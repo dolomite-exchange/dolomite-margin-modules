@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "build": "hardhat compile",
+    "build": "hardhat compile && yarn typechain",
     "clean": "hardhat clean",
     "deploy:1": "hardhat --network arbitrum run scripts/deploy-1.ts",
     "lint": "solhint 'contracts/**/*.sol'",
