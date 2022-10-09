@@ -4,7 +4,11 @@
     "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "paths": {
+      "@dolomite-margin/*": ["node_modules/@dolomite-exchange/dolomite-margin/*"]
+    }
   },
   "include": ["./scripts", "./test"],
   "files": ["./hardhat.config.ts"]

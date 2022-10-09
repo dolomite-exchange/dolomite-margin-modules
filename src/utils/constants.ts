@@ -8,6 +8,11 @@ import {
   IWETH,
   IWETH__factory,
 } from '../types';
+import * as DolomiteAmmFactoryJson from '@dolomite-margin/build/contracts/DolomiteAmmFactory.json';
+import * as DolomiteAmmRouterProxyJson from '@dolomite-margin/build/contracts/DolomiteAmmRouterProxy.json';
+import * as DolomiteMarginJson from '@dolomite-margin/build/contracts/DolomiteMargin.json';
+
+const arbitrumNetworkId = '42161';
 
 // ************************* External Contract Addresses *************************
 
@@ -24,16 +29,16 @@ export const WETH = new BaseContract(
 // ************************* Network Addresses *************************
 
 export const DOLOMITE_AMM_FACTORY = new BaseContract(
-  '0xD99c21C96103F36BC1FA26DD6448af4DA030c1EF',
+  DolomiteAmmFactoryJson.networks[arbitrumNetworkId].address,
   IDolomiteAmmFactory__factory.createInterface(),
 ) as IDolomiteAmmFactory;
 
 export const DOLOMITE_AMM_ROUTER = new BaseContract(
-  '0xa09B4a3FC92965E587a94539ee8B35ECf42D5A08',
+  DolomiteAmmRouterProxyJson.networks[arbitrumNetworkId].address,
   IDolomiteAmmRouterProxy__factory.createInterface(),
 ) as IDolomiteAmmRouterProxy;
 
 export const DOLOMITE_MARGIN = new BaseContract(
-    '0x6Bd780E7fDf01D77e4d475c821f1e7AE05409072',
+  DolomiteMarginJson.networks[arbitrumNetworkId].address,
   IDolomiteMargin__factory.createInterface(),
 ) as IDolomiteMargin;
