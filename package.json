@@ -19,7 +19,7 @@
     "url": "git+https://github.com/dolomite-exchange/dolomite-margin-modules.git"
   },
   "author": "",
-  "license": "ISC",
+  "license": "GPL-2.0",
   "bugs": {
     "url": "https://github.com/dolomite-exchange/dolomite-margin-modules/issues"
   },
@@ -54,6 +54,7 @@
     "typescript": "^4.5.5"
   },
   "dependencies": {
+    "@dolomite-exchange/dolomite-margin": "^0.9.1",
     "@nomiclabs/hardhat-truffle5": "2.0.0",
     "@nomiclabs/hardhat-web3": "2.0.0",
     "@openzeppelin/contracts": "^4.6.0",
