@@ -1,0 +1,65 @@
+{
+  "name": "dolomite-protocol-modules",
+  "version": "1.0.0",
+  "description": "Repository uses the DolomiteMargin instance on Arbitrum One for testing new modules and features against the live deployment.",
+  "main": "hardhat.config.ts",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "hardhat compile",
+    "clean": "hardhat clean",
+    "deploy:1": "hardhat --network arbitrum run scripts/deploy-1.ts",
+    "lint": "solhint 'contracts/**/*.sol'",
+    "test": "hardhat --network hardhat test",
+    "typechain": "npx typechain --target=ethers-v5 './artifacts/contracts/**/+([a-zA-Z0-9_]).json' --out-dir \"./src/types/\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dolomite-exchange/dolomite-margin-modules.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dolomite-exchange/dolomite-margin-modules/issues"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "homepage": "https://github.com/dolomite-exchange/dolomite-margin-modules#readme",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.5",
+    "@nomiclabs/hardhat-etherscan": "^3.0.3",
+    "@nomiclabs/hardhat-vyper": "^3.0.1",
+    "@nomiclabs/hardhat-waffle": "2.0.1",
+    "@typechain/ethers-v5": "^9.0.0",
+    "@typechain/hardhat": "^5.0.0",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^9.1.0",
+    "@types/node": "^17.0.21",
+    "babel-eslint": "^10.0.1",
+    "chai": "^4.3.6",
+    "chai-bignumber": "^3.0.0",
+    "dotenv": "^16.0.0",
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.16.0",
+    "ethereum-waffle": "^4.0.0-alpha.0",
+    "ethers": "^5.6.0",
+    "hardhat-gas-reporter": "1.0.4",
+    "ts-node": "^10.5.0",
+    "typechain": "^7.0.0",
+    "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "@nomiclabs/hardhat-truffle5": "2.0.0",
+    "@nomiclabs/hardhat-web3": "2.0.0",
+    "@openzeppelin/contracts": "^4.6.0",
+    "@openzeppelin/contracts-ethereum-package": "^3.0.0",
+    "@openzeppelin/upgrades": "^2.8.0",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "solhint": "^3.3.6"
+  }
+}

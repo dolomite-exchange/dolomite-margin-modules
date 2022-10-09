@@ -1,0 +1,31 @@
+extends:
+  - airbnb-protocol
+  - eslint:recommended
+
+parser: babel-eslint
+
+env:
+  node: true
+  es6: true
+
+globals:
+  artifacts: true
+
+rules:
+  no-use-before-define: 0
+  class-methods-use-this: 0
+  no-underscore-dangle: 0
+  no-undef: off
+  import/extensions: off
+  import/no-unresolved: off
+  prefer-destructuring: off
+  no-console: off
+  max-line-length: 200
+  camelcase: off
+  no-await-in-loop: off
+  quotes:
+    - error
+    - single
+  max-len:
+    - error
+    - 120
