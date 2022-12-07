@@ -3,12 +3,21 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { assert } from 'chai';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
-import { ethers, network } from 'hardhat';
+import { config as hardhatConfig, ethers, network } from 'hardhat';
 import Web3 from 'web3';
-import config from '../../hardhat.config';
 
-let gasLogger: Record<string, BigNumber> = {};
-let gasLoggerNumberOfCalls: Record<string, number> = {};
+const gasLogger: Record<string, BigNumber> = {};
+const gasLoggerNumberOfCalls: Record<string, number> = {};
+
+/**
+ * Gets the most recent block number from the real network, NOT the forked network.
+ * @param include32BlockBuffer Hardhat works better when there's > 31 block confirmations
+ */
+export async function getRealLatestBlockNumber(include32BlockBuffer: boolean): Promise<number> {
+  const provider = new ethers.providers.JsonRpcProvider(hardhatConfig?.networks?.hardhat?.forking?.url);
+  const blockNumber = await provider.send('eth_blockNumber', []);
+  return Number.parseInt(blockNumber, 16) - (include32BlockBuffer ? 32 : 0);
+}
 
 export async function resetFork(blockNumber: number) {
   await network.provider.request({
@@ -16,9 +25,9 @@ export async function resetFork(blockNumber: number) {
     params: [
       {
         forking: {
-          jsonRpcUrl: config.networks?.hardhat?.forking?.url,
-          blockNumber: blockNumber,
-          ignoreUnknownTxType: config.networks?.hardhat?.forking?.ignoreUnknownTxType ?? false,
+          blockNumber,
+          jsonRpcUrl: hardhatConfig.networks?.hardhat?.forking?.url,
+          ignoreUnknownTxType: hardhatConfig.networks?.hardhat?.forking?.ignoreUnknownTxType ?? false,
         },
       },
     ],
@@ -60,6 +69,13 @@ export async function revertToSnapshotAndCapture(snapshotId: string): Promise<st
   }
 }
 
+export async function setEtherBalance(address: string, balance: BigNumberish = '1000000000000000000') {
+  await network.provider.send('hardhat_setBalance', [
+    address,
+    `0x${ethers.BigNumber.from(balance).toBigInt().toString(16)}`,
+  ]);
+}
+
 export async function impersonate(targetAccount: string, giveEther: boolean = false): Promise<SignerWithAddress> {
   await network.provider.request({
     method: 'hardhat_impersonateAccount',
@@ -71,7 +87,10 @@ export async function impersonate(targetAccount: string, giveEther: boolean = fa
   return ethers.getSigner(targetAccount);
 }
 
-export async function impersonateAll(targetAccounts: string[], giveEther: boolean = false): Promise<SignerWithAddress[]> {
+export async function impersonateAll(
+  targetAccounts: string[],
+  giveEther: boolean = false,
+): Promise<SignerWithAddress[]> {
   const signers = [];
   for (let i = 0; i < targetAccounts.length; i++) {
     signers[i] = await impersonate(targetAccounts[i], giveEther);
@@ -80,10 +99,10 @@ export async function impersonateAll(targetAccounts: string[], giveEther: boolea
 }
 
 export async function gasLog(logTo: string, transactionPromise: Promise<ContractTransaction>) {
-  let transaction = await transactionPromise;
-  let gasUsed = (await ethers.provider.getTransactionReceipt(transaction.hash)).gasUsed;
+  const transaction = await transactionPromise;
+  const gasUsed = (await ethers.provider.getTransactionReceipt(transaction.hash)).gasUsed;
 
-  if (gasLogger[logTo] == undefined) {
+  if (typeof gasLogger[logTo] === 'undefined') {
     gasLogger[logTo] = gasUsed;
     gasLoggerNumberOfCalls[logTo] = 1;
   } else {
@@ -96,37 +115,32 @@ export async function printGasLog() {
   console.log('\tGas used:', JSON.stringify(gasLogger, undefined, '\n'));
 }
 
-export async function setEtherBalance(address: string, balance: BigNumberish = '1000000000000000000') {
-  await network.provider.send('hardhat_setBalance', [
-    address,
-    `0x${ethers.BigNumber.from(balance).toBigInt().toString(16)}`,
-  ]);
-}
-
 export async function advanceNBlock(n: number, secondsPerBlock: number = 1) {
   await ethers.provider.send('hardhat_mine', [`0x${n.toString(16)}`, `0x${secondsPerBlock.toString(16)}`]);
 }
 
+export async function waitTime(timeToAddSeconds: number) {
+  const currentTimestamp = await ethers.provider.getBlock('latest');
+  await ethers.provider.send('evm_setNextBlockTimestamp', [currentTimestamp.timestamp + timeToAddSeconds]);
+  await ethers.provider.send('evm_mine', []);
+}
+
 export async function waitDays(n: number) {
-  await _waitTime((n * 3600 * 24) + 1);
+  await waitTime((n * 3600 * 24) + 1);
 }
 
 export async function waitHours(n: number) {
-  await _waitTime(n * 3600 + 1);
-}
-
-export async function waitTime(n: number) {
-  await _waitTime(n);
+  await waitTime(n * 3600 + 1);
 }
 
 export async function getLatestTimestamp(): Promise<number> {
   const block = await ethers.provider.getBlock('latest');
-  return block.timestamp
+  return block.timestamp;
 }
 
 export async function getLatestBlockNumber(): Promise<number> {
   const block = await ethers.provider.getBlock('latest');
-  return block.number
+  return block.number;
 }
 
 export async function sendEther(from: string, to: string, value: BigNumberish): Promise<any> {
@@ -144,24 +158,24 @@ export async function sendEther(from: string, to: string, value: BigNumberish): 
 }
 
 export function assertBNEq(a: BigNumber, b: BigNumber) {
-  let msg = a.toString() + ' != ' + b.toString();
+  const msg = `${a.toString()} != ${b.toString()}`;
   assert.equal(a.eq(b), true, msg);
 }
 
 export function assertApproxBNEq(a: BigNumber, b: BigNumber, c: BigNumber) {
-  let _a = a.div(c);
-  let _b = b.div(c);
-  let msg = _a.toString() + ' != ' + _b.toString();
-  assert.equal(_a.eq(_b), true, msg);
+  const aBN = a.div(c);
+  const bBN = b.div(c);
+  const msg = `${aBN.toString()} != ${bBN.toString()}`;
+  assert.equal(aBN.eq(bBN), true, msg);
 }
 
 export function assertBNGt(a: BigNumber, b: BigNumber) {
-  let msg = a.toString() + ' is not greater than ' + b.toString();
+  const msg = `${a.toString()} is not greater than ${b.toString()}`;
   assert.equal(a.gt(b), true, msg);
 }
 
 export function assertBNGte(a: BigNumber, b: BigNumber) {
-  let msg = a.toString() + ' is not greater than ' + b.toString();
+  const msg = `${a.toString()} is not greater than ${b.toString()}`;
   assert.equal(a.gte(b), true, msg);
 }
 
@@ -179,9 +193,10 @@ export function calculateApr(
   durationDeltaSeconds: BigNumberish,
 ): BigNumber {
   const base = ethers.BigNumber.from('1000000000000000000');
-  const _newValue = ethers.BigNumber.from(newValue);
-  const _oldValue = ethers.BigNumber.from(oldValue);
-  return _newValue.mul(base).div(_oldValue).sub(base).mul(365 * 86400).div(durationDeltaSeconds);
+  const newValueBN = ethers.BigNumber.from(newValue);
+  const oldValueBN = ethers.BigNumber.from(oldValue);
+  return newValueBN.mul(base).div(oldValueBN).sub(base).mul(365 * 86400)
+    .div(durationDeltaSeconds);
 }
 
 export function calculateApy(
@@ -189,10 +204,10 @@ export function calculateApy(
   oldValue: BigNumberish,
   durationDeltaSeconds: BigNumberish,
 ): BigNumber {
-  const _newValue = ethers.BigNumber.from(newValue);
-  const _oldValue = ethers.BigNumber.from(oldValue);
+  const newValueBN = ethers.BigNumber.from(newValue);
+  const oldValueBN = ethers.BigNumber.from(oldValue);
   const one = ethers.BigNumber.from('1000000000000000000');
-  return one.add(calculateApr(_newValue, _oldValue, durationDeltaSeconds).div(365))
+  return one.add(calculateApr(newValueBN, oldValueBN, durationDeltaSeconds).div(365))
     .pow(365)
     .mul(one)
     .div(one.pow(365))
@@ -200,14 +215,6 @@ export function calculateApy(
 }
 
 export function formatNumber(n: BigNumberish): string {
-  const _n = ethers.BigNumber.from(n);
-  return Web3.utils.fromWei(_n.toString());
-}
-
-// ========================= Private Functions =========================
-
-async function _waitTime(timeToAddSeconds: number) {
-  const currentTimestamp = await ethers.provider.getBlock('latest');
-  await ethers.provider.send('evm_setNextBlockTimestamp', [currentTimestamp.timestamp + timeToAddSeconds]);
-  await ethers.provider.send('evm_mine', []);
+  const numberBN = ethers.BigNumber.from(n);
+  return Web3.utils.fromWei(numberBN.toString());
 }

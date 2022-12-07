@@ -17,7 +17,7 @@
   </a>
 </div>
 
-> Ethereum Smart Contracts for integration tests against the live `DolomiteMargin` instance on Arbitrum One for
+> Solidity Smart Contracts for integration tests against the live `DolomiteMargin` instance on Arbitrum One for
 testing new modules against the live deployment.
 
 ## Installation

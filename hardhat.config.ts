@@ -1,18 +1,20 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import '@nomiclabs/hardhat-ethers'
+import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
-import "@nomiclabs/hardhat-vyper";
+import '@nomiclabs/hardhat-vyper';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 
 import chai from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { HardhatUserConfig } from 'hardhat/types';
-import { DefaultBlockNumber } from './src/utils/no-deps-constants';
+import { DEFAULT_BLOCK_NUMBER } from './src/utils/no-deps-constants';
+
+import 'tsconfig-paths/register';
 
 chai.use(solidity);
-require('dotenv').config()
+require('dotenv').config();
 
 const infuraApiKey = process.env.INFURA_API_KEY;
 if (!infuraApiKey) {
@@ -25,11 +27,12 @@ export const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `https://arbitrum-mainnet.infura.io/v3/${infuraApiKey}`,
-        blockNumber: DefaultBlockNumber,
+        blockNumber: DEFAULT_BLOCK_NUMBER,
         ignoreUnknownTxType: true,
-      }
+      },
     },
     arbitrum: {
+      chainId: 42161,
       url: `https://arbitrum-mainnet.infura.io/v3/${infuraApiKey}`,
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
@@ -54,7 +57,10 @@ export const config: HardhatUserConfig = {
     outDir: 'src/types',
     target: 'ethers-v5',
     alwaysGenerateOverloads: false,
-    externalArtifacts: ['externalArtifacts/*.json'],
+    externalArtifacts: [
+      'node_modules/@dolomite-exchange/dolomite-margin/build/contracts/*.json',
+      'node_modules/@openzeppelin/contracts/build/contracts/*.json',
+    ],
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
