@@ -576,7 +576,7 @@ interface IDolomiteMargin {
     function getIsAutoTraderSpecial(address autoTrader) external view returns (bool);
 
     /**
-     * @return The address that owns the DolomiteMargin external
+     * @return The address that owns the DolomiteMargin protocol
      */
     function owner() external view returns (address);
 
