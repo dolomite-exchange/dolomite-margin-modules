@@ -14,8 +14,8 @@
 
 pragma solidity ^0.8.9;
 
-import "./IDolomiteInterestSetter.sol";
-import "./IDolomitePriceOracle.sol";
+import { IDolomiteInterestSetter } from "./IDolomiteInterestSetter.sol";
+import { IDolomitePriceOracle } from "./IDolomitePriceOracle.sol";
 
 
 interface IDolomiteMargin {

@@ -28,7 +28,6 @@ export const config: HardhatUserConfig = {
       forking: {
         url: `https://arbitrum-mainnet.infura.io/v3/${infuraApiKey}`,
         blockNumber: DEFAULT_BLOCK_NUMBER,
-        ignoreUnknownTxType: true,
       },
     },
     arbitrum: {

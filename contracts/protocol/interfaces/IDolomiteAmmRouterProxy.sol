@@ -14,7 +14,7 @@
 
 pragma solidity ^0.8.9;
 
-import "./IDolomiteMargin.sol";
+import { IDolomiteMargin } from "./IDolomiteMargin.sol";
 
 
 interface IDolomiteAmmRouterProxy {

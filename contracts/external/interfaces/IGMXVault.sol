@@ -14,12 +14,20 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+interface IGMXVault {
 
-interface IWETH is IERC20 {
+    function getFeeBasisPoints(
+        address _token,
+        uint256 _usdgDelta,
+        uint256 _feeBasisPoints,
+        uint256 _taxBasisPoints,
+        bool _increment
+    ) external view returns (uint256);
 
-    function deposit() external payable;
+    function getRedemptionAmount(address _token, uint256 _usdgAmount) external view returns (uint256);
 
-    function withdraw(uint256 _amount) external;
+    function taxBasisPoints() external view returns (uint256);
+
+    function mintBurnFeeBasisPoints() external view returns (uint256);
 }

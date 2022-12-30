@@ -14,12 +14,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+interface IGLPManager {
 
-interface IWETH is IERC20 {
-
-    function deposit() external payable;
-
-    function withdraw(uint256 _amount) external;
+    function getAumInUsdg(bool _maximise) external view returns (uint256);
 }
