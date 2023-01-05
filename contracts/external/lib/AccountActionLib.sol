@@ -136,7 +136,7 @@ library AccountActionLib {
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](1);
         actions[0] = IDolomiteMargin.ActionArgs({
-            actionType: Actions.ActionType.Transfer,
+            actionType: IDolomiteMargin.ActionType.Transfer,
             accountId: 0,
             amount: _amount,
             primaryMarketId: _marketId,
@@ -181,10 +181,15 @@ library AccountActionLib {
         bytes memory _callData
     ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
         return IDolomiteMargin.ActionArgs({
-            actionType : Actions.ActionType.Call,
+            actionType : IDolomiteMargin.ActionType.Call,
             accountId : _accountId,
             // solium-disable-next-line arg-overflow
-            amount : IDolomiteMargin.AssetAmount(true, Types.AssetDenomination.Wei, Types.AssetReference.Delta, 0),
+            amount : IDolomiteMargin.AssetAmount({
+                sign: false,
+                denomination: IDolomiteMargin.AssetDenomination.Wei,
+                ref: IDolomiteMargin.AssetReference.Delta,
+                value: 0
+            }),
             primaryMarketId : 0,
             secondaryMarketId : 0,
             otherAddress : _callee,
@@ -200,7 +205,7 @@ library AccountActionLib {
         address _fromAccount
     ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
         return IDolomiteMargin.ActionArgs({
-            actionType: Actions.ActionType.Deposit,
+            actionType: IDolomiteMargin.ActionType.Deposit,
             accountId: _accountId,
             amount: _amount,
             primaryMarketId: _marketId,
@@ -249,12 +254,12 @@ library AccountActionLib {
         bool _flipMarkets
     ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
         return IDolomiteMargin.ActionArgs({
-            actionType: Actions.ActionType.Trade,
+            actionType: IDolomiteMargin.ActionType.Trade,
             accountId: _solidAccountId,
             amount: IDolomiteMargin.AssetAmount({
-                sign: true,
-                denomination: Types.AssetDenomination.Wei,
-                ref: Types.AssetReference.Target,
+                sign: false,
+                denomination: IDolomiteMargin.AssetDenomination.Wei,
+                ref: IDolomiteMargin.AssetReference.Target,
                 value: 0
             }),
             primaryMarketId: !_flipMarkets ? _owedMarketId : _heldMarketId,
@@ -275,12 +280,12 @@ library AccountActionLib {
         uint256 _amountOutWei
     ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
         return IDolomiteMargin.ActionArgs({
-            actionType : Actions.ActionType.Trade,
+            actionType : IDolomiteMargin.ActionType.Trade,
             accountId : _fromAccountId,
             amount : IDolomiteMargin.AssetAmount({
                 sign: true,
-                denomination: Types.AssetDenomination.Wei,
-                ref: Types.AssetReference.Delta,
+                denomination: IDolomiteMargin.AssetDenomination.Wei,
+                ref: IDolomiteMargin.AssetReference.Delta,
                 value: _amountInWei
             }),
             primaryMarketId : _primaryMarketId,
@@ -299,12 +304,12 @@ library AccountActionLib {
         uint256 _owedWeiToLiquidate
     ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
         return IDolomiteMargin.ActionArgs({
-            actionType: Actions.ActionType.Liquidate,
+            actionType: IDolomiteMargin.ActionType.Liquidate,
             accountId: _solidAccountId,
             amount: IDolomiteMargin.AssetAmount({
                 sign: true,
-                denomination: Types.AssetDenomination.Wei,
-                ref: Types.AssetReference.Delta,
+                denomination: IDolomiteMargin.AssetDenomination.Wei,
+                ref: IDolomiteMargin.AssetReference.Delta,
                 value: _owedWeiToLiquidate
             }),
             primaryMarketId: _owedMarketId,
@@ -324,15 +329,27 @@ library AccountActionLib {
         uint256 _amountOutMinWei,
         bytes memory _orderData
     ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
+        IDolomiteMargin.AssetAmount memory assetAmount;
+        if (_amountInWei == ALL) {
+            assetAmount = IDolomiteMargin.AssetAmount({
+                sign: false,
+                denomination: IDolomiteMargin.AssetDenomination.Wei,
+                ref: IDolomiteMargin.AssetReference.Target,
+                value: 0
+            });
+        } else {
+            assetAmount = IDolomiteMargin.AssetAmount({
+                sign: false,
+                denomination: IDolomiteMargin.AssetDenomination.Wei,
+                ref: IDolomiteMargin.AssetReference.Delta,
+                value: _amountInWei
+            });
+        }
+
         return IDolomiteMargin.ActionArgs({
-            actionType : Actions.ActionType.Sell,
+            actionType : IDolomiteMargin.ActionType.Sell,
             accountId : _fromAccountId,
-            amount : IDolomiteMargin.AssetAmount({
-                sign : false,
-                denomination : Types.AssetDenomination.Wei,
-                ref : _amountInWei == ALL ? Types.AssetReference.Target : Types.AssetReference.Delta,
-                value : _amountInWei == ALL ? 0 : _amountInWei
-            }),
+            amount : assetAmount,
             primaryMarketId : _primaryMarketId,
             secondaryMarketId : _secondaryMarketId,
             otherAddress : _trader,
@@ -348,23 +365,23 @@ library AccountActionLib {
         uint256 _amountWei
     ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
         IDolomiteMargin.AssetAmount memory assetAmount;
-        if (_amountWei == type(uint).max) {
+        if (_amountWei == ALL) {
             assetAmount = IDolomiteMargin.AssetAmount({
                 sign: false,
-                denomation: IDolomiteMargin.AssetDenomination.Wei,
+                denomination: IDolomiteMargin.AssetDenomination.Wei,
                 ref: IDolomiteMargin.AssetReference.Target,
                 value: 0
             });
         } else {
             assetAmount = IDolomiteMargin.AssetAmount({
                 sign: false,
-                denomation: IDolomiteMargin.AssetDenomination.Wei,
+                denomination: IDolomiteMargin.AssetDenomination.Wei,
                 ref: IDolomiteMargin.AssetReference.Delta,
                 value: _amountWei
             });
         }
         return IDolomiteMargin.ActionArgs({
-            actionType : Actions.ActionType.Transfer,
+            actionType : IDolomiteMargin.ActionType.Transfer,
             accountId : _fromAccountId,
             amount : assetAmount,
             primaryMarketId : _marketId,
@@ -382,7 +399,7 @@ library AccountActionLib {
         address _toAccount
     ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
         return IDolomiteMargin.ActionArgs({
-            actionType: Actions.ActionType.Withdraw,
+            actionType: IDolomiteMargin.ActionType.Withdraw,
             accountId: _accountId,
             amount: _amount,
             primaryMarketId: _marketId,

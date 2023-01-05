@@ -23,7 +23,7 @@ pragma solidity ^0.8.9;
  *      and decentralized automation platform that uses the same external network of node operators that secures
  *      billions in value. The documentation is copied from Chainlink's official smart contract documentation
  */
-contract IChainlinkAutomation {
+interface IChainlinkAutomation {
 
     /**
      * @notice  The  method that is simulated by keepers to see if any work actually needs to be performed. This method

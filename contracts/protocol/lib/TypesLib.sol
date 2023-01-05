@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /*
 
     Copyright 2019 dYdX Trading Inc.
@@ -39,9 +40,9 @@ library TypesLib {
     pure
     returns (IDolomiteMargin.Par memory)
     {
-        return Par({
-        sign: false,
-        value: 0
+        return IDolomiteMargin.Par({
+            sign: false,
+            value: 0
         });
     }
 
@@ -67,14 +68,14 @@ library TypesLib {
         IDolomiteMargin.Par memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.value = SafeMath.add(a.value, b.value).to128();
+            result.value = (a.value + b.value).to128();
         } else {
             if (a.value >= b.value) {
                 result.sign = a.sign;
-                result.value = SafeMath.sub(a.value, b.value).to128();
+                result.value = (a.value - b.value).to128();
             } else {
                 result.sign = b.sign;
-                result.value = SafeMath.sub(b.value, a.value).to128();
+                result.value = (b.value - a.value).to128();
             }
         }
         return result;
@@ -104,9 +105,9 @@ library TypesLib {
     pure
     returns (IDolomiteMargin.Par memory)
     {
-        return Par({
-        sign: !a.sign,
-        value: a.value
+        return IDolomiteMargin.Par({
+            sign: !a.sign,
+            value: a.value
         });
     }
 
@@ -167,9 +168,9 @@ library TypesLib {
     pure
     returns (IDolomiteMargin.Wei memory)
     {
-        return Wei({
-        sign: false,
-        value: 0
+        return IDolomiteMargin.Wei({
+            sign: false,
+            value: 0
         });
     }
 
@@ -195,14 +196,14 @@ library TypesLib {
         IDolomiteMargin.Wei memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.value = SafeMath.add(a.value, b.value);
+            result.value = a.value + b.value;
         } else {
             if (a.value >= b.value) {
                 result.sign = a.sign;
-                result.value = SafeMath.sub(a.value, b.value);
+                result.value = a.value - b.value;
             } else {
                 result.sign = b.sign;
-                result.value = SafeMath.sub(b.value, a.value);
+                result.value = b.value - a.value;
             }
         }
         return result;
@@ -232,9 +233,9 @@ library TypesLib {
     pure
     returns (IDolomiteMargin.Wei memory)
     {
-        return Wei({
-        sign: !a.sign,
-        value: a.value
+        return IDolomiteMargin.Wei({
+            sign: !a.sign,
+            value: a.value
         });
     }
 

@@ -16,25 +16,14 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @dev Interface of the GMX Reward Router V2 contract, taken from:
- *      https://arbiscan.io/address/0xB95DB5B167D75e6d04227CfFFA61069348d271F5#code
+ * @title   IAuthorizationBase
+ * @author  Dolomite
+ * @notice  Interface for allowing only trusted callers to invoke functions that use the `requireIsCallerAuthorized`
+ *          modifier.
  */
-interface IGLPRewardRouterV2 {
+interface IAuthorizationBase {
 
-    function handleRewards(
-        bool _shouldClaimGmx,
-        bool _shouldStakeGmx,
-        bool _shouldClaimEsGmx,
-        bool _shouldStakeEsGmx,
-        bool _shouldStakeMultiplierPoints,
-        bool _shouldClaimWeth,
-        bool _shouldConvertWethToEth
-    ) external;
+    function setIsCallerAuthorized(address _caller, bool _isAuthorized) external;
 
-    function unstakeAndRedeemGlp(
-        address _tokenOut,
-        uint256 _glpAmount,
-        uint256 _minAmountOut,
-        address _receiver
-    ) external returns (uint256);
+    function isCallerAuthorized(address _caller) external view returns (bool);
 }

@@ -141,6 +141,9 @@ interface IDolomiteMargin {
         Wei maxWei;
     }
 
+    /*
+     * The price of a base-unit of an asset. Has `36 - token.decimals` decimals
+     */
     struct MonetaryPrice {
         uint256 value;
     }

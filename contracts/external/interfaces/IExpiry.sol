@@ -21,7 +21,7 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
  * @title IExpiry
  * @author Dolomite
  */
-contract IExpiry {
+interface IExpiry {
 
     // ============ Enums ============
 
@@ -49,15 +49,15 @@ contract IExpiry {
         uint256 owedMarketId,
         uint32 expiry
     )
-    public
+    external
     view
     returns (IDolomiteMargin.MonetaryPrice memory heldPrice, IDolomiteMargin.MonetaryPrice memory owedPriceAdj);
 
     function getExpiry(
-        IDolomiteMargin.AccountInfo memory account,
+        IDolomiteMargin.AccountInfo calldata account,
         uint256 marketId
     )
-    public
+    external
     view
     returns (uint32);
 

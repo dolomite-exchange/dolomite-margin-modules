@@ -50,18 +50,21 @@ library AccountBalanceLib {
      */
     function verifyBalanceIsNonNegative(
         IDolomiteMargin dolomiteMargin,
-        address _owner,
-        uint256 _accountIndex,
+        address _accountOwner,
+        uint256 _accountNumber,
         uint256 _marketId
     ) internal view {
-        IDolomiteMargin.AccountInfo memory account = Account.Info(_owner, _accountIndex);
+        IDolomiteMargin.AccountInfo memory account = IDolomiteMargin.AccountInfo({
+            owner: _accountOwner,
+            number: _accountNumber
+        });
         IDolomiteMargin.Par memory par = dolomiteMargin.getAccountPar(account, _marketId);
         Require.that(
             par.isPositive() || par.isZero(),
             FILE,
             "account cannot go negative",
-            _owner,
-            _accountIndex,
+            _accountOwner,
+            _accountNumber,
             _marketId
         );
     }

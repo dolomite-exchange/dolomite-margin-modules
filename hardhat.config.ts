@@ -17,8 +17,12 @@ chai.use(solidity);
 require('dotenv').config();
 
 const infuraApiKey = process.env.INFURA_API_KEY;
+const arbiscanApiKey = process.env.ARBISCAN_API_KEY;
 if (!infuraApiKey) {
   throw new Error('No INFURA_API_KEY provided!');
+}
+if (!arbiscanApiKey) {
+  throw new Error('No ARBISCAN_API_KEY provided!');
 }
 
 export const config: HardhatUserConfig = {
@@ -44,6 +48,9 @@ export const config: HardhatUserConfig = {
           optimizer: {
             enabled: true,
             runs: 10000,
+            details: {
+              yul: false, // set this to false to fix some extraneous "stack too deep" errors that don't make sense
+            },
           },
         },
       },
@@ -62,7 +69,10 @@ export const config: HardhatUserConfig = {
     ],
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: {
+      arbitrumOne: arbiscanApiKey,
+      arbitrumTestnet: arbiscanApiKey,
+    },
   },
 };
 

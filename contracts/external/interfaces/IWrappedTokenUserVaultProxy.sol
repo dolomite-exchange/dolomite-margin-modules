@@ -14,27 +14,21 @@
 
 pragma solidity ^0.8.9;
 
+import { IWrappedTokenUserVaultFactory } from "./IWrappedTokenUserVaultFactory.sol";
 
-/**
- * @dev Interface of the GMX Reward Router V2 contract, taken from:
- *      https://arbiscan.io/address/0xB95DB5B167D75e6d04227CfFFA61069348d271F5#code
- */
-interface IGLPRewardRouterV2 {
 
-    function handleRewards(
-        bool _shouldClaimGmx,
-        bool _shouldStakeGmx,
-        bool _shouldClaimEsGmx,
-        bool _shouldStakeEsGmx,
-        bool _shouldStakeMultiplierPoints,
-        bool _shouldClaimWeth,
-        bool _shouldConvertWethToEth
-    ) external;
+interface IWrappedTokenUserVaultProxy {
 
-    function unstakeAndRedeemGlp(
-        address _tokenOut,
-        uint256 _glpAmount,
-        uint256 _minAmountOut,
-        address _receiver
-    ) external returns (uint256);
+    /**
+     * @param _account                  The owner of this vault contract
+     */
+    function initialize(address _account) external;
+
+    function isInitialized() external view returns (bool);
+
+    function implementation() external view returns (address);
+
+    function vaultFactory() external view returns (address);
+
+    function owner() external view returns (address);
 }

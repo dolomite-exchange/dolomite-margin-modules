@@ -17,6 +17,8 @@ pragma solidity ^0.8.9;
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 
+import { IOnlyDolomiteMargin } from "../interfaces/IOnlyDolomiteMargin.sol";
+
 
 /**
  * @title OnlyDolomiteMargin
@@ -24,22 +26,21 @@ import { Require } from "../../protocol/lib/Require.sol";
  *
  * Inheritable contract that restricts the calling of certain functions to DolomiteMargin only
  */
-contract OnlyDolomiteMargin {
+abstract contract OnlyDolomiteMargin is IOnlyDolomiteMargin {
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "OnlyDolomiteMargin";
+    bytes32 private constant FILE = "OnlyDolomiteMargin";
 
     // ============ Storage ============
 
-    IDolomiteMargin public immutable DOLOMITE_MARGIN;
+    IDolomiteMargin public immutable override DOLOMITE_MARGIN;
 
     // ============ Constructor ============
 
     constructor (
         address _dolomiteMargin
     )
-    public
     {
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
     }

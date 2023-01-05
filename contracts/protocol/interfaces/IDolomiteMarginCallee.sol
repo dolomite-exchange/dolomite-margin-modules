@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /*
 
     Copyright 2019 dYdX Trading Inc.
@@ -16,8 +17,7 @@
 
 */
 
-pragma solidity ^0.5.7;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.9;
 
 import { IDolomiteMargin } from "./IDolomiteMargin.sol";
 
@@ -44,5 +44,5 @@ interface IDolomiteMarginCallee {
         IDolomiteMargin.AccountInfo calldata _accountInfo,
         bytes calldata _data
     )
-    public;
+    external;
 }

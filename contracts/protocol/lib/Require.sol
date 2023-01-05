@@ -36,7 +36,7 @@ library Require {
     bytes2 constant COLON = 0x3a20; // ': '
     bytes2 constant COMMA = 0x2c20; // ', '
     bytes2 constant LPAREN = 0x203c; // ' <'
-    byte constant RPAREN = 0x3e; // '>'
+    bytes1 constant RPAREN = 0x3e; // '>'
     uint256 constant FOUR_BIT_MASK = 0xf;
 
     // ============ Library Functions ============
@@ -320,7 +320,7 @@ library Require {
             i--;
 
             // take last decimal digit
-            bstr[i] = byte(uint8(ASCII_ZERO + (j % 10)));
+            bstr[i] = bytes1(uint8(ASCII_ZERO + (j % 10)));
 
             // remove the last decimal digit
             j /= 10;
@@ -336,14 +336,14 @@ library Require {
     pure
     returns (bytes memory)
     {
-        uint256 z = uint256(input);
+        uint256 z = uint256(uint160(input));
 
         // addresses are "0x" followed by 20 bytes of data which take up 2 characters each
         bytes memory result = new bytes(42);
 
         // populate the result with "0x"
-        result[0] = byte(uint8(ASCII_ZERO));
-        result[1] = byte(uint8(ASCII_LOWER_EX));
+        result[0] = bytes1(uint8(ASCII_ZERO));
+        result[1] = bytes1(uint8(ASCII_LOWER_EX));
 
         // for each byte (starting from the lowest byte), populate the result with two characters
         for (uint256 i = 0; i < 20; i++) {
@@ -375,8 +375,8 @@ library Require {
         bytes memory result = new bytes(66);
 
         // populate the result with "0x"
-        result[0] = byte(uint8(ASCII_ZERO));
-        result[1] = byte(uint8(ASCII_LOWER_EX));
+        result[0] = bytes1(uint8(ASCII_ZERO));
+        result[1] = bytes1(uint8(ASCII_LOWER_EX));
 
         // for each byte (starting from the lowest byte), populate the result with two characters
         for (uint256 i = 0; i < 32; i++) {
@@ -400,14 +400,14 @@ library Require {
     )
     private
     pure
-    returns (byte)
+    returns (bytes1)
     {
         // return ASCII digit (0-9)
         if (input < 10) {
-            return byte(uint8(input + ASCII_ZERO));
+            return bytes1(uint8(input + ASCII_ZERO));
         }
 
         // return ASCII letter (a-f)
-        return byte(uint8(input + ASCII_RELATIVE_ZERO));
+        return bytes1(uint8(input + ASCII_RELATIVE_ZERO));
     }
 }

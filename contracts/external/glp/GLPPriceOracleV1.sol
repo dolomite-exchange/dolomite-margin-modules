@@ -84,7 +84,7 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle, IChainlinkAutomation {
         address _gmxVault,
         address _glp,
         address _dsGlp
-    ) public {
+    ) {
         glpManager = _glpManager;
         gmxVault = _gmxVault;
         glp = _glp;
@@ -97,6 +97,7 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle, IChainlinkAutomation {
         bytes calldata
     )
     external
+    view
     cannotExecute
     returns (bool upkeepNeeded, bytes memory /* performData */) {
         upkeepNeeded = (block.timestamp - lastOraclePriceUpdateTimestamp) >= UPDATE_DURATION;
