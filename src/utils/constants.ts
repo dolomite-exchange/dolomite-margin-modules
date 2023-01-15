@@ -12,13 +12,20 @@ import {
   IDolomiteAmmRouterProxy,
   IDolomiteAmmRouterProxy__factory,
   IDolomiteMargin,
-  IDolomiteMargin__factory,
+  IDolomiteMargin__factory, IERC20, IERC20__factory,
+  IGLPManager,
+  IGLPManager__factory, IGLPRewardRouterV2,
+  IGLPRewardRouterV2__factory,
+  IGMXVault,
+  IGMXVault__factory,
   IWETH,
   IWETH__factory,
   LiquidatorProxyV2WithExternalLiquidity,
   LiquidatorProxyV2WithExternalLiquidity__factory,
 } from '../types';
 import { Network, NETWORK_ID } from './no-deps-constants';
+
+export const BYTES_EMPTY = '0x';
 
 export interface AccountStruct {
   owner: string,
@@ -60,7 +67,7 @@ export const WETH = new BaseContract(
 
 export const WETH_MARKET_ID = WETH_MAP[NETWORK_ID].marketId;
 
-// ************************* Network Addresses *************************
+// ************************* Protocol Addresses *************************
 
 export const DOLOMITE_AMM_FACTORY = new BaseContract(
   DolomiteAmmFactoryJson.networks[NETWORK_ID].address,
@@ -81,3 +88,50 @@ export const LIQUIDATOR_PROXY_V2 = new BaseContract(
   LiquidatorProxyV2WithExternalLiquidityJson.networks[NETWORK_ID].address,
   LiquidatorProxyV2WithExternalLiquidity__factory.createInterface(),
 ) as LiquidatorProxyV2WithExternalLiquidity;
+
+// ************************* External Addresses *************************
+
+const GLP_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x4277f8F2c384827B5273592FF7CeBd9f2C1ac258',
+};
+
+export const GLP = new BaseContract(
+  GLP_MAP[NETWORK_ID],
+  IERC20__factory.createInterface(),
+) as IERC20;
+
+const S_GLP_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x2F546AD4eDD93B956C8999Be404cdCAFde3E89AE',
+};
+
+export const S_GLP = new BaseContract(
+  S_GLP_MAP[NETWORK_ID],
+  IERC20__factory.createInterface(),
+) as IERC20;
+
+const GLP_MANAGER_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x321F653eED006AD1C29D174e17d96351BDe22649',
+};
+
+export const GLP_MANAGER = new BaseContract(
+  GLP_MANAGER_MAP[NETWORK_ID],
+  IGLPManager__factory.createInterface(),
+) as IGLPManager;
+
+const GLP_REWARD_ROUTER_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0xB95DB5B167D75e6d04227CfFFA61069348d271F5',
+};
+
+export const GLP_REWARD_ROUTER = new BaseContract(
+  GLP_REWARD_ROUTER_MAP[NETWORK_ID],
+  IGLPRewardRouterV2__factory.createInterface(),
+) as IGLPRewardRouterV2;
+
+const GMX_VAULT_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x489ee077994B6658eAfA855C308275EAd8097C4A',
+};
+
+export const GMX_VAULT = new BaseContract(
+  GMX_VAULT_MAP[NETWORK_ID],
+  IGMXVault__factory.createInterface(),
+) as IGMXVault;

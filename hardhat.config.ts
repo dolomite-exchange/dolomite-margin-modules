@@ -1,9 +1,9 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-etherscan';
-import '@nomiclabs/hardhat-waffle';
-import '@nomiclabs/hardhat-vyper';
 import '@typechain/hardhat';
+import '@nomiclabs/hardhat-ethers';
+import '@nomiclabs/hardhat-waffle';
+import '@nomiclabs/hardhat-etherscan';
+import '@nomiclabs/hardhat-vyper';
 import 'hardhat-gas-reporter';
 
 import chai from 'chai';

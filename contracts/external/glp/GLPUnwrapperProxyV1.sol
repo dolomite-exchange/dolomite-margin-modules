@@ -194,16 +194,16 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     view
     returns (uint256) {
         Require.that(
-            _takerToken == address(DS_GLP),
+            _makerToken == address(DS_GLP),
             FILE,
-            "Taker token must be DS_GLP",
-            _takerToken
+            "Maker token must be DS_GLP",
+            _makerToken
         );
         Require.that(
-            _makerToken == USDC,
+            _takerToken == USDC,
             FILE,
-            "Maker token must be USDC",
-            _makerToken
+            "Taker token must be USDC",
+            _takerToken
         );
         IGMXVault gmxVault = GMX_VAULT;
 
