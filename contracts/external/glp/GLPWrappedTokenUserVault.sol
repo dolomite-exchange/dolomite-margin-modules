@@ -167,7 +167,7 @@ contract GLPWrappedTokenUserVault is
     )
     external
     onlyVaultOwner(msg.sender) {
-        BORROW_POSITION_PROXY().openBorrowPosition(
+        BORROW_POSITION_PROXY().openBorrowPositionWithDifferentAccounts(
             /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
             _fromAccountNumber,
             /* _toAccountOwner = */ address(this), // solium-disable-line indentation
@@ -187,7 +187,7 @@ contract GLPWrappedTokenUserVault is
         uint256[] memory collateralMarketIds = new uint256[](1);
         collateralMarketIds[0] = MARKET_ID();
 
-        BORROW_POSITION_PROXY().closeBorrowPosition(
+        BORROW_POSITION_PROXY().closeBorrowPositionWithDifferentAccounts(
             /* _borrowAccountOwner = */ address(this), // solium-disable-line indentation
             _borrowAccountNumber,
             /* _toAccountOwner = */ address(this), // solium-disable-line indentation
@@ -212,7 +212,7 @@ contract GLPWrappedTokenUserVault is
             );
         }
 
-        BORROW_POSITION_PROXY().closeBorrowPosition(
+        BORROW_POSITION_PROXY().closeBorrowPositionWithDifferentAccounts(
             /* _borrowAccountOwner = */ address(this), // solium-disable-line indentation
             _borrowAccountNumber,
             /* _toAccountOwner = */ msg.sender, // solium-disable-line indentation
@@ -228,7 +228,7 @@ contract GLPWrappedTokenUserVault is
     )
     external
     onlyVaultOwner(msg.sender) {
-        BORROW_POSITION_PROXY().transferBetweenAccounts(
+        BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
             /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
             _fromAccountNumber,
             /* _toAccountOwner = */ address(this), // solium-disable-line indentation
@@ -254,7 +254,7 @@ contract GLPWrappedTokenUserVault is
             "Invalid marketId"
         );
 
-        BORROW_POSITION_PROXY().transferBetweenAccounts(
+        BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
             /* _fromAccountOwner = */ msg.sender, // solium-disable-line indentation
             _fromAccountNumber,
             /* _toAccountOwner = */ address(this), // solium-disable-line indentation
@@ -272,7 +272,7 @@ contract GLPWrappedTokenUserVault is
     )
     external
     onlyVaultOwner(msg.sender) {
-        BORROW_POSITION_PROXY().transferBetweenAccounts(
+        BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
             /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
             _borrowAccountNumber,
             /* _toAccountOwner = */ address(this), // solium-disable-line indentation
@@ -298,7 +298,7 @@ contract GLPWrappedTokenUserVault is
             "Invalid marketId"
         );
 
-        BORROW_POSITION_PROXY().transferBetweenAccounts(
+        BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
             /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
             _borrowAccountNumber,
             /* _toAccountOwner = */ msg.sender, // solium-disable-line indentation
@@ -322,7 +322,7 @@ contract GLPWrappedTokenUserVault is
             FILE,
             "Invalid marketId"
         );
-        BORROW_POSITION_PROXY().repayAllForBorrowPosition(
+        BORROW_POSITION_PROXY().repayAllForBorrowPositionWithDifferentAccounts(
             /* _fromAccountOwner = */ msg.sender, // solium-disable-line indentation
             _fromAccountNumber,
             /* _borrowAccountOwner = */ address(this),

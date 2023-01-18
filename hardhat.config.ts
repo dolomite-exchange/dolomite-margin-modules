@@ -5,6 +5,7 @@ import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-vyper';
 import 'hardhat-gas-reporter';
+import 'solidity-coverage';
 
 import chai from 'chai';
 import { solidity } from 'ethereum-waffle';

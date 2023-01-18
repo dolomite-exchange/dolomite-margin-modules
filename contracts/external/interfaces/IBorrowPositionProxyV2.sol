@@ -35,7 +35,7 @@ interface IBorrowPositionProxyV2 is IAuthorizationBase {
      *                              `AccountBalanceLib.BalanceCheckFlag.None=3` results in neither account being
      *                              checked.
      */
-    function openBorrowPosition(
+    function openBorrowPositionWithDifferentAccounts(
         address _fromAccountOwner,
         uint256 _fromAccountNumber,
         address _toAccountOwner,
@@ -55,7 +55,7 @@ interface IBorrowPositionProxyV2 is IAuthorizationBase {
      * @param _toAccountNumber      The index into which `_borrowAccountOwner` will be depositing leftover collateral
      * @param _collateralMarketIds  The IDs of the markets being withdrawn, to close the position
      */
-    function closeBorrowPosition(
+    function closeBorrowPositionWithDifferentAccounts(
         address _borrowAccountOwner,
         uint256 _borrowAccountNumber,
         address _toAccountOwner,
@@ -75,7 +75,7 @@ interface IBorrowPositionProxyV2 is IAuthorizationBase {
      *                              `AccountBalanceLib.BalanceCheckFlag.None=3` results in neither account being
      *                              checked.
      */
-    function transferBetweenAccounts(
+    function transferBetweenAccountsWithDifferentAccounts(
         address _fromAccountOwner,
         uint256 _fromAccountNumber,
         address _toAccountOwner,
@@ -96,7 +96,7 @@ interface IBorrowPositionProxyV2 is IAuthorizationBase {
      *                              `AccountBalanceLib.BalanceCheckFlag.None=3` results in neither account being
      *                              checked.
      */
-    function repayAllForBorrowPosition(
+    function repayAllForBorrowPositionWithDifferentAccounts(
         address _fromAccountOwner,
         uint256 _fromAccountNumber,
         address _borrowAccountOwner,

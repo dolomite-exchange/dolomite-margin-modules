@@ -9,9 +9,12 @@
   "scripts": {
     "build": "hardhat --max-memory 16384 compile && hardhat --max-memory 16384 typechain",
     "clean": "hardhat clean",
+    "coverage": "hardhat coverage --testfiles \"test/**/*.ts\" --network hardhat",
     "deploy:1": "hardhat --network arbitrum run scripts/deploy-1.ts",
+    "deploy:coveralls": "coveralls < coverage/lcov.info",
     "lint": "solhint 'contracts/**/*.sol'",
-    "test": "hardhat --network hardhat test"
+    "test": "hardhat --network hardhat test",
+    "test:specific": "hardhat --network hardhat test test/protocol/lib/Types.ts"
   },
   "repository": {
     "type": "git",
@@ -62,6 +65,7 @@
     "hardhat": "^2.12.2",
     "hardhat-gas-reporter": "1.0.4",
     "solhint": "^3.3.6",
+    "solidity-coverage": "^0.8.2",
     "ts-node": "^10.5.0",
     "typescript": "^4.5.5"
   }

@@ -18,17 +18,15 @@ import {
   WETH_MARKET_ID,
 } from '../../../src/utils/constants';
 import {
-  CoreProtocol,
   createContractWithAbi,
   depositIntoDolomiteMargin,
   owedWeiToHeldWei,
-  setupCoreProtocol,
-  setupWETHBalance,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
 import { NETWORK_ID, NO_EXPIRY } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectBalance, expectBalanceIsGreaterThan, expectWalletBalanceOrDustyIfZero } from '../../utils/assertions';
+import { CoreProtocol, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
 
 const API_URL = 'https://apiv5.paraswap.io';
 const USDC_PRICE = BigNumber.from('1000000000000000000000000000000');

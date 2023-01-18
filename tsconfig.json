@@ -12,6 +12,6 @@
       "@dolomite-margin/deployed-contracts/*": ["node_modules/@dolomite-exchange/dolomite-margin/dist/build/published_contracts/*"]
     }
   },
-  "include": ["./scripts", "./test"],
+  "include": ["./scripts", "./test", "./src"],
   "files": ["./hardhat.config.ts"]
 }

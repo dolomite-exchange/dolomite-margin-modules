@@ -1,11 +1,11 @@
-import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 import { address } from '@dolomite-margin/dist/src';
 import { assert, expect } from 'chai';
 import { BaseContract, BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { ERC20, ERC20__factory } from '../../src/types';
 import { AccountStruct } from '../../src/utils/constants';
-import { CoreProtocol, valueStructToBigNumber } from '../../src/utils/dolomite-utils';
+import { valueStructToBigNumber } from '../../src/utils/dolomite-utils';
+import { CoreProtocol } from './setup';
 
 export function assertEqBn(a: BigNumber, b: BigNumber) {
   const msg = `${a.toString()} != ${b.toString()}`;
@@ -98,15 +98,11 @@ export async function expectWalletBalanceOrDustyIfZero(
   }
 }
 
-export function anyValueEventArg() {
-  return anyValue();
-}
-
 export async function expectEvent(
   contract: BaseContract,
   contractTransaction: ContractTransaction,
   eventName: string,
-  args: any,
+  args: object,
 ) {
-  await expect(contractTransaction).to.emit(contract, eventName).withArgs(args);
+  await expect(contractTransaction).to.emit(contract, eventName).withArgs(...Object.values(args));
 }

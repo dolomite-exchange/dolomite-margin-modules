@@ -21,7 +21,6 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { IChainlinkAutomation } from "../interfaces/IChainlinkAutomation.sol";
 import { IGLPManager } from "../interfaces/IGLPManager.sol";
 import { IGMXVault } from "../interfaces/IGMXVault.sol";
 
@@ -30,14 +29,10 @@ import { IGMXVault } from "../interfaces/IGMXVault.sol";
  * @title GLPPriceOracleV1
  * @author Dolomite
  *
- *  An implementation of the IDolomitePriceOracle interface that makes GMX's GLP prices compatible with the protocol. It
- *  uses a 15-minute TWAP price of the GLP, accounting for fees and slippage.
+ * @notice  An implementation of the IDolomitePriceOracle interface that makes GMX's GLP prices compatible with the
+ *          protocol. The GLP price it calculates understates the price by the withdrawal fees.
  */
-contract GLPPriceOracleV1 is IDolomitePriceOracle, IChainlinkAutomation {
-
-    // ============================ Events ============================
-
-    event OraclePriceUpdated(uint256 oraclePrice, uint256 cumulativePrice);
+contract GLPPriceOracleV1 is IDolomitePriceOracle {
 
     // ============================ Constants ============================
 
@@ -45,37 +40,13 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle, IChainlinkAutomation {
 
     uint256 public constant GLP_PRECISION = 1e18;
     uint256 public constant FEE_PRECISION = 10000;
-    uint256 public constant UPDATE_DURATION = 15 minutes;
-    uint256 public constant EXPIRATION_DURATION = 12 hours;
 
     // ============================ Public State Variables ============================
 
-    address public glpManager;
-    address public gmxVault;
-    address public glp;
-    address public dsGlp;
-    uint256 public priceCumulative;
-    uint256 public lastOraclePriceUpdateTimestamp;
-
-    // ============================ Private State Variables ============================
-
-    uint256 private oraclePrice;
-
-    // ============================ Modifiers ============================
-
-    /**
-     * @notice A modifier that allows it to be simulated via eth_call by checking that the sender is the zero address.
-     */
-    modifier cannotExecute() {
-        // solium-disable security/no-tx-origin
-        Require.that(
-            tx.origin == address(0),
-            FILE,
-            "Must execute via eth_call"
-        );
-        // solium-enable security/no-tx-origin
-        _;
-    }
+    IGLPManager immutable public glpManager;
+    IGMXVault immutable public gmxVault;
+    IERC20 immutable public glp;
+    IERC20 immutable public dsGlp;
 
     // ============================ Constructor ============================
 
@@ -85,44 +56,10 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle, IChainlinkAutomation {
         address _glp,
         address _dsGlp
     ) {
-        glpManager = _glpManager;
-        gmxVault = _gmxVault;
-        glp = _glp;
-        dsGlp = _dsGlp;
-
-        lastOraclePriceUpdateTimestamp = block.timestamp - EXPIRATION_DURATION;
-    }
-
-    function checkUpkeep(
-        bytes calldata
-    )
-    external
-    view
-    cannotExecute
-    returns (bool upkeepNeeded, bytes memory /* performData */) {
-        upkeepNeeded = (block.timestamp - lastOraclePriceUpdateTimestamp) >= UPDATE_DURATION;
-        return (upkeepNeeded, bytes(""));
-    }
-
-    function performUpkeep(bytes calldata) external {
-        uint256 timeElapsed = block.timestamp - lastOraclePriceUpdateTimestamp;
-        Require.that(
-            timeElapsed >= UPDATE_DURATION,
-            FILE,
-            "update not allowed yet"
-        );
-
-
-        // Enough time has passed to perform an oracle update
-        uint256 priceCumulativeLast = priceCumulative;
-        uint256 priceCumulativeNew = priceCumulativeLast + (timeElapsed * _getCurrentPrice());
-        uint256 oraclePriceNew = priceCumulativeNew - (priceCumulativeLast / timeElapsed);
-
-        priceCumulative = priceCumulativeNew;
-        oraclePrice = oraclePriceNew;
-        lastOraclePriceUpdateTimestamp = block.timestamp;
-
-        emit OraclePriceUpdated(oraclePriceNew, priceCumulativeNew);
+        glpManager = IGLPManager(_glpManager);
+        gmxVault = IGMXVault(_gmxVault);
+        glp = IERC20(_glp);
+        dsGlp = IERC20(_dsGlp);
     }
 
     function getPrice(
@@ -131,37 +68,24 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle, IChainlinkAutomation {
     public
     view
     returns (IDolomiteMargin.MonetaryPrice memory) {
-        uint256 _oraclePrice = oraclePrice;
         Require.that(
-            _oraclePrice != 0,
-            FILE,
-            "oracle price not set"
-        );
-        Require.that(
-            token == dsGlp,
+            token == address(dsGlp),
             FILE,
             "invalid token"
         );
-        Require.that(
-            block.timestamp - lastOraclePriceUpdateTimestamp < EXPIRATION_DURATION,
-            FILE,
-            "oracle price expired"
-        );
 
         return IDolomiteMargin.MonetaryPrice({
-            value: _oraclePrice
+            value: _getCurrentPrice()
         });
     }
 
     // ============================ Internal Functions ============================
 
     function _getCurrentPrice() internal view returns (uint256) {
-        IGMXVault _gmxVault = IGMXVault(gmxVault);
-        IGLPManager _glpManager = IGLPManager(glpManager);
-        IERC20 _glp = IERC20(glp);
-
-        uint256 fee = _gmxVault.mintBurnFeeBasisPoints() + _gmxVault.taxBasisPoints();
-        uint256 rawPrice = _glpManager.getAumInUsdg(false) * GLP_PRECISION / _glp.totalSupply();
+        uint256 fee = gmxVault.mintBurnFeeBasisPoints() + gmxVault.taxBasisPoints();
+        uint256 rawPrice = glpManager.getAumInUsdg(false) * GLP_PRECISION / glp.totalSupply();
+        // understate the price by the fees needed to burn GLP for USDG. This is okay to do because GLP cannot be
+        // borrowed.
         return rawPrice - (rawPrice * fee / FEE_PRECISION);
     }
 }

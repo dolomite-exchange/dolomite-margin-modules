@@ -22,23 +22,47 @@ import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
 
 interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
 
+    /**
+     * @return The address of the token that this vault wraps around
+     */
     function UNDERLYING_TOKEN() external view returns (address);
 
+    /**
+     * @return  The market ID of this token contract according to DolomiteMargin. This value is initializes in the
+     *          #initialize function
+     */
     function MARKET_ID() external view returns (uint256);
 
+    /**
+     * @return  The address of the BorrowPositionProxyV2 contract
+     */
     function BORROW_POSITION_PROXY() external view returns (IBorrowPositionProxyV2);
 
+    /**
+     * @return  This function should always return `true`. It's used by The Graph to index this contract as a Wrapper.
+     */
+    function isIsolationAsset() external view returns (bool);
+
+    /**
+     * @return  The market IDs of the assets that can be borrowed against this wrapped asset. An empty array indicates
+     *          that all assets can be borrowed against it.
+     */
+    function allowableDebtMarketIds() external view returns (uint256[] memory);
+
+    /**
+     * @notice  Initializes this contract's variables that are dependent on this token being added to DolomiteMargin.
+     */
     function initialize(address[] calldata _tokenUnwrappers) external;
 
     /**
-     * @notice Creates the vault for `_account`
+     * @notice  Creates the vault for `_account`
      *
      * @param _account  The account owner to create the vault for
      */
     function createVault(address _account) external returns (address);
 
     /**
-     * @notice Creates the vault for `msg.sender`
+     * @notice  Creates the vault for `msg.sender`
      *
      * @param _toAccountNumber  The account number of the account to which the tokens will be deposited
      * @param _amountWei        The amount of tokens to deposit
@@ -49,7 +73,7 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     ) external returns (address);
 
     /**
-     * @return The address of the current vault implementation contract
+     * @return  The address of the current vault implementation contract
      */
     function userVaultImplementation() external view returns (address);
 
@@ -58,6 +82,9 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
      */
     function setUserVaultImplementation(address _userVaultImplementation) external;
 
+    /**
+     * @return  True if the token unwrapper is currently in-use by this contract.
+     */
     function isTokenUnwrapperTrusted(address _tokenUnwrapper) external view returns (bool);
 
     /**
@@ -75,7 +102,7 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     function getVaultByAccount(address _account) external view returns (address _vault);
 
     /**
-     * @notice Same as `getVaultByAccount`, but always returns the user's non-zero vault address.
+     * @notice  Same as `getVaultByAccount`, but always returns the user's non-zero vault address.
      */
     function calculateVaultByAccount(address _account) external view returns (address _vault);
 
@@ -86,7 +113,7 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     function getAccountByVault(address _vault) external view returns (address _account);
 
     /**
-     * @notice This function should only be called by a user's vault contract
+     * @notice  This function should only be called by a user's vault contract
      *
      * @param _toAccountNumber  The account number of the account to which the tokens will be deposited
      * @param _amountWei        The amount of tokens to deposit
@@ -98,7 +125,7 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     external;
 
     /**
-     * @notice This function should only be called by a user's vault contract
+     * @notice  This function should only be called by a user's vault contract
      *
      * @param _fromAccountNumber    The account number of the account from which the tokens will be withdrawn
      * @param _amountWei            The amount of tokens to withdraw
@@ -110,7 +137,7 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     external;
 
     /**
-     * @notice This function should only be called by a user's vault contract
+     * @notice  This function should only be called by a user's vault contract
      *
      * @param _recipient    The address to which the underlying tokens will be transferred. Used for performing the
      *                      unwrapping, therefore `_recipient` should be an instance of
