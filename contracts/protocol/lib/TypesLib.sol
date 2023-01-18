@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "../interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../interfaces/IDolomiteStructs.sol";
 
 import { DolomiteMarginMath } from "./DolomiteMarginMath.sol";
 
@@ -38,34 +38,34 @@ library TypesLib {
     function zeroPar()
     internal
     pure
-    returns (IDolomiteMargin.Par memory)
+    returns (IDolomiteStructs.Par memory)
     {
-        return IDolomiteMargin.Par({
+        return IDolomiteStructs.Par({
             sign: false,
             value: 0
         });
     }
 
     function sub(
-        IDolomiteMargin.Par memory a,
-        IDolomiteMargin.Par memory b
+        IDolomiteStructs.Par memory a,
+        IDolomiteStructs.Par memory b
     )
     internal
     pure
-    returns (IDolomiteMargin.Par memory)
+    returns (IDolomiteStructs.Par memory)
     {
         return add(a, negative(b));
     }
 
     function add(
-        IDolomiteMargin.Par memory a,
-        IDolomiteMargin.Par memory b
+        IDolomiteStructs.Par memory a,
+        IDolomiteStructs.Par memory b
     )
     internal
     pure
-    returns (IDolomiteMargin.Par memory)
+    returns (IDolomiteStructs.Par memory)
     {
-        IDolomiteMargin.Par memory result;
+        IDolomiteStructs.Par memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
             result.value = (a.value + b.value).to128();
@@ -82,8 +82,8 @@ library TypesLib {
     }
 
     function equals(
-        IDolomiteMargin.Par memory a,
-        IDolomiteMargin.Par memory b
+        IDolomiteStructs.Par memory a,
+        IDolomiteStructs.Par memory b
     )
     internal
     pure
@@ -99,20 +99,20 @@ library TypesLib {
     }
 
     function negative(
-        IDolomiteMargin.Par memory a
+        IDolomiteStructs.Par memory a
     )
     internal
     pure
-    returns (IDolomiteMargin.Par memory)
+    returns (IDolomiteStructs.Par memory)
     {
-        return IDolomiteMargin.Par({
+        return IDolomiteStructs.Par({
             sign: !a.sign,
             value: a.value
         });
     }
 
     function isNegative(
-        IDolomiteMargin.Par memory a
+        IDolomiteStructs.Par memory a
     )
     internal
     pure
@@ -122,7 +122,7 @@ library TypesLib {
     }
 
     function isPositive(
-        IDolomiteMargin.Par memory a
+        IDolomiteStructs.Par memory a
     )
     internal
     pure
@@ -132,7 +132,7 @@ library TypesLib {
     }
 
     function isZero(
-        IDolomiteMargin.Par memory a
+        IDolomiteStructs.Par memory a
     )
     internal
     pure
@@ -142,7 +142,7 @@ library TypesLib {
     }
 
     function isLessThanZero(
-        IDolomiteMargin.Par memory a
+        IDolomiteStructs.Par memory a
     )
     internal
     pure
@@ -152,7 +152,7 @@ library TypesLib {
     }
 
     function isGreaterThanOrEqualToZero(
-        IDolomiteMargin.Par memory a
+        IDolomiteStructs.Par memory a
     )
     internal
     pure
@@ -166,34 +166,34 @@ library TypesLib {
     function zeroWei()
     internal
     pure
-    returns (IDolomiteMargin.Wei memory)
+    returns (IDolomiteStructs.Wei memory)
     {
-        return IDolomiteMargin.Wei({
+        return IDolomiteStructs.Wei({
             sign: false,
             value: 0
         });
     }
 
     function sub(
-        IDolomiteMargin.Wei memory a,
-        IDolomiteMargin.Wei memory b
+        IDolomiteStructs.Wei memory a,
+        IDolomiteStructs.Wei memory b
     )
     internal
     pure
-    returns (IDolomiteMargin.Wei memory)
+    returns (IDolomiteStructs.Wei memory)
     {
         return add(a, negative(b));
     }
 
     function add(
-        IDolomiteMargin.Wei memory a,
-        IDolomiteMargin.Wei memory b
+        IDolomiteStructs.Wei memory a,
+        IDolomiteStructs.Wei memory b
     )
     internal
     pure
-    returns (IDolomiteMargin.Wei memory)
+    returns (IDolomiteStructs.Wei memory)
     {
-        IDolomiteMargin.Wei memory result;
+        IDolomiteStructs.Wei memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
             result.value = a.value + b.value;
@@ -210,8 +210,8 @@ library TypesLib {
     }
 
     function equals(
-        IDolomiteMargin.Wei memory a,
-        IDolomiteMargin.Wei memory b
+        IDolomiteStructs.Wei memory a,
+        IDolomiteStructs.Wei memory b
     )
     internal
     pure
@@ -227,20 +227,20 @@ library TypesLib {
     }
 
     function negative(
-        IDolomiteMargin.Wei memory a
+        IDolomiteStructs.Wei memory a
     )
     internal
     pure
-    returns (IDolomiteMargin.Wei memory)
+    returns (IDolomiteStructs.Wei memory)
     {
-        return IDolomiteMargin.Wei({
+        return IDolomiteStructs.Wei({
             sign: !a.sign,
             value: a.value
         });
     }
 
     function isNegative(
-        IDolomiteMargin.Wei memory a
+        IDolomiteStructs.Wei memory a
     )
     internal
     pure
@@ -250,7 +250,7 @@ library TypesLib {
     }
 
     function isPositive(
-        IDolomiteMargin.Wei memory a
+        IDolomiteStructs.Wei memory a
     )
     internal
     pure
@@ -260,7 +260,7 @@ library TypesLib {
     }
 
     function isZero(
-        IDolomiteMargin.Wei memory a
+        IDolomiteStructs.Wei memory a
     )
     internal
     pure

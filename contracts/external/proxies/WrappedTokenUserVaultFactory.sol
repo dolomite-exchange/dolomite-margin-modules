@@ -19,7 +19,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 
@@ -203,10 +203,10 @@ abstract contract WrappedTokenUserVaultFactory is
             /* _fromAccount = */ msg.sender, // solium-disable-line indentation
             _toAccountNumber,
             marketId,
-            IDolomiteMargin.AssetAmount({
+            IDolomiteStructs.AssetAmount({
                 sign: true,
-                denomination: IDolomiteMargin.AssetDenomination.Wei,
-                ref: IDolomiteMargin.AssetReference.Delta,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
                 value: _amountWei
             })
         );
@@ -233,10 +233,10 @@ abstract contract WrappedTokenUserVaultFactory is
             _fromAccountNumber,
             /* _toAccount = */ msg.sender, // solium-disable-line indentation
             marketId,
-            IDolomiteMargin.AssetAmount({
+            IDolomiteStructs.AssetAmount({
                 sign: true,
-                denomination: IDolomiteMargin.AssetDenomination.Wei,
-                ref: IDolomiteMargin.AssetReference.Delta,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
                 value: _amountWei
             }),
             AccountBalanceLib.BalanceCheckFlag.From
@@ -269,18 +269,6 @@ abstract contract WrappedTokenUserVaultFactory is
     // ================ Read Functions ================
     // ================================================
 
-    function name() external override virtual view returns (string memory) {
-        return string(abi.encodePacked("Dolomite: ", ERC20(UNDERLYING_TOKEN).name()));
-    }
-
-    function symbol() external override virtual view returns (string memory) {
-        return string(abi.encodePacked("d", ERC20(UNDERLYING_TOKEN).symbol()));
-    }
-
-    function decimals() external override virtual view returns (uint8) {
-        return ERC20(UNDERLYING_TOKEN).decimals();
-    }
-
     function isTokenUnwrapperTrusted(address _tokenUnwrapper) external override view returns (bool) {
         return tokenUnwrapperMap[_tokenUnwrapper];
     }
@@ -298,6 +286,18 @@ abstract contract WrappedTokenUserVaultFactory is
 
     function getAccountByVault(address _vault) external override view returns (address _account) {
         _account = vaultToUserMap[_vault];
+    }
+
+    function name() public override virtual view returns (string memory) {
+        return string(abi.encodePacked("Dolomite: ", ERC20(UNDERLYING_TOKEN).name()));
+    }
+
+    function symbol() public override virtual view returns (string memory) {
+        return string(abi.encodePacked("d", ERC20(UNDERLYING_TOKEN).symbol()));
+    }
+
+    function decimals() public override virtual view returns (uint8) {
+        return ERC20(UNDERLYING_TOKEN).decimals();
     }
 
     // ====================================================

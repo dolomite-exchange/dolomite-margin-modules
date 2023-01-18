@@ -15,6 +15,7 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 
@@ -49,13 +50,13 @@ library AccountActionLib {
         uint256 _marketId,
         IDolomiteMargin.AssetAmount memory _amount
     ) internal {
-        IDolomiteMargin.AccountInfo[] memory accounts = new IDolomiteMargin.AccountInfo[](1);
-        accounts[0] = IDolomiteMargin.AccountInfo({
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
+        accounts[0] = IDolomiteStructs.AccountInfo({
             owner: _accountOwner,
             number: _toAccountNumber
         });
 
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](1);
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
         actions[0] = encodeDepositAction(
             /* _accountId = */ 0, // solium-disable-line indentation
             _marketId,
@@ -75,16 +76,16 @@ library AccountActionLib {
         uint256 _fromAccountNumber,
         address _toAccount,
         uint256 _marketId,
-        IDolomiteMargin.AssetAmount memory _amount,
+        IDolomiteStructs.AssetAmount memory _amount,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) internal {
-        IDolomiteMargin.AccountInfo[] memory accounts = new IDolomiteMargin.AccountInfo[](1);
-        accounts[0] = IDolomiteMargin.AccountInfo({
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
+        accounts[0] = IDolomiteStructs.AccountInfo({
             owner: _accountOwner,
             number: _fromAccountNumber
         });
 
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](1);
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
         actions[0] = encodeWithdrawalAction(
             /* _accountId = */ 0, // solium-disable-line indentation
             _marketId,
@@ -120,17 +121,17 @@ library AccountActionLib {
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) internal {
-        IDolomiteMargin.AccountInfo[] memory accounts = new IDolomiteMargin.AccountInfo[](2);
-        accounts[0] = IDolomiteMargin.AccountInfo({
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
+        accounts[0] = IDolomiteStructs.AccountInfo({
             owner: _fromAccountOwner,
             number: _fromAccountNumber
         });
-        accounts[1] = IDolomiteMargin.AccountInfo({
+        accounts[1] = IDolomiteStructs.AccountInfo({
             owner: _toAccountOwner,
             number: _toAccountNumber
         });
 
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](1);
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
         actions[0] = encodeTransferAction(
             /* _fromAccountId = */ 0, // solium-disable-line indentation
             /* _toAccountId = */ 1, // solium-disable-line indentation
@@ -177,15 +178,15 @@ library AccountActionLib {
         uint256 _accountId,
         address _callee,
         bytes memory _callData
-    ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
-        return IDolomiteMargin.ActionArgs({
-            actionType : IDolomiteMargin.ActionType.Call,
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType : IDolomiteStructs.ActionType.Call,
             accountId : _accountId,
             // solium-disable-next-line arg-overflow
-            amount : IDolomiteMargin.AssetAmount({
+            amount : IDolomiteStructs.AssetAmount({
                 sign: false,
-                denomination: IDolomiteMargin.AssetDenomination.Wei,
-                ref: IDolomiteMargin.AssetReference.Delta,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
                 value: 0
             }),
             primaryMarketId : 0,
@@ -199,11 +200,11 @@ library AccountActionLib {
     function encodeDepositAction(
         uint256 _accountId,
         uint256 _marketId,
-        IDolomiteMargin.AssetAmount memory _amount,
+        IDolomiteStructs.AssetAmount memory _amount,
         address _fromAccount
-    ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
-        return IDolomiteMargin.ActionArgs({
-            actionType: IDolomiteMargin.ActionType.Deposit,
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Deposit,
             accountId: _accountId,
             amount: _amount,
             primaryMarketId: _marketId,
@@ -215,12 +216,12 @@ library AccountActionLib {
     }
 
     function encodeExpirationAction(
-        IDolomiteMargin.AccountInfo memory _account,
+        IDolomiteStructs.AccountInfo memory _account,
         uint256 _accountId,
         uint256 _owedMarketId,
         address _expiry,
         uint256 _expiryTimeDelta
-    ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
         Require.that(
             _expiryTimeDelta == uint32(_expiryTimeDelta),
             _FILE,
@@ -250,14 +251,14 @@ library AccountActionLib {
         address _expiryProxy,
         uint32 _expiry,
         bool _flipMarkets
-    ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
-        return IDolomiteMargin.ActionArgs({
-            actionType: IDolomiteMargin.ActionType.Trade,
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Trade,
             accountId: _solidAccountId,
-            amount: IDolomiteMargin.AssetAmount({
+            amount: IDolomiteStructs.AssetAmount({
                 sign: false,
-                denomination: IDolomiteMargin.AssetDenomination.Wei,
-                ref: IDolomiteMargin.AssetReference.Target,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Target,
                 value: 0
             }),
             primaryMarketId: !_flipMarkets ? _owedMarketId : _heldMarketId,
@@ -276,14 +277,14 @@ library AccountActionLib {
         address _traderAddress,
         uint256 _amountInWei,
         uint256 _amountOutWei
-    ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
-        return IDolomiteMargin.ActionArgs({
-            actionType : IDolomiteMargin.ActionType.Trade,
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType : IDolomiteStructs.ActionType.Trade,
             accountId : _fromAccountId,
-            amount : IDolomiteMargin.AssetAmount({
+            amount : IDolomiteStructs.AssetAmount({
                 sign: true,
-                denomination: IDolomiteMargin.AssetDenomination.Wei,
-                ref: IDolomiteMargin.AssetReference.Delta,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
                 value: _amountInWei
             }),
             primaryMarketId : _primaryMarketId,
@@ -300,14 +301,14 @@ library AccountActionLib {
         uint256 _owedMarketId,
         uint256 _heldMarketId,
         uint256 _owedWeiToLiquidate
-    ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
-        return IDolomiteMargin.ActionArgs({
-            actionType: IDolomiteMargin.ActionType.Liquidate,
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Liquidate,
             accountId: _solidAccountId,
-            amount: IDolomiteMargin.AssetAmount({
+            amount: IDolomiteStructs.AssetAmount({
                 sign: true,
-                denomination: IDolomiteMargin.AssetDenomination.Wei,
-                ref: IDolomiteMargin.AssetReference.Delta,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
                 value: _owedWeiToLiquidate
             }),
             primaryMarketId: _owedMarketId,
@@ -326,26 +327,26 @@ library AccountActionLib {
         uint256 _amountInWei,
         uint256 _amountOutMinWei,
         bytes memory _orderData
-    ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
-        IDolomiteMargin.AssetAmount memory assetAmount;
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        IDolomiteStructs.AssetAmount memory assetAmount;
         if (_amountInWei == _ALL) {
-            assetAmount = IDolomiteMargin.AssetAmount({
+            assetAmount = IDolomiteStructs.AssetAmount({
                 sign: false,
-                denomination: IDolomiteMargin.AssetDenomination.Wei,
-                ref: IDolomiteMargin.AssetReference.Target,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Target,
                 value: 0
             });
         } else {
-            assetAmount = IDolomiteMargin.AssetAmount({
+            assetAmount = IDolomiteStructs.AssetAmount({
                 sign: false,
-                denomination: IDolomiteMargin.AssetDenomination.Wei,
-                ref: IDolomiteMargin.AssetReference.Delta,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
                 value: _amountInWei
             });
         }
 
-        return IDolomiteMargin.ActionArgs({
-            actionType : IDolomiteMargin.ActionType.Sell,
+        return IDolomiteStructs.ActionArgs({
+            actionType : IDolomiteStructs.ActionType.Sell,
             accountId : _fromAccountId,
             amount : assetAmount,
             primaryMarketId : _primaryMarketId,
@@ -361,25 +362,25 @@ library AccountActionLib {
         uint256 _toAccountId,
         uint256 _marketId,
         uint256 _amountWei
-    ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
-        IDolomiteMargin.AssetAmount memory assetAmount;
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        IDolomiteStructs.AssetAmount memory assetAmount;
         if (_amountWei == _ALL) {
-            assetAmount = IDolomiteMargin.AssetAmount({
+            assetAmount = IDolomiteStructs.AssetAmount({
                 sign: false,
-                denomination: IDolomiteMargin.AssetDenomination.Wei,
-                ref: IDolomiteMargin.AssetReference.Target,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Target,
                 value: 0
             });
         } else {
-            assetAmount = IDolomiteMargin.AssetAmount({
+            assetAmount = IDolomiteStructs.AssetAmount({
                 sign: false,
-                denomination: IDolomiteMargin.AssetDenomination.Wei,
-                ref: IDolomiteMargin.AssetReference.Delta,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
                 value: _amountWei
             });
         }
-        return IDolomiteMargin.ActionArgs({
-            actionType : IDolomiteMargin.ActionType.Transfer,
+        return IDolomiteStructs.ActionArgs({
+            actionType : IDolomiteStructs.ActionType.Transfer,
             accountId : _fromAccountId,
             amount : assetAmount,
             primaryMarketId : _marketId,
@@ -393,11 +394,11 @@ library AccountActionLib {
     function encodeWithdrawalAction(
         uint256 _accountId,
         uint256 _marketId,
-        IDolomiteMargin.AssetAmount memory _amount,
+        IDolomiteStructs.AssetAmount memory _amount,
         address _toAccount
-    ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
-        return IDolomiteMargin.ActionArgs({
-            actionType: IDolomiteMargin.ActionType.Withdraw,
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Withdraw,
             accountId: _accountId,
             amount: _amount,
             primaryMarketId: _marketId,

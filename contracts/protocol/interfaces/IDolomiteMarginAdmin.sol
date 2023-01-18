@@ -14,10 +14,12 @@
 
 pragma solidity ^0.8.9;
 
-import "./IDolomiteMarginStructs.sol";
+import { IDolomiteInterestSetter } from "./IDolomiteInterestSetter.sol";
+import { IDolomitePriceOracle } from "./IDolomitePriceOracle.sol";
+import { IDolomiteStructs } from "./IDolomiteStructs.sol";
 
 
-interface IDolomiteMarginAdmin is IDolomiteMarginStructs {
+interface IDolomiteMarginAdmin is IDolomiteStructs {
 
     // ============ Token Functions ============
 

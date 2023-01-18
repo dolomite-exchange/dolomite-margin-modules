@@ -124,12 +124,6 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     function UNDERLYING_TOKEN() external view returns (address);
 
     /**
-     * @return  The market ID of this token contract according to DolomiteMargin. This value is initializes in the
-     *          #initialize function
-     */
-    function MARKET_ID() external view returns (uint256);
-
-    /**
      * @return  The address of the BorrowPositionProxyV2 contract
      */
     function BORROW_POSITION_PROXY() external view returns (IBorrowPositionProxyV2);
@@ -137,6 +131,12 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     // =================================================
     // ================= View Functions ================
     // =================================================
+
+    /**
+     * @return  The market ID of this token contract according to DolomiteMargin. This value is initializes in the
+     *          #initialize function
+     */
+    function marketId() external view returns (uint256);
 
     /**
      * @return  This function should always return `true`. It's used by The Graph to index this contract as a Wrapper.

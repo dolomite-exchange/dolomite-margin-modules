@@ -15,6 +15,7 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
@@ -27,7 +28,7 @@ import { TypesLib } from "../../protocol/lib/TypesLib.sol";
  * Library contract that checks a user's balance after transaction to be non-negative
  */
 library AccountBalanceLib {
-    using TypesLib for IDolomiteMargin.Par;
+    using TypesLib for IDolomiteStructs.Par;
 
     // ============ Types ============
 
@@ -54,11 +55,11 @@ library AccountBalanceLib {
         uint256 _accountNumber,
         uint256 _marketId
     ) internal view {
-        IDolomiteMargin.AccountInfo memory account = IDolomiteMargin.AccountInfo({
+        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
             owner: _accountOwner,
             number: _accountNumber
         });
-        IDolomiteMargin.Par memory par = dolomiteMargin.getAccountPar(account, _marketId);
+        IDolomiteStructs.Par memory par = dolomiteMargin.getAccountPar(account, _marketId);
         Require.that(
             par.isPositive() || par.isZero(),
             _FILE,

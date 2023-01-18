@@ -17,7 +17,7 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 
@@ -67,14 +67,14 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
     )
     public
     view
-    returns (IDolomiteMargin.MonetaryPrice memory) {
+    returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
             token == address(DS_GLP),
             _FILE,
             "invalid token"
         );
 
-        return IDolomiteMargin.MonetaryPrice({
+        return IDolomiteStructs.MonetaryPrice({
             value: _getCurrentPrice()
         });
     }

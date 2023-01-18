@@ -18,7 +18,7 @@ import { IDolomiteInterestSetter } from "./IDolomiteInterestSetter.sol";
 import { IDolomitePriceOracle } from "./IDolomitePriceOracle.sol";
 
 
-interface IDolomiteMarginStructs {
+interface IDolomiteStructs {
 
     // ========================= Enums =========================
 
