@@ -22,32 +22,23 @@ import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
 
 interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
 
-    /**
-     * @return The address of the token that this vault wraps around
-     */
-    function UNDERLYING_TOKEN() external view returns (address);
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
 
-    /**
-     * @return  The market ID of this token contract according to DolomiteMargin. This value is initializes in the
-     *          #initialize function
-     */
-    function MARKET_ID() external view returns (uint256);
+    event UserVaultImplementationSet(
+        address indexed previousUserVaultImplementation,
+        address indexed newUserVaultImplementation
+    );
 
-    /**
-     * @return  The address of the BorrowPositionProxyV2 contract
-     */
-    function BORROW_POSITION_PROXY() external view returns (IBorrowPositionProxyV2);
+    event TokenUnwrapperSet(
+        address indexed tokenUnwrapper,
+        bool isTrusted
+    );
 
-    /**
-     * @return  This function should always return `true`. It's used by The Graph to index this contract as a Wrapper.
-     */
-    function isIsolationAsset() external view returns (bool);
-
-    /**
-     * @return  The market IDs of the assets that can be borrowed against this wrapped asset. An empty array indicates
-     *          that all assets can be borrowed against it.
-     */
-    function allowableDebtMarketIds() external view returns (uint256[] memory);
+    // ================================================
+    // ================== Functions ===================
+    // ================================================
 
     /**
      * @notice  Initializes this contract's variables that are dependent on this token being added to DolomiteMargin.
@@ -73,19 +64,9 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     ) external returns (address);
 
     /**
-     * @return  The address of the current vault implementation contract
-     */
-    function userVaultImplementation() external view returns (address);
-
-    /**
      * @param _userVaultImplementation  The address of the new vault implementation contract
      */
     function setUserVaultImplementation(address _userVaultImplementation) external;
-
-    /**
-     * @return  True if the token unwrapper is currently in-use by this contract.
-     */
-    function isTokenUnwrapperTrusted(address _tokenUnwrapper) external view returns (bool);
 
     /**
      * @param _tokenUnwrapper   The address of the token unwrapper contract to set whether or not it's trusted for
@@ -93,24 +74,6 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
      * @param _isTrusted        True if the token unwrapper is trusted, false otherwise
      */
     function setIsTokenUnwrapperTrusted(address _tokenUnwrapper, bool _isTrusted) external;
-
-    /**
-     * @param _account  The account owner to get the vault for
-     * @return _vault   The address of the vault created for `_account`. Returns address(0) if no vault has been created
-     *                  yet for this account.
-     */
-    function getVaultByAccount(address _account) external view returns (address _vault);
-
-    /**
-     * @notice  Same as `getVaultByAccount`, but always returns the user's non-zero vault address.
-     */
-    function calculateVaultByAccount(address _account) external view returns (address _vault);
-
-    /**
-     * @param _vault    The vault that's used by an account for depositing/withdrawing
-     * @return _account The address of the account that owns the `_vault`
-     */
-    function getAccountByVault(address _vault) external view returns (address _account);
 
     /**
      * @notice  This function should only be called by a user's vault contract
@@ -149,4 +112,68 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
         uint256 _amountWei
     )
     external;
+
+
+    // ============================================
+    // ================= Constants ================
+    // ============================================
+
+    /**
+     * @return The address of the token that this vault wraps around
+     */
+    function UNDERLYING_TOKEN() external view returns (address);
+
+    /**
+     * @return  The market ID of this token contract according to DolomiteMargin. This value is initializes in the
+     *          #initialize function
+     */
+    function MARKET_ID() external view returns (uint256);
+
+    /**
+     * @return  The address of the BorrowPositionProxyV2 contract
+     */
+    function BORROW_POSITION_PROXY() external view returns (IBorrowPositionProxyV2);
+
+    // =================================================
+    // ================= View Functions ================
+    // =================================================
+
+    /**
+     * @return  This function should always return `true`. It's used by The Graph to index this contract as a Wrapper.
+     */
+    function isIsolationAsset() external view returns (bool);
+
+    /**
+     * @return  The market IDs of the assets that can be borrowed against this wrapped asset. An empty array indicates
+     *          that all assets can be borrowed against it.
+     */
+    function allowableDebtMarketIds() external view returns (uint256[] memory);
+
+    /**
+     * @return  The address of the current vault implementation contract
+     */
+    function userVaultImplementation() external view returns (address);
+
+    /**
+     * @param _account  The account owner to get the vault for
+     * @return _vault   The address of the vault created for `_account`. Returns address(0) if no vault has been created
+     *                  yet for this account.
+     */
+    function getVaultByAccount(address _account) external view returns (address _vault);
+
+    /**
+     * @notice  Same as `getVaultByAccount`, but always returns the user's non-zero vault address.
+     */
+    function calculateVaultByAccount(address _account) external view returns (address _vault);
+
+    /**
+     * @param _vault    The vault that's used by an account for depositing/withdrawing
+     * @return _account The address of the account that owns the `_vault`
+     */
+    function getAccountByVault(address _vault) external view returns (address _account);
+
+    /**
+     * @return  True if the token unwrapper is currently in-use by this contract.
+     */
+    function isTokenUnwrapperTrusted(address _tokenUnwrapper) external view returns (bool);
 }

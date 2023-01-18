@@ -32,7 +32,7 @@ contract GLPWrappedTokenUserVaultFactory is
 {
     // ============ Constants ============
 
-    bytes32 internal constant FILE = "GLPWrappedTokenUserVaultFactory";
+    bytes32 private constant _FILE = "GLPWrappedTokenUserVaultFactory";
 
     // ============ Field Variables ============
 
@@ -58,16 +58,16 @@ contract GLPWrappedTokenUserVaultFactory is
 
     // ============ External Functions ============
 
+    function setGlpRewardsRouter(address _glpRewardsRouter) external override onlyOwner {
+        glpRewardsRouter = IGLPRewardRouterV2(_glpRewardsRouter);
+        emit GlpRewardsRouterSet(_glpRewardsRouter);
+    }
+
     function isIsolationAsset() external pure returns (bool) {
         return true;
     }
 
     function allowableDebtMarketIds() external pure returns (uint256[] memory) {
         return new uint256[](0);
-    }
-
-    function setGlpRewardsRouter(address _glpRewardsRouter) external override onlyOwner {
-        glpRewardsRouter = IGLPRewardRouterV2(_glpRewardsRouter);
-        emit GlpRewardsRouterSet(_glpRewardsRouter);
     }
 }

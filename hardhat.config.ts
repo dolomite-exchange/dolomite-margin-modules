@@ -1,9 +1,10 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-etherscan';
+import '@nomiclabs/hardhat-solhint';
 import '@nomiclabs/hardhat-vyper';
+import '@nomiclabs/hardhat-waffle';
+import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
 

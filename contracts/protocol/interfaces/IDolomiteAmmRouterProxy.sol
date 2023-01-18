@@ -19,9 +19,6 @@ import { IDolomiteMargin } from "./IDolomiteMargin.sol";
 
 interface IDolomiteAmmRouterProxy {
 
-    function DOLOMITE_MARGIN() external view returns (address);
-
-
     // ============ Structs ============
 
     struct ModifyPositionParams {
@@ -58,7 +55,9 @@ interface IDolomiteAmmRouterProxy {
         bytes32 s;
     }
 
-    function getPairInitCodeHash() external view returns (bytes32);
+    // ==================================================================
+    // ========================= Write Functions =========================
+    // ==================================================================
 
     function addLiquidity(
         address to,
@@ -83,15 +82,6 @@ interface IDolomiteAmmRouterProxy {
     )
     external;
 
-    function getParamsForSwapExactTokensForTokens(
-        address account,
-        uint accountNumber,
-        uint amountInWei,
-        uint amountOutMinWei,
-        address[] calldata tokenPath
-    )
-    external view returns (IDolomiteMargin.AccountInfo[] memory, IDolomiteMargin.ActionArgs[] memory);
-
     function swapTokensForExactTokens(
         uint accountNumber,
         uint amountInMaxWei,
@@ -100,15 +90,6 @@ interface IDolomiteAmmRouterProxy {
         uint deadline
     )
     external;
-
-    function getParamsForSwapTokensForExactTokens(
-        address account,
-        uint accountNumber,
-        uint amountInMaxWei,
-        uint amountOutWei,
-        address[] calldata tokenPath
-    )
-    external view returns (IDolomiteMargin.AccountInfo[] memory, IDolomiteMargin.ActionArgs[] memory);
 
     function removeLiquidity(
         address to,
@@ -142,4 +123,30 @@ interface IDolomiteAmmRouterProxy {
         ModifyPositionParams calldata params,
         uint deadline
     ) external;
+
+    // ==================================================================
+    // ========================= Read Functions =========================
+    // ==================================================================
+
+    function DOLOMITE_MARGIN() external view returns (address);
+
+    function getPairInitCodeHash() external view returns (bytes32);
+
+    function getParamsForSwapExactTokensForTokens(
+        address account,
+        uint accountNumber,
+        uint amountInWei,
+        uint amountOutMinWei,
+        address[] calldata tokenPath
+    )
+    external view returns (IDolomiteMargin.AccountInfo[] memory, IDolomiteMargin.ActionArgs[] memory);
+
+    function getParamsForSwapTokensForExactTokens(
+        address account,
+        uint accountNumber,
+        uint amountInMaxWei,
+        uint amountOutWei,
+        address[] calldata tokenPath
+    )
+    external view returns (IDolomiteMargin.AccountInfo[] memory, IDolomiteMargin.ActionArgs[] memory);
 }

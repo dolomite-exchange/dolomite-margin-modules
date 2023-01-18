@@ -36,7 +36,7 @@ contract TestDolomiteMarginMath {
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "TestDolomiteMarginMath";
+    bytes32 internal constant _FILE = "TestDolomiteMarginMath";
 
     // ============ DolomiteMarginMath Functions ============
 

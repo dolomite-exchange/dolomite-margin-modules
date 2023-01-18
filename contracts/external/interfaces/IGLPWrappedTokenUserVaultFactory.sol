@@ -20,13 +20,17 @@ import { IWrappedTokenUserVaultFactory } from "./IWrappedTokenUserVaultFactory.s
 
 interface IGLPWrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
 
-    // ======================== Events ========================
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
 
     event GlpRewardsRouterSet(address _glpRewardsRouter);
 
-    // ======================== Functions ========================
-
-    function glpRewardsRouter() external view returns (IGLPRewardRouterV2);
+    // ===================================================
+    // ==================== Functions ====================
+    // ===================================================
 
     function setGlpRewardsRouter(address _glpRewardsRouter) external;
+
+    function glpRewardsRouter() external view returns (IGLPRewardRouterV2);
 }

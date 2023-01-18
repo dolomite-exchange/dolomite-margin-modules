@@ -17,19 +17,33 @@ pragma solidity ^0.8.9;
 
 interface IDolomiteAmmFactory {
 
-    function feeTo() external view returns (address);
-    function feeToSetter() external view returns (address);
-    function dolomiteMargin() external view returns (address);
-
-    function getPair(address tokenA, address tokenB) external view returns (address pair);
-    function allPairs(uint) external view returns (address pair);
-    function allPairsLength() external view returns (uint);
-    function getPairInitCode() external pure returns (bytes memory);
-    function getPairInitCodeHash() external pure returns (bytes32);
+    // ============================================
+    // ============== Write Functions =============
+    // ============================================
 
     function createPair(address tokenA, address tokenB) external returns (address pair);
 
     function setFeeTo(address) external;
+
     function setFeeToSetter(address) external;
 
+    // ============================================
+    // ============== Read Functions ==============
+    // ============================================
+
+    function feeTo() external view returns (address);
+
+    function feeToSetter() external view returns (address);
+
+    function dolomiteMargin() external view returns (address);
+
+    function getPair(address tokenA, address tokenB) external view returns (address pair);
+
+    function allPairs(uint) external view returns (address pair);
+
+    function allPairsLength() external view returns (uint);
+
+    function getPairInitCode() external pure returns (bytes memory);
+
+    function getPairInitCodeHash() external pure returns (bytes32);
 }

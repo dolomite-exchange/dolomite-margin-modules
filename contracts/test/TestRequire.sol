@@ -36,7 +36,7 @@ contract TestRequire {
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "TestRequire";
+    bytes32 internal constant _FILE = "TestRequire";
 
     // ============ Require Functions ============
 
@@ -48,7 +48,7 @@ contract TestRequire {
     {
         Require.that(
             false,
-            FILE,
+            _FILE,
             reason
         );
     }
@@ -62,7 +62,7 @@ contract TestRequire {
     {
         Require.that(
             false,
-            FILE,
+            _FILE,
             reason,
             payloadA
         );
@@ -78,7 +78,7 @@ contract TestRequire {
     {
         Require.that(
             false,
-            FILE,
+            _FILE,
             reason,
             payloadA,
             payloadB
@@ -95,7 +95,7 @@ contract TestRequire {
     {
         Require.that(
             true,
-            FILE,
+            _FILE,
             reason,
             payloadA,
             payloadB
@@ -111,7 +111,7 @@ contract TestRequire {
     {
         Require.that(
             false,
-            FILE,
+            _FILE,
             reason,
             payloadA
         );
@@ -126,7 +126,7 @@ contract TestRequire {
     {
         Require.that(
             true,
-            FILE,
+            _FILE,
             reason,
             payloadA
         );
@@ -142,7 +142,7 @@ contract TestRequire {
     {
         Require.that(
             false,
-            FILE,
+            _FILE,
             reason,
             payloadA,
             payloadB
@@ -159,7 +159,7 @@ contract TestRequire {
     {
         Require.that(
             true,
-            FILE,
+            _FILE,
             reason,
             payloadA,
             payloadB
@@ -177,7 +177,7 @@ contract TestRequire {
     {
         Require.that(
             false,
-            FILE,
+            _FILE,
             reason,
             payloadA,
             payloadB,
@@ -196,7 +196,7 @@ contract TestRequire {
     {
         Require.that(
             true,
-            FILE,
+            _FILE,
             reason,
             payloadA,
             payloadB,
@@ -213,7 +213,7 @@ contract TestRequire {
     {
         Require.that(
             false,
-            FILE,
+            _FILE,
             reason,
             payloadA
         );
@@ -228,7 +228,7 @@ contract TestRequire {
     {
         Require.that(
             true,
-            FILE,
+            _FILE,
             reason,
             payloadA
         );
@@ -245,7 +245,7 @@ contract TestRequire {
     {
         Require.that(
             false,
-            FILE,
+            _FILE,
             reason,
             payloadA,
             payloadB,
@@ -264,7 +264,7 @@ contract TestRequire {
     {
         Require.that(
             true,
-            FILE,
+            _FILE,
             reason,
             payloadA,
             payloadB,

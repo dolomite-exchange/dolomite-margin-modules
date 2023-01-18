@@ -55,7 +55,7 @@ contract GLPWrappedTokenUserVault is
 
     // ============ Constants ============
 
-    bytes32 internal constant FILE = "GLPWrappedTokenUserVault";
+    bytes32 private constant _FILE = "GLPWrappedTokenUserVault";
 
     // ============ Field Variables ============
 
@@ -67,7 +67,7 @@ contract GLPWrappedTokenUserVault is
     modifier onlyDolomiteMargin(address _from) {
         Require.that(
             _from == address(DOLOMITE_MARGIN()),
-            FILE,
+            _FILE,
             "Only Dolomite can call function",
             _from
         );
@@ -77,7 +77,7 @@ contract GLPWrappedTokenUserVault is
     modifier onlyVaultFactory(address _from) {
         Require.that(
             _from == address(VAULT_FACTORY()),
-            FILE,
+            _FILE,
             "Only factory can call function",
             _from
         );
@@ -87,7 +87,7 @@ contract GLPWrappedTokenUserVault is
     modifier onlyVaultOwner(address _from) {
         Require.that(
             _from == address(_proxySelf().owner()),
-            FILE,
+            _FILE,
             "Only owner can call function",
             _from
         );
@@ -97,7 +97,7 @@ contract GLPWrappedTokenUserVault is
     modifier onlyVaultOwnerOrVaultFactory(address _from) {
         Require.that(
             _from == address(_proxySelf().owner()) || _from == address(VAULT_FACTORY()),
-            FILE,
+            _FILE,
             "Only owner or factory can call",
             _from
         );
@@ -115,7 +115,7 @@ contract GLPWrappedTokenUserVault is
         // This implementation requires we deposit into index 0
         Require.that(
             _toAccountNumber == 0,
-            FILE,
+            _FILE,
             "Invalid toAccountNumber",
             _toAccountNumber
         );
@@ -131,7 +131,7 @@ contract GLPWrappedTokenUserVault is
         // This implementation requires we withdraw from index 0
         Require.that(
             _fromAccountNumber == 0,
-            FILE,
+            _FILE,
             "Invalid fromAccountNumber",
             _fromAccountNumber
         );
@@ -207,7 +207,7 @@ contract GLPWrappedTokenUserVault is
         for (uint256 i = 0; i < _collateralMarketIds.length; i++) {
             Require.that(
                 _collateralMarketIds[i] != sGLPMarketId,
-                FILE,
+                _FILE,
                 "Cannot withdraw sGLP to wallet"
             );
         }
@@ -250,7 +250,7 @@ contract GLPWrappedTokenUserVault is
     onlyVaultOwner(msg.sender) {
         Require.that(
             _marketId != MARKET_ID(),
-            FILE,
+            _FILE,
             "Invalid marketId"
         );
 
@@ -294,7 +294,7 @@ contract GLPWrappedTokenUserVault is
     onlyVaultOwner(msg.sender) {
         Require.that(
             _marketId != MARKET_ID(),
-            FILE,
+            _FILE,
             "Invalid marketId"
         );
 
@@ -319,7 +319,7 @@ contract GLPWrappedTokenUserVault is
     onlyVaultOwner(msg.sender) {
         Require.that(
             _marketId != MARKET_ID(),
-            FILE,
+            _FILE,
             "Invalid marketId"
         );
         BORROW_POSITION_PROXY().repayAllForBorrowPositionWithDifferentAccounts(
@@ -339,6 +339,75 @@ contract GLPWrappedTokenUserVault is
     function executeWithdrawalFromVault(address _recipient, uint256 _amount) external onlyVaultFactory(msg.sender) {
         assert(_recipient != address(this));
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
+    }
+
+    function onLiquidate(
+        uint256,
+        uint256 _heldMarketId,
+        IDolomiteMargin.Wei calldata _heldDeltaWei,
+        uint256,
+        IDolomiteMargin.Wei calldata
+    )
+    external
+    onlyDolomiteMargin(msg.sender) {
+        if (_heldMarketId == MARKET_ID()) {
+            Require.that(
+                cursorToQueuedTransferAmountMap[transferCursor] == 0,
+                _FILE,
+                "A transfer is already queued"
+            );
+            cursorToQueuedTransferAmountMap[transferCursor] = _heldDeltaWei.value;
+        }
+    }
+
+    function callFunction(
+        address,
+        IDolomiteMargin.AccountInfo calldata _accountInfo,
+        bytes calldata _data
+    )
+    external
+    onlyDolomiteMargin(msg.sender) {
+        Require.that(
+            _accountInfo.owner == address(this),
+            _FILE,
+            "Invalid account owner",
+            _accountInfo.owner
+        );
+
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        Require.that(
+            dolomiteMargin.getAccountStatus(_accountInfo) == IDolomiteMargin.AccountStatus.Liquid,
+            _FILE,
+            "Account not liquid"
+        );
+
+        // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
+        // designated recipient
+        IERC20 token = IERC20(UNDERLYING_TOKEN());
+        (address recipient) = abi.decode(_data, (address));
+        Require.that(
+            recipient != address(0),
+            _FILE,
+            "Invalid recipient"
+        );
+
+        uint256 transferAmount = cursorToQueuedTransferAmountMap[transferCursor++];
+        Require.that(
+            transferAmount > 0,
+            _FILE,
+            "Invalid transfer"
+        );
+
+        IDolomiteMargin.Wei memory accountWei = dolomiteMargin.getAccountWei(_accountInfo, MARKET_ID());
+        Require.that(
+            token.balanceOf(address(this)) >= transferAmount + accountWei.value,
+            _FILE,
+            "Insufficient balance"
+        );
+        assert(accountWei.sign);
+
+        // notify the vault factory of the liquidation, so the tokens can be transferred on the call to #exchange.
+        VAULT_FACTORY().liquidateWithinDolomiteMargin(recipient, transferAmount);
     }
 
     // ======== Public functions ========
@@ -365,75 +434,6 @@ contract GLPWrappedTokenUserVault is
 
     function VAULT_FACTORY() public view returns (IGLPWrappedTokenUserVaultFactory) {
         return IGLPWrappedTokenUserVaultFactory(_proxySelf().vaultFactory());
-    }
-
-    function onLiquidate(
-        uint256,
-        uint256 _heldMarketId,
-        IDolomiteMargin.Wei calldata _heldDeltaWei,
-        uint256,
-        IDolomiteMargin.Wei calldata
-    )
-    external
-    onlyDolomiteMargin(msg.sender) {
-        if (_heldMarketId == MARKET_ID()) {
-            Require.that(
-                cursorToQueuedTransferAmountMap[transferCursor] == 0,
-                FILE,
-                "A transfer is already queued"
-            );
-            cursorToQueuedTransferAmountMap[transferCursor] = _heldDeltaWei.value;
-        }
-    }
-
-    function callFunction(
-        address,
-        IDolomiteMargin.AccountInfo calldata _accountInfo,
-        bytes calldata _data
-    )
-    external
-    onlyDolomiteMargin(msg.sender) {
-        Require.that(
-            _accountInfo.owner == address(this),
-            FILE,
-            "Invalid account owner",
-            _accountInfo.owner
-        );
-
-        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        Require.that(
-            dolomiteMargin.getAccountStatus(_accountInfo) == IDolomiteMargin.AccountStatus.Liquid,
-            FILE,
-            "Account not liquid"
-        );
-
-        // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
-        // designated recipient
-        IERC20 token = IERC20(UNDERLYING_TOKEN());
-        (address recipient) = abi.decode(_data, (address));
-        Require.that(
-            recipient != address(0),
-            FILE,
-            "Invalid recipient"
-        );
-
-        uint256 transferAmount = cursorToQueuedTransferAmountMap[transferCursor++];
-        Require.that(
-            transferAmount > 0,
-            FILE,
-            "Invalid transfer"
-        );
-
-        IDolomiteMargin.Wei memory accountWei = dolomiteMargin.getAccountWei(_accountInfo, MARKET_ID());
-        Require.that(
-            token.balanceOf(address(this)) >= transferAmount + accountWei.value,
-            FILE,
-            "Insufficient balance"
-        );
-        assert(accountWei.sign);
-
-        // notify the vault factory of the liquidation, so the tokens can be transferred on the call to #exchange.
-        VAULT_FACTORY().liquidateWithinDolomiteMargin(recipient, transferAmount);
     }
 
     // ============ Internal Functions ============

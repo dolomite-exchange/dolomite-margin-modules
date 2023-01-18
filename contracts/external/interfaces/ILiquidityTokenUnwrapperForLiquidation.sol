@@ -25,12 +25,6 @@ interface ILiquidityTokenUnwrapperForLiquidation is IDolomiteMarginExchangeWrapp
      */
     function token() external view returns (address);
 
-    /**
-     * @return  The number of Actions used to unwrap the LP token into `outputMarketId`. If `owedMarketId` equals
-     *          `outputMarketId`, there is no need to chain additional actions on, since the debt will be paid off.
-     */
-    function actionsLength() external pure returns (uint256);
-
     function outputMarketId() external view returns (uint256);
 
     /**
@@ -63,4 +57,10 @@ interface ILiquidityTokenUnwrapperForLiquidation is IDolomiteMarginExchangeWrapp
     external
     view
     returns (IDolomiteMargin.ActionArgs[] memory);
+
+    /**
+     * @return  The number of Actions used to unwrap the LP token into `outputMarketId`. If `owedMarketId` equals
+     *          `outputMarketId`, there is no need to chain additional actions on, since the debt will be paid off.
+     */
+    function actionsLength() external pure returns (uint256);
 }

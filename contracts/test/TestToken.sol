@@ -35,10 +35,6 @@ contract TestToken is ERC20 {
         _decimals = __decimals;
     }
 
-    function decimals() public view virtual override returns (uint8) {
-        return _decimals;
-    }
-
     function mint(address _account, uint _amount) public {
         super._mint(_account, _amount);
     }
@@ -47,4 +43,7 @@ contract TestToken is ERC20 {
         super._burn(_account, _amount);
     }
 
+    function decimals() public view virtual override returns (uint8) {
+        return _decimals;
+    }
 }

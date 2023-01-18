@@ -29,8 +29,8 @@ contract TestWETH is IWETH, TestToken {
 
     uint8 private _decimals;
 
-    constructor () TestToken("Wrapped Ether", "WETH", 18) {
-    }
+    // solhint-disable-next-line no-empty-blocks
+    constructor() TestToken("Wrapped Ether", "WETH", 18) {}
 
     receive() external payable {
         _mint(msg.sender, msg.value);

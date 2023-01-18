@@ -30,30 +30,28 @@ abstract contract OnlyDolomiteMargin is IOnlyDolomiteMargin {
 
     // ============ Constants ============
 
-    bytes32 private constant FILE = "OnlyDolomiteMargin";
+    bytes32 private constant _FILE = "OnlyDolomiteMargin";
 
     // ============ Storage ============
 
-    IDolomiteMargin public immutable override DOLOMITE_MARGIN;
-
-    // ============ Constructor ============
-
-    constructor (
-        address _dolomiteMargin
-    )
-    {
-        DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
-    }
+    IDolomiteMargin public immutable override DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
 
     // ============ Modifiers ============
 
     modifier onlyDolomiteMargin(address _from) {
         Require.that(
             _from == address(DOLOMITE_MARGIN),
-            FILE,
+            _FILE,
             "Only Dolomite can call function",
             _from
         );
         _;
+    }
+
+    // ============ Constructor ============
+
+    constructor (address _dolomiteMargin)
+    {
+        DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
     }
 }

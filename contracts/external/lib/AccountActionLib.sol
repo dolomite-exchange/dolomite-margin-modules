@@ -33,17 +33,13 @@ library AccountActionLib {
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "AccountActionLib";
+    bytes32 private constant _FILE = "AccountActionLib";
 
-    uint256 constant ALL = type(uint256).max;
+    uint256 private constant _ALL = type(uint256).max;
 
-    // ============ Functions ============
-
-    function all() internal pure returns (uint256) {
-        return ALL;
-    }
-
-    // ========================= Operation Functions =========================
+    // ===================================================================
+    // ========================= Write Functions =========================
+    // ===================================================================
 
     function deposit(
         IDolomiteMargin _dolomiteMargin,
@@ -121,7 +117,7 @@ library AccountActionLib {
         address _toAccountOwner,
         uint256 _toAccountNumber,
         uint256 _marketId,
-        IDolomiteMargin.AssetAmount memory _amount,
+        uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) internal {
         IDolomiteMargin.AccountInfo[] memory accounts = new IDolomiteMargin.AccountInfo[](2);
@@ -135,16 +131,12 @@ library AccountActionLib {
         });
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](1);
-        actions[0] = IDolomiteMargin.ActionArgs({
-            actionType: IDolomiteMargin.ActionType.Transfer,
-            accountId: 0,
-            amount: _amount,
-            primaryMarketId: _marketId,
-            secondaryMarketId: 0,
-            otherAddress: address(0),
-            otherAccountId: 1,
-            data: bytes("")
-        });
+        actions[0] = encodeTransferAction(
+            /* _fromAccountId = */ 0, // solium-disable-line indentation
+            /* _toAccountId = */ 1, // solium-disable-line indentation
+            _marketId,
+            _amountWei
+        );
 
         _dolomiteMargin.operate(accounts, actions);
 
@@ -173,7 +165,13 @@ library AccountActionLib {
         }
     }
 
-    // ========================= Encoding Functions =========================
+    // // ===============================================================
+    // ========================= Pure Functions =========================
+    // // ===============================================================
+
+    function all() internal pure returns (uint256) {
+        return _ALL;
+    }
 
     function encodeCallAction(
         uint256 _accountId,
@@ -225,7 +223,7 @@ library AccountActionLib {
     ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
         Require.that(
             _expiryTimeDelta == uint32(_expiryTimeDelta),
-            FILE,
+            _FILE,
             "invalid expiry time"
         );
 
@@ -330,7 +328,7 @@ library AccountActionLib {
         bytes memory _orderData
     ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
         IDolomiteMargin.AssetAmount memory assetAmount;
-        if (_amountInWei == ALL) {
+        if (_amountInWei == _ALL) {
             assetAmount = IDolomiteMargin.AssetAmount({
                 sign: false,
                 denomination: IDolomiteMargin.AssetDenomination.Wei,
@@ -365,7 +363,7 @@ library AccountActionLib {
         uint256 _amountWei
     ) internal pure returns (IDolomiteMargin.ActionArgs memory) {
         IDolomiteMargin.AssetAmount memory assetAmount;
-        if (_amountWei == ALL) {
+        if (_amountWei == _ALL) {
             assetAmount = IDolomiteMargin.AssetAmount({
                 sign: false,
                 denomination: IDolomiteMargin.AssetDenomination.Wei,

@@ -30,14 +30,14 @@ library Require {
 
     // ============ Constants ============
 
-    uint256 constant ASCII_ZERO = 48; // '0'
-    uint256 constant ASCII_RELATIVE_ZERO = 87; // 'a' - 10
-    uint256 constant ASCII_LOWER_EX = 120; // 'x'
-    bytes2 constant COLON = 0x3a20; // ': '
-    bytes2 constant COMMA = 0x2c20; // ', '
-    bytes2 constant LPAREN = 0x203c; // ' <'
-    bytes1 constant RPAREN = 0x3e; // '>'
-    uint256 constant FOUR_BIT_MASK = 0xf;
+    uint256 private constant _ASCII_ZERO = 48; // '0'
+    uint256 private constant _ASCII_RELATIVE_ZERO = 87; // 'a' - 10
+    uint256 private constant _ASCII_LOWER_EX = 120; // 'x'
+    bytes2 private constant _COLON = 0x3a20; // ': '
+    bytes2 private constant _COMMA = 0x2c20; // ', '
+    bytes2 private constant _LPAREN = 0x203c; // ' <'
+    bytes1 private constant _RPAREN = 0x3e; // '>'
+    uint256 private constant _FOUR_BIT_MASK = 0xf;
 
     // ============ Library Functions ============
 
@@ -54,7 +54,7 @@ library Require {
             string(
                 abi.encodePacked(
                     stringifyTruncated(file),
-                    COLON,
+                    _COLON,
                     stringifyTruncated(reason)
                 )
             )
@@ -76,11 +76,11 @@ library Require {
             string(
                 abi.encodePacked(
                     stringifyTruncated(file),
-                    COLON,
+                    _COLON,
                     stringifyTruncated(reason),
-                    LPAREN,
-                    stringify(payloadA),
-                    RPAREN
+                    _LPAREN,
+                    _stringify(payloadA),
+                    _RPAREN
                 )
             )
             );
@@ -102,13 +102,13 @@ library Require {
             string(
                 abi.encodePacked(
                     stringifyTruncated(file),
-                    COLON,
+                    _COLON,
                     stringifyTruncated(reason),
-                    LPAREN,
-                    stringify(payloadA),
-                    COMMA,
-                    stringify(payloadB),
-                    RPAREN
+                    _LPAREN,
+                    _stringify(payloadA),
+                    _COMMA,
+                    _stringify(payloadB),
+                    _RPAREN
                 )
             )
             );
@@ -129,11 +129,11 @@ library Require {
             string(
                 abi.encodePacked(
                     stringifyTruncated(file),
-                    COLON,
+                    _COLON,
                     stringifyTruncated(reason),
-                    LPAREN,
-                    stringify(payloadA),
-                    RPAREN
+                    _LPAREN,
+                    _stringify(payloadA),
+                    _RPAREN
                 )
             )
             );
@@ -155,13 +155,13 @@ library Require {
             string(
                 abi.encodePacked(
                     stringifyTruncated(file),
-                    COLON,
+                    _COLON,
                     stringifyTruncated(reason),
-                    LPAREN,
-                    stringify(payloadA),
-                    COMMA,
-                    stringify(payloadB),
-                    RPAREN
+                    _LPAREN,
+                    _stringify(payloadA),
+                    _COMMA,
+                    _stringify(payloadB),
+                    _RPAREN
                 )
             )
             );
@@ -184,15 +184,15 @@ library Require {
             string(
                 abi.encodePacked(
                     stringifyTruncated(file),
-                    COLON,
+                    _COLON,
                     stringifyTruncated(reason),
-                    LPAREN,
-                    stringify(payloadA),
-                    COMMA,
-                    stringify(payloadB),
-                    COMMA,
-                    stringify(payloadC),
-                    RPAREN
+                    _LPAREN,
+                    _stringify(payloadA),
+                    _COMMA,
+                    _stringify(payloadB),
+                    _COMMA,
+                    _stringify(payloadC),
+                    _RPAREN
                 )
             )
             );
@@ -213,11 +213,11 @@ library Require {
             string(
                 abi.encodePacked(
                     stringifyTruncated(file),
-                    COLON,
+                    _COLON,
                     stringifyTruncated(reason),
-                    LPAREN,
-                    stringify(payloadA),
-                    RPAREN
+                    _LPAREN,
+                    _stringify(payloadA),
+                    _RPAREN
                 )
             )
             );
@@ -240,15 +240,15 @@ library Require {
             string(
                 abi.encodePacked(
                     stringifyTruncated(file),
-                    COLON,
+                    _COLON,
                     stringifyTruncated(reason),
-                    LPAREN,
-                    stringify(payloadA),
-                    COMMA,
-                    stringify(payloadB),
-                    COMMA,
-                    stringify(payloadC),
-                    RPAREN
+                    _LPAREN,
+                    _stringify(payloadA),
+                    _COMMA,
+                    _stringify(payloadB),
+                    _COMMA,
+                    _stringify(payloadC),
+                    _RPAREN
                 )
             )
             );
@@ -277,7 +277,7 @@ library Require {
             if (result[i] != 0) {
                 uint256 length = i + 1;
 
-                /* solium-disable-next-line security/no-inline-assembly */
+                /* solhint-disable-next-line no-inline-assembly */
                 assembly {
                     mstore(result, length) // r.length = length;
                 }
@@ -290,7 +290,7 @@ library Require {
         return new bytes(0);
     }
 
-    function stringify(
+    function _stringify(
         uint256 input
     )
     private
@@ -320,7 +320,7 @@ library Require {
             i--;
 
             // take last decimal digit
-            bstr[i] = bytes1(uint8(ASCII_ZERO + (j % 10)));
+            bstr[i] = bytes1(uint8(_ASCII_ZERO + (j % 10)));
 
             // remove the last decimal digit
             j /= 10;
@@ -329,7 +329,7 @@ library Require {
         return bstr;
     }
 
-    function stringify(
+    function _stringify(
         address input
     )
     private
@@ -342,8 +342,8 @@ library Require {
         bytes memory result = new bytes(42);
 
         // populate the result with "0x"
-        result[0] = bytes1(uint8(ASCII_ZERO));
-        result[1] = bytes1(uint8(ASCII_LOWER_EX));
+        result[0] = bytes1(uint8(_ASCII_ZERO));
+        result[1] = bytes1(uint8(_ASCII_LOWER_EX));
 
         // for each byte (starting from the lowest byte), populate the result with two characters
         for (uint256 i = 0; i < 20; i++) {
@@ -351,18 +351,18 @@ library Require {
             uint256 shift = i * 2;
 
             // populate the least-significant character
-            result[41 - shift] = char(z & FOUR_BIT_MASK);
+            result[41 - shift] = _char(z & _FOUR_BIT_MASK);
             z = z >> 4;
 
             // populate the most-significant character
-            result[40 - shift] = char(z & FOUR_BIT_MASK);
+            result[40 - shift] = _char(z & _FOUR_BIT_MASK);
             z = z >> 4;
         }
 
         return result;
     }
 
-    function stringify(
+    function _stringify(
         bytes32 input
     )
     private
@@ -375,8 +375,8 @@ library Require {
         bytes memory result = new bytes(66);
 
         // populate the result with "0x"
-        result[0] = bytes1(uint8(ASCII_ZERO));
-        result[1] = bytes1(uint8(ASCII_LOWER_EX));
+        result[0] = bytes1(uint8(_ASCII_ZERO));
+        result[1] = bytes1(uint8(_ASCII_LOWER_EX));
 
         // for each byte (starting from the lowest byte), populate the result with two characters
         for (uint256 i = 0; i < 32; i++) {
@@ -384,18 +384,18 @@ library Require {
             uint256 shift = i * 2;
 
             // populate the least-significant character
-            result[65 - shift] = char(z & FOUR_BIT_MASK);
+            result[65 - shift] = _char(z & _FOUR_BIT_MASK);
             z = z >> 4;
 
             // populate the most-significant character
-            result[64 - shift] = char(z & FOUR_BIT_MASK);
+            result[64 - shift] = _char(z & _FOUR_BIT_MASK);
             z = z >> 4;
         }
 
         return result;
     }
 
-    function char(
+    function _char(
         uint256 input
     )
     private
@@ -404,10 +404,10 @@ library Require {
     {
         // return ASCII digit (0-9)
         if (input < 10) {
-            return bytes1(uint8(input + ASCII_ZERO));
+            return bytes1(uint8(input + _ASCII_ZERO));
         }
 
         // return ASCII letter (a-f)
-        return bytes1(uint8(input + ASCII_RELATIVE_ZERO));
+        return bytes1(uint8(input + _ASCII_RELATIVE_ZERO));
     }
 }

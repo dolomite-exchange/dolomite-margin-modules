@@ -50,23 +50,9 @@ abstract contract WrappedTokenUserVaultFactory is
     ERC20
 {
 
-    // ============ Events ============
-
-    event UserVaultImplementationSet(
-        address indexed previousUserVaultImplementation,
-        address indexed newUserVaultImplementation
-    );
-
-    event TokenUnwrapperSet(
-        address indexed tokenUnwrapper,
-        bool isTrusted
-    );
-
-    // ============ Constants ============
-
-    bytes32 private constant FILE = "WrappedTokenUserVaultFactory";
-
-    // ============ Structs ============
+    // =================================================
+    // ==================== Structs ====================
+    // =================================================
 
     struct QueuedTransfer {
         address from;
@@ -75,22 +61,50 @@ abstract contract WrappedTokenUserVaultFactory is
         address vault;
     }
 
-    // ============ Modifiers ============
+    // ===================================================
+    // ==================== Constants ====================
+    // ===================================================
+
+    bytes32 private constant _FILE = "WrappedTokenUserVaultFactory";
+
+    // ==================================================
+    // ================ Immutable Fields ================
+    // ==================================================
+
+    address public immutable override UNDERLYING_TOKEN; // solhint-disable-line var-name-mixedcase
+    IBorrowPositionProxyV2 public immutable override BORROW_POSITION_PROXY; // solhint-disable-line var-name-mixedcase
+
+    // ================================================
+    // ==================== Fields ====================
+    // ================================================
+
+    address public override userVaultImplementation;
+    bool public isInitialized;
+    uint256 public override marketId; // can't be immutable because it's set in the call to #initialize
+    uint256 public transferCursor;
+    mapping(uint256 => QueuedTransfer) public cursorToQueuedTransferMap;
+    mapping(address => address) public vaultToUserMap;
+    mapping(address => address) public userToVaultMap;
+    mapping(address => bool) public tokenUnwrapperMap;
+
+    // ===================================================
+    // ==================== Modifiers ====================
+    // ===================================================
 
     modifier requireIsInitialized {
-        Require.that(isInitialized, FILE, "Not initialized");
+        Require.that(isInitialized, _FILE, "Not initialized");
         _;
     }
 
     modifier requireIsVault(address _vault) {
-        Require.that(address(vaultToUserMap[_vault]) != address(0), FILE, "Caller is not a vault");
+        Require.that(address(vaultToUserMap[_vault]) != address(0), _FILE, "Caller is not a vault");
         _;
     }
 
     modifier requireCursorIsNotQueued {
         Require.that(
             cursorToQueuedTransferMap[transferCursor].from == address(0),
-            FILE,
+            _FILE,
             "Transfer is already queued"
         );
         _;
@@ -99,27 +113,11 @@ abstract contract WrappedTokenUserVaultFactory is
     modifier onlyOwner {
         Require.that(
             msg.sender == DOLOMITE_MARGIN.owner(),
-            FILE,
+            _FILE,
             "Caller is not the owner"
         );
         _;
     }
-
-    // ============ Immutable Fields ============
-
-    address public immutable override UNDERLYING_TOKEN;
-    IBorrowPositionProxyV2 public immutable override BORROW_POSITION_PROXY;
-    uint256 public override MARKET_ID; // can't be set to immutable because it must be set in `initialize()`
-
-    // ============ Fields ============
-
-    address public override userVaultImplementation;
-    bool public isInitialized;
-    uint256 public transferCursor;
-    mapping(uint256 => QueuedTransfer) public cursorToQueuedTransferMap;
-    mapping(address => address) public vaultToUserMap;
-    mapping(address => address) public userToVaultMap;
-    mapping(address => bool) public tokenUnwrapperMap;
 
     constructor(
         address _underlyingToken,
@@ -138,28 +136,20 @@ abstract contract WrappedTokenUserVaultFactory is
         userVaultImplementation = _userVaultImplementation;
     }
 
-    function name() public override virtual view returns (string memory) {
-        return string(abi.encodePacked("Dolomite: ", ERC20(UNDERLYING_TOKEN).name()));
-    }
-
-    function symbol() public override virtual view returns (string memory) {
-        return string(abi.encodePacked("d", ERC20(UNDERLYING_TOKEN).symbol()));
-    }
-
-    function decimals() public override virtual view returns (uint8) {
-        return ERC20(UNDERLYING_TOKEN).decimals();
-    }
+    // =================================================
+    // ================ Write Functions ================
+    // =================================================
 
     function initialize(address[] calldata _tokenUnwrappers) external override {
         Require.that(
             !isInitialized,
-            FILE,
+            _FILE,
             "Already initialized"
         );
-        MARKET_ID = DOLOMITE_MARGIN.getMarketIdByTokenAddress(address(this));
+        marketId = DOLOMITE_MARGIN.getMarketIdByTokenAddress(address(this));
         Require.that(
-            DOLOMITE_MARGIN.getMarketIsClosing(MARKET_ID),
-            FILE,
+            DOLOMITE_MARGIN.getMarketIsClosing(marketId),
+            _FILE,
             "Market cannot allow borrowing"
         );
 
@@ -188,27 +178,8 @@ abstract contract WrappedTokenUserVaultFactory is
         userVaultImplementation = _userVaultImplementation;
     }
 
-    function isTokenUnwrapperTrusted(address _tokenUnwrapper) external override view returns (bool) {
-        return tokenUnwrapperMap[_tokenUnwrapper];
-    }
-
     function setIsTokenUnwrapperTrusted(address _tokenUnwrapper, bool _isTrusted) external override onlyOwner {
         _setIsTokenUnwrapperTrusted(_tokenUnwrapper, _isTrusted);
-    }
-
-    function getVaultByAccount(address _account) external override view returns (address _vault) {
-        _vault = userToVaultMap[_account];
-    }
-
-    function calculateVaultByAccount(address _account) external override view returns (address _vault) {
-        _vault = Create2.computeAddress(
-            keccak256(abi.encodePacked(_account)),
-            keccak256(type(WrappedTokenUserVaultProxy).creationCode)
-        );
-    }
-
-    function getAccountByVault(address _vault) external override view returns (address _account) {
-        _account = vaultToUserMap[_vault];
     }
 
     function depositIntoDolomiteMargin(
@@ -231,7 +202,7 @@ abstract contract WrappedTokenUserVaultFactory is
             /* _accountOwner = */ msg.sender, // solium-disable-line indentation
             /* _fromAccount = */ msg.sender, // solium-disable-line indentation
             _toAccountNumber,
-            MARKET_ID,
+            marketId,
             IDolomiteMargin.AssetAmount({
                 sign: true,
                 denomination: IDolomiteMargin.AssetDenomination.Wei,
@@ -261,7 +232,7 @@ abstract contract WrappedTokenUserVaultFactory is
             /* _accountOwner = */ msg.sender, // solium-disable-line indentation
             _fromAccountNumber,
             /* _toAccount = */ msg.sender, // solium-disable-line indentation
-            MARKET_ID,
+            marketId,
             IDolomiteMargin.AssetAmount({
                 sign: true,
                 denomination: IDolomiteMargin.AssetDenomination.Wei,
@@ -283,7 +254,7 @@ abstract contract WrappedTokenUserVaultFactory is
     requireCursorIsNotQueued {
         Require.that(
             tokenUnwrapperMap[_recipient],
-            FILE,
+            _FILE,
             "Invalid liquidation recipient"
         );
         cursorToQueuedTransferMap[transferCursor] = QueuedTransfer({
@@ -294,7 +265,44 @@ abstract contract WrappedTokenUserVaultFactory is
         });
     }
 
+    // ================================================
+    // ================ Read Functions ================
+    // ================================================
+
+    function name() external override virtual view returns (string memory) {
+        return string(abi.encodePacked("Dolomite: ", ERC20(UNDERLYING_TOKEN).name()));
+    }
+
+    function symbol() external override virtual view returns (string memory) {
+        return string(abi.encodePacked("d", ERC20(UNDERLYING_TOKEN).symbol()));
+    }
+
+    function decimals() external override virtual view returns (uint8) {
+        return ERC20(UNDERLYING_TOKEN).decimals();
+    }
+
+    function isTokenUnwrapperTrusted(address _tokenUnwrapper) external override view returns (bool) {
+        return tokenUnwrapperMap[_tokenUnwrapper];
+    }
+
+    function getVaultByAccount(address _account) external override view returns (address _vault) {
+        _vault = userToVaultMap[_account];
+    }
+
+    function calculateVaultByAccount(address _account) external override view returns (address _vault) {
+        _vault = Create2.computeAddress(
+            keccak256(abi.encodePacked(_account)),
+            keccak256(type(WrappedTokenUserVaultProxy).creationCode)
+        );
+    }
+
+    function getAccountByVault(address _vault) external override view returns (address _account) {
+        _account = vaultToUserMap[_vault];
+    }
+
+    // ====================================================
     // ================ Internal Functions ================
+    // ====================================================
 
     function _setIsTokenUnwrapperTrusted(address _tokenUnwrapper, bool _isTrusted) internal {
         tokenUnwrapperMap[_tokenUnwrapper] = _isTrusted;
@@ -304,7 +312,7 @@ abstract contract WrappedTokenUserVaultFactory is
     function _createVault(address _account) internal returns (address) {
         Require.that(
             userToVaultMap[_account] == address(0),
-            FILE,
+            _FILE,
             "Vault already exists"
         );
         address vault = Create2.deploy(
@@ -329,12 +337,12 @@ abstract contract WrappedTokenUserVaultFactory is
     onlyDolomiteMargin(msg.sender) {
         Require.that(
             _from != address(0),
-            FILE,
+            _FILE,
             "Transfer from the zero address"
         );
         Require.that(
             _to != address(0),
-            FILE,
+            _FILE,
             "Transfer to the zero address"
         );
 
@@ -343,7 +351,7 @@ abstract contract WrappedTokenUserVaultFactory is
         address dolomiteMargin = address(DOLOMITE_MARGIN);
         Require.that(
             _from == dolomiteMargin || _to == dolomiteMargin,
-            FILE,
+            _FILE,
             "from/to must eq DolomiteMargin"
         );
 
@@ -353,7 +361,7 @@ abstract contract WrappedTokenUserVaultFactory is
                 && queuedTransfer.to == _to
                 && queuedTransfer.amount == _amount
                 && vaultToUserMap[queuedTransfer.vault] != address(0),
-            FILE,
+            _FILE,
             "Invalid queued transfer"
         );
 
@@ -361,7 +369,7 @@ abstract contract WrappedTokenUserVaultFactory is
             // transfers TO DolomiteMargin must be made FROM a vault
             Require.that(
                 vaultToUserMap[_from] != address(0),
-                FILE,
+                _FILE,
                 "Invalid from"
             );
             IWrappedTokenUserVaultV1(queuedTransfer.vault).executeDepositIntoVault(_amount);
@@ -372,7 +380,7 @@ abstract contract WrappedTokenUserVaultFactory is
             // transfers FROM DolomiteMargin must be made TO a vault OR to a tokenUnwrapper
             Require.that(
                 vaultToUserMap[_to] != address(0) || tokenUnwrapperMap[_to],
-                FILE,
+                _FILE,
                 "Invalid to"
             );
 

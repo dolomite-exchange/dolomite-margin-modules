@@ -29,10 +29,6 @@ import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 library AccountBalanceLib {
     using TypesLib for IDolomiteMargin.Par;
 
-    // ============ Constants ============
-
-    bytes32 constant FILE = "AccountBalanceLib";
-
     // ============ Types ============
 
     /// Checks that either BOTH, FROM, or TO accounts all have non-negative balances
@@ -42,6 +38,10 @@ library AccountBalanceLib {
         To,
         None
     }
+
+    // ============ Constants ============
+
+    bytes32 private constant _FILE = "AccountBalanceLib";
 
     // ============ Functions ============
 
@@ -61,7 +61,7 @@ library AccountBalanceLib {
         IDolomiteMargin.Par memory par = dolomiteMargin.getAccountPar(account, _marketId);
         Require.that(
             par.isPositive() || par.isZero(),
-            FILE,
+            _FILE,
             "account cannot go negative",
             _accountOwner,
             _accountNumber,

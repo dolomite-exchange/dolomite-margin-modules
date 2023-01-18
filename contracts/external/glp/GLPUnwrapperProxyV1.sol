@@ -43,19 +43,19 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
 
     // ============ Constants ============
 
-    bytes32 internal constant FILE = "GLPUnwrapperProxyV1";
-    uint256 internal constant ACTIONS_LENGTH = 2;
+    bytes32 private constant _FILE = "GLPUnwrapperProxyV1";
+    uint256 private constant _ACTIONS_LENGTH = 2;
     uint256 public constant BASIS_POINTS_DIVISOR = 10000;
 
-    // ============ State Variables ============
+    // ============ Immutable State Variables ============
 
-    address public immutable USDC;
-    uint256 public immutable USDC_MARKET_ID;
-    IGLPManager public immutable GLP_MANAGER;
-    IGLPRewardRouterV2 public immutable GLP_REWARD_ROUTER;
-    IGMXVault public immutable GMX_VAULT;
-    IERC20 public immutable GLP;
-    IWrappedTokenUserVaultFactory public immutable DS_GLP;
+    address public immutable USDC; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    IGLPManager public immutable GLP_MANAGER; // solhint-disable-line var-name-mixedcase
+    IGLPRewardRouterV2 public immutable GLP_REWARD_ROUTER; // solhint-disable-line var-name-mixedcase
+    IGMXVault public immutable GMX_VAULT; // solhint-disable-line var-name-mixedcase
+    IERC20 public immutable GLP; // solhint-disable-line var-name-mixedcase
+    IWrappedTokenUserVaultFactory public immutable DS_GLP; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
@@ -80,12 +80,60 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         IERC20(_usdc).safeApprove(_dolomiteMargin, type(uint256).max);
     }
 
-    function token() external override view returns (address) {
-        return address(DS_GLP);
+    // ============================================
+    // ============ External Functions ============
+    // ============================================
+
+    function exchange(
+        address,
+        address,
+        address _makerToken,
+        address _takerToken,
+        uint256 _requestedFillAmount,
+        bytes calldata _orderData
+    )
+    external
+    override
+    onlyDolomiteMargin(msg.sender)
+    returns (uint256) {
+        Require.that(
+            _takerToken == address(DS_GLP),
+            _FILE,
+            "Taker token must be DS_GLP",
+            _takerToken
+        );
+        Require.that(
+            _makerToken == USDC,
+            _FILE,
+            "Maker token must be USDC",
+            _makerToken
+        );
+
+        // solium-disable indentation
+        {
+            uint256 balance = IERC20(DS_GLP.UNDERLYING_TOKEN()).balanceOf(address(this));
+            Require.that(
+                balance >= _requestedFillAmount,
+                _FILE,
+                "Insufficient GLP for trade",
+                balance
+            );
+        }
+        // solium-enable indentation
+        (uint256 minAmountOut) = abi.decode(_orderData, (uint256));
+
+        uint256 amountOut = GLP_REWARD_ROUTER.unstakeAndRedeemGlp(
+        /* _tokenOut = */ _makerToken, // solium-disable-line indentation
+        /* _glpAmount = */ _requestedFillAmount, // solium-disable-line indentation
+            minAmountOut,
+        /* _receiver = */ address(this) // solium-disable-line indentation
+        );
+
+        return amountOut;
     }
 
-    function actionsLength() external override pure returns (uint256) {
-        return ACTIONS_LENGTH;
+    function token() external override view returns (address) {
+        return address(DS_GLP);
     }
 
     function outputMarketId() external override view returns (uint256) {
@@ -106,7 +154,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     override
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](ACTIONS_LENGTH);
+        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
         // Transfer the liquidated GLP tokens to this contract
         actions[0] = AccountActionLib.encodeCallAction(
             _liquidAccountId,
@@ -135,53 +183,13 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         return actions;
     }
 
-    function exchange(
-        address,
-        address,
-        address _makerToken,
-        address _takerToken,
-        uint256 _requestedFillAmount,
-        bytes calldata _orderData
-    )
-    external
-    override
-    onlyDolomiteMargin(msg.sender)
-    returns (uint256) {
-        Require.that(
-            _takerToken == address(DS_GLP),
-            FILE,
-            "Taker token must be DS_GLP",
-            _takerToken
-        );
-        Require.that(
-            _makerToken == USDC,
-            FILE,
-            "Maker token must be USDC",
-            _makerToken
-        );
-
-        // solium-disable indentation
-        {
-            uint256 balance = IERC20(DS_GLP.UNDERLYING_TOKEN()).balanceOf(address(this));
-            Require.that(
-                balance >= _requestedFillAmount,
-                FILE,
-                "Insufficient GLP for trade",
-                balance
-            );
-        }
-        // solium-enable indentation
-        (uint256 minAmountOut) = abi.decode(_orderData, (uint256));
-
-        uint256 amountOut = GLP_REWARD_ROUTER.unstakeAndRedeemGlp(
-            /* _tokenOut = */ _makerToken, // solium-disable-line indentation
-            /* _glpAmount = */ _requestedFillAmount, // solium-disable-line indentation
-            minAmountOut,
-            /* _receiver = */ address(this) // solium-disable-line indentation
-        );
-
-        return amountOut;
+    function actionsLength() external override pure returns (uint256) {
+        return _ACTIONS_LENGTH;
     }
+
+    // ==========================================
+    // ============ Public Functions ============
+    // ==========================================
 
     function getExchangeCost(
         address _makerToken,
@@ -195,13 +203,13 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     returns (uint256) {
         Require.that(
             _makerToken == address(DS_GLP),
-            FILE,
+            _FILE,
             "Maker token must be DS_GLP",
             _makerToken
         );
         Require.that(
             _takerToken == USDC,
-            FILE,
+            _FILE,
             "Taker token must be USDC",
             _takerToken
         );
@@ -221,7 +229,9 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         return _applyFees(redemptionAmount, feeBasisPoints);
     }
 
-    // ================== Internal Functions ==================
+    // ============================================
+    // ============ Internal Functions ============
+    // ============================================
 
     function _applyFees(
         uint256 _amount,

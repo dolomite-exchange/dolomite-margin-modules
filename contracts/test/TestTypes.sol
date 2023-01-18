@@ -36,7 +36,7 @@ contract TestTypes {
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "TestTypes";
+    bytes32 internal constant _FILE = "TestTypes";
 
     // ============ Types Functions ============
 
@@ -142,7 +142,7 @@ contract TestTypes {
     }
 
     function TypesZeroWei()
-    external
+    public
     pure
     returns (IDolomiteMargin.Wei memory)
     {

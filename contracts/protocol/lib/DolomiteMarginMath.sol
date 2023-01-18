@@ -27,7 +27,7 @@ library DolomiteMarginMath {
 
     // ============ Constants ============
 
-    bytes32 constant FILE = "DolomiteMarginMath";
+    bytes32 internal constant _FILE = "DolomiteMarginMath";
 
     // ============ Library Functions ============
 
@@ -94,7 +94,7 @@ library DolomiteMarginMath {
         uint128 result = uint128(number);
         Require.that(
             result == number,
-            FILE,
+            _FILE,
             "Unsafe cast to uint128",
             number
         );
@@ -111,7 +111,7 @@ library DolomiteMarginMath {
         uint96 result = uint96(number);
         Require.that(
             result == number,
-            FILE,
+            _FILE,
             "Unsafe cast to uint96",
             number
         );
@@ -128,7 +128,7 @@ library DolomiteMarginMath {
         uint32 result = uint32(number);
         Require.that(
             result == number,
-            FILE,
+            _FILE,
             "Unsafe cast to uint32",
             number
         );
