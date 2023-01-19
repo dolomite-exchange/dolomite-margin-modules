@@ -25,8 +25,6 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { Require } from "../../protocol/lib/Require.sol";
 
 import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
-import { IGLPRewardRouterV2 } from"../interfaces/IGLPRewardRouterV2.sol";
-import { IGLPWrappedTokenUserVaultFactory } from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
 import { IWrappedTokenUserVaultProxy } from "../interfaces/IWrappedTokenUserVaultProxy.sol";
 import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1.sol";
@@ -98,11 +96,32 @@ abstract contract WrappedTokenUserVaultV1 is
 
     modifier onlyVaultOwnerOrVaultFactory(address _from) {
         Require.that(
-            _from == address(_proxySelf().owner()) || _from == address(VAULT_FACTORY()),
+            _from == address(_proxySelf().owner()) || _from == VAULT_FACTORY(),
             _FILE,
             "Only owner or factory can call",
             _from
         );
+        _;
+    }
+
+    modifier onlyAllowableDebtMarket(uint256 _marketId) {
+        IWrappedTokenUserVaultFactory vaultFactory = IWrappedTokenUserVaultFactory(VAULT_FACTORY());
+        uint256[] memory allowableMarketIds = vaultFactory.allowablePositionMarketIds();
+        if (allowableMarketIds.length != 0) {
+            bool isAllowable = false;
+            for (uint256 i = 0; i < allowableMarketIds.length; i++) {
+                if (allowableMarketIds[i] == _marketId) {
+                    isAllowable = true;
+                    break;
+                }
+            }
+            Require.that(
+                isAllowable,
+                _FILE,
+                "Market not allowed as debt",
+                _marketId
+            );
+        }
         _;
     }
 
@@ -123,7 +142,7 @@ abstract contract WrappedTokenUserVaultV1 is
             "Invalid toAccountNumber",
             _toAccountNumber
         );
-        VAULT_FACTORY().depositIntoDolomiteMargin(_toAccountNumber, _amountWei);
+        IWrappedTokenUserVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(_toAccountNumber, _amountWei);
     }
 
     function withdrawFromVaultForDolomiteMargin(
@@ -139,7 +158,7 @@ abstract contract WrappedTokenUserVaultV1 is
             "Invalid fromAccountNumber",
             _fromAccountNumber
         );
-        VAULT_FACTORY().withdrawFromDolomiteMargin(_fromAccountNumber, _amountWei);
+        IWrappedTokenUserVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_fromAccountNumber, _amountWei);
     }
 
     function openBorrowPosition(
@@ -150,9 +169,9 @@ abstract contract WrappedTokenUserVaultV1 is
     external
     onlyVaultOwner(msg.sender) {
         BORROW_POSITION_PROXY().openBorrowPositionWithDifferentAccounts(
-        /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
             _fromAccountNumber,
-        /* _toAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _toAccountOwner = */ address(this), // solium-disable-line indentation
             _toAccountNumber,
             marketId(),
             _amountWei,
@@ -170,9 +189,9 @@ abstract contract WrappedTokenUserVaultV1 is
         collateralMarketIds[0] = marketId();
 
         BORROW_POSITION_PROXY().closeBorrowPositionWithDifferentAccounts(
-        /* _borrowAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _borrowAccountOwner = */ address(this), // solium-disable-line indentation
             _borrowAccountNumber,
-        /* _toAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _toAccountOwner = */ address(this), // solium-disable-line indentation
             _toAccountNumber,
             collateralMarketIds
         );
@@ -185,19 +204,20 @@ abstract contract WrappedTokenUserVaultV1 is
     )
     external
     onlyVaultOwner(msg.sender) {
-        uint256 sGLPMarketId = marketId();
+        uint256 underlyingMarketId = marketId();
         for (uint256 i = 0; i < _collateralMarketIds.length; i++) {
             Require.that(
-                _collateralMarketIds[i] != sGLPMarketId,
+                _collateralMarketIds[i] != underlyingMarketId,
                 _FILE,
-                "Cannot withdraw sGLP to wallet"
+                "Cannot withdraw market to wallet",
+                underlyingMarketId
             );
         }
 
         BORROW_POSITION_PROXY().closeBorrowPositionWithDifferentAccounts(
-        /* _borrowAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _borrowAccountOwner = */ address(this), // solium-disable-line indentation
             _borrowAccountNumber,
-        /* _toAccountOwner = */ msg.sender, // solium-disable-line indentation
+            /* _toAccountOwner = */ msg.sender, // solium-disable-line indentation
             _toAccountNumber,
             _collateralMarketIds
         );
@@ -211,9 +231,9 @@ abstract contract WrappedTokenUserVaultV1 is
     external
     onlyVaultOwner(msg.sender) {
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-        /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
             _fromAccountNumber,
-        /* _toAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _toAccountOwner = */ address(this), // solium-disable-line indentation
             _borrowAccountNumber,
             marketId(),
             _amountWei,
@@ -229,7 +249,8 @@ abstract contract WrappedTokenUserVaultV1 is
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwner(msg.sender)
+    onlyAllowableDebtMarket(_marketId) {
         Require.that(
             _marketId != marketId(),
             _FILE,
@@ -237,9 +258,9 @@ abstract contract WrappedTokenUserVaultV1 is
         );
 
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-        /* _fromAccountOwner = */ msg.sender, // solium-disable-line indentation
+            /* _fromAccountOwner = */ msg.sender, // solium-disable-line indentation
             _fromAccountNumber,
-        /* _toAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _toAccountOwner = */ address(this), // solium-disable-line indentation
             _borrowAccountNumber,
             _marketId,
             _amountWei,
@@ -255,9 +276,9 @@ abstract contract WrappedTokenUserVaultV1 is
     external
     onlyVaultOwner(msg.sender) {
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-        /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
             _borrowAccountNumber,
-        /* _toAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _toAccountOwner = */ address(this), // solium-disable-line indentation
             _toAccountNumber,
             marketId(),
             _amountWei,
@@ -273,17 +294,19 @@ abstract contract WrappedTokenUserVaultV1 is
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwner(msg.sender)
+    onlyAllowableDebtMarket(_marketId) {
         Require.that(
             _marketId != marketId(),
             _FILE,
-            "Invalid marketId"
+            "Invalid marketId",
+            _marketId
         );
 
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-        /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
             _borrowAccountNumber,
-        /* _toAccountOwner = */ msg.sender, // solium-disable-line indentation
+            /* _toAccountOwner = */ msg.sender, // solium-disable-line indentation
             _toAccountNumber,
             _marketId,
             _amountWei,
@@ -305,9 +328,9 @@ abstract contract WrappedTokenUserVaultV1 is
             "Invalid marketId"
         );
         BORROW_POSITION_PROXY().repayAllForBorrowPositionWithDifferentAccounts(
-        /* _fromAccountOwner = */ msg.sender, // solium-disable-line indentation
+            /* _fromAccountOwner = */ msg.sender, // solium-disable-line indentation
             _fromAccountNumber,
-        /* _borrowAccountOwner = */ address(this),
+            /* _borrowAccountOwner = */ address(this),
             _borrowAccountNumber,
             _marketId,
             _balanceCheckFlag
@@ -389,33 +412,29 @@ abstract contract WrappedTokenUserVaultV1 is
         assert(accountWei.sign);
 
         // notify the vault factory of the liquidation, so the tokens can be transferred on the call to #exchange.
-        VAULT_FACTORY().liquidateWithinDolomiteMargin(recipient, transferAmount);
+        IWrappedTokenUserVaultFactory(VAULT_FACTORY()).liquidateWithinDolomiteMargin(recipient, transferAmount);
     }
 
     // ======== Public functions ========
 
     function UNDERLYING_TOKEN() public view returns (address) {
-        return VAULT_FACTORY().UNDERLYING_TOKEN();
+        return IWrappedTokenUserVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN();
     }
 
     function DOLOMITE_MARGIN() public view returns (IDolomiteMargin) {
-        return VAULT_FACTORY().DOLOMITE_MARGIN();
+        return IWrappedTokenUserVaultFactory(VAULT_FACTORY()).DOLOMITE_MARGIN();
     }
 
     function BORROW_POSITION_PROXY() public view returns (IBorrowPositionProxyV2) {
-        return VAULT_FACTORY().BORROW_POSITION_PROXY();
+        return IWrappedTokenUserVaultFactory(VAULT_FACTORY()).BORROW_POSITION_PROXY();
     }
 
-    function GLP_REWARDS_ROUTER() public view returns (IGLPRewardRouterV2) {
-        return VAULT_FACTORY().glpRewardsRouter();
-    }
-
-    function VAULT_FACTORY() public view returns (IGLPWrappedTokenUserVaultFactory) {
-        return IGLPWrappedTokenUserVaultFactory(_proxySelf().vaultFactory());
+    function VAULT_FACTORY() public virtual view returns (address) {
+        return _proxySelf().vaultFactory();
     }
 
     function marketId() public view returns (uint256) {
-        return VAULT_FACTORY().marketId();
+        return IWrappedTokenUserVaultFactory(VAULT_FACTORY()).marketId();
     }
 
     // ============ Internal Functions ============

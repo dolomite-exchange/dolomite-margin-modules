@@ -14,7 +14,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "./IDolomiteMargin.sol";
+import { IDolomiteStructs } from "./IDolomiteStructs.sol";
 
 
 /**
@@ -41,5 +41,5 @@ interface IDolomitePriceOracle {
     )
     external
     view
-    returns (IDolomiteMargin.MonetaryPrice memory);
+    returns (IDolomiteStructs.MonetaryPrice memory);
 }

@@ -67,7 +67,7 @@ contract GLPWrappedTokenUserVaultFactory is
         return true;
     }
 
-    function allowableDebtMarketIds() external pure returns (uint256[] memory) {
+    function allowablePositionMarketIds() external pure returns (uint256[] memory) {
         return new uint256[](0);
     }
 }

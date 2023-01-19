@@ -144,10 +144,10 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     function isIsolationAsset() external view returns (bool);
 
     /**
-     * @return  The market IDs of the assets that can be borrowed against this wrapped asset. An empty array indicates
-     *          that all assets can be borrowed against it.
+     * @return  The market IDs of the assets that can be used in a position with this wrapped asset. An empty array
+     *          indicates that any non-isolation mode asset can be borrowed against it.
      */
-    function allowableDebtMarketIds() external view returns (uint256[] memory);
+    function allowablePositionMarketIds() external view returns (uint256[] memory);
 
     /**
      * @return  The address of the current vault implementation contract
