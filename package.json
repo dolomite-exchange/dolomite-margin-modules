@@ -14,7 +14,7 @@
     "deploy:coveralls": "coveralls < coverage/lcov.info",
     "lint": "hardhat check",
     "test": "hardhat --network hardhat test",
-    "test:specific": "hardhat --network hardhat test test/protocol/lib/Types.ts"
+    "test:specific": "hardhat --network hardhat test test/external/proxies/WrappedTokenUserVaultFactory.ts"
   },
   "repository": {
     "type": "git",

@@ -158,27 +158,51 @@ abstract contract WrappedTokenUserVaultFactory is
         }
 
         isInitialized = true;
+        emit Initialized();
     }
 
-    function createVault(address _account) external override returns (address) {
+    function createVault(
+        address _account
+    )
+    external
+    override
+    requireIsInitialized
+    returns (address) {
         return _createVault(_account);
     }
 
     function createVaultAndDepositIntoDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
-    ) external override returns (address) {
+    )
+    external
+    override
+    requireIsInitialized
+    returns (address) {
         address vault = _createVault(msg.sender);
         IWrappedTokenUserVaultV1(vault).depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
         return vault;
     }
 
-    function setUserVaultImplementation(address _userVaultImplementation) external override onlyOwner {
+    function setUserVaultImplementation(
+        address _userVaultImplementation
+    )
+    external
+    override
+    requireIsInitialized
+    onlyOwner {
         emit UserVaultImplementationSet(userVaultImplementation, _userVaultImplementation);
         userVaultImplementation = _userVaultImplementation;
     }
 
-    function setIsTokenUnwrapperTrusted(address _tokenUnwrapper, bool _isTrusted) external override onlyOwner {
+    function setIsTokenUnwrapperTrusted(
+        address _tokenUnwrapper,
+        bool _isTrusted
+    )
+    external
+    override
+    requireIsInitialized
+    onlyOwner {
         _setIsTokenUnwrapperTrusted(_tokenUnwrapper, _isTrusted);
     }
 
@@ -286,6 +310,10 @@ abstract contract WrappedTokenUserVaultFactory is
 
     function getAccountByVault(address _vault) external override view returns (address _account) {
         _account = vaultToUserMap[_vault];
+    }
+
+    function isIsolationAsset() external pure returns (bool) {
+        return true;
     }
 
     function name() public override virtual view returns (string memory) {

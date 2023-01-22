@@ -72,10 +72,6 @@ contract GLPWrappedTokenUserVault is WrappedTokenUserVaultV1 {
         );
     }
 
-    function VAULT_FACTORY() public override view returns (address) {
-        return _proxySelf().vaultFactory();
-    }
-
     function GLP_REWARDS_ROUTER() public view returns (IGLPRewardRouterV2) {
         return IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).glpRewardsRouter();
     }

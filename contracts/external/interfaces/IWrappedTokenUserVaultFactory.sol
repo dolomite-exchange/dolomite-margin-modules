@@ -36,6 +36,8 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
         bool isTrusted
     );
 
+    event Initialized();
+
     // ================================================
     // ================== Functions ===================
     // ================================================

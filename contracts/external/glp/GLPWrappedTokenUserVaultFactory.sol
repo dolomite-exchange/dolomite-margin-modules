@@ -63,10 +63,6 @@ contract GLPWrappedTokenUserVaultFactory is
         emit GlpRewardsRouterSet(_glpRewardsRouter);
     }
 
-    function isIsolationAsset() external pure returns (bool) {
-        return true;
-    }
-
     function allowablePositionMarketIds() external pure returns (uint256[] memory) {
         return new uint256[](0);
     }

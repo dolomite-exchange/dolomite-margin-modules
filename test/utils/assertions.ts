@@ -104,5 +104,10 @@ export async function expectEvent(
   eventName: string,
   args: object,
 ) {
-  await expect(contractTransaction).to.emit(contract, eventName).withArgs(...Object.values(args));
+  const argsArray = Object.values(args);
+  if (argsArray.length > 0) {
+    await expect(contractTransaction).to.emit(contract, eventName).withArgs(...argsArray);
+  } else {
+    await expect(contractTransaction).to.emit(contract, eventName);
+  }
 }

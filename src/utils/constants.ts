@@ -5,6 +5,8 @@ import * as LiquidatorProxyV2WithExternalLiquidityJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV2WithExternalLiquidity.json';
 import { BaseContract, BigNumberish } from 'ethers';
 import {
+  BorrowPositionProxyV2,
+  BorrowPositionProxyV2__factory,
   ERC20,
   ERC20__factory,
   IDolomiteAmmFactory,
@@ -90,6 +92,15 @@ export const LIQUIDATOR_PROXY_V2 = new BaseContract(
 ) as LiquidatorProxyV2WithExternalLiquidity;
 
 // ************************* External Addresses *************************
+
+const BORROW_POSITION_PROXY_V2_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x38E49A617305101216eC6306e3a18065D14Bf3a7',
+};
+
+export const BORROW_POSITION_PROXY_V2 = new BaseContract(
+  BORROW_POSITION_PROXY_V2_MAP[NETWORK_ID],
+  BorrowPositionProxyV2__factory.createInterface(),
+) as BorrowPositionProxyV2;
 
 const GLP_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0x4277f8F2c384827B5273592FF7CeBd9f2C1ac258',

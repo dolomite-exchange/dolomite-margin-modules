@@ -1,8 +1,14 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumberish } from 'ethers';
 import { ethers, network } from 'hardhat';
-import { IDolomiteAmmRouterProxy, IDolomiteMargin } from '../../src/types';
+import {
+  IDolomiteAmmRouterProxy,
+  IDolomiteMargin,
+  TestInterestSetter,
+  TestInterestSetter__factory, TestPriceOracle, TestPriceOracle__factory,
+} from '../../src/types';
 import { DOLOMITE_AMM_ROUTER, DOLOMITE_MARGIN, USDC, WETH } from '../../src/utils/constants';
+import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { impersonate, resetFork } from './index';
 
 /**
@@ -24,6 +30,8 @@ export interface CoreProtocol {
   governance: SignerWithAddress;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
+  testInterestSetter: TestInterestSetter;
+  testPriceOracle: TestPriceOracle;
   hhUser1: SignerWithAddress;
   hhUser2: SignerWithAddress;
   hhUser3: SignerWithAddress;
@@ -56,6 +64,18 @@ export async function setupCoreProtocol(
 
   const dolomiteMargin = DOLOMITE_MARGIN.connect(admin);
 
+  const testInterestSetter = await createContractWithAbi<TestInterestSetter>(
+    TestInterestSetter__factory.abi,
+    TestInterestSetter__factory.bytecode,
+    [],
+  );
+
+  const testPriceOracle = await createContractWithAbi<TestPriceOracle>(
+    TestPriceOracle__factory.abi,
+    TestPriceOracle__factory.bytecode,
+    [],
+  );
+
   const dolomiteAmmRouterProxy = DOLOMITE_AMM_ROUTER.connect(hhUser1);
 
   await setupWETHBalance(hhUser1, '1000000000000000000000', dolomiteMargin); // 1000 WETH
@@ -67,6 +87,8 @@ export async function setupCoreProtocol(
     dolomiteAmmRouterProxy,
     dolomiteMargin,
     governance: admin,
+    testInterestSetter,
+    testPriceOracle,
     hhUser1,
     hhUser2,
     hhUser3,

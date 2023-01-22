@@ -18,6 +18,8 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 
+import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+
 import { IWrappedTokenUserVaultProxy } from "../interfaces/IWrappedTokenUserVaultProxy.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
 
@@ -30,7 +32,8 @@ import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVa
  *          can be used with DolomiteMargin
  */
 contract WrappedTokenUserVaultProxy is
-    IWrappedTokenUserVaultProxy
+    IWrappedTokenUserVaultProxy,
+    ProxyContractHelpers
 {
 
     // ============ Constants ============
@@ -62,7 +65,7 @@ contract WrappedTokenUserVaultProxy is
 
     // solhint-disable-next-line payable-fallback
     fallback() external onlyOwner requireIsInitialized {
-        _callImplementation();
+        _callImplementation(implementation());
     }
 
     function initialize(
@@ -91,62 +94,5 @@ contract WrappedTokenUserVaultProxy is
 
     function owner() public override view returns (address) {
         return _getAddress(_OWNER_SLOT);
-    }
-
-    // ================ Internal Functions ==================
-
-    function _callImplementation() internal {
-        address _implementation = implementation();
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            // Copy msg.data. We take full control of memory in this inline assembly
-            // block because it will not return to Solidity code. We overwrite the
-            // Solidity scratch pad at memory position 0.
-            calldatacopy(0, 0, calldatasize())
-
-            // Call the implementation.
-            // out and outsize are 0 because we don't know the size yet.
-            let result := delegatecall(gas(), _implementation, 0, calldatasize(), 0, 0)
-
-            // Copy the returned data.
-            returndatacopy(0, 0, returndatasize())
-
-            switch result
-            // delegatecall returns 0 on error.
-            case 0 {
-                revert(0, returndatasize())
-            }
-            default {
-                return(0, returndatasize())
-            }
-        }
-    }
-
-    function _setAddress(bytes32 slot, address _value) internal {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            sstore(slot, _value)
-        }
-    }
-
-    function _setUint256(bytes32 slot, uint256 _value) internal {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            sstore(slot, _value)
-        }
-    }
-
-    function _getAddress(bytes32 slot) internal view returns (address value) {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            value := sload(slot)
-        }
-    }
-
-    function _getUint256(bytes32 slot) internal view returns (uint256 value) {
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            value := sload(slot)
-        }
     }
 }
