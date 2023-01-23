@@ -1,6 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumber, BigNumberish, BytesLike } from 'ethers';
 import { ethers } from 'hardhat';
+import { CustomTestToken, CustomTestToken__factory } from '../types';
 import { DOLOMITE_MARGIN } from './constants';
 
 /**
@@ -23,6 +24,13 @@ export async function createContractWithAbi<T extends BaseContract>(
   return await ContractFactory.deploy(...args) as T;
 }
 
+export async function createTestToken(): Promise<CustomTestToken> {
+  return createContractWithAbi<CustomTestToken>(
+    CustomTestToken__factory.abi,
+    CustomTestToken__factory.bytecode,
+    ['Test Token', 'TEST', 18],
+  );
+}
 export async function depositIntoDolomiteMargin(
   user: SignerWithAddress,
   accountId: BigNumberish,

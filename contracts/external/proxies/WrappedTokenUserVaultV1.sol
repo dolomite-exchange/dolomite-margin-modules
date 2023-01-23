@@ -68,7 +68,7 @@ abstract contract WrappedTokenUserVaultV1 is
         Require.that(
             _from == address(DOLOMITE_MARGIN()),
             _FILE,
-            "Only Dolomite can call function",
+            "Only Dolomite can call",
             _from
         );
         _;
@@ -78,7 +78,7 @@ abstract contract WrappedTokenUserVaultV1 is
         Require.that(
             _from == address(VAULT_FACTORY()),
             _FILE,
-            "Only factory can call function",
+            "Only factory can call",
             _from
         );
         _;
@@ -88,7 +88,7 @@ abstract contract WrappedTokenUserVaultV1 is
         Require.that(
             _from == address(_proxySelf().owner()),
             _FILE,
-            "Only owner can call function",
+            "Only owner can call",
             _from
         );
         _;
@@ -168,6 +168,19 @@ abstract contract WrappedTokenUserVaultV1 is
     )
     external
     onlyVaultOwner(msg.sender) {
+        Require.that(
+            _fromAccountNumber == 0,
+            _FILE,
+            "Invalid fromAccountNumber",
+            _fromAccountNumber
+        );
+        Require.that(
+            _toAccountNumber != 0,
+            _FILE,
+            "Invalid toAccountNumber",
+            _toAccountNumber
+        );
+
         BORROW_POSITION_PROXY().openBorrowPositionWithDifferentAccounts(
             /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
             _fromAccountNumber,
@@ -185,6 +198,19 @@ abstract contract WrappedTokenUserVaultV1 is
     )
     external
     onlyVaultOwner(msg.sender) {
+        Require.that(
+            _borrowAccountNumber != 0,
+            _FILE,
+            "Invalid borrowAccountNumber",
+            _borrowAccountNumber
+        );
+        Require.that(
+            _toAccountNumber == 0,
+            _FILE,
+            "Invalid toAccountNumber",
+            _toAccountNumber
+        );
+
         uint256[] memory collateralMarketIds = new uint256[](1);
         collateralMarketIds[0] = marketId();
 
@@ -230,6 +256,19 @@ abstract contract WrappedTokenUserVaultV1 is
     )
     external
     onlyVaultOwner(msg.sender) {
+        Require.that(
+            _fromAccountNumber == 0,
+            _FILE,
+            "Invalid fromAccountNumber",
+            _fromAccountNumber
+        );
+        Require.that(
+            _borrowAccountNumber != 0,
+            _FILE,
+            "Invalid borrowAccountNumber",
+            _borrowAccountNumber
+        );
+
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
             /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
             _fromAccountNumber,
@@ -249,8 +288,7 @@ abstract contract WrappedTokenUserVaultV1 is
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
-    onlyVaultOwner(msg.sender)
-    onlyAllowableDebtMarket(_marketId) {
+    onlyVaultOwner(msg.sender) {
         Require.that(
             _marketId != marketId(),
             _FILE,
@@ -275,6 +313,19 @@ abstract contract WrappedTokenUserVaultV1 is
     )
     external
     onlyVaultOwner(msg.sender) {
+        Require.that(
+            _borrowAccountNumber != 0,
+            _FILE,
+            "Invalid borrowAccountNumber",
+            _borrowAccountNumber
+        );
+        Require.that(
+            _toAccountNumber == 0,
+            _FILE,
+            "Invalid toAccountNumber",
+            _toAccountNumber
+        );
+
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
             /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
             _borrowAccountNumber,

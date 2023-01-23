@@ -71,6 +71,12 @@ contract WrappedTokenUserVaultProxy is
             _FILE,
             "Already initialized"
         );
+        Require.that(
+            IWrappedTokenUserVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this),
+            _FILE,
+            "Invalid account",
+            _account
+        );
         _setUint256(_IS_INITIALIZED_SLOT, 1);
         _setAddress(_OWNER_SLOT, _account);
     }

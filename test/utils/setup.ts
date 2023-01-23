@@ -118,3 +118,19 @@ export async function setupCoreProtocol(
     },
   };
 }
+
+export async function setupTestMarket(
+  core: CoreProtocol,
+  token: { address: address },
+) {
+  await core.dolomiteMargin.connect(core.governance).ownerAddMarket(
+    token.address,
+    core.testPriceOracle.address,
+    core.testInterestSetter.address,
+    { value: 0 },
+    { value: 0 },
+    0,
+    true,
+    false,
+  );
+}

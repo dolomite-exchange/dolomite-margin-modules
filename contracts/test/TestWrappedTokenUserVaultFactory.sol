@@ -14,7 +14,12 @@
 
 pragma solidity ^0.8.9;
 
+import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
+
+import { IWrappedTokenUserVaultProxy } from  "../external/interfaces/IWrappedTokenUserVaultProxy.sol";
+
 import { WrappedTokenUserVaultFactory } from  "../external/proxies/WrappedTokenUserVaultFactory.sol";
+import { WrappedTokenUserVaultProxy } from  "../external/proxies/WrappedTokenUserVaultProxy.sol";
 
 
 contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
@@ -35,14 +40,6 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
         // solhint-disable-previous-line no-empty-blocks
     }
 
-    function setAllowablePositionMarketIds(uint256[] memory __allowablePositionMarketIds) external {
-        _allowablePositionMarketIds = __allowablePositionMarketIds;
-    }
-
-    function allowablePositionMarketIds() external view override returns (uint256[] memory) {
-        return _allowablePositionMarketIds;
-    }
-
     function enqueueTransfer(
         address _from,
         address _to,
@@ -55,5 +52,42 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
             amount: _amount,
             vault: _vault
         });
+    }
+
+    function createVaultNoInitialize(
+        address _account
+    ) external {
+        // Deploys the contract without calling #initialize
+        address vault = Create2.deploy(
+            /* amount = */ 0, // solium-disable-line indentation
+            keccak256(abi.encodePacked(_account)),
+            type(WrappedTokenUserVaultProxy).creationCode
+        );
+
+        _vaultToUserMap[vault] = _account;
+        _userToVaultMap[_account] = vault;
+    }
+
+    function createVaultWithDifferentAccount(
+        address _account1,
+        address _account2
+    ) external {
+        address vault = Create2.deploy(
+            /* amount = */ 0, // solium-disable-line indentation
+            keccak256(abi.encodePacked(_account1)),
+            type(WrappedTokenUserVaultProxy).creationCode
+        );
+
+        _vaultToUserMap[vault] = _account1;
+        _userToVaultMap[_account1] = vault;
+        IWrappedTokenUserVaultProxy(vault).initialize(_account2);
+    }
+
+    function setAllowablePositionMarketIds(uint256[] memory __allowablePositionMarketIds) external {
+        _allowablePositionMarketIds = __allowablePositionMarketIds;
+    }
+
+    function allowablePositionMarketIds() external view override returns (uint256[] memory) {
+        return _allowablePositionMarketIds;
     }
 }

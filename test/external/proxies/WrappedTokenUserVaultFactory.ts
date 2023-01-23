@@ -1,13 +1,10 @@
-import { address } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BaseContract, BigNumber, BigNumberish, CallOverrides, ContractTransaction, ethers } from 'ethers';
+import { BaseContract, BigNumber, ContractTransaction, ethers } from 'ethers';
 import {
   CustomTestToken,
-  CustomTestToken__factory,
-  GLPUnwrapperProxyV1__factory,
-  ILiquidityTokenUnwrapperForLiquidation,
+  GLPUnwrapperProxyV1,
   TestWrappedTokenUserVaultFactory,
   TestWrappedTokenUserVaultFactory__factory,
   TestWrappedTokenUserVaultV1__factory,
@@ -16,20 +13,19 @@ import {
   WrappedTokenUserVaultV1,
   WrappedTokenUserVaultV1__factory,
 } from '../../../src/types';
-import {
-  BORROW_POSITION_PROXY_V2,
-  DOLOMITE_MARGIN,
-  GLP,
-  GLP_MANAGER,
-  GLP_REWARD_ROUTER,
-  GMX_VAULT,
-  USDC,
-  ZERO_BI,
-} from '../../../src/utils/constants';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { BORROW_POSITION_PROXY_V2, DOLOMITE_MARGIN, ZERO_BI } from '../../../src/utils/constants';
+import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectThrow } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupUserVaultProxy } from '../../utils/setup';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectThrow,
+  expectTotalSupply,
+  expectWalletAllowance,
+  expectWalletBalance,
+} from '../../utils/assertions';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
+import { createGlpUnwrapperProxy, createWrappedTokenFactory } from './wrapped-token-utils';
 
 const toAccountNumber = '0';
 const amountWei = BigNumber.from('2000000000000000000');
@@ -40,7 +36,7 @@ describe('WrappedTokenUserVaultFactory', () => {
   let core: CoreProtocol;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
-  let tokenUnwrapper: ILiquidityTokenUnwrapperForLiquidation;
+  let tokenUnwrapper: GLPUnwrapperProxyV1;
   let wrappedTokenFactory: TestWrappedTokenUserVaultFactory;
   let userVaultImplementation: BaseContract;
   let initializeResult: ContractTransaction;
@@ -51,56 +47,22 @@ describe('WrappedTokenUserVaultFactory', () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
     });
-    underlyingToken = await createContractWithAbi<CustomTestToken>(
-      CustomTestToken__factory.abi,
-      CustomTestToken__factory.bytecode,
-      ['Test Token', 'TEST', 18],
-    );
+    underlyingToken = await createTestToken();
     userVaultImplementation = await createContractWithAbi(
       TestWrappedTokenUserVaultV1__factory.abi,
       TestWrappedTokenUserVaultV1__factory.bytecode,
       [],
     );
-    wrappedTokenFactory = await createContractWithAbi<TestWrappedTokenUserVaultFactory>(
-      TestWrappedTokenUserVaultFactory__factory.abi,
-      TestWrappedTokenUserVaultFactory__factory.bytecode,
-      [
-        underlyingToken.address,
-        BORROW_POSITION_PROXY_V2.address,
-        userVaultImplementation.address,
-        DOLOMITE_MARGIN.address,
-      ],
-    );
+    wrappedTokenFactory = await createWrappedTokenFactory(underlyingToken, userVaultImplementation);
     await core.testPriceOracle.setPrice(
       wrappedTokenFactory.address,
       '1000000000000000000', // $1.00
     );
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await core.dolomiteMargin.connect(core.governance).ownerAddMarket(
-      wrappedTokenFactory.address,
-      core.testPriceOracle.address,
-      core.testInterestSetter.address,
-      { value: 0 },
-      { value: 0 },
-      0,
-      true,
-      false,
-    );
+    await setupTestMarket(core, wrappedTokenFactory);
 
-    tokenUnwrapper = await createContractWithAbi<ILiquidityTokenUnwrapperForLiquidation>(
-      GLPUnwrapperProxyV1__factory.abi,
-      GLPUnwrapperProxyV1__factory.bytecode,
-      [
-        USDC.address,
-        GLP_MANAGER.address,
-        GLP_REWARD_ROUTER.address,
-        GMX_VAULT.address,
-        GLP.address,
-        wrappedTokenFactory.address,
-        core.dolomiteMargin.address,
-      ],
-    );
+    tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory);
     initializeResult = await wrappedTokenFactory.initialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrappedTokenFactory.address, true);
 
@@ -143,48 +105,6 @@ describe('WrappedTokenUserVaultFactory', () => {
     );
     expect(await vaultContract.isInitialized()).to.eq(true);
     expect(await vaultContract.owner()).to.eq(core.hhUser1.address);
-  }
-
-  async function expectProtocolBalance(
-    accountOwner: { address: address } | address,
-    accountNumber: BigNumberish,
-    marketId: BigNumberish,
-    amountWei: BigNumberish,
-  ) {
-    const account = {
-      owner: typeof accountOwner === 'object' ? accountOwner.address : accountOwner,
-      number: accountNumber,
-    };
-    const rawBalanceWei = await core.dolomiteMargin.getAccountWei(account, marketId);
-    const balanceWei = rawBalanceWei.sign ? rawBalanceWei.value : rawBalanceWei.value.mul(-1);
-    expect(balanceWei).eq(amountWei);
-  }
-
-  async function expectWalletBalance(
-    accountOwner: { address: address } | address,
-    token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber> },
-    amount: BigNumberish,
-  ) {
-    const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
-    expect(await token.balanceOf(owner)).eq(amount);
-  }
-
-  async function expectWalletAllowance(
-    accountOwner: { address: address } | address,
-    accountSpender: { address: address } | address,
-    token: { allowance(owner: string, spender: string, overrides?: CallOverrides): Promise<BigNumber> },
-    amount: BigNumberish,
-  ) {
-    const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
-    const spender = typeof accountSpender === 'object' ? accountSpender.address : accountSpender;
-    expect(await token.allowance(owner, spender)).eq(amount);
-  }
-
-  async function expectTotalSupply(
-    token: { totalSupply(overrides?: CallOverrides): Promise<BigNumber> },
-    amount: BigNumberish,
-  ) {
-    expect(await token.totalSupply()).eq(amount);
   }
 
   describe('#initialize', () => {
@@ -280,8 +200,8 @@ describe('WrappedTokenUserVaultFactory', () => {
         amountWei,
       );
       await checkVaultCreationResults(result);
-      await expectProtocolBalance(core.hhUser1.address, toAccountNumber, underlyingMarketId, ZERO_BI);
-      await expectProtocolBalance(vaultAddress, toAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, core.hhUser1.address, toAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, toAccountNumber, underlyingMarketId, amountWei);
       await expectWalletBalance(core.dolomiteMargin.address, wrappedTokenFactory, amountWei);
     });
 
@@ -411,8 +331,8 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
       await vault.depositIntoVaultForDolomiteMargin(toAccountNumber, amountWei);
 
-      await expectProtocolBalance(core.hhUser1.address, toAccountNumber, underlyingMarketId, ZERO_BI);
-      await expectProtocolBalance(vaultAddress, toAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, core.hhUser1.address, toAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, toAccountNumber, underlyingMarketId, amountWei);
 
       await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
       await expectWalletBalance(vaultAddress, underlyingToken, amountWei);
@@ -471,8 +391,8 @@ describe('WrappedTokenUserVaultFactory', () => {
 
       await vault.withdrawFromVaultForDolomiteMargin(toAccountNumber, amountWei);
 
-      await expectProtocolBalance(core.hhUser1.address, toAccountNumber, underlyingMarketId, ZERO_BI);
-      await expectProtocolBalance(vaultAddress, toAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1.address, toAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, toAccountNumber, underlyingMarketId, ZERO_BI);
 
       await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
       await expectWalletBalance(vaultAddress, underlyingToken, ZERO_BI);

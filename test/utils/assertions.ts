@@ -1,6 +1,6 @@
 import { address } from '@dolomite-margin/dist/src';
 import { assert, expect } from 'chai';
-import { BaseContract, BigNumber, BigNumberish, ContractTransaction } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, CallOverrides, ContractTransaction } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { ERC20, ERC20__factory } from '../../src/types';
 import { AccountStruct } from '../../src/utils/constants';
@@ -110,4 +110,47 @@ export async function expectEvent(
   } else {
     await expect(contractTransaction).to.emit(contract, eventName);
   }
+}
+
+export async function expectProtocolBalance(
+  core: CoreProtocol,
+  accountOwner: { address: address } | address,
+  accountNumber: BigNumberish,
+  marketId: BigNumberish,
+  amountWei: BigNumberish,
+) {
+  const account = {
+    owner: typeof accountOwner === 'object' ? accountOwner.address : accountOwner,
+    number: accountNumber,
+  };
+  const rawBalanceWei = await core.dolomiteMargin.getAccountWei(account, marketId);
+  const balanceWei = rawBalanceWei.sign ? rawBalanceWei.value : rawBalanceWei.value.mul(-1);
+  expect(balanceWei).eq(amountWei);
+}
+
+export async function expectWalletBalance(
+  accountOwner: { address: address } | address,
+  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber> },
+  amount: BigNumberish,
+) {
+  const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
+  expect(await token.balanceOf(owner)).eq(amount);
+}
+
+export async function expectWalletAllowance(
+  accountOwner: { address: address } | address,
+  accountSpender: { address: address } | address,
+  token: { allowance(owner: string, spender: string, overrides?: CallOverrides): Promise<BigNumber> },
+  amount: BigNumberish,
+) {
+  const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
+  const spender = typeof accountSpender === 'object' ? accountSpender.address : accountSpender;
+  expect(await token.allowance(owner, spender)).eq(amount);
+}
+
+export async function expectTotalSupply(
+  token: { totalSupply(overrides?: CallOverrides): Promise<BigNumber> },
+  amount: BigNumberish,
+) {
+  expect(await token.totalSupply()).eq(amount);
 }
