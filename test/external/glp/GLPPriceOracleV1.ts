@@ -34,7 +34,7 @@ describe('GLPPriceOracleV1', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under the correct conditions for dsGLP', async () => {
-      const gsGlp = await glpPriceOracle.dsGlp();
+      const gsGlp = await glpPriceOracle.DS_GLP();
       const price = await glpPriceOracle.getPrice(gsGlp);
       expect(price.value).to.eq(GLP_PRICE);
     });
@@ -49,7 +49,7 @@ describe('GLPPriceOracleV1', () => {
         'GLPPriceOracleV1: invalid token',
       );
       await expectThrow(
-        glpPriceOracle.getPrice(await glpPriceOracle.glp()),
+        glpPriceOracle.getPrice(await glpPriceOracle.GLP()),
         'GLPPriceOracleV1: invalid token',
       );
     });

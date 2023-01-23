@@ -1,11 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import {
-  BaseContract, BigNumber, BigNumberish, BytesLike,
-} from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, BytesLike } from 'ethers';
 import { ethers } from 'hardhat';
-import {
-  DOLOMITE_MARGIN,
-} from './constants';
+import { DOLOMITE_MARGIN } from './constants';
 
 /**
  * @return  The deployed contract
@@ -37,23 +33,23 @@ export async function depositIntoDolomiteMargin(
     .connect(user)
     .operate(
       [{ owner: user.address, number: accountId }],
-      [
-        {
-          actionType: '0', // deposit
-          accountId: '0', // accounts[0]
-          amount: {
-            sign: true, // positive
-            denomination: '0', // wei
-            ref: '0', // value
-            value: amount,
-          },
-          primaryMarketId: tokenId,
-          secondaryMarketId: 0,
-          otherAddress: user.address,
-          otherAccountId: 0,
-          data: '0x',
+    [
+      {
+        actionType: '0', // deposit
+        accountId: '0', // accounts[0]
+        amount: {
+          sign: true, // positive
+          denomination: '0', // wei
+          ref: '0', // value
+          value: amount,
         },
-      ],
+        primaryMarketId: tokenId,
+        secondaryMarketId: 0,
+        otherAddress: user.address,
+        otherAccountId: 0,
+        data: '0x',
+      },
+    ],
     );
 }
 
@@ -67,23 +63,23 @@ export async function withdrawFromDolomiteMargin(
     .connect(user)
     .operate(
       [{ owner: user.address, number: accountId }],
-      [
-        {
-          actionType: '1', // deposit
-          accountId: '0', // accounts[0]
-          amount: {
-            sign: false, // positive
-            denomination: '0', // wei
-            ref: '0', // value
-            value: amount,
-          },
-          primaryMarketId: tokenId,
-          secondaryMarketId: 0,
-          otherAddress: user.address,
-          otherAccountId: 0,
-          data: '0x',
+    [
+      {
+        actionType: '1', // deposit
+        accountId: '0', // accounts[0]
+        amount: {
+          sign: false, // positive
+          denomination: '0', // wei
+          ref: '0', // value
+          value: amount,
         },
-      ],
+        primaryMarketId: tokenId,
+        secondaryMarketId: 0,
+        otherAddress: user.address,
+        otherAccountId: 0,
+        data: '0x',
+      },
+    ],
     );
 }
 

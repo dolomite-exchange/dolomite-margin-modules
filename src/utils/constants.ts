@@ -3,7 +3,7 @@ import * as DolomiteAmmRouterProxyJson from '@dolomite-margin/deployed-contracts
 import * as DolomiteMarginJson from '@dolomite-margin/deployed-contracts/DolomiteMargin.json';
 import * as LiquidatorProxyV2WithExternalLiquidityJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV2WithExternalLiquidity.json';
-import { BaseContract, BigNumberish } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish } from 'ethers';
 import {
   BorrowPositionProxyV2,
   BorrowPositionProxyV2__factory,
@@ -14,9 +14,12 @@ import {
   IDolomiteAmmRouterProxy,
   IDolomiteAmmRouterProxy__factory,
   IDolomiteMargin,
-  IDolomiteMargin__factory, IERC20, IERC20__factory,
+  IDolomiteMargin__factory,
+  IERC20,
+  IERC20__factory,
   IGLPManager,
-  IGLPManager__factory, IGLPRewardRouterV2,
+  IGLPManager__factory,
+  IGLPRewardRouterV2,
   IGLPRewardRouterV2__factory,
   IGMXVault,
   IGMXVault__factory,
@@ -29,9 +32,11 @@ import { Network, NETWORK_ID } from './no-deps-constants';
 
 export const BYTES_EMPTY = '0x';
 
+export const ZERO_BI = BigNumber.from('0');
+
 export interface AccountStruct {
-  owner: string,
-  number: BigNumberish
+  owner: string;
+  number: BigNumberish;
 }
 
 // ************************* External Contract Addresses *************************

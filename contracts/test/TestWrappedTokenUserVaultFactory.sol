@@ -42,4 +42,18 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
     function allowablePositionMarketIds() external view override returns (uint256[] memory) {
         return _allowablePositionMarketIds;
     }
+
+    function enqueueTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        address _vault
+    ) external {
+        _cursorToQueuedTransferMap[transferCursor] = QueuedTransfer({
+            from: _from,
+            to: _to,
+            amount: _amount,
+            vault: _vault
+        });
+    }
 }

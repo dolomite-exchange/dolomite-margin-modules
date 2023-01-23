@@ -59,9 +59,9 @@ export async function revertToSnapshotAndCapture(snapshotId: string): Promise<st
       params: [snapshotId],
     });
     return snapshot();
-  } else {
-    return id;
   }
+
+  return id;
 }
 
 export async function setEtherBalance(address: string, balance: BigNumberish = '1000000000000000000') {

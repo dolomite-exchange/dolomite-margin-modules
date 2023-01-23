@@ -22,6 +22,17 @@ import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
 
 interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
 
+    // =================================================
+    // ==================== Structs ====================
+    // =================================================
+
+    struct QueuedTransfer {
+        address from;
+        address to;
+        uint256 amount;
+        address vault;
+    }
+
     // ================================================
     // ==================== Events ====================
     // ================================================
@@ -31,10 +42,9 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
         address indexed newUserVaultImplementation
     );
 
-    event TokenUnwrapperSet(
-        address indexed tokenUnwrapper,
-        bool isTrusted
-    );
+    event TokenUnwrapperSet(address indexed tokenUnwrapper, bool isTrusted);
+
+    event VaultCreated(address indexed account, address vault);
 
     event Initialized();
 
@@ -144,6 +154,12 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
      * @return  This function should always return `true`. It's used by The Graph to index this contract as a Wrapper.
      */
     function isIsolationAsset() external view returns (bool);
+
+    /**
+     * @param _transferCursor   The position of the transfer in the queue
+     * @return The transfer enqueued at the position of `_transferCursor`
+     */
+    function getQueuedTransferByCursor(uint256 _transferCursor) external view returns (QueuedTransfer memory);
 
     /**
      * @return  The market IDs of the assets that can be used in a position with this wrapped asset. An empty array

@@ -1,13 +1,19 @@
+import { address } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { BigNumberish } from 'ethers';
+import { BaseContract, BigNumberish, ContractInterface } from 'ethers';
 import { ethers, network } from 'hardhat';
 import {
+  BorrowPositionProxyV2,
   IDolomiteAmmRouterProxy,
   IDolomiteMargin,
   TestInterestSetter,
-  TestInterestSetter__factory, TestPriceOracle, TestPriceOracle__factory,
+  TestInterestSetter__factory,
+  TestPriceOracle,
+  TestPriceOracle__factory,
+  WrappedTokenUserVaultProxy,
+  WrappedTokenUserVaultProxy__factory,
 } from '../../src/types';
-import { DOLOMITE_AMM_ROUTER, DOLOMITE_MARGIN, USDC, WETH } from '../../src/utils/constants';
+import { BORROW_POSITION_PROXY_V2, DOLOMITE_AMM_ROUTER, DOLOMITE_MARGIN, USDC, WETH } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { impersonate, resetFork } from './index';
 
@@ -28,6 +34,7 @@ export interface CoreProtocolConfig {
 export interface CoreProtocol {
   config: CoreProtocolConfig;
   governance: SignerWithAddress;
+  borrowPositionProxyV2: BorrowPositionProxyV2;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
   testInterestSetter: TestInterestSetter;
@@ -50,6 +57,18 @@ export async function setupUSDCBalance(signer: SignerWithAddress, amount: BigNum
   await USDC.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export function setupUserVaultProxy<T extends BaseContract>(
+  vault: address,
+  factory: { abi: ContractInterface },
+  signer?: SignerWithAddress,
+): T {
+  return new BaseContract(
+    vault,
+    factory.abi,
+    signer,
+  ) as T;
+}
+
 export async function setupCoreProtocol(
   config: CoreProtocolSetupConfig,
 ): Promise<CoreProtocol> {
@@ -60,9 +79,11 @@ export async function setupCoreProtocol(
   }
 
   const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await ethers.getSigners();
-  const admin: SignerWithAddress = await impersonate(await DOLOMITE_MARGIN.connect(hhUser1).owner(), true);
+  const governance: SignerWithAddress = await impersonate(await DOLOMITE_MARGIN.connect(hhUser1).owner(), true);
 
-  const dolomiteMargin = DOLOMITE_MARGIN.connect(admin);
+  const dolomiteMargin = DOLOMITE_MARGIN.connect(governance);
+
+  const borrowPositionProxyV2 = BORROW_POSITION_PROXY_V2.connect(governance);
 
   const testInterestSetter = await createContractWithAbi<TestInterestSetter>(
     TestInterestSetter__factory.abi,
@@ -81,18 +102,19 @@ export async function setupCoreProtocol(
   await setupWETHBalance(hhUser1, '1000000000000000000000', dolomiteMargin); // 1000 WETH
 
   return {
-    config: {
-      blockNumber: config.blockNumber,
-    },
+    borrowPositionProxyV2,
     dolomiteAmmRouterProxy,
     dolomiteMargin,
-    governance: admin,
     testInterestSetter,
     testPriceOracle,
+    governance,
     hhUser1,
     hhUser2,
     hhUser3,
     hhUser4,
     hhUser5,
+    config: {
+      blockNumber: config.blockNumber,
+    },
   };
 }

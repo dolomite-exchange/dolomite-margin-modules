@@ -45,11 +45,6 @@ contract WrappedTokenUserVaultProxy is
 
     // ======== Modifiers =========
 
-    modifier onlyOwner() {
-        Require.that(msg.sender == owner(), _FILE, "Caller is not the owner");
-        _;
-    }
-
     modifier requireIsInitialized() {
         Require.that(isInitialized(), _FILE, "Not initialized");
         _;
@@ -64,7 +59,7 @@ contract WrappedTokenUserVaultProxy is
     // ============ Functions ============
 
     // solhint-disable-next-line payable-fallback
-    fallback() external onlyOwner requireIsInitialized {
+    fallback() external requireIsInitialized {
         _callImplementation(implementation());
     }
 

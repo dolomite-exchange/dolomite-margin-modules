@@ -1,0 +1,36 @@
+{
+  "extends": [
+    "tslint-config-airbnb"
+  ],
+  "linterOptions": {
+    "exclude": [
+      "src/types/**/*"
+    ]
+  },
+  "rules": {
+    "import-name": false,
+    "variable-name": [
+      true,
+      "allow-pascal-case",
+      "ban-keywords"
+    ],
+    "trailing-comma": true,
+    "max-line-length": [
+      true,
+      {
+        "limit": 120
+      }
+    ],
+    "ter-arrow-parens": false,
+    "ter-indent": [
+      true,
+      2,
+      {
+        "SwitchCase": 1
+      }
+    ],
+    "prefer-array-literal": false,
+    "align": false,
+    "no-increment-decrement": false
+  }
+}
