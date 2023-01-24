@@ -10,8 +10,8 @@ import {
   TestWrappedTokenUserVaultV1__factory,
   WrappedTokenUserVaultV1,
 } from '../../../src/types';
-import { USDC_MARKET_ID, WETH_MARKET_ID, ZERO_BI } from '../../../src/utils/constants';
-import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
+import { WETH_MARKET_ID, ZERO_BI } from '../../../src/utils/constants';
+import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
@@ -19,7 +19,7 @@ import { createGlpUnwrapperProxy, createWrappedTokenFactory } from './wrapped-to
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
-const amountWei = BigNumber.from('2000000000000000000');
+const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 
 describe('WrappedTokenUserVaultV1', () => {
@@ -34,6 +34,7 @@ describe('WrappedTokenUserVaultV1', () => {
   let userVault: TestWrappedTokenUserVaultV1;
 
   let solidAccount: SignerWithAddress;
+  let otherToken: CustomTestToken;
   let otherMarketId: BigNumber;
 
   before(async () => {
@@ -53,7 +54,7 @@ describe('WrappedTokenUserVaultV1', () => {
     );
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, wrappedTokenFactory);
+    await setupTestMarket(core, wrappedTokenFactory, true);
 
     tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory);
     await wrappedTokenFactory.initialize([tokenUnwrapper.address]);
@@ -63,16 +64,26 @@ describe('WrappedTokenUserVaultV1', () => {
 
     await wrappedTokenFactory.createVault(core.hhUser1.address);
     const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
-    userVault = await setupUserVaultProxy<TestWrappedTokenUserVaultV1>(
+    userVault = setupUserVaultProxy<TestWrappedTokenUserVaultV1>(
       vaultAddress,
       TestWrappedTokenUserVaultV1__factory,
       core.hhUser1,
     );
 
+    otherToken = await createTestToken();
+    await core.testPriceOracle.setPrice(
+      otherToken.address,
+      '1000000000000000000000000000000', // $1.00 in USDC
+    );
+    otherMarketId = await core.dolomiteMargin.getNumMarkets();
+    await setupTestMarket(core, otherToken, false);
+
     await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
     await underlyingToken.connect(core.hhUser1).approve(vaultAddress, amountWei);
 
-    otherMarketId = BigNumber.from(USDC_MARKET_ID);
+    await otherToken.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
+    await otherToken.connect(core.hhUser1).approve(core.dolomiteMargin.address, otherAmountWei);
+    await depositIntoDolomiteMargin(core.hhUser1, defaultAccountNumber, otherMarketId, otherAmountWei);
 
     snapshotId = await snapshot();
   });
@@ -197,6 +208,17 @@ describe('WrappedTokenUserVaultV1', () => {
   });
 
   describe('#closeBorrowPositionWithUnderlyingVaultToken', () => {
+    it('should work normally', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await userVault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+    });
+
     it('should fail when not called by owner', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2)
@@ -221,6 +243,35 @@ describe('WrappedTokenUserVaultV1', () => {
   });
 
   describe('#closeBorrowPositionWithOtherTokens', () => {
+    it('should work normally', async () => {
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+      await userVault.closeBorrowPositionWithOtherTokens(borrowAccountNumber, defaultAccountNumber, [otherMarketId]);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId, ZERO_BI);
+    });
+
+    it('should not work when underlying is requested to be withdrawn', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await expectThrow(
+        userVault.closeBorrowPositionWithOtherTokens(
+          borrowAccountNumber,
+          defaultAccountNumber,
+          [underlyingMarketId],
+        ),
+        `WrappedTokenUserVaultV1: Cannot withdraw market to wallet <${underlyingMarketId.toString()}>`,
+      );
+    });
+
     it('should fail when not called by owner', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).closeBorrowPositionWithOtherTokens(
@@ -234,6 +285,16 @@ describe('WrappedTokenUserVaultV1', () => {
   });
 
   describe('#transferIntoPositionWithUnderlyingToken', () => {
+    it('should work normally', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, amountWei);
+    });
+
     it('should fail when not called by owner', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2)
@@ -258,6 +319,21 @@ describe('WrappedTokenUserVaultV1', () => {
   });
 
   describe('#transferIntoPositionWithOtherToken', () => {
+    it('should work normally', async () => {
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId, otherAmountWei);
+    });
+
     it('should fail when not called by owner', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).transferIntoPositionWithOtherToken(
@@ -270,9 +346,33 @@ describe('WrappedTokenUserVaultV1', () => {
         `WrappedTokenUserVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail when not underlying token is used as transfer token', async () => {
+      await expectThrow(
+        userVault.transferIntoPositionWithOtherToken(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          underlyingMarketId,
+          amountWei,
+          BalanceCheckFlag.Both,
+        ),
+        `WrappedTokenUserVaultV1: Invalid marketId <${underlyingMarketId.toString()}>`,
+      );
+    });
   });
 
   describe('#transferFromPositionWithUnderlyingToken', () => {
+    it('should work normally', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await userVault.transferFromPositionWithUnderlyingToken(borrowAccountNumber, defaultAccountNumber, amountWei);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+    });
+
     it('should fail when not called by owner', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2)
@@ -299,25 +399,27 @@ describe('WrappedTokenUserVaultV1', () => {
   describe('#transferFromPositionWithOtherToken', () => {
     it('should work when no allowable debt market is set (all are allowed then)', async () => {
       await wrappedTokenFactory.setAllowablePositionMarketIds([]);
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await userVault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
         otherMarketId,
         otherAmountWei,
-        BalanceCheckFlag.Both,
+        BalanceCheckFlag.To,
       );
     });
 
     it('should work when 1 allowable debt market is set', async () => {
       await wrappedTokenFactory.setAllowablePositionMarketIds([otherMarketId]);
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await userVault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
         otherMarketId,
         otherAmountWei,
-        BalanceCheckFlag.Both,
+        BalanceCheckFlag.To,
       );
     });
 
@@ -331,6 +433,19 @@ describe('WrappedTokenUserVaultV1', () => {
           BalanceCheckFlag.Both,
         ),
         `WrappedTokenUserVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when not underlying market is used', async () => {
+      await expectThrow(
+        userVault.transferFromPositionWithOtherToken(
+          borrowAccountNumber,
+          defaultAccountNumber,
+          underlyingMarketId,
+          amountWei,
+          BalanceCheckFlag.Both,
+        ),
+        `WrappedTokenUserVaultV1: Invalid marketId <${underlyingMarketId.toString()}>`,
       );
     });
 
@@ -350,6 +465,34 @@ describe('WrappedTokenUserVaultV1', () => {
   });
 
   describe('#repayAllForBorrowPosition', () => {
+    it('should work normally', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId,
+        otherAmountWei.div(2),
+        BalanceCheckFlag.To,
+      );
+      await userVault.repayAllForBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, amountWei);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId, ZERO_BI);
+    });
+
     it('should fail when not called by owner', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).repayAllForBorrowPosition(
@@ -359,6 +502,18 @@ describe('WrappedTokenUserVaultV1', () => {
           BalanceCheckFlag.Both,
         ),
         `WrappedTokenUserVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when underlying market is repaid', async () => {
+      await expectThrow(
+        userVault.repayAllForBorrowPosition(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          underlyingMarketId,
+          BalanceCheckFlag.Both,
+        ),
+        `WrappedTokenUserVaultV1: Invalid marketId <${underlyingMarketId.toString()}>`,
       );
     });
   });

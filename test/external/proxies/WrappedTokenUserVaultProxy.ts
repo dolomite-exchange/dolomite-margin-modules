@@ -38,7 +38,7 @@ describe('WrappedTokenUserVaultProxy', () => {
       '1000000000000000000', // $1.00
     );
 
-    await setupTestMarket(core, wrappedTokenFactory);
+    await setupTestMarket(core, wrappedTokenFactory, true);
 
     const tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory);
     await wrappedTokenFactory.initialize([tokenUnwrapper.address]);

@@ -122,6 +122,7 @@ export async function setupCoreProtocol(
 export async function setupTestMarket(
   core: CoreProtocol,
   token: { address: address },
+  isClosing: boolean,
 ) {
   await core.dolomiteMargin.connect(core.governance).ownerAddMarket(
     token.address,
@@ -130,7 +131,7 @@ export async function setupTestMarket(
     { value: 0 },
     { value: 0 },
     0,
-    true,
+    isClosing,
     false,
   );
 }

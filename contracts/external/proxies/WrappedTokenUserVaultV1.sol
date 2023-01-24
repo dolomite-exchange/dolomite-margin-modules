@@ -292,7 +292,8 @@ abstract contract WrappedTokenUserVaultV1 is
         Require.that(
             _marketId != marketId(),
             _FILE,
-            "Invalid marketId"
+            "Invalid marketId",
+            _marketId
         );
 
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
@@ -376,7 +377,8 @@ abstract contract WrappedTokenUserVaultV1 is
         Require.that(
             _marketId != marketId(),
             _FILE,
-            "Invalid marketId"
+            "Invalid marketId",
+            _marketId
         );
         BORROW_POSITION_PROXY().repayAllForBorrowPositionWithDifferentAccounts(
             /* _fromAccountOwner = */ msg.sender, // solium-disable-line indentation

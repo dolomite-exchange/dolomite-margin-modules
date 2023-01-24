@@ -60,7 +60,7 @@ describe('WrappedTokenUserVaultFactory', () => {
     );
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, wrappedTokenFactory);
+    await setupTestMarket(core, wrappedTokenFactory, true);
 
     tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory);
     initializeResult = await wrappedTokenFactory.initialize([tokenUnwrapper.address]);
