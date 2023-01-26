@@ -58,7 +58,7 @@ abstract contract WrappedTokenUserVaultV1 is
     // =================================================
 
     uint256 public transferCursor;
-    mapping(uint256 => uint256) public cursorToQueuedTransferAmountMap;
+    mapping(uint256 => uint256) internal _cursorToQueuedTransferAmountMap;
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -410,11 +410,11 @@ abstract contract WrappedTokenUserVaultV1 is
     onlyDolomiteMargin(msg.sender) {
         if (_heldMarketId == marketId()) {
             Require.that(
-                cursorToQueuedTransferAmountMap[transferCursor] == 0,
+                _cursorToQueuedTransferAmountMap[transferCursor] == 0,
                 _FILE,
                 "A transfer is already queued"
             );
-            cursorToQueuedTransferAmountMap[transferCursor] = _heldDeltaWei.value;
+            _cursorToQueuedTransferAmountMap[transferCursor] = _heldDeltaWei.value;
         }
     }
 
@@ -449,7 +449,7 @@ abstract contract WrappedTokenUserVaultV1 is
             "Invalid recipient"
         );
 
-        uint256 transferAmount = cursorToQueuedTransferAmountMap[transferCursor++];
+        uint256 transferAmount = _cursorToQueuedTransferAmountMap[transferCursor++];
         Require.that(
             transferAmount > 0,
             _FILE,
@@ -488,6 +488,10 @@ abstract contract WrappedTokenUserVaultV1 is
 
     function marketId() public view returns (uint256) {
         return IWrappedTokenUserVaultFactory(VAULT_FACTORY()).marketId();
+    }
+
+    function getQueuedTransferAmountByCursor(uint256 _cursor) external view returns (uint256) {
+        return _cursorToQueuedTransferAmountMap[_cursor];
     }
 
     // ============ Internal Functions ============

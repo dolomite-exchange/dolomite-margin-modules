@@ -1,7 +1,8 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BaseContract, BigNumber } from 'ethers';
+import { BaseContract, BigNumber, ethers } from 'ethers';
 import {
   CustomTestToken,
   GLPUnwrapperProxyV1,
@@ -10,7 +11,7 @@ import {
   TestWrappedTokenUserVaultV1__factory,
   WrappedTokenUserVaultV1,
 } from '../../../src/types';
-import { WETH_MARKET_ID, ZERO_BI } from '../../../src/utils/constants';
+import { BYTES_EMPTY, WETH_MARKET_ID, ZERO_BI } from '../../../src/utils/constants';
 import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
@@ -537,6 +538,32 @@ describe('WrappedTokenUserVaultV1', () => {
   });
 
   describe('#onLiquidate', () => {
+    it('should work normally', async () => {
+      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
+      await userVault.connect(dolomiteMargin).onLiquidate(
+        userVault.address,
+        underlyingMarketId,
+        { sign: false, value: amountWei },
+        otherMarketId,
+        { sign: true, value: otherAmountWei },
+      );
+      expect(await userVault.transferCursor()).to.eq(0);
+      expect(await userVault.getQueuedTransferAmountByCursor(0)).to.eq(amountWei);
+    });
+
+    it('should work if heldMarketId passed through is NOT underlying', async () => {
+      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
+      await userVault.connect(dolomiteMargin).onLiquidate(
+        userVault.address,
+        otherMarketId,
+        { sign: false, value: amountWei },
+        999,
+        { sign: true, value: otherAmountWei },
+      );
+      expect(await userVault.transferCursor()).to.eq(0);
+      expect(await userVault.getQueuedTransferAmountByCursor(0)).to.eq(0);
+    });
+
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
         userVault.connect(core.hhUser1).onLiquidate(
@@ -549,22 +576,110 @@ describe('WrappedTokenUserVaultV1', () => {
         `WrappedTokenUserVaultV1: Only Dolomite can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail if transfer is already queued (developer error)', async () => {
+      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
+      await userVault.connect(dolomiteMargin).onLiquidate(
+        userVault.address,
+        underlyingMarketId,
+        { sign: false, value: amountWei },
+        otherMarketId,
+        { sign: true, value: otherAmountWei },
+      );
+      expect(await userVault.transferCursor()).to.eq(0);
+      expect(await userVault.getQueuedTransferAmountByCursor(0)).to.eq(amountWei);
+
+      await expectThrow(
+        userVault.connect(dolomiteMargin).onLiquidate(
+          userVault.address,
+          underlyingMarketId,
+          { sign: false, value: amountWei },
+          otherMarketId,
+          { sign: true, value: otherAmountWei },
+        ),
+        'WrappedTokenUserVaultV1: A transfer is already queued',
+      );
+    });
   });
 
   describe('#callFunction', () => {
     it('should fail if not called by DolomiteMargin', async () => {
-      it('should fail if not called by DolomiteMargin', async () => {
-        await expectThrow(
-          userVault.connect(core.hhUser1).onLiquidate(
-            userVault.address,
-            underlyingMarketId,
-            { sign: false, value: amountWei },
-            otherMarketId,
-            { sign: true, value: otherAmountWei },
-          ),
-          `WrappedTokenUserVaultV1: Only Dolomite can call <${core.hhUser1.address.toLowerCase()}>`,
-        );
-      });
+      await expectThrow(
+        userVault.connect(core.hhUser1).callFunction(
+          core.hhUser1.address,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          BYTES_EMPTY,
+        ),
+        `WrappedTokenUserVaultV1: Only Dolomite can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if accountInfo.owner is not the vault', async () => {
+      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        userVault.connect(dolomiteMargin).callFunction(
+          core.hhUser1.address,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          BYTES_EMPTY,
+        ),
+        `WrappedTokenUserVaultV1: Invalid account owner <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if account is not liquid', async () => {
+      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        userVault.connect(dolomiteMargin).callFunction(
+          core.hhUser1.address,
+          { owner: userVault.address, number: defaultAccountNumber },
+          BYTES_EMPTY,
+        ),
+        'WrappedTokenUserVaultV1: Account not liquid',
+      );
+    });
+
+    it('should fail if collateral recipient is ZERO or cannot be decoded', async () => {
+      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
+      // TODO: set account to liquid
+      await expectThrow(
+        userVault.connect(dolomiteMargin).callFunction(
+          core.hhUser1.address,
+          { owner: userVault.address, number: defaultAccountNumber },
+          ethers.utils.defaultAbiCoder.encode(['address'], [ZERO_ADDRESS]),
+        ),
+        'WrappedTokenUserVaultV1: Invalid recipient',
+      );
+      await expectThrow(
+        userVault.connect(dolomiteMargin).callFunction(
+          core.hhUser1.address,
+          { owner: userVault.address, number: defaultAccountNumber },
+          BYTES_EMPTY,
+        ),
+      );
+    });
+
+    it('should fail if transfer is not queued', async () => {
+      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        userVault.connect(dolomiteMargin).callFunction(
+          core.hhUser1.address,
+          { owner: userVault.address, number: defaultAccountNumber },
+          ethers.utils.defaultAbiCoder.encode(['address'], [solidAccount.address]),
+        ),
+        'WrappedTokenUserVaultV1: Invalid transfer',
+      );
+    });
+
+    it('should fail if the vault balance is not sufficient', async () => {
+      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        userVault.connect(dolomiteMargin).callFunction(
+          core.hhUser1.address,
+          { owner: userVault.address, number: defaultAccountNumber },
+          ethers.utils.defaultAbiCoder.encode(['address'], [solidAccount.address]),
+        ),
+        'WrappedTokenUserVaultV1: Insufficient balance',
+      );
     });
   });
 });

@@ -122,4 +122,14 @@ interface IWrappedTokenUserVaultV1 {
     function executeDepositIntoVault(uint256 _amount) external;
 
     function executeWithdrawalFromVault(address _recipient, uint256 _amount) external;
+
+    /**
+     * @return The cursor that indicates what the current index is for the transfer mapping.
+     */
+    function transferCursor() external view returns (uint256);
+
+    /**
+     * @param _cursor   The cursor used to index into the queued transfer amount mapping.
+     */
+    function getQueuedTransferAmountByCursor(uint256 _cursor) external view returns (uint256);
 }

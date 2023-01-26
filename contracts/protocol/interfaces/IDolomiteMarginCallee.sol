@@ -36,8 +36,8 @@ interface IDolomiteMarginCallee {
      * Allows users to send this contract arbitrary data.
      *
      * @param  _sender      The msg.sender to DolomiteMargin
-     * @param  _accountInfo  The account from which the data is being sent
-     * @param  _data         Arbitrary data given by the sender
+     * @param  _accountInfo The account from which the data is being sent
+     * @param  _data        Arbitrary data given by the sender
      */
     function callFunction(
         address _sender,

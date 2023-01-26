@@ -17,5 +17,9 @@ pragma solidity ^0.8.9;
 import { WrappedTokenUserVaultV1 } from  "../external/proxies/WrappedTokenUserVaultV1.sol";
 
 
-// solhint-disable-next-line no-empty-blocks
-contract TestWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {}
+contract TestWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
+
+    function enqueueTransfer(uint256 _transferAmount) external {
+        _cursorToQueuedTransferAmountMap[transferCursor] = _transferAmount;
+    }
+}
