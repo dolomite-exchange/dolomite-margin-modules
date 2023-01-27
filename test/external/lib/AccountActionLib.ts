@@ -164,6 +164,48 @@ describe('AccountActionLib', () => {
       await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
     });
 
+    it('should work normally when flag is set to To', async () => {
+      await performDeposit(underlyingMarketId, amountWei);
+
+      await testLib.connect(core.hhUser1).withdraw(
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.hhUser1.address,
+        underlyingMarketId,
+        { sign: false, value: amountWei, ref: AmountReference.Delta, denomination: AmountDenomination.Wei },
+        BalanceCheckFlag.To,
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        underlyingMarketId,
+        ZERO_BI,
+      );
+      await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
+    });
+
+    it('should work normally when flag is set to None', async () => {
+      await performDeposit(underlyingMarketId, amountWei);
+
+      await testLib.connect(core.hhUser1).withdraw(
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.hhUser1.address,
+        underlyingMarketId,
+        { sign: false, value: amountWei, ref: AmountReference.Delta, denomination: AmountDenomination.Wei },
+        BalanceCheckFlag.None,
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        underlyingMarketId,
+        ZERO_BI,
+      );
+      await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
+    });
+
     it('should fail normally when flag is set to Both/From and account goes negative', async () => {
       await performDeposit(underlyingMarketId, amountWei);
       await performDeposit(otherMarketId, amountWeiBig);
@@ -242,7 +284,51 @@ describe('AccountActionLib', () => {
       await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
     });
 
-    it('should fail normally when flag is set to Both/From and account goes negative', async () => {
+    it('should work normally when flag is set to To', async () => {
+      await performDeposit(underlyingMarketId, amountWei);
+
+      await testLib.connect(core.hhUser1).transfer(
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.hhUser1.address,
+        otherAccountNumber,
+        underlyingMarketId,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        underlyingMarketId,
+        ZERO_BI,
+      );
+      await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
+    });
+
+    it('should work normally when flag is set to None', async () => {
+      await performDeposit(underlyingMarketId, amountWei);
+
+      await testLib.connect(core.hhUser1).transfer(
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.hhUser1.address,
+        otherAccountNumber,
+        underlyingMarketId,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        underlyingMarketId,
+        ZERO_BI,
+      );
+      await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
+    });
+
+    it('should fail normally when flag is set to Both/From/To and account goes negative', async () => {
       await performDeposit(underlyingMarketId, amountWei);
       await performDeposit(otherMarketId, amountWeiBig);
 
@@ -269,6 +355,30 @@ describe('AccountActionLib', () => {
           underlyingMarketId,
           amountWeiBig,
           BalanceCheckFlag.From,
+        ),
+        core.hhUser1,
+        defaultAccountNumber,
+        underlyingMarketId,
+      );
+
+      await testLib.connect(core.hhUser1).transfer(
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.hhUser1.address,
+        otherAccountNumber,
+        underlyingMarketId,
+        amountWeiBig,
+        BalanceCheckFlag.None,
+      );
+      await expectThrowBalanceFlagError(
+        testLib.connect(core.hhUser1).transfer(
+          core.hhUser1.address,
+          otherAccountNumber,
+          core.hhUser1.address,
+          defaultAccountNumber,
+          underlyingMarketId,
+          amountWei,
+          BalanceCheckFlag.To,
         ),
         core.hhUser1,
         defaultAccountNumber,
