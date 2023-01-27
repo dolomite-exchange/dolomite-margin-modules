@@ -25,7 +25,11 @@ import {
 } from '../../../src/utils/dolomite-utils';
 import { NETWORK_ID, NO_EXPIRY } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectBalance, expectBalanceIsGreaterThan, expectWalletBalanceOrDustyIfZero } from '../../utils/assertions';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectWalletBalanceOrDustyIfZero,
+} from '../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
 
 const API_URL = 'https://apiv5.paraswap.io';
@@ -91,19 +95,31 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
         decimals: 6,
       };
 
-      await expectBalance(coreProtocol, solidAccountStruct, WETH_MARKET_ID, 0);
-      await expectBalance(coreProtocol, solidAccountStruct, USDC_MARKET_ID, 0);
+      await expectProtocolBalance(coreProtocol, solidAccountStruct.owner, solidAccountStruct.number, WETH_MARKET_ID, 0);
+      await expectProtocolBalance(coreProtocol, solidAccountStruct.owner, solidAccountStruct.number, USDC_MARKET_ID, 0);
 
       const heldAmountWei = BigNumber.from('1000000000000000000'); // 1 ETH
       await setupWETHBalance(liquidAccount, heldAmountWei, dolomiteMargin);
       await depositIntoDolomiteMargin(liquidAccount, liquidNumber, WETH_MARKET_ID, heldAmountWei);
-      await expectBalance(coreProtocol, liquidAccountStruct, WETH_MARKET_ID, heldAmountWei);
+      await expectProtocolBalance(
+        coreProtocol,
+        liquidAccountStruct.owner,
+        liquidAccountStruct.number,
+        WETH_MARKET_ID,
+        heldAmountWei,
+      );
 
       const owedAmountWei = (await dolomiteMargin.getAccountValues(liquidAccountStruct))[0]
         .value.div(USDC_PRICE).mul(100).div(125);
       // Decrease the user's collateralization to 125%
       await withdrawFromDolomiteMargin(liquidAccount, liquidNumber, USDC_MARKET_ID, owedAmountWei);
-      await expectBalance(coreProtocol, liquidAccountStruct, USDC_MARKET_ID, owedAmountWei.mul(-1));
+      await expectProtocolBalance(
+        coreProtocol,
+        liquidAccountStruct.owner,
+        liquidAccountStruct.number,
+        USDC_MARKET_ID,
+        owedAmountWei.mul(-1),
+      );
 
       // Increase the user's debt by 10%, therefore lowering the collateralization to ~113% (making it under-water)
       await testPriceOracle.setPrice(USDC.address, USDC_PRICE.mul(11).div(10));
@@ -165,22 +181,28 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
 
       const outputAmount = BigNumber.from(priceRouteResponse.priceRoute.destAmount);
-      await expectBalance(coreProtocol, solidAccountStruct, WETH_MARKET_ID, 0);
-      await expectBalanceIsGreaterThan(
+      await expectProtocolBalance(coreProtocol, solidAccountStruct.owner, solidAccountStruct.number, WETH_MARKET_ID, 0);
+      await expectProtocolBalanceIsGreaterThan(
         coreProtocol,
         solidAccountStruct,
         USDC_MARKET_ID,
         outputAmount.sub(owedAmountWei),
         ONE_BPS,
       );
-      await expectBalanceIsGreaterThan(
+      await expectProtocolBalanceIsGreaterThan(
         coreProtocol,
         liquidAccountStruct,
         WETH_MARKET_ID,
         heldAmountWei.sub(inputAmount),
         ONE_BPS,
       );
-      await expectBalance(coreProtocol, liquidAccountStruct, USDC_MARKET_ID, 0);
+      await expectProtocolBalance(
+        coreProtocol,
+        liquidAccountStruct.owner,
+        liquidAccountStruct.number,
+        USDC_MARKET_ID,
+        0,
+      );
 
       await expectWalletBalanceOrDustyIfZero(coreProtocol, liquidatorProxy.address, WETH.address, 0);
       await expectWalletBalanceOrDustyIfZero(coreProtocol, liquidatorProxy.address, USDC.address, 0);

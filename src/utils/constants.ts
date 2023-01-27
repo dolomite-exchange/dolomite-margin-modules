@@ -1,6 +1,7 @@
 import * as DolomiteAmmFactoryJson from '@dolomite-margin/deployed-contracts/DolomiteAmmFactory.json';
 import * as DolomiteAmmRouterProxyJson from '@dolomite-margin/deployed-contracts/DolomiteAmmRouterProxy.json';
 import * as DolomiteMarginJson from '@dolomite-margin/deployed-contracts/DolomiteMargin.json';
+import * as ExpiryJson from '@dolomite-margin/deployed-contracts/Expiry.json';
 import * as LiquidatorProxyV2WithExternalLiquidityJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV2WithExternalLiquidity.json';
 import { BaseContract, BigNumber, BigNumberish } from 'ethers';
@@ -16,7 +17,7 @@ import {
   IDolomiteMargin,
   IDolomiteMargin__factory,
   IERC20,
-  IERC20__factory,
+  IERC20__factory, IExpiry, IExpiry__factory,
   IGLPManager,
   IGLPManager__factory,
   IGLPRewardRouterV2,
@@ -90,6 +91,11 @@ export const DOLOMITE_MARGIN = new BaseContract(
   DolomiteMarginJson.networks[NETWORK_ID].address,
   IDolomiteMargin__factory.createInterface(),
 ) as IDolomiteMargin;
+
+export const EXPIRY = new BaseContract(
+  ExpiryJson.networks[NETWORK_ID].address,
+  IExpiry__factory.createInterface(),
+) as IExpiry;
 
 export const LIQUIDATOR_PROXY_V2 = new BaseContract(
   LiquidatorProxyV2WithExternalLiquidityJson.networks[NETWORK_ID].address,

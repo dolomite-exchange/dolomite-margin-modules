@@ -5,7 +5,7 @@ import { ethers, network } from 'hardhat';
 import {
   BorrowPositionProxyV2,
   IDolomiteAmmRouterProxy,
-  IDolomiteMargin,
+  IDolomiteMargin, IExpiry,
   TestInterestSetter,
   TestInterestSetter__factory,
   TestPriceOracle,
@@ -13,7 +13,14 @@ import {
   WrappedTokenUserVaultProxy,
   WrappedTokenUserVaultProxy__factory,
 } from '../../src/types';
-import { BORROW_POSITION_PROXY_V2, DOLOMITE_AMM_ROUTER, DOLOMITE_MARGIN, USDC, WETH } from '../../src/utils/constants';
+import {
+  BORROW_POSITION_PROXY_V2,
+  DOLOMITE_AMM_ROUTER,
+  DOLOMITE_MARGIN,
+  EXPIRY,
+  USDC,
+  WETH,
+} from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { impersonate, resetFork } from './index';
 
@@ -37,6 +44,7 @@ export interface CoreProtocol {
   borrowPositionProxyV2: BorrowPositionProxyV2;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
+  expiry: IExpiry;
   testInterestSetter: TestInterestSetter;
   testPriceOracle: TestPriceOracle;
   hhUser1: SignerWithAddress;
@@ -83,6 +91,8 @@ export async function setupCoreProtocol(
 
   const dolomiteMargin = DOLOMITE_MARGIN.connect(governance);
 
+  const expiry = EXPIRY.connect(governance);
+
   const borrowPositionProxyV2 = BORROW_POSITION_PROXY_V2.connect(governance);
 
   const testInterestSetter = await createContractWithAbi<TestInterestSetter>(
@@ -105,6 +115,7 @@ export async function setupCoreProtocol(
     borrowPositionProxyV2,
     dolomiteAmmRouterProxy,
     dolomiteMargin,
+    expiry,
     testInterestSetter,
     testPriceOracle,
     governance,

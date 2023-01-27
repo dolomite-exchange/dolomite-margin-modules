@@ -490,7 +490,7 @@ abstract contract WrappedTokenUserVaultV1 is
         return IWrappedTokenUserVaultFactory(VAULT_FACTORY()).marketId();
     }
 
-    function getQueuedTransferAmountByCursor(uint256 _cursor) external view returns (uint256) {
+    function getQueuedTransferAmountByCursor(uint256 _cursor) public view returns (uint256) {
         return _cursorToQueuedTransferAmountMap[_cursor];
     }
 

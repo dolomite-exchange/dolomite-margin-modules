@@ -1,4 +1,4 @@
-import { address } from '@dolomite-margin/dist/src';
+import { address, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { assert, expect } from 'chai';
 import { BaseContract, BigNumber, BigNumberish, CallOverrides, ContractTransaction } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
@@ -41,25 +41,28 @@ export async function expectThrow(call: Promise<any>, reason?: string) {
   }
 }
 
+export async function expectThrowBalanceFlagError(
+  call: Promise<any>,
+  accountOwner: { address: address },
+  accountNumber: BigNumberish,
+  marketId: BigNumberish,
+) {
+  const ownerString = accountOwner.address.toLowerCase();
+  const numberString = accountNumber.toString();
+  const marketString = marketId.toString();
+  await expectThrow(
+    call,
+    `AccountBalanceLib: account cannot go negative <${ownerString}, ${numberString}, ${marketString}>`,
+  );
+}
+
 export async function expectNoThrow(call: Promise<any>) {
   await expect(call).not.to.be.reverted;
 }
 
 // ========================= Balance Assertions =========================
 
-export async function expectBalance(
-  coreProtocol: CoreProtocol,
-  accountStruct: AccountStruct,
-  marketId: BigNumberish,
-  expectedBalance: BigNumberish,
-) {
-  const balance = await coreProtocol.dolomiteMargin.getAccountWei(accountStruct, marketId);
-  expect(valueStructToBigNumber(balance))
-    .to
-    .eq(BigNumber.from(expectedBalance));
-}
-
-export async function expectBalanceIsGreaterThan(
+export async function expectProtocolBalanceIsGreaterThan(
   coreProtocol: CoreProtocol,
   accountStruct: AccountStruct,
   marketId: BigNumberish,
@@ -153,4 +156,21 @@ export async function expectTotalSupply(
   amount: BigNumberish,
 ) {
   expect(await token.totalSupply()).eq(amount);
+}
+
+interface AssetAmount {
+  sign: boolean;
+  denomination: AmountDenomination;
+  ref: AmountReference;
+  value: BigNumberish;
+}
+
+export function expectAssetAmountToEq(
+  found: AssetAmount,
+  expected: AssetAmount,
+) {
+  expect(found.sign).eq(expected.sign);
+  expect(found.denomination).eq(expected.denomination);
+  expect(found.ref).eq(expected.ref);
+  expect(found.value).eq(expected.value);
 }

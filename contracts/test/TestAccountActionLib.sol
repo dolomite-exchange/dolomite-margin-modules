@@ -30,7 +30,7 @@ import { AccountBalanceLib } from "../external/lib/AccountBalanceLib.sol";
 contract TestAccountActionLib {
     using AccountActionLib for IDolomiteMargin;
 
-    IDolomiteMargin public immutable DOLOMITE_MARGIN;
+    IDolomiteMargin public immutable DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
 
     constructor(address _dolomiteMargin) {
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
@@ -94,7 +94,7 @@ contract TestAccountActionLib {
         uint256 _accountId,
         address _callee,
         bytes memory _callData
-    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
         return AccountActionLib.encodeCallAction(
             _accountId,
             _callee,
@@ -107,7 +107,7 @@ contract TestAccountActionLib {
         uint256 _marketId,
         IDolomiteStructs.AssetAmount memory _amount,
         address _fromAccount
-    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
         return AccountActionLib.encodeDepositAction(
             _accountId,
             _marketId,
@@ -122,7 +122,7 @@ contract TestAccountActionLib {
         uint256 _owedMarketId,
         address _expiry,
         uint256 _expiryTimeDelta
-    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
         return AccountActionLib.encodeExpirationAction(
             _account,
             _accountId,
@@ -140,7 +140,7 @@ contract TestAccountActionLib {
         address _expiryProxy,
         uint32 _expiry,
         bool _flipMarkets
-    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
         return AccountActionLib.encodeExpiryLiquidateAction(
             _solidAccountId,
             _liquidAccountId,
@@ -160,7 +160,7 @@ contract TestAccountActionLib {
         address _traderAddress,
         uint256 _amountInWei,
         uint256 _amountOutWei
-    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
         return AccountActionLib.encodeInternalTradeAction(
             _fromAccountId,
             _toAccountId,
@@ -178,7 +178,7 @@ contract TestAccountActionLib {
         uint256 _owedMarketId,
         uint256 _heldMarketId,
         uint256 _owedWeiToLiquidate
-    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
         return AccountActionLib.encodeLiquidateAction(
             _solidAccountId,
             _liquidAccountId,
@@ -196,7 +196,7 @@ contract TestAccountActionLib {
         uint256 _amountInWei,
         uint256 _amountOutMinWei,
         bytes memory _orderData
-    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
         return AccountActionLib.encodeExternalSellAction(
             _fromAccountId,
             _primaryMarketId,
@@ -213,7 +213,7 @@ contract TestAccountActionLib {
         uint256 _toAccountId,
         uint256 _marketId,
         uint256 _amountWei
-    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
         return AccountActionLib.encodeTransferAction(
             _fromAccountId,
             _toAccountId,
@@ -227,7 +227,7 @@ contract TestAccountActionLib {
         uint256 _marketId,
         IDolomiteStructs.AssetAmount memory _amount,
         address _toAccount
-    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
         return AccountActionLib.encodeWithdrawalAction(
             _accountId,
             _marketId,
