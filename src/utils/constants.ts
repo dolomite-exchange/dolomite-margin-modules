@@ -29,7 +29,8 @@ import {
   LiquidatorProxyV2WithExternalLiquidity,
   LiquidatorProxyV2WithExternalLiquidity__factory,
 } from '../types';
-import { Network, NETWORK_ID } from './no-deps-constants';
+import { Network, NETWORK_ID, ONE_WEEK_SECONDS } from './no-deps-constants';
+import Base = Mocha.reporters.Base;
 
 export const BYTES_EMPTY = '0x';
 
@@ -113,6 +114,15 @@ export const BORROW_POSITION_PROXY_V2 = new BaseContract(
   BorrowPositionProxyV2__factory.createInterface(),
 ) as BorrowPositionProxyV2;
 
+const ES_GMX_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0xf42Ae1D54fd613C9bb14810b0588FaAa09a426cA',
+};
+
+const ES_GMX = new BaseContract(
+  ES_GMX_MAP[NETWORK_ID],
+  IERC20__factory.createInterface(),
+) as IERC20;
+
 const GLP_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0x4277f8F2c384827B5273592FF7CeBd9f2C1ac258',
 };
@@ -148,6 +158,15 @@ export const GLP_REWARD_ROUTER = new BaseContract(
   GLP_REWARD_ROUTER_MAP[NETWORK_ID],
   IGLPRewardRouterV2__factory.createInterface(),
 ) as IGLPRewardRouterV2;
+
+const GMX_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a',
+};
+
+export const GMX = new BaseContract(
+  GMX_MAP[NETWORK_ID],
+  IERC20__factory.createInterface(),
+) as IERC20;
 
 const GMX_VAULT_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0x489ee077994B6658eAfA855C308275EAd8097C4A',

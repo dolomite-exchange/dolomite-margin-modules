@@ -14,6 +14,9 @@
 
 pragma solidity ^0.8.9;
 
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginCallee } from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
 import { IDolomiteMarginLiquidationCallback } from "../../protocol/interfaces/IDolomiteMarginLiquidationCallback.sol";
@@ -43,6 +46,7 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  *          position as other "isolated" tokens.
  */
 contract GLPWrappedTokenUserVault is WrappedTokenUserVaultV1 {
+    using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
@@ -70,15 +74,42 @@ contract GLPWrappedTokenUserVault is WrappedTokenUserVaultV1 {
             _shouldClaimWeth,
             /* _shouldConvertWethToEth = */ false
         );
-        // TODO deposit WETH into dolomite
-        // TODO transfer WETH to msg.sender's account at index via the transfer proxy
+
+        address factory = VAULT_FACTORY();
+        if (!_shouldStakeGmx) {
+            // If the user isn't staking GMX, transfer it to the vault owner
+            IERC20 GMX = IERC20(IGLPWrappedTokenUserVaultFactory(factory).GMX());
+            uint amount = GMX.balanceOf(address(this));
+            GMX.safeTransfer(msg.sender, amount);
+        }
+
+        if (!_shouldStakeEsGmx) {
+            // If the user isn't staking esGMX, transfer it to the vault owner
+            IERC20 ES_GMX = IERC20(IGLPWrappedTokenUserVaultFactory(factory).ES_GMX());
+            uint amount = ES_GMX.balanceOf(address(this));
+            ES_GMX.safeTransfer(msg.sender, amount);
+        }
+
+        if (_shouldClaimWeth) {
+            address weth = IGLPWrappedTokenUserVaultFactory(factory).WETH();
+            uint256 amountWei = IERC20(weth).balanceOf(address(this));
+            if (_shouldDepositEthIntoDolomite) {
+                IERC20(weth).safeApprove(DOLOMITE_MARGIN(), amountWei);
+                IWrappedTokenUserVaultFactory(factory).depositRewardTokenIntoDolomiteMarginForVaultOwner(
+                    /* _toAccountNumber = */ 0,
+                    IGLPWrappedTokenUserVaultFactory(factory).WETH_MARKET_ID(),
+                    amountWei
+                );
+            } else {
+                IERC20(weth).safeTransfer(msg.sender, amountWei);
+            }
+        }
     }
 
     function GLP_REWARDS_ROUTER() public view returns (IGLPRewardRouterV2) {
         return IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).glpRewardsRouter();
     }
 
-    // TODO: add claim and deposit
     // TODO: add stake/unstake esGMX
     // TODO: add vesting deposit/withdraw esGMX
 }

@@ -32,5 +32,13 @@ interface IGLPWrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
 
     function setGlpRewardsRouter(address _glpRewardsRouter) external;
 
+    function WETH() external pure returns (address);
+
+    function WETH_MARKET_ID() external pure returns (uint256);
+
+    function GMX() external view returns (IGLPRewardRouterV2);
+
+    function ES_GMX() external view returns (IGLPRewardRouterV2);
+
     function glpRewardsRouter() external view returns (IGLPRewardRouterV2);
 }

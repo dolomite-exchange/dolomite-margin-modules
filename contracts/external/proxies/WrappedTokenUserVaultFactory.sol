@@ -201,6 +201,29 @@ abstract contract WrappedTokenUserVaultFactory is
         _setIsTokenUnwrapperTrusted(_tokenUnwrapper, _isTrusted);
     }
 
+    function depositRewardTokenIntoDolomiteMarginForVaultOwner(
+        uint256 _toAccountNumber,
+        uint256 _marketId,
+        uint256 _amountWei
+    )
+    external
+    override
+    requireIsVault(msg.sender) {
+        AccountActionLib.deposit(
+            DOLOMITE_MARGIN,
+            _vaultToUserMap[msg.sender],
+            msg.sender /* = _fromAccount */,
+            _toAccountNumber,
+            _marketId,
+            IDolomiteStructs.AssetAmount({
+                sign: true,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: _amountWei
+            })
+        );
+    }
+
     function depositIntoDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei

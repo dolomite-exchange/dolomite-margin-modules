@@ -123,10 +123,10 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         (uint256 minAmountOut) = abi.decode(_orderData, (uint256));
 
         uint256 amountOut = GLP_REWARD_ROUTER.unstakeAndRedeemGlp(
-        /* _tokenOut = */ _makerToken, // solium-disable-line indentation
-        /* _glpAmount = */ _requestedFillAmount, // solium-disable-line indentation
+            /* _tokenOut = */ _makerToken,
+            /* _glpAmount = */ _requestedFillAmount,
             minAmountOut,
-        /* _receiver = */ address(this) // solium-disable-line indentation
+            /* _receiver = */ address(this)
         );
 
         return amountOut;
@@ -155,11 +155,12 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
-        // Transfer the liquidated GLP tokens to this contract
+        // Transfer the liquidated GLP tokens to this contract. Do this by enqueuing a transfer via the `callFunction`
+        // on the liquid account vault contract.
         actions[0] = AccountActionLib.encodeCallAction(
             _liquidAccountId,
             _liquidAccountOwner,
-            /* _receiver[encoded] = */ abi.encode(address(this)) // solium-disable-line indentation
+            /* _receiver[encoded] = */ abi.encode(address(this))
         );
 
         uint256 outputMarket = USDC_MARKET_ID;
@@ -167,16 +168,16 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
             DOLOMITE_MARGIN.getMarketTokenAddress(_heldMarket),
             DOLOMITE_MARGIN.getMarketTokenAddress(outputMarket),
             _heldAmountWithReward,
-            /* _orderData = */ bytes("") // solium-disable-line indentation
+            /* _orderData = */ bytes("")
         );
 
         actions[1] = AccountActionLib.encodeExternalSellAction(
             _solidAccountId,
             _heldMarket,
             outputMarket,
-            /* _trader = */ address(this), // solium-disable-line indentation
-            /* _amountInWei = */ _heldAmountWithReward, // solium-disable-line indentation
-            /* _amountOutMinWei = */ amountOut, // solium-disable-line indentation
+            /* _trader = */ address(this),
+            /* _amountInWei = */ _heldAmountWithReward,
+            /* _amountOutMinWei = */ amountOut,
             bytes("")
         );
 
@@ -224,7 +225,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
             usdgAmount,
             gmxVault.mintBurnFeeBasisPoints(),
             gmxVault.taxBasisPoints(),
-            /* _increment = */ false // solium-disable-line indentation
+            /* _increment = */ false
         );
         return _applyFees(redemptionAmount, feeBasisPoints);
     }
