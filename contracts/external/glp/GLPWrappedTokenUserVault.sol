@@ -57,7 +57,7 @@ contract GLPWrappedTokenUserVault is WrappedTokenUserVaultV1 {
         bool _shouldStakeEsGmx,
         bool _shouldStakeMultiplierPoints,
         bool _shouldClaimWeth,
-        bool _shouldConvertWethToEth
+        bool _shouldDepositEthIntoDolomite
     )
     external
     onlyVaultOwner(msg.sender) {
@@ -68,8 +68,10 @@ contract GLPWrappedTokenUserVault is WrappedTokenUserVaultV1 {
             _shouldStakeEsGmx,
             _shouldStakeMultiplierPoints,
             _shouldClaimWeth,
-            _shouldConvertWethToEth
+            /* _shouldConvertWethToEth = */ false
         );
+        // TODO deposit WETH into dolomite
+        // TODO transfer WETH to msg.sender's account at index via the transfer proxy
     }
 
     function GLP_REWARDS_ROUTER() public view returns (IGLPRewardRouterV2) {
