@@ -74,22 +74,22 @@ contract GLPWrappedTokenUserVaultFactory is
 
     // ============ External Functions ============
 
-    function setGmx(address _gmx) external override onlyOwner {
+    function setGmx(address _gmx) external override onlyOwner(msg.sender) {
         gmx = _gmx;
         emit GmxSet(_gmx);
     }
 
-    function setEsGmx(address _esGmx) external override onlyOwner {
+    function setEsGmx(address _esGmx) external override onlyOwner(msg.sender) {
         esGmx = _esGmx;
         emit EsGmxSet(_esGmx);
     }
 
-    function setVGlp(address _vGlp) external override onlyOwner {
+    function setVGlp(address _vGlp) external override onlyOwner(msg.sender) {
         vGlp = _vGlp;
         emit VGlpSet(_vGlp);
     }
 
-    function setGlpRewardsRouter(address _glpRewardsRouter) external override onlyOwner {
+    function setGlpRewardsRouter(address _glpRewardsRouter) external override onlyOwner(msg.sender) {
         glpRewardsRouter = IGLPRewardRouterV2(_glpRewardsRouter);
         emit GlpRewardsRouterSet(_glpRewardsRouter);
     }

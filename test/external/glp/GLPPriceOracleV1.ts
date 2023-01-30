@@ -2,9 +2,9 @@ import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { GLPPriceOracleV1, GLPPriceOracleV1__factory } from '../../../src/types';
-import { GLP, GLP_MANAGER, GMX_VAULT, S_GLP } from '../../../src/utils/constants';
+import { FS_GLP, GLP, GLP_MANAGER, GMX_VAULT } from '../../../src/utils/constants';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { snapshot, revertToSnapshotAndCapture } from '../../utils';
+import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import { setupCoreProtocol } from '../../utils/setup';
 
@@ -22,7 +22,7 @@ describe('GLPPriceOracleV1', () => {
     glpPriceOracle = await createContractWithAbi<GLPPriceOracleV1>(
       GLPPriceOracleV1__factory.abi,
       GLPPriceOracleV1__factory.bytecode,
-      [GLP_MANAGER.address, GMX_VAULT.address, GLP.address, S_GLP.address], // technically should be DS_GLP
+      [GLP_MANAGER.address, GMX_VAULT.address, GLP.address, FS_GLP.address], // technically should be DFS_GLP
     );
 
     snapshotId = await snapshot();

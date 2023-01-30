@@ -6,7 +6,7 @@ import {
   CustomTestToken,
   GLPUnwrapperProxyV1,
   TestWrappedTokenUserVaultFactory,
-  TestWrappedTokenUserVaultFactory__factory,
+  TestWrappedTokenUserVaultFactory__factory, TestWrappedTokenUserVaultV1,
   TestWrappedTokenUserVaultV1__factory,
   WrappedTokenUserVaultProxy,
   WrappedTokenUserVaultProxy__factory,
@@ -36,6 +36,8 @@ describe('WrappedTokenUserVaultFactory', () => {
   let core: CoreProtocol;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
+  let rewardToken: CustomTestToken;
+  let rewardMarketId: BigNumber;
   let tokenUnwrapper: GLPUnwrapperProxyV1;
   let wrappedTokenFactory: TestWrappedTokenUserVaultFactory;
   let userVaultImplementation: BaseContract;
@@ -61,6 +63,14 @@ describe('WrappedTokenUserVaultFactory', () => {
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, wrappedTokenFactory, true);
+
+    rewardToken = await createTestToken();
+    await core.testPriceOracle.setPrice(
+      rewardToken.address,
+      '1000000000000000000', // $1.00
+    );
+    rewardMarketId = await core.dolomiteMargin.getNumMarkets();
+    await setupTestMarket(core, rewardToken, false);
 
     tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory);
     initializeResult = await wrappedTokenFactory.initialize([tokenUnwrapper.address]);
@@ -248,7 +258,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
       await expectThrow(
         wrappedTokenFactory.connect(core.hhUser1).setUserVaultImplementation(newImplementation.address),
-        'WrappedTokenUserVaultFactory: Caller is not the owner',
+        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -298,7 +308,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
       await expectThrow(
         wrappedTokenFactory.connect(core.hhUser1).setIsTokenUnwrapperTrusted(newUnwrapper.address, true),
-        'WrappedTokenUserVaultFactory: Caller is not the owner',
+        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -320,28 +330,30 @@ describe('WrappedTokenUserVaultFactory', () => {
     it('should work normally', async () => {
       await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
 
-      await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
-      await underlyingToken.connect(core.hhUser1).approve(vaultAddress, amountWei);
 
-      const vault = setupUserVaultProxy<WrappedTokenUserVaultV1>(
+      const vault = setupUserVaultProxy<TestWrappedTokenUserVaultV1>(
         vaultAddress,
-        WrappedTokenUserVaultV1__factory,
+        TestWrappedTokenUserVaultV1__factory,
         core.hhUser1,
       );
-      await vault.depositIntoVaultForDolomiteMargin(toAccountNumber, amountWei);
+      await rewardToken.addBalance(vault.address, amountWei);
+      await vault.callDepositRewardTokenIntoDolomiteMarginForVaultOwner(
+        toAccountNumber,
+        rewardMarketId,
+        amountWei,
+      );
 
-      await expectProtocolBalance(core, core.hhUser1.address, toAccountNumber, underlyingMarketId, ZERO_BI);
-      await expectProtocolBalance(core, vaultAddress, toAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, core.hhUser1.address, toAccountNumber, rewardMarketId, amountWei);
+      await expectProtocolBalance(core, vaultAddress, 0, rewardMarketId, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, toAccountNumber, rewardMarketId, ZERO_BI);
 
-      await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
-      await expectWalletBalance(vaultAddress, underlyingToken, amountWei);
-      await expectWalletBalance(core.dolomiteMargin.address, wrappedTokenFactory, amountWei);
+      await expectWalletBalance(core.hhUser1, rewardToken, ZERO_BI);
+      await expectWalletBalance(vaultAddress, rewardToken, ZERO_BI);
+      await expectWalletBalance(core.dolomiteMargin.address, rewardToken, amountWei);
 
-      await expectWalletAllowance(core.hhUser1, vault, underlyingToken, ZERO_BI);
-      await expectWalletAllowance(vault, core.dolomiteMargin.address, wrappedTokenFactory, ZERO_BI);
-
-      await expectTotalSupply(wrappedTokenFactory, amountWei);
+      await expectWalletAllowance(core.hhUser1, vault, rewardToken, ZERO_BI);
+      await expectWalletAllowance(vault, core.dolomiteMargin.address, rewardToken, ZERO_BI);
     });
 
     it('should fail when not called by vault', async () => {

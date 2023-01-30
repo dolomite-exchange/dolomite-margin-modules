@@ -109,7 +109,6 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
             _makerToken
         );
 
-        // solium-disable indentation
         {
             uint256 balance = IERC20(DS_GLP.UNDERLYING_TOKEN()).balanceOf(address(this));
             Require.that(
@@ -119,7 +118,6 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
                 balance
             );
         }
-        // solium-enable indentation
         (uint256 minAmountOut) = abi.decode(_orderData, (uint256));
 
         uint256 amountOut = GLP_REWARD_ROUTER.unstakeAndRedeemGlp(

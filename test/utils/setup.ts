@@ -60,19 +60,19 @@ export async function setupWETHBalance(signer: SignerWithAddress, amount: BigNum
 }
 
 export async function setupUSDCBalance(signer: SignerWithAddress, amount: BigNumberish, spender: { address: string }) {
-  const whaleSigner = await impersonate('0xCe2CC46682E9C6D5f174aF598fb4931a9c0bE68e');
+  const whaleSigner = await impersonate('0x805ba50001779CeD4f59CfF63aea527D12B94829', true);
   await USDC.connect(whaleSigner).transfer(signer.address, amount);
   await USDC.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export function setupUserVaultProxy<T extends BaseContract>(
   vault: address,
-  factory: { abi: ContractInterface },
+  factoryInterface: { abi: ContractInterface },
   signer?: SignerWithAddress,
 ): T {
   return new BaseContract(
     vault,
-    factory.abi,
+    factoryInterface.abi,
     signer,
   ) as T;
 }

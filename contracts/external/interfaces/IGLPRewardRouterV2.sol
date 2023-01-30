@@ -31,6 +31,13 @@ interface IGLPRewardRouterV2 {
         bool _shouldConvertWethToEth
     ) external;
 
+    function mintAndStakeGlp(
+        address _token,
+        uint256 _amount,
+        uint256 _minUsdg,
+        uint256 _minGlp
+    ) external;
+
     function unstakeAndRedeemGlp(
         address _tokenOut,
         uint256 _glpAmount,

@@ -59,7 +59,7 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
     ) external {
         // Deploys the contract without calling #initialize
         address vault = Create2.deploy(
-            /* amount = */ 0, // solium-disable-line indentation
+            /* amount = */ 0,
             keccak256(abi.encodePacked(_account)),
             type(WrappedTokenUserVaultProxy).creationCode
         );
@@ -73,7 +73,7 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
         address _account2
     ) external {
         address vault = Create2.deploy(
-            /* amount = */ 0, // solium-disable-line indentation
+            /* amount = */ 0,
             keccak256(abi.encodePacked(_account1)),
             type(WrappedTokenUserVaultProxy).creationCode
         );

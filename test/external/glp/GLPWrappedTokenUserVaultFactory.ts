@@ -1,24 +1,22 @@
-import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
 import {
   GLPWrappedTokenUserVaultFactory,
   GLPWrappedTokenUserVaultFactory__factory,
-  GLPWrappedTokenUserVaultV1, GLPWrappedTokenUserVaultV1__factory,
+  GLPWrappedTokenUserVaultV1,
+  GLPWrappedTokenUserVaultV1__factory,
 } from '../../../src/types';
 import {
   BORROW_POSITION_PROXY_V2,
   ES_GMX,
-  GLP,
-  GLP_MANAGER,
-  GLP_REWARD_ROUTER, GMX,
-  GMX_VAULT,
-  S_GLP, V_GLP,
+  GLP_REWARD_ROUTER,
+  GMX,
+  FS_GLP,
+  V_GLP,
   WETH,
   WETH_MARKET_ID,
 } from '../../../src/utils/constants';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { snapshot, revertToSnapshotAndCapture } from '../../utils';
+import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
 
@@ -28,16 +26,17 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
+  let vaultImplementation: GLPWrappedTokenUserVaultV1;
   let factory: GLPWrappedTokenUserVaultFactory;
 
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
     });
-    const vaultImplementation = await createContractWithAbi<GLPWrappedTokenUserVaultV1>(
+    vaultImplementation = await createContractWithAbi<GLPWrappedTokenUserVaultV1>(
       GLPWrappedTokenUserVaultV1__factory.abi,
       GLPWrappedTokenUserVaultV1__factory.bytecode,
-      []
+      [],
     );
     factory = await createContractWithAbi<GLPWrappedTokenUserVaultFactory>(
       GLPWrappedTokenUserVaultFactory__factory.abi,
@@ -49,7 +48,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
         GMX.address,
         ES_GMX.address,
         V_GLP.address,
-        S_GLP.address,
+        FS_GLP.address,
         BORROW_POSITION_PROXY_V2.address,
         vaultImplementation.address,
         core.dolomiteMargin.address,
@@ -63,6 +62,21 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
+  describe('#contructor', () => {
+    it('should initialize variables properly', async () => {
+      expect(await factory.WETH()).to.equal(WETH.address);
+      expect(await factory.WETH_MARKET_ID()).to.equal(WETH_MARKET_ID);
+      expect(await factory.glpRewardsRouter()).to.equal(GLP_REWARD_ROUTER.address);
+      expect(await factory.gmx()).to.equal(GMX.address);
+      expect(await factory.esGmx()).to.equal(ES_GMX.address);
+      expect(await factory.vGlp()).to.equal(V_GLP.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(FS_GLP.address);
+      expect(await factory.BORROW_POSITION_PROXY()).to.equal(BORROW_POSITION_PROXY_V2.address);
+      expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
+      expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+    });
+  });
+
   describe('#setGmx', () => {
     it('should work normally', async () => {
       const result = await factory.connect(core.governance).setGmx(OTHER_ADDRESS);
@@ -70,6 +84,13 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
         gmx: OTHER_ADDRESS,
       });
       expect(await factory.gmx()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        factory.connect(core.hhUser1).setGmx(OTHER_ADDRESS),
+        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
+      );
     });
   });
 
@@ -81,6 +102,13 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       });
       expect(await factory.esGmx()).to.equal(OTHER_ADDRESS);
     });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        factory.connect(core.hhUser1).setEsGmx(OTHER_ADDRESS),
+        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
   });
 
   describe('#setVGlp', () => {
@@ -90,6 +118,13 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
         vGlp: OTHER_ADDRESS,
       });
       expect(await factory.vGlp()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        factory.connect(core.hhUser1).setVGlp(OTHER_ADDRESS),
+        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
+      );
     });
   });
 
@@ -101,11 +136,18 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       });
       expect(await factory.glpRewardsRouter()).to.equal(OTHER_ADDRESS);
     });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        factory.connect(core.hhUser1).setGlpRewardsRouter(OTHER_ADDRESS),
+        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
   });
 
   describe('#allowablePositionMarketIds', () => {
     it('should work normally', async () => {
-      expect(await factory.allowablePositionMarketIds()).to.equal([]);
+      expect(await factory.allowablePositionMarketIds()).to.deep.equal([]);
     });
   });
 });

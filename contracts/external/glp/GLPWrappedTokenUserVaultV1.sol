@@ -38,7 +38,7 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
 /**
- * @title   GLPWrappedTokenUserVault
+ * @title   GLPWrappedTokenUserVaultV1
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the sGLP token that can be used to

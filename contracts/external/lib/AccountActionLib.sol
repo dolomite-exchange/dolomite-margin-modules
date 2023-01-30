@@ -58,7 +58,7 @@ library AccountActionLib {
 
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
         actions[0] = encodeDepositAction(
-            /* _accountId = */ 0, // solium-disable-line indentation
+            /* _accountId = */ 0,
             _marketId,
             _amount,
             _fromAccount
@@ -87,7 +87,7 @@ library AccountActionLib {
 
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
         actions[0] = encodeWithdrawalAction(
-            /* _accountId = */ 0, // solium-disable-line indentation
+            /* _accountId = */ 0,
             _marketId,
             _amount,
             _toAccount
@@ -133,8 +133,8 @@ library AccountActionLib {
 
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
         actions[0] = encodeTransferAction(
-            /* _fromAccountId = */ 0, // solium-disable-line indentation
-            /* _toAccountId = */ 1, // solium-disable-line indentation
+            /* _fromAccountId = */ 0,
+            /* _toAccountId = */ 1,
             _marketId,
             _amountWei
         );
@@ -182,7 +182,6 @@ library AccountActionLib {
         return IDolomiteStructs.ActionArgs({
             actionType : IDolomiteStructs.ActionType.Call,
             accountId : _accountId,
-            // solium-disable-next-line arg-overflow
             amount : IDolomiteStructs.AssetAmount({
                 sign: false,
                 denomination: IDolomiteStructs.AssetDenomination.Wei,

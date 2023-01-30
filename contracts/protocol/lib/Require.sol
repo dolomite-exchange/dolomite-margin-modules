@@ -270,7 +270,6 @@ library Require {
         // determine the length of the input by finding the location of the last non-zero byte
         for (uint256 i = 32; i > 0; ) {
             // reverse-for-loops with unsigned integer
-            /* solium-disable-next-line security/no-modify-for-iter-var */
             i--;
 
             // find the last non-zero byte in order to determine the length
@@ -316,7 +315,6 @@ library Require {
         j = input;
         for (uint256 i = length; i > 0; ) {
             // reverse-for-loops with unsigned integer
-            /* solium-disable-next-line security/no-modify-for-iter-var */
             i--;
 
             // take last decimal digit

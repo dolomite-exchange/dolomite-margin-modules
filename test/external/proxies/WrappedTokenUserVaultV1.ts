@@ -17,8 +17,9 @@ import {
   TestWrappedTokenUserVaultV1__factory,
   WrappedTokenUserVaultV1,
 } from '../../../src/types';
-import { BYTES_EMPTY, WETH_MARKET_ID, ZERO_BI } from '../../../src/utils/constants';
+import { WETH_MARKET_ID } from '../../../src/utils/constants';
 import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
+import { BYTES_EMPTY, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';

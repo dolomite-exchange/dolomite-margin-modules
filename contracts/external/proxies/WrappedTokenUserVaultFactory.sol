@@ -105,11 +105,12 @@ abstract contract WrappedTokenUserVaultFactory is
         _;
     }
 
-    modifier onlyOwner {
+    modifier onlyOwner(address _caller) {
         Require.that(
-            msg.sender == DOLOMITE_MARGIN.owner(),
+            _caller == DOLOMITE_MARGIN.owner(),
             _FILE,
-            "Caller is not the owner"
+            "Caller is not the owner",
+            _caller
         );
         _;
     }
@@ -185,7 +186,7 @@ abstract contract WrappedTokenUserVaultFactory is
     external
     override
     requireIsInitialized
-    onlyOwner {
+    onlyOwner(msg.sender) {
         emit UserVaultImplementationSet(userVaultImplementation, _userVaultImplementation);
         userVaultImplementation = _userVaultImplementation;
     }
@@ -197,7 +198,7 @@ abstract contract WrappedTokenUserVaultFactory is
     external
     override
     requireIsInitialized
-    onlyOwner {
+    onlyOwner(msg.sender) {
         _setIsTokenUnwrapperTrusted(_tokenUnwrapper, _isTrusted);
     }
 
@@ -209,19 +210,36 @@ abstract contract WrappedTokenUserVaultFactory is
     external
     override
     requireIsVault(msg.sender) {
-        AccountActionLib.deposit(
-            DOLOMITE_MARGIN,
-            _vaultToUserMap[msg.sender],
-            msg.sender /* = _fromAccount */,
-            _toAccountNumber,
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
+        accounts[0] = IDolomiteStructs.AccountInfo({
+            owner: msg.sender,
+            number: 0
+        });
+        accounts[1] = IDolomiteStructs.AccountInfo({
+            owner: _vaultToUserMap[msg.sender],
+            number: _toAccountNumber
+        });
+
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](2);
+        actions[0] = AccountActionLib.encodeDepositAction(
+            /* _accountId = */ 0,
             _marketId,
             IDolomiteStructs.AssetAmount({
                 sign: true,
                 denomination: IDolomiteStructs.AssetDenomination.Wei,
                 ref: IDolomiteStructs.AssetReference.Delta,
                 value: _amountWei
-            })
+            }),
+            /* _fromAccount = */ msg.sender
         );
+        actions[1] = AccountActionLib.encodeTransferAction(
+            /* _fromAccountId = */ 0,
+            /* _toAccountId = */ 1,
+            _marketId,
+            AccountActionLib.all()
+        );
+
+        DOLOMITE_MARGIN.operate(accounts, actions);
     }
 
     function depositIntoDolomiteMargin(
@@ -241,8 +259,8 @@ abstract contract WrappedTokenUserVaultFactory is
         });
         AccountActionLib.deposit(
             DOLOMITE_MARGIN,
-            /* _accountOwner = */ msg.sender, // solium-disable-line indentation
-            /* _fromAccount = */ msg.sender, // solium-disable-line indentation
+            /* _accountOwner = */ msg.sender,
+            /* _fromAccount = */ msg.sender,
             _toAccountNumber,
             marketId,
             IDolomiteStructs.AssetAmount({
@@ -270,9 +288,9 @@ abstract contract WrappedTokenUserVaultFactory is
         });
         AccountActionLib.withdraw(
             DOLOMITE_MARGIN,
-            /* _accountOwner = */ msg.sender, // solium-disable-line indentation
+            /* _accountOwner = */ msg.sender,
             _fromAccountNumber,
-            /* _toAccount = */ msg.sender, // solium-disable-line indentation
+            /* _toAccount = */ msg.sender,
             marketId,
             IDolomiteStructs.AssetAmount({
                 sign: false,
@@ -357,7 +375,7 @@ abstract contract WrappedTokenUserVaultFactory is
             "Vault already exists"
         );
         address vault = Create2.deploy(
-            /* amount = */ 0, // solium-disable-line indentation
+            /* amount = */ 0,
             keccak256(abi.encodePacked(_account)),
             type(WrappedTokenUserVaultProxy).creationCode
         );
