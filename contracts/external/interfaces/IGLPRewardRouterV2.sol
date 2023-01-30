@@ -37,4 +37,12 @@ interface IGLPRewardRouterV2 {
         uint256 _minAmountOut,
         address _receiver
     ) external returns (uint256);
+
+    function stakeGmx(uint256 _amount) external;
+
+    function unstakeGmx(uint256 _amount) external;
+
+    function stakeEsGmx(uint256 _amount) external;
+
+    function unstakeEsGmx(uint256 _amount) external;
 }

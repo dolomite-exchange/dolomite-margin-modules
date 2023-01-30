@@ -25,6 +25,9 @@ interface IGLPWrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
     // ================================================
 
     event GlpRewardsRouterSet(address _glpRewardsRouter);
+    event GmxSet(address _gmx);
+    event EsGmxSet(address _esGmx);
+    event VGlpSet(address _vGlp);
 
     // ===================================================
     // ==================== Functions ====================
@@ -32,13 +35,21 @@ interface IGLPWrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
 
     function setGlpRewardsRouter(address _glpRewardsRouter) external;
 
-    function WETH() external pure returns (address);
+    function setGmx(address _gmx) external;
 
-    function WETH_MARKET_ID() external pure returns (uint256);
+    function setEsGmx(address _esGmx) external;
 
-    function GMX() external view returns (IGLPRewardRouterV2);
+    function setVGlp(address _vGlp) external;
 
-    function ES_GMX() external view returns (IGLPRewardRouterV2);
+    function WETH() external view returns (address);
+
+    function WETH_MARKET_ID() external view returns (uint256);
+
+    function esGmx() external view returns (address);
+
+    function gmx() external view returns (address);
+
+    function vGlp() external view returns (address);
 
     function glpRewardsRouter() external view returns (IGLPRewardRouterV2);
 }

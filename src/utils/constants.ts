@@ -23,14 +23,13 @@ import {
   IGLPRewardRouterV2,
   IGLPRewardRouterV2__factory,
   IGMXVault,
-  IGMXVault__factory,
+  IGMXVault__factory, IVGlp, IVGlp__factory,
   IWETH,
   IWETH__factory,
   LiquidatorProxyV2WithExternalLiquidity,
   LiquidatorProxyV2WithExternalLiquidity__factory,
 } from '../types';
-import { Network, NETWORK_ID, ONE_WEEK_SECONDS } from './no-deps-constants';
-import Base = Mocha.reporters.Base;
+import { Network, NETWORK_ID } from './no-deps-constants';
 
 export const BYTES_EMPTY = '0x';
 
@@ -118,7 +117,7 @@ const ES_GMX_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xf42Ae1D54fd613C9bb14810b0588FaAa09a426cA',
 };
 
-const ES_GMX = new BaseContract(
+export const ES_GMX = new BaseContract(
   ES_GMX_MAP[NETWORK_ID],
   IERC20__factory.createInterface(),
 ) as IERC20;
@@ -176,3 +175,12 @@ export const GMX_VAULT = new BaseContract(
   GMX_VAULT_MAP[NETWORK_ID],
   IGMXVault__factory.createInterface(),
 ) as IGMXVault;
+
+const V_GLP_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0xA75287d2f8b217273E7FCD7E86eF07D33972042E',
+};
+
+export const V_GLP = new BaseContract(
+  V_GLP_MAP[NETWORK_ID],
+  IVGlp__factory.createInterface(),
+) as IVGlp;

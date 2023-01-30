@@ -182,9 +182,9 @@ abstract contract WrappedTokenUserVaultV1 is
         );
 
         BORROW_POSITION_PROXY().openBorrowPositionWithDifferentAccounts(
-            /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _fromAccountOwner = */ address(this),
             _fromAccountNumber,
-            /* _toAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _toAccountOwner = */ address(this),
             _toAccountNumber,
             marketId(),
             _amountWei,
@@ -215,9 +215,9 @@ abstract contract WrappedTokenUserVaultV1 is
         collateralMarketIds[0] = marketId();
 
         BORROW_POSITION_PROXY().closeBorrowPositionWithDifferentAccounts(
-            /* _borrowAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _borrowAccountOwner = */ address(this),
             _borrowAccountNumber,
-            /* _toAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _toAccountOwner = */ address(this),
             _toAccountNumber,
             collateralMarketIds
         );
@@ -241,9 +241,9 @@ abstract contract WrappedTokenUserVaultV1 is
         }
 
         BORROW_POSITION_PROXY().closeBorrowPositionWithDifferentAccounts(
-            /* _borrowAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _borrowAccountOwner = */ address(this),
             _borrowAccountNumber,
-            /* _toAccountOwner = */ msg.sender, // solium-disable-line indentation
+            /* _toAccountOwner = */ msg.sender,
             _toAccountNumber,
             _collateralMarketIds
         );
@@ -270,9 +270,9 @@ abstract contract WrappedTokenUserVaultV1 is
         );
 
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-            /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _fromAccountOwner = */ address(this),
             _fromAccountNumber,
-            /* _toAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _toAccountOwner = */ address(this),
             _borrowAccountNumber,
             marketId(),
             _amountWei,
@@ -297,9 +297,9 @@ abstract contract WrappedTokenUserVaultV1 is
         );
 
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-            /* _fromAccountOwner = */ msg.sender, // solium-disable-line indentation
+            /* _fromAccountOwner = */ msg.sender,
             _fromAccountNumber,
-            /* _toAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _toAccountOwner = */ address(this),
             _borrowAccountNumber,
             _marketId,
             _amountWei,
@@ -328,9 +328,9 @@ abstract contract WrappedTokenUserVaultV1 is
         );
 
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-            /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _fromAccountOwner = */ address(this),
             _borrowAccountNumber,
-            /* _toAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _toAccountOwner = */ address(this),
             _toAccountNumber,
             marketId(),
             _amountWei,
@@ -356,9 +356,9 @@ abstract contract WrappedTokenUserVaultV1 is
         );
 
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-            /* _fromAccountOwner = */ address(this), // solium-disable-line indentation
+            /* _fromAccountOwner = */ address(this),
             _borrowAccountNumber,
-            /* _toAccountOwner = */ msg.sender, // solium-disable-line indentation
+            /* _toAccountOwner = */ msg.sender,
             _toAccountNumber,
             _marketId,
             _amountWei,
@@ -381,7 +381,7 @@ abstract contract WrappedTokenUserVaultV1 is
             _marketId
         );
         BORROW_POSITION_PROXY().repayAllForBorrowPositionWithDifferentAccounts(
-            /* _fromAccountOwner = */ msg.sender, // solium-disable-line indentation
+            /* _fromAccountOwner = */ msg.sender,
             _fromAccountNumber,
             /* _borrowAccountOwner = */ address(this),
             _borrowAccountNumber,
@@ -392,11 +392,6 @@ abstract contract WrappedTokenUserVaultV1 is
 
     function executeDepositIntoVault(uint256 _amount) external onlyVaultFactory(msg.sender) {
         IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_proxySelf().owner(), address(this), _amount);
-    }
-
-    function executeWithdrawalFromVault(address _recipient, uint256 _amount) external onlyVaultFactory(msg.sender) {
-        assert(_recipient != address(this));
-        IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
     function onLiquidate(
@@ -441,7 +436,6 @@ abstract contract WrappedTokenUserVaultV1 is
 
         // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
         // designated recipient
-        IERC20 token = IERC20(UNDERLYING_TOKEN());
         (address recipient) = abi.decode(_data, (address));
         Require.that(
             recipient != address(0),
@@ -457,8 +451,10 @@ abstract contract WrappedTokenUserVaultV1 is
         );
 
         IDolomiteStructs.Wei memory accountWei = dolomiteMargin.getAccountWei(_accountInfo, marketId());
+        // We need to add the transfer amount to the accountWei because the liquidation has occurred internally and the
+        // virtual balance has already been seized.
         Require.that(
-            token.balanceOf(address(this)) >= transferAmount + accountWei.value,
+            underlyingBalanceOf() >= transferAmount + accountWei.value,
             _FILE,
             "Insufficient balance"
         );
@@ -469,6 +465,17 @@ abstract contract WrappedTokenUserVaultV1 is
     }
 
     // ======== Public functions ========
+
+    function executeWithdrawalFromVault(
+        address _recipient,
+        uint256 _amount
+    )
+    public
+    virtual
+    onlyVaultFactory(msg.sender) {
+        assert(_recipient != address(this));
+        IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
+    }
 
     function UNDERLYING_TOKEN() public view returns (address) {
         return IWrappedTokenUserVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN();
@@ -492,6 +499,10 @@ abstract contract WrappedTokenUserVaultV1 is
 
     function getQueuedTransferAmountByCursor(uint256 _cursor) public view returns (uint256) {
         return _cursorToQueuedTransferAmountMap[_cursor];
+    }
+
+    function underlyingBalanceOf() public virtual view returns (uint256) {
+        return IERC20(UNDERLYING_TOKEN()).balanceOf(address(this));
     }
 
     // ============ Internal Functions ============

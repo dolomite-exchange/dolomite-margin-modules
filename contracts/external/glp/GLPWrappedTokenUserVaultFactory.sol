@@ -36,12 +36,23 @@ contract GLPWrappedTokenUserVaultFactory is
 
     // ============ Field Variables ============
 
+    address public immutable override WETH; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable override WETH_MARKET_ID; // solhint-disable-line var-name-mixedcase
+
     IGLPRewardRouterV2 public override glpRewardsRouter;
+    address public override gmx;
+    address public override esGmx;
+    address public override vGlp;
 
     // ============ Constructor ============
 
     constructor(
+        address _weth,
+        uint256 _wethMarketId,
         address _glpRewardsRouter,
+        address _gmx,
+        address _esGmx,
+        address _vGlp,
         address _underlyingToken,
         address _borrowPositionProxy,
         address _userVaultImplementation,
@@ -53,10 +64,30 @@ contract GLPWrappedTokenUserVaultFactory is
         _userVaultImplementation,
         _dolomiteMargin
     ) {
+        WETH = _weth;
+        WETH_MARKET_ID = _wethMarketId;
         glpRewardsRouter = IGLPRewardRouterV2(_glpRewardsRouter);
+        gmx = _gmx;
+        esGmx = _esGmx;
+        vGlp = _vGlp;
     }
 
     // ============ External Functions ============
+
+    function setGmx(address _gmx) external override onlyOwner {
+        gmx = _gmx;
+        emit GmxSet(_gmx);
+    }
+
+    function setEsGmx(address _esGmx) external override onlyOwner {
+        esGmx = _esGmx;
+        emit EsGmxSet(_esGmx);
+    }
+
+    function setVGlp(address _vGlp) external override onlyOwner {
+        vGlp = _vGlp;
+        emit VGlpSet(_vGlp);
+    }
 
     function setGlpRewardsRouter(address _glpRewardsRouter) external override onlyOwner {
         glpRewardsRouter = IGLPRewardRouterV2(_glpRewardsRouter);

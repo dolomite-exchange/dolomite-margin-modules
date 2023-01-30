@@ -13,7 +13,7 @@ import {
   WrappedTokenUserVaultV1,
   WrappedTokenUserVaultV1__factory,
 } from '../../../src/types';
-import { BORROW_POSITION_PROXY_V2, DOLOMITE_MARGIN, ZERO_BI } from '../../../src/utils/constants';
+import { BORROW_POSITION_PROXY_V2, DOLOMITE_MARGIN, WETH_MARKET_ID, ZERO_BI } from '../../../src/utils/constants';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
@@ -312,6 +312,43 @@ describe('WrappedTokenUserVaultFactory', () => {
       await expectThrow(
         uninitializedFactory.setIsTokenUnwrapperTrusted(newUnwrapper.address, true),
         'WrappedTokenUserVaultFactory: Not initialized',
+      );
+    });
+  });
+
+  describe('#depositRewardTokenIntoDolomiteMarginForVaultOwner', () => {
+    it('should work normally', async () => {
+      await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
+
+      await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
+      const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
+      await underlyingToken.connect(core.hhUser1).approve(vaultAddress, amountWei);
+
+      const vault = setupUserVaultProxy<WrappedTokenUserVaultV1>(
+        vaultAddress,
+        WrappedTokenUserVaultV1__factory,
+        core.hhUser1,
+      );
+      await vault.depositIntoVaultForDolomiteMargin(toAccountNumber, amountWei);
+
+      await expectProtocolBalance(core, core.hhUser1.address, toAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, toAccountNumber, underlyingMarketId, amountWei);
+
+      await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
+      await expectWalletBalance(vaultAddress, underlyingToken, amountWei);
+      await expectWalletBalance(core.dolomiteMargin.address, wrappedTokenFactory, amountWei);
+
+      await expectWalletAllowance(core.hhUser1, vault, underlyingToken, ZERO_BI);
+      await expectWalletAllowance(vault, core.dolomiteMargin.address, wrappedTokenFactory, ZERO_BI);
+
+      await expectTotalSupply(wrappedTokenFactory, amountWei);
+    });
+
+    it('should fail when not called by vault', async () => {
+      await expectThrow(
+        wrappedTokenFactory.connect(core.hhUser1)
+          .depositRewardTokenIntoDolomiteMarginForVaultOwner(toAccountNumber, WETH_MARKET_ID, amountWei),
+        `WrappedTokenUserVaultFactory: Caller is not a vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
