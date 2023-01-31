@@ -122,6 +122,9 @@ const FS_GLP_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0x1aDDD80E6039594eE970E5872D247bf0414C8903',
 };
 
+/**
+ * The underlying token the for WrappedTokenUserVaultFactory
+ */
 export const FS_GLP = new BaseContract(
   FS_GLP_MAP[NETWORK_ID],
   IERC20__factory.createInterface(),
@@ -172,10 +175,25 @@ export const GMX_VAULT = new BaseContract(
   IGMXVault__factory.createInterface(),
 ) as IGMXVault;
 
+const S_GLP_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf',
+};
+
+/**
+ * Special token that enables transfers and wraps around fsGLP
+ */
+export const S_GLP = new BaseContract(
+  S_GLP_MAP[NETWORK_ID],
+  IERC20__factory.createInterface(),
+) as IERC20;
+
 const V_GLP_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xA75287d2f8b217273E7FCD7E86eF07D33972042E',
 };
 
+/**
+ * Token that holds fsGLP for vesting esGMX into GMX
+ */
 export const V_GLP = new BaseContract(
   V_GLP_MAP[NETWORK_ID],
   IVGlp__factory.createInterface(),

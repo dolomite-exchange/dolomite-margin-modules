@@ -390,10 +390,6 @@ abstract contract WrappedTokenUserVaultV1 is
         );
     }
 
-    function executeDepositIntoVault(uint256 _amount) external onlyVaultFactory(msg.sender) {
-        IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_proxySelf().owner(), address(this), _amount);
-    }
-
     function onLiquidate(
         uint256,
         uint256 _heldMarketId,
@@ -465,6 +461,15 @@ abstract contract WrappedTokenUserVaultV1 is
     }
 
     // ======== Public functions ========
+
+    function executeDepositIntoVault(
+        uint256 _amount
+    )
+    public
+    virtual
+    onlyVaultFactory(msg.sender) {
+        IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_proxySelf().owner(), address(this), _amount);
+    }
 
     function executeWithdrawalFromVault(
         address _recipient,

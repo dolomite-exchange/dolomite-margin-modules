@@ -42,6 +42,7 @@ contract GLPWrappedTokenUserVaultFactory is
     IGLPRewardRouterV2 public override glpRewardsRouter;
     address public override gmx;
     address public override esGmx;
+    address public override sGlp;
     address public override vGlp;
 
     // ============ Constructor ============
@@ -52,14 +53,15 @@ contract GLPWrappedTokenUserVaultFactory is
         address _glpRewardsRouter,
         address _gmx,
         address _esGmx,
+        address _sGlp,
         address _vGlp,
-        address _underlyingToken,
+        address _fsGlp, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
         address _dolomiteMargin
     )
     WrappedTokenUserVaultFactory(
-        _underlyingToken,
+        _fsGlp,
         _borrowPositionProxy,
         _userVaultImplementation,
         _dolomiteMargin
@@ -69,6 +71,7 @@ contract GLPWrappedTokenUserVaultFactory is
         glpRewardsRouter = IGLPRewardRouterV2(_glpRewardsRouter);
         gmx = _gmx;
         esGmx = _esGmx;
+        sGlp = _sGlp;
         vGlp = _vGlp;
     }
 
@@ -82,6 +85,11 @@ contract GLPWrappedTokenUserVaultFactory is
     function setEsGmx(address _esGmx) external override onlyOwner(msg.sender) {
         esGmx = _esGmx;
         emit EsGmxSet(_esGmx);
+    }
+
+    function setSGlp(address _sGlp) external override onlyOwner(msg.sender) {
+        sGlp = _sGlp;
+        emit SGlpSet(_sGlp);
     }
 
     function setVGlp(address _vGlp) external override onlyOwner(msg.sender) {

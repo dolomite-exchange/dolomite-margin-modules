@@ -13,7 +13,7 @@ import {
   FS_GLP,
   V_GLP,
   WETH,
-  WETH_MARKET_ID,
+  WETH_MARKET_ID, S_GLP,
 } from '../../../src/utils/constants';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -69,6 +69,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       expect(await factory.glpRewardsRouter()).to.equal(GLP_REWARD_ROUTER.address);
       expect(await factory.gmx()).to.equal(GMX.address);
       expect(await factory.esGmx()).to.equal(ES_GMX.address);
+      expect(await factory.sGlp()).to.equal(S_GLP.address);
       expect(await factory.vGlp()).to.equal(V_GLP.address);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(FS_GLP.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(BORROW_POSITION_PROXY_V2.address);
@@ -106,6 +107,23 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         factory.connect(core.hhUser1).setEsGmx(OTHER_ADDRESS),
+        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#setSGlp', () => {
+    it('should work normally', async () => {
+      const result = await factory.connect(core.governance).setSGlp(OTHER_ADDRESS);
+      await expectEvent(factory, result, 'SGlpSet', {
+        sGlp: OTHER_ADDRESS,
+      });
+      expect(await factory.vGlp()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        factory.connect(core.hhUser1).setSGlp(OTHER_ADDRESS),
         `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

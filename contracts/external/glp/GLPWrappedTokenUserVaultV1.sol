@@ -134,6 +134,15 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
 
     // ============ Public Functions ============
 
+    function executeDepositIntoVault(
+        uint256 _amount
+    )
+    public
+    override
+    onlyVaultFactory(msg.sender) {
+        sGlp().safeTransferFrom(_proxySelf().owner(), address(this), _amount);
+    }
+
     function executeWithdrawalFromVault(
         address _recipient,
         uint256 _amount
@@ -146,7 +155,8 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
             vGlp().withdraw();
         }
 
-        super.executeWithdrawalFromVault(_recipient, _amount);
+        assert(_recipient != address(this));
+        sGlp().safeTransfer(_recipient, _amount);
     }
 
     function glpRewardsRouter() public view returns (IGLPRewardRouterV2) {
@@ -155,6 +165,10 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
 
     function underlyingBalanceOf() public view override returns (uint256) {
         return vGlp().pairAmounts(address(this)) + super.underlyingBalanceOf();
+    }
+
+    function sGlp() public view returns (IERC20) {
+        return IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).sGlp());
     }
 
     function vGlp() public view returns (IVGlp) {

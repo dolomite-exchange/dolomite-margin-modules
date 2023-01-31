@@ -54,8 +54,10 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     IGLPManager public immutable GLP_MANAGER; // solhint-disable-line var-name-mixedcase
     IGLPRewardRouterV2 public immutable GLP_REWARD_ROUTER; // solhint-disable-line var-name-mixedcase
     IGMXVault public immutable GMX_VAULT; // solhint-disable-line var-name-mixedcase
-    IERC20 public immutable GLP; // solhint-disable-line var-name-mixedcase
-    IWrappedTokenUserVaultFactory public immutable DS_GLP; // solhint-disable-line var-name-mixedcase
+    IERC20 public immutable FS_GLP; // solhint-disable-line var-name-mixedcase
+
+    /// @notice The Dolomite-wrapped contract for fsGLP (fee-staked GLP)
+    IWrappedTokenUserVaultFactory public immutable DFS_GLP; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
@@ -64,7 +66,6 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         address _glpManager,
         address _glpRewardRouter,
         address _gmxVault,
-        address _glp,
         address _dsGlp,
         address _dolomiteMargin
     )
@@ -73,8 +74,8 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         GLP_MANAGER = IGLPManager(_glpManager);
         GLP_REWARD_ROUTER = IGLPRewardRouterV2(_glpRewardRouter);
         GMX_VAULT = IGMXVault(_gmxVault);
-        GLP = IERC20(_glp);
-        DS_GLP = IWrappedTokenUserVaultFactory(_dsGlp);
+        DFS_GLP = IWrappedTokenUserVaultFactory(_dsGlp);
+        FS_GLP = IERC20(DFS_GLP.UNDERLYING_TOKEN());
 
         USDC_MARKET_ID = IDolomiteMargin(_dolomiteMargin).getMarketIdByTokenAddress(_usdc);
         IERC20(_usdc).safeApprove(_dolomiteMargin, type(uint256).max);
@@ -97,7 +98,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         Require.that(
-            _takerToken == address(DS_GLP),
+            _takerToken == address(DFS_GLP),
             _FILE,
             "Taker token must be DS_GLP",
             _takerToken
@@ -110,7 +111,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         );
 
         {
-            uint256 balance = IERC20(DS_GLP.UNDERLYING_TOKEN()).balanceOf(address(this));
+            uint256 balance = FS_GLP.balanceOf(address(this));
             Require.that(
                 balance >= _requestedFillAmount,
                 _FILE,
@@ -131,7 +132,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     }
 
     function token() external override view returns (address) {
-        return address(DS_GLP);
+        return address(DFS_GLP);
     }
 
     function outputMarketId() external override view returns (uint256) {
@@ -201,7 +202,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     view
     returns (uint256) {
         Require.that(
-            _makerToken == address(DS_GLP),
+            _makerToken == address(DFS_GLP),
             _FILE,
             "Maker token must be DS_GLP",
             _makerToken
@@ -214,8 +215,9 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         );
         IGMXVault gmxVault = GMX_VAULT;
 
+        // This code is taken from the GMX contracts for calculating the redemption amount
         uint256 aumInUsdg = GLP_MANAGER.getAumInUsdg(false);
-        uint256 glpSupply = GLP.totalSupply();
+        uint256 glpSupply = FS_GLP.totalSupply();
         uint256 usdgAmount = _desiredMakerToken * aumInUsdg / glpSupply;
         uint256 redemptionAmount = gmxVault.getRedemptionAmount(_takerToken, usdgAmount);
         uint256 feeBasisPoints = gmxVault.getFeeBasisPoints(
@@ -236,6 +238,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         uint256 _amount,
         uint256 _feeBasisPoints
     ) internal pure returns (uint256) {
+        // this code is taken from GMX
         return _amount * (BASIS_POINTS_DIVISOR - _feeBasisPoints) / BASIS_POINTS_DIVISOR;
     }
 }
