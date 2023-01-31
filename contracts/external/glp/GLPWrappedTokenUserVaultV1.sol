@@ -26,7 +26,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { WrappedTokenUserVaultV1 } from "../proxies/WrappedTokenUserVaultV1.sol";
 
 import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
-import { IGLPRewardRouterV2 } from"../interfaces/IGLPRewardRouterV2.sol";
+import { IGMXRewardRouterV2 } from"../interfaces/IGMXRewardRouterV2.sol";
 import { IGLPWrappedTokenUserVaultFactory } from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
 import { IVGlp } from "../interfaces/IVGlp.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
@@ -66,7 +66,7 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     )
     external
     onlyVaultOwner(msg.sender) {
-        glpRewardsRouter().handleRewards(
+        gmxRewardsRouter().handleRewards(
             _shouldClaimGmx,
             _shouldStakeGmx,
             _shouldClaimEsGmx,
@@ -104,24 +104,24 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         IERC20 gmx = IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmx());
         gmx.safeTransferFrom(msg.sender, address(this), _amount);
 
-        IGLPRewardRouterV2 _glpRewardsRouter = glpRewardsRouter();
-        gmx.safeApprove(address(_glpRewardsRouter), _amount);
-        _glpRewardsRouter.stakeGmx(_amount);
+        IGMXRewardRouterV2 _gmxRewardsRouter = gmxRewardsRouter();
+        gmx.safeApprove(address(_gmxRewardsRouter), _amount);
+        _gmxRewardsRouter.stakeGmx(_amount);
     }
 
     function unstakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
-        glpRewardsRouter().unstakeGmx(_amount);
+        gmxRewardsRouter().unstakeGmx(_amount);
 
         IERC20 gmx = IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmx());
         gmx.safeTransfer(msg.sender, _amount);
     }
 
     function stakeEsGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
-        glpRewardsRouter().stakeEsGmx(_amount);
+        gmxRewardsRouter().stakeEsGmx(_amount);
     }
 
     function unstakeEsGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
-        glpRewardsRouter().unstakeEsGmx(_amount);
+        gmxRewardsRouter().unstakeEsGmx(_amount);
     }
 
     function vestGlp(uint256 _amount) external onlyVaultOwner(msg.sender) {
@@ -159,8 +159,8 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         sGlp().safeTransfer(_recipient, _amount);
     }
 
-    function glpRewardsRouter() public view returns (IGLPRewardRouterV2) {
-        return IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).glpRewardsRouter();
+    function gmxRewardsRouter() public view returns (IGMXRewardRouterV2) {
+        return IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRewardsRouter();
     }
 
     function underlyingBalanceOf() public view override returns (uint256) {

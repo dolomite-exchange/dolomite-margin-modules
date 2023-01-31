@@ -14,7 +14,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IGLPRewardRouterV2 } from "./IGLPRewardRouterV2.sol";
+import { IGMXRewardRouterV2 } from "./IGMXRewardRouterV2.sol";
 import { IWrappedTokenUserVaultFactory } from "./IWrappedTokenUserVaultFactory.sol";
 
 
@@ -24,7 +24,7 @@ interface IGLPWrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
     // ==================== Events ====================
     // ================================================
 
-    event GlpRewardsRouterSet(address _glpRewardsRouter);
+    event GmxRewardsRouterSet(address _gmxRewardsRouter);
     event GmxSet(address _gmx);
     event EsGmxSet(address _esGmx);
     event SGlpSet(address _vGlp);
@@ -34,7 +34,7 @@ interface IGLPWrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
     // ==================== Functions ====================
     // ===================================================
 
-    function setGlpRewardsRouter(address _glpRewardsRouter) external;
+    function setGmxRewardsRouter(address _gmxRewardsRouter) external;
 
     function setGmx(address _gmx) external;
 
@@ -56,5 +56,5 @@ interface IGLPWrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
 
     function vGlp() external view returns (address);
 
-    function glpRewardsRouter() external view returns (IGLPRewardRouterV2);
+    function gmxRewardsRouter() external view returns (IGMXRewardRouterV2);
 }

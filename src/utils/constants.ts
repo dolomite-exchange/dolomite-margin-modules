@@ -157,6 +157,15 @@ export const GLP_REWARD_ROUTER = new BaseContract(
   IGLPRewardRouterV2__factory.createInterface(),
 ) as IGLPRewardRouterV2;
 
+const GMX_REWARD_ROUTER_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1',
+};
+
+export const GMX_REWARD_ROUTER = new BaseContract(
+  GMX_REWARD_ROUTER_MAP[NETWORK_ID],
+  IGLPRewardRouterV2__factory.createInterface(),
+) as IGLPRewardRouterV2;
+
 const GMX_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a',
 };

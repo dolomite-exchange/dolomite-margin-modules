@@ -8,12 +8,13 @@ import {
 import {
   BORROW_POSITION_PROXY_V2,
   ES_GMX,
-  GLP_REWARD_ROUTER,
-  GMX,
   FS_GLP,
+  GMX,
+  GMX_REWARD_ROUTER,
+  S_GLP,
   V_GLP,
   WETH,
-  WETH_MARKET_ID, S_GLP,
+  WETH_MARKET_ID,
 } from '../../../src/utils/constants';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -44,9 +45,10 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       [
         WETH.address,
         WETH_MARKET_ID,
-        GLP_REWARD_ROUTER.address,
+        GMX_REWARD_ROUTER.address,
         GMX.address,
         ES_GMX.address,
+        S_GLP.address,
         V_GLP.address,
         FS_GLP.address,
         BORROW_POSITION_PROXY_V2.address,
@@ -66,7 +68,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.WETH()).to.equal(WETH.address);
       expect(await factory.WETH_MARKET_ID()).to.equal(WETH_MARKET_ID);
-      expect(await factory.glpRewardsRouter()).to.equal(GLP_REWARD_ROUTER.address);
+      expect(await factory.gmxRewardsRouter()).to.equal(GMX_REWARD_ROUTER.address);
       expect(await factory.gmx()).to.equal(GMX.address);
       expect(await factory.esGmx()).to.equal(ES_GMX.address);
       expect(await factory.sGlp()).to.equal(S_GLP.address);
@@ -118,7 +120,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       await expectEvent(factory, result, 'SGlpSet', {
         sGlp: OTHER_ADDRESS,
       });
-      expect(await factory.vGlp()).to.equal(OTHER_ADDRESS);
+      expect(await factory.sGlp()).to.equal(OTHER_ADDRESS);
     });
 
     it('should fail when not called by owner', async () => {
@@ -146,18 +148,18 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
     });
   });
 
-  describe('#setGlpRewardsRouter', () => {
+  describe('#setGmxRewardsRouter', () => {
     it('should work normally', async () => {
-      const result = await factory.connect(core.governance).setGlpRewardsRouter(OTHER_ADDRESS);
-      await expectEvent(factory, result, 'GlpRewardsRouterSet', {
-        glpRewardsRouter: OTHER_ADDRESS,
+      const result = await factory.connect(core.governance).setGmxRewardsRouter(OTHER_ADDRESS);
+      await expectEvent(factory, result, 'GmxRewardsRouterSet', {
+        gmxRewardsRouter: OTHER_ADDRESS,
       });
-      expect(await factory.glpRewardsRouter()).to.equal(OTHER_ADDRESS);
+      expect(await factory.gmxRewardsRouter()).to.equal(OTHER_ADDRESS);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        factory.connect(core.hhUser1).setGlpRewardsRouter(OTHER_ADDRESS),
+        factory.connect(core.hhUser1).setGmxRewardsRouter(OTHER_ADDRESS),
         `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

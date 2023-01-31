@@ -8,7 +8,7 @@ import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import { setupCoreProtocol } from '../../utils/setup';
 
-const GLP_PRICE = BigNumber.from('911464299405961697'); // $0.911464
+const GLP_PRICE = BigNumber.from('913711474561791281'); // $0.913711
 
 describe('GLPPriceOracleV1', () => {
   let snapshotId: string;
@@ -34,8 +34,8 @@ describe('GLPPriceOracleV1', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under the correct conditions for dsGLP', async () => {
-      const gsGlp = await glpPriceOracle.DS_GLP();
-      const price = await glpPriceOracle.getPrice(gsGlp);
+      const dsGlp = await glpPriceOracle.DS_GLP();
+      const price = await glpPriceOracle.getPrice(dsGlp);
       expect(price.value).to.eq(GLP_PRICE);
     });
 

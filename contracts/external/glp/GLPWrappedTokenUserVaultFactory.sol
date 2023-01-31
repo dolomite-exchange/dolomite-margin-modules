@@ -14,7 +14,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IGLPRewardRouterV2 } from "../interfaces/IGLPRewardRouterV2.sol";
+import { IGMXRewardRouterV2 } from "../interfaces/IGMXRewardRouterV2.sol";
 import { IGLPWrappedTokenUserVaultFactory } from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
 
 import { WrappedTokenUserVaultFactory } from "../proxies/WrappedTokenUserVaultFactory.sol";
@@ -39,7 +39,7 @@ contract GLPWrappedTokenUserVaultFactory is
     address public immutable override WETH; // solhint-disable-line var-name-mixedcase
     uint256 public immutable override WETH_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
-    IGLPRewardRouterV2 public override glpRewardsRouter;
+    IGMXRewardRouterV2 public override gmxRewardsRouter;
     address public override gmx;
     address public override esGmx;
     address public override sGlp;
@@ -50,7 +50,7 @@ contract GLPWrappedTokenUserVaultFactory is
     constructor(
         address _weth,
         uint256 _wethMarketId,
-        address _glpRewardsRouter,
+        address _gmxRewardsRouter,
         address _gmx,
         address _esGmx,
         address _sGlp,
@@ -68,7 +68,7 @@ contract GLPWrappedTokenUserVaultFactory is
     ) {
         WETH = _weth;
         WETH_MARKET_ID = _wethMarketId;
-        glpRewardsRouter = IGLPRewardRouterV2(_glpRewardsRouter);
+        gmxRewardsRouter = IGMXRewardRouterV2(_gmxRewardsRouter);
         gmx = _gmx;
         esGmx = _esGmx;
         sGlp = _sGlp;
@@ -97,9 +97,9 @@ contract GLPWrappedTokenUserVaultFactory is
         emit VGlpSet(_vGlp);
     }
 
-    function setGlpRewardsRouter(address _glpRewardsRouter) external override onlyOwner(msg.sender) {
-        glpRewardsRouter = IGLPRewardRouterV2(_glpRewardsRouter);
-        emit GlpRewardsRouterSet(_glpRewardsRouter);
+    function setGmxRewardsRouter(address _gmxRewardsRouter) external override onlyOwner(msg.sender) {
+        gmxRewardsRouter = IGMXRewardRouterV2(_gmxRewardsRouter);
+        emit GmxRewardsRouterSet(_gmxRewardsRouter);
     }
 
     function allowablePositionMarketIds() external pure returns (uint256[] memory) {

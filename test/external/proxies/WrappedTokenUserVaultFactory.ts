@@ -6,15 +6,17 @@ import {
   CustomTestToken,
   GLPUnwrapperProxyV1,
   TestWrappedTokenUserVaultFactory,
-  TestWrappedTokenUserVaultFactory__factory, TestWrappedTokenUserVaultV1,
+  TestWrappedTokenUserVaultFactory__factory,
+  TestWrappedTokenUserVaultV1,
   TestWrappedTokenUserVaultV1__factory,
   WrappedTokenUserVaultProxy,
   WrappedTokenUserVaultProxy__factory,
   WrappedTokenUserVaultV1,
   WrappedTokenUserVaultV1__factory,
 } from '../../../src/types';
-import { BORROW_POSITION_PROXY_V2, DOLOMITE_MARGIN, WETH_MARKET_ID, ZERO_BI } from '../../../src/utils/constants';
+import { BORROW_POSITION_PROXY_V2, DOLOMITE_MARGIN, WETH_MARKET_ID } from '../../../src/utils/constants';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
+import { ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
