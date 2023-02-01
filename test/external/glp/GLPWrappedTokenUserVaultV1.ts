@@ -6,20 +6,7 @@ import {
   GLPWrappedTokenUserVaultV1,
   GLPWrappedTokenUserVaultV1__factory,
 } from '../../../src/types';
-import {
-  BORROW_POSITION_PROXY_V2,
-  ES_GMX,
-  FS_GLP,
-  GLP_MANAGER,
-  GLP_REWARD_ROUTER,
-  GMX,
-  GMX_REWARD_ROUTER,
-  S_GLP,
-  USDC,
-  V_GLP,
-  WETH,
-  WETH_MARKET_ID,
-} from '../../../src/utils/constants';
+import { USDC, WETH, WETH_MARKET_ID } from '../../../src/utils/constants';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
@@ -59,13 +46,13 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       [
         WETH.address,
         WETH_MARKET_ID,
-        GMX_REWARD_ROUTER.address,
-        GMX.address,
-        ES_GMX.address,
-        S_GLP.address,
-        V_GLP.address,
-        FS_GLP.address,
-        BORROW_POSITION_PROXY_V2.address,
+        core.gmxEcosystem.gmxRewardRouter.address,
+        core.gmxEcosystem.gmx.address,
+        core.gmxEcosystem.esGmx.address,
+        core.gmxEcosystem.sGlp.address,
+        core.gmxEcosystem.vGlp.address,
+        core.gmxEcosystem.fsGlp.address,
+        core.borrowPositionProxyV2.address,
         vaultImplementation.address,
         core.dolomiteMargin.address,
       ],
@@ -84,17 +71,19 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       core.hhUser1,
     );
 
-    await setupUSDCBalance(core.hhUser1, usdcAmount, GLP_MANAGER);
-    await GLP_REWARD_ROUTER.connect(core.hhUser1).mintAndStakeGlp(
+    await setupUSDCBalance(core.hhUser1, usdcAmount, core.gmxEcosystem.glpManager);
+    await core.gmxEcosystem.glpRewardRouter.mintAndStakeGlp(
       USDC.address,
       usdcAmount,
       ONE_BI,
       ONE_BI,
     );
     // use sGLP for approvals/transfers and fsGLP for checking balances
-    await S_GLP.connect(core.hhUser1).approve(vault.address, MAX_UINT_256_BI);
+    await core.gmxEcosystem.sGlp.approve(vault.address, MAX_UINT_256_BI);
     await vault.depositIntoVaultForDolomiteMargin(ZERO_BI, amountWei);
-    expect(await FS_GLP.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
+    expect(await core.gmxEcosystem.fsGlp.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
+
+    await core.gmxEcosystem.esGmxDistributor.setTokensPerInterval('10333994708994708');
 
     snapshotId = await snapshot();
   });
@@ -105,26 +94,28 @@ describe('GLPWrappedTokenUserVaultV1', () => {
 
   describe('#handleRewards', () => {
     it('should work', async () => {
-      await waitDays(365);
+      expect(await core.gmxEcosystem.esGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      // The user has not vested any esGMX into GMX, so the balance should be 0
+      expect(await core.gmxEcosystem.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.weth.balanceOf(core.hhUser1.address)).to.be.eq(ZERO_BI);
+
+      await waitDays(30);
       await vault.handleRewards(true, false, true, false, true, true, false);
-      // TODO: find out why there is no GMX nor esGMX accruing. Might need to run a maintenance function on GMX.
-      console.log(
-        'AFTER GMX balance=[hhUser1]',
-        (await GMX.connect(core.hhUser1).balanceOf(core.hhUser1.address)).toString(),
-      );
-      console.log('AFTER GMX balance=[vault]', (await GMX.connect(core.hhUser1).balanceOf(vault.address)).toString());
-      console.log(
-        'AFTER esGMX balance=[hhUser1]',
-        (await ES_GMX.connect(core.hhUser1).balanceOf(core.hhUser1.address)).toString(),
-      );
-      console.log(
-        'AFTER esGMX balance[vault]',
-        (await ES_GMX.connect(core.hhUser1).balanceOf(vault.address)).toString(),
-      );
-      console.log(
-        'AFTER WETH balance=[hhUser1]',
-        (await WETH.connect(core.hhUser1).balanceOf(core.hhUser1.address)).toString(),
-      );
+
+      expect((await core.gmxEcosystem.esGmx.balanceOf(vault.address)).gt(ZERO_BI)).to.eq(true);
+      expect(await core.gmxEcosystem.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      // The user has not vested any esGMX into GMX, so the balance should be 0
+      expect(await core.gmxEcosystem.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await core.weth.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
     });
 
     it('should fail when not called by vault owner', async () => {
@@ -172,7 +163,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
 
   describe('#gmxRewardsRouter', () => {
     it('should work normally', async () => {
-      expect(await vault.gmxRewardsRouter()).to.equal(GMX_REWARD_ROUTER.address);
+      expect(await vault.gmxRewardsRouter()).to.equal(core.gmxEcosystem.gmxRewardRouter.address);
     });
   });
 
@@ -190,7 +181,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
 
   describe('#vGlp', () => {
     it('should work normally', async () => {
-      expect(await vault.vGlp()).to.equal(V_GLP.address);
+      expect(await vault.vGlp()).to.equal(core.gmxEcosystem.vGlp.address);
     });
   });
 });

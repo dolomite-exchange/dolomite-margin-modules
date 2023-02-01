@@ -16,9 +16,9 @@ import {
 import {
   BORROW_POSITION_PROXY_V2,
   DOLOMITE_AMM_ROUTER,
-  DOLOMITE_MARGIN,
-  EXPIRY,
-  USDC,
+  DOLOMITE_MARGIN, ES_GMX, ES_GMX_DISTRIBUTOR,
+  EXPIRY, FS_GLP, GLP, GLP_MANAGER, GLP_REWARD_ROUTER, GMX, GMX_REWARD_ROUTER, GMX_VAULT, S_GLP,
+  USDC, V_GLP,
   WETH,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
@@ -45,8 +45,22 @@ export interface CoreProtocol {
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
   expiry: IExpiry;
+  gmxEcosystem: {
+    esGmx: typeof ES_GMX;
+    esGmxDistributor: typeof ES_GMX_DISTRIBUTOR;
+    fsGlp: typeof FS_GLP;
+    glp: typeof GLP;
+    glpManager: typeof GLP_MANAGER;
+    glpRewardRouter: typeof GLP_REWARD_ROUTER;
+    gmxRewardRouter: typeof GMX_REWARD_ROUTER;
+    gmx: typeof GMX;
+    gmxVault: typeof GMX_VAULT;
+    sGlp: typeof S_GLP;
+    vGlp: typeof V_GLP;
+  };
   testInterestSetter: TestInterestSetter;
   testPriceOracle: TestPriceOracle;
+  weth: typeof WETH;
   hhUser1: SignerWithAddress;
   hhUser2: SignerWithAddress;
   hhUser3: SignerWithAddress;
@@ -109,7 +123,7 @@ export async function setupCoreProtocol(
 
   const dolomiteAmmRouterProxy = DOLOMITE_AMM_ROUTER.connect(hhUser1);
 
-  await setupWETHBalance(hhUser1, '1000000000000000000000', dolomiteMargin); // 1000 WETH
+  const esGmxAdmin = await impersonate(await ES_GMX_DISTRIBUTOR.connect(hhUser1).admin());
 
   return {
     borrowPositionProxyV2,
@@ -127,6 +141,20 @@ export async function setupCoreProtocol(
     config: {
       blockNumber: config.blockNumber,
     },
+    gmxEcosystem: {
+      esGmx: ES_GMX.connect(hhUser1),
+      esGmxDistributor: ES_GMX_DISTRIBUTOR.connect(esGmxAdmin),
+      fsGlp: FS_GLP.connect(hhUser1),
+      glp: GLP.connect(hhUser1),
+      glpManager: GLP_MANAGER.connect(hhUser1),
+      glpRewardRouter: GLP_REWARD_ROUTER.connect(hhUser1),
+      gmxRewardRouter: GMX_REWARD_ROUTER.connect(hhUser1),
+      gmx: GMX.connect(hhUser1),
+      gmxVault: GMX_VAULT.connect(hhUser1),
+      sGlp: S_GLP.connect(hhUser1),
+      vGlp: V_GLP.connect(hhUser1),
+    },
+    weth: WETH.connect(hhUser1),
   };
 }
 

@@ -17,7 +17,7 @@ import {
   IDolomiteMargin,
   IDolomiteMargin__factory,
   IERC20,
-  IERC20__factory, IExpiry, IExpiry__factory,
+  IERC20__factory, IEsGmxDistributor, IEsGmxDistributor__factory, IExpiry, IExpiry__factory,
   IGLPManager,
   IGLPManager__factory,
   IGLPRewardRouterV2,
@@ -117,6 +117,15 @@ export const ES_GMX = new BaseContract(
   ES_GMX_MAP[NETWORK_ID],
   IERC20__factory.createInterface(),
 ) as IERC20;
+
+const ES_GMX_DISTRIBUTOR_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x60519b48ec4183a61ca2B8e37869E675FD203b34',
+};
+
+export const ES_GMX_DISTRIBUTOR = new BaseContract(
+  ES_GMX_DISTRIBUTOR_MAP[NETWORK_ID],
+  IEsGmxDistributor__factory.createInterface(),
+) as IEsGmxDistributor;
 
 const FS_GLP_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0x1aDDD80E6039594eE970E5872D247bf0414C8903',
