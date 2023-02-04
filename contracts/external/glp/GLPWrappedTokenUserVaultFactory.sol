@@ -14,7 +14,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IGMXRewardRouterV2 } from "../interfaces/IGMXRewardRouterV2.sol";
+import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
+import { IGmxRewardRouterV2 } from "../interfaces/IGmxRewardRouterV2.sol";
 import { IGLPWrappedTokenUserVaultFactory } from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
 
 import { WrappedTokenUserVaultFactory } from "../proxies/WrappedTokenUserVaultFactory.sol";
@@ -38,23 +39,14 @@ contract GLPWrappedTokenUserVaultFactory is
 
     address public immutable override WETH; // solhint-disable-line var-name-mixedcase
     uint256 public immutable override WETH_MARKET_ID; // solhint-disable-line var-name-mixedcase
-
-    IGMXRewardRouterV2 public override gmxRewardsRouter;
-    address public override gmx;
-    address public override esGmx;
-    address public override sGlp;
-    address public override vGlp;
+    IGmxRegistryV1 public override gmxRegistry;
 
     // ============ Constructor ============
 
     constructor(
         address _weth,
         uint256 _wethMarketId,
-        address _gmxRewardsRouter,
-        address _gmx,
-        address _esGmx,
-        address _sGlp,
-        address _vGlp,
+        address _gmxRegistry,
         address _fsGlp, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
@@ -68,41 +60,21 @@ contract GLPWrappedTokenUserVaultFactory is
     ) {
         WETH = _weth;
         WETH_MARKET_ID = _wethMarketId;
-        gmxRewardsRouter = IGMXRewardRouterV2(_gmxRewardsRouter);
-        gmx = _gmx;
-        esGmx = _esGmx;
-        sGlp = _sGlp;
-        vGlp = _vGlp;
+        gmxRegistry = IGmxRegistryV1(_gmxRegistry);
     }
 
     // ============ External Functions ============
 
-    function setGmx(address _gmx) external override onlyOwner(msg.sender) {
-        gmx = _gmx;
-        emit GmxSet(_gmx);
+    function setGmxRegistry(address _gmxRegistry) external override onlyDolomiteMarginOwner(msg.sender) {
+        gmxRegistry = IGmxRegistryV1(_gmxRegistry);
+        emit GmxRegistrySet(_gmxRegistry);
     }
 
-    function setEsGmx(address _esGmx) external override onlyOwner(msg.sender) {
-        esGmx = _esGmx;
-        emit EsGmxSet(_esGmx);
+    function allowableDebtMarketIds() external pure returns (uint256[] memory) {
+        return new uint256[](0);
     }
 
-    function setSGlp(address _sGlp) external override onlyOwner(msg.sender) {
-        sGlp = _sGlp;
-        emit SGlpSet(_sGlp);
-    }
-
-    function setVGlp(address _vGlp) external override onlyOwner(msg.sender) {
-        vGlp = _vGlp;
-        emit VGlpSet(_vGlp);
-    }
-
-    function setGmxRewardsRouter(address _gmxRewardsRouter) external override onlyOwner(msg.sender) {
-        gmxRewardsRouter = IGMXRewardRouterV2(_gmxRewardsRouter);
-        emit GmxRewardsRouterSet(_gmxRewardsRouter);
-    }
-
-    function allowablePositionMarketIds() external pure returns (uint256[] memory) {
+    function allowableCollateralMarketIds() external pure returns (uint256[] memory) {
         return new uint256[](0);
     }
 }

@@ -22,7 +22,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { Require } from "../../protocol/lib/Require.sol";
 
 import { IGLPManager } from "../interfaces/IGLPManager.sol";
-import { IGMXVault } from "../interfaces/IGMXVault.sol";
+import {IGmxVault} from "../interfaces/IGmxVault.sol";
 
 
 /**
@@ -44,7 +44,7 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
     // ============================ Public State Variables ============================
 
     IGLPManager immutable public GLP_MANAGER; // solhint-disable-line var-name-mixedcase
-    IGMXVault immutable public GMX_VAULT; // solhint-disable-line var-name-mixedcase
+    IGmxVault immutable public GMX_VAULT; // solhint-disable-line var-name-mixedcase
     IERC20 immutable public GLP; // solhint-disable-line var-name-mixedcase
     IERC20 immutable public DS_GLP; // solhint-disable-line var-name-mixedcase
 
@@ -57,7 +57,7 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
         address _dsGlp
     ) {
         GLP_MANAGER = IGLPManager(_glpManager);
-        GMX_VAULT = IGMXVault(_gmxVault);
+        GMX_VAULT = IGmxVault(_gmxVault);
         GLP = IERC20(_glp);
         DS_GLP = IERC20(_dsGlp);
     }

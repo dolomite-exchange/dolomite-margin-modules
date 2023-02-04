@@ -26,7 +26,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { WrappedTokenUserVaultV1 } from "../proxies/WrappedTokenUserVaultV1.sol";
 
 import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
-import { IGMXRewardRouterV2 } from"../interfaces/IGMXRewardRouterV2.sol";
+import { IGmxRewardRouterV2 } from"../interfaces/IGmxRewardRouterV2.sol";
 import { IGLPWrappedTokenUserVaultFactory } from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
 import { IVGlp } from "../interfaces/IVGlp.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
@@ -79,9 +79,9 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         address factory = VAULT_FACTORY();
         if (!_shouldStakeGmx) {
             // If the user isn't staking GMX, transfer it to the vault owner
-            IERC20 gmx = IERC20(IGLPWrappedTokenUserVaultFactory(factory).gmx());
-            uint amount = gmx.balanceOf(address(this));
-            gmx.safeTransfer(msg.sender, amount);
+            IERC20 _gmx = gmx();
+            uint amount = _gmx.balanceOf(address(this));
+            _gmx.safeTransfer(msg.sender, amount);
         }
 
         if (_shouldClaimWeth) {
@@ -101,19 +101,18 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     }
 
     function stakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
-        IERC20 gmx = IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmx());
-        gmx.safeTransferFrom(msg.sender, address(this), _amount);
+        IERC20 _gmx = gmx();
+        _gmx.safeTransferFrom(msg.sender, address(this), _amount);
 
-        IGMXRewardRouterV2 _gmxRewardsRouter = gmxRewardsRouter();
-        gmx.safeApprove(address(_gmxRewardsRouter), _amount);
+        IGmxRewardRouterV2 _gmxRewardsRouter = gmxRewardsRouter();
+        _gmx.safeApprove(address(_gmxRewardsRouter), _amount);
         _gmxRewardsRouter.stakeGmx(_amount);
     }
 
     function unstakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
         gmxRewardsRouter().unstakeGmx(_amount);
 
-        IERC20 gmx = IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmx());
-        gmx.safeTransfer(msg.sender, _amount);
+        gmx().safeTransfer(msg.sender, _amount);
     }
 
     function stakeEsGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
@@ -122,6 +121,10 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
 
     function unstakeEsGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
         gmxRewardsRouter().unstakeEsGmx(_amount);
+    }
+
+    function acceptFullAccountTransfer(address _sender) external onlyVaultOwner(msg.sender) {
+        gmxRewardsRouter().acceptTransfer(_sender);
     }
 
     function vestGlp(uint256 _amount) external onlyVaultOwner(msg.sender) {
@@ -159,19 +162,23 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         sGlp().safeTransfer(_recipient, _amount);
     }
 
-    function gmxRewardsRouter() public view returns (IGMXRewardRouterV2) {
-        return IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRewardsRouter();
+    function gmxRewardsRouter() public view returns (IGmxRewardRouterV2) {
+        return IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().gmxRewardsRouter();
     }
 
     function underlyingBalanceOf() public view override returns (uint256) {
         return vGlp().pairAmounts(address(this)) + super.underlyingBalanceOf();
     }
 
+    function gmx() public view returns (IERC20) {
+        return IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().gmx());
+    }
+
     function sGlp() public view returns (IERC20) {
-        return IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).sGlp());
+        return IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().sGlp());
     }
 
     function vGlp() public view returns (IVGlp) {
-        return IVGlp(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).vGlp());
+        return IVGlp(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().vGlp());
     }
 }

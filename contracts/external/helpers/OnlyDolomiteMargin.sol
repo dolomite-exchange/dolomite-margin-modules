@@ -48,6 +48,16 @@ abstract contract OnlyDolomiteMargin is IOnlyDolomiteMargin {
         _;
     }
 
+    modifier onlyDolomiteMarginOwner(address _from) {
+        Require.that(
+            _from == DOLOMITE_MARGIN.owner(),
+            _FILE,
+            "Caller is not owner of Dolomite",
+            _from
+        );
+        _;
+    }
+
     // ============ Constructor ============
 
     constructor (address _dolomiteMargin)

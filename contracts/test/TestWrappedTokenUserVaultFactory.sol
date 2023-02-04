@@ -24,7 +24,8 @@ import { WrappedTokenUserVaultProxy } from  "../external/proxies/WrappedTokenUse
 
 contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
 
-    uint256[] private _allowablePositionMarketIds;
+    uint256[] private _allowableDebtMarketIds;
+    uint256[] private _allowableCollateralMarketIds;
 
     constructor(
         address _underlyingToken,
@@ -83,11 +84,19 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
         IWrappedTokenUserVaultProxy(vault).initialize(_account2);
     }
 
-    function setAllowablePositionMarketIds(uint256[] memory __allowablePositionMarketIds) external {
-        _allowablePositionMarketIds = __allowablePositionMarketIds;
+    function setAllowableDebtMarketIds(uint256[] memory __allowableDebtMarketIds) external {
+        _allowableDebtMarketIds = __allowableDebtMarketIds;
     }
 
-    function allowablePositionMarketIds() external view override returns (uint256[] memory) {
-        return _allowablePositionMarketIds;
+    function setAllowableCollateralMarketIds(uint256[] memory __allowableCollateralMarketIds) external {
+        _allowableCollateralMarketIds = __allowableCollateralMarketIds;
+    }
+
+    function allowableDebtMarketIds() external view override returns (uint256[] memory) {
+        return _allowableDebtMarketIds;
+    }
+
+    function allowableCollateralMarketIds() external view override returns (uint256[] memory) {
+        return _allowableDebtMarketIds;
     }
 }

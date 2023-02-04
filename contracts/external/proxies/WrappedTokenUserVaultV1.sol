@@ -23,6 +23,7 @@ import { IDolomiteMarginLiquidationCallback } from "../../protocol/interfaces/ID
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
+import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 
 import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
@@ -46,6 +47,7 @@ abstract contract WrappedTokenUserVaultV1 is
     IDolomiteMarginLiquidationCallback
 {
     using SafeERC20 for IERC20;
+    using TypesLib for IDolomiteMargin.Par;
 
     // ===================================================
     // ==================== Constants ====================
@@ -104,25 +106,73 @@ abstract contract WrappedTokenUserVaultV1 is
         _;
     }
 
-    modifier onlyAllowableDebtMarket(uint256 _marketId) {
-        IWrappedTokenUserVaultFactory vaultFactory = IWrappedTokenUserVaultFactory(VAULT_FACTORY());
-        uint256[] memory allowableMarketIds = vaultFactory.allowablePositionMarketIds();
-        if (allowableMarketIds.length != 0) {
-            bool isAllowable = false;
-            for (uint256 i = 0; i < allowableMarketIds.length; i++) {
-                if (allowableMarketIds[i] == _marketId) {
-                    isAllowable = true;
-                    break;
-                }
-            }
-            Require.that(
-                isAllowable,
-                _FILE,
-                "Market not allowed as debt",
-                _marketId
-            );
-        }
+    modifier onlyAllowableDebtMarket(address _accountOwner, uint256 _accountNumber, uint256 _marketId) {
         _;
+
+        // If the balance is negative, check that the debt is for an allowable market. We use the Par balance because,
+        // it uses less gas than getting the Wei balance, and we're only checking whether the balance is negative.
+        IDolomiteStructs.Par memory balancePar = DOLOMITE_MARGIN().getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: _accountOwner,
+                number: _accountNumber
+            }),
+            _marketId
+        );
+        if (balancePar.isNegative()) {
+            // Check the allowable debt markets for the position:
+            IWrappedTokenUserVaultFactory vaultFactory = IWrappedTokenUserVaultFactory(VAULT_FACTORY());
+            uint256[] memory allowableDebtMarketIds = vaultFactory.allowableDebtMarketIds();
+            if (allowableDebtMarketIds.length != 0) {
+                bool isAllowable = false;
+                for (uint256 i = 0; i < allowableDebtMarketIds.length; i++) {
+                    if (allowableDebtMarketIds[i] == _marketId) {
+                        isAllowable = true;
+                        break;
+                    }
+                }
+                Require.that(
+                    isAllowable,
+                    _FILE,
+                    "Market not allowed as debt",
+                    _marketId
+                );
+            }
+        }
+    }
+
+    modifier onlyAllowableCollateralMarket(address _accountOwner, uint256 _accountNumber, uint256 _marketId) {
+        _;
+
+        // If the balance is positive, check that the collateral is for an allowable market. We use the Par balance
+        // because, it uses less gas than getting the Wei balance, and we're only checking whether the balance is
+        // positive.
+        IDolomiteStructs.Par memory balancePar = DOLOMITE_MARGIN().getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: _accountOwner,
+                number: _accountNumber
+            }),
+            _marketId
+        );
+        if (balancePar.isPositive()) {
+            // Check the allowable debt markets for the position:
+            IWrappedTokenUserVaultFactory vaultFactory = IWrappedTokenUserVaultFactory(VAULT_FACTORY());
+            uint256[] memory allowableCollateralMarketIds = vaultFactory.allowableCollateralMarketIds();
+            if (allowableCollateralMarketIds.length != 0) {
+                bool isAllowable = false;
+                for (uint256 i = 0; i < allowableCollateralMarketIds.length; i++) {
+                    if (allowableCollateralMarketIds[i] == _marketId) {
+                        isAllowable = true;
+                        break;
+                    }
+                }
+                Require.that(
+                    isAllowable,
+                    _FILE,
+                    "Market not allowed as collateral",
+                    _marketId
+                );
+            }
+        }
     }
 
     // ===================================================
@@ -288,7 +338,8 @@ abstract contract WrappedTokenUserVaultV1 is
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
-    onlyVaultOwner(msg.sender) {
+    onlyVaultOwner(msg.sender)
+    onlyAllowableCollateralMarket(address(this), _borrowAccountNumber, _marketId) {
         Require.that(
             _marketId != marketId(),
             _FILE,
@@ -347,7 +398,7 @@ abstract contract WrappedTokenUserVaultV1 is
     )
     external
     onlyVaultOwner(msg.sender)
-    onlyAllowableDebtMarket(_marketId) {
+    onlyAllowableDebtMarket(address(this), _borrowAccountNumber, _marketId) {
         Require.that(
             _marketId != marketId(),
             _FILE,

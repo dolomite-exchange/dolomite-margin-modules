@@ -146,6 +146,12 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     // ============================================
 
     /**
+     * @return  The market ID of the single element array returned by #allowableCollateralMarketIds() if no other
+     *          collateral assets are allowed
+     */
+    function NONE() external pure returns (uint256);
+
+    /**
      * @return The address of the token that this vault wraps around
      */
     function UNDERLYING_TOKEN() external view returns (address);
@@ -177,10 +183,17 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     function getQueuedTransferByCursor(uint256 _transferCursor) external view returns (QueuedTransfer memory);
 
     /**
-     * @return  The market IDs of the assets that can be used in a position with this wrapped asset. An empty array
+     * @return  The market IDs of the assets that can be borrowed in a position with this wrapped asset. An empty array
      *          indicates that any non-isolation mode asset can be borrowed against it.
      */
-    function allowablePositionMarketIds() external view returns (uint256[] memory);
+    function allowableDebtMarketIds() external view returns (uint256[] memory);
+
+    /**
+     * @return  The market IDs of the assets that can be used as collateral in a position with this wrapped asset. An
+     *          empty array indicates that any non-isolation mode asset can be borrowed against it. To indicate that no
+     *          assets can be used as collateral, return an array with a single element containing #NONE.
+     */
+    function allowableCollateralMarketIds() external view returns (uint256[] memory);
 
     /**
      * @return  The address of the current vault implementation contract

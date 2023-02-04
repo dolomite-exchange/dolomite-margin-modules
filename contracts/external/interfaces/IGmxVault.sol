@@ -15,27 +15,19 @@
 pragma solidity ^0.8.9;
 
 
-/**
- * @dev Interface of the GMX Reward Router V2 contract, taken from:
- *      https://arbiscan.io/address/0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1#code
- */
-interface IGMXRewardRouterV2 {
+interface IGmxVault {
 
-    function handleRewards(
-        bool _shouldClaimGmx,
-        bool _shouldStakeGmx,
-        bool _shouldClaimEsGmx,
-        bool _shouldStakeEsGmx,
-        bool _shouldStakeMultiplierPoints,
-        bool _shouldClaimWeth,
-        bool _shouldConvertWethToEth
-    ) external;
+    function getFeeBasisPoints(
+        address _token,
+        uint256 _usdgDelta,
+        uint256 _feeBasisPoints,
+        uint256 _taxBasisPoints,
+        bool _increment
+    ) external view returns (uint256);
 
-    function stakeGmx(uint256 _amount) external;
+    function getRedemptionAmount(address _token, uint256 _usdgAmount) external view returns (uint256);
 
-    function unstakeGmx(uint256 _amount) external;
+    function taxBasisPoints() external view returns (uint256);
 
-    function stakeEsGmx(uint256 _amount) external;
-
-    function unstakeEsGmx(uint256 _amount) external;
+    function mintBurnFeeBasisPoints() external view returns (uint256);
 }

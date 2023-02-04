@@ -27,7 +27,7 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 import { IGLPManager } from "../interfaces/IGLPManager.sol";
 import { IGLPRewardRouterV2 } from "../interfaces/IGLPRewardRouterV2.sol";
-import { IGMXVault } from "../interfaces/IGMXVault.sol";
+import {IGmxVault} from "../interfaces/IGmxVault.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
 import { ILiquidityTokenUnwrapperForLiquidation } from "../interfaces/ILiquidityTokenUnwrapperForLiquidation.sol";
 
@@ -53,7 +53,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     uint256 public immutable USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
     IGLPManager public immutable GLP_MANAGER; // solhint-disable-line var-name-mixedcase
     IGLPRewardRouterV2 public immutable GLP_REWARD_ROUTER; // solhint-disable-line var-name-mixedcase
-    IGMXVault public immutable GMX_VAULT; // solhint-disable-line var-name-mixedcase
+    IGmxVault public immutable GMX_VAULT; // solhint-disable-line var-name-mixedcase
     IERC20 public immutable GLP; // solhint-disable-line var-name-mixedcase
 
     /// @notice The Dolomite-wrapped contract for fsGLP (fee-staked GLP)
@@ -74,7 +74,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         USDC = _usdc;
         GLP_MANAGER = IGLPManager(_glpManager);
         GLP_REWARD_ROUTER = IGLPRewardRouterV2(_glpRewardRouter);
-        GMX_VAULT = IGMXVault(_gmxVault);
+        GMX_VAULT = IGmxVault(_gmxVault);
         GLP = IERC20(_glp);
         DFS_GLP = IWrappedTokenUserVaultFactory(_dsGlp);
 
@@ -214,7 +214,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
             "Taker token must be USDC",
             _takerToken
         );
-        IGMXVault gmxVault = GMX_VAULT;
+        IGmxVault gmxVault = GMX_VAULT;
 
         // This code is taken from the GMX contracts for calculating the redemption amount
         uint256 aumInUsdg = GLP_MANAGER.getAumInUsdg(false);

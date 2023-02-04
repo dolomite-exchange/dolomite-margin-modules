@@ -60,6 +60,7 @@ abstract contract WrappedTokenUserVaultFactory is
     // ================ Immutable Fields ================
     // ==================================================
 
+    uint256 public constant override NONE = type(uint256).max;
     address public immutable override UNDERLYING_TOKEN; // solhint-disable-line var-name-mixedcase
     IBorrowPositionProxyV2 public immutable override BORROW_POSITION_PROXY; // solhint-disable-line var-name-mixedcase
 
@@ -101,16 +102,6 @@ abstract contract WrappedTokenUserVaultFactory is
             _cursorToQueuedTransferMap[transferCursor].from == address(0),
             _FILE,
             "Transfer is already queued"
-        );
-        _;
-    }
-
-    modifier onlyOwner(address _caller) {
-        Require.that(
-            _caller == DOLOMITE_MARGIN.owner(),
-            _FILE,
-            "Caller is not the owner",
-            _caller
         );
         _;
     }
@@ -186,7 +177,7 @@ abstract contract WrappedTokenUserVaultFactory is
     external
     override
     requireIsInitialized
-    onlyOwner(msg.sender) {
+    onlyDolomiteMarginOwner(msg.sender) {
         emit UserVaultImplementationSet(userVaultImplementation, _userVaultImplementation);
         userVaultImplementation = _userVaultImplementation;
     }
@@ -198,7 +189,7 @@ abstract contract WrappedTokenUserVaultFactory is
     external
     override
     requireIsInitialized
-    onlyOwner(msg.sender) {
+    onlyDolomiteMarginOwner(msg.sender) {
         _setIsTokenUnwrapperTrusted(_tokenUnwrapper, _isTrusted);
     }
 

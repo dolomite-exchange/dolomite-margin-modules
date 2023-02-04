@@ -156,6 +156,11 @@ describe('GLPWrappedTokenUserVaultV1', () => {
     });
   });
 
+  describe('#acceptTransfer', () => {
+    it('should work when the vault has had no interactions with GMX', async () => {
+    });
+  });
+
   describe('#executeWithdrawalFromVault', () => {
     it('should ', async () => {
     });

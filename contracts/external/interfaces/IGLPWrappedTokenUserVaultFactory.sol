@@ -14,7 +14,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IGMXRewardRouterV2 } from "./IGMXRewardRouterV2.sol";
+import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
+import { IGmxRewardRouterV2 } from "./IGmxRewardRouterV2.sol";
 import { IWrappedTokenUserVaultFactory } from "./IWrappedTokenUserVaultFactory.sol";
 
 
@@ -24,37 +25,17 @@ interface IGLPWrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
     // ==================== Events ====================
     // ================================================
 
-    event GmxRewardsRouterSet(address _gmxRewardsRouter);
-    event GmxSet(address _gmx);
-    event EsGmxSet(address _esGmx);
-    event SGlpSet(address _vGlp);
-    event VGlpSet(address _vGlp);
+    event GmxRegistrySet(address _gmxRegistry);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function setGmxRewardsRouter(address _gmxRewardsRouter) external;
-
-    function setGmx(address _gmx) external;
-
-    function setEsGmx(address _esGmx) external;
-
-    function setSGlp(address _sGlp) external;
-
-    function setVGlp(address _vGlp) external;
+    function setGmxRegistry(address _gmxRegistry) external;
 
     function WETH() external view returns (address);
 
     function WETH_MARKET_ID() external view returns (uint256);
 
-    function esGmx() external view returns (address);
-
-    function gmx() external view returns (address);
-
-    function sGlp() external view returns (address);
-
-    function vGlp() external view returns (address);
-
-    function gmxRewardsRouter() external view returns (IGMXRewardRouterV2);
+    function gmxRegistry() external view returns (IGmxRegistryV1);
 }
