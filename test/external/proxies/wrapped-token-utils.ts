@@ -10,7 +10,7 @@ import {
   DOLOMITE_MARGIN,
   GLP,
   GLP_MANAGER,
-  GLP_REWARD_ROUTER,
+  GLP_REWARDS_ROUTER,
   GMX_VAULT,
   USDC,
 } from '../../../src/utils/constants';
@@ -41,7 +41,7 @@ export async function createGlpUnwrapperProxy(
     [
       USDC.address,
       GLP_MANAGER.address,
-      GLP_REWARD_ROUTER.address,
+      GLP_REWARDS_ROUTER.address,
       GMX_VAULT.address,
       GLP.address,
       wrappedTokenFactory.address,

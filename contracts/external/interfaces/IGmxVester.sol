@@ -15,7 +15,7 @@
 pragma solidity ^0.8.9;
 
 
-interface IVGlp {
+interface IGmxVester {
 
     /**
      * @notice          Deposits esGMX for vesting into GMX.  msg.sender will also need to pay sGLP tokens.

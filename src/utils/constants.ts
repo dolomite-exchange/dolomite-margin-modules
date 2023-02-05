@@ -17,13 +17,19 @@ import {
   IDolomiteMargin,
   IDolomiteMargin__factory,
   IERC20,
-  IERC20__factory, IEsGmxDistributor, IEsGmxDistributor__factory, IExpiry, IExpiry__factory,
+  IERC20__factory,
+  IEsGmxDistributor,
+  IEsGmxDistributor__factory,
+  IExpiry,
+  IExpiry__factory,
   IGLPManager,
   IGLPManager__factory,
   IGLPRewardRouterV2,
   IGLPRewardRouterV2__factory,
-  IGMXVault,
-  IGMXVault__factory, IVGlp, IVGlp__factory,
+  IGmxVault,
+  IGmxVault__factory,
+  IGmxVester,
+  IGmxVester__factory,
   IWETH,
   IWETH__factory,
   LiquidatorProxyV2WithExternalLiquidity,
@@ -161,7 +167,7 @@ const GLP_REWARD_ROUTER_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xB95DB5B167D75e6d04227CfFFA61069348d271F5',
 };
 
-export const GLP_REWARD_ROUTER = new BaseContract(
+export const GLP_REWARDS_ROUTER = new BaseContract(
   GLP_REWARD_ROUTER_MAP[NETWORK_ID],
   IGLPRewardRouterV2__factory.createInterface(),
 ) as IGLPRewardRouterV2;
@@ -170,7 +176,7 @@ const GMX_REWARD_ROUTER_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1',
 };
 
-export const GMX_REWARD_ROUTER = new BaseContract(
+export const GMX_REWARDS_ROUTER = new BaseContract(
   GMX_REWARD_ROUTER_MAP[NETWORK_ID],
   IGLPRewardRouterV2__factory.createInterface(),
 ) as IGLPRewardRouterV2;
@@ -190,8 +196,8 @@ const GMX_VAULT_MAP: Record<Network, string> = {
 
 export const GMX_VAULT = new BaseContract(
   GMX_VAULT_MAP[NETWORK_ID],
-  IGMXVault__factory.createInterface(),
-) as IGMXVault;
+  IGmxVault__factory.createInterface(),
+) as IGmxVault;
 
 const S_GLP_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf',
@@ -205,6 +211,25 @@ export const S_GLP = new BaseContract(
   IERC20__factory.createInterface(),
 ) as IERC20;
 
+// TODO: Find out if there is one for transferring sbfGMX
+const S_GMX_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x0000000000000000000000000000000000000000',
+};
+
+export const S_GMX = new BaseContract(
+  S_GMX_MAP[NETWORK_ID],
+  IERC20__factory.createInterface(),
+) as IERC20;
+
+const SBF_GMX_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0xd2D1162512F927a7e282Ef43a362659E4F2a728F',
+};
+
+export const SBF_GMX = new BaseContract(
+  SBF_GMX_MAP[NETWORK_ID],
+  IERC20__factory.createInterface(),
+) as IERC20;
+
 const V_GLP_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xA75287d2f8b217273E7FCD7E86eF07D33972042E',
 };
@@ -214,5 +239,17 @@ const V_GLP_MAP: Record<Network, string> = {
  */
 export const V_GLP = new BaseContract(
   V_GLP_MAP[NETWORK_ID],
-  IVGlp__factory.createInterface(),
-) as IVGlp;
+  IGmxVester__factory.createInterface(),
+) as IGmxVester;
+
+const V_GMX_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x199070DDfd1CFb69173aa2F7e20906F26B363004',
+};
+
+/**
+ * Token that holds sGMX for vesting esGMX into GMX
+ */
+export const V_GMX = new BaseContract(
+  V_GMX_MAP[NETWORK_ID],
+  IGmxVester__factory.createInterface(),
+) as IGmxVester;

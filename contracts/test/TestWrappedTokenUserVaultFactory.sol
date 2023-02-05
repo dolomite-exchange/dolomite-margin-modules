@@ -97,6 +97,6 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
     }
 
     function allowableCollateralMarketIds() external view override returns (uint256[] memory) {
-        return _allowableDebtMarketIds;
+        return _allowableCollateralMarketIds;
     }
 }

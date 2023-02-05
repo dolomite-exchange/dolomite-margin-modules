@@ -18,7 +18,7 @@ export async function createContract<T extends BaseContract>(
 export async function createContractWithAbi<T extends BaseContract>(
   abi: any[],
   bytecode: BytesLike,
-  args: (number | string)[],
+  args: (number | string | object)[],
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(abi, bytecode);
   return await ContractFactory.deploy(...args) as T;

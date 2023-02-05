@@ -4,21 +4,36 @@ import { BaseContract, BigNumberish, ContractInterface } from 'ethers';
 import { ethers, network } from 'hardhat';
 import {
   BorrowPositionProxyV2,
+  GmxRegistryV1,
+  GmxRegistryV1__factory,
   IDolomiteAmmRouterProxy,
-  IDolomiteMargin, IExpiry,
+  IDolomiteMargin,
+  IExpiry,
   TestInterestSetter,
   TestInterestSetter__factory,
   TestPriceOracle,
   TestPriceOracle__factory,
-  WrappedTokenUserVaultProxy,
-  WrappedTokenUserVaultProxy__factory,
 } from '../../src/types';
 import {
   BORROW_POSITION_PROXY_V2,
   DOLOMITE_AMM_ROUTER,
-  DOLOMITE_MARGIN, ES_GMX, ES_GMX_DISTRIBUTOR,
-  EXPIRY, FS_GLP, GLP, GLP_MANAGER, GLP_REWARD_ROUTER, GMX, GMX_REWARD_ROUTER, GMX_VAULT, S_GLP,
-  USDC, V_GLP,
+  DOLOMITE_MARGIN,
+  ES_GMX,
+  ES_GMX_DISTRIBUTOR,
+  EXPIRY,
+  FS_GLP,
+  GLP,
+  GLP_MANAGER,
+  GLP_REWARDS_ROUTER,
+  GMX,
+  GMX_REWARDS_ROUTER,
+  GMX_VAULT,
+  S_GLP,
+  S_GMX,
+  SBF_GMX,
+  USDC,
+  V_GLP,
+  V_GMX,
   WETH,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
@@ -51,12 +66,15 @@ export interface CoreProtocol {
     fsGlp: typeof FS_GLP;
     glp: typeof GLP;
     glpManager: typeof GLP_MANAGER;
-    glpRewardRouter: typeof GLP_REWARD_ROUTER;
-    gmxRewardRouter: typeof GMX_REWARD_ROUTER;
+    glpRewardsRouter: typeof GLP_REWARDS_ROUTER;
+    gmxRewardsRouter: typeof GMX_REWARDS_ROUTER;
     gmx: typeof GMX;
     gmxVault: typeof GMX_VAULT;
     sGlp: typeof S_GLP;
+    sGmx: typeof S_GMX;
+    sbfGmx: typeof SBF_GMX;
     vGlp: typeof V_GLP;
+    vGmx: typeof V_GMX;
   };
   testInterestSetter: TestInterestSetter;
   testPriceOracle: TestPriceOracle;
@@ -89,6 +107,30 @@ export function setupUserVaultProxy<T extends BaseContract>(
     factoryInterface.abi,
     signer,
   ) as T;
+}
+
+export function setupGmxRegistry(core: CoreProtocol): Promise<GmxRegistryV1> {
+  return createContractWithAbi<GmxRegistryV1>(
+    GmxRegistryV1__factory.abi,
+    GmxRegistryV1__factory.bytecode,
+    [
+      {
+        esGmx: core.gmxEcosystem.esGmx.address,
+        glp: core.gmxEcosystem.glp.address,
+        glpManager: core.gmxEcosystem.glpManager.address,
+        glpRewardsRouter: core.gmxEcosystem.glpRewardsRouter.address,
+        gmx: core.gmxEcosystem.gmx.address,
+        gmxRewardsRouter: core.gmxEcosystem.gmxRewardsRouter.address,
+        gmxVault: core.gmxEcosystem.gmxVault.address,
+        sGlp: core.gmxEcosystem.sGlp.address,
+        sGmx: core.gmxEcosystem.sGmx.address,
+        sbfGmx: core.gmxEcosystem.sbfGmx.address,
+        vGlp: core.gmxEcosystem.vGlp.address,
+        vGmx: core.gmxEcosystem.vGmx.address,
+      },
+      core.dolomiteMargin.address,
+    ],
+  );
 }
 
 export async function setupCoreProtocol(
@@ -147,12 +189,15 @@ export async function setupCoreProtocol(
       fsGlp: FS_GLP.connect(hhUser1),
       glp: GLP.connect(hhUser1),
       glpManager: GLP_MANAGER.connect(hhUser1),
-      glpRewardRouter: GLP_REWARD_ROUTER.connect(hhUser1),
-      gmxRewardRouter: GMX_REWARD_ROUTER.connect(hhUser1),
+      glpRewardsRouter: GLP_REWARDS_ROUTER.connect(hhUser1),
+      gmxRewardsRouter: GMX_REWARDS_ROUTER.connect(hhUser1),
       gmx: GMX.connect(hhUser1),
       gmxVault: GMX_VAULT.connect(hhUser1),
       sGlp: S_GLP.connect(hhUser1),
+      sGmx: S_GMX.connect(hhUser1),
+      sbfGmx: SBF_GMX.connect(hhUser1),
       vGlp: V_GLP.connect(hhUser1),
+      vGmx: V_GMX.connect(hhUser1),
     },
     weth: WETH.connect(hhUser1),
   };

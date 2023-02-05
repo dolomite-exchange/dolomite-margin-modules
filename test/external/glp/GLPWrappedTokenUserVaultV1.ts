@@ -13,7 +13,7 @@ import { revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
   CoreProtocol,
-  setupCoreProtocol,
+  setupCoreProtocol, setupGmxRegistry,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
@@ -40,17 +40,14 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       GLPWrappedTokenUserVaultV1__factory.bytecode,
       [],
     );
+    const gmxRegistry = await setupGmxRegistry(core);
     factory = await createContractWithAbi<GLPWrappedTokenUserVaultFactory>(
       GLPWrappedTokenUserVaultFactory__factory.abi,
       GLPWrappedTokenUserVaultFactory__factory.bytecode,
       [
         WETH.address,
         WETH_MARKET_ID,
-        core.gmxEcosystem.gmxRewardRouter.address,
-        core.gmxEcosystem.gmx.address,
-        core.gmxEcosystem.esGmx.address,
-        core.gmxEcosystem.sGlp.address,
-        core.gmxEcosystem.vGlp.address,
+        gmxRegistry.address,
         core.gmxEcosystem.fsGlp.address,
         core.borrowPositionProxyV2.address,
         vaultImplementation.address,
@@ -72,7 +69,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
     );
 
     await setupUSDCBalance(core.hhUser1, usdcAmount, core.gmxEcosystem.glpManager);
-    await core.gmxEcosystem.glpRewardRouter.mintAndStakeGlp(
+    await core.gmxEcosystem.glpRewardsRouter.mintAndStakeGlp(
       USDC.address,
       usdcAmount,
       ONE_BI,
@@ -168,7 +165,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
 
   describe('#gmxRewardsRouter', () => {
     it('should work normally', async () => {
-      expect(await vault.gmxRewardsRouter()).to.equal(core.gmxEcosystem.gmxRewardRouter.address);
+      expect(await vault.gmxRewardsRouter()).to.equal(core.gmxEcosystem.gmxRewardsRouter.address);
     });
   });
 

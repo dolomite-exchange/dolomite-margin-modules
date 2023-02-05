@@ -260,7 +260,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
       await expectThrow(
         wrappedTokenFactory.connect(core.hhUser1).setUserVaultImplementation(newImplementation.address),
-        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -310,7 +310,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
       await expectThrow(
         wrappedTokenFactory.connect(core.hhUser1).setIsTokenUnwrapperTrusted(newUnwrapper.address, true),
-        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 

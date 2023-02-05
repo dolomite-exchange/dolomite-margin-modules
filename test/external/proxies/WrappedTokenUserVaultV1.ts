@@ -79,6 +79,7 @@ describe('WrappedTokenUserVaultV1', () => {
       TestWrappedTokenUserVaultV1__factory,
       core.hhUser1,
     );
+    await userVault.initialize();
 
     otherToken = await createTestToken();
     await core.testPriceOracle.setPrice(
@@ -113,6 +114,15 @@ describe('WrappedTokenUserVaultV1', () => {
       expect(await userVault.BORROW_POSITION_PROXY()).to.eq(core.borrowPositionProxyV2.address);
       expect(await userVault.VAULT_FACTORY()).to.eq(wrappedTokenFactory.address);
       expect(await userVault.marketId()).to.eq(underlyingMarketId);
+    });
+  });
+
+  describe('#initialize', () => {
+    it('should fail when already initialized', async () => {
+      await expectThrow(
+        userVault.initialize(),
+        'WrappedTokenUserVaultV1: Already initialized',
+      );
     });
   });
 
@@ -348,6 +358,65 @@ describe('WrappedTokenUserVaultV1', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId, otherAmountWei);
     });
 
+    it('should work normally when collateral market is allowed', async () => {
+      await wrappedTokenFactory.setAllowableCollateralMarketIds([otherMarketId]);
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId, otherAmountWei);
+    });
+
+    it('should work normally for disallowed collateral asset that goes negative (debt market)', async () => {
+      await wrappedTokenFactory.setAllowableCollateralMarketIds([WETH_MARKET_ID]);
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId,
+        otherAmountWei,
+        BalanceCheckFlag.To,
+      );
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId,
+        otherAmountWei.div(2),
+        BalanceCheckFlag.None,
+      );
+
+      // the default account had $10, then added another $10, then lost $5, so it should have $15
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId, BigNumber.from('15000000'));
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId, otherAmountWei.div(-2));
+    });
+
+    it('should work when non-allowable debt market is transferred in', async () => {
+      await wrappedTokenFactory.setAllowableDebtMarketIds([WETH_MARKET_ID]);
+      // attempt to transfer another market ID in
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId, otherAmountWei);
+    });
+
     it('should fail when not called by owner', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).transferIntoPositionWithOtherToken(
@@ -361,7 +430,7 @@ describe('WrappedTokenUserVaultV1', () => {
       );
     });
 
-    it('should fail when not underlying token is used as transfer token', async () => {
+    it('should fail when underlying token is used as transfer token', async () => {
       await expectThrow(
         userVault.transferIntoPositionWithOtherToken(
           defaultAccountNumber,
@@ -371,6 +440,20 @@ describe('WrappedTokenUserVaultV1', () => {
           BalanceCheckFlag.Both,
         ),
         `WrappedTokenUserVaultV1: Invalid marketId <${underlyingMarketId.toString()}>`,
+      );
+    });
+
+    it('should fail when transferring in an unsupported collateral token', async () => {
+      await wrappedTokenFactory.setAllowableCollateralMarketIds([WETH_MARKET_ID]);
+      await expectThrow(
+        userVault.transferIntoPositionWithOtherToken(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          otherMarketId,
+          otherAmountWei,
+          BalanceCheckFlag.Both,
+        ),
+        `WrappedTokenUserVaultV1: Market not allowed as collateral <${otherMarketId.toString()}>`,
       );
     });
   });
@@ -412,7 +495,7 @@ describe('WrappedTokenUserVaultV1', () => {
 
   describe('#transferFromPositionWithOtherToken', () => {
     it('should work when no allowable debt market is set (all are allowed then)', async () => {
-      await wrappedTokenFactory.setAllowablePositionMarketIds([]);
+      await wrappedTokenFactory.setAllowableDebtMarketIds([]);
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await userVault.transferFromPositionWithOtherToken(
@@ -425,7 +508,20 @@ describe('WrappedTokenUserVaultV1', () => {
     });
 
     it('should work when 1 allowable debt market is set', async () => {
-      await wrappedTokenFactory.setAllowablePositionMarketIds([otherMarketId]);
+      await wrappedTokenFactory.setAllowableDebtMarketIds([otherMarketId]);
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId,
+        otherAmountWei.div(2),
+        BalanceCheckFlag.To,
+      );
+    });
+
+    it('should work when 1 allowable collateral market is set', async () => {
+      await wrappedTokenFactory.setAllowableCollateralMarketIds([WETH_MARKET_ID]);
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await userVault.transferFromPositionWithOtherToken(
@@ -434,6 +530,26 @@ describe('WrappedTokenUserVaultV1', () => {
         otherMarketId,
         otherAmountWei,
         BalanceCheckFlag.To,
+      );
+    });
+
+    it('should work when 1 allowable debt market is set', async () => {
+      await wrappedTokenFactory.setAllowableDebtMarketIds([WETH_MARKET_ID]);
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId,
+        otherAmountWei,
+        BalanceCheckFlag.None,
+      );
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId,
+        otherAmountWei.div(2),
+        BalanceCheckFlag.None,
       );
     });
 
@@ -464,14 +580,16 @@ describe('WrappedTokenUserVaultV1', () => {
     });
 
     it('should fail when an invalid debt market is used', async () => {
-      await wrappedTokenFactory.setAllowablePositionMarketIds([WETH_MARKET_ID]);
+      await wrappedTokenFactory.setAllowableDebtMarketIds([WETH_MARKET_ID]);
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await expectThrow(
         userVault.transferFromPositionWithOtherToken(
           borrowAccountNumber,
           defaultAccountNumber,
           otherMarketId,
           otherAmountWei,
-          BalanceCheckFlag.Both,
+          BalanceCheckFlag.To,
         ),
         `WrappedTokenUserVaultV1: Market not allowed as debt <${otherMarketId}>`,
       );

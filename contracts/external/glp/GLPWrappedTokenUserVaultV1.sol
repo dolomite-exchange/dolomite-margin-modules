@@ -28,7 +28,7 @@ import { WrappedTokenUserVaultV1 } from "../proxies/WrappedTokenUserVaultV1.sol"
 import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
 import { IGmxRewardRouterV2 } from"../interfaces/IGmxRewardRouterV2.sol";
 import { IGLPWrappedTokenUserVaultFactory } from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
-import { IVGlp } from "../interfaces/IVGlp.sol";
+import { IGmxVester } from "../interfaces/IGmxVester.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
 import { IWrappedTokenUserVaultProxy } from "../interfaces/IWrappedTokenUserVaultProxy.sol";
 import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1.sol";
@@ -123,8 +123,9 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         gmxRewardsRouter().unstakeEsGmx(_amount);
     }
 
-    function acceptFullAccountTransfer(address _sender) external onlyVaultOwner(msg.sender) {
+    function acceptFullAccountTransfer(address _sender) external onlyVaultOwner(msg.sender) nonReentrant {
         gmxRewardsRouter().acceptTransfer(_sender);
+        // TODO: deposit received assets into Dolomite
     }
 
     function vestGlp(uint256 _amount) external onlyVaultOwner(msg.sender) {
@@ -133,6 +134,14 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
 
     function unvestGlp() external onlyVaultOwner(msg.sender) {
         vGlp().withdraw();
+    }
+
+    function vestGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
+        vGmx().deposit(_amount);
+    }
+
+    function unvestGmx() external onlyVaultOwner(msg.sender) {
+        vGmx().withdraw();
     }
 
     // ============ Public Functions ============
@@ -170,6 +179,10 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         return vGlp().pairAmounts(address(this)) + super.underlyingBalanceOf();
     }
 
+    function gmxBalanceOf() public view returns (uint256) {
+        return vGmx().pairAmounts(address(this));
+    }
+
     function gmx() public view returns (IERC20) {
         return IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().gmx());
     }
@@ -178,7 +191,11 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         return IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().sGlp());
     }
 
-    function vGlp() public view returns (IVGlp) {
-        return IVGlp(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().vGlp());
+    function vGlp() public view returns (IGmxVester) {
+        return IGmxVester(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().vGlp());
+    }
+
+    function vGmx() public view returns (IGmxVester) {
+        return IGmxVester(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().vGmx());
     }
 }

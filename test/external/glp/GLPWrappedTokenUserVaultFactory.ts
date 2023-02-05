@@ -4,22 +4,13 @@ import {
   GLPWrappedTokenUserVaultFactory__factory,
   GLPWrappedTokenUserVaultV1,
   GLPWrappedTokenUserVaultV1__factory,
+  GmxRegistryV1,
 } from '../../../src/types';
-import {
-  BORROW_POSITION_PROXY_V2,
-  ES_GMX,
-  FS_GLP,
-  GMX,
-  GMX_REWARD_ROUTER,
-  S_GLP,
-  V_GLP,
-  WETH,
-  WETH_MARKET_ID,
-} from '../../../src/utils/constants';
+import { WETH_MARKET_ID } from '../../../src/utils/constants';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupGmxRegistry } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -27,6 +18,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
+  let gmxRegistry: GmxRegistryV1;
   let vaultImplementation: GLPWrappedTokenUserVaultV1;
   let factory: GLPWrappedTokenUserVaultFactory;
 
@@ -34,6 +26,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
     });
+    gmxRegistry = await setupGmxRegistry(core);
     vaultImplementation = await createContractWithAbi<GLPWrappedTokenUserVaultV1>(
       GLPWrappedTokenUserVaultV1__factory.abi,
       GLPWrappedTokenUserVaultV1__factory.bytecode,
@@ -43,15 +36,11 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       GLPWrappedTokenUserVaultFactory__factory.abi,
       GLPWrappedTokenUserVaultFactory__factory.bytecode,
       [
-        WETH.address,
+        core.weth.address,
         WETH_MARKET_ID,
-        GMX_REWARD_ROUTER.address,
-        GMX.address,
-        ES_GMX.address,
-        S_GLP.address,
-        V_GLP.address,
-        FS_GLP.address,
-        BORROW_POSITION_PROXY_V2.address,
+        gmxRegistry.address,
+        core.gmxEcosystem.fsGlp.address,
+        core.borrowPositionProxyV2.address,
         vaultImplementation.address,
         core.dolomiteMargin.address,
       ],
@@ -66,108 +55,42 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
 
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await factory.WETH()).to.equal(WETH.address);
+      expect(await factory.WETH()).to.equal(core.weth.address);
       expect(await factory.WETH_MARKET_ID()).to.equal(WETH_MARKET_ID);
-      expect(await factory.gmxRewardsRouter()).to.equal(GMX_REWARD_ROUTER.address);
-      expect(await factory.gmx()).to.equal(GMX.address);
-      expect(await factory.esGmx()).to.equal(ES_GMX.address);
-      expect(await factory.sGlp()).to.equal(S_GLP.address);
-      expect(await factory.vGlp()).to.equal(V_GLP.address);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(FS_GLP.address);
-      expect(await factory.BORROW_POSITION_PROXY()).to.equal(BORROW_POSITION_PROXY_V2.address);
+      expect(await factory.gmxRegistry()).to.equal(gmxRegistry.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem.fsGlp.address);
+      expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
     });
   });
 
-  describe('#setGmx', () => {
+  describe('#setGmxRegistry', () => {
     it('should work normally', async () => {
-      const result = await factory.connect(core.governance).setGmx(OTHER_ADDRESS);
-      await expectEvent(factory, result, 'GmxSet', {
-        gmx: OTHER_ADDRESS,
+      const result = await factory.connect(core.governance).setGmxRegistry(OTHER_ADDRESS);
+      await expectEvent(factory, result, 'GmxRegistrySet', {
+        gmxRegistry: OTHER_ADDRESS,
       });
-      expect(await factory.gmx()).to.equal(OTHER_ADDRESS);
+      expect(await factory.gmxRegistry()).to.equal(OTHER_ADDRESS);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        factory.connect(core.hhUser1).setGmx(OTHER_ADDRESS),
-        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
+        factory.connect(core.hhUser1).setGmxRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
 
-  describe('#setEsGmx', () => {
+  describe('#allowableCollateralMarketIds', () => {
     it('should work normally', async () => {
-      const result = await factory.connect(core.governance).setEsGmx(OTHER_ADDRESS);
-      await expectEvent(factory, result, 'EsGmxSet', {
-        esGmx: OTHER_ADDRESS,
-      });
-      expect(await factory.esGmx()).to.equal(OTHER_ADDRESS);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        factory.connect(core.hhUser1).setEsGmx(OTHER_ADDRESS),
-        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
-      );
+      expect(await factory.allowableCollateralMarketIds()).to.deep.equal([]);
     });
   });
 
-  describe('#setSGlp', () => {
+  describe('#allowableDebtMarketIds', () => {
     it('should work normally', async () => {
-      const result = await factory.connect(core.governance).setSGlp(OTHER_ADDRESS);
-      await expectEvent(factory, result, 'SGlpSet', {
-        sGlp: OTHER_ADDRESS,
-      });
-      expect(await factory.sGlp()).to.equal(OTHER_ADDRESS);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        factory.connect(core.hhUser1).setSGlp(OTHER_ADDRESS),
-        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#setVGlp', () => {
-    it('should work normally', async () => {
-      const result = await factory.connect(core.governance).setVGlp(OTHER_ADDRESS);
-      await expectEvent(factory, result, 'VGlpSet', {
-        vGlp: OTHER_ADDRESS,
-      });
-      expect(await factory.vGlp()).to.equal(OTHER_ADDRESS);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        factory.connect(core.hhUser1).setVGlp(OTHER_ADDRESS),
-        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#setGmxRewardsRouter', () => {
-    it('should work normally', async () => {
-      const result = await factory.connect(core.governance).setGmxRewardsRouter(OTHER_ADDRESS);
-      await expectEvent(factory, result, 'GmxRewardsRouterSet', {
-        gmxRewardsRouter: OTHER_ADDRESS,
-      });
-      expect(await factory.gmxRewardsRouter()).to.equal(OTHER_ADDRESS);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        factory.connect(core.hhUser1).setGmxRewardsRouter(OTHER_ADDRESS),
-        `WrappedTokenUserVaultFactory: Caller is not the owner <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#allowablePositionMarketIds', () => {
-    it('should work normally', async () => {
-      expect(await factory.allowablePositionMarketIds()).to.deep.equal([]);
+      expect(await factory.allowableDebtMarketIds()).to.deep.equal([]);
     });
   });
 });

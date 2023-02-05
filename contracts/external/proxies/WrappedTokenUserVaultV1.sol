@@ -54,6 +54,8 @@ abstract contract WrappedTokenUserVaultV1 is
     // ===================================================
 
     bytes32 private constant _FILE = "WrappedTokenUserVaultV1";
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
 
     // =================================================
     // ================ Field Variables ================
@@ -61,6 +63,7 @@ abstract contract WrappedTokenUserVaultV1 is
 
     uint256 public transferCursor;
     mapping(uint256 => uint256) internal _cursorToQueuedTransferAmountMap;
+    uint256 private _reentrancyGuard;
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -175,9 +178,41 @@ abstract contract WrappedTokenUserVaultV1 is
         }
     }
 
+    /**
+     * @dev Prevents a contract from calling itself, directly or indirectly. Calling a `nonReentrant` function from
+     *      another `nonReentrant` function is not supported. It is possible to prevent this from happening by making
+     *      the `nonReentrant` function external, and making it call a `private` function that does the actual work.
+     */
+    modifier nonReentrant() {
+        // On the first call to nonReentrant, _reentrancyGuard will be _NOT_ENTERED
+        Require.that(
+            _reentrancyGuard != _ENTERED,
+            _FILE,
+            "ReentrancyGuard: reentrant call"
+        );
+
+        // Any calls to nonReentrant after this point will fail
+        _reentrancyGuard = _ENTERED;
+
+        _;
+
+        // By storing the original value once again, a refund is triggered (see https://eips.ethereum.org/EIPS/eip-2200)
+        _reentrancyGuard = _NOT_ENTERED;
+    }
+
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
+
+    function initialize() external {
+        Require.that(
+            _reentrancyGuard == 0,
+            _FILE,
+            "Already initialized"
+        );
+
+        _reentrancyGuard = _NOT_ENTERED;
+    }
 
     function depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,
