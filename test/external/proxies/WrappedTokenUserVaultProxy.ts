@@ -10,7 +10,13 @@ import {
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
+import {
+  CoreProtocol,
+  setupCoreProtocol,
+  setupGmxRegistry,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../../utils/setup';
 import { createGlpUnwrapperProxy, createWrappedTokenFactory } from './wrapped-token-utils';
 
 describe('WrappedTokenUserVaultProxy', () => {
@@ -40,7 +46,8 @@ describe('WrappedTokenUserVaultProxy', () => {
 
     await setupTestMarket(core, wrappedTokenFactory, true);
 
-    const tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory);
+    const registry = await setupGmxRegistry(core);
+    const tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory, registry);
     await wrappedTokenFactory.initialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrappedTokenFactory.address, true);
 

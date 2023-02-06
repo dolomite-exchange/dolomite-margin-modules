@@ -1,7 +1,7 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
   GLPUnwrapperProxyV1,
-  GLPUnwrapperProxyV1__factory,
+  GLPUnwrapperProxyV1__factory, IGmxRegistryV1,
   TestWrappedTokenUserVaultFactory,
   TestWrappedTokenUserVaultFactory__factory,
 } from '../../../src/types';
@@ -34,16 +34,14 @@ export async function createWrappedTokenFactory(
 
 export async function createGlpUnwrapperProxy(
   wrappedTokenFactory: { address: address },
+  gmxRegistry: { address: address },
 ): Promise<GLPUnwrapperProxyV1> {
   return createContractWithAbi<GLPUnwrapperProxyV1>(
     GLPUnwrapperProxyV1__factory.abi,
     GLPUnwrapperProxyV1__factory.bytecode,
     [
       USDC.address,
-      GLP_MANAGER.address,
-      GLP_REWARDS_ROUTER.address,
-      GMX_VAULT.address,
-      GLP.address,
+      gmxRegistry.address,
       wrappedTokenFactory.address,
       DOLOMITE_MARGIN.address,
     ],

@@ -26,7 +26,13 @@ import {
   expectWalletAllowance,
   expectWalletBalance,
 } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
+import {
+  CoreProtocol,
+  setupCoreProtocol,
+  setupGmxRegistry,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../../utils/setup';
 import { createGlpUnwrapperProxy, createWrappedTokenFactory } from './wrapped-token-utils';
 
 const toAccountNumber = '0';
@@ -74,7 +80,8 @@ describe('WrappedTokenUserVaultFactory', () => {
     rewardMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, rewardToken, false);
 
-    tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory);
+    const registry = await setupGmxRegistry(core);
+    tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory, registry);
     initializeResult = await wrappedTokenFactory.initialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrappedTokenFactory.address, true);
 

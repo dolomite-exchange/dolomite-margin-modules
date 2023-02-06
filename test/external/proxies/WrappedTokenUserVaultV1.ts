@@ -28,7 +28,13 @@ import {
   expectTotalSupply,
   expectWalletBalance,
 } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
+import {
+  CoreProtocol,
+  setupCoreProtocol,
+  setupGmxRegistry,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../../utils/setup';
 import { createGlpUnwrapperProxy, createWrappedTokenFactory } from './wrapped-token-utils';
 
 const defaultAccountNumber = '0';
@@ -72,7 +78,8 @@ describe('WrappedTokenUserVaultV1', () => {
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, wrappedTokenFactory, true);
 
-    tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory);
+    const registry = await setupGmxRegistry(core);
+    tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory, registry);
     await wrappedTokenFactory.initialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrappedTokenFactory.address, true);
 
@@ -120,6 +127,19 @@ describe('WrappedTokenUserVaultV1', () => {
       expect(await userVault.BORROW_POSITION_PROXY()).to.eq(core.borrowPositionProxyV2.address);
       expect(await userVault.VAULT_FACTORY()).to.eq(wrappedTokenFactory.address);
       expect(await userVault.marketId()).to.eq(underlyingMarketId);
+    });
+  });
+
+  describe('#nonReentrant', () => {
+    it('should work when no reentrancy happens', async () => {
+      await userVault.testReentrancy(false);
+    });
+
+    it('should not work when reentrancy happens', async () => {
+      await expectThrow(
+        userVault.testReentrancy(true),
+        'WrappedTokenUserVaultV1: Reentrant call',
+      );
     });
   });
 
@@ -686,7 +706,7 @@ describe('WrappedTokenUserVaultV1', () => {
       );
       expect(await userVault.transferCursor()).to.eq(0);
       expect(await userVault.getQueuedTransferAmountByCursor(0)).to.eq(amountWei);
-      await expectEvent(wrappedTokenFactory, result, 'TransferAmountEnqueued', {
+      await expectEvent(userVault, result, 'TransferAmountEnqueued', {
         cursor: 0,
         amount: amountWei,
       });
@@ -749,7 +769,7 @@ describe('WrappedTokenUserVaultV1', () => {
       const result = await userVault.connect(core.governance).enqueueTransfer(amountWei);
       expect(await userVault.transferCursor()).to.eq(0);
       expect(await userVault.getQueuedTransferAmountByCursor(0)).to.eq(amountWei);
-      await expectEvent(wrappedTokenFactory, result, 'TransferAmountEnqueued', {
+      await expectEvent(userVault, result, 'TransferAmountEnqueued', {
         cursor: 0,
         amount: amountWei,
       });
