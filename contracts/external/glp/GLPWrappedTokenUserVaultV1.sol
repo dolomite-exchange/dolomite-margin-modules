@@ -147,12 +147,13 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     // ============ Public Functions ============
 
     function executeDepositIntoVault(
+        address _from,
         uint256 _amount
     )
     public
     override
     onlyVaultFactory(msg.sender) {
-        sGlp().safeTransferFrom(_proxySelf().owner(), address(this), _amount);
+        sGlp().safeTransferFrom(_from, address(this), _amount);
     }
 
     function executeWithdrawalFromVault(

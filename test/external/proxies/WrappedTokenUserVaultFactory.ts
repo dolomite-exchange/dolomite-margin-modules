@@ -129,13 +129,13 @@ describe('WrappedTokenUserVaultFactory', () => {
   describe('#initialize', () => {
     it('should work when deployed normally', async () => {
       await expectEvent(wrappedTokenFactory, initializeResult, 'Initialized', {});
-      await expectEvent(wrappedTokenFactory, initializeResult, 'TokenUnwrapperSet', {
-        tokenUnwrapper: tokenUnwrapper.address,
+      await expectEvent(wrappedTokenFactory, initializeResult, 'TokenConverterSet', {
+        tokenConverter: tokenUnwrapper.address,
         isTrusted: true,
       });
       expect(await wrappedTokenFactory.marketId()).to.eq(underlyingMarketId);
       expect(await wrappedTokenFactory.isInitialized()).to.eq(true);
-      expect(await wrappedTokenFactory.isTokenUnwrapperTrusted(tokenUnwrapper.address)).to.eq(true);
+      expect(await wrappedTokenFactory.isTokenConverterTrusted(tokenUnwrapper.address)).to.eq(true);
     });
 
     it('should fail when already initialized', async () => {
@@ -285,51 +285,51 @@ describe('WrappedTokenUserVaultFactory', () => {
     });
   });
 
-  describe('#setIsTokenUnwrapperTrusted', () => {
+  describe('#setIsTokenConverterTrusted', () => {
     it('should work when called by governance', async () => {
-      const newUnwrapper = await createContractWithAbi(
+      const newConverter = await createContractWithAbi(
         WrappedTokenUserVaultProxy__factory.abi,
         WrappedTokenUserVaultProxy__factory.bytecode,
         [],
       );
       const result1 = await wrappedTokenFactory.connect(core.governance)
-        .setIsTokenUnwrapperTrusted(newUnwrapper.address, true);
-      expect(await wrappedTokenFactory.isTokenUnwrapperTrusted(newUnwrapper.address)).to.eq(true);
-      await expectEvent(wrappedTokenFactory, result1, 'TokenUnwrapperSet', {
-        tokenUnwrapper: newUnwrapper.address,
+        .setIsTokenConverterTrusted(newConverter.address, true);
+      expect(await wrappedTokenFactory.isTokenConverterTrusted(newConverter.address)).to.eq(true);
+      await expectEvent(wrappedTokenFactory, result1, 'TokenConverterSet', {
+        tokenConverter: newConverter.address,
         isTrusted: true,
       });
 
       const result2 = await wrappedTokenFactory.connect(core.governance)
-        .setIsTokenUnwrapperTrusted(newUnwrapper.address, false);
-      expect(await wrappedTokenFactory.isTokenUnwrapperTrusted(newUnwrapper.address)).to.eq(false);
-      await expectEvent(wrappedTokenFactory, result2, 'TokenUnwrapperSet', {
-        tokenUnwrapper: newUnwrapper.address,
+        .setIsTokenConverterTrusted(newConverter.address, false);
+      expect(await wrappedTokenFactory.isTokenConverterTrusted(newConverter.address)).to.eq(false);
+      await expectEvent(wrappedTokenFactory, result2, 'TokenConverterSet', {
+        tokenConverter: newConverter.address,
         isTrusted: false,
       });
     });
 
     it('should fail when not called by owner', async () => {
-      const newUnwrapper = await createContractWithAbi(
+      const newConverter = await createContractWithAbi(
         WrappedTokenUserVaultProxy__factory.abi,
         WrappedTokenUserVaultProxy__factory.bytecode,
         [],
       );
       await expectThrow(
-        wrappedTokenFactory.connect(core.hhUser1).setIsTokenUnwrapperTrusted(newUnwrapper.address, true),
+        wrappedTokenFactory.connect(core.hhUser1).setIsTokenConverterTrusted(newConverter.address, true),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail when not not initialized', async () => {
-      const newUnwrapper = await createContractWithAbi(
+      const newConverter = await createContractWithAbi(
         WrappedTokenUserVaultProxy__factory.abi,
         WrappedTokenUserVaultProxy__factory.bytecode,
         [],
       );
       const uninitializedFactory = await createUninitializedFactory();
       await expectThrow(
-        uninitializedFactory.setIsTokenUnwrapperTrusted(newUnwrapper.address, true),
+        uninitializedFactory.setIsTokenConverterTrusted(newConverter.address, true),
         'WrappedTokenUserVaultFactory: Not initialized',
       );
     });
@@ -375,15 +375,15 @@ describe('WrappedTokenUserVaultFactory', () => {
   });
 
   describe('#enqueueTransferIntoDolomiteMargin', () => {
-    it('should work normally', async () => {
+    it('should work when called by a token converter', async () => {
       await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
 
-      await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
       await underlyingToken.connect(core.hhUser1).approve(vaultAddress, amountWei);
       const impersonatedVault = await impersonate(vaultAddress, true);
 
-      const result = await wrappedTokenFactory.connect(impersonatedVault).enqueueTransferIntoDolomiteMargin(amountWei);
+      const result = await wrappedTokenFactory.connect(impersonatedVault)
+        .enqueueTransferIntoDolomiteMargin(vaultAddress, amountWei);
       await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
         transferCursor: 0,
         from: vaultAddress,
@@ -397,12 +397,21 @@ describe('WrappedTokenUserVaultFactory', () => {
       expect(queuedTransfer.to).to.eq(core.dolomiteMargin.address);
       expect(queuedTransfer.amount).to.eq(amountWei);
       expect(queuedTransfer.vault).to.eq(vaultAddress);
+
+      await underlyingToken.connect(core.hhUser2).addBalance(core.hhUser2.address, amountWei);
+      await underlyingToken.connect(core.hhUser2).approve(vaultAddress, amountWei); // this vault belongs to user #1
+
+      await wrappedTokenFactory.connect(core.governance).setIsTokenConverterTrusted(core.hhUser2.address, true);
+      await wrappedTokenFactory.connect(core.hhUser2).transfer(core.hhUser3.address, amountWei);
+
+      expect(await underlyingToken.balanceOf(vaultAddress)).to.eq(amountWei);
+      expect(await wrappedTokenFactory.balanceOf(core.hhUser3.address)).to.eq(amountWei);
     });
 
-    it('should fail when not called by vault', async () => {
+    it('should fail when not called by token converter', async () => {
       await expectThrow(
-        wrappedTokenFactory.connect(core.hhUser1).enqueueTransferIntoDolomiteMargin(amountWei),
-        `WrappedTokenUserVaultFactory: Caller is not a vault <${core.hhUser1.address.toLowerCase()}>`,
+        wrappedTokenFactory.connect(core.hhUser1).enqueueTransferIntoDolomiteMargin(core.hhUser1.address, amountWei),
+        `WrappedTokenUserVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -419,7 +428,7 @@ describe('WrappedTokenUserVaultFactory', () => {
 
       const impersonatedVault = await impersonate(vaultAddress, true);
       await expectThrow(
-        wrappedTokenFactory.connect(impersonatedVault).enqueueTransferIntoDolomiteMargin(amountWei),
+        wrappedTokenFactory.connect(impersonatedVault).enqueueTransferIntoDolomiteMargin(vaultAddress, amountWei),
         'WrappedTokenUserVaultFactory: Transfer is already queued',
       );
     });
@@ -613,7 +622,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       expect(queuedTransfer.vault).to.equal(vaultAddress);
     });
 
-    it('should fail when recipient is not an unwrapper', async () => {
+    it('should fail when recipient is not a token converter', async () => {
       await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
 
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);

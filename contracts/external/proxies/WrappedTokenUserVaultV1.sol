@@ -488,12 +488,13 @@ abstract contract WrappedTokenUserVaultV1 is
     // ======== Public functions ========
 
     function executeDepositIntoVault(
+        address _from,
         uint256 _amount
     )
     public
     virtual
     onlyVaultFactory(msg.sender) {
-        IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_proxySelf().owner(), address(this), _amount);
+        IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
     }
 
     function executeWithdrawalFromVault(

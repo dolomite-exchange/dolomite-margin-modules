@@ -134,9 +134,10 @@ interface IWrappedTokenUserVaultV1 {
     /**
      * @notice  Attempts to deposit assets into this vault from the vault's owner. Should revert if the caller is not
      *          the Vault Factory.
+     * @param _from     The sender of the tokens into this vault.
      * @param _amount   The amount of the vault's underlying token to transfer.
      */
-    function executeDepositIntoVault(uint256 _amount) external;
+    function executeDepositIntoVault(address _from, uint256 _amount) external;
 
     /**
      * @notice  Attempts to withdraw assets from this vault to the recipient. Should revert if the caller is not the

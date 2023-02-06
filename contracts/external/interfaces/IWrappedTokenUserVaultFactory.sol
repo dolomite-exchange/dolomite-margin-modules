@@ -42,7 +42,7 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
         address indexed newUserVaultImplementation
     );
 
-    event TokenUnwrapperSet(address indexed tokenUnwrapper, bool isTrusted);
+    event TokenConverterSet(address indexed tokenConverter, bool isTrusted);
 
     event VaultCreated(address indexed account, address vault);
 
@@ -63,7 +63,7 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     /**
      * @notice  Initializes this contract's variables that are dependent on this token being added to DolomiteMargin.
      */
-    function initialize(address[] calldata _tokenUnwrappers) external;
+    function initialize(address[] calldata _tokenConverters) external;
 
     /**
      * @notice  Creates the vault for `_account`
@@ -89,11 +89,13 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     function setUserVaultImplementation(address _userVaultImplementation) external;
 
     /**
-     * @param _tokenUnwrapper   The address of the token unwrapper contract to set whether or not it's trusted for
-     *                          executing transfers
-     * @param _isTrusted        True if the token unwrapper is trusted, false otherwise
+     * @notice  A token converter is used to convert this underlying token into a Dolomite-compatible one for deposit
+     *          or withdrawal
+     * @param _tokenConverter   The address of the token converter contract to set whether or not it's trusted for
+     *                          executing transfers to/from vaults
+     * @param _isTrusted        True if the token converter is trusted, false otherwise
      */
-    function setIsTokenUnwrapperTrusted(address _tokenUnwrapper, bool _isTrusted) external;
+    function setIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) external;
 
     /**
      * @notice  Deposits the reward token into the vault owner's account at `_toAccountNumber`. This function should
@@ -111,11 +113,12 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     external;
 
     /**
-     * @notice  Enqueues a transfer into Dolomite Margin from the vault owner's account. Assumes msg.sender is a user's
-     *          vault. Otherwise, reverts.
+     * @notice  Enqueues a transfer into Dolomite Margin from the vault owner's account. Assumes msg.sender is a trusted
+     *          token converter, else reverts.
      * @param _amountWei    The amount of tokens to transfer into Dolomite Margin
      */
     function enqueueTransferIntoDolomiteMargin(
+        address _vault,
         uint256 _amountWei
     )
     external;
@@ -237,7 +240,9 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     function getAccountByVault(address _vault) external view returns (address _account);
 
     /**
-     * @return  True if the token unwrapper is currently in-use by this contract.
+     * @notice  A token converter is used to convert this underlying token into a Dolomite-compatible one for deposit
+     *          or withdrawal
+     * @return  True if the token converter is currently in-use by this contract.
      */
-    function isTokenUnwrapperTrusted(address _tokenUnwrapper) external view returns (bool);
+    function isTokenConverterTrusted(address _tokenConverter) external view returns (bool);
 }
