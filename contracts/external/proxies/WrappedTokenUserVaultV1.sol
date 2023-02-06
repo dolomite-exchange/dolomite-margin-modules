@@ -79,6 +79,16 @@ abstract contract WrappedTokenUserVaultV1 is
         _;
     }
 
+    modifier onlyDolomiteMarginGlobalOperator(address _from) {
+        Require.that(
+            DOLOMITE_MARGIN().getIsGlobalOperator(_from),
+            _FILE,
+            "Caller is not a global operator",
+            _from
+        );
+        _;
+    }
+
     modifier onlyVaultFactory(address _from) {
         Require.that(
             _from == address(VAULT_FACTORY()),
@@ -486,13 +496,16 @@ abstract contract WrappedTokenUserVaultV1 is
     external
     onlyDolomiteMargin(msg.sender) {
         if (_heldMarketId == marketId()) {
-            Require.that(
-                _cursorToQueuedTransferAmountMap[transferCursor] == 0,
-                _FILE,
-                "A transfer is already queued"
-            );
-            _cursorToQueuedTransferAmountMap[transferCursor] = _heldDeltaWei.value;
+            _enqueueTransfer(_heldDeltaWei.value);
         }
+    }
+
+    function enqueueTransfer(
+        uint256 _amount
+    )
+    external
+    onlyDolomiteMarginGlobalOperator(msg.sender) {
+        _enqueueTransfer(_amount);
     }
 
     function callFunction(
@@ -507,13 +520,6 @@ abstract contract WrappedTokenUserVaultV1 is
             _FILE,
             "Invalid account owner",
             _accountInfo.owner
-        );
-
-        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        Require.that(
-            dolomiteMargin.getAccountStatus(_accountInfo) == IDolomiteStructs.AccountStatus.Liquid,
-            _FILE,
-            "Account not liquid"
         );
 
         // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
@@ -532,7 +538,7 @@ abstract contract WrappedTokenUserVaultV1 is
             "Invalid transfer"
         );
 
-        IDolomiteStructs.Wei memory accountWei = dolomiteMargin.getAccountWei(_accountInfo, marketId());
+        IDolomiteStructs.Wei memory accountWei = DOLOMITE_MARGIN().getAccountWei(_accountInfo, marketId());
         // We need to add the transfer amount to the accountWei because the liquidation has occurred internally and the
         // virtual balance has already been seized.
         Require.that(
@@ -600,5 +606,16 @@ abstract contract WrappedTokenUserVaultV1 is
 
     function _proxySelf() internal view returns (IWrappedTokenUserVaultProxy) {
         return IWrappedTokenUserVaultProxy(address(this));
+    }
+
+    function _enqueueTransfer(uint256 _amount) internal {
+        uint _transferCursor = transferCursor;
+        Require.that(
+            _cursorToQueuedTransferAmountMap[_transferCursor] == 0,
+            _FILE,
+            "A transfer is already queued"
+        );
+        _cursorToQueuedTransferAmountMap[_transferCursor] = _amount;
+        emit TransferAmountEnqueued(_transferCursor, _amount);
     }
 }

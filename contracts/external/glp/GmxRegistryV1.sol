@@ -19,6 +19,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { IGLPManager } from "../interfaces/IGLPManager.sol";
+import { IGLPRewardsRouterV2 } from "../interfaces/IGLPRewardsRouterV2.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "../interfaces/IGmxRewardRouterV2.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
@@ -63,7 +64,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
     address public override esGmx;
     IERC20 public override glp;
     IGLPManager public override glpManager;
-    IGmxRewardRouterV2 public override glpRewardsRouter;
+    IGLPRewardsRouterV2 public override glpRewardsRouter;
     IERC20 public override gmx;
     IGmxRewardRouterV2 public override gmxRewardsRouter;
     IGmxVault public override gmxVault;
@@ -82,7 +83,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         esGmx = _initializer.esGmx;
         glp = IERC20(_initializer.glp);
         glpManager = IGLPManager(_initializer.glpManager);
-        glpRewardsRouter = IGmxRewardRouterV2(_initializer.glpRewardsRouter);
+        glpRewardsRouter = IGLPRewardsRouterV2(_initializer.glpRewardsRouter);
         gmx = IERC20(_initializer.gmx);
         gmxRewardsRouter = IGmxRewardRouterV2(_initializer.gmxRewardsRouter);
         gmxVault = IGmxVault(_initializer.gmxVault);
@@ -111,7 +112,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
     }
 
     function setGlpRewardsRouter(address _glpRewardsRouter) external override onlyDolomiteMarginOwner(msg.sender) {
-        glpRewardsRouter = IGmxRewardRouterV2(_glpRewardsRouter);
+        glpRewardsRouter = IGLPRewardsRouterV2(_glpRewardsRouter);
         emit GlpRewardsRouterSet(_glpRewardsRouter);
     }
 

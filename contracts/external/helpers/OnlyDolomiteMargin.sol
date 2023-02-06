@@ -58,6 +58,16 @@ abstract contract OnlyDolomiteMargin is IOnlyDolomiteMargin {
         _;
     }
 
+    modifier onlyDolomiteMarginGlobalOperator(address _from) {
+        Require.that(
+            DOLOMITE_MARGIN.getIsGlobalOperator(_from),
+            _FILE,
+            "Caller is not a global operator",
+            _from
+        );
+        _;
+    }
+
     // ============ Constructor ============
 
     constructor (address _dolomiteMargin)

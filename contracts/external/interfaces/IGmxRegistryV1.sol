@@ -18,6 +18,7 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { IGLPManager } from "../interfaces/IGLPManager.sol";
+import { IGLPRewardsRouterV2 } from "./IGLPRewardsRouterV2.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "../interfaces/IGmxRewardRouterV2.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
@@ -52,7 +53,7 @@ interface IGmxRegistryV1 {
 
     function glpManager() external view returns (IGLPManager);
 
-    function glpRewardsRouter() external view returns (IGmxRewardRouterV2);
+    function glpRewardsRouter() external view returns (IGLPRewardsRouterV2);
 
     function gmx() external view returns (IERC20);
 

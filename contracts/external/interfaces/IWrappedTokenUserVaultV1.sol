@@ -19,6 +19,12 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 interface IWrappedTokenUserVaultV1 {
 
+    // ============ Events ============
+
+    event TransferAmountEnqueued(uint256 indexed transferCursor, uint256 amount);
+
+    // ============ Functions ============
+
     /**
      * @notice  End-user function for depositing the vault factory's underlying token into DolomiteMargin. Should only
      *          be executable by the vault owner OR the vault factory.
@@ -119,8 +125,25 @@ interface IWrappedTokenUserVaultV1 {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external;
 
+    /**
+     * @notice Used to enqueue a transfer from a global operator for atomically selling off collateral in this vault.
+     * @param _amount   The amount of the vault's underlying token to transfer.
+     */
+    function enqueueTransfer(uint256 _amount) external;
+
+    /**
+     * @notice  Attempts to deposit assets into this vault from the vault's owner. Should revert if the caller is not
+     *          the Vault Factory.
+     * @param _amount   The amount of the vault's underlying token to transfer.
+     */
     function executeDepositIntoVault(uint256 _amount) external;
 
+    /**
+     * @notice  Attempts to withdraw assets from this vault to the recipient. Should revert if the caller is not the
+     *          Vault Factory.
+     * @param _recipient    The address to receive the withdrawal.
+     * @param _amount       The amount of the vault's underlying token to transfer out.
+     */
     function executeWithdrawalFromVault(address _recipient, uint256 _amount) external;
 
     /**

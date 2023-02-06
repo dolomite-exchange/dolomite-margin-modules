@@ -24,8 +24,8 @@ import {
   IExpiry__factory,
   IGLPManager,
   IGLPManager__factory,
-  IGLPRewardRouterV2,
-  IGLPRewardRouterV2__factory,
+  IGLPRewardsRouterV2,
+  IGLPRewardsRouterV2__factory,
   IGmxVault,
   IGmxVault__factory,
   IGmxVester,
@@ -169,8 +169,8 @@ const GLP_REWARD_ROUTER_MAP: Record<Network, string> = {
 
 export const GLP_REWARDS_ROUTER = new BaseContract(
   GLP_REWARD_ROUTER_MAP[NETWORK_ID],
-  IGLPRewardRouterV2__factory.createInterface(),
-) as IGLPRewardRouterV2;
+  IGLPRewardsRouterV2__factory.createInterface(),
+) as IGLPRewardsRouterV2;
 
 const GMX_REWARD_ROUTER_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1',
@@ -178,8 +178,8 @@ const GMX_REWARD_ROUTER_MAP: Record<Network, string> = {
 
 export const GMX_REWARDS_ROUTER = new BaseContract(
   GMX_REWARD_ROUTER_MAP[NETWORK_ID],
-  IGLPRewardRouterV2__factory.createInterface(),
-) as IGLPRewardRouterV2;
+  IGLPRewardsRouterV2__factory.createInterface(),
+) as IGLPRewardsRouterV2;
 
 const GMX_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a',

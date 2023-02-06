@@ -168,6 +168,8 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         }
 
         assert(_recipient != address(this));
+        // we can't use the fsGLP because it's not transferable. sGLP contains the authorization and logic for
+        // transferring fsGLP tokens.
         sGlp().safeTransfer(_recipient, _amount);
     }
 

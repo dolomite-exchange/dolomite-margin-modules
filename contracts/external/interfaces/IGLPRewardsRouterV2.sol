@@ -19,7 +19,7 @@ pragma solidity ^0.8.9;
  * @dev Interface of the GMX Reward Router V2 contract, taken from:
  *      https://arbiscan.io/address/0xB95DB5B167D75e6d04227CfFFA61069348d271F5#code
  */
-interface IGLPRewardRouterV2 {
+interface IGLPRewardsRouterV2 {
 
     function mintAndStakeGlp(
         address _token,

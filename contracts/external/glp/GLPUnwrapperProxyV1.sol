@@ -26,8 +26,9 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 import { IGLPManager } from "../interfaces/IGLPManager.sol";
-import { IGLPRewardRouterV2 } from "../interfaces/IGLPRewardRouterV2.sol";
-import {IGmxVault} from "../interfaces/IGmxVault.sol";
+import { IGLPRewardsRouterV2 } from "../interfaces/IGLPRewardsRouterV2.sol";
+import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
+import { IGmxVault } from "../interfaces/IGmxVault.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
 import { ILiquidityTokenUnwrapperForLiquidation } from "../interfaces/ILiquidityTokenUnwrapperForLiquidation.sol";
 
@@ -51,10 +52,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
 
     address public immutable USDC; // solhint-disable-line var-name-mixedcase
     uint256 public immutable USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
-    IGLPManager public immutable GLP_MANAGER; // solhint-disable-line var-name-mixedcase
-    IGLPRewardRouterV2 public immutable GLP_REWARD_ROUTER; // solhint-disable-line var-name-mixedcase
-    IGmxVault public immutable GMX_VAULT; // solhint-disable-line var-name-mixedcase
-    IERC20 public immutable GLP; // solhint-disable-line var-name-mixedcase
+    IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     /// @notice The Dolomite-wrapped contract for fsGLP (fee-staked GLP)
     IWrappedTokenUserVaultFactory public immutable DFS_GLP; // solhint-disable-line var-name-mixedcase
@@ -63,19 +61,13 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
 
     constructor(
         address _usdc,
-        address _glpManager,
-        address _glpRewardRouter,
-        address _gmxVault,
-        address _glp,
+        address _gmxRegistry,
         address _dsGlp,
         address _dolomiteMargin
     )
     OnlyDolomiteMargin(_dolomiteMargin) {
         USDC = _usdc;
-        GLP_MANAGER = IGLPManager(_glpManager);
-        GLP_REWARD_ROUTER = IGLPRewardRouterV2(_glpRewardRouter);
-        GMX_VAULT = IGmxVault(_gmxVault);
-        GLP = IERC20(_glp);
+        GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
         DFS_GLP = IWrappedTokenUserVaultFactory(_dsGlp);
 
         USDC_MARKET_ID = IDolomiteMargin(_dolomiteMargin).getMarketIdByTokenAddress(_usdc);
@@ -112,7 +104,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         );
 
         {
-            uint256 balance = GLP.balanceOf(address(this));
+            uint256 balance = glp().balanceOf(address(this));
             Require.that(
                 balance >= _requestedFillAmount,
                 _FILE,
@@ -122,7 +114,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         }
         (uint256 minAmountOut) = abi.decode(_orderData, (uint256));
 
-        uint256 amountOut = GLP_REWARD_ROUTER.unstakeAndRedeemGlp(
+        uint256 amountOut = glpRewardsRouter().unstakeAndRedeemGlp(
             /* _tokenOut = */ _makerToken,
             /* _glpAmount = */ _requestedFillAmount,
             minAmountOut,
@@ -192,6 +184,22 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     // ============ Public Functions ============
     // ==========================================
 
+    function glp() public view returns (IERC20) {
+        return IERC20(GMX_REGISTRY.glp());
+    }
+
+    function glpManager() public view returns (IGLPManager) {
+        return IGLPManager(GMX_REGISTRY.glpManager());
+    }
+
+    function glpRewardsRouter() public view returns (IGLPRewardsRouterV2) {
+        return GMX_REGISTRY.glpRewardsRouter();
+    }
+
+    function gmxVault() public view returns (IGmxVault) {
+        return IGmxVault(GMX_REGISTRY.gmxVault());
+    }
+
     function getExchangeCost(
         address _makerToken,
         address _takerToken,
@@ -214,18 +222,18 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
             "Taker token must be USDC",
             _takerToken
         );
-        IGmxVault gmxVault = GMX_VAULT;
+        IGmxVault _gmxVault = gmxVault();
 
         // This code is taken from the GMX contracts for calculating the redemption amount
-        uint256 aumInUsdg = GLP_MANAGER.getAumInUsdg(false);
-        uint256 glpSupply = GLP.totalSupply();
+        uint256 aumInUsdg = glpManager().getAumInUsdg(false);
+        uint256 glpSupply = glp().totalSupply();
         uint256 usdgAmount = _desiredMakerToken * aumInUsdg / glpSupply;
-        uint256 redemptionAmount = gmxVault.getRedemptionAmount(_takerToken, usdgAmount);
-        uint256 feeBasisPoints = gmxVault.getFeeBasisPoints(
+        uint256 redemptionAmount = _gmxVault.getRedemptionAmount(_takerToken, usdgAmount);
+        uint256 feeBasisPoints = _gmxVault.getFeeBasisPoints(
             _makerToken,
             usdgAmount,
-            gmxVault.mintBurnFeeBasisPoints(),
-            gmxVault.taxBasisPoints(),
+            _gmxVault.mintBurnFeeBasisPoints(),
+            _gmxVault.taxBasisPoints(),
             /* _increment = */ false
         );
         return _applyFees(redemptionAmount, feeBasisPoints);
