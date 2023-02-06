@@ -374,6 +374,57 @@ describe('WrappedTokenUserVaultFactory', () => {
     });
   });
 
+  describe('#enqueueTransferIntoDolomiteMargin', () => {
+    it('should work normally', async () => {
+      await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
+
+      await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
+      const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
+      await underlyingToken.connect(core.hhUser1).approve(vaultAddress, amountWei);
+      const impersonatedVault = await impersonate(vaultAddress, true);
+
+      const result = await wrappedTokenFactory.connect(impersonatedVault).enqueueTransferIntoDolomiteMargin(amountWei);
+      await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
+        transferCursor: 0,
+        from: vaultAddress,
+        to: core.dolomiteMargin.address,
+        amount: amountWei,
+        vault: vaultAddress,
+      });
+
+      const queuedTransfer = await wrappedTokenFactory.getQueuedTransferByCursor(0);
+      expect(queuedTransfer.from).to.eq(vaultAddress);
+      expect(queuedTransfer.to).to.eq(core.dolomiteMargin.address);
+      expect(queuedTransfer.amount).to.eq(amountWei);
+      expect(queuedTransfer.vault).to.eq(vaultAddress);
+    });
+
+    it('should fail when not called by vault', async () => {
+      await expectThrow(
+        wrappedTokenFactory.connect(core.hhUser1).enqueueTransferIntoDolomiteMargin(amountWei),
+        `WrappedTokenUserVaultFactory: Caller is not a vault <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when cursor is already queued (developer error)', async () => {
+      await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
+      const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
+
+      await wrappedTokenFactory.testEnqueueTransfer(
+        vaultAddress,
+        core.dolomiteMargin.address,
+        amountWei,
+        vaultAddress,
+      );
+
+      const impersonatedVault = await impersonate(vaultAddress, true);
+      await expectThrow(
+        wrappedTokenFactory.connect(impersonatedVault).enqueueTransferIntoDolomiteMargin(amountWei),
+        'WrappedTokenUserVaultFactory: Transfer is already queued',
+      );
+    });
+  });
+
   describe('#depositIntoDolomiteMargin', () => {
     it('should work normally', async () => {
       await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
@@ -387,7 +438,14 @@ describe('WrappedTokenUserVaultFactory', () => {
         WrappedTokenUserVaultV1__factory,
         core.hhUser1,
       );
-      await vault.depositIntoVaultForDolomiteMargin(toAccountNumber, amountWei);
+      const result = await vault.depositIntoVaultForDolomiteMargin(toAccountNumber, amountWei);
+      await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
+        transferCursor: 0,
+        from: vault.address,
+        to: core.dolomiteMargin.address,
+        amount: amountWei,
+        vault: vault.address,
+      });
 
       await expectProtocolBalance(core, core.hhUser1.address, toAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, vaultAddress, toAccountNumber, underlyingMarketId, amountWei);
@@ -413,7 +471,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
       const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
 
-      await wrappedTokenFactory.enqueueTransfer(
+      await wrappedTokenFactory.testEnqueueTransfer(
         vaultAddress,
         core.dolomiteMargin.address,
         amountWei,
@@ -447,7 +505,14 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
       await vault.depositIntoVaultForDolomiteMargin(toAccountNumber, amountWei);
 
-      await vault.withdrawFromVaultForDolomiteMargin(toAccountNumber, amountWei);
+      const result = await vault.withdrawFromVaultForDolomiteMargin(toAccountNumber, amountWei);
+      await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
+        transferCursor: 1,
+        from: core.dolomiteMargin.address,
+        to: vault.address,
+        amount: amountWei,
+        vault: vault.address,
+      });
 
       await expectProtocolBalance(core, core.hhUser1.address, toAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, vaultAddress, toAccountNumber, underlyingMarketId, ZERO_BI);
@@ -495,7 +560,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
       const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
 
-      await wrappedTokenFactory.enqueueTransfer(
+      await wrappedTokenFactory.testEnqueueTransfer(
         vaultAddress,
         core.dolomiteMargin.address,
         amountWei,
@@ -530,7 +595,15 @@ describe('WrappedTokenUserVaultFactory', () => {
       await vault.depositIntoVaultForDolomiteMargin(toAccountNumber, amountWei);
 
       const vaultSigner = await impersonate(vaultAddress, true);
-      await wrappedTokenFactory.connect(vaultSigner).liquidateWithinDolomiteMargin(tokenUnwrapper.address, amountWei);
+      const result = await wrappedTokenFactory.connect(vaultSigner)
+        .liquidateWithinDolomiteMargin(tokenUnwrapper.address, amountWei);
+      await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
+        transferCursor: 1,
+        from: core.dolomiteMargin.address,
+        to: tokenUnwrapper.address,
+        amount: amountWei,
+        vault: vault.address,
+      });
 
       const transferCursor = await wrappedTokenFactory.transferCursor();
       const queuedTransfer = await wrappedTokenFactory.getQueuedTransferByCursor(transferCursor);
@@ -572,7 +645,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
       const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
 
-      await wrappedTokenFactory.enqueueTransfer(
+      await wrappedTokenFactory.testEnqueueTransfer(
         vaultAddress,
         core.dolomiteMargin.address,
         amountWei,
@@ -593,19 +666,6 @@ describe('WrappedTokenUserVaultFactory', () => {
         wrappedTokenFactory.connect(core.hhUser1).transfer(core.hhUser2.address, amountWei),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
-    });
-
-    it('should not work when transferring from the 0 address', async () => {
-      // This can't actually be tested because the default implementation for ERC20 reverts when the owner is the zero
-      // address
-
-      // const sender = await impersonate(core.dolomiteMargin.address, true);
-      // const zeroSender = await impersonate(ZERO_ADDRESS, true);
-      // await wrappedTokenFactory.connect(zeroSender).approve(sender.address, ethers.constants.MaxUint256);
-      // await expectThrow(
-      //   wrappedTokenFactory.connect(sender).transferFrom(ZERO_ADDRESS, core.hhUser2.address, amountWei),
-      //   'WrappedTokenUserVaultFactory: Transfer from the zero address',
-      // );
     });
 
     it('should not work when transferring to the 0 address', async () => {
@@ -640,7 +700,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
       await wrappedTokenFactory.connect(core.hhUser1).approve(spender.address, amountWei);
 
-      await wrappedTokenFactory.enqueueTransfer(
+      await wrappedTokenFactory.testEnqueueTransfer(
         core.hhUser1.address,
         core.dolomiteMargin.address,
         amountWei,
@@ -664,7 +724,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       await underlyingToken.connect(core.hhUser1).approve(vaultAddress, amountWei);
       await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
 
-      await wrappedTokenFactory.enqueueTransfer(
+      await wrappedTokenFactory.testEnqueueTransfer(
         core.dolomiteMargin.address,
         core.hhUser1.address,
         amountWei,

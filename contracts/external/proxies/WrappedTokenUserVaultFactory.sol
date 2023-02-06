@@ -233,6 +233,16 @@ abstract contract WrappedTokenUserVaultFactory is
         DOLOMITE_MARGIN.operate(accounts, actions);
     }
 
+    function enqueueTransferIntoDolomiteMargin(
+        uint256 _amountWei
+    )
+    external
+    override
+    requireIsVault(msg.sender)
+    requireCursorIsNotQueued {
+        _enqueueTransfer(msg.sender, address(DOLOMITE_MARGIN), _amountWei, msg.sender);
+    }
+
     function depositIntoDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -241,13 +251,7 @@ abstract contract WrappedTokenUserVaultFactory is
     override
     requireIsVault(msg.sender)
     requireCursorIsNotQueued {
-        _approve(msg.sender, address(DOLOMITE_MARGIN), _amountWei);
-        _cursorToQueuedTransferMap[transferCursor] = QueuedTransfer({
-            from: msg.sender,
-            to: address(DOLOMITE_MARGIN),
-            amount: _amountWei,
-            vault: msg.sender
-        });
+        _enqueueTransfer(msg.sender, address(DOLOMITE_MARGIN), _amountWei, msg.sender);
         AccountActionLib.deposit(
             DOLOMITE_MARGIN,
             /* _accountOwner = */ msg.sender,
@@ -271,12 +275,7 @@ abstract contract WrappedTokenUserVaultFactory is
     override
     requireIsVault(msg.sender)
     requireCursorIsNotQueued {
-        _cursorToQueuedTransferMap[transferCursor] = QueuedTransfer({
-            from: address(DOLOMITE_MARGIN),
-            to: msg.sender,
-            amount: _amountWei,
-            vault: msg.sender
-        });
+        _enqueueTransfer(address(DOLOMITE_MARGIN), msg.sender, _amountWei, msg.sender);
         AccountActionLib.withdraw(
             DOLOMITE_MARGIN,
             /* _accountOwner = */ msg.sender,
@@ -306,12 +305,7 @@ abstract contract WrappedTokenUserVaultFactory is
             _FILE,
             "Invalid liquidation recipient"
         );
-        _cursorToQueuedTransferMap[transferCursor] = QueuedTransfer({
-            from: address(DOLOMITE_MARGIN),
-            to: _recipient,
-            amount: _amountWei,
-            vault: msg.sender
-        });
+        _enqueueTransfer(address(DOLOMITE_MARGIN), _recipient, _amountWei, msg.sender);
     }
 
     // ================================================
@@ -378,6 +372,24 @@ abstract contract WrappedTokenUserVaultFactory is
         return vault;
     }
 
+    function _enqueueTransfer(
+        address _from,
+        address _to,
+        uint256 _amountWei,
+        address _vault
+    ) internal {
+        if (_to == address(DOLOMITE_MARGIN)) {
+            _approve(_from, _to, _amountWei);
+        }
+        _cursorToQueuedTransferMap[transferCursor] = QueuedTransfer({
+            from: _from,
+            to: _to,
+            amount: _amountWei,
+            vault: _vault
+        });
+        emit TransferQueued(transferCursor, _from, _to, _amountWei, _vault);
+    }
+
     function _transfer(
         address _from,
         address _to,
@@ -418,6 +430,7 @@ abstract contract WrappedTokenUserVaultFactory is
 
         if (_to == dolomiteMargin) {
             // transfers TO DolomiteMargin must be made FROM a vault
+            // TODO: potentially strip the _from requirement so we can do dynamic deposits.
             Require.that(
                 _userToVaultMap[_vaultToUserMap[_from]] == queuedTransfer.vault && queuedTransfer.vault != address(0),
                 _FILE,

@@ -48,6 +48,14 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
 
     event Initialized();
 
+    event TransferQueued(
+        uint256 indexed transferCursor,
+        address from,
+        address to,
+        uint256 amountWei,
+        address vault
+    );
+
     // ================================================
     // ================== Functions ===================
     // ================================================
@@ -98,6 +106,16 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     function depositRewardTokenIntoDolomiteMarginForVaultOwner(
         uint256 _toAccountNumber,
         uint256 _marketId,
+        uint256 _amountWei
+    )
+    external;
+
+    /**
+     * @notice  Enqueues a transfer into Dolomite Margin from the vault owner's account. Assumes msg.sender is a user's
+     *          vault. Otherwise, reverts.
+     * @param _amountWei    The amount of tokens to transfer into Dolomite Margin
+     */
+    function enqueueTransferIntoDolomiteMargin(
         uint256 _amountWei
     )
     external;

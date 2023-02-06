@@ -41,7 +41,7 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
         // solhint-disable-previous-line no-empty-blocks
     }
 
-    function enqueueTransfer(
+    function testEnqueueTransfer(
         address _from,
         address _to,
         uint256 _amount,
