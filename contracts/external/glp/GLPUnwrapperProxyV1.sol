@@ -83,7 +83,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         address,
         address _makerToken,
         address _takerToken,
-        uint256 _requestedFillAmount,
+        uint256 _amountTakerToken,
         bytes calldata _orderData
     )
     external
@@ -106,7 +106,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         {
             uint256 balance = glp().balanceOf(address(this));
             Require.that(
-                balance >= _requestedFillAmount,
+                balance >= _amountTakerToken,
                 _FILE,
                 "Insufficient GLP for trade",
                 balance
@@ -116,7 +116,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
 
         uint256 amountOut = glpRewardsRouter().unstakeAndRedeemGlp(
             /* _tokenOut = */ _makerToken,
-            /* _glpAmount = */ _requestedFillAmount,
+            /* _glpAmount = */ _amountTakerToken,
             minAmountOut,
             /* _receiver = */ address(this)
         );

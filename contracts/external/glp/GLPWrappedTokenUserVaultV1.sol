@@ -89,7 +89,7 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
             uint256 amountWei = IERC20(weth).balanceOf(address(this));
             if (_shouldDepositEthIntoDolomite) {
                 IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), amountWei);
-                IWrappedTokenUserVaultFactory(factory).depositRewardTokenIntoDolomiteMarginForVaultOwner(
+                IWrappedTokenUserVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
                     /* _toAccountNumber = */ 0,
                     IGLPWrappedTokenUserVaultFactory(factory).WETH_MARKET_ID(),
                     amountWei
@@ -123,7 +123,12 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         gmxRewardsRouter().unstakeEsGmx(_amount);
     }
 
-    function acceptFullAccountTransfer(address _sender) external onlyVaultOwner(msg.sender) nonReentrant {
+    function acceptFullAccountTransfer(
+        address _sender
+    )
+    external
+    nonReentrant
+    onlyVaultOwnerOrVaultFactory(msg.sender) {
         gmxRewardsRouter().acceptTransfer(_sender);
         // TODO: deposit received assets into Dolomite
     }
@@ -132,16 +137,28 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         vGlp().deposit(_amount);
     }
 
+    /**
+     * @notice  Withdraws all esGMX that is vesting along with the paired fsGLP tokens used to vest the esGMX. Any
+     *          remaining esGMX stays in this vault (it's non-transferable) along with the withdrawn fsGLP. The vested
+     *          GMX tokens are sent to the vault owner.
+     */
     function unvestGlp() external onlyVaultOwner(msg.sender) {
         vGlp().withdraw();
+        _withdrawAllGmx();
     }
 
-    function vestGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
-        vGmx().deposit(_amount);
+    function vestGmx(uint256 _esGmxAmount) external onlyVaultOwner(msg.sender) {
+        vGmx().deposit(_esGmxAmount);
     }
 
+    /**
+     * @notice  Withdraws all esGMX that is vesting along with the paired sbfGMX tokens used to vest the esGMX. Any
+     *          remaining esGMX stays in this vault (it's non-transferable) along with the withdrawn sbfGMX. The vested
+     *          GMX tokens are sent to the vault owner.
+     */
     function unvestGmx() external onlyVaultOwner(msg.sender) {
         vGmx().withdraw();
+        _withdrawAllGmx();
     }
 
     // ============ Public Functions ============
@@ -183,7 +200,8 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     }
 
     function gmxBalanceOf() public view returns (uint256) {
-        return vGmx().pairAmounts(address(this));
+        address account = address(this);
+        return vGmx().pairAmounts(account) + sbfGmx().balanceOf(account);
     }
 
     function gmx() public view returns (IERC20) {
@@ -194,11 +212,22 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         return IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().sGlp());
     }
 
+    function sbfGmx() public view returns (IERC20) {
+        return IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().sbfGmx());
+    }
+
     function vGlp() public view returns (IGmxVester) {
         return IGmxVester(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().vGlp());
     }
 
     function vGmx() public view returns (IGmxVester) {
         return IGmxVester(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().vGmx());
+    }
+
+    // ==================== Internal Functions ========================
+
+    function _withdrawAllGmx() internal {
+        IERC20 _gmx = gmx();
+        _gmx.safeTransfer(msg.sender, _gmx.balanceOf(address(this)));
     }
 }

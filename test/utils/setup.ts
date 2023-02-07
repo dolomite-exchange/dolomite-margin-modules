@@ -92,9 +92,17 @@ export async function setupWETHBalance(signer: SignerWithAddress, amount: BigNum
 }
 
 export async function setupUSDCBalance(signer: SignerWithAddress, amount: BigNumberish, spender: { address: string }) {
-  const whaleSigner = await impersonate('0x805ba50001779CeD4f59CfF63aea527D12B94829', true);
+  const whaleAddress = '0x805ba50001779CeD4f59CfF63aea527D12B94829'; // Radiant USDC pool
+  const whaleSigner = await impersonate(whaleAddress, true);
   await USDC.connect(whaleSigner).transfer(signer.address, amount);
   await USDC.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupGMXBalance(signer: SignerWithAddress, amount: BigNumberish, spender: { address: string }) {
+  const whaleAddress = '0x80a9ae39310abf666a87c743d6ebbd0e8c42158e'; // Uniswap V3 GMX/ETH pool
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await GMX.connect(whaleSigner).transfer(signer.address, amount);
+  await GMX.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export function setupUserVaultProxy<T extends BaseContract>(

@@ -40,7 +40,7 @@ interface IDolomiteMarginExchangeWrapper {
      * @param  _receiver            Address to set allowance on once the trade has completed
      * @param  _makerToken          The token to receive (target asset; IE path[path.length - 1])
      * @param  _takerToken          The token to pay (originator asset; IE path[0])
-     * @param  _requestedFillAmount Amount of takerToken being paid
+     * @param  _amountTakerToken    Amount of takerToken being paid
      * @param  _orderData           Arbitrary bytes data for any information to pass to the exchange
      * @return                      The amount of makerToken received
      */
@@ -49,7 +49,7 @@ interface IDolomiteMarginExchangeWrapper {
         address _receiver,
         address _makerToken,
         address _takerToken,
-        uint256 _requestedFillAmount,
+        uint256 _amountTakerToken,
         bytes calldata _orderData
     )
     external

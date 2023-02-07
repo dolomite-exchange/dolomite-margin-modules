@@ -25,14 +25,14 @@ import { WrappedTokenUserVaultV1 } from  "../external/proxies/WrappedTokenUserVa
 contract TestWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     using SafeERC20 for IERC20;
 
-    function callDepositRewardTokenIntoDolomiteMarginForVaultOwner(
+    function callDepositOtherTokenIntoDolomiteMarginForVaultOwner(
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei
     ) external {
         IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(_marketId)).safeApprove(address(DOLOMITE_MARGIN()), _amountWei);
 
-        IWrappedTokenUserVaultFactory(VAULT_FACTORY()).depositRewardTokenIntoDolomiteMarginForVaultOwner(
+        IWrappedTokenUserVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
             _toAccountNumber,
             _marketId,
             _amountWei

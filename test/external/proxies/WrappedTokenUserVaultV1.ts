@@ -679,7 +679,7 @@ describe('WrappedTokenUserVaultV1', () => {
   describe('#executeDepositIntoVault', () => {
     it('should fail when not called by factory', async () => {
       await expectThrow(
-        userVault.connect(core.hhUser1).executeDepositIntoVault(amountWei),
+        userVault.connect(core.hhUser1).executeDepositIntoVault(core.hhUser1.address, amountWei),
         `WrappedTokenUserVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -826,7 +826,7 @@ describe('WrappedTokenUserVaultV1', () => {
         ],
       );
       expect(await core.dolomiteMargin.getAccountStatus(liquidMarginAccount)).to.eq(AccountStatus.Liquidating);
-      await wrappedTokenFactory.connect(core.governance).setIsTokenUnwrapperTrusted(solidUser.address, true);
+      await wrappedTokenFactory.connect(core.governance).setIsTokenConverterTrusted(solidUser.address, true);
     }
 
     it('should work if user is liquidated and balance is sufficient', async () => {

@@ -1,3 +1,4 @@
+import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumber, BigNumberish, BytesLike } from 'ethers';
 import { ethers } from 'hardhat';
@@ -32,28 +33,29 @@ export async function createTestToken(): Promise<CustomTestToken> {
   );
 }
 export async function depositIntoDolomiteMargin(
-  user: SignerWithAddress,
-  accountId: BigNumberish,
+  accountOwner: SignerWithAddress,
+  accountNumber: BigNumberish,
   tokenId: BigNumberish,
   amount: BigNumberish,
+  fromAddress?: string,
 ): Promise<void> {
   await DOLOMITE_MARGIN
-    .connect(user)
+    .connect(accountOwner)
     .operate(
-      [{ owner: user.address, number: accountId }],
+      [{ owner: accountOwner.address, number: accountNumber }],
     [
       {
-        actionType: '0', // deposit
+        actionType: ActionType.Deposit, // deposit
         accountId: '0', // accounts[0]
         amount: {
-          sign: true, // positive
-          denomination: '0', // wei
-          ref: '0', // value
+          sign: true,
+          denomination: AmountDenomination.Wei,
+          ref: AmountReference.Delta,
           value: amount,
         },
         primaryMarketId: tokenId,
         secondaryMarketId: 0,
-        otherAddress: user.address,
+        otherAddress: fromAddress ?? accountOwner.address,
         otherAccountId: 0,
         data: '0x',
       },

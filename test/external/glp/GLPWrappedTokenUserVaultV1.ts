@@ -13,12 +13,13 @@ import { revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
   CoreProtocol,
-  setupCoreProtocol, setupGmxRegistry,
+  setupCoreProtocol, setupGMXBalance, setupGmxRegistry,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
 
+const gmxAmount = '10000000000000000000'; // 10 GMX
 const usdcAmount = '2000000000'; // 2,000 USDC
 const amountWei = '1250000000000000000000'; // 1,250 GLP tokens
 const amountWeiSmall = '125000000000000000000'; // 125 GLP tokens
@@ -124,7 +125,20 @@ describe('GLPWrappedTokenUserVaultV1', () => {
   });
 
   describe('#stakeGmx', () => {
-    it('should ', async () => {
+    it('should work when GMX is staked', async () => {
+      await setupGMXBalance(core.hhUser1, gmxAmount, vault);
+      await vault.stakeGmx(gmxAmount);
+      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
+    });
+
+    it('should work when GMX is vesting', async () => {
+      await setupGMXBalance(core.hhUser1, gmxAmount, vault);
+      await vault.stakeGmx(gmxAmount);
+      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
+    });
+
+    it('should work when no GMX is deposited at all', async () => {
+      expect(await vault.gmxBalanceOf()).to.eq(ZERO_BI);
     });
   });
 
@@ -178,6 +192,15 @@ describe('GLPWrappedTokenUserVaultV1', () => {
     });
 
     it('should work when funds are only in vesting', async () => {
+    });
+  });
+
+  describe('#gmxBalanceOf', () => {
+    it('should work when GMX is vesting and staked', async () => {
+      await setupGMXBalance(core.hhUser1, gmxAmount, vault);
+      await vault.stakeGmx(gmxAmount);
+      await vault.vestGmx(gmxAmount);
+      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
     });
   });
 
