@@ -34,7 +34,7 @@ abstract contract WrappedTokenUserVaultWrapper is IDolomiteMarginExchangeWrapper
 
     // ======================== Field Variables ========================
 
-    IWrappedTokenUserVaultFactory public immutable VAULT_FACTORY;
+    IWrappedTokenUserVaultFactory public immutable VAULT_FACTORY; // solhint-disable-line var-name-mixedcase
 
     constructor(
         address _vaultFactory,

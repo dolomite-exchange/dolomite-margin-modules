@@ -170,7 +170,7 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
      * @return  The market ID of the single element array returned by #allowableCollateralMarketIds() if no other
      *          collateral assets are allowed
      */
-    function NONE() external pure returns (uint256);
+    function NONE() external view returns (uint256);
 
     /**
      * @return The address of the token that this vault wraps around

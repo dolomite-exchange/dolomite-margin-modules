@@ -39,5 +39,14 @@ interface IGmxRewardRouterV2 {
 
     function unstakeEsGmx(uint256 _amount) external;
 
+    function signalTransfer(address _receiver) external;
+
     function acceptTransfer(address _sender) external;
+
+    /**
+     * @notice              Checks if a pending transfer has been queued from `_sender` via a call to #signalTransfer
+     * @param _sender       The address to check if a transfer from which has been queued
+     * @return _receiver    The address to which the transfer will be sent if it's executed from the queue
+     */
+    function pendingReceivers(address _sender) external view returns (address _receiver);
 }

@@ -47,30 +47,6 @@ interface IGmxRegistryV1 {
     // ==================== Functions ====================
     // ===================================================
 
-    function esGmx() external view returns (address);
-
-    function glp() external view returns (IERC20);
-
-    function glpManager() external view returns (IGLPManager);
-
-    function glpRewardsRouter() external view returns (IGLPRewardsRouterV2);
-
-    function gmx() external view returns (IERC20);
-
-    function gmxRewardsRouter() external view returns (IGmxRewardRouterV2);
-
-    function gmxVault() external view returns (IGmxVault);
-
-    function sGlp() external view returns (address);
-
-    function sGmx() external view returns (address);
-
-    function sbfGmx() external view returns (address);
-
-    function vGlp() external view returns (address);
-
-    function vGmx() external view returns (address);
-
     function setEsGmx(address _esGmx) external;
 
     function setGlp(address _glp) external;
@@ -94,4 +70,28 @@ interface IGmxRegistryV1 {
     function setVGlp(address _vGlp) external;
 
     function setVGmx(address _vGmx) external;
+
+    function esGmx() external view returns (address);
+
+    function glp() external view returns (IERC20);
+
+    function glpManager() external view returns (IGLPManager);
+
+    function glpRewardsRouter() external view returns (IGLPRewardsRouterV2);
+
+    function gmx() external view returns (IERC20);
+
+    function gmxRewardsRouter() external view returns (IGmxRewardRouterV2);
+
+    function gmxVault() external view returns (IGmxVault);
+
+    function sGlp() external view returns (address);
+
+    function sGmx() external view returns (address);
+
+    function sbfGmx() external view returns (address);
+
+    function vGlp() external view returns (address);
+
+    function vGmx() external view returns (address);
 }

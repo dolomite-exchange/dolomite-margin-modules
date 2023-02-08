@@ -39,13 +39,13 @@ contract TestWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         );
     }
 
+    function enqueueTestTransfer(uint256 _transferAmount) external {
+        _cursorToQueuedTransferAmountMap[transferCursor] = _transferAmount;
+    }
+
     function testReentrancy(bool _shouldReenter) public nonReentrant {
         if (_shouldReenter) {
             testReentrancy(false);
         }
-    }
-
-    function enqueueTestTransfer(uint256 _transferAmount) external {
-        _cursorToQueuedTransferAmountMap[transferCursor] = _transferAmount;
     }
 }

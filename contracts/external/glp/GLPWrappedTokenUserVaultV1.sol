@@ -14,27 +14,28 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteMarginCallee } from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
-import { IDolomiteMarginLiquidationCallback } from "../../protocol/interfaces/IDolomiteMarginLiquidationCallback.sol";
+import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
+import {IDolomiteMarginCallee} from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
+import {IDolomiteMarginLiquidationCallback} from "../../protocol/interfaces/IDolomiteMarginLiquidationCallback.sol";
 
-import { Require } from "../../protocol/lib/Require.sol";
+import {Require} from "../../protocol/lib/Require.sol";
 
-import { WrappedTokenUserVaultV1 } from "../proxies/WrappedTokenUserVaultV1.sol";
+import {WrappedTokenUserVaultV1} from "../proxies/WrappedTokenUserVaultV1.sol";
 
-import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
-import { IGmxRewardRouterV2 } from"../interfaces/IGmxRewardRouterV2.sol";
-import { IGLPWrappedTokenUserVaultFactory } from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
-import { IGmxVester } from "../interfaces/IGmxVester.sol";
-import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
-import { IWrappedTokenUserVaultProxy } from "../interfaces/IWrappedTokenUserVaultProxy.sol";
-import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1.sol";
+import {IBorrowPositionProxyV2} from "../interfaces/IBorrowPositionProxyV2.sol";
+import {IGmxRewardRouterV2} from"../interfaces/IGmxRewardRouterV2.sol";
+import {IGLPWrappedTokenUserVaultFactory} from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
+import {IGmxVester} from "../interfaces/IGmxVester.sol";
+import {ISGMX} from "../interfaces/ISGMX.sol";
+import {IWrappedTokenUserVaultFactory} from "../interfaces/IWrappedTokenUserVaultFactory.sol";
+import {IWrappedTokenUserVaultProxy} from "../interfaces/IWrappedTokenUserVaultProxy.sol";
+import {IWrappedTokenUserVaultV1} from "../interfaces/IWrappedTokenUserVaultV1.sol";
 
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import {AccountActionLib} from "../lib/AccountActionLib.sol";
+import {AccountBalanceLib} from "../lib/AccountBalanceLib.sol";
 
 
 /**
@@ -49,11 +50,15 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     using SafeERC20 for IERC20;
 
-    // ============ Constants ============
+    // ==================================================================
+    // =========================== Constants ============================
+    // ==================================================================
 
     bytes32 private constant _FILE = "GLPWrappedTokenUserVaultV1";
 
-    // ============ External Functions ============
+    // ==================================================================
+    // ======================= External Functions =======================
+    // ==================================================================
 
     function handleRewards(
         bool _shouldClaimGmx,
@@ -73,7 +78,7 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
             _shouldStakeEsGmx,
             _shouldStakeMultiplierPoints,
             _shouldClaimWeth,
-            /* _shouldConvertWethToEth = */ false
+        /* _shouldConvertWethToEth = */ false
         );
 
         address factory = VAULT_FACTORY();
@@ -90,7 +95,7 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
             if (_shouldDepositEthIntoDolomite) {
                 IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), amountWei);
                 IWrappedTokenUserVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                    /* _toAccountNumber = */ 0,
+                /* _toAccountNumber = */ 0,
                     IGLPWrappedTokenUserVaultFactory(factory).WETH_MARKET_ID(),
                     amountWei
                 );
@@ -161,7 +166,9 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         _withdrawAllGmx();
     }
 
-    // ============ Public Functions ============
+    // ==================================================================
+    // ======================== Public Functions ========================
+    // ==================================================================
 
     function executeDepositIntoVault(
         address _from,
@@ -191,6 +198,10 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         sGlp().safeTransfer(_recipient, _amount);
     }
 
+    function esGmx() public view returns (IERC20) {
+        return IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().esGmx());
+    }
+
     function gmxRewardsRouter() public view returns (IGmxRewardRouterV2) {
         return IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().gmxRewardsRouter();
     }
@@ -201,7 +212,16 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
 
     function gmxBalanceOf() public view returns (uint256) {
         address account = address(this);
-        return vGmx().pairAmounts(account) + sbfGmx().balanceOf(account);
+        return vGmx().pairAmounts(account) + sGmx().depositBalances(account, address(gmx()));
+    }
+
+    function esGmxBalanceOf() public view returns (uint256) {
+        IERC20 _esGmx = esGmx();
+        address account = address(this);
+        return vGmx().balanceOf(account)
+            + vGlp().balanceOf(account)
+            + _esGmx.balanceOf(account)
+            + sGmx().depositBalances(account, address(_esGmx));
     }
 
     function gmx() public view returns (IERC20) {
@@ -210,6 +230,10 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
 
     function sGlp() public view returns (IERC20) {
         return IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().sGlp());
+    }
+
+    function sGmx() public view returns (ISGMX) {
+        return ISGMX(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().sGmx());
     }
 
     function sbfGmx() public view returns (IERC20) {
@@ -224,7 +248,9 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         return IGmxVester(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().vGmx());
     }
 
-    // ==================== Internal Functions ========================
+    // ==================================================================
+    // ======================= Internal Functions =======================
+    // ==================================================================
 
     function _withdrawAllGmx() internal {
         IERC20 _gmx = gmx();

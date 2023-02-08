@@ -538,10 +538,6 @@ abstract contract WrappedTokenUserVaultV1 is
 
     // ============ Internal Functions ============
 
-    function _proxySelf() internal view returns (IWrappedTokenUserVaultProxy) {
-        return IWrappedTokenUserVaultProxy(address(this));
-    }
-
     function _enqueueTransfer(uint256 _amount) internal {
         uint _transferCursor = transferCursor;
         Require.that(
@@ -588,6 +584,10 @@ abstract contract WrappedTokenUserVaultV1 is
                 );
             }
         }
+    }
+
+    function _proxySelf() internal view returns (IWrappedTokenUserVaultProxy) {
+        return IWrappedTokenUserVaultProxy(address(this));
     }
 
     function _checkAllowableDebtMarket(

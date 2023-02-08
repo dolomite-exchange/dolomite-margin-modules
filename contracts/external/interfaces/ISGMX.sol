@@ -17,23 +17,12 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
-interface IGmxVester is IERC20 {
+/**
+ * @notice  This is the intermediary token used during the staking process for GMX. We use this contract to distinguish
+ *          between GMX esGMX deposited for staking to receive sbfGMX. The contract address on Arbitrum Mainnet is:
+ *          0x908C4D94D34924765f1eDc22A1DD098397c59dD4
+ */
+interface ISGMX is IERC20 {
 
-    /**
-     * @notice          Deposits esGMX for vesting into GMX.  msg.sender will also need to pay sGLP tokens.
-     * @param _amount   The amount of esGMX to deposit for vesting into GMX.
-     */
-    function deposit(uint256 _amount) external;
-
-    /**
-     * @notice  Withdraws all of msg.sender's tokens from the vault and stops vesting for esGMX into GMX.  msg.sender
-     *          will receive GMX, esGMX, and sGLP tokens.
-     */
-    function withdraw() external;
-
-    /**
-     * @notice          Gets the account's sGLP balance, which is paired with esGMX for vesting into GMX.
-     * @param _account  The account whose sGLP balance should be retrieved.
-     */
-    function pairAmounts(address _account) external view returns (uint256);
+    function depositBalances(address _account, address _depositToken) external view returns (uint256);
 }
