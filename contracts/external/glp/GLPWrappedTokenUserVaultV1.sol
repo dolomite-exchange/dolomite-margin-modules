@@ -14,28 +14,30 @@
 
 pragma solidity ^0.8.9;
 
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
-import {IDolomiteMarginCallee} from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
-import {IDolomiteMarginLiquidationCallback} from "../../protocol/interfaces/IDolomiteMarginLiquidationCallback.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteMarginCallee } from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
+import { IDolomiteMarginLiquidationCallback } from "../../protocol/interfaces/IDolomiteMarginLiquidationCallback.sol";
 
-import {Require} from "../../protocol/lib/Require.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 
-import {WrappedTokenUserVaultV1} from "../proxies/WrappedTokenUserVaultV1.sol";
+import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 
-import {IBorrowPositionProxyV2} from "../interfaces/IBorrowPositionProxyV2.sol";
-import {IGmxRewardRouterV2} from"../interfaces/IGmxRewardRouterV2.sol";
-import {IGLPWrappedTokenUserVaultFactory} from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
-import {IGmxVester} from "../interfaces/IGmxVester.sol";
-import {ISGMX} from "../interfaces/ISGMX.sol";
-import {IWrappedTokenUserVaultFactory} from "../interfaces/IWrappedTokenUserVaultFactory.sol";
-import {IWrappedTokenUserVaultProxy} from "../interfaces/IWrappedTokenUserVaultProxy.sol";
-import {IWrappedTokenUserVaultV1} from "../interfaces/IWrappedTokenUserVaultV1.sol";
+import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
+import { IGmxRewardRouterV2 } from"../interfaces/IGmxRewardRouterV2.sol";
+import { IGLPWrappedTokenUserVaultFactory } from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
+import { IGmxVester } from "../interfaces/IGmxVester.sol";
+import { ISGMX } from "../interfaces/ISGMX.sol";
+import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
+import { IWrappedTokenUserVaultProxy } from "../interfaces/IWrappedTokenUserVaultProxy.sol";
+import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1.sol";
 
-import {AccountActionLib} from "../lib/AccountActionLib.sol";
-import {AccountBalanceLib} from "../lib/AccountBalanceLib.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+
+import { WrappedTokenUserVaultV1 } from "../proxies/WrappedTokenUserVaultV1.sol";
 
 
 /**
@@ -47,7 +49,7 @@ import {AccountBalanceLib} from "../lib/AccountBalanceLib.sol";
  *          it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held in the same
  *          position as other "isolated" tokens.
  */
-contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
+contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHelpers {
     using SafeERC20 for IERC20;
 
     // ==================================================================
@@ -55,6 +57,8 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     // ==================================================================
 
     bytes32 private constant _FILE = "GLPWrappedTokenUserVaultV1";
+    bytes32 private constant _IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.isAcceptingFullAccountTransfer")) - 1);
 
     // ==================================================================
     // ======================= External Functions =======================
@@ -78,7 +82,7 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
             _shouldStakeEsGmx,
             _shouldStakeMultiplierPoints,
             _shouldClaimWeth,
-        /* _shouldConvertWethToEth = */ false
+            /* _shouldConvertWethToEth = */ false
         );
 
         address factory = VAULT_FACTORY();
@@ -95,7 +99,7 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
             if (_shouldDepositEthIntoDolomite) {
                 IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), amountWei);
                 IWrappedTokenUserVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                /* _toAccountNumber = */ 0,
+                    /* _toAccountNumber = */ 0,
                     IGLPWrappedTokenUserVaultFactory(factory).WETH_MARKET_ID(),
                     amountWei
                 );
@@ -135,11 +139,21 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     nonReentrant
     onlyVaultOwnerOrVaultFactory(msg.sender) {
         gmxRewardsRouter().acceptTransfer(_sender);
-        // TODO: deposit received assets into Dolomite
+
+        // set this flag so we don't materialize the transfer. This is needed because the assets are spot settled in
+        // this vault via the call to #acceptTransfer
+        _setIsAcceptingFullAccountTransfer(true);
+
+        // the amount of fsGLP being deposited is the current balance of fsGLP, because we started at 0.
+        uint amountWei = underlyingBalanceOf();
+        IWrappedTokenUserVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(0 /* _toAccountNumber = */, amountWei);
+
+        // reset the flag back to false
+        _setIsAcceptingFullAccountTransfer(false);
     }
 
-    function vestGlp(uint256 _amount) external onlyVaultOwner(msg.sender) {
-        vGlp().deposit(_amount);
+    function vestGlp(uint256 _esGmxAmount) external onlyVaultOwner(msg.sender) {
+        vGlp().deposit(_esGmxAmount);
     }
 
     /**
@@ -177,7 +191,12 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     public
     override
     onlyVaultFactory(msg.sender) {
-        sGlp().safeTransferFrom(_from, address(this), _amount);
+        if (isAcceptingFullAccountTransfer()) {
+            // The fsGLP is already in this vault, so don't materialize a transfer from the vault owner
+            assert(_amount == underlyingBalanceOf());
+        } else {
+            sGlp().safeTransferFrom(_from, address(this), _amount);
+        }
     }
 
     function executeWithdrawalFromVault(
@@ -218,9 +237,11 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     function esGmxBalanceOf() public view returns (uint256) {
         IERC20 _esGmx = esGmx();
         address account = address(this);
-        return vGmx().balanceOf(account)
+        // We need to pull the esGMX being held here, in the vesting contracts for GMX and GLP, and being staked in the
+        // sGMX contract
+        return _esGmx.balanceOf(account)
+            + vGmx().balanceOf(account)
             + vGlp().balanceOf(account)
-            + _esGmx.balanceOf(account)
             + sGmx().depositBalances(account, address(_esGmx));
     }
 
@@ -248,6 +269,10 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
         return IGmxVester(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().vGmx());
     }
 
+    function isAcceptingFullAccountTransfer() public view returns (bool) {
+        return _getUint256(_IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT) == 1;
+    }
+
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
@@ -255,5 +280,9 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     function _withdrawAllGmx() internal {
         IERC20 _gmx = gmx();
         _gmx.safeTransfer(msg.sender, _gmx.balanceOf(address(this)));
+    }
+
+    function _setIsAcceptingFullAccountTransfer(bool _isAcceptingFullAccountTransfer) internal {
+        _setUint256(_IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT, isAcceptingFullAccountTransfer ? 1 : 0);
     }
 }
