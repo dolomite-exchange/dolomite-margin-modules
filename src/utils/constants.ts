@@ -30,6 +30,8 @@ import {
   IGmxVault__factory,
   IGmxVester,
   IGmxVester__factory,
+  ISGMX,
+  ISGMX__factory,
   IWETH,
   IWETH__factory,
   LiquidatorProxyV2WithExternalLiquidity,
@@ -211,15 +213,14 @@ export const S_GLP = new BaseContract(
   IERC20__factory.createInterface(),
 ) as IERC20;
 
-// TODO: Find out if there is one for transferring sbfGMX
 const S_GMX_MAP: Record<Network, string> = {
-  [Network.ArbitrumOne]: '0x0000000000000000000000000000000000000000',
+  [Network.ArbitrumOne]: '0x908C4D94D34924765f1eDc22A1DD098397c59dD4',
 };
 
 export const S_GMX = new BaseContract(
   S_GMX_MAP[NETWORK_ID],
-  IERC20__factory.createInterface(),
-) as IERC20;
+  ISGMX__factory.createInterface(),
+) as ISGMX;
 
 const SBF_GMX_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xd2D1162512F927a7e282Ef43a362659E4F2a728F',

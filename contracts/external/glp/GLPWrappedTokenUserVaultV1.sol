@@ -113,9 +113,8 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
         IERC20 _gmx = gmx();
         _gmx.safeTransferFrom(msg.sender, address(this), _amount);
 
-        IGmxRewardRouterV2 _gmxRewardsRouter = gmxRewardsRouter();
-        _gmx.safeApprove(address(_gmxRewardsRouter), _amount);
-        _gmxRewardsRouter.stakeGmx(_amount);
+        _gmx.safeApprove(address(sGmx()), _amount);
+        gmxRewardsRouter().stakeGmx(_amount);
     }
 
     function unstakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
@@ -152,6 +151,9 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
         _setIsAcceptingFullAccountTransfer(false);
     }
 
+    /**
+     * @notice Deposits `_esGmxAmount` into the vesting contract along with GLP to be converted into GMX tokens.
+     */
     function vestGlp(uint256 _esGmxAmount) external onlyVaultOwner(msg.sender) {
         vGlp().deposit(_esGmxAmount);
     }
@@ -166,6 +168,9 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
         _withdrawAllGmx();
     }
 
+    /**
+     * @notice Deposits `_esGmxAmount` into the vesting contract along with sbfGMX to be converted into GMX tokens.
+     */
     function vestGmx(uint256 _esGmxAmount) external onlyVaultOwner(msg.sender) {
         vGmx().deposit(_esGmxAmount);
     }
@@ -231,6 +236,7 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
 
     function gmxBalanceOf() public view returns (uint256) {
         address account = address(this);
+        // sGmx doesn't update when funds are deposited into vGMX
         return vGmx().pairAmounts(account) + sGmx().depositBalances(account, address(gmx()));
     }
 
@@ -243,6 +249,14 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
             + vGmx().balanceOf(account)
             + vGlp().balanceOf(account)
             + sGmx().depositBalances(account, address(_esGmx));
+    }
+
+    function getGlpAmountNeededForEsGmxVesting(uint256 _esGmxAmount) public view returns (uint256) {
+        return _getPairAmountNeededForEsGmxVesting(vGlp(), _esGmxAmount);
+    }
+
+    function getGmxAmountNeededForEsGmxVesting(uint256 _esGmxAmount) public view returns (uint256) {
+        return _getPairAmountNeededForEsGmxVesting(vGmx(), _esGmxAmount);
     }
 
     function gmx() public view returns (IERC20) {
@@ -283,6 +297,20 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
     }
 
     function _setIsAcceptingFullAccountTransfer(bool _isAcceptingFullAccountTransfer) internal {
-        _setUint256(_IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT, isAcceptingFullAccountTransfer ? 1 : 0);
+        _setUint256(_IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT, _isAcceptingFullAccountTransfer ? 1 : 0);
+    }
+
+    function _getPairAmountNeededForEsGmxVesting(
+        IGmxVester _vester,
+        uint256 _esGmxAmount
+    ) internal view returns (uint256) {
+        address account = address(this);
+        uint256 pairAmount = _vester.pairAmounts(account);
+        uint256 nextPairAmount = _vester.getPairAmount(account, _esGmxAmount + _vester.balanceOf(account));
+        if (nextPairAmount > pairAmount) {
+            return nextPairAmount - pairAmount;
+        } else {
+            return 0;
+        }
     }
 }
