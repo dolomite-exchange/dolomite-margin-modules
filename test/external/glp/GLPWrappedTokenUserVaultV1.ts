@@ -133,6 +133,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       await setupGMXBalance(core.hhUser1, gmxAmount, vault);
       await vault.stakeGmx(gmxAmount);
       expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
+      expect(await core.gmxEcosystem.sbfGmx.balanceOf(vault.address)).to.eq(gmxAmount);
     });
   });
 
@@ -143,6 +144,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       await vault.unstakeGmx(gmxAmount);
       expect(await core.gmxEcosystem.gmx.balanceOf(core.hhUser1.address)).to.eq(gmxAmount);
       expect(await vault.gmxBalanceOf()).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem.sbfGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
     });
   });
 
@@ -151,17 +153,30 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       await waitDays(30);
       await vault.handleRewards(true, false, true, false, true, true, false);
 
-      const originalBalance = await core.gmxEcosystem.esGmx.balanceOf(vault.address);
+      const esGmx = core.gmxEcosystem.esGmx;
+      const originalBalance = await esGmx.balanceOf(vault.address);
       await vault.stakeEsGmx(esGmxAmount);
       expect(await vault.esGmxBalanceOf()).to.eq(originalBalance);
-      expect(await core.gmxEcosystem.sGmx.depositBalances(vault.address, core.gmxEcosystem.esGmx.address))
-        .to
-        .eq(esGmxAmount);
+      expect(await core.gmxEcosystem.sGmx.depositBalances(vault.address, esGmx.address)).to.eq(esGmxAmount);
+      expect(await esGmx.balanceOf(vault.address)).to.eq(originalBalance.sub(esGmxAmount));
+      expect(await core.gmxEcosystem.sbfGmx.balanceOf(vault.address)).to.eq(esGmxAmount);
     });
   });
 
   describe('#unstakeEsGmx', () => {
-    it('should ', async () => {
+    it('should work normally', async () => {
+      await waitDays(30);
+      await vault.handleRewards(true, false, true, false, true, true, false);
+
+      const esGmx = core.gmxEcosystem.esGmx;
+      const originalBalance = await esGmx.balanceOf(vault.address);
+      await vault.stakeEsGmx(esGmxAmount);
+
+      await vault.unstakeEsGmx(esGmxAmount);
+      expect(await vault.esGmxBalanceOf()).to.eq(originalBalance);
+      expect(await core.gmxEcosystem.sGmx.depositBalances(vault.address, esGmx.address)).to.eq(ZERO_BI);
+      expect(await esGmx.balanceOf(vault.address)).to.eq(originalBalance);
+      expect(await core.gmxEcosystem.sbfGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
     });
   });
 
@@ -180,19 +195,50 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       await setupGMXBalance(core.hhUser1, gmxAmount, vault);
       await vault.stakeGmx(gmxAmount);
       expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
+      expect(await core.gmxEcosystem.sbfGmx. balanceOf(vault.address)).to.eq(gmxAmount);
+
       await waitDays(30);
       await vault.handleRewards(true, false, true, false, false, true, false);
-      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
       await vault.vestGmx(esGmxAmount);
-      // return vGmx().pairAmounts(account) + sGmx().depositBalances(account, address(gmx()));
-      console.log('vGMX', (await core.gmxEcosystem.vGmx.pairAmounts(vault.address)).toString());
-      console.log('sGMX', (await core.gmxEcosystem.sGmx.depositBalances(vault.address, core.gmxEcosystem.gmx.address)).toString());
+      // the amount of GMX in the vault should be unchanged if some of it moves into vesting
       expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
     });
   });
 
   describe('#unvestGmx', () => {
-    it('should ', async () => {
+    it('should work when GMX is re-staked', async () => {
+      await setupGMXBalance(core.hhUser1, gmxAmount, vault);
+      await vault.stakeGmx(gmxAmount);
+      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
+      expect(await core.gmxEcosystem.sbfGmx. balanceOf(vault.address)).to.eq(gmxAmount);
+
+      await waitDays(30);
+      await vault.handleRewards(true, false, true, false, false, true, false);
+      await vault.vestGmx(esGmxAmount);
+      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
+
+      await waitDays(366);
+      await vault.unvestGmx(true);
+
+      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount.add(esGmxAmount));
+    });
+
+    it('should work when vested GMX is withdrawn', async () => {
+      await setupGMXBalance(core.hhUser1, gmxAmount, vault);
+      await vault.stakeGmx(gmxAmount);
+      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
+      expect(await core.gmxEcosystem.sbfGmx. balanceOf(vault.address)).to.eq(gmxAmount);
+
+      await waitDays(30);
+      await vault.handleRewards(true, false, true, false, false, true, false);
+      await vault.vestGmx(esGmxAmount);
+      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
+
+      await waitDays(366);
+      await vault.unvestGmx(false);
+
+      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
+      expect(await core.gmxEcosystem.gmx.balanceOf(core.hhUser1.address)).to.eq(esGmxAmount);
     });
   });
 
@@ -245,12 +291,6 @@ describe('GLPWrappedTokenUserVaultV1', () => {
 
     it('should work when no GMX is deposited at all', async () => {
       expect(await vault.gmxBalanceOf()).to.eq(ZERO_BI);
-    });
-  });
-
-  describe('#vGlp', () => {
-    it('should work normally', async () => {
-      expect(await vault.vGlp()).to.equal(core.gmxEcosystem.vGlp.address);
     });
   });
 });

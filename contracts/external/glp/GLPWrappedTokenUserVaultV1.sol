@@ -113,8 +113,7 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
         IERC20 _gmx = gmx();
         _gmx.safeTransferFrom(msg.sender, address(this), _amount);
 
-        _gmx.safeApprove(address(sGmx()), _amount);
-        gmxRewardsRouter().stakeGmx(_amount);
+        _stakeGmx(_gmx, _amount);
     }
 
     function unstakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
@@ -162,10 +161,17 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
      * @notice  Withdraws all esGMX that is vesting along with the paired fsGLP tokens used to vest the esGMX. Any
      *          remaining esGMX stays in this vault (it's non-transferable) along with the withdrawn fsGLP. The vested
      *          GMX tokens are sent to the vault owner.
+     * @param _shouldStakeGmx   `true` to stake the GMX tokens in this vault, or `false` to send them to the vault
+     *                          owner.
      */
-    function unvestGlp() external onlyVaultOwner(msg.sender) {
+    function unvestGlp(bool _shouldStakeGmx) external onlyVaultOwner(msg.sender) {
         vGlp().withdraw();
-        _withdrawAllGmx();
+        if (_shouldStakeGmx) {
+            IERC20 _gmx = gmx();
+            _stakeGmx(_gmx, _gmx.balanceOf(address(this)));
+        } else {
+            _withdrawAllGmx();
+        }
     }
 
     /**
@@ -179,10 +185,17 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
      * @notice  Withdraws all esGMX that is vesting along with the paired sbfGMX tokens used to vest the esGMX. Any
      *          remaining esGMX stays in this vault (it's non-transferable) along with the withdrawn sbfGMX. The vested
      *          GMX tokens are sent to the vault owner.
+     * @param _shouldStakeGmx   `true` to stake the GMX tokens in this vault, or `false` to send them to the vault
+     *                          owner.
      */
-    function unvestGmx() external onlyVaultOwner(msg.sender) {
+    function unvestGmx(bool _shouldStakeGmx) external onlyVaultOwner(msg.sender) {
         vGmx().withdraw();
-        _withdrawAllGmx();
+        if (_shouldStakeGmx) {
+            IERC20 _gmx = gmx();
+            _stakeGmx(_gmx, _gmx.balanceOf(address(this)));
+        } else {
+            _withdrawAllGmx();
+        }
     }
 
     // ==================================================================
@@ -236,8 +249,9 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
 
     function gmxBalanceOf() public view returns (uint256) {
         address account = address(this);
-        // sGmx doesn't update when funds are deposited into vGMX
-        return vGmx().pairAmounts(account) + sGmx().depositBalances(account, address(gmx()));
+        // sGmx reflects the amount of GMX tokens the user owns. The `depositBalances` mapping isn't updated when the
+        // sbfGMX tokens are transferred to the vGMX vesting contract, so this seems reliable.
+        return sGmx().depositBalances(account, address(gmx()));
     }
 
     function esGmxBalanceOf() public view returns (uint256) {
@@ -290,6 +304,11 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
+
+    function _stakeGmx(IERC20 _gmx, uint256 _amount) internal {
+        _gmx.safeApprove(address(sGmx()), _amount);
+        gmxRewardsRouter().stakeGmx(_amount);
+    }
 
     function _withdrawAllGmx() internal {
         IERC20 _gmx = gmx();
