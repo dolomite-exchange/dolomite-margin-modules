@@ -16,6 +16,7 @@ pragma solidity ^0.8.9;
 
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "../interfaces/IGmxRewardRouterV2.sol";
+import { IGLPWrappedTokenUserVaultV1 } from "../interfaces/IGLPWrappedTokenUserVaultV1.sol";
 import { IGLPWrappedTokenUserVaultFactory } from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
 
 import { WrappedTokenUserVaultFactory } from "../proxies/WrappedTokenUserVaultFactory.sol";
@@ -64,6 +65,18 @@ contract GLPWrappedTokenUserVaultFactory is
     }
 
     // ============ External Functions ============
+
+    function createVaultAndAcceptFullAccountTransfer(
+        address _sender
+    )
+    external
+    override
+    requireIsInitialized
+    returns (address) {
+        address vault = _createVault(msg.sender);
+        IGLPWrappedTokenUserVaultV1(vault).acceptFullAccountTransfer(_sender);
+        return vault;
+    }
 
     function setGmxRegistry(address _gmxRegistry) external override onlyDolomiteMarginOwner(msg.sender) {
         gmxRegistry = IGmxRegistryV1(_gmxRegistry);

@@ -31,6 +31,8 @@ interface IGLPWrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
     // ==================== Functions ====================
     // ===================================================
 
+    function createVaultAndAcceptFullAccountTransfer(address _sender) external returns (address);
+
     function setGmxRegistry(address _gmxRegistry) external;
 
     function WETH() external view returns (address);

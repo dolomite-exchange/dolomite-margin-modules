@@ -26,6 +26,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 
 import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
+import { IGLPWrappedTokenUserVaultV1 } from "../interfaces/IGLPWrappedTokenUserVaultV1.sol";
 import { IGmxRewardRouterV2 } from"../interfaces/IGmxRewardRouterV2.sol";
 import { IGLPWrappedTokenUserVaultFactory } from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
 import { IGmxVester } from "../interfaces/IGmxVester.sol";
@@ -49,7 +50,7 @@ import { WrappedTokenUserVaultV1 } from "../proxies/WrappedTokenUserVaultV1.sol"
  *          it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held in the same
  *          position as other "isolated" tokens.
  */
-contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHelpers {
+contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedTokenUserVaultV1, ProxyContractHelpers {
     using SafeERC20 for IERC20;
 
     // ==================================================================
@@ -71,10 +72,12 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
         bool _shouldStakeEsGmx,
         bool _shouldStakeMultiplierPoints,
         bool _shouldClaimWeth,
-        bool _shouldDepositEthIntoDolomite
+        bool _shouldDepositWethIntoDolomite
     )
     external
+    override
     onlyVaultOwner(msg.sender) {
+        _approveGmxForStaking(gmx());
         gmxRewardsRouter().handleRewards(
             _shouldClaimGmx,
             _shouldStakeGmx,
@@ -88,15 +91,13 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
         address factory = VAULT_FACTORY();
         if (!_shouldStakeGmx) {
             // If the user isn't staking GMX, transfer it to the vault owner
-            IERC20 _gmx = gmx();
-            uint amount = _gmx.balanceOf(address(this));
-            _gmx.safeTransfer(msg.sender, amount);
+            _withdrawAllGmx(msg.sender);
         }
 
         if (_shouldClaimWeth) {
             address weth = IGLPWrappedTokenUserVaultFactory(factory).WETH();
             uint256 amountWei = IERC20(weth).balanceOf(address(this));
-            if (_shouldDepositEthIntoDolomite) {
+            if (_shouldDepositWethIntoDolomite) {
                 IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), amountWei);
                 IWrappedTokenUserVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
                     /* _toAccountNumber = */ 0,
@@ -109,24 +110,24 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
         }
     }
 
-    function stakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
+    function stakeGmx(uint256 _amount) external override onlyVaultOwner(msg.sender) {
         IERC20 _gmx = gmx();
         _gmx.safeTransferFrom(msg.sender, address(this), _amount);
 
         _stakeGmx(_gmx, _amount);
     }
 
-    function unstakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
+    function unstakeGmx(uint256 _amount) external override onlyVaultOwner(msg.sender) {
         gmxRewardsRouter().unstakeGmx(_amount);
 
         gmx().safeTransfer(msg.sender, _amount);
     }
 
-    function stakeEsGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
+    function stakeEsGmx(uint256 _amount) external override onlyVaultOwner(msg.sender) {
         gmxRewardsRouter().stakeEsGmx(_amount);
     }
 
-    function unstakeEsGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
+    function unstakeEsGmx(uint256 _amount) external override onlyVaultOwner(msg.sender) {
         gmxRewardsRouter().unstakeEsGmx(_amount);
     }
 
@@ -134,6 +135,7 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
         address _sender
     )
     external
+    override
     nonReentrant
     onlyVaultOwnerOrVaultFactory(msg.sender) {
         gmxRewardsRouter().acceptTransfer(_sender);
@@ -150,51 +152,31 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
         _setIsAcceptingFullAccountTransfer(false);
     }
 
-    /**
-     * @notice Deposits `_esGmxAmount` into the vesting contract along with GLP to be converted into GMX tokens.
-     */
-    function vestGlp(uint256 _esGmxAmount) external onlyVaultOwner(msg.sender) {
+    function vestGlp(uint256 _esGmxAmount) external override onlyVaultOwner(msg.sender) {
         vGlp().deposit(_esGmxAmount);
     }
 
-    /**
-     * @notice  Withdraws all esGMX that is vesting along with the paired fsGLP tokens used to vest the esGMX. Any
-     *          remaining esGMX stays in this vault (it's non-transferable) along with the withdrawn fsGLP. The vested
-     *          GMX tokens are sent to the vault owner.
-     * @param _shouldStakeGmx   `true` to stake the GMX tokens in this vault, or `false` to send them to the vault
-     *                          owner.
-     */
-    function unvestGlp(bool _shouldStakeGmx) external onlyVaultOwner(msg.sender) {
+    function unvestGlp(bool _shouldStakeGmx) external override onlyVaultOwner(msg.sender) {
         vGlp().withdraw();
         if (_shouldStakeGmx) {
             IERC20 _gmx = gmx();
             _stakeGmx(_gmx, _gmx.balanceOf(address(this)));
         } else {
-            _withdrawAllGmx();
+            _withdrawAllGmx(msg.sender);
         }
     }
 
-    /**
-     * @notice Deposits `_esGmxAmount` into the vesting contract along with sbfGMX to be converted into GMX tokens.
-     */
-    function vestGmx(uint256 _esGmxAmount) external onlyVaultOwner(msg.sender) {
+    function vestGmx(uint256 _esGmxAmount) external override onlyVaultOwner(msg.sender) {
         vGmx().deposit(_esGmxAmount);
     }
 
-    /**
-     * @notice  Withdraws all esGMX that is vesting along with the paired sbfGMX tokens used to vest the esGMX. Any
-     *          remaining esGMX stays in this vault (it's non-transferable) along with the withdrawn sbfGMX. The vested
-     *          GMX tokens are sent to the vault owner.
-     * @param _shouldStakeGmx   `true` to stake the GMX tokens in this vault, or `false` to send them to the vault
-     *                          owner.
-     */
-    function unvestGmx(bool _shouldStakeGmx) external onlyVaultOwner(msg.sender) {
+    function unvestGmx(bool _shouldStakeGmx) external override onlyVaultOwner(msg.sender) {
         vGmx().withdraw();
         if (_shouldStakeGmx) {
             IERC20 _gmx = gmx();
             _stakeGmx(_gmx, _gmx.balanceOf(address(this)));
         } else {
-            _withdrawAllGmx();
+            _withdrawAllGmx(msg.sender);
         }
     }
 
@@ -225,8 +207,9 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
     override
     onlyVaultFactory(msg.sender) {
         if (super.underlyingBalanceOf() < _amount) {
-            // There's not enough value in the vault to cover the withdrawal, so we need to withdraw from the vGLP
+            // There's not enough value in the vault to cover the withdrawal, so we need to withdraw from vGLP
             vGlp().withdraw();
+            _withdrawAllGmx(_proxySelf().owner());
         }
 
         assert(_recipient != address(this));
@@ -285,10 +268,6 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
         return ISGMX(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().sGmx());
     }
 
-    function sbfGmx() public view returns (IERC20) {
-        return IERC20(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().sbfGmx());
-    }
-
     function vGlp() public view returns (IGmxVester) {
         return IGmxVester(IGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).gmxRegistry().vGlp());
     }
@@ -306,13 +285,20 @@ contract GLPWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1, ProxyContractHel
     // ==================================================================
 
     function _stakeGmx(IERC20 _gmx, uint256 _amount) internal {
-        _gmx.safeApprove(address(sGmx()), _amount);
+        _approveGmxForStaking(_gmx);
         gmxRewardsRouter().stakeGmx(_amount);
     }
 
-    function _withdrawAllGmx() internal {
+    function _approveGmxForStaking(IERC20 _gmx) internal {
+        address _sGmx = address(sGmx());
+        if (_gmx.allowance(address(this), _sGmx) == 0) {
+            _gmx.safeApprove(_sGmx, type(uint256).max);
+        }
+    }
+
+    function _withdrawAllGmx(address _recipient) internal {
         IERC20 _gmx = gmx();
-        _gmx.safeTransfer(msg.sender, _gmx.balanceOf(address(this)));
+        _gmx.safeTransfer(_recipient, _gmx.balanceOf(address(this)));
     }
 
     function _setIsAcceptingFullAccountTransfer(bool _isAcceptingFullAccountTransfer) internal {

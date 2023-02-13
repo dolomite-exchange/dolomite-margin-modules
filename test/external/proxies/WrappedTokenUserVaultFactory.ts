@@ -19,7 +19,7 @@ import {
 } from '../../../src/types';
 import { BORROW_POSITION_PROXY_V2, DOLOMITE_MARGIN, WETH_MARKET_ID } from '../../../src/utils/constants';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
-import { ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
@@ -412,9 +412,10 @@ describe('WrappedTokenUserVaultFactory', () => {
       vaultImplementation: SignerWithAddress,
       inputMarketId: BigNumberish,
       outputMarketId: BigNumberish,
+      signer?: SignerWithAddress,
     ): Promise<ContractTransaction> {
       return DOLOMITE_MARGIN
-        .connect(vaultImplementation)
+        .connect(signer ?? vaultImplementation)
         .operate(
           [{ owner: vaultImplementation.address, number: toAccountNumber }],
         [
@@ -433,7 +434,8 @@ describe('WrappedTokenUserVaultFactory', () => {
             otherAccountId: 0,
             data: ethers.utils.defaultAbiCoder.encode(['address'], [vaultImplementation.address]),
           },
-        ]);
+        ],
+        );
     }
 
     it('should work when called by a token converter', async () => {
@@ -454,6 +456,17 @@ describe('WrappedTokenUserVaultFactory', () => {
       await expectThrow(
         executeWrap(vaultImplementation, otherMarketId, WETH_MARKET_ID),
         `WrappedTokenUserVaultWrapper: Invalid maker token <${core.weth.address.toLowerCase()}>`,
+      );
+      await expectThrow(
+        tokenWrapper.connect(core.hhUser1)
+          .exchange(core.hhUser1.address,
+            core.dolomiteMargin.address,
+            underlyingToken.address,
+            wrappedTokenFactory.address,
+            amountWei,
+            BYTES_EMPTY,
+          ),
+        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
       const result = await executeWrap(vaultImplementation, otherMarketId, underlyingMarketId);
 

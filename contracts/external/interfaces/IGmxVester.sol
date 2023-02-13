@@ -41,4 +41,6 @@ interface IGmxVester is IERC20 {
      * @notice          Gets the amount of GMX  will be received for the given amount of esGMX.
      */
     function getPairAmount(address _account, uint256 _esAmount) external view returns (uint256);
+
+    function getMaxVestableAmount(address _account) external view returns (uint256);
 }

@@ -32,9 +32,11 @@ import {
   S_GMX,
   SBF_GMX,
   USDC,
+  USDC_MARKET_ID,
   V_GLP,
   V_GMX,
   WETH,
+  WETH_MARKET_ID,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { impersonate, resetFork } from './index';
@@ -76,8 +78,13 @@ export interface CoreProtocol {
     vGlp: typeof V_GLP;
     vGmx: typeof V_GMX;
   };
+  marketIds: {
+    usdc: BigNumberish;
+    weth: BigNumberish;
+  };
   testInterestSetter: TestInterestSetter;
   testPriceOracle: TestPriceOracle;
+  usdc: typeof USDC;
   weth: typeof WETH;
   hhUser1: SignerWithAddress;
   hhUser2: SignerWithAddress;
@@ -207,6 +214,11 @@ export async function setupCoreProtocol(
       vGlp: V_GLP.connect(hhUser1),
       vGmx: V_GMX.connect(hhUser1),
     },
+    marketIds: {
+      usdc: USDC_MARKET_ID,
+      weth: WETH_MARKET_ID,
+    },
+    usdc: USDC.connect(hhUser1),
     weth: WETH.connect(hhUser1),
   };
 }

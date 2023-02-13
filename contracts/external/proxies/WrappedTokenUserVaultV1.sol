@@ -101,7 +101,7 @@ abstract contract WrappedTokenUserVaultV1 is
 
     modifier onlyVaultOwner(address _from) {
         Require.that(
-            _from == address(_proxySelf().owner()),
+            _from == _proxySelf().owner(),
             _FILE,
             "Only owner can call",
             _from

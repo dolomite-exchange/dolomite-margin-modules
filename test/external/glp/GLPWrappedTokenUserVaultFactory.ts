@@ -1,16 +1,27 @@
 import { expect } from 'chai';
+import { BigNumber } from 'ethers';
 import {
   GLPWrappedTokenUserVaultFactory,
   GLPWrappedTokenUserVaultFactory__factory,
   GLPWrappedTokenUserVaultV1,
   GLPWrappedTokenUserVaultV1__factory,
   GmxRegistryV1,
+  TestGLPWrappedTokenUserVaultV1,
+  TestGLPWrappedTokenUserVaultV1__factory,
 } from '../../../src/types';
 import { WETH_MARKET_ID } from '../../../src/utils/constants';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupGmxRegistry } from '../../utils/setup';
+import {
+  CoreProtocol,
+  setupCoreProtocol,
+  setupGmxRegistry,
+  setupTestMarket,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -19,7 +30,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
 
   let core: CoreProtocol;
   let gmxRegistry: GmxRegistryV1;
-  let vaultImplementation: GLPWrappedTokenUserVaultV1;
+  let vaultImplementation: TestGLPWrappedTokenUserVaultV1;
   let factory: GLPWrappedTokenUserVaultFactory;
 
   before(async () => {
@@ -27,9 +38,9 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       blockNumber: 53107700,
     });
     gmxRegistry = await setupGmxRegistry(core);
-    vaultImplementation = await createContractWithAbi<GLPWrappedTokenUserVaultV1>(
-      GLPWrappedTokenUserVaultV1__factory.abi,
-      GLPWrappedTokenUserVaultV1__factory.bytecode,
+    vaultImplementation = await createContractWithAbi<TestGLPWrappedTokenUserVaultV1>(
+      TestGLPWrappedTokenUserVaultV1__factory.abi,
+      TestGLPWrappedTokenUserVaultV1__factory.bytecode,
       [],
     );
     factory = await createContractWithAbi<GLPWrappedTokenUserVaultFactory>(
@@ -62,6 +73,45 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+    });
+  });
+
+  describe('#createVaultAndAcceptFullAccountTransfer', () => {
+    it('should work normally', async () => {
+      const usdcAmount = BigNumber.from('100000000'); // 100 USDC
+      await setupUSDCBalance(core.hhUser1, usdcAmount, core.gmxEcosystem.glpManager);
+      await core.gmxEcosystem.glpRewardsRouter.mintAndStakeGlp(
+        core.usdc.address,
+        usdcAmount,
+        ONE_BI,
+        ONE_BI,
+      );
+      // use sGLP for approvals/transfers and fsGLP for checking balances
+      const glpAmount = await core.gmxEcosystem.fsGlp.balanceOf(core.hhUser1.address);
+      const vaultAddress = await factory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
+      await core.gmxEcosystem.gmxRewardsRouter.connect(core.hhUser1).signalTransfer(vaultAddress);
+
+      await core.testPriceOracle.setPrice(factory.address, '1000000000000000000');
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+      await setupTestMarket(core, factory, true);
+      await factory.initialize([]);
+
+      await factory.connect(core.hhUser2).createVaultAndAcceptFullAccountTransfer(core.hhUser1.address);
+      const vault = setupUserVaultProxy<GLPWrappedTokenUserVaultV1>(
+        vaultAddress,
+        GLPWrappedTokenUserVaultV1__factory,
+        core.hhUser2,
+      );
+      expect(await core.gmxEcosystem.fsGlp.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem.fsGlp.balanceOf(vaultAddress)).to.eq(glpAmount);
+      expect(await vault.underlyingBalanceOf()).to.eq(glpAmount);
+    });
+
+    it('should fail when not initialized yet', async () => {
+      await expectThrow(
+        factory.connect(core.hhUser2).createVaultAndAcceptFullAccountTransfer(core.hhUser1.address),
+        'WrappedTokenUserVaultFactory: Not initialized',
+      );
     });
   });
 
