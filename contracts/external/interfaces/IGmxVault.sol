@@ -14,8 +14,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxVaultPriceFeed } from "./IGmxVaultPriceFeed.sol";
-
 
 interface IGmxVault {
 
