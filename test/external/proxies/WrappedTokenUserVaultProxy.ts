@@ -17,7 +17,7 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createGlpUnwrapperProxy, createWrappedTokenFactory } from './wrapped-token-utils';
+import { createGlpUnwrapperProxy, createTestWrappedTokenFactory } from '../../utils/wrapped-token-utils';
 
 describe('WrappedTokenUserVaultProxy', () => {
   let snapshotId: string;
@@ -38,7 +38,7 @@ describe('WrappedTokenUserVaultProxy', () => {
       TestWrappedTokenUserVaultV1__factory.bytecode,
       [],
     );
-    wrappedTokenFactory = await createWrappedTokenFactory(underlyingToken, userVaultImplementation);
+    wrappedTokenFactory = await createTestWrappedTokenFactory(underlyingToken, userVaultImplementation);
     await core.testPriceOracle.setPrice(
       wrappedTokenFactory.address,
       '1000000000000000000', // $1.00

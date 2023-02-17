@@ -45,10 +45,10 @@ contract TestWrappedTokenUserVaultFactoryWrapper is WrappedTokenUserVaultWrapper
 
     // ================ Internal Functions ================
 
-    function _exchange(
+    function _exchangeIntoUnderlyingToken(
         address,
         address,
-        address,
+        address _makerTokenUnderlying,
         address,
         uint256 _amountTakerToken,
         address,
@@ -56,7 +56,7 @@ contract TestWrappedTokenUserVaultFactoryWrapper is WrappedTokenUserVaultWrapper
     ) internal override returns (uint256) {
         // 1:1 conversion for the sake of testing
         uint256 outputAmount = _amountTakerToken;
-        ICustomTestToken(VAULT_FACTORY.UNDERLYING_TOKEN()).addBalance(address(this), outputAmount);
+        ICustomTestToken(_makerTokenUnderlying).addBalance(address(this), outputAmount);
         return outputAmount;
     }
 }

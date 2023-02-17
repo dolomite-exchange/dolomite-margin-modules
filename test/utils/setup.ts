@@ -227,10 +227,11 @@ export async function setupTestMarket(
   core: CoreProtocol,
   token: { address: address },
   isClosing: boolean,
+  priceOracle?: { address: address },
 ) {
   await core.dolomiteMargin.connect(core.governance).ownerAddMarket(
     token.address,
-    core.testPriceOracle.address,
+    (priceOracle ?? core.testPriceOracle).address,
     core.testInterestSetter.address,
     { value: 0 },
     { value: 0 },

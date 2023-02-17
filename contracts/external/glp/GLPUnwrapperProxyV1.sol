@@ -34,7 +34,7 @@ import { ILiquidityTokenUnwrapperForLiquidation } from "../interfaces/ILiquidity
 
 
 /**
- * @title GLPUnwrapperProxy
+ * @title GLPUnwrapperProxyV1
  * @author Dolomite
  *
  * @notice  Contract for unwrapping GLP via a "redemption" to USDC

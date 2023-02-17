@@ -63,10 +63,10 @@ abstract contract WrappedTokenUserVaultWrapper is IDolomiteMarginExchangeWrapper
 
         (address vault) = abi.decode(_orderData, (address));
 
-        uint256 outputAmount = _exchange(
+        uint256 outputAmount = _exchangeIntoUnderlyingToken(
             _tradeOriginator,
             _receiver,
-            _makerToken,
+            VAULT_FACTORY.UNDERLYING_TOKEN(),
             _takerToken,
             _amountTakerToken,
             vault,
@@ -80,10 +80,13 @@ abstract contract WrappedTokenUserVaultWrapper is IDolomiteMarginExchangeWrapper
 
     // ============ Internal Functions ============
 
-    function _exchange(
+    /**
+     * @notice Performs the exchange from `_takerToken` (could be anything) into the factory's underlying token.
+     */
+    function _exchangeIntoUnderlyingToken(
         address _tradeOriginator,
         address _receiver,
-        address _makerToken,
+        address _makerTokenUnderlying,
         address _takerToken,
         uint256 _amountTakerToken,
         address _vault,

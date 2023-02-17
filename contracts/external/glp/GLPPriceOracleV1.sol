@@ -22,7 +22,8 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { Require } from "../../protocol/lib/Require.sol";
 
 import { IGLPManager } from "../interfaces/IGLPManager.sol";
-import {IGmxVault} from "../interfaces/IGmxVault.sol";
+import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
+import { IGmxVault } from "../interfaces/IGmxVault.sol";
 
 
 /**
@@ -43,22 +44,16 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
 
     // ============================ Public State Variables ============================
 
-    IGLPManager immutable public GLP_MANAGER; // solhint-disable-line var-name-mixedcase
-    IGmxVault immutable public GMX_VAULT; // solhint-disable-line var-name-mixedcase
-    IERC20 immutable public GLP; // solhint-disable-line var-name-mixedcase
     IERC20 immutable public DS_GLP; // solhint-disable-line var-name-mixedcase
+    IGmxRegistryV1 immutable public GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
 
     constructor(
-        address _glpManager,
-        address _gmxVault,
-        address _glp,
+        address _gmxRegistry,
         address _dsGlp
     ) {
-        GLP_MANAGER = IGLPManager(_glpManager);
-        GMX_VAULT = IGmxVault(_gmxVault);
-        GLP = IERC20(_glp);
+        GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
         DS_GLP = IERC20(_dsGlp);
     }
 
@@ -79,11 +74,24 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
         });
     }
 
+    function glp() public view returns (IERC20) {
+        return GMX_REGISTRY.glp();
+    }
+
+    function glpManager() public view returns (IGLPManager) {
+        return GMX_REGISTRY.glpManager();
+    }
+
+    function gmxVault() public view returns (IGmxVault) {
+        return GMX_REGISTRY.gmxVault();
+    }
+
     // ============================ Internal Functions ============================
 
     function _getCurrentPrice() internal view returns (uint256) {
-        uint256 fee = GMX_VAULT.mintBurnFeeBasisPoints() + GMX_VAULT.taxBasisPoints();
-        uint256 rawPrice = GLP_MANAGER.getAumInUsdg(false) * GLP_PRECISION / GLP.totalSupply();
+        IGmxVault _gmxVault = gmxVault();
+        uint256 fee = _gmxVault.mintBurnFeeBasisPoints() + _gmxVault.taxBasisPoints();
+        uint256 rawPrice = glpManager().getAumInUsdg(false) * GLP_PRECISION / glp().totalSupply();
         // understate the price by the fees needed to burn GLP for USDG. This is okay to do because GLP cannot be
         // borrowed.
         return rawPrice - (rawPrice * fee / FEE_PRECISION);
