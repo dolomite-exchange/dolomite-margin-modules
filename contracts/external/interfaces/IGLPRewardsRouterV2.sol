@@ -26,7 +26,7 @@ interface IGLPRewardsRouterV2 {
         uint256 _amount,
         uint256 _minUsdg,
         uint256 _minGlp
-    ) external;
+    ) external returns (uint256);
 
     function unstakeAndRedeemGlp(
         address _tokenOut,

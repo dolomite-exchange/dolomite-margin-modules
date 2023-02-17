@@ -62,13 +62,13 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     constructor(
         address _usdc,
         address _gmxRegistry,
-        address _dsGlp,
+        address _dfsGlp,
         address _dolomiteMargin
     )
     OnlyDolomiteMargin(_dolomiteMargin) {
         USDC = _usdc;
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
-        DFS_GLP = IWrappedTokenUserVaultFactory(_dsGlp);
+        DFS_GLP = IWrappedTokenUserVaultFactory(_dfsGlp);
 
         USDC_MARKET_ID = IDolomiteMargin(_dolomiteMargin).getMarketIdByTokenAddress(_usdc);
         IERC20(_usdc).safeApprove(_dolomiteMargin, type(uint256).max);
@@ -104,7 +104,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         );
 
         {
-            uint256 balance = glp().balanceOf(address(this));
+            uint256 balance = GMX_REGISTRY.glp().balanceOf(address(this));
             Require.that(
                 balance >= _amountTakerToken,
                 _FILE,
@@ -114,7 +114,7 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         }
         (uint256 minAmountOut) = abi.decode(_orderData, (uint256));
 
-        uint256 amountOut = glpRewardsRouter().unstakeAndRedeemGlp(
+        uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
             /* _tokenOut = */ _makerToken,
             /* _glpAmount = */ _amountTakerToken,
             minAmountOut,
@@ -184,22 +184,6 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     // ============ Public Functions ============
     // ==========================================
 
-    function glp() public view returns (IERC20) {
-        return IERC20(GMX_REGISTRY.glp());
-    }
-
-    function glpManager() public view returns (IGLPManager) {
-        return IGLPManager(GMX_REGISTRY.glpManager());
-    }
-
-    function glpRewardsRouter() public view returns (IGLPRewardsRouterV2) {
-        return GMX_REGISTRY.glpRewardsRouter();
-    }
-
-    function gmxVault() public view returns (IGmxVault) {
-        return IGmxVault(GMX_REGISTRY.gmxVault());
-    }
-
     function getExchangeCost(
         address _makerToken,
         address _takerToken,
@@ -222,21 +206,30 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
             "Taker token must be USDC",
             _takerToken
         );
-        IGmxVault _gmxVault = gmxVault();
+        IGmxVault gmxVault = GMX_REGISTRY.gmxVault();
 
         // This code is taken from the GMX contracts for calculating the redemption amount
-        uint256 aumInUsdg = glpManager().getAumInUsdg(false);
-        uint256 glpSupply = glp().totalSupply();
-        uint256 usdgAmount = _desiredMakerToken * aumInUsdg / glpSupply;
-        uint256 redemptionAmount = _gmxVault.getRedemptionAmount(_takerToken, usdgAmount);
-        uint256 feeBasisPoints = _gmxVault.getFeeBasisPoints(
+        // https://arbiscan.io/address/0x3963ffc9dff443c2a94f21b129d429891e32ec18#code
+        // Look in the #_removeLiquidity function
+        uint256 aumInUsdg = GMX_REGISTRY.glpManager().getAumInUsdg(false);
+        uint256 glpSupply = GMX_REGISTRY.glp().totalSupply();
+        uint256 usdgAmount = _desiredMakerToken * aumInUsdg / glpSupply; // GLP supply is always > 0 here
+
+        // GMX VAULT - Taken from https://arbiscan.io/address/0x489ee077994b6658eafa855c308275ead8097c4a#code
+        // in the #sellUSDG function
+        uint256 redemptionAmount = gmxVault.getRedemptionAmount(_takerToken, usdgAmount);
+
+        // uint256 feeBasisPoints = getFeeBasisPoints(_token, usdgAmount, mintBurnFeeBasisPoints, taxBasisPoints, false);
+        //        uint256 amountOut = _collectSwapFees(_token, redemptionAmount, feeBasisPoints);
+        uint256 feeBasisPoints = gmxVault.getFeeBasisPoints(
             _makerToken,
             usdgAmount,
-            _gmxVault.mintBurnFeeBasisPoints(),
-            _gmxVault.taxBasisPoints(),
+            gmxVault.mintBurnFeeBasisPoints(),
+            gmxVault.taxBasisPoints(),
             /* _increment = */ false
         );
         return _applyFees(redemptionAmount, feeBasisPoints);
+        // END vault code snippet
     }
 
     // ============================================
@@ -247,7 +240,8 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         uint256 _amount,
         uint256 _feeBasisPoints
     ) internal pure returns (uint256) {
-        // this code is taken from GMX
+        // this code is taken from GMX in the `_collectSwapFees` function in the GMX Vault contract:
+        // https://arbiscan.io/address/0x489ee077994b6658eafa855c308275ead8097c4a#code
         return _amount * (BASIS_POINTS_DIVISOR - _feeBasisPoints) / BASIS_POINTS_DIVISOR;
     }
 }
