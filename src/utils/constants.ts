@@ -1,3 +1,4 @@
+import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
 import * as DolomiteAmmFactoryJson from '@dolomite-margin/deployed-contracts/DolomiteAmmFactory.json';
 import * as DolomiteAmmRouterProxyJson from '@dolomite-margin/deployed-contracts/DolomiteAmmRouterProxy.json';
 import * as DolomiteMarginJson from '@dolomite-margin/deployed-contracts/DolomiteMargin.json';
@@ -9,7 +10,7 @@ import {
   BorrowPositionProxyV2,
   BorrowPositionProxyV2__factory,
   ERC20,
-  ERC20__factory,
+  ERC20__factory, IDepositWithdrawalProxy, IDepositWithdrawalProxy__factory,
   IDolomiteAmmFactory,
   IDolomiteAmmFactory__factory,
   IDolomiteAmmRouterProxy,
@@ -82,6 +83,11 @@ export const WETH = new BaseContract(
 export const WETH_MARKET_ID = WETH_MAP[NETWORK_ID].marketId;
 
 // ************************* Protocol Addresses *************************
+
+export const DEPOSIT_WITHDRAWAL_PROXY = new BaseContract(
+  DepositWithdrawalProxyJson.networks[NETWORK_ID].address,
+  IDepositWithdrawalProxy__factory.createInterface(),
+) as IDepositWithdrawalProxy;
 
 export const DOLOMITE_AMM_FACTORY = new BaseContract(
   DolomiteAmmFactoryJson.networks[NETWORK_ID].address,

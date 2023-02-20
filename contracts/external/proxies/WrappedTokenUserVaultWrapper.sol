@@ -15,25 +15,26 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
+import { IWrappedTokenUserVaultWrapper } from "../interfaces/IWrappedTokenUserVaultWrapper.sol";
 
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { TokenWrapperLib } from "../lib/TokenWrapperLib.sol";
 
 
 /**
- * @title WrappedTokenUserVaultWrapper
- * @author Dolomite
+ * @title   WrappedTokenUserVaultWrapper
+ * @author  Dolomite
  *
  * @notice  Abstract contract for wrapping a token into a VaultWrapperFactory token. Must be set as a token converter
  *          for the VaultWrapperFactory token.
  */
-abstract contract WrappedTokenUserVaultWrapper is IDolomiteMarginExchangeWrapper, OnlyDolomiteMargin {
+abstract contract WrappedTokenUserVaultWrapper is IWrappedTokenUserVaultWrapper, OnlyDolomiteMargin {
 
     // ======================== Constants ========================
 
@@ -72,22 +73,76 @@ abstract contract WrappedTokenUserVaultWrapper is IDolomiteMarginExchangeWrapper
             _makerToken
         );
 
-        (address vault) = abi.decode(_orderData, (address));
+        (uint256 minMakerAmount) = abi.decode(_orderData, (uint256));
 
         uint256 outputAmount = _exchangeIntoUnderlyingToken(
             _tradeOriginator,
             _receiver,
             VAULT_FACTORY.UNDERLYING_TOKEN(),
+            minMakerAmount,
             _takerToken,
             _amountTakerToken,
-            vault,
             _orderData
         );
 
-        TokenWrapperLib.approveWrappedTokenForTransfer(_makerToken, vault, _receiver, outputAmount);
+        TokenWrapperLib.approveWrappedTokenForTransfer(_makerToken, _tradeOriginator, _receiver, outputAmount);
 
         return outputAmount;
     }
+
+    function createActionsForWrapping(
+        uint256 _solidAccountId,
+        uint256,
+        address,
+        address,
+        uint256 _owedMarket,
+        uint256 _heldMarket,
+        uint256,
+        uint256 _heldAmount
+    )
+    external
+    override
+    view
+    returns (IDolomiteMargin.ActionArgs[] memory) {
+        Require.that(
+            DOLOMITE_MARGIN.getMarketTokenAddress(_owedMarket) == address(VAULT_FACTORY),
+            _FILE,
+            "Invalid owed market",
+            _owedMarket
+        );
+        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](1);
+
+        uint256 amountOut = getExchangeCost(
+            DOLOMITE_MARGIN.getMarketTokenAddress(_heldMarket),
+            DOLOMITE_MARGIN.getMarketTokenAddress(_owedMarket),
+            _heldAmount,
+            /* _orderData = */ bytes("")
+        );
+
+        actions[0] = AccountActionLib.encodeExternalSellAction(
+            _solidAccountId,
+            _heldMarket,
+            _owedMarket,
+            /* _trader = */ address(this),
+            /* _amountInWei = */ _heldAmount,
+            /* _amountOutMinWei = */ amountOut,
+            bytes("")
+        );
+
+        return actions;
+    }
+
+    function getExchangeCost(
+        address _makerToken,
+        address _takerToken,
+        uint256 _desiredMakerToken,
+        bytes memory _orderData
+    )
+    public
+    override
+    virtual
+    view
+    returns (uint256);
 
     // ============ Internal Functions ============
 
@@ -98,9 +153,9 @@ abstract contract WrappedTokenUserVaultWrapper is IDolomiteMarginExchangeWrapper
         address _tradeOriginator,
         address _receiver,
         address _makerTokenUnderlying,
+        uint256 _minMakerAmount,
         address _takerToken,
         uint256 _amountTakerToken,
-        address _vault,
         bytes calldata _orderData
     ) internal virtual returns (uint256);
 }

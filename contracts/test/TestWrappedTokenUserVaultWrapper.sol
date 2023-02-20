@@ -14,44 +14,27 @@
 
 pragma solidity ^0.8.9;
 
-import { WrappedTokenUserVaultUnwrapper } from "../external/proxies/WrappedTokenUserVaultUnwrapper.sol";
+import { TokenWrapperLib } from "../external/lib/TokenWrapperLib.sol";
+
+import { WrappedTokenUserVaultWrapper } from "../external/proxies/WrappedTokenUserVaultWrapper.sol";
 
 import { ICustomTestToken } from "./ICustomTestToken.sol";
 
 
-contract TestWrappedTokenUserVaultFactoryUnwrapper is WrappedTokenUserVaultUnwrapper {
-
-    // ================ Immutable Field Variables ================
-
-    address public immutable OUTPUT_TOKEN; // solhint-disable-line var-name-mixedcase
-    uint256 public immutable OUTPUT_MARKET_ID; // solhint-disable-line var-name-mixedcase
-
-    // ================ Constructor ================
+contract TestWrappedTokenUserVaultWrapper is WrappedTokenUserVaultWrapper {
 
     constructor(
-        address _outputToken,
         address _vaultFactory,
-        uint256 _actionsLength,
         address _dolomiteMargin
-    )
-    WrappedTokenUserVaultUnwrapper(
-        _vaultFactory,
-        _actionsLength,
-        _dolomiteMargin
-    ) {
-        OUTPUT_TOKEN = _outputToken;
-        OUTPUT_MARKET_ID = DOLOMITE_MARGIN.getMarketIdByTokenAddress(_outputToken);
-    }
-
-    function outputMarketId() external view returns (uint256) {
-        return OUTPUT_MARKET_ID;
+    ) WrappedTokenUserVaultWrapper(_vaultFactory, _dolomiteMargin) {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     function getExchangeCost(
         address,
         address,
         uint256 _desiredMakerToken,
-        bytes calldata
+        bytes memory
     )
     public
     override
@@ -63,20 +46,27 @@ contract TestWrappedTokenUserVaultFactoryUnwrapper is WrappedTokenUserVaultUnwra
 
     // ================ Internal Functions ================
 
-    function _exchangeUnderlyingTokenToOutputToken(
+    function _exchangeIntoUnderlyingToken(
         address,
         address,
-        address,
+        address _makerTokenUnderlying,
         uint256,
-        address _takerTokenUnderlying,
+        address _takerToken,
         uint256 _amountTakerToken,
         bytes calldata
     )
     internal
     override
     returns (uint256) {
-        uint256 outputAmount = _amountTakerToken;
-        ICustomTestToken(_takerTokenUnderlying).addBalance(address(this), outputAmount);
+        // 1:1 conversion for the sake of testing
+        uint256 makerPrice = DOLOMITE_MARGIN.getMarketPrice(
+            DOLOMITE_MARGIN.getMarketIdByTokenAddress(address(VAULT_FACTORY))
+        ).value;
+        uint256 takerPrice = DOLOMITE_MARGIN.getMarketPrice(
+            DOLOMITE_MARGIN.getMarketIdByTokenAddress(_takerToken)
+        ).value;
+        uint256 outputAmount = _amountTakerToken * takerPrice / makerPrice;
+        ICustomTestToken(_makerTokenUnderlying).addBalance(address(this), outputAmount);
         return outputAmount;
     }
 }

@@ -1,15 +1,15 @@
-import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BaseContract, BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
 import {
   CustomTestToken,
-  GLPUnwrapperProxyV1,
   TestWrappedTokenUserVaultFactory,
   TestWrappedTokenUserVaultFactory__factory,
-  TestWrappedTokenUserVaultFactoryWrapper,
-  TestWrappedTokenUserVaultFactoryWrapper__factory,
+  TestWrappedTokenUserVaultUnwrapper,
+  TestWrappedTokenUserVaultUnwrapper__factory,
+  TestWrappedTokenUserVaultWrapper,
+  TestWrappedTokenUserVaultWrapper__factory,
   TestWrappedTokenUserVaultV1,
   TestWrappedTokenUserVaultV1__factory,
   WrappedTokenUserVaultUpgradeableProxy,
@@ -17,7 +17,9 @@ import {
   WrappedTokenUserVaultV1,
   WrappedTokenUserVaultV1__factory,
 } from '../../../src/types';
-import { BORROW_POSITION_PROXY_V2, DOLOMITE_MARGIN, WETH_MARKET_ID } from '../../../src/utils/constants';
+import {
+  BORROW_POSITION_PROXY_V2,
+} from '../../../src/utils/constants';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -29,14 +31,8 @@ import {
   expectWalletAllowance,
   expectWalletBalance,
 } from '../../utils/assertions';
-import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupGmxRegistry,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../../utils/setup';
-import { createGlpUnwrapperProxy, createTestWrappedTokenFactory } from '../../utils/wrapped-token-utils';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
+import { createTestWrappedTokenFactory } from '../../utils/wrapped-token-utils';
 
 const toAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units
@@ -52,8 +48,8 @@ describe('WrappedTokenUserVaultFactory', () => {
   let otherMarketId: BigNumber;
   let rewardToken: CustomTestToken;
   let rewardMarketId: BigNumber;
-  let tokenUnwrapper: GLPUnwrapperProxyV1;
-  let tokenWrapper: TestWrappedTokenUserVaultFactoryWrapper;
+  let tokenUnwrapper: TestWrappedTokenUserVaultUnwrapper;
+  let tokenWrapper: TestWrappedTokenUserVaultWrapper;
   let wrappedTokenFactory: TestWrappedTokenUserVaultFactory;
   let userVaultImplementation: BaseContract;
   let initializeResult: ContractTransaction;
@@ -95,11 +91,19 @@ describe('WrappedTokenUserVaultFactory', () => {
     rewardMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, rewardToken, false);
 
-    const registry = await setupGmxRegistry(core);
-    tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory, registry);
-    tokenWrapper = await createContractWithAbi<TestWrappedTokenUserVaultFactoryWrapper>(
-      TestWrappedTokenUserVaultFactoryWrapper__factory.abi,
-      TestWrappedTokenUserVaultFactoryWrapper__factory.bytecode,
+    tokenUnwrapper = await createContractWithAbi<TestWrappedTokenUserVaultUnwrapper>(
+      TestWrappedTokenUserVaultUnwrapper__factory.abi,
+      TestWrappedTokenUserVaultUnwrapper__factory.bytecode,
+      [
+        otherToken.address,
+        wrappedTokenFactory.address,
+        2,
+        core.dolomiteMargin.address,
+      ],
+    );
+    tokenWrapper = await createContractWithAbi<TestWrappedTokenUserVaultWrapper>(
+      TestWrappedTokenUserVaultWrapper__factory.abi,
+      TestWrappedTokenUserVaultWrapper__factory.bytecode,
       [wrappedTokenFactory.address, core.dolomiteMargin.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(tokenWrapper.address, true);
@@ -123,7 +127,7 @@ describe('WrappedTokenUserVaultFactory', () => {
         underlyingToken.address,
         BORROW_POSITION_PROXY_V2.address,
         userVaultImplementation.address,
-        DOLOMITE_MARGIN.address,
+        core.dolomiteMargin.address,
       ],
     );
   }
@@ -174,7 +178,7 @@ describe('WrappedTokenUserVaultFactory', () => {
           underlyingToken.address,
           BORROW_POSITION_PROXY_V2.address,
           userVaultImplementation.address,
-          DOLOMITE_MARGIN.address,
+          core.dolomiteMargin.address,
         ],
       );
       await core.testPriceOracle.setPrice(
@@ -401,41 +405,33 @@ describe('WrappedTokenUserVaultFactory', () => {
     it('should fail when not called by vault', async () => {
       await expectThrow(
         wrappedTokenFactory.connect(core.hhUser1)
-          .depositOtherTokenIntoDolomiteMarginForVaultOwner(toAccountNumber, WETH_MARKET_ID, amountWei),
+          .depositOtherTokenIntoDolomiteMarginForVaultOwner(toAccountNumber, core.marketIds.weth, amountWei),
         `WrappedTokenUserVaultFactory: Caller is not a vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
 
   describe('#enqueueTransferIntoDolomiteMargin', () => {
-    function executeWrap(
+    async function executeWrap(
       vaultImplementation: SignerWithAddress,
       inputMarketId: BigNumberish,
       outputMarketId: BigNumberish,
       signer?: SignerWithAddress,
     ): Promise<ContractTransaction> {
-      return DOLOMITE_MARGIN
+      const solidAccountId = 0;
+      const actions = await tokenWrapper.createActionsForWrapping(
+        solidAccountId,
+        /* _liquidAccountId = */ 0,
+        ZERO_ADDRESS,
+        ZERO_ADDRESS,
+        outputMarketId,
+        inputMarketId,
+        ZERO_BI,
+        smallAmountWei,
+      );
+      return core.dolomiteMargin
         .connect(signer ?? vaultImplementation)
-        .operate(
-          [{ owner: vaultImplementation.address, number: toAccountNumber }],
-        [
-          {
-            actionType: ActionType.Sell,
-            accountId: '0', // accounts[0]
-            amount: {
-              sign: false,
-              denomination: AmountDenomination.Wei,
-              ref: AmountReference.Delta,
-              value: smallAmountWei,
-            },
-            primaryMarketId: inputMarketId,
-            secondaryMarketId: outputMarketId,
-            otherAddress: tokenWrapper.address,
-            otherAccountId: 0,
-            data: ethers.utils.defaultAbiCoder.encode(['address'], [vaultImplementation.address]),
-          },
-        ],
-        );
+        .operate([{ owner: vaultImplementation.address, number: toAccountNumber }], actions);
     }
 
     it('should work when called by a token converter', async () => {
@@ -454,12 +450,13 @@ describe('WrappedTokenUserVaultFactory', () => {
       await otherToken.addBalance(core.dolomiteMargin.address, amountWei);
       expect(await wrappedTokenFactory.isTokenConverterTrusted(tokenWrapper.address)).to.eq(true);
       await expectThrow(
-        executeWrap(vaultImplementation, otherMarketId, WETH_MARKET_ID),
+        executeWrap(vaultImplementation, otherMarketId, core.marketIds.weth),
         `WrappedTokenUserVaultWrapper: Invalid maker token <${core.weth.address.toLowerCase()}>`,
       );
       await expectThrow(
         tokenWrapper.connect(core.hhUser1)
-          .exchange(core.hhUser1.address,
+          .exchange(
+            core.hhUser1.address,
             core.dolomiteMargin.address,
             underlyingToken.address,
             wrappedTokenFactory.address,
@@ -484,12 +481,12 @@ describe('WrappedTokenUserVaultFactory', () => {
         vault: vault.address,
       });
 
-      const additiveBalance = amountWei.add(smallAmountWei);
+      const cumulativeBalance = amountWei.add(smallAmountWei);
       expect(await otherToken.balanceOf(tokenWrapper.address)).to.eq(smallAmountWei);
       expect(await underlyingToken.balanceOf(tokenWrapper.address)).to.eq(ZERO_BI);
-      expect(await underlyingToken.balanceOf(vault.address)).to.eq(additiveBalance);
-      expect(await wrappedTokenFactory.balanceOf(core.dolomiteMargin.address)).to.eq(additiveBalance);
-      await expectProtocolBalance(core, vault.address, toAccountNumber, underlyingMarketId, additiveBalance);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(cumulativeBalance);
+      expect(await wrappedTokenFactory.balanceOf(core.dolomiteMargin.address)).to.eq(cumulativeBalance);
+      await expectProtocolBalance(core, vault.address, toAccountNumber, underlyingMarketId, cumulativeBalance);
     });
 
     it('should fail when not called by token converter', async () => {
@@ -527,34 +524,26 @@ describe('WrappedTokenUserVaultFactory', () => {
   });
 
   describe('#enqueueTransferFromDolomiteMargin', () => {
-    function executeUnwrap(
+    async function executeUnwrap(
       vaultImplementation: SignerWithAddress,
       inputMarketId: BigNumberish,
       outputMarketId: BigNumberish,
       signer?: SignerWithAddress,
     ): Promise<ContractTransaction> {
-      return DOLOMITE_MARGIN
+      const solidAccountId = 0;
+      const actions = await tokenUnwrapper.createActionsForUnwrappingForLiquidation(
+        solidAccountId,
+        solidAccountId,
+        ZERO_ADDRESS,
+        ZERO_ADDRESS,
+        outputMarketId,
+        inputMarketId,
+        ZERO_BI,
+        smallAmountWei,
+      );
+      return core.dolomiteMargin
         .connect(signer ?? vaultImplementation)
-        .operate(
-          [{ owner: vaultImplementation.address, number: toAccountNumber }],
-        [
-          {
-            actionType: ActionType.Sell,
-            accountId: '0', // accounts[0]
-            amount: {
-              sign: false,
-              denomination: AmountDenomination.Wei,
-              ref: AmountReference.Delta,
-              value: smallAmountWei,
-            },
-            primaryMarketId: inputMarketId,
-            secondaryMarketId: outputMarketId,
-            otherAddress: tokenWrapper.address,
-            otherAccountId: 0,
-            data: ethers.utils.defaultAbiCoder.encode(['address'], [vaultImplementation.address]),
-          },
-        ],
-        );
+        .operate([{ owner: vaultImplementation.address, number: toAccountNumber }], actions);
     }
 
     it('should work when called by a token converter', async () => {
@@ -571,44 +560,34 @@ describe('WrappedTokenUserVaultFactory', () => {
 
       const vaultImplementation = await impersonate(vault.address, true);
       await otherToken.addBalance(core.dolomiteMargin.address, amountWei);
-      expect(await wrappedTokenFactory.isTokenConverterTrusted(tokenWrapper.address)).to.eq(true);
+      expect(await wrappedTokenFactory.isTokenConverterTrusted(tokenUnwrapper.address)).to.eq(true);
+      await core.dolomiteMargin.ownerSetGlobalOperator(vaultImplementation.address, true);
       await expectThrow(
-        executeWrap(vaultImplementation, otherMarketId, WETH_MARKET_ID),
-        `WrappedTokenUserVaultWrapper: Invalid maker token <${core.weth.address.toLowerCase()}>`,
+        executeUnwrap(vaultImplementation, core.marketIds.weth, otherMarketId),
+        `WrappedTokenUserVaultUnwrapper: Invalid taker token <${core.weth.address.toLowerCase()}>`,
       );
-      await expectThrow(
-        tokenWrapper.connect(core.hhUser1)
-          .exchange(core.hhUser1.address,
-            core.dolomiteMargin.address,
-            underlyingToken.address,
-            wrappedTokenFactory.address,
-            amountWei,
-            BYTES_EMPTY,
-          ),
-        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
-      );
-      const result = await executeWrap(vaultImplementation, otherMarketId, underlyingMarketId);
+      const result = await executeUnwrap(vaultImplementation, underlyingMarketId, otherMarketId);
 
       const queuedTransfer = await wrappedTokenFactory.getQueuedTransferByCursor(1);
-      expect(queuedTransfer.from).to.eq(tokenWrapper.address);
-      expect(queuedTransfer.to).to.eq(core.dolomiteMargin.address);
+      expect(queuedTransfer.from).to.eq(core.dolomiteMargin.address);
+      expect(queuedTransfer.to).to.eq(tokenUnwrapper.address);
       expect(queuedTransfer.amount).to.eq(smallAmountWei);
       expect(queuedTransfer.vault).to.eq(vault.address);
 
       await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
         transferCursor: 1,
-        from: tokenWrapper.address,
-        to: core.dolomiteMargin.address,
+        from: core.dolomiteMargin.address,
+        to: tokenUnwrapper.address,
         amount: smallAmountWei,
         vault: vault.address,
       });
 
-      const additiveBalance = amountWei.add(smallAmountWei);
-      expect(await otherToken.balanceOf(tokenWrapper.address)).to.eq(smallAmountWei);
-      expect(await underlyingToken.balanceOf(tokenWrapper.address)).to.eq(ZERO_BI);
-      expect(await underlyingToken.balanceOf(vault.address)).to.eq(additiveBalance);
-      expect(await wrappedTokenFactory.balanceOf(core.dolomiteMargin.address)).to.eq(additiveBalance);
-      await expectProtocolBalance(core, vault.address, toAccountNumber, underlyingMarketId, additiveBalance);
+      const cumulativeBalance = amountWei.sub(smallAmountWei);
+      expect(await otherToken.balanceOf(core.dolomiteMargin.address)).to.eq(smallAmountWei.add(amountWei));
+      expect(await underlyingToken.balanceOf(tokenUnwrapper.address)).to.eq(smallAmountWei);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(cumulativeBalance);
+      expect(await wrappedTokenFactory.balanceOf(core.dolomiteMargin.address)).to.eq(cumulativeBalance);
+      await expectProtocolBalance(core, vault.address, toAccountNumber, underlyingMarketId, cumulativeBalance);
     });
 
     it('should fail when not called by token converter', async () => {

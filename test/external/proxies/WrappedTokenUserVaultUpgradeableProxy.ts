@@ -4,8 +4,8 @@ import {
   TestWrappedTokenUserVaultFactory,
   TestWrappedTokenUserVaultV1,
   TestWrappedTokenUserVaultV1__factory,
-  WrappedTokenUserVaultProxy,
-  WrappedTokenUserVaultProxy__factory,
+  WrappedTokenUserVaultUpgradeableProxy,
+  WrappedTokenUserVaultUpgradeableProxy__factory,
 } from '../../../src/types';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -19,14 +19,14 @@ import {
 } from '../../utils/setup';
 import { createGlpUnwrapperProxy, createTestWrappedTokenFactory } from '../../utils/wrapped-token-utils';
 
-describe('WrappedTokenUserVaultProxy', () => {
+describe('WrappedTokenUserVaultUpgradeableProxy', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
   let wrappedTokenFactory: TestWrappedTokenUserVaultFactory;
   let userVaultImplementation: BaseContract;
 
-  let vaultProxy: WrappedTokenUserVaultProxy;
+  let vaultProxy: WrappedTokenUserVaultUpgradeableProxy;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -53,9 +53,9 @@ describe('WrappedTokenUserVaultProxy', () => {
 
     await wrappedTokenFactory.createVault(core.hhUser1.address);
     const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
-    vaultProxy = await setupUserVaultProxy<WrappedTokenUserVaultProxy>(
+    vaultProxy = await setupUserVaultProxy<WrappedTokenUserVaultUpgradeableProxy>(
       vaultAddress,
-      WrappedTokenUserVaultProxy__factory,
+      WrappedTokenUserVaultUpgradeableProxy__factory,
       core.hhUser1,
     );
 
@@ -70,9 +70,9 @@ describe('WrappedTokenUserVaultProxy', () => {
     it('should work under normal conditions', async () => {
       await wrappedTokenFactory.createVaultNoInitialize(core.hhUser2.address);
       const vault2Address = await wrappedTokenFactory.getVaultByAccount(core.hhUser2.address);
-      const vault2 = setupUserVaultProxy<WrappedTokenUserVaultProxy>(
+      const vault2 = setupUserVaultProxy<WrappedTokenUserVaultUpgradeableProxy>(
         vault2Address,
-        WrappedTokenUserVaultProxy__factory,
+        WrappedTokenUserVaultUpgradeableProxy__factory,
         core.hhUser2,
       );
       await vault2.initialize(core.hhUser2.address);
@@ -83,14 +83,14 @@ describe('WrappedTokenUserVaultProxy', () => {
     it('should fail if already initialized', async () => {
       await expectThrow(
         vaultProxy.initialize(core.hhUser1.address),
-        'WrappedTokenUserVaultProxy: Already initialized',
+        'WrappedTokenUserVaultUpgradeableProxy: Already initialized',
       );
     });
 
     it('should fail if invalid account', async () => {
       await expectThrow(
         wrappedTokenFactory.createVaultWithDifferentAccount(core.hhUser2.address, core.hhUser3.address),
-        `WrappedTokenUserVaultProxy: Invalid account <${core.hhUser3.address.toLowerCase()}>`,
+        `WrappedTokenUserVaultUpgradeableProxy: Invalid account <${core.hhUser3.address.toLowerCase()}>`,
       );
     });
   });
@@ -113,7 +113,7 @@ describe('WrappedTokenUserVaultProxy', () => {
         TestWrappedTokenUserVaultV1__factory,
         core.hhUser2,
       );
-      await expectThrow(vaultImpl.VAULT_FACTORY(), 'WrappedTokenUserVaultProxy: Not initialized');
+      await expectThrow(vaultImpl.VAULT_FACTORY(), 'WrappedTokenUserVaultUpgradeableProxy: Not initialized');
     });
   });
 

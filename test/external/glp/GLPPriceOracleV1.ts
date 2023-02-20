@@ -36,8 +36,8 @@ describe('GLPPriceOracleV1', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under the correct conditions for dsGLP', async () => {
-      const dsGlp = await glpPriceOracle.DS_GLP();
-      const price = await glpPriceOracle.getPrice(dsGlp);
+      const dfsGlp = await glpPriceOracle.DFS_GLP();
+      const price = await glpPriceOracle.getPrice(dfsGlp);
       expect(price.value).to.eq(GLP_PRICE);
     });
 

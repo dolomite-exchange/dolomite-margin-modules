@@ -19,7 +19,7 @@ import { IDolomiteMarginCallee } from "../../protocol/interfaces/IDolomiteMargin
 import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 
 
-interface ILiquidityTokenUnwrapperForLiquidation is IDolomiteMarginExchangeWrapper, IDolomiteMarginCallee {
+interface IWrappedTokenUserVaultUnwrapper is IDolomiteMarginExchangeWrapper, IDolomiteMarginCallee {
 
     /**
      * @return The liquidity token that this contract can unwrap
@@ -42,7 +42,7 @@ interface ILiquidityTokenUnwrapperForLiquidation is IDolomiteMarginExchangeWrapp
      * @param _heldMarket           The market that the liquid account holds and must be sold to repay the
      *                              `_owedMarket`.
      * @param _owedAmount           The amount of the `_owedMarket` that the liquid account owes and must repay.
-     * @param _heldAmountWithReward The amount of the `_heldMarket` that the liquid account holds and must sell.
+     * @param _heldAmount           The amount of the `_heldMarket` that the liquid account holds and must sell.
      * @return                      The actions that will be executed to unwrap the `_heldMarket` into `outputMarketId`.
      */
     function createActionsForUnwrappingForLiquidation(
@@ -53,7 +53,7 @@ interface ILiquidityTokenUnwrapperForLiquidation is IDolomiteMarginExchangeWrapp
         uint256 _owedMarket,
         uint256 _heldMarket,
         uint256 _owedAmount,
-        uint256 _heldAmountWithReward
+        uint256 _heldAmount
     )
     external
     view

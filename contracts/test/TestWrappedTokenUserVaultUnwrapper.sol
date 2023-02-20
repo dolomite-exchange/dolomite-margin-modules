@@ -14,29 +14,45 @@
 
 pragma solidity ^0.8.9;
 
-import { TokenWrapperLib } from "../external/lib/TokenWrapperLib.sol";
-
-import { WrappedTokenUserVaultWrapper } from "../external/proxies/WrappedTokenUserVaultWrapper.sol";
+import { WrappedTokenUserVaultUnwrapper } from "../external/proxies/WrappedTokenUserVaultUnwrapper.sol";
 
 import { ICustomTestToken } from "./ICustomTestToken.sol";
 
 
-contract TestWrappedTokenUserVaultFactoryWrapper is WrappedTokenUserVaultWrapper {
+contract TestWrappedTokenUserVaultUnwrapper is WrappedTokenUserVaultUnwrapper {
+
+    // ================ Immutable Field Variables ================
+
+    address public immutable OUTPUT_TOKEN; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable OUTPUT_MARKET_ID; // solhint-disable-line var-name-mixedcase
+
+    // ================ Constructor ================
 
     constructor(
+        address _outputToken,
         address _vaultFactory,
         address _dolomiteMargin
-    ) WrappedTokenUserVaultWrapper(_vaultFactory, _dolomiteMargin) {
-        // solhint-disable-previous-line no-empty-blocks
+    )
+    WrappedTokenUserVaultUnwrapper(
+        _vaultFactory,
+        _dolomiteMargin
+    ) {
+        OUTPUT_TOKEN = _outputToken;
+        OUTPUT_MARKET_ID = DOLOMITE_MARGIN.getMarketIdByTokenAddress(_outputToken);
+    }
+
+    function outputMarketId() external view returns (uint256) {
+        return OUTPUT_MARKET_ID;
     }
 
     function getExchangeCost(
         address,
         address,
         uint256 _desiredMakerToken,
-        bytes calldata
+        bytes memory
     )
-    external
+    public
+    override
     pure
     returns (uint256) {
         // 1:1 conversion for the sake of testing
@@ -45,18 +61,20 @@ contract TestWrappedTokenUserVaultFactoryWrapper is WrappedTokenUserVaultWrapper
 
     // ================ Internal Functions ================
 
-    function _exchangeIntoUnderlyingToken(
+    function _exchangeUnderlyingTokenToOutputToken(
         address,
         address,
-        address _makerTokenUnderlying,
+        address _makerToken,
+        uint256,
         address,
         uint256 _amountTakerToken,
-        address,
         bytes calldata
-    ) internal override returns (uint256) {
-        // 1:1 conversion for the sake of testing
+    )
+    internal
+    override
+    returns (uint256) {
         uint256 outputAmount = _amountTakerToken;
-        ICustomTestToken(_makerTokenUnderlying).addBalance(address(this), outputAmount);
+        ICustomTestToken(_makerToken).addBalance(address(this), outputAmount);
         return outputAmount;
     }
 }

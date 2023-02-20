@@ -16,21 +16,13 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
-
-import { IGLPManager } from "../interfaces/IGLPManager.sol";
-import { IGLPRewardsRouterV2 } from "../interfaces/IGLPRewardsRouterV2.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
-import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
-import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1.sol";
-import { ILiquidityTokenUnwrapperForLiquidation } from "../interfaces/ILiquidityTokenUnwrapperForLiquidation.sol";
 
 import { WrappedTokenUserVaultUnwrapper } from "../proxies/WrappedTokenUserVaultUnwrapper.sol";
 
@@ -49,7 +41,6 @@ contract GLPUnwrapperProxyV1 is WrappedTokenUserVaultUnwrapper {
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GLPUnwrapperProxyV1";
-    uint256 private constant _ACTIONS_LENGTH = 2;
 
     // ============ Immutable State Variables ============
 
@@ -63,10 +54,9 @@ contract GLPUnwrapperProxyV1 is WrappedTokenUserVaultUnwrapper {
         address _usdc,
         address _gmxRegistry,
         address _dfsGlp,
-        uint256 _actionsLength,
         address _dolomiteMargin
     )
-    WrappedTokenUserVaultUnwrapper(_dfsGlp, _actionsLength, _dolomiteMargin) {
+    WrappedTokenUserVaultUnwrapper(_dfsGlp, _dolomiteMargin) {
         USDC = _usdc;
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
 

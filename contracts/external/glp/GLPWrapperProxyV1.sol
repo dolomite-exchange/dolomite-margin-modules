@@ -27,6 +27,8 @@ import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
 import { WrappedTokenUserVaultWrapper } from "../proxies/WrappedTokenUserVaultWrapper.sol";
 
+import { GLPMathLib } from "./GLPMathLib.sol";
+
 
 /**
  * @title GLPWrapperProxyV1
@@ -69,9 +71,10 @@ contract GLPWrapperProxyV1 is WrappedTokenUserVaultWrapper {
         address _makerToken,
         address _takerToken,
         uint256 _desiredMakerToken,
-        bytes calldata
+        bytes memory
     )
-    external
+    public
+    override
     view
     returns (uint256) {
         Require.that(
@@ -107,7 +110,7 @@ contract GLPWrapperProxyV1 is WrappedTokenUserVaultWrapper {
             gmxVault.taxBasisPoints(),
             true
         );
-        uint256 makerAmountAfterFees = _applyFees(_desiredMakerToken, feeBasisPoints);
+        uint256 makerAmountAfterFees = GLPMathLib.applyFeesToAmount(_desiredMakerToken, feeBasisPoints);
         uint256 usdgAmount = gmxVault.adjustForDecimals(
             makerAmountAfterFees * price / PRICE_PRECISION,
             _makerToken,
@@ -130,24 +133,19 @@ contract GLPWrapperProxyV1 is WrappedTokenUserVaultWrapper {
         address,
         address,
         address,
+        uint256 _minMakerAmount,
         address _takerToken,
         uint256 _amountTakerToken,
-        address,
-        bytes calldata _orderData
+        bytes calldata
     )
     internal
     override
     returns (uint256) {
-        (uint256 minAmount) = abi.decode(_orderData, (uint256));
-        return GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(_takerToken, _amountTakerToken, /* _minUsdg = */ 0, minAmount);
-    }
-
-    function _applyFees(
-        uint256 _amount,
-        uint256 _feeBasisPoints
-    ) internal pure returns (uint256) {
-        // this code is taken from GMX in the `_collectSwapFees` function in the GMX Vault contract:
-        // https://arbiscan.io/address/0x489ee077994b6658eafa855c308275ead8097c4a#code
-        return _amount * (BASIS_POINTS_DIVISOR - _feeBasisPoints) / BASIS_POINTS_DIVISOR;
+        return GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(
+            _takerToken,
+            _amountTakerToken,
+            /* _minUsdg = */ 0,
+            _minMakerAmount
+        );
     }
 }

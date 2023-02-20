@@ -5,7 +5,7 @@ import { ethers, network } from 'hardhat';
 import {
   BorrowPositionProxyV2,
   GmxRegistryV1,
-  GmxRegistryV1__factory,
+  GmxRegistryV1__factory, IDepositWithdrawalProxy,
   IDolomiteAmmRouterProxy,
   IDolomiteMargin,
   IExpiry,
@@ -15,7 +15,7 @@ import {
   TestPriceOracle__factory,
 } from '../../src/types';
 import {
-  BORROW_POSITION_PROXY_V2,
+  BORROW_POSITION_PROXY_V2, DEPOSIT_WITHDRAWAL_PROXY,
   DOLOMITE_AMM_ROUTER,
   DOLOMITE_MARGIN,
   ES_GMX,
@@ -59,6 +59,7 @@ export interface CoreProtocol {
   config: CoreProtocolConfig;
   governance: SignerWithAddress;
   borrowPositionProxyV2: BorrowPositionProxyV2;
+  depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
   expiry: IExpiry;
@@ -179,12 +180,15 @@ export async function setupCoreProtocol(
     [],
   );
 
+  const depositWithdrawalProxy = DEPOSIT_WITHDRAWAL_PROXY.connect(hhUser1);
+
   const dolomiteAmmRouterProxy = DOLOMITE_AMM_ROUTER.connect(hhUser1);
 
   const esGmxAdmin = await impersonate(await ES_GMX_DISTRIBUTOR.connect(hhUser1).admin());
 
   return {
     borrowPositionProxyV2,
+    depositWithdrawalProxy,
     dolomiteAmmRouterProxy,
     dolomiteMargin,
     expiry,

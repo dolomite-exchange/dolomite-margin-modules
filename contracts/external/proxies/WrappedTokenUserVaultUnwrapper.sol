@@ -25,7 +25,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
-import { ILiquidityTokenUnwrapperForLiquidation } from "../interfaces/ILiquidityTokenUnwrapperForLiquidation.sol";
+import { IWrappedTokenUserVaultUnwrapper } from "../interfaces/IWrappedTokenUserVaultUnwrapper.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
 import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1.sol";
 
@@ -40,7 +40,7 @@ import { TokenWrapperLib } from "../lib/TokenWrapperLib.sol";
  * @notice  Abstract contract for unwrapping a VaultWrapper token into the underlying token. Must be set as a token
  *          converter for the VaultWrapperFactory token.
  */
-abstract contract WrappedTokenUserVaultUnwrapper is ILiquidityTokenUnwrapperForLiquidation, OnlyDolomiteMargin {
+abstract contract WrappedTokenUserVaultUnwrapper is IWrappedTokenUserVaultUnwrapper, OnlyDolomiteMargin {
     using SafeERC20 for IERC20;
 
     // ======================== Constants ========================
@@ -50,17 +50,15 @@ abstract contract WrappedTokenUserVaultUnwrapper is ILiquidityTokenUnwrapperForL
     // ======================== Field Variables ========================
 
     IWrappedTokenUserVaultFactory public immutable VAULT_FACTORY; // solhint-disable-line var-name-mixedcase
-    uint256 public immutable ACTIONS_LENGTH; // solhint-disable-line var-name-mixedcase
+    uint256 private immutable _ACTIONS_LENGTH = 2; // solhint-disable-line var-name-mixedcase
 
     // ======================== Constructor ========================
 
     constructor(
         address _vaultFactory,
-        uint256 _actionsLength,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         VAULT_FACTORY = IWrappedTokenUserVaultFactory(_vaultFactory);
-        ACTIONS_LENGTH = _actionsLength;
     }
 
     // ======================== External Functions ========================
@@ -154,43 +152,43 @@ abstract contract WrappedTokenUserVaultUnwrapper is ILiquidityTokenUnwrapperForL
         uint256 _owedMarket,
         uint256 _heldMarket,
         uint256,
-        uint256 _heldAmountWithReward
+        uint256 _heldAmount
     )
     external
     override
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](ACTIONS_LENGTH);
-        // Transfer the liquidated GLP tokens to this contract. Do this by enqueuing a transfer via the `callFunction`
-        // on the liquid account vault contract.
+        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
+        // Transfer the Wrapped Tokens to this contract. Do this by enqueuing a transfer via the call to
+        // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
         actions[0] = AccountActionLib.encodeCallAction(
             _liquidAccountId,
             address(this),
-        /* _transferAmount[encoded] = */ abi.encode(_heldAmountWithReward)
+            /* _transferAmount[encoded] = */ abi.encode(_heldAmount)
         );
 
         uint256 amountOut = getExchangeCost(
             DOLOMITE_MARGIN.getMarketTokenAddress(_heldMarket),
             DOLOMITE_MARGIN.getMarketTokenAddress(_owedMarket),
-            _heldAmountWithReward,
-        /* _orderData = */ bytes("")
+            _heldAmount,
+            /* _orderData = */ bytes("")
         );
 
         actions[1] = AccountActionLib.encodeExternalSellAction(
             _solidAccountId,
             _heldMarket,
             _owedMarket,
-        /* _trader = */ address(this),
-        /* _amountInWei = */ _heldAmountWithReward,
-        /* _amountOutMinWei = */ amountOut,
+            /* _trader = */ address(this),
+            /* _amountInWei = */ _heldAmount,
+            /* _amountOutMinWei = */ amountOut,
             bytes("")
         );
 
         return actions;
     }
 
-    function actionsLength() external view returns (uint256) {
-        return ACTIONS_LENGTH;
+    function actionsLength() external virtual pure returns (uint256) {
+        return _ACTIONS_LENGTH;
     }
 
     function getExchangeCost(
