@@ -28,6 +28,7 @@ describe('GmxRegistryV1', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.esGmx()).to.equal(core.gmxEcosystem.esGmx.address);
+      expect(await registry.fsGlp()).to.equal(core.gmxEcosystem.fsGlp.address);
       expect(await registry.glp()).to.equal(core.gmxEcosystem.glp.address);
       expect(await registry.glpManager()).to.equal(core.gmxEcosystem.glpManager.address);
       expect(await registry.glpRewardsRouter()).to.equal(core.gmxEcosystem.glpRewardsRouter.address);
@@ -54,6 +55,23 @@ describe('GmxRegistryV1', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).setEsGmx(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#setFSGlp', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).setFSGlp(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'FSGlpSet', {
+        esGmx: OTHER_ADDRESS,
+      });
+      expect(await registry.fsGlp()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).setFSGlp(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

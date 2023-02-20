@@ -42,6 +42,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
 
     struct Initializer {
         address esGmx;
+        address fsGlp;
         address glp;
         address glpManager;
         address glpRewardsRouter;
@@ -62,6 +63,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
     // ============ Field Variables ============
 
     address public override esGmx;
+    IERC20 public override fsGlp;
     IERC20 public override glp;
     IGLPManager public override glpManager;
     IGLPRewardsRouterV2 public override glpRewardsRouter;
@@ -81,6 +83,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         esGmx = _initializer.esGmx;
+        fsGlp = IERC20(_initializer.fsGlp);
         glp = IERC20(_initializer.glp);
         glpManager = IGLPManager(_initializer.glpManager);
         glpRewardsRouter = IGLPRewardsRouterV2(_initializer.glpRewardsRouter);
@@ -99,6 +102,11 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
     function setEsGmx(address _esGmx) external override onlyDolomiteMarginOwner(msg.sender) {
         esGmx = _esGmx;
         emit EsGmxSet(_esGmx);
+    }
+
+    function setFSGlp(address _fsGlp) external override onlyDolomiteMarginOwner(msg.sender) {
+        fsGlp = IERC20(_fsGlp);
+        emit FSGlpSet(_fsGlp);
     }
 
     function setGlp(address _glp) external override onlyDolomiteMarginOwner(msg.sender) {

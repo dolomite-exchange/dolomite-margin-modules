@@ -1,14 +1,7 @@
-import {
-  AccountStatus,
-  ActionType,
-  AmountDenomination,
-  AmountReference,
-  BalanceCheckFlag,
-} from '@dolomite-margin/dist/src';
+import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BaseContract, BigNumber, ethers } from 'ethers';
+import { BaseContract, BigNumber } from 'ethers';
 import {
   CustomTestToken,
   GLPUnwrapperProxyV1,
@@ -19,15 +12,9 @@ import {
 } from '../../../src/types';
 import { WETH_MARKET_ID } from '../../../src/utils/constants';
 import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import {
-  expectEvent,
-  expectProtocolBalance,
-  expectThrow,
-  expectTotalSupply,
-  expectWalletBalance,
-} from '../../utils/assertions';
+import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 import {
   CoreProtocol,
   setupCoreProtocol,
@@ -42,7 +29,6 @@ const borrowAccountNumber = '123';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const bigOtherAmountWei = BigNumber.from('100000000000'); // $100,000
-const borrowOtherAmountWei = BigNumber.from('170000000'); // $170
 
 describe('WrappedTokenUserVaultV1', () => {
   let snapshotId: string;
@@ -690,262 +676,6 @@ describe('WrappedTokenUserVaultV1', () => {
       await expectThrow(
         userVault.connect(core.hhUser1).executeWithdrawalFromVault(core.hhUser1.address, amountWei),
         `WrappedTokenUserVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#onLiquidate', () => {
-    it('should work normally', async () => {
-      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
-      const result = await userVault.connect(dolomiteMargin).onLiquidate(
-        userVault.address,
-        underlyingMarketId,
-        { sign: false, value: amountWei },
-        otherMarketId,
-        { sign: true, value: otherAmountWei },
-      );
-      expect(await userVault.transferCursor()).to.eq(0);
-      expect(await userVault.getQueuedTransferAmountByCursor(0)).to.eq(amountWei);
-      await expectEvent(userVault, result, 'TransferAmountEnqueued', {
-        cursor: 0,
-        amount: amountWei,
-      });
-    });
-
-    it('should work if heldMarketId passed through is NOT underlying', async () => {
-      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
-      await userVault.connect(dolomiteMargin).onLiquidate(
-        userVault.address,
-        otherMarketId,
-        { sign: false, value: amountWei },
-        999,
-        { sign: true, value: otherAmountWei },
-      );
-      expect(await userVault.transferCursor()).to.eq(0);
-      expect(await userVault.getQueuedTransferAmountByCursor(0)).to.eq(0);
-    });
-
-    it('should fail if not called by DolomiteMargin', async () => {
-      await expectThrow(
-        userVault.connect(core.hhUser1).onLiquidate(
-          userVault.address,
-          underlyingMarketId,
-          { sign: false, value: amountWei },
-          otherMarketId,
-          { sign: true, value: otherAmountWei },
-        ),
-        `WrappedTokenUserVaultV1: Only Dolomite can call <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if transfer is already queued (developer error)', async () => {
-      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
-      await userVault.connect(dolomiteMargin).onLiquidate(
-        userVault.address,
-        underlyingMarketId,
-        { sign: false, value: amountWei },
-        otherMarketId,
-        { sign: true, value: otherAmountWei },
-      );
-      expect(await userVault.transferCursor()).to.eq(0);
-      expect(await userVault.getQueuedTransferAmountByCursor(0)).to.eq(amountWei);
-
-      await expectThrow(
-        userVault.connect(dolomiteMargin).onLiquidate(
-          userVault.address,
-          underlyingMarketId,
-          { sign: false, value: amountWei },
-          otherMarketId,
-          { sign: true, value: otherAmountWei },
-        ),
-        'WrappedTokenUserVaultV1: A transfer is already queued',
-      );
-    });
-  });
-
-  describe('#enqueueTransfer', () => {
-    it('should work when called by a global operator', async () => {
-      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.governance.address, true);
-      const result = await userVault.connect(core.governance).enqueueTransfer(amountWei);
-      expect(await userVault.transferCursor()).to.eq(0);
-      expect(await userVault.getQueuedTransferAmountByCursor(0)).to.eq(amountWei);
-      await expectEvent(userVault, result, 'TransferAmountEnqueued', {
-        cursor: 0,
-        amount: amountWei,
-      });
-    });
-
-    it('should fail if not called by a global operator', async () => {
-      await expectThrow(
-        userVault.connect(core.hhUser1).enqueueTransfer(amountWei),
-        `WrappedTokenUserVaultV1: Caller is not a global operator <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if transfer is already queued (developer error)', async () => {
-      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.governance.address, true);
-      await userVault.connect(core.governance).enqueueTransfer(amountWei);
-      expect(await userVault.transferCursor()).to.eq(0);
-      expect(await userVault.getQueuedTransferAmountByCursor(0)).to.eq(amountWei);
-
-      await expectThrow(
-        userVault.connect(core.governance).enqueueTransfer(amountWei),
-        'WrappedTokenUserVaultV1: A transfer is already queued',
-      );
-    });
-  });
-
-  describe('#callFunction', () => {
-    async function openPositionAndLiquidate() {
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
-      await userVault.transferFromPositionWithOtherToken(
-        borrowAccountNumber,
-        defaultAccountNumber,
-        otherMarketId,
-        borrowOtherAmountWei, // $170; collateralization is  117.6%
-        BalanceCheckFlag.To,
-      );
-      await core.testPriceOracle.setPrice(otherToken.address, '1100000000000000000000000000000'); // $1.10
-      const liquidMarginAccount = { owner: userVault.address, number: borrowAccountNumber };
-      const solidMarginAccount = { owner: solidUser.address, number: defaultAccountNumber };
-      await core.dolomiteMargin.ownerSetGlobalOperator(solidUser.address, true);
-      await core.dolomiteMargin.connect(solidUser).operate(
-        [solidMarginAccount, liquidMarginAccount],
-        [
-          {
-            actionType: ActionType.Liquidate,
-            accountId: 0,
-            otherAccountId: 1,
-            amount: { sign: false, value: 0, ref: AmountReference.Target, denomination: AmountDenomination.Wei },
-            primaryMarketId: otherMarketId,
-            secondaryMarketId: underlyingMarketId,
-            otherAddress: ZERO_ADDRESS,
-            data: BYTES_EMPTY,
-          },
-        ],
-      );
-      expect(await core.dolomiteMargin.getAccountStatus(liquidMarginAccount)).to.eq(AccountStatus.Liquidating);
-      await wrappedTokenFactory.connect(core.governance).setIsTokenConverterTrusted(solidUser.address, true);
-    }
-
-    it('should work if user is liquidated and balance is sufficient', async () => {
-      await openPositionAndLiquidate();
-
-      const liquidationAmountPlusReward = BigNumber.from('196350000000000000000');
-      expect(await userVault.getQueuedTransferAmountByCursor(0)).to.eq(liquidationAmountPlusReward);
-
-      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
-      await userVault.connect(dolomiteMargin).callFunction(
-        core.hhUser1.address,
-        { owner: userVault.address, number: borrowAccountNumber },
-        ethers.utils.defaultAbiCoder.encode(['address'], [solidUser.address]),
-      );
-
-      const transferCursor = await wrappedTokenFactory.transferCursor();
-      const queuedTransfer = await wrappedTokenFactory.getQueuedTransferByCursor(transferCursor);
-      expect(queuedTransfer.from).to.eq(core.dolomiteMargin.address);
-      expect(queuedTransfer.to).to.eq(solidUser.address);
-      expect(queuedTransfer.amount).to.eq(liquidationAmountPlusReward);
-      expect(queuedTransfer.vault).to.eq(userVault.address);
-
-      // solid user receives the held collateral + the liquidation reward
-      const liquidBalance = amountWei.sub(liquidationAmountPlusReward);
-      await expectWalletBalance(userVault, underlyingToken, amountWei); // the tokens have NOT been transferred yet
-
-      await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, liquidBalance);
-      await expectProtocolBalance(
-        core,
-        solidUser,
-        defaultAccountNumber,
-        underlyingMarketId,
-        liquidationAmountPlusReward,
-      );
-
-      await expectProtocolBalance(
-        core,
-        userVault,
-        borrowAccountNumber,
-        otherMarketId,
-        ZERO_BI,
-      );
-      await expectProtocolBalance(
-        core,
-        solidUser,
-        defaultAccountNumber,
-        otherMarketId,
-        bigOtherAmountWei.sub(borrowOtherAmountWei),
-      );
-    });
-
-    it('should fail if not called by DolomiteMargin', async () => {
-      await expectThrow(
-        userVault.connect(core.hhUser1).callFunction(
-          core.hhUser1.address,
-          { owner: core.hhUser1.address, number: defaultAccountNumber },
-          BYTES_EMPTY,
-        ),
-        `WrappedTokenUserVaultV1: Only Dolomite can call <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if accountInfo.owner is not the vault', async () => {
-      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
-      await expectThrow(
-        userVault.connect(dolomiteMargin).callFunction(
-          core.hhUser1.address,
-          { owner: core.hhUser1.address, number: defaultAccountNumber },
-          BYTES_EMPTY,
-        ),
-        `WrappedTokenUserVaultV1: Invalid account owner <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if collateral recipient is ZERO or cannot be decoded', async () => {
-      await openPositionAndLiquidate();
-      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
-      await expectThrow(
-        userVault.connect(dolomiteMargin).callFunction(
-          core.hhUser1.address,
-          { owner: userVault.address, number: borrowAccountNumber },
-          ethers.utils.defaultAbiCoder.encode(['address'], [ZERO_ADDRESS]),
-        ),
-        'WrappedTokenUserVaultV1: Invalid recipient',
-      );
-      await expectThrow(
-        userVault.connect(dolomiteMargin).callFunction(
-          core.hhUser1.address,
-          { owner: userVault.address, number: borrowAccountNumber },
-          BYTES_EMPTY,
-        ),
-      );
-    });
-
-    it('should fail if transfer is not queued', async () => {
-      await openPositionAndLiquidate();
-      await userVault.enqueueTestTransfer(0);
-      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
-      await expectThrow(
-        userVault.connect(dolomiteMargin).callFunction(
-          core.hhUser1.address,
-          { owner: userVault.address, number: borrowAccountNumber },
-          ethers.utils.defaultAbiCoder.encode(['address'], [solidUser.address]),
-        ),
-        'WrappedTokenUserVaultV1: Invalid transfer',
-      );
-    });
-
-    it('should fail if the vault balance is not sufficient', async () => {
-      await openPositionAndLiquidate();
-      const dolomiteMargin = await impersonate(core.dolomiteMargin.address, true);
-      await userVault.enqueueTestTransfer(amountWei.mul(2));
-      await expectThrow(
-        userVault.connect(dolomiteMargin).callFunction(
-          core.hhUser1.address,
-          { owner: userVault.address, number: borrowAccountNumber },
-          ethers.utils.defaultAbiCoder.encode(['address'], [solidUser.address]),
-        ),
-        'WrappedTokenUserVaultV1: Insufficient balance',
       );
     });
   });

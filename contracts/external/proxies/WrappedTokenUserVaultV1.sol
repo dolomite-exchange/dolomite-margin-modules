@@ -18,8 +18,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteMarginCallee } from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
-import { IDolomiteMarginLiquidationCallback } from "../../protocol/interfaces/IDolomiteMarginLiquidationCallback.sol";
+
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
@@ -41,11 +40,7 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  * @notice  Abstract implementation (for an upgradeable proxy) for wrapping tokens via a per-user vault that can be used
  *          with DolomiteMargin
  */
-abstract contract WrappedTokenUserVaultV1 is
-    IWrappedTokenUserVaultV1,
-    IDolomiteMarginCallee,
-    IDolomiteMarginLiquidationCallback
-{
+abstract contract WrappedTokenUserVaultV1 is IWrappedTokenUserVaultV1 {
     using SafeERC20 for IERC20;
     using TypesLib for IDolomiteMargin.Par;
 
@@ -61,33 +56,11 @@ abstract contract WrappedTokenUserVaultV1 is
     // ================ Field Variables ================
     // =================================================
 
-    uint256 public transferCursor;
-    mapping(uint256 => uint256) internal _cursorToQueuedTransferAmountMap;
     uint256 private _reentrancyGuard;
 
     // ===================================================
     // ==================== Modifiers ====================
     // ===================================================
-
-    modifier onlyDolomiteMargin(address _from) {
-        Require.that(
-            _from == address(DOLOMITE_MARGIN()),
-            _FILE,
-            "Only Dolomite can call",
-            _from
-        );
-        _;
-    }
-
-    modifier onlyDolomiteMarginGlobalOperator(address _from) {
-        Require.that(
-            DOLOMITE_MARGIN().getIsGlobalOperator(_from),
-            _FILE,
-            "Caller is not a global operator",
-            _from
-        );
-        _;
-    }
 
     modifier onlyVaultFactory(address _from) {
         Require.that(
@@ -419,72 +392,6 @@ abstract contract WrappedTokenUserVaultV1 is
         );
     }
 
-    function onLiquidate(
-        uint256,
-        uint256 _heldMarketId,
-        IDolomiteStructs.Wei calldata _heldDeltaWei,
-        uint256,
-        IDolomiteStructs.Wei calldata
-    )
-    external
-    onlyDolomiteMargin(msg.sender) {
-        if (_heldMarketId == marketId()) {
-            _enqueueTransfer(_heldDeltaWei.value);
-        }
-    }
-
-    function enqueueTransfer(
-        uint256 _amount
-    )
-    external
-    onlyDolomiteMarginGlobalOperator(msg.sender) {
-        _enqueueTransfer(_amount);
-    }
-
-    function callFunction(
-        address,
-        IDolomiteStructs.AccountInfo calldata _accountInfo,
-        bytes calldata _data
-    )
-    external
-    onlyDolomiteMargin(msg.sender) {
-        Require.that(
-            _accountInfo.owner == address(this),
-            _FILE,
-            "Invalid account owner",
-            _accountInfo.owner
-        );
-
-        // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
-        // designated recipient
-        (address recipient) = abi.decode(_data, (address));
-        Require.that(
-            recipient != address(0),
-            _FILE,
-            "Invalid recipient"
-        );
-
-        uint256 transferAmount = _cursorToQueuedTransferAmountMap[transferCursor++];
-        Require.that(
-            transferAmount > 0,
-            _FILE,
-            "Invalid transfer"
-        );
-
-        IDolomiteStructs.Wei memory accountWei = DOLOMITE_MARGIN().getAccountWei(_accountInfo, marketId());
-        // We need to add the transfer amount to the accountWei because the liquidation has occurred internally and the
-        // virtual balance has already been seized.
-        Require.that(
-            underlyingBalanceOf() >= transferAmount + accountWei.value,
-            _FILE,
-            "Insufficient balance"
-        );
-        assert(accountWei.sign);
-
-        // notify the vault factory of the liquidation, so the tokens can be transferred on the call to #exchange.
-        IWrappedTokenUserVaultFactory(VAULT_FACTORY()).liquidateWithinDolomiteMargin(recipient, transferAmount);
-    }
-
     // ======== Public functions ========
 
     function executeDepositIntoVault(
@@ -528,26 +435,11 @@ abstract contract WrappedTokenUserVaultV1 is
         return IWrappedTokenUserVaultFactory(VAULT_FACTORY()).marketId();
     }
 
-    function getQueuedTransferAmountByCursor(uint256 _cursor) public view returns (uint256) {
-        return _cursorToQueuedTransferAmountMap[_cursor];
-    }
-
-    function underlyingBalanceOf() public virtual view returns (uint256) {
+    function underlyingBalanceOf() public override virtual view returns (uint256) {
         return IERC20(UNDERLYING_TOKEN()).balanceOf(address(this));
     }
 
     // ============ Internal Functions ============
-
-    function _enqueueTransfer(uint256 _amount) internal {
-        uint _transferCursor = transferCursor;
-        Require.that(
-            _cursorToQueuedTransferAmountMap[_transferCursor] == 0,
-            _FILE,
-            "A transfer is already queued"
-        );
-        _cursorToQueuedTransferAmountMap[_transferCursor] = _amount;
-        emit TransferAmountEnqueued(_transferCursor, _amount);
-    }
 
     function _checkAllowableCollateralMarket(
         address _accountOwner,

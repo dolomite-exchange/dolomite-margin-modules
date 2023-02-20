@@ -25,13 +25,13 @@ import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVa
 
 
 /**
- * @title WrappedTokenUserVault
+ * @title WrappedTokenUserVaultUpgradeableProxy
  * @author Dolomite
  *
  * @notice  Abstract "implementation" (for an upgradeable proxy) contract for wrapping tokens via a per-user vault that
  *          can be used with DolomiteMargin
  */
-contract WrappedTokenUserVaultProxy is
+contract WrappedTokenUserVaultUpgradeableProxy is
     IWrappedTokenUserVaultProxy,
     ProxyContractHelpers
 {

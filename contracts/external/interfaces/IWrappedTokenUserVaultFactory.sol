@@ -113,11 +113,24 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     external;
 
     /**
-     * @notice  Enqueues a transfer into Dolomite Margin from the vault owner's account. Assumes msg.sender is a trusted
-     *          token converter, else reverts.
+     * @notice  Enqueues a transfer into Dolomite Margin from the vault. Assumes msg.sender is a trusted token
+     *          converter, else reverts.
+     * @param _vault        The address of the vault that the token converter is interacting with
      * @param _amountWei    The amount of tokens to transfer into Dolomite Margin
      */
     function enqueueTransferIntoDolomiteMargin(
+        address _vault,
+        uint256 _amountWei
+    )
+    external;
+
+    /**
+     * @notice  Enqueues a transfer from Dolomite Margin to the token converter. Assumes msg.sender is a trusted token
+     *          converter, else reverts.
+     * @param _vault        The address of the vault that the token converter is interacting with
+     * @param _amountWei    The amount of tokens to transfer from Dolomite Margin to the token converter
+     */
+    function enqueueTransferFromDolomiteMargin(
         address _vault,
         uint256 _amountWei
     )
@@ -146,21 +159,6 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
         uint256 _amountWei
     )
     external;
-
-    /**
-     * @notice  This function should only be called by a user's vault contract
-     *
-     * @param _recipient    The address to which the underlying tokens will be transferred. Used for performing the
-     *                      unwrapping, therefore `_recipient` should be an instance of
-     *                      `ILiquidityTokenUnwrapperForLiquidation`
-     * @param _amountWei    The amount of tokens to transfer to the recipient
-     */
-    function liquidateWithinDolomiteMargin(
-        address _recipient,
-        uint256 _amountWei
-    )
-    external;
-
 
     // ============================================
     // ================= Constants ================

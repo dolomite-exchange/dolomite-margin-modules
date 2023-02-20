@@ -22,7 +22,6 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 import { IGLPManager } from "../interfaces/IGLPManager.sol";
@@ -30,7 +29,12 @@ import { IGLPRewardsRouterV2 } from "../interfaces/IGLPRewardsRouterV2.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
+import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1.sol";
 import { ILiquidityTokenUnwrapperForLiquidation } from "../interfaces/ILiquidityTokenUnwrapperForLiquidation.sol";
+
+import { WrappedTokenUserVaultUnwrapper } from "../proxies/WrappedTokenUserVaultUnwrapper.sol";
+
+import { GLPMathLib } from "./GLPMathLib.sol";
 
 
 /**
@@ -39,14 +43,13 @@ import { ILiquidityTokenUnwrapperForLiquidation } from "../interfaces/ILiquidity
  *
  * @notice  Contract for unwrapping GLP via a "redemption" to USDC
  */
-contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolomiteMargin {
+contract GLPUnwrapperProxyV1 is WrappedTokenUserVaultUnwrapper {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GLPUnwrapperProxyV1";
     uint256 private constant _ACTIONS_LENGTH = 2;
-    uint256 public constant BASIS_POINTS_DIVISOR = 10000;
 
     // ============ Immutable State Variables ============
 
@@ -54,21 +57,18 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     uint256 public immutable USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
-    /// @notice The Dolomite-wrapped contract for fsGLP (fee-staked GLP)
-    IWrappedTokenUserVaultFactory public immutable DFS_GLP; // solhint-disable-line var-name-mixedcase
-
     // ============ Constructor ============
 
     constructor(
         address _usdc,
         address _gmxRegistry,
         address _dfsGlp,
+        uint256 _actionsLength,
         address _dolomiteMargin
     )
-    OnlyDolomiteMargin(_dolomiteMargin) {
+    WrappedTokenUserVaultUnwrapper(_dfsGlp, _actionsLength, _dolomiteMargin) {
         USDC = _usdc;
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
-        DFS_GLP = IWrappedTokenUserVaultFactory(_dfsGlp);
 
         USDC_MARKET_ID = IDolomiteMargin(_dolomiteMargin).getMarketIdByTokenAddress(_usdc);
         IERC20(_usdc).safeApprove(_dolomiteMargin, type(uint256).max);
@@ -78,24 +78,18 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     // ============ External Functions ============
     // ============================================
 
-    function exchange(
+    function _exchangeUnderlyingTokenToOutputToken(
         address,
         address,
         address _makerToken,
-        address _takerToken,
+        uint256 _minMakerAmount,
+        address _takerTokenUnderlying,
         uint256 _amountTakerToken,
-        bytes calldata _orderData
+        bytes calldata
     )
-    external
+    internal
     override
-    onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        Require.that(
-            _takerToken == address(DFS_GLP),
-            _FILE,
-            "Taker token must be DS_GLP",
-            _takerToken
-        );
         Require.that(
             _makerToken == USDC,
             _FILE,
@@ -104,80 +98,27 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         );
 
         {
-            uint256 balance = GMX_REGISTRY.glp().balanceOf(address(this));
+            uint256 balance = IERC20(_takerTokenUnderlying).balanceOf(address(this));
             Require.that(
                 balance >= _amountTakerToken,
                 _FILE,
-                "Insufficient GLP for trade",
+                "Insufficient fsGLP for trade",
                 balance
             );
         }
-        (uint256 minAmountOut) = abi.decode(_orderData, (uint256));
 
         uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
             /* _tokenOut = */ _makerToken,
             /* _glpAmount = */ _amountTakerToken,
-            minAmountOut,
+            _minMakerAmount,
             /* _receiver = */ address(this)
         );
 
         return amountOut;
     }
 
-    function token() external override view returns (address) {
-        return address(DFS_GLP);
-    }
-
     function outputMarketId() external override view returns (uint256) {
         return USDC_MARKET_ID;
-    }
-
-    function createActionsForUnwrappingForLiquidation(
-        uint256 _solidAccountId,
-        uint256 _liquidAccountId,
-        address,
-        address _liquidAccountOwner,
-        uint256,
-        uint256 _heldMarket,
-        uint256,
-        uint256 _heldAmountWithReward
-    )
-    external
-    override
-    view
-    returns (IDolomiteMargin.ActionArgs[] memory) {
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
-        // Transfer the liquidated GLP tokens to this contract. Do this by enqueuing a transfer via the `callFunction`
-        // on the liquid account vault contract.
-        actions[0] = AccountActionLib.encodeCallAction(
-            _liquidAccountId,
-            _liquidAccountOwner,
-            /* _receiver[encoded] = */ abi.encode(address(this))
-        );
-
-        uint256 outputMarket = USDC_MARKET_ID;
-        uint256 amountOut = getExchangeCost(
-            DOLOMITE_MARGIN.getMarketTokenAddress(_heldMarket),
-            DOLOMITE_MARGIN.getMarketTokenAddress(outputMarket),
-            _heldAmountWithReward,
-            /* _orderData = */ bytes("")
-        );
-
-        actions[1] = AccountActionLib.encodeExternalSellAction(
-            _solidAccountId,
-            _heldMarket,
-            outputMarket,
-            /* _trader = */ address(this),
-            /* _amountInWei = */ _heldAmountWithReward,
-            /* _amountOutMinWei = */ amountOut,
-            bytes("")
-        );
-
-        return actions;
-    }
-
-    function actionsLength() external override pure returns (uint256) {
-        return _ACTIONS_LENGTH;
     }
 
     // ==========================================
@@ -195,9 +136,9 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
     view
     returns (uint256) {
         Require.that(
-            _makerToken == address(DFS_GLP),
+            _makerToken == address(VAULT_FACTORY),
             _FILE,
-            "Maker token must be DS_GLP",
+            "Maker token must be dfsGLP",
             _makerToken
         );
         Require.that(
@@ -219,29 +160,14 @@ contract GLPUnwrapperProxyV1 is ILiquidityTokenUnwrapperForLiquidation, OnlyDolo
         // in the #sellUSDG function
         uint256 redemptionAmount = gmxVault.getRedemptionAmount(_takerToken, usdgAmount);
 
-        // uint256 feeBasisPoints = getFeeBasisPoints(_token, usdgAmount, mintBurnFeeBasisPoints, taxBasisPoints, false);
-        //        uint256 amountOut = _collectSwapFees(_token, redemptionAmount, feeBasisPoints);
         uint256 feeBasisPoints = gmxVault.getFeeBasisPoints(
-            _makerToken,
+            _takerToken,
             usdgAmount,
             gmxVault.mintBurnFeeBasisPoints(),
             gmxVault.taxBasisPoints(),
             /* _increment = */ false
         );
-        return _applyFees(redemptionAmount, feeBasisPoints);
+        return GLPMathLib.applyFeesToAmount(redemptionAmount, feeBasisPoints);
         // END vault code snippet
-    }
-
-    // ============================================
-    // ============ Internal Functions ============
-    // ============================================
-
-    function _applyFees(
-        uint256 _amount,
-        uint256 _feeBasisPoints
-    ) internal pure returns (uint256) {
-        // this code is taken from GMX in the `_collectSwapFees` function in the GMX Vault contract:
-        // https://arbiscan.io/address/0x489ee077994b6658eafa855c308275ead8097c4a#code
-        return _amount * (BASIS_POINTS_DIVISOR - _feeBasisPoints) / BASIS_POINTS_DIVISOR;
     }
 }

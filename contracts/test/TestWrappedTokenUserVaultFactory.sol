@@ -19,7 +19,7 @@ import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { IWrappedTokenUserVaultProxy } from  "../external/interfaces/IWrappedTokenUserVaultProxy.sol";
 
 import { WrappedTokenUserVaultFactory } from  "../external/proxies/WrappedTokenUserVaultFactory.sol";
-import { WrappedTokenUserVaultProxy } from  "../external/proxies/WrappedTokenUserVaultProxy.sol";
+import { WrappedTokenUserVaultUpgradeableProxy } from  "../external/proxies/WrappedTokenUserVaultUpgradeableProxy.sol";
 
 
 contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
@@ -62,7 +62,7 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
         address vault = Create2.deploy(
             /* amount = */ 0,
             keccak256(abi.encodePacked(_account)),
-            type(WrappedTokenUserVaultProxy).creationCode
+            type(WrappedTokenUserVaultUpgradeableProxy).creationCode
         );
 
         _vaultToUserMap[vault] = _account;
@@ -76,7 +76,7 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
         address vault = Create2.deploy(
             /* amount = */ 0,
             keccak256(abi.encodePacked(_account1)),
-            type(WrappedTokenUserVaultProxy).creationCode
+            type(WrappedTokenUserVaultUpgradeableProxy).creationCode
         );
 
         _vaultToUserMap[vault] = _account1;

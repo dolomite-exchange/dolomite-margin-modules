@@ -131,6 +131,7 @@ export function setupGmxRegistry(core: CoreProtocol): Promise<GmxRegistryV1> {
     [
       {
         esGmx: core.gmxEcosystem.esGmx.address,
+        fsGlp: core.gmxEcosystem.fsGlp.address,
         glp: core.gmxEcosystem.glp.address,
         glpManager: core.gmxEcosystem.glpManager.address,
         glpRewardsRouter: core.gmxEcosystem.glpRewardsRouter.address,

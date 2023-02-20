@@ -26,6 +26,13 @@ import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVa
 import { TokenWrapperLib } from "../lib/TokenWrapperLib.sol";
 
 
+/**
+ * @title WrappedTokenUserVaultWrapper
+ * @author Dolomite
+ *
+ * @notice  Abstract contract for wrapping a token into a VaultWrapperFactory token. Must be set as a token converter
+ *          for the VaultWrapperFactory token.
+ */
 abstract contract WrappedTokenUserVaultWrapper is IDolomiteMarginExchangeWrapper, OnlyDolomiteMargin {
 
     // ======================== Constants ========================
@@ -36,12 +43,16 @@ abstract contract WrappedTokenUserVaultWrapper is IDolomiteMarginExchangeWrapper
 
     IWrappedTokenUserVaultFactory public immutable VAULT_FACTORY; // solhint-disable-line var-name-mixedcase
 
+    // ======================== Constructor ========================
+
     constructor(
         address _vaultFactory,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         VAULT_FACTORY = IWrappedTokenUserVaultFactory(_vaultFactory);
     }
+
+    // ======================== External Functions ========================
 
     function exchange(
         address _tradeOriginator,

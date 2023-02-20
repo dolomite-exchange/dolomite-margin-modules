@@ -31,6 +31,7 @@ interface IGmxRegistryV1 {
     // ================================================
 
     event EsGmxSet(address _esGmx);
+    event FSGlpSet(address _fsGlp);
     event GlpSet(address _glp);
     event GlpManagerSet(address _glpManager);
     event GlpRewardsRouterSet(address _glpRewardsRouter);
@@ -48,6 +49,8 @@ interface IGmxRegistryV1 {
     // ===================================================
 
     function setEsGmx(address _esGmx) external;
+
+    function setFSGlp(address _fsGlp) external;
 
     function setGlp(address _glp) external;
 
@@ -72,6 +75,8 @@ interface IGmxRegistryV1 {
     function setVGmx(address _vGmx) external;
 
     function esGmx() external view returns (address);
+
+    function fsGlp() external view returns (IERC20);
 
     function glp() external view returns (IERC20);
 

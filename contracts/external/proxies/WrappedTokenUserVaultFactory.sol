@@ -33,7 +33,7 @@ import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
-import { WrappedTokenUserVaultProxy } from "./WrappedTokenUserVaultProxy.sol";
+import { WrappedTokenUserVaultUpgradeableProxy } from "./WrappedTokenUserVaultUpgradeableProxy.sol";
 
 
 /**
@@ -137,7 +137,7 @@ abstract contract WrappedTokenUserVaultFactory is
     // ================ Write Functions ================
     // =================================================
 
-    function initialize(address[] calldata _tokenUnwrappers) external override {
+    function initialize(address[] calldata _tokenConverters) external override {
         Require.that(
             !isInitialized,
             _FILE,
@@ -150,8 +150,8 @@ abstract contract WrappedTokenUserVaultFactory is
             "Market cannot allow borrowing"
         );
 
-        for (uint256 i = 0; i < _tokenUnwrappers.length; i++) {
-            _setIsTokenConverterTrusted(_tokenUnwrappers[i], true);
+        for (uint256 i = 0; i < _tokenConverters.length; i++) {
+            _setIsTokenConverterTrusted(_tokenConverters[i], true);
         }
 
         isInitialized = true;
@@ -267,6 +267,23 @@ abstract contract WrappedTokenUserVaultFactory is
         _enqueueTransfer(msg.sender, address(DOLOMITE_MARGIN), _amountWei, _vault);
     }
 
+    function enqueueTransferFromDolomiteMargin(
+        address _vault,
+        uint256 _amountWei
+    )
+    external
+    override
+    requireIsTokenConverter(msg.sender)
+    requireCursorIsNotQueued {
+        Require.that(
+            _vaultToUserMap[_vault] != address(0),
+            _FILE,
+            "Invalid vault",
+            _vault
+        );
+        _enqueueTransfer(address(DOLOMITE_MARGIN), msg.sender, _amountWei, _vault);
+    }
+
     function depositIntoDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -328,27 +345,6 @@ abstract contract WrappedTokenUserVaultFactory is
         );
     }
 
-    function liquidateWithinDolomiteMargin(
-        address _recipient,
-        uint256 _amountWei
-    )
-    external
-    override
-    requireIsVault(msg.sender)
-    requireCursorIsNotQueued {
-        Require.that(
-            _tokenConverterToIsTrustedMap[_recipient],
-            _FILE,
-            "Invalid liquidation recipient"
-        );
-        _enqueueTransfer(
-            address(DOLOMITE_MARGIN),
-            _recipient,
-            _amountWei,
-            msg.sender
-        );
-    }
-
     // ================================================
     // ================ Read Functions ================
     // ================================================
@@ -373,7 +369,7 @@ abstract contract WrappedTokenUserVaultFactory is
     function calculateVaultByAccount(address _account) external override view returns (address _vault) {
         _vault = Create2.computeAddress(
             keccak256(abi.encodePacked(_account)),
-            keccak256(type(WrappedTokenUserVaultProxy).creationCode)
+            keccak256(type(WrappedTokenUserVaultUpgradeableProxy).creationCode)
         );
     }
 
@@ -403,7 +399,7 @@ abstract contract WrappedTokenUserVaultFactory is
         address vault = Create2.deploy(
             /* amount = */ 0,
             keccak256(abi.encodePacked(_account)),
-            type(WrappedTokenUserVaultProxy).creationCode
+            type(WrappedTokenUserVaultUpgradeableProxy).creationCode
         );
         emit VaultCreated(_account, vault);
         _vaultToUserMap[vault] = _account;
@@ -420,7 +416,7 @@ abstract contract WrappedTokenUserVaultFactory is
         address _vault
     ) internal {
         if (_to == address(DOLOMITE_MARGIN)) {
-            // Approve the queued transfer amount from the vault contract into DolomiteMargin
+            // Approve the queued transfer amount from the vault contract into DolomiteMargin from this contract
             _approve(_vault, _to, _amount);
         }
         _cursorToQueuedTransferMap[transferCursor] = QueuedTransfer({
@@ -471,7 +467,7 @@ abstract contract WrappedTokenUserVaultFactory is
         );
 
         if (_to == dolomiteMargin) {
-            // transfers TO DolomiteMargin must be made FROM a vault or a tokenUnwrapper
+            // transfers TO DolomiteMargin must be made FROM a vault or a tokenConverter
             address vaultOwner = _vaultToUserMap[_from];
             Require.that(
                 (vaultOwner != address(0) && _from == queuedTransfer.vault) || _tokenConverterToIsTrustedMap[_from],
@@ -486,7 +482,7 @@ abstract contract WrappedTokenUserVaultFactory is
         } else {
             assert(_from == dolomiteMargin);
 
-            // transfers FROM DolomiteMargin must be made TO a vault OR to a tokenUnwrapper
+            // transfers FROM DolomiteMargin must be made TO a vault OR to a tokenConverter
             address vaultOwner = _vaultToUserMap[_to];
             Require.that(
                 vaultOwner != address(0) || _tokenConverterToIsTrustedMap[_to],

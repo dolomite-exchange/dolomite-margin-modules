@@ -19,10 +19,6 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 interface IWrappedTokenUserVaultV1 {
 
-    // ============ Events ============
-
-    event TransferAmountEnqueued(uint256 indexed transferCursor, uint256 amount);
-
     // ============ Functions ============
 
     /**
@@ -126,12 +122,6 @@ interface IWrappedTokenUserVaultV1 {
     ) external;
 
     /**
-     * @notice Used to enqueue a transfer from a global operator for atomically selling off collateral in this vault.
-     * @param _amount   The amount of the vault's underlying token to transfer.
-     */
-    function enqueueTransfer(uint256 _amount) external;
-
-    /**
      * @notice  Attempts to deposit assets into this vault from the vault's owner. Should revert if the caller is not
      *          the Vault Factory.
      * @param _from     The sender of the tokens into this vault.
@@ -148,12 +138,7 @@ interface IWrappedTokenUserVaultV1 {
     function executeWithdrawalFromVault(address _recipient, uint256 _amount) external;
 
     /**
-     * @return The cursor that indicates what the current index is for the transfer mapping.
+     * @return The amount of `UNDERLYING_TOKEN` that are currently in this vault.
      */
-    function transferCursor() external view returns (uint256);
-
-    /**
-     * @param _cursor   The cursor used to index into the queued transfer amount mapping.
-     */
-    function getQueuedTransferAmountByCursor(uint256 _cursor) external view returns (uint256);
+    function underlyingBalanceOf() external view returns (uint256);
 }

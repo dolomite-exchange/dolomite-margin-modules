@@ -83,7 +83,7 @@ contract GLPWrapperProxyV1 is WrappedTokenUserVaultWrapper {
         Require.that(
             _takerToken == address(VAULT_FACTORY), // VAULT_FACTORY is the DFS_GLP token
             _FILE,
-            "Taker token must be DS_GLP",
+            "Taker token must be dfsGLP",
             _takerToken
         );
 

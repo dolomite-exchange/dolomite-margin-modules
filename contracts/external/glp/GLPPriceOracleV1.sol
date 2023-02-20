@@ -44,7 +44,7 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
 
     // ============================ Public State Variables ============================
 
-    IERC20 immutable public DS_GLP; // solhint-disable-line var-name-mixedcase
+    IERC20 immutable public DFS_GLP; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 immutable public GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
@@ -54,7 +54,7 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
         address _dsGlp
     ) {
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
-        DS_GLP = IERC20(_dsGlp);
+        DFS_GLP = IERC20(_dsGlp);
     }
 
     function getPrice(
@@ -64,7 +64,7 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
-            token == address(DS_GLP),
+            token == address(DFS_GLP),
             _FILE,
             "invalid token"
         );

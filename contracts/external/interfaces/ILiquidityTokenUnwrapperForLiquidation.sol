@@ -14,11 +14,12 @@
 
 pragma solidity ^0.8.9;
 
-import {IDolomiteMarginExchangeWrapper} from "../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteMarginCallee } from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
+import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 
 
-interface ILiquidityTokenUnwrapperForLiquidation is IDolomiteMarginExchangeWrapper {
+interface ILiquidityTokenUnwrapperForLiquidation is IDolomiteMarginExchangeWrapper, IDolomiteMarginCallee {
 
     /**
      * @return The liquidity token that this contract can unwrap
@@ -62,5 +63,5 @@ interface ILiquidityTokenUnwrapperForLiquidation is IDolomiteMarginExchangeWrapp
      * @return  The number of Actions used to unwrap the LP token into `outputMarketId`. If `owedMarketId` equals
      *          `outputMarketId`, there is no need to chain additional actions on, since the debt will be paid off.
      */
-    function actionsLength() external pure returns (uint256);
+    function actionsLength() external view returns (uint256);
 }
