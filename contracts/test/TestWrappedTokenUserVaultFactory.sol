@@ -51,7 +51,8 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
             from: _from,
             to: _to,
             amount: _amount,
-            vault: _vault
+            vault: _vault,
+            isExecuted: false
         });
     }
 

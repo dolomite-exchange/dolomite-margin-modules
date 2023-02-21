@@ -34,10 +34,6 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
  */
 contract TestDolomiteMarginMath {
 
-    // ============ Constants ============
-
-    bytes32 internal constant _FILE = "TestDolomiteMarginMath";
-
     // ============ DolomiteMarginMath Functions ============
 
     function DolomiteMarginMathGetPartial(

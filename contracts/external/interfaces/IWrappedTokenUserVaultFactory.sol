@@ -31,6 +31,7 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
         address to;
         uint256 amount;
         address vault;
+        bool isExecuted;
     }
 
     // ================================================
@@ -114,7 +115,7 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
 
     /**
      * @notice  Enqueues a transfer into Dolomite Margin from the vault. Assumes msg.sender is a trusted token
-     *          converter, else reverts.
+     *          converter, else reverts. Reverts if `_vault` is not a valid vault contract.
      * @param _vault        The address of the vault that the token converter is interacting with
      * @param _amountWei    The amount of tokens to transfer into Dolomite Margin
      */
@@ -126,7 +127,7 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
 
     /**
      * @notice  Enqueues a transfer from Dolomite Margin to the token converter. Assumes msg.sender is a trusted token
-     *          converter, else reverts.
+     *          converter, else reverts. Reverts if `_vault` is not a valid vault contract.
      * @param _vault        The address of the vault that the token converter is interacting with
      * @param _amountWei    The amount of tokens to transfer from Dolomite Margin to the token converter
      */
@@ -196,8 +197,8 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     function isIsolationAsset() external view returns (bool);
 
     /**
-     * @param _transferCursor   The position of the transfer in the queue
-     * @return The transfer enqueued at the position of `_transferCursor`
+     * @param _transferCursor   The cursor used to key into the mapping of queued transfers
+     * @return The transfer enqueued in the mapping at the cursor's position
      */
     function getQueuedTransferByCursor(uint256 _transferCursor) external view returns (QueuedTransfer memory);
 

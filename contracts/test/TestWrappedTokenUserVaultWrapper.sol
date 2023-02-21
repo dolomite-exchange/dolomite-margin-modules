@@ -14,8 +14,6 @@
 
 pragma solidity ^0.8.9;
 
-import { TokenWrapperLib } from "../external/lib/TokenWrapperLib.sol";
-
 import { WrappedTokenUserVaultWrapper } from "../external/proxies/WrappedTokenUserVaultWrapper.sol";
 
 import { ICustomTestToken } from "./ICustomTestToken.sol";
@@ -53,7 +51,7 @@ contract TestWrappedTokenUserVaultWrapper is WrappedTokenUserVaultWrapper {
         uint256,
         address _takerToken,
         uint256 _amountTakerToken,
-        bytes calldata
+        bytes memory
     )
     internal
     override

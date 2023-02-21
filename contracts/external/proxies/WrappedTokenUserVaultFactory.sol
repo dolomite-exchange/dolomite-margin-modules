@@ -91,7 +91,7 @@ abstract contract WrappedTokenUserVaultFactory is
         Require.that(
             address(_vaultToUserMap[_vault]) != address(0),
             _FILE,
-            "Caller is not a vault",
+            "Invalid vault",
             _vault
         );
         _;
@@ -103,15 +103,6 @@ abstract contract WrappedTokenUserVaultFactory is
             _FILE,
             "Caller is not a token converter",
             _tokenConverter
-        );
-        _;
-    }
-
-    modifier requireCursorIsNotQueued {
-        Require.that(
-            _cursorToQueuedTransferMap[transferCursor].from == address(0),
-            _FILE,
-            "Transfer is already queued"
         );
         _;
     }
@@ -257,13 +248,7 @@ abstract contract WrappedTokenUserVaultFactory is
     external
     override
     requireIsTokenConverter(msg.sender)
-    requireCursorIsNotQueued {
-        Require.that(
-            _vaultToUserMap[_vault] != address(0),
-            _FILE,
-            "Invalid vault",
-            _vault
-        );
+    requireIsVault(_vault) {
         _enqueueTransfer(msg.sender, address(DOLOMITE_MARGIN), _amountWei, _vault);
     }
 
@@ -274,13 +259,7 @@ abstract contract WrappedTokenUserVaultFactory is
     external
     override
     requireIsTokenConverter(msg.sender)
-    requireCursorIsNotQueued {
-        Require.that(
-            _vaultToUserMap[_vault] != address(0),
-            _FILE,
-            "Invalid vault",
-            _vault
-        );
+    requireIsVault(_vault) {
         _enqueueTransfer(address(DOLOMITE_MARGIN), msg.sender, _amountWei, _vault);
     }
 
@@ -290,8 +269,7 @@ abstract contract WrappedTokenUserVaultFactory is
     )
     external
     override
-    requireIsVault(msg.sender)
-    requireCursorIsNotQueued {
+    requireIsVault(msg.sender) {
         address vault = msg.sender;
         _enqueueTransfer(
             vault,
@@ -320,8 +298,7 @@ abstract contract WrappedTokenUserVaultFactory is
     )
     external
     override
-    requireIsVault(msg.sender)
-    requireCursorIsNotQueued {
+    requireIsVault(msg.sender) {
         address vault = msg.sender;
         _enqueueTransfer(
             address(DOLOMITE_MARGIN),
@@ -419,11 +396,15 @@ abstract contract WrappedTokenUserVaultFactory is
             // Approve the queued transfer amount from the vault contract into DolomiteMargin from this contract
             _approve(_vault, _to, _amount);
         }
+        // add 1 to the cursor for any enqueue, allowing anyone to overwrite stale enqueues in case a developer
+        // doesn't integrate with this contract properly
+        transferCursor += 1;
         _cursorToQueuedTransferMap[transferCursor] = QueuedTransfer({
             from: _from,
             to: _to,
             amount: _amount,
-            vault: _vault
+            vault: _vault,
+            isExecuted: false
         });
         emit TransferQueued(transferCursor, _from, _to, _amount, _vault);
     }
@@ -456,7 +437,8 @@ abstract contract WrappedTokenUserVaultFactory is
             "from/to must eq DolomiteMargin"
         );
 
-        QueuedTransfer memory queuedTransfer = _cursorToQueuedTransferMap[transferCursor++];
+        uint _transferCursor = transferCursor;
+        QueuedTransfer memory queuedTransfer = _cursorToQueuedTransferMap[_transferCursor];
         Require.that(
             queuedTransfer.from == _from
                 && queuedTransfer.to == _to
@@ -465,6 +447,13 @@ abstract contract WrappedTokenUserVaultFactory is
             _FILE,
             "Invalid queued transfer"
         );
+        Require.that(
+            !queuedTransfer.isExecuted,
+            _FILE,
+            "Transfer already executed",
+            _transferCursor
+        );
+        _cursorToQueuedTransferMap[_transferCursor].isExecuted = true;
 
         if (_to == dolomiteMargin) {
             // transfers TO DolomiteMargin must be made FROM a vault or a tokenConverter

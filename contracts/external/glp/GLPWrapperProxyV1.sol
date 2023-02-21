@@ -37,13 +37,12 @@ import { GLPMathLib } from "./GLPMathLib.sol";
  * @notice  Contract for wrapping GLP via minting from USDC
  */
 contract GLPWrapperProxyV1 is WrappedTokenUserVaultWrapper {
+    using GLPMathLib for IGmxVault;
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GLPWrapperProxyV1";
-    uint256 public constant PRICE_PRECISION = 10 ** 30;
-    uint256 public constant BASIS_POINTS_DIVISOR = 10000;
 
     // ============ Constructor ============
 
@@ -80,51 +79,18 @@ contract GLPWrapperProxyV1 is WrappedTokenUserVaultWrapper {
         Require.that(
             _makerToken == USDC,
             _FILE,
-            "Maker token must be USDC",
+            "Invalid maker token",
             _makerToken
         );
         Require.that(
             _takerToken == address(VAULT_FACTORY), // VAULT_FACTORY is the DFS_GLP token
             _FILE,
-            "Taker token must be dfsGLP",
+            "Invalid taker token",
             _takerToken
         );
 
-        // This code is taken from the GMX contracts for calculating the minting amount
-
-        // https://arbiscan.io/address/0x489ee077994b6658eafa855c308275ead8097c4a#code
-        // BEGIN gmxVault#buyUSDG (returns the usdgAmount)
-        IGmxVault gmxVault = GMX_REGISTRY.gmxVault();
-        uint256 price = gmxVault.getMinPrice(_makerToken);
-        address usdg = gmxVault.usdg();
-        uint256 rawAmount = gmxVault.adjustForDecimals(
-            _desiredMakerToken * price / PRICE_PRECISION,
-            _makerToken,
-            usdg
-        );
-
-        uint256 feeBasisPoints = gmxVault.getFeeBasisPoints(
-            _makerToken,
-            rawAmount,
-            gmxVault.mintBurnFeeBasisPoints(),
-            gmxVault.taxBasisPoints(),
-            true
-        );
-        uint256 makerAmountAfterFees = GLPMathLib.applyFeesToAmount(_desiredMakerToken, feeBasisPoints);
-        uint256 usdgAmount = gmxVault.adjustForDecimals(
-            makerAmountAfterFees * price / PRICE_PRECISION,
-            _makerToken,
-            usdg
-        );
-        // END gmxVault#buyUSDG
-
-        // https://arbiscan.io/address/0x3963ffc9dff443c2a94f21b129d429891e32ec18#code
-        // BEGIN glpManager#_addLiquidity
-        uint256 aumInUsdg = GMX_REGISTRY.glpManager().getAumInUsdg(true);
-        uint256 glpSupply = GMX_REGISTRY.glp().totalSupply();
-
-        return aumInUsdg == 0 ? usdgAmount : usdgAmount * glpSupply / aumInUsdg;
-        // END glpManager#_addLiquidity
+        uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_makerToken, _desiredMakerToken);
+        return GLPMathLib.getGlpMintAmount(GMX_REGISTRY, usdgAmount);
     }
 
     // ============ Internal Functions ============
@@ -136,16 +102,38 @@ contract GLPWrapperProxyV1 is WrappedTokenUserVaultWrapper {
         uint256 _minMakerAmount,
         address _takerToken,
         uint256 _amountTakerToken,
-        bytes calldata
+        bytes memory
     )
     internal
     override
     returns (uint256) {
+        Require.that(
+            _takerToken == USDC,
+            _FILE,
+            "Invalid taker token",
+            _takerToken
+        );
+
+        IERC20(_takerToken).safeApprove(address(GMX_REGISTRY.glpManager()), _amountTakerToken);
+
         return GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(
             _takerToken,
             _amountTakerToken,
             /* _minUsdg = */ 0,
             _minMakerAmount
         );
+    }
+
+    function _approveWrappedTokenForTransfer(
+        address _vault,
+        address _receiver,
+        uint256 _amount
+    )
+    internal
+    override {
+        VAULT_FACTORY.enqueueTransferIntoDolomiteMargin(_vault, _amount);
+
+        IERC20(GMX_REGISTRY.sGlp()).safeApprove(_vault, _amount);
+        IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
     }
 }

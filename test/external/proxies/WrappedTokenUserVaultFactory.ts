@@ -8,18 +8,15 @@ import {
   TestWrappedTokenUserVaultFactory__factory,
   TestWrappedTokenUserVaultUnwrapper,
   TestWrappedTokenUserVaultUnwrapper__factory,
-  TestWrappedTokenUserVaultWrapper,
-  TestWrappedTokenUserVaultWrapper__factory,
   TestWrappedTokenUserVaultV1,
   TestWrappedTokenUserVaultV1__factory,
+  TestWrappedTokenUserVaultWrapper,
+  TestWrappedTokenUserVaultWrapper__factory,
   WrappedTokenUserVaultUpgradeableProxy,
   WrappedTokenUserVaultUpgradeableProxy__factory,
   WrappedTokenUserVaultV1,
   WrappedTokenUserVaultV1__factory,
 } from '../../../src/types';
-import {
-  BORROW_POSITION_PROXY_V2,
-} from '../../../src/utils/constants';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -67,7 +64,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       TestWrappedTokenUserVaultV1__factory.bytecode,
       [],
     );
-    wrappedTokenFactory = await createTestWrappedTokenFactory(underlyingToken, userVaultImplementation);
+    wrappedTokenFactory = await createTestWrappedTokenFactory(core, underlyingToken, userVaultImplementation);
     await core.testPriceOracle.setPrice(
       wrappedTokenFactory.address,
       '1000000000000000000', // $1.00
@@ -97,7 +94,6 @@ describe('WrappedTokenUserVaultFactory', () => {
       [
         otherToken.address,
         wrappedTokenFactory.address,
-        2,
         core.dolomiteMargin.address,
       ],
     );
@@ -125,7 +121,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       TestWrappedTokenUserVaultFactory__factory.bytecode,
       [
         underlyingToken.address,
-        BORROW_POSITION_PROXY_V2.address,
+        core.borrowPositionProxyV2.address,
         userVaultImplementation.address,
         core.dolomiteMargin.address,
       ],
@@ -176,7 +172,7 @@ describe('WrappedTokenUserVaultFactory', () => {
         TestWrappedTokenUserVaultFactory__factory.bytecode,
         [
           underlyingToken.address,
-          BORROW_POSITION_PROXY_V2.address,
+          core.borrowPositionProxyV2.address,
           userVaultImplementation.address,
           core.dolomiteMargin.address,
         ],
@@ -406,7 +402,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       await expectThrow(
         wrappedTokenFactory.connect(core.hhUser1)
           .depositOtherTokenIntoDolomiteMarginForVaultOwner(toAccountNumber, core.marketIds.weth, amountWei),
-        `WrappedTokenUserVaultFactory: Caller is not a vault <${core.hhUser1.address.toLowerCase()}>`,
+        `WrappedTokenUserVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -451,7 +447,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       expect(await wrappedTokenFactory.isTokenConverterTrusted(tokenWrapper.address)).to.eq(true);
       await expectThrow(
         executeWrap(vaultImplementation, otherMarketId, core.marketIds.weth),
-        `WrappedTokenUserVaultWrapper: Invalid maker token <${core.weth.address.toLowerCase()}>`,
+        `WrappedTokenUserVaultWrapper: Invalid owed market <${core.marketIds.weth.toString()}>`,
       );
       await expectThrow(
         tokenWrapper.connect(core.hhUser1)
@@ -467,14 +463,14 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
       const result = await executeWrap(vaultImplementation, otherMarketId, underlyingMarketId);
 
-      const queuedTransfer = await wrappedTokenFactory.getQueuedTransferByCursor(1);
+      const queuedTransfer = await wrappedTokenFactory.getQueuedTransferByCursor(2);
       expect(queuedTransfer.from).to.eq(tokenWrapper.address);
       expect(queuedTransfer.to).to.eq(core.dolomiteMargin.address);
       expect(queuedTransfer.amount).to.eq(smallAmountWei);
       expect(queuedTransfer.vault).to.eq(vault.address);
 
       await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
-        transferCursor: 1,
+        transferCursor: 2,
         from: tokenWrapper.address,
         to: core.dolomiteMargin.address,
         amount: smallAmountWei,
@@ -496,7 +492,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
     });
 
-    it('should fail when cursor is already queued (developer error)', async () => {
+    it('should overwrite cursor if already queued', async () => {
       await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
       const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
 
@@ -508,10 +504,22 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
 
       await wrappedTokenFactory.connect(core.governance).setIsTokenConverterTrusted(core.hhUser2.address, true);
-      await expectThrow(
-        wrappedTokenFactory.connect(core.hhUser2).enqueueTransferIntoDolomiteMargin(vaultAddress, amountWei),
-        'WrappedTokenUserVaultFactory: Transfer is already queued',
-      );
+      const result = await wrappedTokenFactory.connect(core.hhUser2)
+        .enqueueTransferIntoDolomiteMargin(vaultAddress, amountWei);
+
+      const queuedTransfer = await wrappedTokenFactory.getQueuedTransferByCursor(1);
+      expect(queuedTransfer.from).to.eq(core.hhUser2.address);
+      expect(queuedTransfer.to).to.eq(core.dolomiteMargin.address);
+      expect(queuedTransfer.amount).to.eq(amountWei);
+      expect(queuedTransfer.vault).to.eq(vaultAddress);
+
+      await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
+        transferCursor: 1,
+        from: core.hhUser2.address,
+        to: core.dolomiteMargin.address,
+        amount: amountWei,
+        vault: vaultAddress,
+      });
     });
 
     it('should fail when vault is invalid', async () => {
@@ -568,14 +576,14 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
       const result = await executeUnwrap(vaultImplementation, underlyingMarketId, otherMarketId);
 
-      const queuedTransfer = await wrappedTokenFactory.getQueuedTransferByCursor(1);
+      const queuedTransfer = await wrappedTokenFactory.getQueuedTransferByCursor(2);
       expect(queuedTransfer.from).to.eq(core.dolomiteMargin.address);
       expect(queuedTransfer.to).to.eq(tokenUnwrapper.address);
       expect(queuedTransfer.amount).to.eq(smallAmountWei);
       expect(queuedTransfer.vault).to.eq(vault.address);
 
       await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
-        transferCursor: 1,
+        transferCursor: 2,
         from: core.dolomiteMargin.address,
         to: tokenUnwrapper.address,
         amount: smallAmountWei,
@@ -597,7 +605,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
     });
 
-    it('should fail when cursor is already queued (developer error)', async () => {
+    it('should overwrite cursor if already queued', async () => {
       await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
       const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
 
@@ -609,10 +617,22 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
 
       await wrappedTokenFactory.connect(core.governance).setIsTokenConverterTrusted(core.hhUser2.address, true);
-      await expectThrow(
-        wrappedTokenFactory.connect(core.hhUser2).enqueueTransferFromDolomiteMargin(vaultAddress, amountWei),
-        'WrappedTokenUserVaultFactory: Transfer is already queued',
-      );
+      const result = await wrappedTokenFactory.connect(core.hhUser2)
+        .enqueueTransferFromDolomiteMargin(vaultAddress, amountWei);
+
+      const queuedTransfer = await wrappedTokenFactory.getQueuedTransferByCursor(1);
+      expect(queuedTransfer.from).to.eq(core.dolomiteMargin.address);
+      expect(queuedTransfer.to).to.eq(core.hhUser2.address);
+      expect(queuedTransfer.amount).to.eq(amountWei);
+      expect(queuedTransfer.vault).to.eq(vaultAddress);
+
+      await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
+        transferCursor: 1,
+        from: core.dolomiteMargin.address,
+        to: core.hhUser2.address,
+        amount: amountWei,
+        vault: vaultAddress,
+      });
     });
 
     it('should fail when vault is invalid', async () => {
@@ -639,7 +659,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
       const result = await vault.depositIntoVaultForDolomiteMargin(toAccountNumber, amountWei);
       await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
-        transferCursor: 0,
+        transferCursor: 1,
         from: vault.address,
         to: core.dolomiteMargin.address,
         amount: amountWei,
@@ -662,29 +682,7 @@ describe('WrappedTokenUserVaultFactory', () => {
     it('should fail when not called by vault', async () => {
       await expectThrow(
         wrappedTokenFactory.connect(core.hhUser1).depositIntoDolomiteMargin(toAccountNumber, amountWei),
-        `WrappedTokenUserVaultFactory: Caller is not a vault <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail when cursor is already queued (developer error)', async () => {
-      await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
-      const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
-
-      await wrappedTokenFactory.testEnqueueTransfer(
-        vaultAddress,
-        core.dolomiteMargin.address,
-        amountWei,
-        vaultAddress,
-      );
-
-      const vault = setupUserVaultProxy<WrappedTokenUserVaultV1>(
-        vaultAddress,
-        WrappedTokenUserVaultV1__factory,
-        core.hhUser1,
-      );
-      await expectThrow(
-        vault.depositIntoVaultForDolomiteMargin(toAccountNumber, amountWei),
-        'WrappedTokenUserVaultFactory: Transfer is already queued',
+        `WrappedTokenUserVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -706,7 +704,7 @@ describe('WrappedTokenUserVaultFactory', () => {
 
       const result = await vault.withdrawFromVaultForDolomiteMargin(toAccountNumber, amountWei);
       await expectEvent(wrappedTokenFactory, result, 'TransferQueued', {
-        transferCursor: 1,
+        transferCursor: 2,
         from: core.dolomiteMargin.address,
         to: vault.address,
         amount: amountWei,
@@ -751,29 +749,7 @@ describe('WrappedTokenUserVaultFactory', () => {
     it('should fail when not called by vault', async () => {
       await expectThrow(
         wrappedTokenFactory.connect(core.hhUser1).withdrawFromDolomiteMargin(toAccountNumber, amountWei),
-        `WrappedTokenUserVaultFactory: Caller is not a vault <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail when cursor is already queued (developer error)', async () => {
-      await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
-      const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
-
-      await wrappedTokenFactory.testEnqueueTransfer(
-        vaultAddress,
-        core.dolomiteMargin.address,
-        amountWei,
-        vaultAddress,
-      );
-
-      const vault = setupUserVaultProxy<WrappedTokenUserVaultV1>(
-        vaultAddress,
-        WrappedTokenUserVaultV1__factory,
-        core.hhUser1,
-      );
-      await expectThrow(
-        vault.withdrawFromVaultForDolomiteMargin(toAccountNumber, amountWei),
-        'WrappedTokenUserVaultFactory: Transfer is already queued',
+        `WrappedTokenUserVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -808,6 +784,29 @@ describe('WrappedTokenUserVaultFactory', () => {
       await expectThrow(
         wrappedTokenFactory.connect(sender).transfer(core.hhUser2.address, amountWei),
         'WrappedTokenUserVaultFactory: Invalid queued transfer',
+      );
+    });
+
+    it('should not work when transfer is already executed', async () => {
+      await wrappedTokenFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
+      const vaultAddress = await wrappedTokenFactory.getVaultByAccount(core.hhUser1.address);
+
+      const vault = setupUserVaultProxy<WrappedTokenUserVaultV1>(
+        vaultAddress,
+        WrappedTokenUserVaultV1__factory,
+        core.hhUser1,
+      );
+      await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
+      await underlyingToken.connect(core.hhUser1).approve(vault.address, amountWei);
+      await vault.depositIntoVaultForDolomiteMargin(toAccountNumber, smallAmountWei);
+
+      const vaultImpersonator = await impersonate(vaultAddress, true);
+      await wrappedTokenFactory.connect(vaultImpersonator).approve(core.dolomiteMargin.address, smallAmountWei);
+
+      const sender = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrappedTokenFactory.connect(sender).transferFrom(vaultAddress, core.dolomiteMargin.address, smallAmountWei),
+        'WrappedTokenUserVaultFactory: Transfer already executed <1>',
       );
     });
 

@@ -27,7 +27,7 @@ import {
   GLP_REWARDS_ROUTER,
   GMX,
   GMX_REWARDS_ROUTER,
-  GMX_VAULT,
+  GMX_VAULT, LIQUIDATOR_PROXY_V2, LIQUIDATOR_PROXY_V3,
   S_GLP,
   S_GMX,
   SBF_GMX,
@@ -79,6 +79,8 @@ export interface CoreProtocol {
     vGlp: typeof V_GLP;
     vGmx: typeof V_GMX;
   };
+  liquidatorProxyV2: typeof LIQUIDATOR_PROXY_V2;
+  liquidatorProxyV3: typeof LIQUIDATOR_PROXY_V3;
   marketIds: {
     usdc: BigNumberish;
     weth: BigNumberish;
@@ -219,6 +221,8 @@ export async function setupCoreProtocol(
       vGlp: V_GLP.connect(hhUser1),
       vGmx: V_GMX.connect(hhUser1),
     },
+    liquidatorProxyV2: LIQUIDATOR_PROXY_V2.connect(hhUser1),
+    liquidatorProxyV3: LIQUIDATOR_PROXY_V3.connect(hhUser1),
     marketIds: {
       usdc: USDC_MARKET_ID,
       weth: WETH_MARKET_ID,

@@ -5,12 +5,17 @@ import * as DolomiteMarginJson from '@dolomite-margin/deployed-contracts/Dolomit
 import * as ExpiryJson from '@dolomite-margin/deployed-contracts/Expiry.json';
 import * as LiquidatorProxyV2WithExternalLiquidityJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV2WithExternalLiquidity.json';
+import * as LiquidatorProxyV3WithLiquidityTokenJson
+  from '@dolomite-margin/deployed-contracts/LiquidatorProxyV3WithLiquidityToken.json';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseContract, BigNumberish } from 'ethers';
 import {
   BorrowPositionProxyV2,
   BorrowPositionProxyV2__factory,
   ERC20,
-  ERC20__factory, IDepositWithdrawalProxy, IDepositWithdrawalProxy__factory,
+  ERC20__factory,
+  IDepositWithdrawalProxy,
+  IDepositWithdrawalProxy__factory,
   IDolomiteAmmFactory,
   IDolomiteAmmFactory__factory,
   IDolomiteAmmRouterProxy,
@@ -39,6 +44,8 @@ import {
   IWETH__factory,
   LiquidatorProxyV2WithExternalLiquidity,
   LiquidatorProxyV2WithExternalLiquidity__factory,
+  LiquidatorProxyV3WithLiquidityToken,
+  LiquidatorProxyV3WithLiquidityToken__factory,
 } from '../types';
 import { Network, NETWORK_ID } from './no-deps-constants';
 
@@ -113,6 +120,12 @@ export const LIQUIDATOR_PROXY_V2 = new BaseContract(
   LiquidatorProxyV2WithExternalLiquidityJson.networks[NETWORK_ID].address,
   LiquidatorProxyV2WithExternalLiquidity__factory.createInterface(),
 ) as LiquidatorProxyV2WithExternalLiquidity;
+
+export const LIQUIDATOR_PROXY_V3 = new BaseContract(
+  // LiquidatorProxyV3WithLiquidityTokenJson.networks[NETWORK_ID].address,
+  ZERO_ADDRESS,
+  LiquidatorProxyV3WithLiquidityToken__factory.createInterface(),
+) as LiquidatorProxyV3WithLiquidityToken;
 
 // ************************* External Addresses *************************
 

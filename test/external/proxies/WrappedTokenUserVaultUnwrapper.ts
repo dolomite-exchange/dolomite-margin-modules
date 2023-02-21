@@ -151,7 +151,7 @@ describe('WrappedTokenUserVaultUnwrapper', () => {
         defaultAbiCoder.encode(['uint256'], [amountWei]),
       );
       const cursor = await factory.transferCursor();
-      expect(cursor).to.eq(1);
+      expect(cursor).to.eq(2);
       const transfer = await factory.getQueuedTransferByCursor(cursor);
       expect(transfer.from).to.eq(core.dolomiteMargin.address);
       expect(transfer.to).to.eq(unwrapper.address);
@@ -250,6 +250,39 @@ describe('WrappedTokenUserVaultUnwrapper', () => {
           BYTES_EMPTY,
         ),
         `WrappedTokenUserVaultUnwrapper: Invalid taker token <${core.weth.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if there is an insufficient taker token balance', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          otherToken.address,
+          factory.address,
+          amountWei,
+          abiCoder.encode(['uint256'], [amountWei]), // minMakerAmount
+        ),
+        `WrappedTokenUserVaultUnwrapper: Insufficient taker token <0, ${amountWei.toString()}>`,
+      );
+    });
+
+    it('should fail if there is an insufficient amount outputted', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      const unwrapperImpersonator = await impersonate(unwrapper.address, true);
+      await factory.connect(unwrapperImpersonator).enqueueTransferFromDolomiteMargin(vault.address, amountWei);
+      await factory.connect(dolomiteMarginImpersonator).transfer(unwrapper.address, amountWei);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          otherToken.address,
+          factory.address,
+          amountWei,
+          abiCoder.encode(['uint256'], [amountWei.mul(2)]), // minMakerAmount
+        ),
+        `WrappedTokenUserVaultUnwrapper: Insufficient output amount <${amountWei.toString()}, ${amountWei.mul(2).toString()}>`,
       );
     });
   });

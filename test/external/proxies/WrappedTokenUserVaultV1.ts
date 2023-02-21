@@ -4,8 +4,7 @@ import { expect } from 'chai';
 import { BaseContract, BigNumber } from 'ethers';
 import {
   CustomTestToken,
-  GLPUnwrapperProxyV1,
-  TestWrappedTokenUserVaultFactory,
+  TestWrappedTokenUserVaultFactory, TestWrappedTokenUserVaultUnwrapper, TestWrappedTokenUserVaultUnwrapper__factory,
   TestWrappedTokenUserVaultV1,
   TestWrappedTokenUserVaultV1__factory,
   WrappedTokenUserVaultV1,
@@ -18,11 +17,10 @@ import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBala
 import {
   CoreProtocol,
   setupCoreProtocol,
-  setupGmxRegistry,
   setupTestMarket,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createGlpUnwrapperProxy, createTestWrappedTokenFactory } from '../../utils/wrapped-token-utils';
+import { createTestWrappedTokenFactory } from '../../utils/wrapped-token-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -36,7 +34,7 @@ describe('WrappedTokenUserVaultV1', () => {
   let core: CoreProtocol;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
-  let tokenUnwrapper: GLPUnwrapperProxyV1;
+  let tokenUnwrapper: TestWrappedTokenUserVaultUnwrapper;
   let wrappedTokenFactory: TestWrappedTokenUserVaultFactory;
   let userVaultImplementation: BaseContract;
   let userVault: TestWrappedTokenUserVaultV1;
@@ -55,7 +53,7 @@ describe('WrappedTokenUserVaultV1', () => {
       TestWrappedTokenUserVaultV1__factory.bytecode,
       [],
     );
-    wrappedTokenFactory = await createTestWrappedTokenFactory(underlyingToken, userVaultImplementation);
+    wrappedTokenFactory = await createTestWrappedTokenFactory(core, underlyingToken, userVaultImplementation);
     await core.testPriceOracle.setPrice(
       wrappedTokenFactory.address,
       '1000000000000000000', // $1.00
@@ -64,8 +62,11 @@ describe('WrappedTokenUserVaultV1', () => {
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, wrappedTokenFactory, true);
 
-    const registry = await setupGmxRegistry(core);
-    tokenUnwrapper = await createGlpUnwrapperProxy(wrappedTokenFactory, registry);
+    tokenUnwrapper = await createContractWithAbi(
+      TestWrappedTokenUserVaultUnwrapper__factory.abi,
+      TestWrappedTokenUserVaultUnwrapper__factory.bytecode,
+      [core.usdc.address, wrappedTokenFactory.address, core.dolomiteMargin.address]
+    );
     await wrappedTokenFactory.initialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(wrappedTokenFactory.address, true);
 

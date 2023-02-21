@@ -124,13 +124,6 @@ describe('WrappedTokenUserVaultWrapper', () => {
         otherAmountWei,
       );
 
-      const amountOut = await wrapper.getExchangeCost(
-        factory.address,
-        otherToken.address,
-        otherAmountWei,
-        BYTES_EMPTY,
-      );
-
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await core.dolomiteMargin.connect(core.hhUser5).operate([defaultAccount], actions);
 
@@ -171,6 +164,21 @@ describe('WrappedTokenUserVaultWrapper', () => {
           BYTES_EMPTY,
         ),
         `WrappedTokenUserVaultWrapper: Invalid maker token <${core.weth.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if the output amount is insufficient', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
+          vault.address,
+          core.dolomiteMargin.address,
+          factory.address,
+          otherToken.address,
+          amountWei.div(1e12), // normalize the amount to match the # of decimals otherToken has
+          defaultAbiCoder.encode(['uint256'], [amountWei.mul(2)]), // minOutputAmount is too large
+        ),
+        `WrappedTokenUserVaultWrapper: Insufficient output amount <${amountWei.toString()}, ${amountWei.mul(2).toString()}>`,
       );
     });
   });

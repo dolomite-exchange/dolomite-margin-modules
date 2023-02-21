@@ -1,10 +1,10 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import {
   GLPPriceOracleV1,
   GLPPriceOracleV1__factory,
-  GLPUnwrapperProxyV1,
   GLPWrappedTokenUserVaultFactory,
   GLPWrappedTokenUserVaultFactory__factory,
   GLPWrappedTokenUserVaultV1,
@@ -14,7 +14,6 @@ import {
   IERC20,
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
-import { BORROW_POSITION_PROXY_V2, DOLOMITE_MARGIN } from '../../../src/utils/constants';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -27,22 +26,23 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createGlpUnwrapperProxy, createGlpWrapperProxy } from '../../utils/wrapped-token-utils';
+import { createGlpWrapperProxy } from '../../utils/wrapped-token-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
+const usdcAmount = amountWei.div(1e12).mul(5);
+const usableUsdcAmount = usdcAmount.div(2);
 
 const abiCoder = ethers.utils.defaultAbiCoder;
 
-describe('GLPUnwrapperProxyV1', () => {
+describe('GLPWrapperProxyV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
   let underlyingToken: IERC20;
   let underlyingMarketId: BigNumber;
   let gmxRegistry: GmxRegistryV1;
-  let unwrapper: GLPUnwrapperProxyV1;
   let wrapper: GLPWrapperProxyV1;
   let factory: GLPWrappedTokenUserVaultFactory;
   let vault: GLPWrappedTokenUserVaultV1;
@@ -70,9 +70,9 @@ describe('GLPUnwrapperProxyV1', () => {
         core.marketIds.weth,
         gmxRegistry.address,
         underlyingToken.address,
-        BORROW_POSITION_PROXY_V2.address,
+        core.borrowPositionProxyV2.address,
         userVaultImplementation.address,
-        DOLOMITE_MARGIN.address,
+        core.dolomiteMargin.address,
       ],
     );
     priceOracle = await createContractWithAbi<GLPPriceOracleV1>(
@@ -85,9 +85,8 @@ describe('GLPUnwrapperProxyV1', () => {
     await setupTestMarket(core, factory, true, priceOracle);
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
 
-    unwrapper = await createGlpUnwrapperProxy(core, factory, gmxRegistry);
     wrapper = await createGlpWrapperProxy(core, factory, gmxRegistry);
-    await factory.initialize([unwrapper.address, wrapper.address]);
+    await factory.initialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     solidUser = core.hhUser5;
@@ -101,9 +100,9 @@ describe('GLPUnwrapperProxyV1', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    const usdcAmount = amountWei.div(1e12).mul(4);
     await setupUSDCBalance(core.hhUser1, usdcAmount, core.gmxEcosystem.glpManager);
-    await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1).mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
+    await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
+      .mintAndStakeGlp(core.usdc.address, usableUsdcAmount, 0, 0);
     await core.gmxEcosystem.sGlp.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
@@ -117,53 +116,56 @@ describe('GLPUnwrapperProxyV1', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('Actions.Call and Actions.Sell for non-liquidation', () => {
+  describe('Call and Exchange for non-liquidation sale', () => {
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
-      const actions = await unwrapper.createActionsForUnwrappingForLiquidation(
+      const actions = await wrapper.createActionsForWrapping(
         solidAccountId,
         liquidAccountId,
-        vault.address,
-        vault.address,
-        core.marketIds.usdc,
+        ZERO_ADDRESS,
+        ZERO_ADDRESS,
         underlyingMarketId,
+        core.marketIds.usdc,
         ZERO_BI,
-        amountWei,
+        usableUsdcAmount,
       );
 
-      const amountOut = await unwrapper.getExchangeCost(
-        factory.address,
+      const amountOut = await wrapper.getExchangeCost(
         core.usdc.address,
-        amountWei,
+        factory.address,
+        usableUsdcAmount,
         BYTES_EMPTY,
       );
 
+      await core.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await core.dolomiteMargin.connect(core.hhUser5).operate(
         [defaultAccount],
         actions,
       );
 
+      const expectedTotalBalance = amountWei.add(amountOut);
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
-      expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
-      expect(await vault.underlyingBalanceOf()).to.eq(ZERO_BI);
+      expect(underlyingBalanceWei.value).to.eq(expectedTotalBalance);
+      expect(underlyingBalanceWei.sign).to.eq(true);
+      expect(await vault.underlyingBalanceOf()).to.eq(expectedTotalBalance);
 
       const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
-      expect(otherBalanceWei.sign).to.eq(true);
-      expect(otherBalanceWei.value).to.eq(amountOut);
+      expect(otherBalanceWei.sign).to.eq(false);
+      expect(otherBalanceWei.value).to.eq(usableUsdcAmount);
     });
   });
 
   describe('#exchange', () => {
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
-        unwrapper.connect(core.hhUser1).exchange(
+        wrapper.connect(core.hhUser1).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
           factory.address,
-          amountWei,
+          core.usdc.address,
+          usableUsdcAmount,
           BYTES_EMPTY,
         ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
@@ -173,70 +175,58 @@ describe('GLPUnwrapperProxyV1', () => {
     it('should fail if taker token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
-        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          factory.address,
           core.weth.address,
-          amountWei,
-          BYTES_EMPTY,
+          usableUsdcAmount,
+          abiCoder.encode(['uint256'], [ZERO_BI]),
         ),
-        `WrappedTokenUserVaultUnwrapper: Invalid taker token <${core.weth.address.toLowerCase()}>`,
+        `GLPWrapperProxyV1: Invalid taker token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if maker token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.gmxEcosystem.sGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
-        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
           core.weth.address,
-          factory.address,
+          core.usdc.address,
           amountWei,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `GLPUnwrapperProxyV1: Invalid maker token <${core.weth.address.toLowerCase()}>`,
+        `WrappedTokenUserVaultWrapper: Invalid maker token <${core.weth.address.toLowerCase()}>`,
       );
     });
   });
 
-  describe('#token', () => {
+  describe('#usdc', () => {
     it('should work', async () => {
-      expect(await unwrapper.token()).to.eq(factory.address);
-    });
-  });
-
-  describe('#outputMarketId', () => {
-    it('should work', async () => {
-      expect(await unwrapper.outputMarketId()).to.eq(core.marketIds.usdc);
-    });
-  });
-
-  describe('#actionsLength', () => {
-    it('should work', async () => {
-      expect(await unwrapper.actionsLength()).to.eq(2);
+      expect(await wrapper.USDC()).to.eq(core.usdc.address);
     });
   });
 
   describe('#gmxRegistry', () => {
     it('should work', async () => {
-      expect(await unwrapper.GMX_REGISTRY()).to.eq(gmxRegistry.address);
+      expect(await wrapper.GMX_REGISTRY()).to.eq(gmxRegistry.address);
     });
   });
 
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
+      const inputAmount = usableUsdcAmount;
       const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
         .callStatic
-        .unstakeAndRedeemGlp(
+        .mintAndStakeGlp(
           core.usdc.address,
-          amountWei,
+          inputAmount,
           1,
-          core.hhUser1.address,
+          1,
         );
-      expect(await unwrapper.getExchangeCost(factory.address, core.usdc.address, amountWei, BYTES_EMPTY))
+      expect(await wrapper.getExchangeCost(core.usdc.address, factory.address, inputAmount, BYTES_EMPTY))
         .to
         .eq(expectedAmount);
     });
@@ -245,32 +235,32 @@ describe('GLPUnwrapperProxyV1', () => {
       for (let i = 0; i < 10; i++) {
         // create a random number from 1 to 99 and divide by 101 (making the number, at-most, slightly smaller)
         const randomNumber = BigNumber.from(Math.floor(Math.random() * 99) + 1);
-        const weirdAmount = amountWei.mul(randomNumber).div(101);
+        const weirdAmount = usableUsdcAmount.mul(randomNumber).div(101);
         const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
-          .unstakeAndRedeemGlp(
+          .mintAndStakeGlp(
             core.usdc.address,
             weirdAmount,
             1,
-            core.hhUser1.address,
+            1,
           );
-        expect(await unwrapper.getExchangeCost(factory.address, core.usdc.address, weirdAmount, BYTES_EMPTY))
+        expect(await wrapper.getExchangeCost(core.usdc.address, factory.address, weirdAmount, BYTES_EMPTY))
           .to
           .eq(expectedAmount);
       }
     });
 
-    it('should fail if the maker token is not dsfGLP', async () => {
+    it('should fail if the maker token is not USDC', async () => {
       await expectThrow(
-        unwrapper.getExchangeCost(core.weth.address, core.usdc.address, amountWei, BYTES_EMPTY),
-        `GLPUnwrapperProxyV1: Invalid maker token <${core.weth.address.toLowerCase()}>`,
+        wrapper.getExchangeCost(core.weth.address, factory.address, usableUsdcAmount, BYTES_EMPTY),
+        `GLPWrapperProxyV1: Invalid maker token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
-    it('should fail if the taker token is not USDC', async () => {
+    it('should fail if the taker token is not dfsGLP', async () => {
       await expectThrow(
-        unwrapper.getExchangeCost(factory.address, core.weth.address, amountWei, BYTES_EMPTY),
-        `GLPUnwrapperProxyV1: Invalid taker token <${core.weth.address.toLowerCase()}>`,
+        wrapper.getExchangeCost(core.usdc.address, core.weth.address, usableUsdcAmount, BYTES_EMPTY),
+        `GLPWrapperProxyV1: Invalid taker token <${core.weth.address.toLowerCase()}>`,
       );
     });
   });

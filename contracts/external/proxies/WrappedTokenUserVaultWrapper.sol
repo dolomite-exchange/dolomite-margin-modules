@@ -14,6 +14,9 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
@@ -24,7 +27,6 @@ import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVa
 import { IWrappedTokenUserVaultWrapper } from "../interfaces/IWrappedTokenUserVaultWrapper.sol";
 
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { TokenWrapperLib } from "../lib/TokenWrapperLib.sol";
 
 
 /**
@@ -35,6 +37,7 @@ import { TokenWrapperLib } from "../lib/TokenWrapperLib.sol";
  *          for the VaultWrapperFactory token.
  */
 abstract contract WrappedTokenUserVaultWrapper is IWrappedTokenUserVaultWrapper, OnlyDolomiteMargin {
+    using SafeERC20 for IERC20;
 
     // ======================== Constants ========================
 
@@ -84,8 +87,15 @@ abstract contract WrappedTokenUserVaultWrapper is IWrappedTokenUserVaultWrapper,
             _amountTakerToken,
             _orderData
         );
+        Require.that(
+            outputAmount >= minMakerAmount,
+            _FILE,
+            "Insufficient output amount",
+            outputAmount,
+            minMakerAmount
+        );
 
-        TokenWrapperLib.approveWrappedTokenForTransfer(_makerToken, _tradeOriginator, _receiver, outputAmount);
+        _approveWrappedTokenForTransfer(_tradeOriginator, _receiver, outputAmount);
 
         return outputAmount;
     }
@@ -156,6 +166,20 @@ abstract contract WrappedTokenUserVaultWrapper is IWrappedTokenUserVaultWrapper,
         uint256 _minMakerAmount,
         address _takerToken,
         uint256 _amountTakerToken,
-        bytes calldata _orderData
+        bytes memory _orderData
     ) internal virtual returns (uint256);
+
+    function _approveWrappedTokenForTransfer(
+        address _vault,
+        address _receiver,
+        uint256 _amount
+    )
+    internal
+    virtual {
+        VAULT_FACTORY.enqueueTransferIntoDolomiteMargin(_vault, _amount);
+
+        address underlyingToken = VAULT_FACTORY.UNDERLYING_TOKEN();
+        IERC20(underlyingToken).safeApprove(_vault, _amount);
+        IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
+    }
 }

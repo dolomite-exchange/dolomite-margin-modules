@@ -30,7 +30,6 @@ import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVa
 import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1.sol";
 
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { TokenWrapperLib } from "../lib/TokenWrapperLib.sol";
 
 
 /**
@@ -119,12 +118,23 @@ abstract contract WrappedTokenUserVaultUnwrapper is IWrappedTokenUserVaultUnwrap
 
         (uint256 minMakerAmount) = abi.decode(_orderData, (uint256));
 
+        {
+            uint256 balance = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
+            Require.that(
+                balance >= _amountTakerToken,
+                _FILE,
+                "Insufficient taker token",
+                balance,
+                _amountTakerToken
+            );
+        }
+
         uint256 outputAmount = _exchangeUnderlyingTokenToOutputToken(
             _tradeOriginator,
             _receiver,
             _makerToken,
             minMakerAmount,
-            VAULT_FACTORY.UNDERLYING_TOKEN(),
+            address(VAULT_FACTORY),
             _amountTakerToken,
             _orderData
         );
@@ -132,7 +142,8 @@ abstract contract WrappedTokenUserVaultUnwrapper is IWrappedTokenUserVaultUnwrap
             outputAmount >= minMakerAmount,
             _FILE,
             "Insufficient output amount",
-            outputAmount
+            outputAmount,
+            minMakerAmount
         );
 
         IERC20(_makerToken).safeApprove(_receiver, outputAmount);
@@ -213,8 +224,8 @@ abstract contract WrappedTokenUserVaultUnwrapper is IWrappedTokenUserVaultUnwrap
         address _receiver,
         address _makerToken,
         uint256 _minMakerAmount,
-        address _takerTokenUnderlying,
+        address _takerToken,
         uint256 _amountTakerToken,
-        bytes calldata _orderData
+        bytes memory _orderData
     ) internal virtual returns (uint256);
 }

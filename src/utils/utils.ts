@@ -43,3 +43,7 @@ export function formatNumber(n: BigNumberish): string {
   const numberBN = ethers.BigNumber.from(n);
   return Web3.utils.fromWei(numberBN.toString());
 }
+
+export async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

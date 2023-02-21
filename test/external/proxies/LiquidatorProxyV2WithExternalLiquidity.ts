@@ -1,5 +1,6 @@
 // Utilities
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { sleep } from '@openzeppelin/upgrades';
 import axios from 'axios';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -11,11 +12,6 @@ import {
 } from '../../../src/types';
 import {
   AccountStruct,
-  LIQUIDATOR_PROXY_V2,
-  USDC,
-  USDC_MARKET_ID,
-  WETH,
-  WETH_MARKET_ID,
 } from '../../../src/utils/constants';
 import {
   createContractWithAbi,
@@ -24,7 +20,7 @@ import {
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
 import { NETWORK_ID, NO_EXPIRY } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { getRealLatestBlockNumber, impersonate, resetFork, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
@@ -39,7 +35,7 @@ const liquidNumber = '123';
 const ONE_BPS = BigNumber.from('1');
 
 describe('LiquidatorProxyV2WithExternalLiquidity', () => {
-  let coreProtocol: CoreProtocol;
+  let core: CoreProtocol;
   let governance: SignerWithAddress;
   let solidAccount: SignerWithAddress;
   let liquidAccount: SignerWithAddress;
@@ -53,16 +49,16 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
 
   before(async () => {
     const blockNumber = await getRealLatestBlockNumber(true);
-    coreProtocol = await setupCoreProtocol({
+    core = await setupCoreProtocol({
       blockNumber,
     });
-    governance = coreProtocol.governance;
-    solidAccount = coreProtocol.hhUser1;
-    liquidAccount = coreProtocol.hhUser2;
+    governance = core.governance;
+    solidAccount = core.hhUser1;
+    liquidAccount = core.hhUser2;
     solidAccountStruct = { owner: solidAccount.address, number: BigNumber.from(solidNumber) };
     liquidAccountStruct = { owner: liquidAccount.address, number: BigNumber.from(liquidNumber) };
-    dolomiteMargin = coreProtocol.dolomiteMargin;
-    liquidatorProxy = LIQUIDATOR_PROXY_V2.connect(solidAccount);
+    dolomiteMargin = core.dolomiteMargin;
+    liquidatorProxy = core.liquidatorProxyV2.connect(solidAccount);
     const owner = await impersonate(governance.address, true);
 
     if (!(await dolomiteMargin.getIsGlobalOperator(liquidatorProxy.address))) {
@@ -75,8 +71,8 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
       TestPriceOracle__factory.bytecode,
       [],
     );
-    await testPriceOracle.setPrice(USDC.address, USDC_PRICE);
-    await dolomiteMargin.connect(owner).ownerSetPriceOracle(USDC_MARKET_ID, testPriceOracle.address);
+    await testPriceOracle.setPrice(core.usdc.address, USDC_PRICE);
+    await dolomiteMargin.connect(owner).ownerSetPriceOracle(core.marketIds.usdc, testPriceOracle.address);
     snapshotId = await snapshot();
   });
 
@@ -85,47 +81,52 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
   });
 
   describe('#liquidate', () => {
-    it('should work properly', async () => {
-      const inputToken = {
-        address: WETH.address,
-        decimals: 18,
-      };
-      const outputToken = {
-        address: USDC.address,
-        decimals: 6,
-      };
-
-      await expectProtocolBalance(coreProtocol, solidAccountStruct.owner, solidAccountStruct.number, WETH_MARKET_ID, 0);
-      await expectProtocolBalance(coreProtocol, solidAccountStruct.owner, solidAccountStruct.number, USDC_MARKET_ID, 0);
+    async function setupUserBalance(): Promise<{ heldAmountWei: BigNumber, owedAmountWei: BigNumber }> {
+      await expectProtocolBalance(core, solidAccountStruct.owner, solidAccountStruct.number, core.marketIds.weth, 0);
+      await expectProtocolBalance(core, solidAccountStruct.owner, solidAccountStruct.number, core.marketIds.usdc, 0);
 
       const heldAmountWei = BigNumber.from('1000000000000000000'); // 1 ETH
       await setupWETHBalance(liquidAccount, heldAmountWei, dolomiteMargin);
-      await depositIntoDolomiteMargin(liquidAccount, liquidNumber, WETH_MARKET_ID, heldAmountWei);
+      await depositIntoDolomiteMargin(liquidAccount, liquidNumber, core.marketIds.weth, heldAmountWei);
       await expectProtocolBalance(
-        coreProtocol,
+        core,
         liquidAccountStruct.owner,
         liquidAccountStruct.number,
-        WETH_MARKET_ID,
+        core.marketIds.weth,
         heldAmountWei,
       );
 
       const owedAmountWei = (await dolomiteMargin.getAccountValues(liquidAccountStruct))[0]
         .value.div(USDC_PRICE).mul(100).div(125);
       // Decrease the user's collateralization to 125%
-      await withdrawFromDolomiteMargin(liquidAccount, liquidNumber, USDC_MARKET_ID, owedAmountWei);
+      await withdrawFromDolomiteMargin(liquidAccount, liquidNumber, core.marketIds.usdc, owedAmountWei);
       await expectProtocolBalance(
-        coreProtocol,
+        core,
         liquidAccountStruct.owner,
         liquidAccountStruct.number,
-        USDC_MARKET_ID,
+        core.marketIds.usdc,
         owedAmountWei.mul(-1),
       );
+      return { heldAmountWei, owedAmountWei, };
+    }
+
+    it('should work properly', async () => {
+      const inputToken = {
+        address: core.weth.address,
+        decimals: 18,
+      };
+      const outputToken = {
+        address: core.usdc.address,
+        decimals: 6,
+      };
+
+      const { heldAmountWei, owedAmountWei } = await setupUserBalance();
 
       // Increase the user's debt by 10%, therefore lowering the collateralization to ~113% (making it under-water)
-      await testPriceOracle.setPrice(USDC.address, USDC_PRICE.mul(11).div(10));
+      await testPriceOracle.setPrice(core.usdc.address, USDC_PRICE.mul(11).div(10));
 
-      const owedPriceAdj = (await dolomiteMargin.getMarketPrice(USDC_MARKET_ID)).value.mul(105).div(100);
-      const heldPrice = (await dolomiteMargin.getMarketPrice(WETH_MARKET_ID)).value;
+      const owedPriceAdj = (await dolomiteMargin.getMarketPrice(core.marketIds.usdc)).value.mul(105).div(100);
+      const heldPrice = (await dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
       const inputAmount = owedWeiToHeldWei(owedAmountWei, owedPriceAdj, heldPrice);
       const priceRouteResponse = await axios.get(`${API_URL}/prices`, {
         params: {
@@ -169,11 +170,12 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
         });
 
       console.log('\tLiquidating account:', liquidAccount.address);
+
       const txResult = await liquidatorProxy.liquidate(
         solidAccountStruct,
         liquidAccountStruct,
-        USDC_MARKET_ID,
-        WETH_MARKET_ID,
+        core.marketIds.usdc,
+        core.marketIds.weth,
         NO_EXPIRY,
         result.data,
       );
@@ -181,31 +183,31 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
 
       const outputAmount = BigNumber.from(priceRouteResponse.priceRoute.destAmount);
-      await expectProtocolBalance(coreProtocol, solidAccountStruct.owner, solidAccountStruct.number, WETH_MARKET_ID, 0);
+      await expectProtocolBalance(core, solidAccountStruct.owner, solidAccountStruct.number, core.marketIds.weth, 0);
       await expectProtocolBalanceIsGreaterThan(
-        coreProtocol,
+        core,
         solidAccountStruct,
-        USDC_MARKET_ID,
+        core.marketIds.usdc,
         outputAmount.sub(owedAmountWei),
         ONE_BPS,
       );
       await expectProtocolBalanceIsGreaterThan(
-        coreProtocol,
+        core,
         liquidAccountStruct,
-        WETH_MARKET_ID,
+        core.marketIds.weth,
         heldAmountWei.sub(inputAmount),
         ONE_BPS,
       );
       await expectProtocolBalance(
-        coreProtocol,
+        core,
         liquidAccountStruct.owner,
         liquidAccountStruct.number,
-        USDC_MARKET_ID,
+        core.marketIds.usdc,
         0,
       );
 
-      await expectWalletBalanceOrDustyIfZero(coreProtocol, liquidatorProxy.address, WETH.address, 0);
-      await expectWalletBalanceOrDustyIfZero(coreProtocol, liquidatorProxy.address, USDC.address, 0);
+      await expectWalletBalanceOrDustyIfZero(core, liquidatorProxy.address, core.weth.address, 0);
+      await expectWalletBalanceOrDustyIfZero(core, liquidatorProxy.address, core.usdc.address, 0);
     });
   });
 });

@@ -14,9 +14,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
@@ -36,7 +33,7 @@ import { GLPMathLib } from "./GLPMathLib.sol";
  * @notice  Contract for unwrapping GLP via a "redemption" to USDC
  */
 contract GLPUnwrapperProxyV1 is WrappedTokenUserVaultUnwrapper {
-    using SafeERC20 for IERC20;
+    using GLPMathLib for IGmxVault;
 
     // ============ Constants ============
 
@@ -61,51 +58,11 @@ contract GLPUnwrapperProxyV1 is WrappedTokenUserVaultUnwrapper {
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
 
         USDC_MARKET_ID = IDolomiteMargin(_dolomiteMargin).getMarketIdByTokenAddress(_usdc);
-        IERC20(_usdc).safeApprove(_dolomiteMargin, type(uint256).max);
     }
 
     // ============================================
     // ============ External Functions ============
     // ============================================
-
-    function _exchangeUnderlyingTokenToOutputToken(
-        address,
-        address,
-        address _makerToken,
-        uint256 _minMakerAmount,
-        address _takerTokenUnderlying,
-        uint256 _amountTakerToken,
-        bytes calldata
-    )
-    internal
-    override
-    returns (uint256) {
-        Require.that(
-            _makerToken == USDC,
-            _FILE,
-            "Maker token must be USDC",
-            _makerToken
-        );
-
-        {
-            uint256 balance = IERC20(_takerTokenUnderlying).balanceOf(address(this));
-            Require.that(
-                balance >= _amountTakerToken,
-                _FILE,
-                "Insufficient fsGLP for trade",
-                balance
-            );
-        }
-
-        uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
-            /* _tokenOut = */ _makerToken,
-            /* _glpAmount = */ _amountTakerToken,
-            _minMakerAmount,
-            /* _receiver = */ address(this)
-        );
-
-        return amountOut;
-    }
 
     function outputMarketId() external override view returns (uint256) {
         return USDC_MARKET_ID;
@@ -128,36 +85,51 @@ contract GLPUnwrapperProxyV1 is WrappedTokenUserVaultUnwrapper {
         Require.that(
             _makerToken == address(VAULT_FACTORY),
             _FILE,
-            "Maker token must be dfsGLP",
+            "Invalid maker token",
             _makerToken
         );
         Require.that(
             _takerToken == USDC,
             _FILE,
-            "Taker token must be USDC",
+            "Invalid taker token",
             _takerToken
         );
-        IGmxVault gmxVault = GMX_REGISTRY.gmxVault();
 
-        // This code is taken from the GMX contracts for calculating the redemption amount
-        // https://arbiscan.io/address/0x3963ffc9dff443c2a94f21b129d429891e32ec18#code
-        // Look in the #_removeLiquidity function
-        uint256 aumInUsdg = GMX_REGISTRY.glpManager().getAumInUsdg(false);
-        uint256 glpSupply = GMX_REGISTRY.glp().totalSupply();
-        uint256 usdgAmount = _desiredMakerToken * aumInUsdg / glpSupply; // GLP supply is always > 0 here
+        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, _desiredMakerToken);
 
-        // GMX VAULT - Taken from https://arbiscan.io/address/0x489ee077994b6658eafa855c308275ead8097c4a#code
-        // in the #sellUSDG function
-        uint256 redemptionAmount = gmxVault.getRedemptionAmount(_takerToken, usdgAmount);
+        return GMX_REGISTRY.gmxVault().getGlpRedemptionAmount(_takerToken, usdgAmount);
+    }
 
-        uint256 feeBasisPoints = gmxVault.getFeeBasisPoints(
-            _takerToken,
-            usdgAmount,
-            gmxVault.mintBurnFeeBasisPoints(),
-            gmxVault.taxBasisPoints(),
-            /* _increment = */ false
+    // ============================================
+    // ============ Internal Functions ============
+    // ============================================
+
+    function _exchangeUnderlyingTokenToOutputToken(
+        address,
+        address,
+        address _makerToken,
+        uint256 _minMakerAmount,
+        address,
+        uint256 _amountTakerToken,
+        bytes memory
+    )
+    internal
+    override
+    returns (uint256) {
+        Require.that(
+            _makerToken == USDC,
+            _FILE,
+            "Invalid maker token",
+            _makerToken
         );
-        return GLPMathLib.applyFeesToAmount(redemptionAmount, feeBasisPoints);
-        // END vault code snippet
+
+        uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
+            /* _tokenOut = */ _makerToken,
+            /* _glpAmount = */ _amountTakerToken,
+            _minMakerAmount,
+            /* _receiver = */ address(this)
+        );
+
+        return amountOut;
     }
 }

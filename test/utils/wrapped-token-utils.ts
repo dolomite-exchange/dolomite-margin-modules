@@ -1,14 +1,17 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
   GLPUnwrapperProxyV1,
-  GLPUnwrapperProxyV1__factory, GLPWrapperProxyV1, GLPWrapperProxyV1__factory,
+  GLPUnwrapperProxyV1__factory,
+  GLPWrapperProxyV1,
+  GLPWrapperProxyV1__factory,
   TestWrappedTokenUserVaultFactory,
   TestWrappedTokenUserVaultFactory__factory,
 } from '../../src/types';
-import { BORROW_POSITION_PROXY_V2, DOLOMITE_MARGIN, USDC } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
+import { CoreProtocol } from './setup';
 
 export async function createTestWrappedTokenFactory(
+  core: CoreProtocol,
   underlyingToken: { address: address },
   userVaultImplementation: { address: address },
 ): Promise<TestWrappedTokenUserVaultFactory> {
@@ -17,14 +20,15 @@ export async function createTestWrappedTokenFactory(
     TestWrappedTokenUserVaultFactory__factory.bytecode,
     [
       underlyingToken.address,
-      BORROW_POSITION_PROXY_V2.address,
+      core.borrowPositionProxyV2.address,
       userVaultImplementation.address,
-      DOLOMITE_MARGIN.address,
+      core.dolomiteMargin.address,
     ],
   );
 }
 
 export async function createGlpUnwrapperProxy(
+  core: CoreProtocol,
   dfsGlp: { address: address },
   gmxRegistry: { address: address },
 ): Promise<GLPUnwrapperProxyV1> {
@@ -32,15 +36,16 @@ export async function createGlpUnwrapperProxy(
     GLPUnwrapperProxyV1__factory.abi,
     GLPUnwrapperProxyV1__factory.bytecode,
     [
-      USDC.address,
+      core.usdc.address,
       gmxRegistry.address,
       dfsGlp.address,
-      DOLOMITE_MARGIN.address,
+      core.dolomiteMargin.address,
     ],
   );
 }
 
 export async function createGlpWrapperProxy(
+  core: CoreProtocol,
   dfsGlp: { address: address },
   gmxRegistry: { address: address },
 ): Promise<GLPWrapperProxyV1> {
@@ -48,10 +53,10 @@ export async function createGlpWrapperProxy(
     GLPWrapperProxyV1__factory.abi,
     GLPWrapperProxyV1__factory.bytecode,
     [
-      USDC.address,
+      core.usdc.address,
       gmxRegistry.address,
       dfsGlp.address,
-      DOLOMITE_MARGIN.address,
+      core.dolomiteMargin.address,
     ],
   );
 }

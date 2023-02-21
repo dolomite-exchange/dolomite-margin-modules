@@ -66,14 +66,21 @@ contract TestWrappedTokenUserVaultUnwrapper is WrappedTokenUserVaultUnwrapper {
         address,
         address _makerToken,
         uint256,
-        address,
+        address _takerToken,
         uint256 _amountTakerToken,
-        bytes calldata
+        bytes memory
     )
     internal
     override
     returns (uint256) {
-        uint256 outputAmount = _amountTakerToken;
+        // 1:1 conversion for the sake of testing
+        uint256 makerPrice = DOLOMITE_MARGIN.getMarketPrice(
+            DOLOMITE_MARGIN.getMarketIdByTokenAddress(address(VAULT_FACTORY))
+        ).value;
+        uint256 takerPrice = DOLOMITE_MARGIN.getMarketPrice(
+            DOLOMITE_MARGIN.getMarketIdByTokenAddress(_takerToken)
+        ).value;
+        uint256 outputAmount = _amountTakerToken * takerPrice / makerPrice;
         ICustomTestToken(_makerToken).addBalance(address(this), outputAmount);
         return outputAmount;
     }

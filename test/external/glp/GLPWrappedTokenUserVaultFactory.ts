@@ -9,7 +9,6 @@ import {
   TestGLPWrappedTokenUserVaultV1,
   TestGLPWrappedTokenUserVaultV1__factory,
 } from '../../../src/types';
-import { WETH_MARKET_ID } from '../../../src/utils/constants';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -48,7 +47,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       GLPWrappedTokenUserVaultFactory__factory.bytecode,
       [
         core.weth.address,
-        WETH_MARKET_ID,
+        core.marketIds.weth,
         gmxRegistry.address,
         core.gmxEcosystem.fsGlp.address,
         core.borrowPositionProxyV2.address,
@@ -67,7 +66,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.WETH()).to.equal(core.weth.address);
-      expect(await factory.WETH_MARKET_ID()).to.equal(WETH_MARKET_ID);
+      expect(await factory.WETH_MARKET_ID()).to.equal(core.marketIds.weth);
       expect(await factory.gmxRegistry()).to.equal(gmxRegistry.address);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem.fsGlp.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);

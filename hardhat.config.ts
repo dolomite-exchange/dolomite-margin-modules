@@ -18,10 +18,10 @@ import 'tsconfig-paths/register';
 chai.use(solidity);
 require('dotenv').config();
 
-const infuraApiKey = process.env.INFURA_API_KEY;
+const arbitrumWeb3Url = process.env.ARBITRUM_WEB3_PROVIDER_URL;
 const arbiscanApiKey = process.env.ARBISCAN_API_KEY;
-if (!infuraApiKey) {
-  throw new Error('No INFURA_API_KEY provided!');
+if (!arbitrumWeb3Url) {
+  throw new Error('No ARBITRUM_WEB3_PROVIDER_URL provided!');
 }
 if (!arbiscanApiKey) {
   throw new Error('No ARBISCAN_API_KEY provided!');
@@ -32,13 +32,13 @@ export const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://arbitrum-mainnet.infura.io/v3/${infuraApiKey}`,
+        url: arbitrumWeb3Url,
         blockNumber: DEFAULT_BLOCK_NUMBER,
       },
     },
     arbitrum: {
       chainId: 42161,
-      url: `https://arbitrum-mainnet.infura.io/v3/${infuraApiKey}`,
+      url: arbitrumWeb3Url,
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
   },

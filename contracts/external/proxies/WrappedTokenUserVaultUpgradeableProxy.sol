@@ -38,7 +38,7 @@ contract WrappedTokenUserVaultUpgradeableProxy is
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "WrappedTokenUserVaultProxy";
+    bytes32 private constant _FILE = "WrappedUserVaultUpgradeableProxy";
     bytes32 private constant _IS_INITIALIZED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isInitialized")) - 1);
     bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
