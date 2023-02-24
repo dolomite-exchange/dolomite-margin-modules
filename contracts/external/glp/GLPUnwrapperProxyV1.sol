@@ -64,7 +64,7 @@ contract GLPUnwrapperProxyV1 is WrappedTokenUserVaultUnwrapper {
     // ============ External Functions ============
     // ============================================
 
-    function outputMarketId() external override view returns (uint256) {
+    function outputMarketId() public override view returns (uint256) {
         return USDC_MARKET_ID;
     }
 

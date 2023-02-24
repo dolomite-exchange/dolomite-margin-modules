@@ -122,8 +122,7 @@ export const LIQUIDATOR_PROXY_V2 = new BaseContract(
 ) as LiquidatorProxyV2WithExternalLiquidity;
 
 export const LIQUIDATOR_PROXY_V3 = new BaseContract(
-  // LiquidatorProxyV3WithLiquidityTokenJson.networks[NETWORK_ID].address,
-  ZERO_ADDRESS,
+  LiquidatorProxyV3WithLiquidityTokenJson.networks[NETWORK_ID].address,
   LiquidatorProxyV3WithLiquidityToken__factory.createInterface(),
 ) as LiquidatorProxyV3WithLiquidityToken;
 

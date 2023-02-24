@@ -231,10 +231,10 @@
   dependencies:
     "@cspotcode/source-map-consumer" "0.8.0"
 
-"@dolomite-exchange/dolomite-margin@^0.9.12":
-  version "0.9.12"
-  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin/-/dolomite-margin-0.9.12.tgz#b52cee148d53b1c105dc9586e46fdc4dc0ec797e"
-  integrity sha512-JQrcQzzYfJfEXVg7BzNhMOUKzw6uceQmXTX3SoPldXO93A2djOh0v8S0pyldRbPRaA6Z51DnwjMkHVHCfsHb+Q==
+"@dolomite-exchange/dolomite-margin@^0.9.13":
+  version "0.9.13"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin/-/dolomite-margin-0.9.13.tgz#a4e90114e2dfea9f27e3475b14cae823e885d89a"
+  integrity sha512-ERdrzAkTNxPU6pAjycepXMAvyNjbzZMewcJUYx2ImBAZpQNNvzNA2WbQWO/Pa4F0zRqTHQu8HZFMhJsmOPRWzg==
   dependencies:
     "@openzeppelin/contracts" "^2.5.1"
     "@types/web3" "1.0.18"

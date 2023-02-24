@@ -16,7 +16,7 @@
     "lint:sol": "hardhat check",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "test": "hardhat --network hardhat test",
-    "test:specific": "hardhat --network hardhat test test/external/proxies/WrappedTokenUserVaultV1.ts"
+    "test:specific": "hardhat --network hardhat test test/external/glp/GLPLiquidation.ts"
   },
   "repository": {
     "type": "git",
@@ -31,7 +31,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.5",
     "@babel/eslint-parser": "^7.19.1",
-    "@dolomite-exchange/dolomite-margin": "^0.9.12",
+    "@dolomite-exchange/dolomite-margin": "^0.9.13",
     "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-solhint": "^3.0.0",

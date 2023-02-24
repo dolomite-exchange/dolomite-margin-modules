@@ -1,7 +1,5 @@
 // Utilities
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { sleep } from '@openzeppelin/upgrades';
-import axios from 'axios';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
@@ -10,25 +8,23 @@ import {
   TestPriceOracle,
   TestPriceOracle__factory,
 } from '../../../src/types';
-import {
-  AccountStruct,
-} from '../../../src/utils/constants';
+import { AccountStruct } from '../../../src/utils/constants';
 import {
   createContractWithAbi,
   depositIntoDolomiteMargin,
   owedWeiToHeldWei,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { NETWORK_ID, NO_EXPIRY } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, resetFork, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { NO_EXPIRY } from '../../../src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
 } from '../../utils/assertions';
+import { getCalldataForParaswap } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
 
-const API_URL = 'https://apiv5.paraswap.io';
 const USDC_PRICE = BigNumber.from('1000000000000000000000000000000');
 const solidNumber = '321';
 const liquidNumber = '123';
@@ -107,19 +103,10 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
         core.marketIds.usdc,
         owedAmountWei.mul(-1),
       );
-      return { heldAmountWei, owedAmountWei, };
+      return { heldAmountWei, owedAmountWei };
     }
 
     it('should work properly', async () => {
-      const inputToken = {
-        address: core.weth.address,
-        decimals: 18,
-      };
-      const outputToken = {
-        address: core.usdc.address,
-        decimals: 6,
-      };
-
       const { heldAmountWei, owedAmountWei } = await setupUserBalance();
 
       // Increase the user's debt by 10%, therefore lowering the collateralization to ~113% (making it under-water)
@@ -128,48 +115,19 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
       const owedPriceAdj = (await dolomiteMargin.getMarketPrice(core.marketIds.usdc)).value.mul(105).div(100);
       const heldPrice = (await dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
       const inputAmount = owedWeiToHeldWei(owedAmountWei, owedPriceAdj, heldPrice);
-      const priceRouteResponse = await axios.get(`${API_URL}/prices`, {
-        params: {
-          network: NETWORK_ID,
-          srcToken: inputToken.address,
-          srcDecimals: inputToken.decimals.toString(),
-          destToken: outputToken.address,
-          destDecimals: outputToken.decimals.toString(),
-          amount: inputAmount.toString(),
-          includeContractMethods: 'simpleSwap,multiSwap,megaSwap',
-        },
-      })
-        .then(response => response.data)
-        .catch((error) => {
-          console.error('Found error in prices', error);
-          throw error;
-        });
-
-      const minOutputAmount = owedAmountWei;
-      const queryParams = new URLSearchParams({
-        ignoreChecks: 'true',
-        ignoreGasEstimate: 'true',
-        onlyParams: 'false',
-      }).toString();
-      const result = await axios.post(`${API_URL}/transactions/${NETWORK_ID}?${queryParams}`, {
-        priceRoute: priceRouteResponse?.priceRoute,
-        txOrigin: solidAccount.address,
-        srcToken: inputToken.address,
-        srcDecimals: inputToken.decimals,
-        destToken: outputToken.address,
-        destDecimals: outputToken.decimals,
-        srcAmount: inputAmount.toString(),
-        destAmount: minOutputAmount.toString(),
-        userAddress: liquidatorProxy.address,
-        receiver: liquidatorProxy.address,
-      })
-        .then(response => response.data)
-        .catch((error) => {
-          console.error('Found error in transactions', error);
-          throw error;
-        });
 
       console.log('\tLiquidating account:', liquidAccount.address);
+
+      const { calldata: paraswapCallData, outputAmount } = await getCalldataForParaswap(
+        inputAmount,
+        core.weth,
+        18,
+        owedAmountWei,
+        core.usdc,
+        6,
+        solidAccount,
+        liquidatorProxy,
+      );
 
       const txResult = await liquidatorProxy.liquidate(
         solidAccountStruct,
@@ -177,12 +135,11 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
         core.marketIds.usdc,
         core.marketIds.weth,
         NO_EXPIRY,
-        result.data,
+        paraswapCallData,
       );
       const receipt = await txResult.wait();
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
 
-      const outputAmount = BigNumber.from(priceRouteResponse.priceRoute.destAmount);
       await expectProtocolBalance(core, solidAccountStruct.owner, solidAccountStruct.number, core.marketIds.weth, 0);
       await expectProtocolBalanceIsGreaterThan(
         core,

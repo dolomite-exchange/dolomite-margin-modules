@@ -5,7 +5,8 @@ import { ethers, network } from 'hardhat';
 import {
   BorrowPositionProxyV2,
   GmxRegistryV1,
-  GmxRegistryV1__factory, IDepositWithdrawalProxy,
+  GmxRegistryV1__factory,
+  IDepositWithdrawalProxy,
   IDolomiteAmmRouterProxy,
   IDolomiteMargin,
   IExpiry,
@@ -15,7 +16,8 @@ import {
   TestPriceOracle__factory,
 } from '../../src/types';
 import {
-  BORROW_POSITION_PROXY_V2, DEPOSIT_WITHDRAWAL_PROXY,
+  BORROW_POSITION_PROXY_V2,
+  DEPOSIT_WITHDRAWAL_PROXY,
   DOLOMITE_AMM_ROUTER,
   DOLOMITE_MARGIN,
   ES_GMX,
@@ -27,7 +29,9 @@ import {
   GLP_REWARDS_ROUTER,
   GMX,
   GMX_REWARDS_ROUTER,
-  GMX_VAULT, LIQUIDATOR_PROXY_V2, LIQUIDATOR_PROXY_V3,
+  GMX_VAULT,
+  LIQUIDATOR_PROXY_V2,
+  LIQUIDATOR_PROXY_V3,
   S_GLP,
   S_GMX,
   SBF_GMX,

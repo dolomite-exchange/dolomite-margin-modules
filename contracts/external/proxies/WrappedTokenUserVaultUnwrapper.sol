@@ -160,7 +160,7 @@ abstract contract WrappedTokenUserVaultUnwrapper is IWrappedTokenUserVaultUnwrap
         uint256 _liquidAccountId,
         address,
         address,
-        uint256 _owedMarket,
+        uint256,
         uint256 _heldMarket,
         uint256,
         uint256 _heldAmount
@@ -178,9 +178,10 @@ abstract contract WrappedTokenUserVaultUnwrapper is IWrappedTokenUserVaultUnwrap
             /* _transferAmount[encoded] = */ abi.encode(_heldAmount)
         );
 
+        uint256 _outputMarketId = outputMarketId();
         uint256 amountOut = getExchangeCost(
             DOLOMITE_MARGIN.getMarketTokenAddress(_heldMarket),
-            DOLOMITE_MARGIN.getMarketTokenAddress(_owedMarket),
+            DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarketId),
             _heldAmount,
             /* _orderData = */ bytes("")
         );
@@ -188,7 +189,7 @@ abstract contract WrappedTokenUserVaultUnwrapper is IWrappedTokenUserVaultUnwrap
         actions[1] = AccountActionLib.encodeExternalSellAction(
             _solidAccountId,
             _heldMarket,
-            _owedMarket,
+            _outputMarketId,
             /* _trader = */ address(this),
             /* _amountInWei = */ _heldAmount,
             /* _amountOutMinWei = */ amountOut,
@@ -213,6 +214,8 @@ abstract contract WrappedTokenUserVaultUnwrapper is IWrappedTokenUserVaultUnwrap
     virtual
     view
     returns (uint256);
+
+    function outputMarketId() public override virtual view returns (uint256);
 
     // ============ Internal Functions ============
 

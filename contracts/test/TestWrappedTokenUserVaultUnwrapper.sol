@@ -41,7 +41,7 @@ contract TestWrappedTokenUserVaultUnwrapper is WrappedTokenUserVaultUnwrapper {
         OUTPUT_MARKET_ID = DOLOMITE_MARGIN.getMarketIdByTokenAddress(_outputToken);
     }
 
-    function outputMarketId() external view returns (uint256) {
+    function outputMarketId() public override view returns (uint256) {
         return OUTPUT_MARKET_ID;
     }
 
