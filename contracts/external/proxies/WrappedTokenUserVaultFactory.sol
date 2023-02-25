@@ -128,7 +128,12 @@ abstract contract WrappedTokenUserVaultFactory is
     // ================ Write Functions ================
     // =================================================
 
-    function initialize(address[] calldata _tokenConverters) external override {
+    function initialize(
+        address[] calldata _tokenConverters
+    )
+    external
+    override
+    onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             !isInitialized,
             _FILE,
@@ -209,6 +214,8 @@ abstract contract WrappedTokenUserVaultFactory is
             _otherMarketId
         );
 
+        // we have to deposit into the vault first and then transfer to vault.owner, because the deposit is not
+        // coming from the factory address or the vault owner.
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
         accounts[0] = IDolomiteStructs.AccountInfo({
             owner: msg.sender,
@@ -392,6 +399,12 @@ abstract contract WrappedTokenUserVaultFactory is
         uint256 _amount,
         address _vault
     ) internal {
+        QueuedTransfer memory oldTransfer = _cursorToQueuedTransferMap[transferCursor];
+        if (!oldTransfer.isExecuted && oldTransfer.to == address(DOLOMITE_MARGIN)) {
+            // remove the approval if the previous transfer was not executed and was to DolomiteMargin
+            _approve(oldTransfer.vault, oldTransfer.to, 0);
+        }
+
         if (_to == address(DOLOMITE_MARGIN)) {
             // Approve the queued transfer amount from the vault contract into DolomiteMargin from this contract
             _approve(_vault, _to, _amount);

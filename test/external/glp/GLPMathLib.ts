@@ -10,7 +10,8 @@ import {
 } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { CoreProtocol, setupCoreProtocol, setupGmxRegistry, setupUSDCBalance } from '../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+import { createGmxRegistry } from '../../utils/wrapped-token-utils';
 
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const usdcAmount = BigNumber.from('10000000'); // $10
@@ -27,7 +28,7 @@ describe('GLPMathLib', () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
     });
-    registry = await setupGmxRegistry(core);
+    registry = await createGmxRegistry(core);
     lib = await createContractWithAbi(
       TestGLPMathLib__factory.abi,
       TestGLPMathLib__factory.bytecode,

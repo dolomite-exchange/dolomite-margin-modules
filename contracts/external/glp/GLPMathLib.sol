@@ -62,7 +62,7 @@ library GLPMathLib {
             rawAmount,
             _gmxVault.mintBurnFeeBasisPoints(),
             _gmxVault.taxBasisPoints(),
-            true
+            /* _increment */ true
         );
         uint256 inputAmountAfterFees = applyFeesToAmount(_inputAmount, feeBasisPoints);
         usdgAmount = _gmxVault.adjustForDecimals(

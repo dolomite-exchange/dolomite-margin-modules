@@ -1,1 +1,44 @@
-{}
+{
+  "GmxRegistryV1": {
+    "42161": {
+      "address": "0xdBC61629a28901CE6C8A0D9a2Bcf74eCe8b30F89",
+      "transaction": "0xd63b672d9d2862b98685f0dfa83f6aa1c5b29bfa0176dc034487024023c625b0",
+      "isVerified": true
+    }
+  },
+  "GLPWrappedTokenUserVaultV1": {
+    "42161": {
+      "address": "0xC1d404297e1BB0EebBeF4fDA22629550cd427a53",
+      "transaction": "0x76fd8d312dd726753dd582d983f39b116dc6a6ad1b052ab6abbaaf5a6d180319",
+      "isVerified": true
+    }
+  },
+  "GLPWrappedTokenUserVaultFactory": {
+    "42161": {
+      "address": "0x34DF4E8062A8C8Ae97E3382B452bd7BF60542698",
+      "transaction": "0x679b23b24ce8d9a20ff1016d0bdfb803842dacf51c3cd1b2944d33d6acab9e75",
+      "isVerified": true
+    }
+  },
+  "GLPPriceOracleV1": {
+    "42161": {
+      "address": "0x26cf2B04bA936Aff81435e67c7C1551E17271744",
+      "transaction": "0xb81186791a06f1932e30958a61c66c1a4e0999a739d747a084ae854191680c1f",
+      "isVerified": true
+    }
+  },
+  "GLPWrapperProxyV1": {
+    "42161": {
+      "address": "0x3D6189AfB5efD2117b1c9Ccf4742737795Da9448",
+      "transaction": "0xb7bb0b22695ac92596d69acb57c9e8701bbd23f1e4bdc1ba4a9654992456ce36",
+      "isVerified": true
+    }
+  },
+  "GLPUnwrapperProxyV1": {
+    "42161": {
+      "address": "0x54eF98673563e830EE5cF80CF4900086022A75A0",
+      "transaction": "0x72e9daae28a399e896c2804a7b8c27bb1f4b7782aa862e7de1acb2f53883f7d9",
+      "isVerified": true
+    }
+  }
+}

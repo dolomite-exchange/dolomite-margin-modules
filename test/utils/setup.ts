@@ -43,7 +43,7 @@ import {
   WETH_MARKET_ID,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
-import { impersonate, resetFork } from './index';
+import { impersonate, impersonateOrFallback, resetFork } from './index';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -131,31 +131,6 @@ export function setupUserVaultProxy<T extends BaseContract>(
   ) as T;
 }
 
-export function setupGmxRegistry(core: CoreProtocol): Promise<GmxRegistryV1> {
-  return createContractWithAbi<GmxRegistryV1>(
-    GmxRegistryV1__factory.abi,
-    GmxRegistryV1__factory.bytecode,
-    [
-      {
-        esGmx: core.gmxEcosystem.esGmx.address,
-        fsGlp: core.gmxEcosystem.fsGlp.address,
-        glp: core.gmxEcosystem.glp.address,
-        glpManager: core.gmxEcosystem.glpManager.address,
-        glpRewardsRouter: core.gmxEcosystem.glpRewardsRouter.address,
-        gmx: core.gmxEcosystem.gmx.address,
-        gmxRewardsRouter: core.gmxEcosystem.gmxRewardsRouter.address,
-        gmxVault: core.gmxEcosystem.gmxVault.address,
-        sGlp: core.gmxEcosystem.sGlp.address,
-        sGmx: core.gmxEcosystem.sGmx.address,
-        sbfGmx: core.gmxEcosystem.sbfGmx.address,
-        vGlp: core.gmxEcosystem.vGlp.address,
-        vGmx: core.gmxEcosystem.vGmx.address,
-      },
-      core.dolomiteMargin.address,
-    ],
-  );
-}
-
 export async function setupCoreProtocol(
   config: CoreProtocolSetupConfig,
 ): Promise<CoreProtocol> {
@@ -166,7 +141,11 @@ export async function setupCoreProtocol(
   }
 
   const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await ethers.getSigners();
-  const governance: SignerWithAddress = await impersonate(await DOLOMITE_MARGIN.connect(hhUser1).owner(), true);
+  const governance: SignerWithAddress = await impersonateOrFallback(
+    await DOLOMITE_MARGIN.connect(hhUser1).owner(),
+    true,
+    hhUser1,
+  );
 
   const dolomiteMargin = DOLOMITE_MARGIN.connect(governance);
 
@@ -174,23 +153,29 @@ export async function setupCoreProtocol(
 
   const borrowPositionProxyV2 = BORROW_POSITION_PROXY_V2.connect(governance);
 
-  const testInterestSetter = await createContractWithAbi<TestInterestSetter>(
-    TestInterestSetter__factory.abi,
-    TestInterestSetter__factory.bytecode,
-    [],
-  );
-
-  const testPriceOracle = await createContractWithAbi<TestPriceOracle>(
-    TestPriceOracle__factory.abi,
-    TestPriceOracle__factory.bytecode,
-    [],
-  );
+  let testInterestSetter: TestInterestSetter;
+  let testPriceOracle: TestPriceOracle;
+  if (network.name === 'hardhat') {
+    testInterestSetter = await createContractWithAbi<TestInterestSetter>(
+      TestInterestSetter__factory.abi,
+      TestInterestSetter__factory.bytecode,
+      [],
+    );
+    testPriceOracle = await createContractWithAbi<TestPriceOracle>(
+      TestPriceOracle__factory.abi,
+      TestPriceOracle__factory.bytecode,
+      [],
+    );
+  } else {
+    testInterestSetter = null as any;
+    testPriceOracle = null as any;
+  }
 
   const depositWithdrawalProxy = DEPOSIT_WITHDRAWAL_PROXY.connect(hhUser1);
 
   const dolomiteAmmRouterProxy = DOLOMITE_AMM_ROUTER.connect(hhUser1);
 
-  const esGmxAdmin = await impersonate(await ES_GMX_DISTRIBUTOR.connect(hhUser1).admin());
+  const esGmxAdmin = await impersonateOrFallback(await ES_GMX_DISTRIBUTOR.connect(hhUser1).admin(), true, hhUser1);
 
   return {
     borrowPositionProxyV2,

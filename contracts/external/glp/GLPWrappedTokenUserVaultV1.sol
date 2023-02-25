@@ -99,6 +99,7 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
             uint256 amountWei = IERC20(weth).balanceOf(address(this));
             if (_shouldDepositWethIntoDolomite) {
                 IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), amountWei);
+                // TODO: change toAccountNumber to be dynamic as # of listed markets grow.
                 IWrappedTokenUserVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
                     /* _toAccountNumber = */ 0,
                     IGLPWrappedTokenUserVaultFactory(factory).WETH_MARKET_ID(),
@@ -146,7 +147,7 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
 
         // the amount of fsGLP being deposited is the current balance of fsGLP, because we started at 0.
         uint amountWei = underlyingBalanceOf();
-        IWrappedTokenUserVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(0 /* _toAccountNumber = */, amountWei);
+        IWrappedTokenUserVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(/* _toAccountNumber = */ 0, amountWei);
 
         // reset the flag back to false
         _setIsAcceptingFullAccountTransfer(false);
@@ -233,7 +234,9 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
     function gmxBalanceOf() public view returns (uint256) {
         address account = address(this);
         // sGmx reflects the amount of GMX tokens the user owns. The `depositBalances` mapping isn't updated when the
-        // sbfGMX tokens are transferred to the vGMX vesting contract, so this seems reliable.
+        // sbfGMX tokens are transferred to the vGMX vesting contract, so this seems reliable. Moreover, this contract
+        // only holds staked-GMX tokens, which is why we only check the sGMX contract. sGMX reflects any sbfGMX that is
+        // moved into vGMX vesting too.
         return sGmx().depositBalances(account, address(gmx()));
     }
 

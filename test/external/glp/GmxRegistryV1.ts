@@ -2,7 +2,8 @@ import { expect } from 'chai';
 import { GmxRegistryV1 } from '../../../src/types';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupGmxRegistry } from '../../utils/setup';
+import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+import { createGmxRegistry } from '../../utils/wrapped-token-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -16,7 +17,7 @@ describe('GmxRegistryV1', () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
     });
-    registry = await setupGmxRegistry(core);
+    registry = await createGmxRegistry(core);
 
     snapshotId = await snapshot();
   });

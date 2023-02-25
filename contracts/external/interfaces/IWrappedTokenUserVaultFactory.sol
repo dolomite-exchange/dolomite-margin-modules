@@ -99,8 +99,8 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
     function setIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) external;
 
     /**
-     * @notice  Deposits the reward token into the vault owner's account at `_toAccountNumber`. This function should
-     *          only be called by a user's vault contract. Reverts if _marketId is set to the market ID of this vault
+     * @notice  Deposits a token into the vault owner's account at `_toAccountNumber`. This function can only be called
+     *          by a user's vault contract. Reverts if `_marketId` is set to the market ID of this vault.
      *
      * @param _toAccountNumber  The account number of the account to which the tokens will be deposited
      * @param _marketId         The market ID of the token to deposit

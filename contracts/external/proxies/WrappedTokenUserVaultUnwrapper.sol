@@ -33,8 +33,8 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 
 /**
- * @title WrappedTokenUserVaultUnwrapper
- * @author Dolomite
+ * @title   WrappedTokenUserVaultUnwrapper
+ * @author  Dolomite
  *
  * @notice  Abstract contract for unwrapping a VaultWrapper token into the underlying token. Must be set as a token
  *          converter for the VaultWrapperFactory token.

@@ -17,7 +17,7 @@ import {
 import { Account } from '../../../src/types/IDolomiteMargin';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, NO_EXPIRY, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../utils';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
@@ -28,12 +28,11 @@ import { getCalldataForParaswap } from '../../utils/liquidation-utils';
 import {
   CoreProtocol,
   setupCoreProtocol,
-  setupGmxRegistry,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createGlpUnwrapperProxy, createGlpWrapperProxy } from '../../utils/wrapped-token-utils';
+import { createGlpUnwrapperProxy, createGlpWrapperProxy, createGmxRegistry } from '../../utils/wrapped-token-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -68,7 +67,7 @@ describe('GLPLiquidation', () => {
       GLPWrappedTokenUserVaultV1__factory.bytecode,
       [],
     );
-    gmxRegistry = await setupGmxRegistry(core);
+    gmxRegistry = await createGmxRegistry(core);
     factory = await createContractWithAbi<GLPWrappedTokenUserVaultFactory>(
       GLPWrappedTokenUserVaultFactory__factory.abi,
       GLPWrappedTokenUserVaultFactory__factory.bytecode,
@@ -94,7 +93,7 @@ describe('GLPLiquidation', () => {
 
     unwrapper = await createGlpUnwrapperProxy(core, factory, gmxRegistry);
     wrapper = await createGlpWrapperProxy(core, factory, gmxRegistry);
-    await factory.initialize([unwrapper.address, wrapper.address]);
+    await factory.connect(core.governance).initialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     solidUser = core.hhUser5;

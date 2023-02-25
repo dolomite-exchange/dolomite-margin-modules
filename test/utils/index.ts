@@ -1,6 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
-import { ethers, network, config as hardhatConfig } from 'hardhat';
+import { config as hardhatConfig, ethers, network } from 'hardhat';
 
 const gasLogger: Record<string, BigNumber> = {};
 const gasLoggerNumberOfCalls: Record<string, number> = {};
@@ -69,6 +69,17 @@ export async function setEtherBalance(address: string, balance: BigNumberish = '
     address,
     `0x${ethers.BigNumber.from(balance).toBigInt().toString(16)}`,
   ]);
+}
+
+export async function impersonateOrFallback(
+  targetAccount: string,
+  giveEther: boolean,
+  fallbackSigner: SignerWithAddress,
+): Promise<SignerWithAddress> {
+  if (network.name !== 'hardhat') {
+    return fallbackSigner;
+  }
+  return impersonate(targetAccount, giveEther);
 }
 
 export async function impersonate(targetAccount: string, giveEther: boolean = false): Promise<SignerWithAddress> {

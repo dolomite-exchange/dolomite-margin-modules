@@ -34,8 +34,8 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
 /**
- * @title WrappedTokenUserVaultV1
- * @author Dolomite
+ * @title   WrappedTokenUserVaultV1
+ * @author  Dolomite
  *
  * @notice  Abstract implementation (for an upgradeable proxy) for wrapping tokens via a per-user vault that can be used
  *          with DolomiteMargin
@@ -457,7 +457,7 @@ abstract contract WrappedTokenUserVaultV1 is IWrappedTokenUserVaultV1 {
             _marketId
         );
         if (balancePar.isPositive()) {
-            // Check the allowable debt markets for the position:
+            // Check the allowable collateral markets for the position:
             IWrappedTokenUserVaultFactory vaultFactory = IWrappedTokenUserVaultFactory(VAULT_FACTORY());
             uint256[] memory allowableCollateralMarketIds = vaultFactory.allowableCollateralMarketIds();
             if (allowableCollateralMarketIds.length != 0) {

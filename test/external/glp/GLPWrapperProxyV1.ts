@@ -21,12 +21,11 @@ import { expectThrow } from '../../utils/assertions';
 import {
   CoreProtocol,
   setupCoreProtocol,
-  setupGmxRegistry,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createGlpWrapperProxy } from '../../utils/wrapped-token-utils';
+import { createGlpWrapperProxy, createGmxRegistry } from '../../utils/wrapped-token-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -61,7 +60,7 @@ describe('GLPWrapperProxyV1', () => {
       GLPWrappedTokenUserVaultV1__factory.bytecode,
       [],
     );
-    gmxRegistry = await setupGmxRegistry(core);
+    gmxRegistry = await createGmxRegistry(core);
     factory = await createContractWithAbi<GLPWrappedTokenUserVaultFactory>(
       GLPWrappedTokenUserVaultFactory__factory.abi,
       GLPWrappedTokenUserVaultFactory__factory.bytecode,
@@ -86,7 +85,7 @@ describe('GLPWrapperProxyV1', () => {
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
 
     wrapper = await createGlpWrapperProxy(core, factory, gmxRegistry);
-    await factory.initialize([wrapper.address]);
+    await factory.connect(core.governance).initialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     solidUser = core.hhUser5;

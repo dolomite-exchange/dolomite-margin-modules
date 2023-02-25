@@ -17,11 +17,11 @@ import {
   CoreProtocol,
   setupCoreProtocol,
   setupGMXBalance,
-  setupGmxRegistry,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import { createGmxRegistry } from '../../utils/wrapped-token-utils';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -49,7 +49,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       TestGLPWrappedTokenUserVaultV1__factory.bytecode,
       [],
     );
-    const gmxRegistry = await setupGmxRegistry(core);
+    const gmxRegistry = await createGmxRegistry(core);
     factory = await createContractWithAbi<GLPWrappedTokenUserVaultFactory>(
       GLPWrappedTokenUserVaultFactory__factory.abi,
       GLPWrappedTokenUserVaultFactory__factory.bytecode,
@@ -68,7 +68,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
     await core.testPriceOracle.setPrice(factory.address, '1000000000000000000');
     await setupTestMarket(core, factory, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.initialize([]);
+    await factory.connect(core.governance).initialize([]);
 
     await factory.createVault(core.hhUser1.address);
     vault = setupUserVaultProxy<TestGLPWrappedTokenUserVaultV1>(

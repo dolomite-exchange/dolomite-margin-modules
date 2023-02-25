@@ -16,11 +16,11 @@ import { expectEvent, expectThrow } from '../../utils/assertions';
 import {
   CoreProtocol,
   setupCoreProtocol,
-  setupGmxRegistry,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import { createGmxRegistry } from '../../utils/wrapped-token-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -36,7 +36,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
     });
-    gmxRegistry = await setupGmxRegistry(core);
+    gmxRegistry = await createGmxRegistry(core);
     vaultImplementation = await createContractWithAbi<TestGLPWrappedTokenUserVaultV1>(
       TestGLPWrappedTokenUserVaultV1__factory.abi,
       TestGLPWrappedTokenUserVaultV1__factory.bytecode,
@@ -93,7 +93,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       await core.testPriceOracle.setPrice(factory.address, '1000000000000000000');
       await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
       await setupTestMarket(core, factory, true);
-      await factory.initialize([]);
+      await factory.connect(core.governance).initialize([]);
 
       await factory.connect(core.hhUser2).createVaultAndAcceptFullAccountTransfer(core.hhUser1.address);
       const vault = setupUserVaultProxy<GLPWrappedTokenUserVaultV1>(
