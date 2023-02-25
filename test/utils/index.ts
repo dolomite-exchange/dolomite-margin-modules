@@ -121,7 +121,7 @@ export async function waitTime(timeToAddSeconds: number) {
 }
 
 export async function waitDays(n: number) {
-  await waitTime((n * 3600 * 24) + 1);
+  await waitTime((n * 86400) + 1);
 }
 
 export async function waitHours(n: number) {

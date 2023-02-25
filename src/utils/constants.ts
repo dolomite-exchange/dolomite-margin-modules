@@ -7,13 +7,14 @@ import * as LiquidatorProxyV2WithExternalLiquidityJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV2WithExternalLiquidity.json';
 import * as LiquidatorProxyV3WithLiquidityTokenJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV3WithLiquidityToken.json';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseContract, BigNumberish } from 'ethers';
 import {
   BorrowPositionProxyV2,
   BorrowPositionProxyV2__factory,
   ERC20,
   ERC20__factory,
+  Expiry,
+  Expiry__factory,
   IDepositWithdrawalProxy,
   IDepositWithdrawalProxy__factory,
   IDolomiteAmmFactory,
@@ -26,8 +27,6 @@ import {
   IERC20__factory,
   IEsGmxDistributor,
   IEsGmxDistributor__factory,
-  IExpiry,
-  IExpiry__factory,
   IGLPManager,
   IGLPManager__factory,
   IGLPRewardsRouterV2,
@@ -113,8 +112,8 @@ export const DOLOMITE_MARGIN = new BaseContract(
 
 export const EXPIRY = new BaseContract(
   ExpiryJson.networks[NETWORK_ID].address,
-  IExpiry__factory.createInterface(),
-) as IExpiry;
+  Expiry__factory.createInterface(),
+) as Expiry;
 
 export const LIQUIDATOR_PROXY_V2 = new BaseContract(
   LiquidatorProxyV2WithExternalLiquidityJson.networks[NETWORK_ID].address,

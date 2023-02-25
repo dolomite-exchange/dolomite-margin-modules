@@ -4,12 +4,12 @@ import { BaseContract, BigNumberish, ContractInterface } from 'ethers';
 import { ethers, network } from 'hardhat';
 import {
   BorrowPositionProxyV2,
+  Expiry,
   GmxRegistryV1,
   GmxRegistryV1__factory,
   IDepositWithdrawalProxy,
   IDolomiteAmmRouterProxy,
   IDolomiteMargin,
-  IExpiry,
   TestInterestSetter,
   TestInterestSetter__factory,
   TestPriceOracle,
@@ -66,7 +66,7 @@ export interface CoreProtocol {
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
-  expiry: IExpiry;
+  expiry: Expiry;
   gmxEcosystem: {
     esGmx: typeof ES_GMX;
     esGmxDistributor: typeof ES_GMX_DISTRIBUTOR;
