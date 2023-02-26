@@ -14,201 +14,53 @@
 
 pragma solidity ^0.8.9;
 
-import "./IDolomiteInterestSetter.sol";
-import "./IDolomitePriceOracle.sol";
+import { IDolomiteInterestSetter } from "./IDolomiteInterestSetter.sol";
+import { IDolomitePriceOracle } from "./IDolomitePriceOracle.sol";
+import { IDolomiteMarginAdmin } from "./IDolomiteMarginAdmin.sol";
 
 
-interface IDolomiteMargin {
+interface IDolomiteMargin is IDolomiteMarginAdmin {
 
-    // ========================= Enums =========================
-
-    enum ActionType {
-        Deposit,   // supply tokens
-        Withdraw,  // borrow tokens
-        Transfer,  // transfer balance between accounts
-        Buy,       // buy an amount of some token (externally)
-        Sell,      // sell an amount of some token (externally)
-        Trade,     // trade tokens against another account
-        Liquidate, // liquidate an undercollateralized or expiring account
-        Vaporize,  // use excess tokens to zero-out a completely negative account
-        Call       // send arbitrary data to an address
-    }
-
-    enum AssetDenomination {
-        Wei, // the amount is denominated in wei
-        Par  // the amount is denominated in par
-    }
-
-    enum AssetReference {
-        Delta, // the amount is given as a delta from the current value
-        Target // the amount is given as an exact number to end up at
-    }
-
-    // ========================= Structs =========================
-
-    struct AccountInfo {
-        address owner;  // The address that owns the account
-        uint256 number; // A nonce that allows a single address to control many accounts
-    }
+    // ==================================================
+    // ================= Write Functions ================
+    // ==================================================
 
     /**
-     * Most-recently-cached account status.
+     * The main entry-point to DolomiteMargin that allows users and contracts to manage accounts.
+     * Take one or more actions on one or more accounts. The msg.sender must be the owner or
+     * operator of all accounts except for those being liquidated, vaporized, or traded with.
+     * One call to operate() is considered a singular "operation". Account collateralization is
+     * ensured only after the completion of the entire operation.
      *
-     * Normal: Can only be liquidated if the account values are violating the global margin-ratio.
-     * Liquid: Can be liquidated no matter the account values.
-     *         Can be vaporized if there are no more positive account values.
-     * Vapor:  Has only negative (or zeroed) account values. Can be vaporized.
+     * @param  accounts  A list of all accounts that will be used in this operation. Cannot contain
+     *                   duplicates. In each action, the relevant account will be referred-to by its
+     *                   index in the list.
+     * @param  actions   An ordered list of all actions that will be taken in this operation. The
+     *                   actions will be processed in order.
+     */
+    function operate(
+        AccountInfo[] calldata accounts,
+        ActionArgs[] calldata actions
+    ) external;
+
+    /**
+     * Approves/disapproves any number of operators. An operator is an external address that has the
+     * same permissions to manipulate an account as the owner of the account. Operators are simply
+     * addresses and therefore may either be externally-owned Ethereum accounts OR smart contracts.
      *
+     * Operators are also able to act as AutoTrader contracts on behalf of the account owner if the
+     * operator is a smart contract and implements the IAutoTrader interface.
+     *
+     * @param  args  A list of OperatorArgs which have an address and a boolean. The boolean value
+     *               denotes whether to approve (true) or revoke approval (false) for that address.
      */
-    enum AccountStatus {
-        Normal,
-        Liquid,
-        Vapor
-    }
+    function setOperators(
+        OperatorArg[] calldata args
+    ) external;
 
-    /*
-     * Arguments that are passed to DolomiteMargin in an ordered list as part of a single operation.
-     * Each ActionArgs has an actionType which specifies which action struct that this data will be
-     * parsed into before being processed.
-     */
-    struct ActionArgs {
-        ActionType actionType;
-        uint256 accountId;
-        AssetAmount amount;
-        uint256 primaryMarketId;
-        uint256 secondaryMarketId;
-        address otherAddress;
-        uint256 otherAccountId;
-        bytes data;
-    }
-
-    struct AssetAmount {
-        bool sign; // true if positive
-        AssetDenomination denomination;
-        AssetReference ref;
-        uint256 value;
-    }
-
-    struct Decimal {
-        uint256 value;
-    }
-
-    struct InterestIndex {
-        uint96 borrow;
-        uint96 supply;
-        uint32 lastUpdate;
-    }
-
-    struct Market {
-        address token;
-
-        // Whether additional borrows are allowed for this market
-        bool isClosing;
-
-        // Whether this market can be removed and its ID can be recycled and reused
-        bool isRecyclable;
-
-        // Total aggregated supply and borrow amount of the entire market
-        TotalPar totalPar;
-
-        // Interest index of the market
-        InterestIndex index;
-
-        // Contract address of the price oracle for this market
-        IDolomitePriceOracle priceOracle;
-
-        // Contract address of the interest setter for this market
-        IDolomiteInterestSetter interestSetter;
-
-        // Multiplier on the marginRatio for this market, IE 5% (0.05 * 1e18). This number increases the market's
-        // required collateralization by: reducing the user's supplied value (in terms of dollars) for this market and
-        // increasing its borrowed value. This is done through the following operation:
-        // `suppliedWei = suppliedWei + (assetValueForThisMarket / (1 + marginPremium))`
-        // This number increases the user's borrowed wei by multiplying it by:
-        // `borrowedWei = borrowedWei + (assetValueForThisMarket * (1 + marginPremium))`
-        Decimal marginPremium;
-
-        // Multiplier on the liquidationSpread for this market, IE 20% (0.2 * 1e18). This number increases the
-        // `liquidationSpread` using the following formula:
-        // `liquidationSpread = liquidationSpread * (1 + spreadPremium)`
-        // NOTE: This formula is applied up to two times - one for each market whose spreadPremium is greater than 0
-        // (when performing a liquidation between two markets)
-        Decimal spreadPremium;
-
-        // The maximum amount that can be held by the external. This allows the external to cap any additional risk
-        // that is inferred by allowing borrowing against low-cap or assets with increased volatility. Setting this
-        // value to 0 is analogous to having no limit. This value can never be below 0.
-        Wei maxWei;
-    }
-
-    struct MonetaryPrice {
-        uint256 value;
-    }
-
-    struct MonetaryValue {
-        uint256 value;
-    }
-
-    struct OperatorArg {
-        address operator;
-        bool trusted;
-    }
-
-    struct Par {
-        bool sign;
-        uint256 value;
-    }
-
-    struct RiskLimits {
-        // The highest that the ratio can be for liquidating under-water accounts
-        uint64 marginRatioMax;
-        // The highest that the liquidation rewards can be when a liquidator liquidates an account
-        uint64 liquidationSpreadMax;
-        // The highest that the supply APR can be for a market, as a proportion of the borrow rate. Meaning, a rate of
-        // 100% (1e18) would give suppliers all of the interest that borrowers are paying. A rate of 90% would give
-        // suppliers 90% of the interest that borrowers pay.
-        uint64 earningsRateMax;
-        // The highest min margin ratio premium that can be applied to a particular market. Meaning, a value of 100%
-        // (1e18) would require borrowers to maintain an extra 100% collateral to maintain a healthy margin ratio. This
-        // value works by increasing the debt owed and decreasing the supply held for the particular market by this
-        // amount, plus 1e18 (since a value of 10% needs to be applied as `decimal.plusOne`)
-        uint64 marginPremiumMax;
-        // The highest liquidation reward that can be applied to a particular market. This percentage is applied
-        // in addition to the liquidation spread in `RiskParams`. Meaning a value of 1e18 is 100%. It is calculated as:
-        // `liquidationSpread * Decimal.onePlus(spreadPremium)`
-        uint64 spreadPremiumMax;
-        uint128 minBorrowedValueMax;
-    }
-
-    struct RiskParams {
-        // Required ratio of over-collateralization
-        Decimal marginRatio;
-
-        // Percentage penalty incurred by liquidated accounts
-        Decimal liquidationSpread;
-
-        // Percentage of the borrower's interest fee that gets passed to the suppliers
-        Decimal earningsRate;
-
-        // The minimum absolute borrow value of an account
-        // There must be sufficient incentivize to liquidate undercollateralized accounts
-        MonetaryValue minBorrowedValue;
-
-        // The maximum number of markets a user can have a non-zero balance for a given account.
-        uint256 accountMaxNumberOfMarketsWithBalances;
-    }
-
-    struct TotalPar {
-        uint128 borrow;
-        uint128 supply;
-    }
-
-    struct Wei {
-        bool sign;
-        uint256 value;
-    }
-
-    // ========================= Functions =========================
+    // ==================================================
+    // ================= Read Functions ================
+    // ==================================================
 
     // ============ Getters for Markets ============
 
@@ -640,222 +492,4 @@ interface IDolomiteMargin {
      * @return  All global risk parameter limits
      */
     function getRiskLimits() external view returns (RiskLimits memory);
-
-    // ============ Write Functions ============
-
-    /**
-     * The main entry-point to DolomiteMargin that allows users and contracts to manage accounts.
-     * Take one or more actions on one or more accounts. The msg.sender must be the owner or
-     * operator of all accounts except for those being liquidated, vaporized, or traded with.
-     * One call to operate() is considered a singular "operation". Account collateralization is
-     * ensured only after the completion of the entire operation.
-     *
-     * @param  accounts  A list of all accounts that will be used in this operation. Cannot contain
-     *                   duplicates. In each action, the relevant account will be referred-to by its
-     *                   index in the list.
-     * @param  actions   An ordered list of all actions that will be taken in this operation. The
-     *                   actions will be processed in order.
-     */
-    function operate(
-        AccountInfo[] calldata accounts,
-        ActionArgs[] calldata actions
-    ) external;
-
-    /**
-     * Approves/disapproves any number of operators. An operator is an external address that has the
-     * same permissions to manipulate an account as the owner of the account. Operators are simply
-     * addresses and therefore may either be externally-owned Ethereum accounts OR smart contracts.
-     *
-     * Operators are also able to act as AutoTrader contracts on behalf of the account owner if the
-     * operator is a smart contract and implements the IAutoTrader interface.
-     *
-     * @param  args  A list of OperatorArgs which have an address and a boolean. The boolean value
-     *               denotes whether to approve (true) or revoke approval (false) for that address.
-     */
-    function setOperators(
-        OperatorArg[] calldata args
-    ) external;
-
-    // =========================================
-    // ============ Owner Functions ============
-    // =========================================
-
-    // ============ Token Functions ============
-
-    /**
-     * Withdraw an ERC20 token for which there is an associated market. Only excess tokens can be withdrawn. The number
-     * of excess tokens is calculated by taking the current number of tokens held in DolomiteMargin, adding the number
-     * of tokens owed to DolomiteMargin by borrowers, and subtracting the number of tokens owed to suppliers by
-     * DolomiteMargin.
-     */
-    function ownerWithdrawExcessTokens(
-        uint256 marketId,
-        address recipient
-    )
-    external
-    returns (uint256);
-
-    /**
-     * Withdraw an ERC20 token for which there is no associated market.
-     */
-    function ownerWithdrawUnsupportedTokens(
-        address token,
-        address recipient
-    )
-    external
-    returns (uint256);
-
-    // ============ Market Functions ============
-
-    /**
-     * Sets the number of non-zero balances an account may have within the same `accountIndex`. This ensures a user
-     * cannot DOS the system by filling their account with non-zero balances (which linearly increases gas costs when
-     * checking collateralization) and disallowing themselves to close the position, because the number of gas units
-     * needed to process their transaction exceed the block's gas limit. In turn, this would  prevent the user from also
-     * being liquidated, causing the all of the capital to be "stuck" in the position.
-     *
-     * Lowering this number does not "freeze" user accounts that have more than the new limit of balances, because this
-     * variable is enforced by checking the users number of non-zero balances against the max or if it sizes down before
-     * each transaction finishes.
-     */
-    function ownerSetAccountMaxNumberOfMarketsWithBalances(
-        uint256 accountMaxNumberOfMarketsWithBalances
-    )
-    external;
-
-    /**
-     * Add a new market to DolomiteMargin. Must be for a previously-unsupported ERC20 token.
-     */
-    function ownerAddMarket(
-        address token,
-        IDolomitePriceOracle priceOracle,
-        IDolomiteInterestSetter interestSetter,
-        Decimal calldata marginPremium,
-        Decimal calldata spreadPremium,
-        uint256 maxWei,
-        bool isClosing,
-        bool isRecyclable
-    )
-    external;
-
-    /**
-     * Removes a market from DolomiteMargin, sends any remaining tokens in this contract to `salvager` and invokes the
-     * recyclable callback
-     */
-    function ownerRemoveMarkets(
-        uint[] calldata marketIds,
-        address salvager
-    )
-    external;
-
-    /**
-     * Set (or unset) the status of a market to "closing". The borrowedValue of a market cannot increase while its
-     * status is "closing".
-     */
-    function ownerSetIsClosing(
-        uint256 marketId,
-        bool isClosing
-    )
-    external;
-
-    /**
-     * Set the price oracle for a market.
-     */
-    function ownerSetPriceOracle(
-        uint256 marketId,
-        IDolomitePriceOracle priceOracle
-    )
-    external;
-
-    /**
-     * Set the interest-setter for a market.
-     */
-    function ownerSetInterestSetter(
-        uint256 marketId,
-        IDolomiteInterestSetter interestSetter
-    )
-    external;
-
-    /**
-     * Set a premium on the minimum margin-ratio for a market. This makes it so that any positions that include this
-     * market require a higher collateralization to avoid being liquidated.
-     */
-    function ownerSetMarginPremium(
-        uint256 marketId,
-        Decimal calldata marginPremium
-    )
-    external;
-
-    function ownerSetMaxWei(
-        uint256 marketId,
-        uint256 maxWei
-    )
-    external;
-
-    /**
-     * Set a premium on the liquidation spread for a market. This makes it so that any liquidations that include this
-     * market have a higher spread than the global default.
-     */
-    function ownerSetSpreadPremium(
-        uint256 marketId,
-        Decimal calldata spreadPremium
-    )
-    external;
-
-    // ============ Risk Functions ============
-
-    /**
-     * Set the global minimum margin-ratio that every position must maintain to prevent being liquidated.
-     */
-    function ownerSetMarginRatio(
-        Decimal calldata ratio
-    )
-    external;
-
-    /**
-     * Set the global liquidation spread. This is the spread between oracle prices that incentivizes the liquidation of
-     * risky positions.
-     */
-    function ownerSetLiquidationSpread(
-        Decimal calldata spread
-    )
-    external;
-
-    /**
-     * Set the global earnings-rate variable that determines what percentage of the interest paid by borrowers gets
-     * passed-on to suppliers.
-     */
-    function ownerSetEarningsRate(
-        Decimal calldata earningsRate
-    )
-    external;
-
-    /**
-     * Set the global minimum-borrow value which is the minimum value of any new borrow on DolomiteMargin.
-     */
-    function ownerSetMinBorrowedValue(
-        MonetaryValue calldata minBorrowedValue
-    )
-    external;
-
-    // ============ Global Operator Functions ============
-
-    /**
-     * Approve (or disapprove) an address that is permissioned to be an operator for all accounts in DolomiteMargin.
-     * Intended only to approve smart-contracts.
-     */
-    function ownerSetGlobalOperator(
-        address operator,
-        bool approved
-    )
-    external;
-
-    /**
-     * Approve (or disapprove) an auto trader that can only be called by a global operator. IE for expirations
-     */
-    function ownerSetAutoTraderSpecial(
-        address autoTrader,
-        bool special
-    )
-    external;
 }

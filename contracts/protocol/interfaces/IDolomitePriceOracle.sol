@@ -14,6 +14,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteStructs } from "./IDolomiteStructs.sol";
+
 
 /**
  * @title IDolomitePriceOracle
@@ -22,15 +24,6 @@ pragma solidity ^0.8.9;
  * Interface that Price Oracles for DolomiteMargin must implement in order to report prices.
  */
 interface IDolomitePriceOracle {
-
-    // ============ Structs ============
-
-    /*
-     * The price of a base-unit of an asset. Has `36 - token.decimals` decimals
-     */
-    struct Price {
-        uint256 value;
-    }
 
     // ============ Public Functions ============
 
@@ -48,5 +41,5 @@ interface IDolomitePriceOracle {
     )
     external
     view
-    returns (Price memory);
+    returns (IDolomiteStructs.MonetaryPrice memory);
 }

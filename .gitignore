@@ -15,3 +15,7 @@ package-lock.json
 src/types
 
 .env
+
+# test coverage
+coverage.json
+coverage/
