@@ -24,6 +24,10 @@ import { IGmxRewardRouterV2 } from "../interfaces/IGmxRewardRouterV2.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
 
 
+/**
+ * @title   IGmxRegistryV1
+ * @author  Dolomite
+ */
 interface IGmxRegistryV1 {
 
     // ================================================

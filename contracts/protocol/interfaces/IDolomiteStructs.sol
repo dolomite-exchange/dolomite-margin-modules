@@ -18,6 +18,10 @@ import { IDolomiteInterestSetter } from "./IDolomiteInterestSetter.sol";
 import { IDolomitePriceOracle } from "./IDolomitePriceOracle.sol";
 
 
+/**
+ * @title   IDolomiteStructs
+ * @author  Dolomite
+ */
 interface IDolomiteStructs {
 
     // ========================= Enums =========================

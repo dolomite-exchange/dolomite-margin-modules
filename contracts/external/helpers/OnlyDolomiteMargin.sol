@@ -21,10 +21,11 @@ import { IOnlyDolomiteMargin } from "../interfaces/IOnlyDolomiteMargin.sol";
 
 
 /**
- * @title OnlyDolomiteMargin
- * @author Dolomite
+ * @title   OnlyDolomiteMargin
+ * @author  Dolomite
  *
- * Inheritable contract that restricts the calling of certain functions to DolomiteMargin only
+ * @notice  Inheritable contract that restricts the calling of certain functions to `DolomiteMargin`, the owner of
+ *          `DolomiteMargin` or a `DolomiteMargin` global operator
  */
 abstract contract OnlyDolomiteMargin is IOnlyDolomiteMargin {
 

@@ -22,10 +22,10 @@ import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 
 
 /**
- * @title AccountBalanceLib
- * @author Dolomite
+ * @title   AccountBalanceLib
+ * @author  Dolomite
  *
- * Library contract that checks a user's balance after transaction to be non-negative
+ * @notice  Library contract that checks a user's balance after transaction to be non-negative
  */
 library AccountBalanceLib {
     using TypesLib for IDolomiteStructs.Par;

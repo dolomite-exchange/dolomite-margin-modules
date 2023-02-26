@@ -19,6 +19,10 @@ import { IGmxRewardRouterV2 } from "./IGmxRewardRouterV2.sol";
 import { IWrappedTokenUserVaultFactory } from "./IWrappedTokenUserVaultFactory.sol";
 
 
+/**
+ * @title   IGLPWrappedTokenUserVaultFactory
+ * @author  Dolomite
+ */
 interface IGLPWrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
 
     // ================================================

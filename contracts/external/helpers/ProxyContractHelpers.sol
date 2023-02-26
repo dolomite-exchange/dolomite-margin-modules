@@ -15,6 +15,12 @@
 pragma solidity ^0.8.9;
 
 
+/**
+ * @title   ProxyContractHelpers
+ * @author  Dolomite
+ *
+ * @notice  Helper functions for upgradeable proxy contracts to use
+ */
 abstract contract ProxyContractHelpers {
 
     // ================ Internal Functions ==================

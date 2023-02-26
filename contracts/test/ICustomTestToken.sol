@@ -16,10 +16,10 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title ICustomTestToken
- * @author Dolomite
+ * @title   ICustomTestToken
+ * @author  Dolomite
  *
- * Interface contract for accessing test methods on test ERC20s for testing.
+ * @notice  Interface contract for accessing test methods on test ERC20s for testing.
  */
 interface ICustomTestToken {
 

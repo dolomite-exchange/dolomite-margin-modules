@@ -25,10 +25,10 @@ import { DolomiteMarginMath } from "./DolomiteMarginMath.sol";
 
 
 /**
- * @title TypesLib
- * @author dYdX
+ * @title   TypesLib
+ * @author  dYdX
  *
- * Library for interacting with the basic structs used in DolomiteMargin
+ * @notice  Library for interacting with the basic structs used in DolomiteMargin
  */
 library TypesLib {
     using DolomiteMarginMath for uint256;

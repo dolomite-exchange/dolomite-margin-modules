@@ -37,8 +37,8 @@ import { WrappedTokenUserVaultUpgradeableProxy } from "./WrappedTokenUserVaultUp
 
 
 /**
- * @title WrappedTokenUserVaultFactory
- * @author Dolomite
+ * @title   WrappedTokenUserVaultFactory
+ * @author  Dolomite
  *
  * @notice  Abstract contract for wrapping tokens via a per-user vault that credits a user's balance within
  *          DolomiteMargin

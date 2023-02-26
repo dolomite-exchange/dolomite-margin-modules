@@ -18,10 +18,10 @@ import { Require } from "./Require.sol";
 
 
 /**
- * @title Math
- * @author dYdX
+ * @title   Math
+ * @author  dYdX
  *
- * Library for non-standard Math functions
+ * @notice  Library for non-standard Math functions
  */
 library DolomiteMarginMath {
 

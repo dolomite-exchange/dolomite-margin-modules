@@ -19,6 +19,10 @@ import {WrappedTokenUserVaultUnwrapperTrader} from "../external/proxies/WrappedT
 import { ICustomTestToken } from "./ICustomTestToken.sol";
 
 
+/**
+ * @title   TestWrappedTokenUserVaultUnwrapper
+ * @author  Dolomite
+ */
 contract TestWrappedTokenUserVaultUnwrapper is WrappedTokenUserVaultUnwrapperTrader {
 
     // ================ Immutable Field Variables ================

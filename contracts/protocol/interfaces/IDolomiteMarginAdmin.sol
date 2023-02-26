@@ -19,6 +19,10 @@ import { IDolomitePriceOracle } from "./IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "./IDolomiteStructs.sol";
 
 
+/**
+ * @title   IDolomiteMarginAdmin
+ * @author  Dolomite
+ */
 interface IDolomiteMarginAdmin is IDolomiteStructs {
 
     // ============ Token Functions ============

@@ -20,8 +20,8 @@ import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 
 
 /**
- * @title GLPMathLib
- * @author Dolomite
+ * @title   GLPMathLib
+ * @author  Dolomite
  *
  * @notice  A library contract that contains helper functions for common math that GLP code needs to perform.
  */

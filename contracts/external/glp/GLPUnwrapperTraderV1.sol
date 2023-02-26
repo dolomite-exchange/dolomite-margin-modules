@@ -27,10 +27,11 @@ import { GLPMathLib } from "./GLPMathLib.sol";
 
 
 /**
- * @title GLPUnwrapperTraderV1
- * @author Dolomite
+ * @title   GLPUnwrapperTraderV1
+ * @author  Dolomite
  *
- * @notice  Contract for unwrapping GLP via a "redemption" to USDC
+ * @notice  Used for unwrapping GLP (via burning via the GLPRewardsRouter) into USDC. Upon settlement, the burned GLP is
+ *          sent from the user's vault to this contract and dfsGLP is burned from `DolomiteMargin`.
  */
 contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
     using GLPMathLib for IGmxVault;

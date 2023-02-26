@@ -17,6 +17,10 @@ pragma solidity ^0.8.9;
 import { IDolomiteMargin } from "./IDolomiteMargin.sol";
 
 
+/**
+ * @title   IDolomiteAmmRouterProxy
+ * @author  Dolomite
+ */
 interface IDolomiteAmmRouterProxy {
 
     // ============ Structs ============

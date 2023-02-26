@@ -22,6 +22,10 @@ import { IWrappedTokenUserVaultFactory } from  "../external/interfaces/IWrappedT
 import { WrappedTokenUserVaultV1 } from  "../external/proxies/WrappedTokenUserVaultV1.sol";
 
 
+/**
+ * @title   TestWrappedTokenUserVaultV1
+ * @author  Dolomite
+ */
 contract TestWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
     using SafeERC20 for IERC20;
 

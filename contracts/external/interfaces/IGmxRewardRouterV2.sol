@@ -16,8 +16,11 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @dev Interface of the GMX Reward Router V2 contract, taken from:
- *      https://arbiscan.io/address/0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1#code
+ * @title   IGmxRewardRouterV2
+ * @author  Dolomite
+ *
+ * @notice  Interface of the GMX Reward Router V2 contract, taken from:
+ *          https://arbiscan.io/address/0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1#code
  */
 interface IGmxRewardRouterV2 {
 

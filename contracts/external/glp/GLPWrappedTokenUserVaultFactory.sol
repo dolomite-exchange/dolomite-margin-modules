@@ -26,7 +26,8 @@ import { WrappedTokenUserVaultFactory } from "../proxies/WrappedTokenUserVaultFa
  * @title   GLPWrappedTokenUserVaultFactory
  * @author  Dolomite
  *
- * @notice  Concrete implementation of the WrappedTokenUserVaultFactory contract for GMX's sGLP token
+ * @notice  The wrapper around the fsGLP token that is used to create user vaults and manage the entry points that a
+ *          user can use to interact with DolomiteMargin from the vault.
  */
 contract GLPWrappedTokenUserVaultFactory is
     IGLPWrappedTokenUserVaultFactory,

@@ -27,10 +27,10 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
 
 
 /**
- * @title TestRequire
- * @author dYdX and Dolomite
+ * @title   TestRequire
+ * @author  dYdX and Dolomite
  *
- * Contract for testing pure library functions
+ * @notice  Contract for testing pure library functions
  */
 contract TestRequire {
 

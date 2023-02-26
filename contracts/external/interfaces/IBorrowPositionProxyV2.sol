@@ -19,6 +19,13 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IAuthorizationBase } from "./IAuthorizationBase.sol";
 
 
+/**
+ * @title   IAuthorizationBase
+ * @author  Dolomite
+ *
+ * @notice  Interface for allowing only trusted callers to invoke borrow related functions for transferring funds
+ *          between account owners.
+ */
 interface IBorrowPositionProxyV2 is IAuthorizationBase {
 
     // ========================= Functions =========================

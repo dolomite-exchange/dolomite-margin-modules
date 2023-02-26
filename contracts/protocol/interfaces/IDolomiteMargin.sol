@@ -19,6 +19,12 @@ import { IDolomitePriceOracle } from "./IDolomitePriceOracle.sol";
 import { IDolomiteMarginAdmin } from "./IDolomiteMarginAdmin.sol";
 
 
+/**
+ * @title   IDolomiteMargin
+ * @author  Dolomite
+ *
+ * @notice  The interface for interacting with the main entry-point to DolomiteMargin
+ */
 interface IDolomiteMargin is IDolomiteMarginAdmin {
 
     // ==================================================

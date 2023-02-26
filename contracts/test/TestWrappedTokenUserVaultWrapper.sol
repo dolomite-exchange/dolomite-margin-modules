@@ -19,6 +19,10 @@ import { WrappedTokenUserVaultWrapperTrader } from "../external/proxies/WrappedT
 import { ICustomTestToken } from "./ICustomTestToken.sol";
 
 
+/**
+ * @title   TestWrappedTokenUserVaultWrapper
+ * @author  Dolomite
+ */
 contract TestWrappedTokenUserVaultWrapper is WrappedTokenUserVaultWrapperTrader {
 
     constructor(

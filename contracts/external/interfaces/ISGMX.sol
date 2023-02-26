@@ -18,6 +18,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
+ * @title   ISGMX
+ * @author  Dolomite
+ *
  * @notice  This is the intermediary token used during the staking process for GMX. We use this contract to distinguish
  *          between GMX esGMX deposited for staking to receive sbfGMX. The contract address on Arbitrum Mainnet is:
  *          0x908C4D94D34924765f1eDc22A1DD098397c59dD4

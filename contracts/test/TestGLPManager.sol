@@ -18,8 +18,8 @@ import { IGLPManager } from "../external/interfaces/IGLPManager.sol";
 
 
 /**
- * @title TestGlpManager
- * @author Dolomite
+ * @title   TestGlpManager
+ * @author  Dolomite
  *
  * @notice  A contract for testing pieces of the GLP Manager's functionality
  */

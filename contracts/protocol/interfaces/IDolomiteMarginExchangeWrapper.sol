@@ -21,11 +21,11 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title IDolomiteExternalExchangeWrapper
- * @author dYdX
+ * @title   IDolomiteExternalExchangeWrapper
+ * @author  dYdX
  *
- *  Interface that Exchange Wrappers for DolomiteMargin must implement in order to trade ERC20 tokens with external
- *  protocols.
+ * @notice  Interface that Exchange Wrappers for DolomiteMargin must implement in order to trade ERC20 tokens with
+ *          external protocols.
  */
 interface IDolomiteMarginExchangeWrapper {
 

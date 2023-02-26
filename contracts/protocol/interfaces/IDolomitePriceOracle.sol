@@ -18,10 +18,10 @@ import { IDolomiteStructs } from "./IDolomiteStructs.sol";
 
 
 /**
- * @title IDolomitePriceOracle
- * @author Dolomite
+ * @title   IDolomitePriceOracle
+ * @author  Dolomite
  *
- * Interface that Price Oracles for DolomiteMargin must implement in order to report prices.
+ * @notice  Interface that Price Oracles for DolomiteMargin must implement in order to report prices.
  */
 interface IDolomitePriceOracle {
 

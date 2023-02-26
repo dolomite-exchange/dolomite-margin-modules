@@ -17,6 +17,10 @@ pragma solidity ^0.8.9;
 import { IWrappedTokenUserVaultFactory } from "./IWrappedTokenUserVaultFactory.sol";
 
 
+/**
+ * @title   IWrappedTokenUserVaultProxy
+ * @author  Dolomite
+ */
 interface IWrappedTokenUserVaultProxy {
 
     /**

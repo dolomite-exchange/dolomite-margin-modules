@@ -17,6 +17,10 @@ pragma solidity ^0.8.9;
 import { IDolomiteMargin } from "./IDolomiteMargin.sol";
 
 
+/**
+ * @title   IDolomiteAmmPair
+ * @author  Dolomite
+ */
 interface IDolomiteAmmPair {
 
     // ==========================================================

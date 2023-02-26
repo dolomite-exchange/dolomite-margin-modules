@@ -18,6 +18,7 @@ pragma solidity ^0.8.9;
 /**
  * @title   IAuthorizationBase
  * @author  Dolomite
+ *
  * @notice  Interface for allowing only trusted callers to invoke functions that use the `requireIsCallerAuthorized`
  *          modifier.
  */

@@ -16,12 +16,12 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title IChainlinkAutomation
- * @author Dolomite
+ * @title   IChainlinkAutomation
+ * @author  Dolomite
  *
- * @dev Chainlink Automation enables conditional execution of your smart contracts functions through a hyper-reliable
- *      and decentralized automation platform that uses the same external network of node operators that secures
- *      billions in value. The documentation is copied from Chainlink's official smart contract documentation
+ * @dev     Chainlink Automation enables conditional execution of your smart contracts functions through a
+ *          hyper-reliable and decentralized automation platform that uses the same external network of node operators
+ *          that secures billions in value. The documentation is copied from Chainlink's official documentation.
  */
 interface IChainlinkAutomation {
 

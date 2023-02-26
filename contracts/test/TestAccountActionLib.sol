@@ -22,10 +22,10 @@ import { AccountBalanceLib } from "../external/lib/AccountBalanceLib.sol";
 
 
 /**
- * @title TestAccountActionLib
- * @author Dolomite
+ * @title   TestAccountActionLib
+ * @author  Dolomite
  *
- * Contract for testing pure library functions
+ * @notice  Contract for testing pure library functions
  */
 contract TestAccountActionLib {
     using AccountActionLib for IDolomiteMargin;

@@ -18,6 +18,7 @@ pragma solidity ^0.8.9;
 /**
  * @title   IEsGmxDistributor
  * @author  Dolomite
+ *
  * @notice  Interface for setting the rewards that are distributed to fsGLP holders. Useful for testing esGMX
  *          functionality.
  */

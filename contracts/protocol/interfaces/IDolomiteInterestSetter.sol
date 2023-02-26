@@ -15,6 +15,10 @@
 pragma solidity ^0.8.9;
 
 
+/**
+ * @title   IDolomiteInterestSetter
+ * @author  Dolomite
+ */
 interface IDolomiteInterestSetter {
 
     // ============ Structs ============

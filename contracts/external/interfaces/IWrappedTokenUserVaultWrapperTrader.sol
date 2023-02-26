@@ -18,6 +18,10 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 
 
+/**
+ * @title   IWrappedTokenUserVaultWrapperTrader
+ * @author  Dolomite
+ */
 interface IWrappedTokenUserVaultWrapperTrader is IDolomiteMarginExchangeWrapper {
 
     /**

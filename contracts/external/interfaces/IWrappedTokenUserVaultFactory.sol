@@ -20,6 +20,10 @@ import { IBorrowPositionProxyV2 } from "./IBorrowPositionProxyV2.sol";
 import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
 
 
+/**
+ * @title   IWrappedTokenUserVaultFactory
+ * @author  Dolomite
+ */
 interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
 
     // =================================================

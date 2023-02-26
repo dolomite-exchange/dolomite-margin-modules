@@ -20,6 +20,8 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 /**
  * @title IExpiry
  * @author Dolomite
+ *
+ * @notice Interface for getting, setting, and executing the expiry of a position.
  */
 interface IExpiry {
 

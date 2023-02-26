@@ -25,10 +25,10 @@ import { AccountBalanceLib } from "./AccountBalanceLib.sol";
 
 
 /**
- * @title AccountActionLib
- * @author Dolomite
+ * @title   AccountActionLib
+ * @author  Dolomite
  *
- * Library contract that makes specific actions easy to call
+ * @notice  Library contract that makes specific actions easy to call
  */
 library AccountActionLib {
 

@@ -31,10 +31,11 @@ import { GLPMathLib } from "./GLPMathLib.sol";
 
 
 /**
- * @title GLPWrapperTraderV1
- * @author Dolomite
+ * @title   GLPWrapperTraderV1
+ * @author  Dolomite
  *
- * @notice  Contract for wrapping GLP via minting from USDC
+ * @notice  Used for wrapping GLP (via minting from the GLPRewardsRouter) from USDC. Upon settlement, the minted GLP is
+ *          sent to the user's vault and dfsGLP is minted to `DolomiteMargin`.
  */
 contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
     using GLPMathLib for IGmxVault;

@@ -20,10 +20,10 @@ import { IGmxRegistryV1 } from "../external/interfaces/IGmxRegistryV1.sol";
 
 
 /**
- * @title TestGLPMathLib
- * @author Dolomite
+ * @title   TestGLPMathLib
+ * @author  Dolomite
  *
- * Contract for testing pure library functions
+ * @notice  Contract for testing pure library functions
  */
 contract TestGLPMathLib {
 

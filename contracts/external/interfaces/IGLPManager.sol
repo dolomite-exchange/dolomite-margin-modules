@@ -15,6 +15,12 @@
 pragma solidity ^0.8.9;
 
 
+/**
+ * @title   IGLPManager
+ * @author  Dolomite
+ *
+ * @notice  Interface for getting the AUM (highest bid and lowest ask) of GLP.
+ */
 interface IGLPManager {
 
     function getAumInUsdg(bool _maximise) external view returns (uint256);

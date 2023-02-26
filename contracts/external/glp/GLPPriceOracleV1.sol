@@ -27,11 +27,12 @@ import { IGmxVault } from "../interfaces/IGmxVault.sol";
 
 
 /**
- * @title GLPPriceOracleV1
- * @author Dolomite
+ * @title   GLPPriceOracleV1
+ * @author  Dolomite
  *
  * @notice  An implementation of the IDolomitePriceOracle interface that makes GMX's GLP prices compatible with the
- *          protocol. The GLP price it calculates understates the price by the withdrawal fees.
+ *          protocol. The GLP price it calculates understates the price by using the highest bid and factors in any
+ *          withdrawal fees. This is okay to do because GLP cannot be borrowed.
  */
 contract GLPPriceOracleV1 is IDolomitePriceOracle {
 

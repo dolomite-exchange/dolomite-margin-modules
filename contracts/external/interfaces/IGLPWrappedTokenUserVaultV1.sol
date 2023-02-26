@@ -15,6 +15,10 @@
 pragma solidity ^0.8.9;
 
 
+/**
+ * @title   IGLPWrappedTokenUserVaultV1
+ * @author  Dolomite
+ */
 interface IGLPWrappedTokenUserVaultV1 {
 
     /**

@@ -27,10 +27,10 @@ import { TypesLib } from "../protocol/lib/TypesLib.sol";
 
 
 /**
- * @title TestDolomiteMarginMath
- * @author dYdX and Dolomite
+ * @title   TestDolomiteMarginMath
+ * @author  dYdX and Dolomite
  *
- * Contract for testing pure library functions
+ * @notice  Contract for testing pure library functions
  */
 contract TestDolomiteMarginMath {
 

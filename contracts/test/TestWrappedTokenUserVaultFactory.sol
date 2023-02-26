@@ -22,6 +22,10 @@ import { WrappedTokenUserVaultFactory } from  "../external/proxies/WrappedTokenU
 import { WrappedTokenUserVaultUpgradeableProxy } from  "../external/proxies/WrappedTokenUserVaultUpgradeableProxy.sol";
 
 
+/**
+ * @title   TestWrappedTokenUserVaultFactory
+ * @author  Dolomite
+ */
 contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
 
     uint256[] private _allowableDebtMarketIds;

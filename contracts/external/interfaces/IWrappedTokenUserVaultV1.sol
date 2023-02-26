@@ -17,6 +17,10 @@ pragma solidity ^0.8.9;
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
+/**
+ * @title   IWrappedTokenUserVaultV1
+ * @author  Dolomite
+ */
 interface IWrappedTokenUserVaultV1 {
 
     // ============ Functions ============

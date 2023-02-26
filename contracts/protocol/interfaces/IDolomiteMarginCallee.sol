@@ -23,10 +23,10 @@ import { IDolomiteMargin } from "./IDolomiteMargin.sol";
 
 
 /**
- * @title IDolomiteMarginCallee
- * @author dYdX
+ * @title   IDolomiteMarginCallee
+ * @author  dYdX
  *
- * Interface that Callees for DolomiteMargin must implement in order to ingest data.
+ * @notice  Interface that Callees for DolomiteMargin must implement in order to ingest data.
  */
 interface IDolomiteMarginCallee {
 
