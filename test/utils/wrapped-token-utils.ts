@@ -1,9 +1,9 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
-  GLPUnwrapperProxyV1,
-  GLPUnwrapperProxyV1__factory,
-  GLPWrapperProxyV1,
-  GLPWrapperProxyV1__factory,
+  GLPUnwrapperTraderV1,
+  GLPUnwrapperTraderV1__factory,
+  GLPWrapperTraderV1,
+  GLPWrapperTraderV1__factory,
   GmxRegistryV1,
   GmxRegistryV1__factory,
   TestWrappedTokenUserVaultFactory,
@@ -29,7 +29,7 @@ export async function createTestWrappedTokenFactory(
   );
 }
 
-export function getGlpUnwrapperProxyConstructorParams(
+export function getGlpUnwrapperTraderConstructorParams(
   core: CoreProtocol,
   dfsGlp: { address: address },
   gmxRegistry: { address: address },
@@ -42,19 +42,19 @@ export function getGlpUnwrapperProxyConstructorParams(
   ];
 }
 
-export async function createGlpUnwrapperProxy(
+export async function createGlpUnwrapperTrader(
   core: CoreProtocol,
   dfsGlp: { address: address },
   gmxRegistry: { address: address },
-): Promise<GLPUnwrapperProxyV1> {
-  return createContractWithAbi<GLPUnwrapperProxyV1>(
-    GLPUnwrapperProxyV1__factory.abi,
-    GLPUnwrapperProxyV1__factory.bytecode,
-    getGlpUnwrapperProxyConstructorParams(core, dfsGlp, gmxRegistry)
+): Promise<GLPUnwrapperTraderV1> {
+  return createContractWithAbi<GLPUnwrapperTraderV1>(
+    GLPUnwrapperTraderV1__factory.abi,
+    GLPUnwrapperTraderV1__factory.bytecode,
+    getGlpUnwrapperTraderConstructorParams(core, dfsGlp, gmxRegistry)
   );
 }
 
-export function getGlpWrapperProxyConstructorParams(
+export function getGlpWrapperTraderConstructorParams(
   core: CoreProtocol,
   dfsGlp: { address: address },
   gmxRegistry: { address: address },
@@ -67,15 +67,15 @@ export function getGlpWrapperProxyConstructorParams(
   ];
 }
 
-export async function createGlpWrapperProxy(
+export async function createGlpWrapperTrader(
   core: CoreProtocol,
   dfsGlp: { address: address },
   gmxRegistry: { address: address },
-): Promise<GLPWrapperProxyV1> {
-  return createContractWithAbi<GLPWrapperProxyV1>(
-    GLPWrapperProxyV1__factory.abi,
-    GLPWrapperProxyV1__factory.bytecode,
-    getGlpWrapperProxyConstructorParams(core, dfsGlp, gmxRegistry),
+): Promise<GLPWrapperTraderV1> {
+  return createContractWithAbi<GLPWrapperTraderV1>(
+    GLPWrapperTraderV1__factory.abi,
+    GLPWrapperTraderV1__factory.bytecode,
+    getGlpWrapperTraderConstructorParams(core, dfsGlp, gmxRegistry),
   );
 }
 

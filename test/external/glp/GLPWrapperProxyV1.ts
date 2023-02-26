@@ -9,7 +9,7 @@ import {
   GLPWrappedTokenUserVaultFactory__factory,
   GLPWrappedTokenUserVaultV1,
   GLPWrappedTokenUserVaultV1__factory,
-  GLPWrapperProxyV1,
+  GLPWrapperTraderV1,
   GmxRegistryV1,
   IERC20,
 } from '../../../src/types';
@@ -25,7 +25,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createGlpWrapperProxy, createGmxRegistry } from '../../utils/wrapped-token-utils';
+import { createGlpWrapperTrader, createGmxRegistry } from '../../utils/wrapped-token-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -35,14 +35,14 @@ const usableUsdcAmount = usdcAmount.div(2);
 
 const abiCoder = ethers.utils.defaultAbiCoder;
 
-describe('GLPWrapperProxyV1', () => {
+describe('GLPWrapperTraderV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
   let underlyingToken: IERC20;
   let underlyingMarketId: BigNumber;
   let gmxRegistry: GmxRegistryV1;
-  let wrapper: GLPWrapperProxyV1;
+  let wrapper: GLPWrapperTraderV1;
   let factory: GLPWrappedTokenUserVaultFactory;
   let vault: GLPWrappedTokenUserVaultV1;
   let priceOracle: GLPPriceOracleV1;
@@ -84,7 +84,7 @@ describe('GLPWrapperProxyV1', () => {
     await setupTestMarket(core, factory, true, priceOracle);
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
 
-    wrapper = await createGlpWrapperProxy(core, factory, gmxRegistry);
+    wrapper = await createGlpWrapperTrader(core, factory, gmxRegistry);
     await factory.connect(core.governance).initialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
@@ -182,7 +182,7 @@ describe('GLPWrapperProxyV1', () => {
           usableUsdcAmount,
           abiCoder.encode(['uint256'], [ZERO_BI]),
         ),
-        `GLPWrapperProxyV1: Invalid taker token <${core.weth.address.toLowerCase()}>`,
+        `GLPWrapperTraderV1: Invalid taker token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -252,14 +252,14 @@ describe('GLPWrapperProxyV1', () => {
     it('should fail if the maker token is not USDC', async () => {
       await expectThrow(
         wrapper.getExchangeCost(core.weth.address, factory.address, usableUsdcAmount, BYTES_EMPTY),
-        `GLPWrapperProxyV1: Invalid maker token <${core.weth.address.toLowerCase()}>`,
+        `GLPWrapperTraderV1: Invalid maker token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if the taker token is not dfsGLP', async () => {
       await expectThrow(
         wrapper.getExchangeCost(core.usdc.address, core.weth.address, usableUsdcAmount, BYTES_EMPTY),
-        `GLPWrapperProxyV1: Invalid taker token <${core.weth.address.toLowerCase()}>`,
+        `GLPWrapperTraderV1: Invalid taker token <${core.weth.address.toLowerCase()}>`,
       );
     });
   });

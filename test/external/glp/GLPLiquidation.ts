@@ -5,12 +5,12 @@ import { BigNumber } from 'ethers';
 import {
   GLPPriceOracleV1,
   GLPPriceOracleV1__factory,
-  GLPUnwrapperProxyV1,
+  GLPUnwrapperTraderV1,
   GLPWrappedTokenUserVaultFactory,
   GLPWrappedTokenUserVaultFactory__factory,
   GLPWrappedTokenUserVaultV1,
   GLPWrappedTokenUserVaultV1__factory,
-  GLPWrapperProxyV1,
+  GLPWrapperTraderV1,
   GmxRegistryV1,
   IERC20,
 } from '../../../src/types';
@@ -32,7 +32,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createGlpUnwrapperProxy, createGlpWrapperProxy, createGmxRegistry } from '../../utils/wrapped-token-utils';
+import { createGlpUnwrapperTrader, createGlpWrapperTrader, createGmxRegistry } from '../../utils/wrapped-token-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -45,8 +45,8 @@ describe('GLPLiquidation', () => {
   let underlyingToken: IERC20;
   let underlyingMarketId: BigNumber;
   let gmxRegistry: GmxRegistryV1;
-  let unwrapper: GLPUnwrapperProxyV1;
-  let wrapper: GLPWrapperProxyV1;
+  let unwrapper: GLPUnwrapperTraderV1;
+  let wrapper: GLPWrapperTraderV1;
   let factory: GLPWrappedTokenUserVaultFactory;
   let vault: GLPWrappedTokenUserVaultV1;
   let priceOracle: GLPPriceOracleV1;
@@ -89,10 +89,9 @@ describe('GLPLiquidation', () => {
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
-    await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
 
-    unwrapper = await createGlpUnwrapperProxy(core, factory, gmxRegistry);
-    wrapper = await createGlpWrapperProxy(core, factory, gmxRegistry);
+    unwrapper = await createGlpUnwrapperTrader(core, factory, gmxRegistry);
+    wrapper = await createGlpWrapperTrader(core, factory, gmxRegistry);
     await factory.connect(core.governance).initialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 

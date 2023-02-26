@@ -14,12 +14,12 @@
 
 pragma solidity ^0.8.9;
 
-import { WrappedTokenUserVaultUnwrapper } from "../external/proxies/WrappedTokenUserVaultUnwrapper.sol";
+import {WrappedTokenUserVaultUnwrapperTrader} from "../external/proxies/WrappedTokenUserVaultUnwrapper.sol";
 
 import { ICustomTestToken } from "./ICustomTestToken.sol";
 
 
-contract TestWrappedTokenUserVaultUnwrapper is WrappedTokenUserVaultUnwrapper {
+contract TestWrappedTokenUserVaultUnwrapper is WrappedTokenUserVaultUnwrapperTrader {
 
     // ================ Immutable Field Variables ================
 
@@ -33,7 +33,7 @@ contract TestWrappedTokenUserVaultUnwrapper is WrappedTokenUserVaultUnwrapper {
         address _vaultFactory,
         address _dolomiteMargin
     )
-    WrappedTokenUserVaultUnwrapper(
+    WrappedTokenUserVaultUnwrapperTrader(
         _vaultFactory,
         _dolomiteMargin
     ) {

@@ -14,17 +14,17 @@
 
 pragma solidity ^0.8.9;
 
-import { WrappedTokenUserVaultWrapper } from "../external/proxies/WrappedTokenUserVaultWrapper.sol";
+import { WrappedTokenUserVaultWrapperTrader } from "../external/proxies/WrappedTokenUserVaultWrapperTrader.sol";
 
 import { ICustomTestToken } from "./ICustomTestToken.sol";
 
 
-contract TestWrappedTokenUserVaultWrapper is WrappedTokenUserVaultWrapper {
+contract TestWrappedTokenUserVaultWrapper is WrappedTokenUserVaultWrapperTrader {
 
     constructor(
         address _vaultFactory,
         address _dolomiteMargin
-    ) WrappedTokenUserVaultWrapper(_vaultFactory, _dolomiteMargin) {
+    ) WrappedTokenUserVaultWrapperTrader(_vaultFactory, _dolomiteMargin) {
         // solhint-disable-previous-line no-empty-blocks
     }
 

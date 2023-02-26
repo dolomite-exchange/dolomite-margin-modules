@@ -21,23 +21,23 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
 
-import { WrappedTokenUserVaultUnwrapper } from "../proxies/WrappedTokenUserVaultUnwrapper.sol";
+import {WrappedTokenUserVaultUnwrapperTrader} from "../proxies/WrappedTokenUserVaultUnwrapper.sol";
 
 import { GLPMathLib } from "./GLPMathLib.sol";
 
 
 /**
- * @title GLPUnwrapperProxyV1
+ * @title GLPUnwrapperTraderV1
  * @author Dolomite
  *
  * @notice  Contract for unwrapping GLP via a "redemption" to USDC
  */
-contract GLPUnwrapperProxyV1 is WrappedTokenUserVaultUnwrapper {
+contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
     using GLPMathLib for IGmxVault;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "GLPUnwrapperProxyV1";
+    bytes32 private constant _FILE = "GLPUnwrapperTraderV1";
 
     // ============ Immutable State Variables ============
 
@@ -53,7 +53,7 @@ contract GLPUnwrapperProxyV1 is WrappedTokenUserVaultUnwrapper {
         address _dfsGlp,
         address _dolomiteMargin
     )
-    WrappedTokenUserVaultUnwrapper(_dfsGlp, _dolomiteMargin) {
+    WrappedTokenUserVaultUnwrapperTrader(_dfsGlp, _dolomiteMargin) {
         USDC = _usdc;
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
 

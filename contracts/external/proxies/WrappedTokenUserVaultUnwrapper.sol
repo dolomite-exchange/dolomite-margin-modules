@@ -25,7 +25,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
-import { IWrappedTokenUserVaultUnwrapper } from "../interfaces/IWrappedTokenUserVaultUnwrapper.sol";
+import { IWrappedTokenUserVaultUnwrapperTrader } from "../interfaces/IWrappedTokenUserVaultUnwrapperTrader.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
 import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1.sol";
 
@@ -33,13 +33,13 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 
 /**
- * @title   WrappedTokenUserVaultUnwrapper
+ * @title   WrappedTokenUserVaultUnwrapperTrader
  * @author  Dolomite
  *
  * @notice  Abstract contract for unwrapping a VaultWrapper token into the underlying token. Must be set as a token
  *          converter for the VaultWrapperFactory token.
  */
-abstract contract WrappedTokenUserVaultUnwrapper is IWrappedTokenUserVaultUnwrapper, OnlyDolomiteMargin {
+abstract contract WrappedTokenUserVaultUnwrapperTrader is IWrappedTokenUserVaultUnwrapperTrader, OnlyDolomiteMargin {
     using SafeERC20 for IERC20;
 
     // ======================== Constants ========================

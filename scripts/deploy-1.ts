@@ -2,8 +2,8 @@ import { ethers } from 'hardhat';
 import { GLPPriceOracleV1 } from '../src/types';
 import { setupCoreProtocol } from '../test/utils/setup';
 import {
-  getGlpUnwrapperProxyConstructorParams,
-  getGlpWrapperProxyConstructorParams,
+  getGlpUnwrapperTraderConstructorParams,
+  getGlpWrapperTraderConstructorParams,
   getGmxRegistryConstructorParams,
 } from '../test/utils/wrapped-token-utils';
 import { deployContractAndSave } from './deploy-utils';
@@ -36,13 +36,13 @@ async function main() {
   );
   await deployContractAndSave(
     chainId,
-    'GLPWrapperProxyV1',
-    getGlpWrapperProxyConstructorParams(core, { address: factoryAddress }, { address: gmxRegistryAddress }),
+    'GLPWrapperTraderV1',
+    getGlpWrapperTraderConstructorParams(core, { address: factoryAddress }, { address: gmxRegistryAddress }),
   );
   await deployContractAndSave(
     chainId,
-    'GLPUnwrapperProxyV1',
-    getGlpUnwrapperProxyConstructorParams(core, { address: factoryAddress }, { address: gmxRegistryAddress }),
+    'GLPUnwrapperTraderV1',
+    getGlpUnwrapperTraderConstructorParams(core, { address: factoryAddress }, { address: gmxRegistryAddress }),
   );
 }
 

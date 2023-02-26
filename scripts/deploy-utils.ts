@@ -79,7 +79,8 @@ async function prettyPrintAndVerifyContract(
   console.log('='.repeat(52 + contractName.length));
 
   if (network.name !== 'hardhat') {
-    await sleep(5000); // wait 5s for the transaction to be indexed by Arbiscan
+    console.log('Sleeping for 5s to wait for the transaction to be indexed by Etherscan...');
+    await sleep(5000);
     await verifyContract(contract.address, [...args]);
     file[contractName][chainId].isVerified = true;
     writeFile(file);

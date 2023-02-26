@@ -15,14 +15,23 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteMarginCallee } from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
 import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 
 
-interface IWrappedTokenUserVaultWrapper is IDolomiteMarginExchangeWrapper {
+interface IWrappedTokenUserVaultUnwrapperTrader is IDolomiteMarginExchangeWrapper, IDolomiteMarginCallee {
 
     /**
-     * @notice  Creates the necessary actions for selling the `_heldMarket` into `_owedMarket`. Note, `_owedMarket` must
-     *          equal `outputMarketId` depending on the implementation of this contract.
+     * @return The liquidity token that this contract can unwrap
+     */
+    function token() external view returns (address);
+
+    function outputMarketId() external view returns (uint256);
+
+    /**
+     * @notice  Creates the necessary actions for selling the `_heldMarket` into `_outputMarket`. Note, `_outputMarket`
+     *          may not equal `_owedMarket` depending on the implementation of this contract. It is the responsibility
+     *          of the caller to ensure that the `_outputMarket` is converted to `_owedMarket` in subsequent actions.
      *
      * @param _solidAccountId       The index of the account (according the Accounts[] array) that is performing the
      *                              liquidation.
@@ -36,7 +45,7 @@ interface IWrappedTokenUserVaultWrapper is IDolomiteMarginExchangeWrapper {
      * @param _heldAmount           The amount of the `_heldMarket` that the liquid account holds and must sell.
      * @return                      The actions that will be executed to unwrap the `_heldMarket` into `outputMarketId`.
      */
-    function createActionsForWrapping(
+    function createActionsForUnwrappingForLiquidation(
         uint256 _solidAccountId,
         uint256 _liquidAccountId,
         address _solidAccountOwner,
@@ -49,4 +58,10 @@ interface IWrappedTokenUserVaultWrapper is IDolomiteMarginExchangeWrapper {
     external
     view
     returns (IDolomiteMargin.ActionArgs[] memory);
+
+    /**
+     * @return  The number of Actions used to unwrap the LP token into `outputMarketId`. If `owedMarketId` equals
+     *          `outputMarketId`, there is no need to chain additional actions on, since the debt will be paid off.
+     */
+    function actionsLength() external view returns (uint256);
 }

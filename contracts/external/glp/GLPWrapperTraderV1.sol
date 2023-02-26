@@ -25,24 +25,24 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IGLPRewardsRouterV2 } from "../interfaces/IGLPRewardsRouterV2.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
-import { WrappedTokenUserVaultWrapper } from "../proxies/WrappedTokenUserVaultWrapper.sol";
+import { WrappedTokenUserVaultWrapperTrader } from "../proxies/WrappedTokenUserVaultWrapperTrader.sol";
 
 import { GLPMathLib } from "./GLPMathLib.sol";
 
 
 /**
- * @title GLPWrapperProxyV1
+ * @title GLPWrapperTraderV1
  * @author Dolomite
  *
  * @notice  Contract for wrapping GLP via minting from USDC
  */
-contract GLPWrapperProxyV1 is WrappedTokenUserVaultWrapper {
+contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
     using GLPMathLib for IGmxVault;
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "GLPWrapperProxyV1";
+    bytes32 private constant _FILE = "GLPWrapperTraderV1";
 
     // ============ Constructor ============
 
@@ -56,7 +56,7 @@ contract GLPWrapperProxyV1 is WrappedTokenUserVaultWrapper {
         address _gmxRegistry,
         address _dfsGlp,
         address _dolomiteMargin
-    ) WrappedTokenUserVaultWrapper(
+    ) WrappedTokenUserVaultWrapperTrader(
         _dfsGlp,
         _dolomiteMargin
     ) {
