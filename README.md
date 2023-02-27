@@ -18,21 +18,14 @@
 </div>
 
 > Solidity Smart Contracts for integration tests against the live `DolomiteMargin` instance on Arbitrum One for
-testing new modules against the live deployment.
+> testing new modules against the live deployment.
 
 ## Installation
 
-1. Clone [Dolomite's Hardhat Fork for Arbitrum](https://github.com/dolomite-exchange/hardhat) into another directory.
-This repository depends on it because the default Hardhat NPM library does not support forking Arbitrum One. This is
-because of the lack of support for custom transaction types. See more information 
-[here](https://github.com/NomicFoundation/hardhat/pull/3260). 
-2. Run `yarn install && yarn build && npm link` from within the forked `hardhat` project's working directory.
-3. Switch back to this project's working directory and run `npm link hardhat`. This will link the forked `hardhat` 
-project to this project's `node_modules` directory. 
-4. Run `yarn install` to install the rest of the dependencies.
-5. Sign up on [Infura](https://infura.io/register). We recommend using Infura to allow for a reproducible Arbitrum One
-   testing environment as well as efficiency due to caching.
-6. Run `yarn build` to compile all smart contracts and build TypeChain wrappers
+1. Run `yarn install` to install the rest of the dependencies.
+2. Sign up on [Infura](https://infura.io/register) or [Alchemy](https://www.alchemy.com/). We recommend using Infura or
+   Alchemy to allow for a reproducible Arbitrum One testing environment as well as efficiency due to caching.
+3. Run `yarn build` to compile all smart contracts and build TypeChain wrappers
 
 ## Testing
 
