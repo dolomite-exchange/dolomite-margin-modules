@@ -16,7 +16,8 @@
     "lint:sol": "hardhat check",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "test": "hardhat --network hardhat test",
-    "test:specific": "hardhat --network hardhat test test/external/proxies/WrappedTokenUserVaultFactory.ts"
+    "test:specific": "hardhat --network hardhat test test/external/glp/GLPUnwrapperProxyV1.ts",
+    "verify:contract": "hardhat --network arbitrum run scripts/verify-contract.ts"
   },
   "repository": {
     "type": "git",

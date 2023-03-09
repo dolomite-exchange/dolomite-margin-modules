@@ -103,7 +103,8 @@ describe('WrappedTokenUserVaultFactory', () => {
       [factory.address, core.dolomiteMargin.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(tokenWrapper.address, true);
-    initializeResult = await factory.connect(core.governance).initialize([tokenUnwrapper.address, tokenWrapper.address]);
+    initializeResult = await factory.connect(core.governance)
+      .initialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     solidAccount = core.hhUser5;
