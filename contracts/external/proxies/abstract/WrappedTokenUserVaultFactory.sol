@@ -19,19 +19,19 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 
-import { Require } from "../../protocol/lib/Require.sol";
+import { Require } from "../../../protocol/lib/Require.sol";
 
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
 
-import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
-import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
-import { IWrappedTokenUserVaultProxy } from "../interfaces/IWrappedTokenUserVaultProxy.sol";
-import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1.sol";
+import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
+import { IWrappedTokenUserVaultFactory } from "../../interfaces/IWrappedTokenUserVaultFactory.sol";
+import { IWrappedTokenUserVaultProxy } from "../../interfaces/IWrappedTokenUserVaultProxy.sol";
+import { IWrappedTokenUserVaultV1 } from "../../interfaces/IWrappedTokenUserVaultV1.sol";
 
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { AccountActionLib } from "../../lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
 import { WrappedTokenUserVaultUpgradeableProxy } from "./WrappedTokenUserVaultUpgradeableProxy.sol";
 
