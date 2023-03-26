@@ -28,6 +28,7 @@ contract TestGLPWrappedTokenUserVaultV1 is GLPWrappedTokenUserVaultV1 {
     bytes32 private constant _FILE = "TestGLPWrappedTokenUserVaultV1";
 
     function callAcceptFullAccountTransferAndTriggerReentrancy(address _sender) external nonReentrant {
+        // solhint-disable-next-line avoid-low-level-calls
         (bool isSuccessful, bytes memory result) = address(this).delegatecall(
             abi.encodeWithSignature("acceptFullAccountTransfer(address)", _sender)
         );
@@ -35,6 +36,7 @@ contract TestGLPWrappedTokenUserVaultV1 is GLPWrappedTokenUserVaultV1 {
             if (result.length < 68) {
                 revert("No reversion message!");
             } else {
+                // solhint-disable-next-line no-inline-assembly
                 assembly {
                     result := add(result, 0x04) // Slice the sighash.
                 }

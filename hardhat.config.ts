@@ -19,10 +19,10 @@ chai.use(solidity);
 require('dotenv').config();
 
 const arbitrumWeb3Url = process.env.ARBITRUM_WEB3_PROVIDER_URL;
-const arbiscanApiKey = process.env.ARBISCAN_API_KEY;
 if (!arbitrumWeb3Url) {
   throw new Error('No ARBITRUM_WEB3_PROVIDER_URL provided!');
 }
+const arbiscanApiKey = process.env.ARBISCAN_API_KEY;
 if (!arbiscanApiKey) {
   throw new Error('No ARBISCAN_API_KEY provided!');
 }

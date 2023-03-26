@@ -16,10 +16,10 @@ import {
   WrappedTokenUserVaultUpgradeableProxy__factory,
   WrappedTokenUserVaultV1,
   WrappedTokenUserVaultV1__factory,
-} from '../../../src/types';
-import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+} from '../../../../src/types';
+import { createContractWithAbi, createTestToken } from '../../../../src/utils/dolomite-utils';
+import { BYTES_EMPTY, ZERO_BI } from '../../../../src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -27,9 +27,9 @@ import {
   expectTotalSupply,
   expectWalletAllowance,
   expectWalletBalance,
-} from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
-import { createTestWrappedTokenFactory } from '../../utils/wrapped-token-utils';
+} from '../../../utils/assertions';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
+import { createTestWrappedTokenFactory } from '../../../utils/wrapped-token-utils';
 
 const toAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units
@@ -103,7 +103,8 @@ describe('WrappedTokenUserVaultFactory', () => {
       [factory.address, core.dolomiteMargin.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(tokenWrapper.address, true);
-    initializeResult = await factory.connect(core.governance).initialize([tokenUnwrapper.address, tokenWrapper.address]);
+    initializeResult = await factory.connect(core.governance)
+      .initialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     solidAccount = core.hhUser5;

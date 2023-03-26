@@ -25,13 +25,13 @@ import { IGLPManager } from "../external/interfaces/IGLPManager.sol";
  */
 contract TestGLPManager is IGLPManager {
 
-    uint256 private aumInUsdg;
+    uint256 private _aumInUsdg;
 
-    function getAumInUsdg(bool) external view returns (uint256) {
-        return aumInUsdg;
+    function setAumInUsdg(uint256 _newAumInUsdg) external {
+        _aumInUsdg = _newAumInUsdg;
     }
 
-    function setAumInUsdg(uint256 _aumInUsdg) external {
-        aumInUsdg = _aumInUsdg;
+    function getAumInUsdg(bool) external view returns (uint256) {
+        return _aumInUsdg;
     }
 }

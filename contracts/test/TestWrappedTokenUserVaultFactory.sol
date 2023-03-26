@@ -18,7 +18,7 @@ import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 
 import { IWrappedTokenUserVaultProxy } from  "../external/interfaces/IWrappedTokenUserVaultProxy.sol";
 
-import { WrappedTokenUserVaultFactory } from  "../external/proxies/WrappedTokenUserVaultFactory.sol";
+import { WrappedTokenUserVaultFactory } from  "../external/proxies/abstract/WrappedTokenUserVaultFactory.sol";
 import { WrappedTokenUserVaultUpgradeableProxy } from  "../external/proxies/WrappedTokenUserVaultUpgradeableProxy.sol";
 
 

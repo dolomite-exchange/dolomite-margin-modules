@@ -19,7 +19,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 
 import { IWrappedTokenUserVaultFactory } from  "../external/interfaces/IWrappedTokenUserVaultFactory.sol";
 
-import { WrappedTokenUserVaultV1 } from  "../external/proxies/WrappedTokenUserVaultV1.sol";
+import { WrappedTokenUserVaultV1 } from  "../external/proxies/abstract/WrappedTokenUserVaultV1.sol";
 
 
 /**

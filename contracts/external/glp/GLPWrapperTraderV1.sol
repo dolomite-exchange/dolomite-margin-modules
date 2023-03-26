@@ -25,7 +25,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IGLPRewardsRouterV2 } from "../interfaces/IGLPRewardsRouterV2.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
-import { WrappedTokenUserVaultWrapperTrader } from "../proxies/WrappedTokenUserVaultWrapperTrader.sol";
+import { WrappedTokenUserVaultWrapperTrader } from "../proxies/abstract/WrappedTokenUserVaultWrapperTrader.sol";
 
 import { GLPMathLib } from "./GLPMathLib.sol";
 

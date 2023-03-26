@@ -33,7 +33,7 @@ import { IWrappedTokenUserVaultV1 } from "../../interfaces/IWrappedTokenUserVaul
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
-import { WrappedTokenUserVaultUpgradeableProxy } from "./WrappedTokenUserVaultUpgradeableProxy.sol";
+import { WrappedTokenUserVaultUpgradeableProxy } from "../WrappedTokenUserVaultUpgradeableProxy.sol";
 
 
 /**
@@ -109,7 +109,7 @@ abstract contract WrappedTokenUserVaultFactory is
 
     constructor(
         address _underlyingToken,
-        address _borrowPositionProxy,
+        address _borrowPositionProxyV2,
         address _userVaultImplementation,
         address _dolomiteMargin
     )
@@ -120,7 +120,7 @@ abstract contract WrappedTokenUserVaultFactory is
     OnlyDolomiteMargin(_dolomiteMargin)
     {
         UNDERLYING_TOKEN = _underlyingToken;
-        BORROW_POSITION_PROXY = IBorrowPositionProxyV2(_borrowPositionProxy);
+        BORROW_POSITION_PROXY = IBorrowPositionProxyV2(_borrowPositionProxyV2);
         userVaultImplementation = _userVaultImplementation;
     }
 
