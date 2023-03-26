@@ -114,7 +114,7 @@ abstract contract WrappedTokenUserVaultFactory is
         address _dolomiteMargin
     )
     ERC20(
-        /* name_ = */ string(abi.encodePacked("Dolomite: ", ERC20(_underlyingToken).name())),
+        /* name_ = */ string(abi.encodePacked("Dolomite Isolation: ", ERC20(_underlyingToken).name())),
         /* symbol_ = */ string(abi.encodePacked("d", ERC20(_underlyingToken).symbol()))
     )
     OnlyDolomiteMargin(_dolomiteMargin)
