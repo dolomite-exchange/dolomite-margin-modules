@@ -5,8 +5,6 @@ import { ethers, network } from 'hardhat';
 import {
   BorrowPositionProxyV2,
   Expiry,
-  GmxRegistryV1,
-  GmxRegistryV1__factory,
   IDepositWithdrawalProxy,
   IDolomiteAmmRouterProxy,
   IDolomiteMargin,
@@ -53,6 +51,7 @@ export interface CoreProtocolSetupConfig {
    * The block number at which the tests will be run on Arbitrum
    */
   blockNumber: number;
+  // network: Network; // TODO: add this in as needed to make tests across networks
 }
 
 export interface CoreProtocolConfig {
@@ -100,23 +99,38 @@ export interface CoreProtocol {
   hhUser5: SignerWithAddress;
 }
 
-export async function setupWETHBalance(signer: SignerWithAddress, amount: BigNumberish, spender: { address: string }) {
-  await WETH.connect(signer).deposit({ value: amount });
-  await WETH.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+export async function setupWETHBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  await core.weth.connect(signer).deposit({ value: amount });
+  await core.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupUSDCBalance(signer: SignerWithAddress, amount: BigNumberish, spender: { address: string }) {
+export async function setupUSDCBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
   const whaleAddress = '0x805ba50001779CeD4f59CfF63aea527D12B94829'; // Radiant USDC pool
   const whaleSigner = await impersonate(whaleAddress, true);
-  await USDC.connect(whaleSigner).transfer(signer.address, amount);
-  await USDC.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  await core.usdc.connect(whaleSigner).transfer(signer.address, amount);
+  await core.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupGMXBalance(signer: SignerWithAddress, amount: BigNumberish, spender: { address: string }) {
+export async function setupGMXBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
   const whaleAddress = '0x80a9ae39310abf666a87c743d6ebbd0e8c42158e'; // Uniswap V3 GMX/ETH pool
   const whaleSigner = await impersonate(whaleAddress, true);
-  await GMX.connect(whaleSigner).transfer(signer.address, amount);
-  await GMX.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  await core.gmxEcosystem.gmx?.connect(whaleSigner).transfer(signer.address, amount);
+  await core.gmxEcosystem.gmx?.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export function setupUserVaultProxy<T extends BaseContract>(
@@ -175,7 +189,9 @@ export async function setupCoreProtocol(
 
   const dolomiteAmmRouterProxy = DOLOMITE_AMM_ROUTER.connect(hhUser1);
 
-  const esGmxAdmin = await impersonateOrFallback(await ES_GMX_DISTRIBUTOR.connect(hhUser1).admin(), true, hhUser1);
+  const esGmxAdmin = ES_GMX_DISTRIBUTOR
+    ? await impersonateOrFallback(await ES_GMX_DISTRIBUTOR.connect(hhUser1).admin(), true, hhUser1)
+    : undefined;
 
   return {
     borrowPositionProxyV2,
@@ -193,22 +209,23 @@ export async function setupCoreProtocol(
     hhUser5,
     config: {
       blockNumber: config.blockNumber,
+      network: config.network,
     },
     gmxEcosystem: {
-      esGmx: ES_GMX.connect(hhUser1),
-      esGmxDistributor: ES_GMX_DISTRIBUTOR.connect(esGmxAdmin),
-      fsGlp: FS_GLP.connect(hhUser1),
-      glp: GLP.connect(hhUser1),
-      glpManager: GLP_MANAGER.connect(hhUser1),
-      glpRewardsRouter: GLP_REWARDS_ROUTER.connect(hhUser1),
-      gmxRewardsRouter: GMX_REWARDS_ROUTER.connect(hhUser1),
-      gmx: GMX.connect(hhUser1),
-      gmxVault: GMX_VAULT.connect(hhUser1),
-      sGlp: S_GLP.connect(hhUser1),
-      sGmx: S_GMX.connect(hhUser1),
-      sbfGmx: SBF_GMX.connect(hhUser1),
-      vGlp: V_GLP.connect(hhUser1),
-      vGmx: V_GMX.connect(hhUser1),
+      esGmx: ES_GMX?.connect(hhUser1),
+      esGmxDistributor: ES_GMX_DISTRIBUTOR?.connect(esGmxAdmin),
+      fsGlp: FS_GLP?.connect(hhUser1),
+      glp: GLP?.connect(hhUser1),
+      glpManager: GLP_MANAGER?.connect(hhUser1),
+      glpRewardsRouter: GLP_REWARDS_ROUTER?.connect(hhUser1),
+      gmxRewardsRouter: GMX_REWARDS_ROUTER?.connect(hhUser1),
+      gmx: GMX?.connect(hhUser1),
+      gmxVault: GMX_VAULT?.connect(hhUser1),
+      sGlp: S_GLP?.connect(hhUser1),
+      sGmx: S_GMX?.connect(hhUser1),
+      sbfGmx: SBF_GMX?.connect(hhUser1),
+      vGlp: V_GLP?.connect(hhUser1),
+      vGmx: V_GMX?.connect(hhUser1),
     },
     liquidatorProxyV2: LIQUIDATOR_PROXY_V2.connect(hhUser1),
     liquidatorProxyV3: LIQUIDATOR_PROXY_V3.connect(hhUser1),
