@@ -15,7 +15,7 @@ import {
   owedWeiToHeldWei,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { NO_EXPIRY } from '../../../src/utils/no-deps-constants';
+import { Network, NO_EXPIRY } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectProtocolBalance,
@@ -47,6 +47,7 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
     const blockNumber = await getRealLatestBlockNumber(true);
     core = await setupCoreProtocol({
       blockNumber,
+      network: Network.ArbitrumOne,
     });
     governance = core.governance;
     solidAccount = core.hhUser1;
@@ -54,7 +55,7 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
     solidAccountStruct = { owner: solidAccount.address, number: BigNumber.from(solidNumber) };
     liquidAccountStruct = { owner: liquidAccount.address, number: BigNumber.from(liquidNumber) };
     dolomiteMargin = core.dolomiteMargin;
-    liquidatorProxy = core.liquidatorProxyV2.connect(solidAccount);
+    liquidatorProxy = core.liquidatorProxyV2!.connect(solidAccount);
     const owner = await impersonate(governance.address, true);
 
     if (!(await dolomiteMargin.getIsGlobalOperator(liquidatorProxy.address))) {
@@ -82,8 +83,8 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
       await expectProtocolBalance(core, solidAccountStruct.owner, solidAccountStruct.number, core.marketIds.usdc, 0);
 
       const heldAmountWei = BigNumber.from('1000000000000000000'); // 1 ETH
-      await setupWETHBalance(liquidAccount, heldAmountWei, dolomiteMargin);
-      await depositIntoDolomiteMargin(liquidAccount, liquidNumber, core.marketIds.weth, heldAmountWei);
+      await setupWETHBalance(core, liquidAccount, heldAmountWei, dolomiteMargin);
+      await depositIntoDolomiteMargin(core, liquidAccount, liquidNumber, core.marketIds.weth, heldAmountWei);
       await expectProtocolBalance(
         core,
         liquidAccountStruct.owner,
@@ -95,7 +96,7 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
       const owedAmountWei = (await dolomiteMargin.getAccountValues(liquidAccountStruct))[0]
         .value.div(USDC_PRICE).mul(100).div(125);
       // Decrease the user's collateralization to 125%
-      await withdrawFromDolomiteMargin(liquidAccount, liquidNumber, core.marketIds.usdc, owedAmountWei);
+      await withdrawFromDolomiteMargin(core, liquidAccount, liquidNumber, core.marketIds.usdc, owedAmountWei);
       await expectProtocolBalance(
         core,
         liquidAccountStruct.owner,

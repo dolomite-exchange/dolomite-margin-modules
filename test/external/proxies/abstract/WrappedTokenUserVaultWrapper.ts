@@ -12,12 +12,10 @@ import {
   TestWrappedTokenUserVaultWrapper__factory,
   TestWrappedTokenUserVaultV1,
   TestWrappedTokenUserVaultV1__factory,
-  WrappedTokenUserVaultWrapper,
 } from '../../../../src/types';
 import { Account } from '../../../../src/types/IDolomiteMargin';
-import { BORROW_POSITION_PROXY_V2, DOLOMITE_MARGIN } from '../../../../src/utils/constants';
 import { createContractWithAbi, createTestToken } from '../../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, ZERO_BI } from '../../../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
@@ -47,6 +45,7 @@ describe('WrappedTokenUserVaultWrapper', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
+      network: Network.ArbitrumOne,
     });
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
@@ -60,9 +59,9 @@ describe('WrappedTokenUserVaultWrapper', () => {
       TestWrappedTokenUserVaultFactory__factory.bytecode,
       [
         underlyingToken.address,
-        BORROW_POSITION_PROXY_V2.address,
+        core.borrowPositionProxyV2.address,
         userVaultImplementation.address,
-        DOLOMITE_MARGIN.address,
+        core.dolomiteMargin.address,
       ],
     );
 

@@ -80,6 +80,10 @@ export async function createGlpWrapperTrader(
 }
 
 export function getGmxRegistryConstructorParams(core: CoreProtocol): any[] {
+  if (!core.gmxEcosystem) {
+    throw new Error('GMX ecosystem not initialized');
+  }
+
   return [
     {
       esGmx: core.gmxEcosystem.esGmx.address,

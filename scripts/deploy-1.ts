@@ -1,4 +1,5 @@
 import { ethers } from 'hardhat';
+import { Network } from 'src/utils/no-deps-constants';
 import { GLPPriceOracleV1 } from '../src/types';
 import { setupCoreProtocol } from '../test/utils/setup';
 import {
@@ -13,7 +14,7 @@ import { deployContractAndSave } from './deploy-utils';
  */
 async function main() {
   const chainId = (await ethers.provider.getNetwork()).chainId;
-  const core = await setupCoreProtocol({ blockNumber: 0 });
+  const core = await setupCoreProtocol({ blockNumber: 0, network: chainId.toString() as Network });
   const gmxRegistryAddress = await deployContractAndSave(
     chainId,
     'GmxRegistryV1',
@@ -24,7 +25,7 @@ async function main() {
     core.weth.address,
     core.marketIds.weth,
     gmxRegistryAddress,
-    core.gmxEcosystem.fsGlp.address,
+    core.gmxEcosystem?.fsGlp.address,
     core.borrowPositionProxyV2.address,
     userVaultImplementationAddress,
     core.dolomiteMargin.address,

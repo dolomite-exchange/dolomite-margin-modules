@@ -231,10 +231,10 @@
   dependencies:
     "@cspotcode/source-map-consumer" "0.8.0"
 
-"@dolomite-exchange/dolomite-margin@^0.9.13":
-  version "0.9.13"
-  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin/-/dolomite-margin-0.9.13.tgz#a4e90114e2dfea9f27e3475b14cae823e885d89a"
-  integrity sha512-ERdrzAkTNxPU6pAjycepXMAvyNjbzZMewcJUYx2ImBAZpQNNvzNA2WbQWO/Pa4F0zRqTHQu8HZFMhJsmOPRWzg==
+"@dolomite-exchange/dolomite-margin@^0.9.18":
+  version "0.9.18"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin/-/dolomite-margin-0.9.18.tgz#93329d7ee2cd6d6ee416b03fdeb9ce4255908f37"
+  integrity sha512-nWjiCoQpEI5ToJyU0630ALn0Z6vrSGjBeukaTOQC1dLAJIZ9KmbrGnONJJB9AtzQsnEjUTdZtIz/VG/xnkgDGA==
   dependencies:
     "@openzeppelin/contracts" "^2.5.1"
     "@types/web3" "1.0.18"
@@ -1692,10 +1692,10 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-2.5.1.tgz#c76e3fc57aa224da3718ec351812a4251289db31"
   integrity sha512-qIy6tLx8rtybEsIOAlrM4J/85s2q2nPkDqj/Rx46VakBZ0LwtFhXIVub96LXHczQX0vaqmAueDqNPXtbSXSaYQ==
 
-"@openzeppelin/contracts@^4.8.0":
-  version "4.8.0"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.8.0.tgz#6854c37df205dd2c056bdfa1b853f5d732109109"
-  integrity sha512-AGuwhRRL+NaKx73WKRNzeCxOCOCxpaqF+kp8TJ89QzAipSwZy/NoflkWaL9bywXFRhIzXt8j38sfF7KBKCPWLw==
+"@openzeppelin/contracts@^4.8.0-rc.2":
+  version "4.8.2"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.8.2.tgz#d815ade0027b50beb9bcca67143c6bcc3e3923d6"
+  integrity sha512-kEUOgPQszC0fSYWpbh2kT94ltOJwj1qfT2DWo+zVttmGmf97JZ99LspePNaeeaLhCImaHVeBbjaQFZQn7+Zc5g==
 
 "@openzeppelin/upgrades@^2.8.0":
   version "2.8.0"

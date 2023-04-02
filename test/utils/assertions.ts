@@ -1,5 +1,5 @@
 import { address, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
-import { assert, expect } from 'chai';
+import { expect } from 'chai';
 import { BaseContract, BigNumber, BigNumberish, CallOverrides, ContractTransaction } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { ERC20, ERC20__factory } from '../../src/types';

@@ -31,7 +31,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.5",
     "@babel/eslint-parser": "^7.19.1",
-    "@dolomite-exchange/dolomite-margin": "^0.9.13",
+    "@dolomite-exchange/dolomite-margin": "^0.9.18",
     "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-solhint": "^3.0.0",
@@ -39,7 +39,7 @@
     "@nomiclabs/hardhat-vyper": "^3.0.1",
     "@nomiclabs/hardhat-waffle": "2.0.1",
     "@nomiclabs/hardhat-web3": "2.0.0",
-    "@openzeppelin/contracts": "^4.8.0",
+    "@openzeppelin/contracts": "^4.8.0-rc.2",
     "@openzeppelin/contracts-ethereum-package": "^3.0.0",
     "@openzeppelin/upgrades": "^2.8.0",
     "@typechain/ethers-v5": "^9.0.0",

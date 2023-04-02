@@ -11,6 +11,7 @@ import {
   TestWrappedTokenUserVaultWrapper__factory,
 } from '../../../src/types';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
+import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectArrayEq, expectEvent, expectThrow } from '../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
@@ -36,6 +37,7 @@ describe('SimpleWrappedTokenUserVaultFactory', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 60_000_000,
+      network: Network.ArbitrumOne,
     });
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
