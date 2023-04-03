@@ -227,6 +227,20 @@ describe('GLPUnwrapperTraderV1', () => {
   });
 
   describe('#getExchangeCost', () => {
+    it('should be greater than oracle price for $10M redemption', async () => {
+      const ONE_WEI = BigNumber.from('1000000000000000000');
+      const TEN_MILLION = BigNumber.from('10000000');
+      const amount = ONE_WEI.mul(TEN_MILLION);
+      const decimalDelta = BigNumber.from('1000000000000');
+      const outputAmount = await unwrapper.getExchangeCost(factory.address, core.usdc.address, amount, BYTES_EMPTY);
+      const oraclePrice = (await priceOracle.getPrice(factory.address)).value.div(decimalDelta);
+      console.log('\toutputAmount', outputAmount.toString());
+      console.log('\toraclePrice', oraclePrice.toString());
+      // the effective price should be greater than the oracle price and less than the oracle price + 0.75%
+      expect(outputAmount.div(TEN_MILLION)).to.be.gt(oraclePrice);
+      expect(outputAmount.div(TEN_MILLION)).to.be.lt(oraclePrice.mul('10075').div('10000'));
+    });
+
     it('should work normally', async () => {
       const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
         .callStatic

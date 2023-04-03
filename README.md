@@ -15,6 +15,9 @@
   <a href='https://t.me/dolomite_official' style="text-decoration:none;">
     <img src='https://img.shields.io/badge/chat-on%20telegram-9cf.svg?longCache=true' alt='Telegram' />
   </a>
+  <a href='https://github.com/dolomite-exchange/dolomite-margin-modules' style="text-decoration:none;">
+    <img src='https://img.shields.io/badge/GitHub-dolomite--exchange%2Fdolomite--margin--modules-lightgrey' alt='GitHub'/>
+  </a>
 </div>
 
 > Solidity Smart Contracts for integration tests against the live `DolomiteMargin` instance on Arbitrum One for

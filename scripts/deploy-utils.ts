@@ -6,7 +6,7 @@ import { createContract } from '../src/utils/dolomite-utils';
 
 type ChainId = string;
 
-async function verifyContract(address: string, constructorArguments: any[]) {
+export async function verifyContract(address: string, constructorArguments: any[]) {
   try {
     await run('verify:verify', {
       address,
