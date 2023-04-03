@@ -1,6 +1,8 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
-import { config as hardhatConfig, ethers, network } from 'hardhat';
+import { config as hardhatConfig, ethers, network as hardhatNetwork } from 'hardhat';
+import { HttpNetworkConfig } from 'hardhat/src/types/config';
+import { Network, networkToNetworkNameMap } from 'src/utils/no-deps-constants';
 
 const gasLogger: Record<string, BigNumber> = {};
 const gasLoggerNumberOfCalls: Record<string, number> = {};
@@ -15,14 +17,15 @@ export async function getRealLatestBlockNumber(include32BlockBuffer: boolean): P
   return Number.parseInt(blockNumber, 16) - (include32BlockBuffer ? 32 : 0);
 }
 
-export async function resetFork(blockNumber: number) {
-  await network.provider.request({
+export async function resetFork(blockNumber: number, network: Network) {
+  const networkConfig = hardhatConfig.networks?.[networkToNetworkNameMap[network]] as HttpNetworkConfig;
+  await hardhatNetwork.provider.request({
     method: 'hardhat_reset',
     params: [
       {
         forking: {
           blockNumber,
-          jsonRpcUrl: hardhatConfig.networks?.hardhat?.forking?.url,
+          jsonRpcUrl: networkConfig?.url,
         },
       },
     ],
@@ -36,7 +39,7 @@ export async function resetFork(blockNumber: number) {
  * @return The new snapshot ID of the chain
  */
 export async function snapshot(): Promise<string> {
-  const result = await network.provider.request({
+  const result = await hardhatNetwork.provider.request({
     method: 'evm_snapshot',
     params: [],
   });
@@ -54,7 +57,7 @@ export async function revertToSnapshotAndCapture(snapshotId: string): Promise<st
   const id = await snapshot();
 
   if (id !== snapshotId) {
-    await network.provider.request({
+    await hardhatNetwork.provider.request({
       method: 'evm_revert',
       params: [snapshotId],
     });
@@ -65,7 +68,7 @@ export async function revertToSnapshotAndCapture(snapshotId: string): Promise<st
 }
 
 export async function setEtherBalance(address: string, balance: BigNumberish = '1000000000000000000') {
-  await network.provider.send('hardhat_setBalance', [
+  await hardhatNetwork.provider.send('hardhat_setBalance', [
     address,
     `0x${ethers.BigNumber.from(balance).toBigInt().toString(16)}`,
   ]);
@@ -76,14 +79,14 @@ export async function impersonateOrFallback(
   giveEther: boolean,
   fallbackSigner: SignerWithAddress,
 ): Promise<SignerWithAddress> {
-  if (network.name !== 'hardhat') {
+  if (hardhatNetwork.name !== 'hardhat') {
     return fallbackSigner;
   }
   return impersonate(targetAccount, giveEther);
 }
 
 export async function impersonate(targetAccount: string, giveEther: boolean = false): Promise<SignerWithAddress> {
-  await network.provider.request({
+  await hardhatNetwork.provider.request({
     method: 'hardhat_impersonateAccount',
     params: [targetAccount],
   });
@@ -140,7 +143,7 @@ export async function waitHours(n: number) {
 }
 
 export async function sendEther(from: string, to: string, value: BigNumberish): Promise<any> {
-  await network.provider.request({
+  await hardhatNetwork.provider.request({
     method: 'hardhat_impersonateAccount',
     params: [from],
   });

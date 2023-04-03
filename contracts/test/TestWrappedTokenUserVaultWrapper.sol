@@ -14,7 +14,8 @@
 
 pragma solidity ^0.8.9;
 
-import { WrappedTokenUserVaultWrapperTrader } from "../external/proxies/WrappedTokenUserVaultWrapperTrader.sol";
+import { WrappedTokenUserVaultWrapperTrader } from
+    "../external/proxies/abstract/WrappedTokenUserVaultWrapperTrader.sol";
 
 import { ICustomTestToken } from "./ICustomTestToken.sol";
 

@@ -1,37 +1,11 @@
 import { address, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
-import { assert, expect } from 'chai';
+import { expect } from 'chai';
 import { BaseContract, BigNumber, BigNumberish, CallOverrides, ContractTransaction } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { ERC20, ERC20__factory } from '../../src/types';
+import { ERC20__factory } from '../../src/types';
 import { AccountStruct } from '../../src/utils/constants';
 import { valueStructToBigNumber } from '../../src/utils/dolomite-utils';
 import { CoreProtocol } from './setup';
-
-export function assertEqBn(a: BigNumber, b: BigNumber) {
-  const msg = `${a.toString()} != ${b.toString()}`;
-  assert.equal(a.eq(b), true, msg);
-}
-
-export function assertApproxEqBn(a: BigNumber, b: BigNumber, divisor: BigNumber) {
-  const aBN = a.div(divisor);
-  const bBN = b.div(divisor);
-  const msg = `${aBN.toString()} != ${bBN.toString()}`;
-  assert.equal(aBN.eq(bBN), true, msg);
-}
-
-export function assertGtBn(a: BigNumber, b: BigNumber) {
-  const msg = `${a.toString()} is not greater than ${b.toString()}`;
-  assert.equal(a.gt(b), true, msg);
-}
-
-export function assertGteBn(a: BigNumber, b: BigNumber) {
-  const msg = `${a.toString()} is not greater than ${b.toString()}`;
-  assert.equal(a.gte(b), true, msg);
-}
-
-export function assertNotEqualBn(a: BigNumber, b: BigNumber) {
-  assert.equal(a.eq(b), false);
-}
 
 export async function expectThrow(call: Promise<any>, reason?: string) {
   if (reason) {
@@ -86,9 +60,12 @@ export async function expectWalletBalanceOrDustyIfZero(
   wallet: address,
   token: address,
   expectedBalance: BigNumberish,
+  balanceBefore?: BigNumber,
 ) {
-  const contract = await new BaseContract(token, ERC20__factory.createInterface()) as ERC20;
-  const balance = await contract.connect(coreProtocol.hhUser1).balanceOf(wallet);
+  const tokenContract = await ERC20__factory.connect(token, coreProtocol.hhUser1);
+  let balance = await tokenContract.balanceOf(wallet);
+  balance = balanceBefore ? balance.sub(balanceBefore) : balance;
+
   if (!balance.eq(expectedBalance) && BigNumber.from(expectedBalance).eq('0')) {
     // check the amount is dusty then (< $0.01)
     const price = await coreProtocol.dolomiteMargin.getMarketPrice(
@@ -173,4 +150,11 @@ export function expectAssetAmountToEq(
   expect(found.denomination).eq(expected.denomination);
   expect(found.ref).eq(expected.ref);
   expect(found.value).eq(expected.value);
+}
+
+export function expectArrayEq(array1: any[], array2: any[]) {
+  expect(array1.length).eq(array2.length);
+  for (let i = 0; i < array1.length; i++) {
+    expect(array1[i]).eq(array2[i]);
+  }
 }

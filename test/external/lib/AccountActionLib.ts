@@ -10,7 +10,7 @@ import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import { CustomTestToken, TestAccountActionLib, TestAccountActionLib__factory } from '../../../src/types';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectAssetAmountToEq,
@@ -45,6 +45,7 @@ describe('AccountActionLib', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
+      network: Network.ArbitrumOne,
     });
     testLib = await createContractWithAbi<TestAccountActionLib>(
       TestAccountActionLib__factory.abi,

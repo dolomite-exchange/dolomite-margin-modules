@@ -1,21 +1,18 @@
 import { expect } from 'chai';
 import { BaseContract } from 'ethers';
 import {
-  TestWrappedTokenUserVaultFactory, TestWrappedTokenUserVaultUnwrapper__factory,
+  TestWrappedTokenUserVaultFactory,
+  TestWrappedTokenUserVaultUnwrapper__factory,
   TestWrappedTokenUserVaultV1,
   TestWrappedTokenUserVaultV1__factory,
   WrappedTokenUserVaultUpgradeableProxy,
   WrappedTokenUserVaultUpgradeableProxy__factory,
 } from '../../../src/types';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
+import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
-import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
 import { createTestWrappedTokenFactory } from '../../utils/wrapped-token-utils';
 
 describe('WrappedTokenUserVaultUpgradeableProxy', () => {
@@ -30,6 +27,7 @@ describe('WrappedTokenUserVaultUpgradeableProxy', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
+      network: Network.ArbitrumOne,
     });
     const underlyingToken = await createTestToken();
     userVaultImplementation = await createContractWithAbi(

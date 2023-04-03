@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { GmxRegistryV1 } from '../../../src/types';
+import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
@@ -16,6 +17,7 @@ describe('GmxRegistryV1', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
+      network: Network.ArbitrumOne,
     });
     registry = await createGmxRegistry(core);
 
@@ -28,19 +30,19 @@ describe('GmxRegistryV1', () => {
 
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await registry.esGmx()).to.equal(core.gmxEcosystem.esGmx.address);
-      expect(await registry.fsGlp()).to.equal(core.gmxEcosystem.fsGlp.address);
-      expect(await registry.glp()).to.equal(core.gmxEcosystem.glp.address);
-      expect(await registry.glpManager()).to.equal(core.gmxEcosystem.glpManager.address);
-      expect(await registry.glpRewardsRouter()).to.equal(core.gmxEcosystem.glpRewardsRouter.address);
-      expect(await registry.gmx()).to.equal(core.gmxEcosystem.gmx.address);
-      expect(await registry.gmxRewardsRouter()).to.equal(core.gmxEcosystem.gmxRewardsRouter.address);
-      expect(await registry.gmxVault()).to.equal(core.gmxEcosystem.gmxVault.address);
-      expect(await registry.sGlp()).to.equal(core.gmxEcosystem.sGlp.address);
-      expect(await registry.sGmx()).to.equal(core.gmxEcosystem.sGmx.address);
-      expect(await registry.sbfGmx()).to.equal(core.gmxEcosystem.sbfGmx.address);
-      expect(await registry.vGlp()).to.equal(core.gmxEcosystem.vGlp.address);
-      expect(await registry.vGmx()).to.equal(core.gmxEcosystem.vGmx.address);
+      expect(await registry.esGmx()).to.equal(core.gmxEcosystem!.esGmx.address);
+      expect(await registry.fsGlp()).to.equal(core.gmxEcosystem!.fsGlp.address);
+      expect(await registry.glp()).to.equal(core.gmxEcosystem!.glp.address);
+      expect(await registry.glpManager()).to.equal(core.gmxEcosystem!.glpManager.address);
+      expect(await registry.glpRewardsRouter()).to.equal(core.gmxEcosystem!.glpRewardsRouter.address);
+      expect(await registry.gmx()).to.equal(core.gmxEcosystem!.gmx.address);
+      expect(await registry.gmxRewardsRouter()).to.equal(core.gmxEcosystem!.gmxRewardsRouter.address);
+      expect(await registry.gmxVault()).to.equal(core.gmxEcosystem!.gmxVault.address);
+      expect(await registry.sGlp()).to.equal(core.gmxEcosystem!.sGlp.address);
+      expect(await registry.sGmx()).to.equal(core.gmxEcosystem!.sGmx.address);
+      expect(await registry.sbfGmx()).to.equal(core.gmxEcosystem!.sbfGmx.address);
+      expect(await registry.vGlp()).to.equal(core.gmxEcosystem!.vGlp.address);
+      expect(await registry.vGmx()).to.equal(core.gmxEcosystem!.vGmx.address);
     });
   });
 

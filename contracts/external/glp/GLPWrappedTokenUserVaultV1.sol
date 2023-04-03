@@ -38,7 +38,7 @@ import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
-import { WrappedTokenUserVaultV1 } from "../proxies/WrappedTokenUserVaultV1.sol";
+import { WrappedTokenUserVaultV1 } from "../proxies/abstract/WrappedTokenUserVaultV1.sol";
 
 
 /**

@@ -14,24 +14,15 @@
 
 pragma solidity ^0.8.9;
 
-import { IGLPManager } from "../external/interfaces/IGLPManager.sol";
+import { WrappedTokenUserVaultV1 } from  "./abstract/WrappedTokenUserVaultV1.sol";
 
 
 /**
- * @title   TestGlpManager
+ * @title   SimpleWrappedTokenUserVaultV1
  * @author  Dolomite
- *
- * @notice  A contract for testing pieces of the GLP Manager's functionality
+ * @notice  A simple implementation (for an upgradeable proxy) for wrapping tokens via a per-user vault that can be used
+ *          with DolomiteMargin. There are no functions to implement, so the implementation is empty.
  */
-contract TestGLPManager is IGLPManager {
-
-    uint256 private _aumInUsdg;
-
-    function setAumInUsdg(uint256 _newAumInUsdg) external {
-        _aumInUsdg = _newAumInUsdg;
-    }
-
-    function getAumInUsdg(bool) external view returns (uint256) {
-        return _aumInUsdg;
-    }
+contract SimpleWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
+    // solhint-disable-previous-line no-empty-blocks
 }

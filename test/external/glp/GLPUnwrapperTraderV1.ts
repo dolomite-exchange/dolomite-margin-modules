@@ -14,9 +14,8 @@ import {
   IERC20,
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
-import { BORROW_POSITION_PROXY_V2, DOLOMITE_MARGIN } from '../../../src/utils/constants';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
@@ -53,8 +52,9 @@ describe('GLPUnwrapperTraderV1', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
+      network: Network.ArbitrumOne,
     });
-    underlyingToken = core.gmxEcosystem.fsGlp;
+    underlyingToken = core.gmxEcosystem!.fsGlp;
     const userVaultImplementation = await createContractWithAbi(
       GLPWrappedTokenUserVaultV1__factory.abi,
       GLPWrappedTokenUserVaultV1__factory.bytecode,
@@ -69,9 +69,9 @@ describe('GLPUnwrapperTraderV1', () => {
         core.marketIds.weth,
         gmxRegistry.address,
         underlyingToken.address,
-        BORROW_POSITION_PROXY_V2.address,
+        core.borrowPositionProxyV2.address,
         userVaultImplementation.address,
-        DOLOMITE_MARGIN.address,
+        core.dolomiteMargin.address,
       ],
     );
     priceOracle = await createContractWithAbi<GLPPriceOracleV1>(
@@ -101,12 +101,13 @@ describe('GLPUnwrapperTraderV1', () => {
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
     const usdcAmount = amountWei.div(1e12).mul(4);
-    await setupUSDCBalance(core.hhUser1, usdcAmount, core.gmxEcosystem.glpManager);
-    await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1).mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
-    await core.gmxEcosystem.sGlp.connect(core.hhUser1).approve(vault.address, amountWei);
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
+    await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+      .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
+    await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
-    expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
+    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
 
     snapshotId = await snapshot();
@@ -186,7 +187,7 @@ describe('GLPUnwrapperTraderV1', () => {
 
     it('should fail if maker token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.gmxEcosystem.sGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await core.gmxEcosystem!.sGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
@@ -241,7 +242,7 @@ describe('GLPUnwrapperTraderV1', () => {
     });
 
     it('should work normally', async () => {
-      const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
+      const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
         .callStatic
         .unstakeAndRedeemGlp(
           core.usdc.address,
@@ -259,7 +260,7 @@ describe('GLPUnwrapperTraderV1', () => {
         // create a random number from 1 to 99 and divide by 101 (making the number, at-most, slightly smaller)
         const randomNumber = BigNumber.from(Math.floor(Math.random() * 99) + 1);
         const weirdAmount = amountWei.mul(randomNumber).div(101);
-        const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
+        const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .unstakeAndRedeemGlp(
             core.usdc.address,

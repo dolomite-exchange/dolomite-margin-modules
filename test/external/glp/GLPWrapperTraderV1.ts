@@ -15,7 +15,7 @@ import {
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
@@ -53,8 +53,9 @@ describe('GLPWrapperTraderV1', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
+      network: Network.ArbitrumOne,
     });
-    underlyingToken = core.gmxEcosystem.fsGlp;
+    underlyingToken = core.gmxEcosystem!.fsGlp;
     const userVaultImplementation = await createContractWithAbi(
       GLPWrappedTokenUserVaultV1__factory.abi,
       GLPWrappedTokenUserVaultV1__factory.bytecode,
@@ -99,13 +100,13 @@ describe('GLPWrapperTraderV1', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    await setupUSDCBalance(core.hhUser1, usdcAmount, core.gmxEcosystem.glpManager);
-    await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
+    await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.usdc.address, usableUsdcAmount, 0, 0);
-    await core.gmxEcosystem.sGlp.connect(core.hhUser1).approve(vault.address, amountWei);
+    await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
-    expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
+    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
 
     snapshotId = await snapshot();
@@ -217,7 +218,7 @@ describe('GLPWrapperTraderV1', () => {
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
       const inputAmount = usableUsdcAmount;
-      const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
+      const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
         .callStatic
         .mintAndStakeGlp(
           core.usdc.address,
@@ -235,7 +236,7 @@ describe('GLPWrapperTraderV1', () => {
         // create a random number from 1 to 99 and divide by 101 (making the number, at-most, slightly smaller)
         const randomNumber = BigNumber.from(Math.floor(Math.random() * 99) + 1);
         const weirdAmount = usableUsdcAmount.mul(randomNumber).div(101);
-        const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
+        const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .mintAndStakeGlp(
             core.usdc.address,

@@ -4,23 +4,23 @@ import { expect } from 'chai';
 import { BaseContract, BigNumber } from 'ethers';
 import {
   CustomTestToken,
-  TestWrappedTokenUserVaultFactory, TestWrappedTokenUserVaultUnwrapper, TestWrappedTokenUserVaultUnwrapper__factory,
+  TestWrappedTokenUserVaultFactory,
+  TestWrappedTokenUserVaultUnwrapper,
+  TestWrappedTokenUserVaultUnwrapper__factory,
   TestWrappedTokenUserVaultV1,
   TestWrappedTokenUserVaultV1__factory,
   WrappedTokenUserVaultV1,
-} from '../../../src/types';
-import { WETH_MARKET_ID } from '../../../src/utils/constants';
-import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
+} from '../../../../src/types';
 import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../../utils/setup';
-import { createTestWrappedTokenFactory } from '../../utils/wrapped-token-utils';
+  createContractWithAbi,
+  createTestToken,
+  depositIntoDolomiteMargin,
+} from '../../../../src/utils/dolomite-utils';
+import { Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../../utils/assertions';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
+import { createTestWrappedTokenFactory } from '../../../utils/wrapped-token-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -46,6 +46,7 @@ describe('WrappedTokenUserVaultV1', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
+      network: Network.ArbitrumOne,
     });
     underlyingToken = await createTestToken();
     userVaultImplementation = await createContractWithAbi(
@@ -65,7 +66,7 @@ describe('WrappedTokenUserVaultV1', () => {
     tokenUnwrapper = await createContractWithAbi(
       TestWrappedTokenUserVaultUnwrapper__factory.abi,
       TestWrappedTokenUserVaultUnwrapper__factory.bytecode,
-      [core.usdc.address, factory.address, core.dolomiteMargin.address]
+      [core.usdc.address, factory.address, core.dolomiteMargin.address],
     );
     await factory.connect(core.governance).initialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -94,11 +95,11 @@ describe('WrappedTokenUserVaultV1', () => {
 
     await otherToken.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
     await otherToken.connect(core.hhUser1).approve(core.dolomiteMargin.address, otherAmountWei);
-    await depositIntoDolomiteMargin(core.hhUser1, defaultAccountNumber, otherMarketId, otherAmountWei);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId, otherAmountWei);
 
     await otherToken.connect(solidUser).addBalance(solidUser.address, bigOtherAmountWei);
     await otherToken.connect(solidUser).approve(core.dolomiteMargin.address, bigOtherAmountWei);
-    await depositIntoDolomiteMargin(solidUser, defaultAccountNumber, otherMarketId, bigOtherAmountWei);
+    await depositIntoDolomiteMargin(core, solidUser, defaultAccountNumber, otherMarketId, bigOtherAmountWei);
 
     snapshotId = await snapshot();
   });
@@ -388,7 +389,7 @@ describe('WrappedTokenUserVaultV1', () => {
     });
 
     it('should work normally for disallowed collateral asset that goes negative (debt market)', async () => {
-      await factory.setAllowableCollateralMarketIds([WETH_MARKET_ID]);
+      await factory.setAllowableCollateralMarketIds([core.marketIds.weth]);
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await userVault.transferFromPositionWithOtherToken(
@@ -414,7 +415,7 @@ describe('WrappedTokenUserVaultV1', () => {
     });
 
     it('should work when non-allowable debt market is transferred in', async () => {
-      await factory.setAllowableDebtMarketIds([WETH_MARKET_ID]);
+      await factory.setAllowableDebtMarketIds([core.marketIds.weth]);
       // attempt to transfer another market ID in
       await userVault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -457,7 +458,7 @@ describe('WrappedTokenUserVaultV1', () => {
     });
 
     it('should fail when transferring in an unsupported collateral token', async () => {
-      await factory.setAllowableCollateralMarketIds([WETH_MARKET_ID]);
+      await factory.setAllowableCollateralMarketIds([core.marketIds.weth]);
       await expectThrow(
         userVault.transferIntoPositionWithOtherToken(
           defaultAccountNumber,
@@ -534,7 +535,7 @@ describe('WrappedTokenUserVaultV1', () => {
     });
 
     it('should work when 1 allowable collateral market is set', async () => {
-      await factory.setAllowableCollateralMarketIds([WETH_MARKET_ID]);
+      await factory.setAllowableCollateralMarketIds([core.marketIds.weth]);
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await userVault.transferFromPositionWithOtherToken(
@@ -547,7 +548,7 @@ describe('WrappedTokenUserVaultV1', () => {
     });
 
     it('should work when 1 allowable debt market is set', async () => {
-      await factory.setAllowableDebtMarketIds([WETH_MARKET_ID]);
+      await factory.setAllowableDebtMarketIds([core.marketIds.weth]);
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await userVault.transferIntoPositionWithOtherToken(
@@ -593,7 +594,7 @@ describe('WrappedTokenUserVaultV1', () => {
     });
 
     it('should fail when an invalid debt market is used', async () => {
-      await factory.setAllowableDebtMarketIds([WETH_MARKET_ID]);
+      await factory.setAllowableDebtMarketIds([core.marketIds.weth]);
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await expectThrow(

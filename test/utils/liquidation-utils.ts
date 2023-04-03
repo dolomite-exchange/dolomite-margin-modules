@@ -1,7 +1,7 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import axios from 'axios';
 import { BigNumber } from 'ethers';
-import { NETWORK_ID } from '../../src/utils/no-deps-constants';
+import { CoreProtocol } from './setup';
 
 const API_URL = 'https://apiv5.paraswap.io';
 
@@ -14,10 +14,11 @@ export async function getCalldataForParaswap(
   outputDecimals: number,
   txOrigin: { address: address },
   receiver: { address: address },
+  core: CoreProtocol,
 ): Promise<{ calldata: string, outputAmount: BigNumber }> {
   const priceRouteResponse = await axios.get(`${API_URL}/prices`, {
     params: {
-      network: NETWORK_ID,
+      network: core.config.network,
       srcToken: inputToken.address,
       srcDecimals: inputDecimals,
       destToken: outputToken.address,
@@ -37,7 +38,7 @@ export async function getCalldataForParaswap(
     ignoreGasEstimate: 'true',
     onlyParams: 'false',
   }).toString();
-  const result = await axios.post(`${API_URL}/transactions/${NETWORK_ID}?${queryParams}`, {
+  const result = await axios.post(`${API_URL}/transactions/${core.config.network}?${queryParams}`, {
     priceRoute: priceRouteResponse?.priceRoute,
     txOrigin: txOrigin.address,
     srcToken: inputToken.address,

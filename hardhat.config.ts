@@ -18,11 +18,15 @@ import 'tsconfig-paths/register';
 chai.use(solidity);
 require('dotenv').config();
 
-const arbitrumWeb3Url = process.env.ARBITRUM_WEB3_PROVIDER_URL;
-const arbiscanApiKey = process.env.ARBISCAN_API_KEY;
-if (!arbitrumWeb3Url) {
-  throw new Error('No ARBITRUM_WEB3_PROVIDER_URL provided!');
+const arbitrumOneWeb3Url = process.env.ARBITRUM_ONE_WEB3_PROVIDER_URL;
+if (!arbitrumOneWeb3Url) {
+  throw new Error('No ARBITRUM_ONE_WEB3_PROVIDER_URL provided!');
 }
+const arbitrumGoerliWeb3Url = process.env.ARBITRUM_GOERLI_WEB3_PROVIDER_URL;
+if (!arbitrumGoerliWeb3Url) {
+  throw new Error('No ARBITRUM_GOERLI_WEB3_PROVIDER_URL provided!');
+}
+const arbiscanApiKey = process.env.ARBISCAN_API_KEY;
 if (!arbiscanApiKey) {
   throw new Error('No ARBISCAN_API_KEY provided!');
 }
@@ -32,13 +36,18 @@ export const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: arbitrumWeb3Url,
+        url: arbitrumOneWeb3Url,
         blockNumber: DEFAULT_BLOCK_NUMBER,
       },
     },
-    arbitrum: {
+    arbitrum_one: {
       chainId: 42161,
-      url: arbitrumWeb3Url,
+      url: arbitrumOneWeb3Url,
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    },
+    arbitrum_goerli: {
+      chainId: 421613,
+      url: arbitrumGoerliWeb3Url,
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
   },
@@ -73,7 +82,7 @@ export const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       arbitrumOne: arbiscanApiKey,
-      arbitrumTestnet: arbiscanApiKey,
+      arbitrumGoerli: arbiscanApiKey,
     },
   },
 };
