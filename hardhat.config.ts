@@ -82,7 +82,7 @@ export const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       arbitrumOne: arbiscanApiKey,
-      arbitrumTestnet: arbiscanApiKey,
+      arbitrumGoerli: arbiscanApiKey,
     },
   },
 };

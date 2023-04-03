@@ -45,7 +45,14 @@
     "421613": {
       "address": "0x7FD65B49ee2E2faC8077932953e993e91b6f6621",
       "transaction": "0x7d5e93aa20528a7186f824f0a777a5dc6cd8180f889060139cbb7c80739ed2eb",
-      "isVerified": false
+      "isVerified": true
+    }
+  },
+  "AtlasSIUserVaultFactory": {
+    "421613": {
+      "address": "0x823F4f7582fcBbe4eB1239430191C29C494Dd51c",
+      "transaction": "0xe8d85a24b5a78382babc16667be3898cfda9e2ad073c6c6072bf1dae4dd73952",
+      "isVerified": true
     }
   }
 }
