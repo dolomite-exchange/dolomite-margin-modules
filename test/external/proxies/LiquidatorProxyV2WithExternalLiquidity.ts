@@ -128,6 +128,7 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
         6,
         solidAccount,
         liquidatorProxy,
+        core,
       );
 
       const txResult = await liquidatorProxy.liquidate(
