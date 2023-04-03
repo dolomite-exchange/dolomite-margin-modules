@@ -10,7 +10,7 @@ import {
   TestGLPWrappedTokenUserVaultV1__factory,
 } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
 import {
@@ -35,6 +35,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
+      network: Network.ArbitrumOne,
     });
     gmxRegistry = await createGmxRegistry(core);
     vaultImplementation = await createContractWithAbi<TestGLPWrappedTokenUserVaultV1>(
@@ -49,7 +50,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
         core.weth.address,
         core.marketIds.weth,
         gmxRegistry.address,
-        core.gmxEcosystem.fsGlp.address,
+        core.gmxEcosystem!.fsGlp.address,
         core.borrowPositionProxyV2.address,
         vaultImplementation.address,
         core.dolomiteMargin.address,
@@ -68,7 +69,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       expect(await factory.WETH()).to.equal(core.weth.address);
       expect(await factory.WETH_MARKET_ID()).to.equal(core.marketIds.weth);
       expect(await factory.gmxRegistry()).to.equal(gmxRegistry.address);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem.fsGlp.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem!.fsGlp.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
@@ -78,17 +79,17 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
   describe('#createVaultAndAcceptFullAccountTransfer', () => {
     it('should work normally', async () => {
       const usdcAmount = BigNumber.from('100000000'); // 100 USDC
-      await setupUSDCBalance(core.hhUser1, usdcAmount, core.gmxEcosystem.glpManager);
-      await core.gmxEcosystem.glpRewardsRouter.mintAndStakeGlp(
+      await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
+      await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1).mintAndStakeGlp(
         core.usdc.address,
         usdcAmount,
         ONE_BI,
         ONE_BI,
       );
       // use sGLP for approvals/transfers and fsGLP for checking balances
-      const glpAmount = await core.gmxEcosystem.fsGlp.balanceOf(core.hhUser1.address);
+      const glpAmount = await core.gmxEcosystem!.fsGlp.connect(core.hhUser1).balanceOf(core.hhUser1.address);
       const vaultAddress = await factory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
-      await core.gmxEcosystem.gmxRewardsRouter.connect(core.hhUser1).signalTransfer(vaultAddress);
+      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).signalTransfer(vaultAddress);
 
       await core.testPriceOracle.setPrice(factory.address, '1000000000000000000');
       await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -101,8 +102,8 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
         GLPWrappedTokenUserVaultV1__factory,
         core.hhUser2,
       );
-      expect(await core.gmxEcosystem.fsGlp.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
-      expect(await core.gmxEcosystem.fsGlp.balanceOf(vaultAddress)).to.eq(glpAmount);
+      expect(await core.gmxEcosystem!.fsGlp.connect(core.hhUser1).balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.fsGlp.connect(core.hhUser1).balanceOf(vaultAddress)).to.eq(glpAmount);
       expect(await vault.underlyingBalanceOf()).to.eq(glpAmount);
     });
 

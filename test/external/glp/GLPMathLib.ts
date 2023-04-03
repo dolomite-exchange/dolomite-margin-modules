@@ -9,6 +9,7 @@ import {
   TestGLPMathLib__factory,
 } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 import { createGmxRegistry } from '../../utils/wrapped-token-utils';
@@ -27,6 +28,7 @@ describe('GLPMathLib', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 53107700,
+      network: Network.ArbitrumOne,
     });
     registry = await createGmxRegistry(core);
     lib = await createContractWithAbi(
@@ -36,8 +38,9 @@ describe('GLPMathLib', () => {
     );
 
     const usdcBigAmount = amountWei.div(1e12).mul(4);
-    await setupUSDCBalance(core.hhUser1, usdcBigAmount, core.gmxEcosystem.glpManager);
-    await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1).mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
+    await setupUSDCBalance(core, core.hhUser1, usdcBigAmount, core.gmxEcosystem!.glpManager);
+    await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
+      .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
 
     snapshotId = await snapshot();
   });
@@ -54,7 +57,7 @@ describe('GLPMathLib', () => {
         const weirdAmountUsdc = usdcAmount.mul(random).div(101);
         const usdgAmount = await lib.GLPMathLibGetUsdgAmountForBuy(core.usdc.address, weirdAmountUsdc);
 
-        const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
+        const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .mintAndStakeGlp(core.usdc.address, weirdAmountUsdc, 0, 0);
         expect(await lib.GLPMathLibGetGlpMintAmount(usdgAmount)).to.eq(expectedAmount);
@@ -86,7 +89,7 @@ describe('GLPMathLib', () => {
         const weirdAmountGlp = glpAmount.mul(random).div(101);
         const usdgAmount = await lib.GLPMathLibGetUsdgAmountForSell(weirdAmountGlp);
 
-        const expectedAmount = await core.gmxEcosystem.glpRewardsRouter.connect(core.hhUser1)
+        const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .unstakeAndRedeemGlp(core.usdc.address, weirdAmountGlp, 0, core.hhUser1.address);
         expect(await lib.GLPMathLibGetGlpRedemptionAmount(core.usdc.address, usdgAmount)).to.eq(expectedAmount);

@@ -2,8 +2,8 @@ import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { GLPPriceOracleV1, GLPPriceOracleV1__factory, GmxRegistryV1 } from '../../../src/types';
-import { FS_GLP } from '../../../src/utils/constants';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import { setupCoreProtocol } from '../../utils/setup';
@@ -20,12 +20,13 @@ describe('GLPPriceOracleV1', () => {
   before(async () => {
     const core = await setupCoreProtocol({
       blockNumber: 53107700,
+      network: Network.ArbitrumOne,
     });
     gmxRegistry = await createGmxRegistry(core);
     glpPriceOracle = await createContractWithAbi<GLPPriceOracleV1>(
       GLPPriceOracleV1__factory.abi,
       GLPPriceOracleV1__factory.bytecode,
-      [gmxRegistry.address, FS_GLP.address], // technically should be DFS_GLP
+      [gmxRegistry.address, core.gmxEcosystem!.fsGlp.address], // technically should be DFS_GLP
     );
 
     snapshotId = await snapshot();

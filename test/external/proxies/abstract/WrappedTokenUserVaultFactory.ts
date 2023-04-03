@@ -921,7 +921,7 @@ describe('WrappedTokenUserVaultFactory', () => {
 
   describe('#name', () => {
     it('should work normally', async () => {
-      expect(await factory.name()).to.eq('Dolomite: Test Token');
+      expect(await factory.name()).to.eq('Dolomite Isolation: Test Token');
     });
   });
 

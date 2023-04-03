@@ -60,6 +60,10 @@ abstract contract WrappedTokenUserVaultFactory is
     // ================ Immutable Fields ================
     // ==================================================
 
+    /**
+     * @dev The market ID used to indicate that no other markets can be used in this category for
+     *      #allowableDebtMarketIds or #allowableCollateralMarketIds
+     */
     uint256 public constant override NONE = type(uint256).max;
     address public immutable override UNDERLYING_TOKEN; // solhint-disable-line var-name-mixedcase
     IBorrowPositionProxyV2 public immutable override BORROW_POSITION_PROXY; // solhint-disable-line var-name-mixedcase

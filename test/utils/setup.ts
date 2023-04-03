@@ -15,14 +15,15 @@ import { address } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface } from 'ethers';
 import { ethers, network } from 'hardhat';
-import { Network, NETWORK_ID } from 'src/utils/no-deps-constants';
+import { Network } from 'src/utils/no-deps-constants';
 import {
   BorrowPositionProxyV2,
   BorrowPositionProxyV2__factory,
   Expiry,
   Expiry__factory,
   IDepositWithdrawalProxy,
-  IDepositWithdrawalProxy__factory, IDolomiteAmmFactory,
+  IDepositWithdrawalProxy__factory,
+  IDolomiteAmmFactory,
   IDolomiteAmmFactory__factory,
   IDolomiteAmmRouterProxy,
   IDolomiteAmmRouterProxy__factory,
@@ -43,8 +44,11 @@ import {
   IGmxVester,
   IGmxVester__factory,
   ISGMX,
-  ISGMX__factory, IWETH, IWETH__factory,
-  LiquidatorAssetRegistry, LiquidatorAssetRegistry__factory,
+  ISGMX__factory,
+  IWETH,
+  IWETH__factory,
+  LiquidatorAssetRegistry,
+  LiquidatorAssetRegistry__factory,
   LiquidatorProxyV1,
   LiquidatorProxyV1__factory,
   LiquidatorProxyV1WithAmm,
@@ -146,8 +150,8 @@ export interface CoreProtocol {
    */
   gmxEcosystem: GmxEcosystem | undefined;
   liquidatorAssetRegistry: LiquidatorAssetRegistry | undefined;
-  liquidatorProxyV1: LiquidatorProxyV1 | undefined;
-  liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm | undefined;
+  liquidatorProxyV1: LiquidatorProxyV1;
+  liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
   liquidatorProxyV2: LiquidatorProxyV2WithExternalLiquidity | undefined;
   liquidatorProxyV3: LiquidatorProxyV3WithLiquidityToken | undefined;
   testInterestSetter: TestInterestSetter;
@@ -216,7 +220,7 @@ export async function setupCoreProtocol(
   config: CoreProtocolSetupConfig,
 ): Promise<CoreProtocol> {
   if (network.name === 'hardhat') {
-    await resetFork(config.blockNumber);
+    await resetFork(config.blockNumber, config.network);
   } else {
     console.log('Skipping forking...');
   }
@@ -275,13 +279,13 @@ export async function setupCoreProtocol(
     governance,
   );
 
-  const liquidatorProxyV2 = getContract(
-    (LiquidatorProxyV2WithExternalLiquidityJson.networks as any)[NETWORK_ID]?.address,
+  const liquidatorProxyV2 = getContractOpt(
+    (LiquidatorProxyV2WithExternalLiquidityJson.networks as any)[config.network]?.address,
     LiquidatorProxyV2WithExternalLiquidity__factory.connect,
   );
 
-  const liquidatorProxyV3 = getContract(
-    (LiquidatorProxyV3WithLiquidityTokenJson.networks as any)[NETWORK_ID].address,
+  const liquidatorProxyV3 = getContractOpt(
+    (LiquidatorProxyV3WithLiquidityTokenJson.networks as any)[config.network]?.address,
     LiquidatorProxyV3WithLiquidityToken__factory.connect,
   );
 
@@ -303,7 +307,7 @@ export async function setupCoreProtocol(
     testPriceOracle = null as any;
   }
 
-  const atlasEcosystem = await createAtlasEcosystem(config.network);
+  const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
 
   return {
@@ -359,13 +363,13 @@ export async function setupTestMarket(
   );
 }
 
-async function createAtlasEcosystem(network: Network): Promise<AtlasEcosystem | undefined> {
+async function createAtlasEcosystem(network: Network, signer: SignerWithAddress): Promise<AtlasEcosystem | undefined> {
   if (!ATLAS_SI_TOKEN_MAP[network]) {
     return undefined;
   }
 
   return {
-    siToken: getContract(ATLAS_SI_TOKEN_MAP[network] as string, IERC20__factory.connect),
+    siToken: getContract(ATLAS_SI_TOKEN_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
   };
 }
 
@@ -380,20 +384,29 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
     ? await impersonateOrFallback(await esGmxDistributor.connect(signer).admin(), true, signer)
     : undefined;
   return {
-    esGmx: getContract(ES_GMX_MAP[network] as string, IERC20__factory.connect),
+    esGmx: getContract(ES_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     esGmxDistributor: esGmxDistributor.connect(esGmxAdmin),
-    fsGlp: getContract(FS_GLP_MAP[network] as string, IERC20__factory.connect),
-    glp: getContract(GLP_MAP[network] as string, IERC20__factory.connect),
-    glpManager: getContract(GLP_MANAGER_MAP[network] as string, IGLPManager__factory.connect),
-    glpRewardsRouter: getContract(GLP_REWARD_ROUTER_MAP[network] as string, IGLPRewardsRouterV2__factory.connect),
-    gmxRewardsRouter: getContract(GMX_REWARD_ROUTER_MAP[network] as string, IGmxRewardRouterV2__factory.connect),
-    gmx: getContract(GMX_MAP[network] as string, IERC20__factory.connect),
-    gmxVault: getContract(GMX_VAULT_MAP[network] as string, IGmxVault__factory.connect),
-    sGlp: getContract(S_GLP_MAP[network] as string, IERC20__factory.connect),
-    sGmx: getContract(S_GMX_MAP[network] as string, ISGMX__factory.connect),
-    sbfGmx: getContract(SBF_GMX_MAP[network] as string, IERC20__factory.connect),
-    vGlp: getContract(V_GLP_MAP[network] as string, IGmxVester__factory.connect),
-    vGmx: getContract(V_GMX_MAP[network] as string, IGmxVester__factory.connect),
+    fsGlp: getContract(FS_GLP_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
+    glp: getContract(GLP_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
+    glpManager: getContract(
+      GLP_MANAGER_MAP[network] as string,
+      address => IGLPManager__factory.connect(address, signer),
+    ),
+    glpRewardsRouter: getContract(
+      GLP_REWARD_ROUTER_MAP[network] as string,
+      address => IGLPRewardsRouterV2__factory.connect(address, signer),
+    ),
+    gmxRewardsRouter: getContract(
+      GMX_REWARD_ROUTER_MAP[network] as string,
+      address => IGmxRewardRouterV2__factory.connect(address, signer),
+    ),
+    gmx: getContract(GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
+    gmxVault: getContract(GMX_VAULT_MAP[network] as string, address => IGmxVault__factory.connect(address, signer)),
+    sGlp: getContract(S_GLP_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
+    sGmx: getContract(S_GMX_MAP[network] as string, address => ISGMX__factory.connect(address, signer)),
+    sbfGmx: getContract(SBF_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
+    vGlp: getContract(V_GLP_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
+    vGmx: getContract(V_GMX_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
   };
 }
 
@@ -401,5 +414,16 @@ function getContract<T>(
   address: string,
   connector: (address: string, signerOrProvider: any) => T,
 ): T {
+  return connector(address, undefined);
+}
+
+function getContractOpt<T>(
+  address: string | undefined,
+  connector: (address: string, signerOrProvider: any) => T,
+): T | undefined {
+  if (!address) {
+    return undefined;
+  }
+
   return connector(address, undefined);
 }

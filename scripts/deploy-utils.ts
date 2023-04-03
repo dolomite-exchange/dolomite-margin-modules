@@ -11,6 +11,7 @@ async function verifyContract(address: string, constructorArguments: any[]) {
     await run('verify:verify', {
       address,
       constructorArguments,
+      network: 'arbitrumTestnet',
     });
   } catch (e: any) {
     if (e?.message.toLowerCase().includes('already verified')) {
@@ -25,6 +26,7 @@ export async function deployContractAndSave(
   chainId: number,
   contractName: string,
   args: any[],
+  contractRename?: string,
 ): Promise<address> {
   const fileBuffer = fs.readFileSync('./scripts/deployments.json');
 
@@ -35,21 +37,22 @@ export async function deployContractAndSave(
     file = {};
   }
 
-  if (file[contractName]?.[chainId.toString()]) {
-    console.log(`Contract ${contractName} has already been deployed to chainId ${chainId}. Skipping...`);
-    const contract = file[contractName][chainId.toString()];
+  const usedContractName = contractRename ?? contractName;
+  if (file[usedContractName]?.[chainId.toString()]) {
+    console.log(`Contract ${usedContractName} has already been deployed to chainId ${chainId}. Skipping...`);
+    const contract = file[usedContractName][chainId.toString()];
     if (!contract.isVerified) {
-      await prettyPrintAndVerifyContract(file, chainId, contractName, args);
+      await prettyPrintAndVerifyContract(file, chainId, usedContractName, args);
     }
     return contract.address;
   }
 
-  console.log(`Deploying ${contractName} to chainId ${chainId}...`);
+  console.log(`Deploying ${usedContractName} to chainId ${chainId}...`);
 
   const contract = await createContract(contractName, args);
 
-  file[contractName] = {
-    ...file[contractName],
+  file[usedContractName] = {
+    ...file[usedContractName],
     [chainId]: {
       address: contract.address,
       transaction: contract.deployTransaction.hash,
@@ -61,7 +64,7 @@ export async function deployContractAndSave(
     writeFile(file);
   }
 
-  await prettyPrintAndVerifyContract(file, chainId, contractName, args);
+  await prettyPrintAndVerifyContract(file, chainId, usedContractName, args);
 
   return contract.address;
 }

@@ -10,13 +10,14 @@
     "build": "hardhat --max-memory 16384 compile && hardhat --max-memory 16384 typechain",
     "clean": "hardhat clean",
     "coverage": "hardhat coverage --testfiles \"test/**/*.ts\" --network hardhat",
-    "deploy:1": "hardhat --network arbitrum run scripts/deploy-1.ts",
+    "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy-atlas-ecosystem.ts",
+    "deploy:gmx-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-gmx-ecosystem.ts",
     "deploy:coveralls": "coveralls < coverage/lcov.info",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "test": "hardhat --network hardhat test",
-    "test:specific": "hardhat --network hardhat test test/external/proxies/SimpleWrappedTokenUserVaultFactory.ts"
+    "test:specific": "hardhat --network hardhat test test/external/glp/GLPLiquidation.ts"
   },
   "repository": {
     "type": "git",
