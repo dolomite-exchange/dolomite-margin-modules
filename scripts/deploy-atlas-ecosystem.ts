@@ -24,6 +24,7 @@ async function main() {
     userVaultImplementation,
     core.dolomiteMargin.address,
   ], 'AtlasSIUserVaultFactory');
+  await deployContractAndSave(Number(network), 'TestAdminPriceOracleV1', [core.dolomiteMargin.address]);
 }
 
 main()

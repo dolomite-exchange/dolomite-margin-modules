@@ -59,13 +59,13 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
     }
 
     function getPrice(
-        address token
+        address _token
     )
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
-            token == address(DFS_GLP),
+            _token == address(DFS_GLP),
             _FILE,
             "invalid token"
         );

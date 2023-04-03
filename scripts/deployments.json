@@ -54,5 +54,12 @@
       "transaction": "0xe8d85a24b5a78382babc16667be3898cfda9e2ad073c6c6072bf1dae4dd73952",
       "isVerified": true
     }
+  },
+  "TestAdminPriceOracleV1": {
+    "421613": {
+      "address": "0xB54b35897388d0E022a66DDf4ec71B01049c403D",
+      "transaction": "0x3893a6904daab16ed655b05ec9631066a27cb948a2a1c42b0d8c7b952fceb95e",
+      "isVerified": true
+    }
   }
 }
