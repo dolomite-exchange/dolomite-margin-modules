@@ -21,6 +21,8 @@ import { WrappedTokenUserVaultV1 } from  "./abstract/WrappedTokenUserVaultV1.sol
  * @title   SimpleWrappedTokenUserVaultV1
  * @author  Dolomite
  * @notice  A simple implementation (for an upgradeable proxy) for wrapping tokens via a per-user vault that can be used
- *          with DolomiteMargin.
+ *          with DolomiteMargin. There are no functions to implement, so the implementation is empty.
  */
-contract SimpleWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {}
+contract SimpleWrappedTokenUserVaultV1 is WrappedTokenUserVaultV1 {
+    // solhint-disable-previous-line no-empty-blocks
+}

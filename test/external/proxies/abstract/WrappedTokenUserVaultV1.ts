@@ -4,21 +4,22 @@ import { expect } from 'chai';
 import { BaseContract, BigNumber } from 'ethers';
 import {
   CustomTestToken,
-  TestWrappedTokenUserVaultFactory, TestWrappedTokenUserVaultUnwrapper, TestWrappedTokenUserVaultUnwrapper__factory,
+  TestWrappedTokenUserVaultFactory,
+  TestWrappedTokenUserVaultUnwrapper,
+  TestWrappedTokenUserVaultUnwrapper__factory,
   TestWrappedTokenUserVaultV1,
   TestWrappedTokenUserVaultV1__factory,
   WrappedTokenUserVaultV1,
 } from '../../../../src/types';
-import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from '../../../../src/utils/dolomite-utils';
+import {
+  createContractWithAbi,
+  createTestToken,
+  depositIntoDolomiteMargin,
+} from '../../../../src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../../utils/assertions';
-import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
 import { createTestWrappedTokenFactory } from '../../../utils/wrapped-token-utils';
 
 const defaultAccountNumber = '0';
@@ -65,7 +66,7 @@ describe('WrappedTokenUserVaultV1', () => {
     tokenUnwrapper = await createContractWithAbi(
       TestWrappedTokenUserVaultUnwrapper__factory.abi,
       TestWrappedTokenUserVaultUnwrapper__factory.bytecode,
-      [core.usdc.address, factory.address, core.dolomiteMargin.address]
+      [core.usdc.address, factory.address, core.dolomiteMargin.address],
     );
     await factory.connect(core.governance).initialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
