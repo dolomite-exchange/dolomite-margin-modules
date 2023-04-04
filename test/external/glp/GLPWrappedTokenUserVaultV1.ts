@@ -449,7 +449,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
     });
   });
 
-  describe('#acceptTransfer', () => {
+  describe('#acceptFullAccountTransfer', () => {
     it('should work when the vault has had no interactions with GMX', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, core.gmxEcosystem!.sGmx);
       const usdcAmount = BigNumber.from('100000000'); // 100 USDC
@@ -488,6 +488,54 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       expect(await core.gmxEcosystem!.fsGlp.balanceOf(vaultAddress)).to.eq(glpAmount);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(vaultAddress)).to.eq(balanceEsGmxAmount);
       expect((await core.gmxEcosystem!.sbfGmx.balanceOf(vaultAddress)).eq(ZERO_BI)).to.eq(false);
+    });
+
+    it('should fail when triggered more than once on the same vault', async () => {
+      await core.gmxEcosystem!.esGmxDistributor.setTokensPerInterval('0');
+      const usdcAmount = BigNumber.from('100000000'); // 100 USDC
+      await setupUSDCBalance(core, core.hhUser2, usdcAmount, core.gmxEcosystem!.glpManager);
+      await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser2).mintAndStakeGlp(
+        core.usdc.address,
+        usdcAmount,
+        ONE_BI,
+        ONE_BI,
+      );
+      const glpAmount = await core.gmxEcosystem!.fsGlp.balanceOf(core.hhUser2.address);
+
+      const vaultAddress = await factory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
+      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser2).signalTransfer(vaultAddress);
+      await factory.createVault(core.hhUser2.address);
+
+      const newVault = setupUserVaultProxy<GLPWrappedTokenUserVaultV1>(
+        vaultAddress,
+        GLPWrappedTokenUserVaultV1__factory,
+        core.hhUser2,
+      );
+      expect(await newVault.hasAcceptedFullAccountTransfer()).to.eq(false);
+      await newVault.acceptFullAccountTransfer(core.hhUser2.address);
+
+      expect(await core.gmxEcosystem!.fsGlp.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
+
+      expect(await core.gmxEcosystem!.fsGlp.balanceOf(vaultAddress)).to.eq(glpAmount);
+      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(vaultAddress)).to.eq(ZERO_BI);
+
+      expect(await newVault.hasAcceptedFullAccountTransfer()).to.eq(true);
+
+      await setupUSDCBalance(core, core.hhUser2, usdcAmount, core.gmxEcosystem!.glpManager);
+      await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser2).mintAndStakeGlp(
+        core.usdc.address,
+        usdcAmount,
+        ONE_BI,
+        ONE_BI,
+      );
+
+      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser2).signalTransfer(vaultAddress);
+      await expectThrow(
+        newVault.acceptFullAccountTransfer(core.hhUser2.address),
+        'GLPWrappedTokenUserVaultV1: Cannot transfer more than once',
+      );
     });
 
     it('should fail when reentrancy is triggered in the user vault', async () => {

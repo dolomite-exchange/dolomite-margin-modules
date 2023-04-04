@@ -60,6 +60,8 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
     bytes32 private constant _FILE = "GLPWrappedTokenUserVaultV1";
     bytes32 private constant _IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT =
         bytes32(uint256(keccak256("eip1967.proxy.isAcceptingFullAccountTransfer")) - 1);
+    bytes32 private constant _HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.hasAcceptedFullAccountTransfer")) - 1);
 
     // ==================================================================
     // ======================= External Functions =======================
@@ -139,18 +141,27 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
     override
     nonReentrant
     onlyVaultOwnerOrVaultFactory(msg.sender) {
+        Require.that(
+            !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0,
+            _FILE,
+            "Cannot transfer more than once"
+        );
+
         gmxRewardsRouter().acceptTransfer(_sender);
 
         // set this flag so we don't materialize the transfer. This is needed because the assets are spot settled in
         // this vault via the call to #acceptTransfer
         _setIsAcceptingFullAccountTransfer(true);
 
-        // the amount of fsGLP being deposited is the current balance of fsGLP, because we started at 0.
+        // the amount of fsGLP being deposited is the current balance of fsGLP, since we should have started at 0.
         uint amountWei = underlyingBalanceOf();
         IWrappedTokenUserVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(/* _toAccountNumber = */ 0, amountWei);
 
         // reset the flag back to false
         _setIsAcceptingFullAccountTransfer(false);
+
+        // set this flag so we don't allow full account transfers again
+        _setHasAcceptedFullAccountTransfer(true);
     }
 
     function vestGlp(uint256 _esGmxAmount) external override onlyVaultOwner(msg.sender) {
@@ -283,6 +294,10 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
         return _getUint256(_IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT) == 1;
     }
 
+    function hasAcceptedFullAccountTransfer() public view returns (bool) {
+        return _getUint256(_HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT) == 1;
+    }
+
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
@@ -306,6 +321,10 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
 
     function _setIsAcceptingFullAccountTransfer(bool _isAcceptingFullAccountTransfer) internal {
         _setUint256(_IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT, _isAcceptingFullAccountTransfer ? 1 : 0);
+    }
+
+    function _setHasAcceptedFullAccountTransfer(bool _hasAcceptingFullAccountTransfer) internal {
+        _setUint256(_HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT, _hasAcceptingFullAccountTransfer ? 1 : 0);
     }
 
     function _getPairAmountNeededForEsGmxVesting(
