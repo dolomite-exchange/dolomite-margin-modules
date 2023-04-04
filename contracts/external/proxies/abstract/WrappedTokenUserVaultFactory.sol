@@ -357,7 +357,7 @@ abstract contract WrappedTokenUserVaultFactory is
     function calculateVaultByAccount(address _account) external override view returns (address _vault) {
         _vault = Create2.computeAddress(
             keccak256(abi.encodePacked(_account)),
-            keccak256(type(WrappedTokenUserVaultUpgradeableProxy).creationCode)
+            getInitCodeHash()
         );
     }
 
@@ -367,6 +367,14 @@ abstract contract WrappedTokenUserVaultFactory is
 
     function isIsolationAsset() external pure returns (bool) {
         return true;
+    }
+
+    // ====================================================
+    // ================= Public Functions =================
+    // ====================================================
+
+    function getInitCodeHash() public pure returns (bytes32) {
+        return keccak256(type(WrappedTokenUserVaultUpgradeableProxy).creationCode);
     }
 
     // ====================================================

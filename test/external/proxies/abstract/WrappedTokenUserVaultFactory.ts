@@ -900,6 +900,13 @@ describe('WrappedTokenUserVaultFactory', () => {
     });
   });
 
+  describe('#getInitCodeHash', () => {
+    it('should work normally', async () => {
+      const bytecode = WrappedTokenUserVaultUpgradeableProxy__factory.bytecode;
+      expect(await factory.getInitCodeHash()).to.eq(ethers.utils.keccak256(bytecode));
+    });
+  });
+
   describe('#getQueuedTransferByCursor', () => {
     it('should work when transfer cursor is lte current cursor', async () => {
       // the user has not queued any transfers yet. The current cursor is 0.
