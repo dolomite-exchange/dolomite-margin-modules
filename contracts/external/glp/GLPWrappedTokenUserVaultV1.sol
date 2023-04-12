@@ -14,8 +14,8 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginCallee } from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
@@ -74,12 +74,17 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
         bool _shouldStakeEsGmx,
         bool _shouldStakeMultiplierPoints,
         bool _shouldClaimWeth,
-        bool _shouldDepositWethIntoDolomite
+        bool _shouldDepositWethIntoDolomite,
+        uint256 _depositAccountNumberForWeth
     )
     external
     override
+    nonReentrant
     onlyVaultOwner(msg.sender) {
-        _approveGmxForStaking(gmx());
+        if (_shouldStakeGmx) {
+            // we don't know how much GMX will be staked, so we have to approve all
+            _approveGmxForStaking(gmx(), type(uint256).max);
+        }
         gmxRewardsRouter().handleRewards(
             _shouldClaimGmx,
             _shouldStakeGmx,
@@ -90,25 +95,27 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
             /* _shouldConvertWethToEth = */ false
         );
 
-        address factory = VAULT_FACTORY();
-        if (!_shouldStakeGmx) {
+        if (_shouldStakeGmx) {
+            // we can reset the allowance back to 0 here
+            _approveGmxForStaking(gmx(), 0);
+        } else {
             // If the user isn't staking GMX, transfer it to the vault owner
             _withdrawAllGmx(msg.sender);
         }
 
         if (_shouldClaimWeth) {
+            address factory = VAULT_FACTORY();
             address weth = IGLPWrappedTokenUserVaultFactory(factory).WETH();
-            uint256 amountWei = IERC20(weth).balanceOf(address(this));
+            uint256 wethAmountWei = IERC20(weth).balanceOf(address(this));
             if (_shouldDepositWethIntoDolomite) {
-                IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), amountWei);
-                // TODO: change toAccountNumber to be dynamic as # of listed markets grow.
+                IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), wethAmountWei);
                 IWrappedTokenUserVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                    /* _toAccountNumber = */ 0,
+                    _depositAccountNumberForWeth,
                     IGLPWrappedTokenUserVaultFactory(factory).WETH_MARKET_ID(),
-                    amountWei
+                    wethAmountWei
                 );
             } else {
-                IERC20(weth).safeTransfer(msg.sender, amountWei);
+                IERC20(weth).safeTransfer(msg.sender, wethAmountWei);
             }
         }
     }
@@ -303,15 +310,19 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
     // ==================================================================
 
     function _stakeGmx(IERC20 _gmx, uint256 _amount) internal {
-        _approveGmxForStaking(_gmx);
+        _approveGmxForStaking(_gmx, _amount);
         gmxRewardsRouter().stakeGmx(_amount);
     }
 
-    function _approveGmxForStaking(IERC20 _gmx) internal {
+    function _approveGmxForStaking(IERC20 _gmx, uint256 _amount) internal {
         address _sGmx = address(sGmx());
-        if (_gmx.allowance(address(this), _sGmx) == 0) {
-            _gmx.safeApprove(_sGmx, type(uint256).max);
+        uint256 allowance = _gmx.allowance(address(this), _sGmx);
+        if (_amount != allowance && _amount > 0 && allowance > 0) {
+            // reset the allowance to 0 if needed
+            _gmx.safeApprove(_sGmx, 0);
         }
+        // approve only the amount needed and nothing more.
+        _gmx.safeApprove(_sGmx, _amount);
     }
 
     function _withdrawAllGmx(address _recipient) internal {

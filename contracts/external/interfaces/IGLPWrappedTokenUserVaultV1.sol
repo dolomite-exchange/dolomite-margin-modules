@@ -39,6 +39,8 @@ interface IGLPWrappedTokenUserVaultV1 {
      *                                          to skip.
      * @param _shouldDepositWethIntoDolomite    `true` to deposit the claimed WETH tokens into the vault owner's
      *                                          Dolomite account, or `false` to send them to the vault owner.
+     * @param _depositAccountNumberForWeth      The account number to which the WETH tokens should be deposited if
+     *                                          the user decides to deposit them into Dolomite.
      */
     function handleRewards(
         bool _shouldClaimGmx,
@@ -47,7 +49,8 @@ interface IGLPWrappedTokenUserVaultV1 {
         bool _shouldStakeEsGmx,
         bool _shouldStakeMultiplierPoints,
         bool _shouldClaimWeth,
-        bool _shouldDepositWethIntoDolomite
+        bool _shouldDepositWethIntoDolomite,
+        uint256 _depositAccountNumberForWeth
     )
     external;
 
