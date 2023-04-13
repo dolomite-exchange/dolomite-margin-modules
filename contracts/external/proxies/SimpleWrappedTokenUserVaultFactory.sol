@@ -22,8 +22,7 @@ import { WrappedTokenUserVaultFactory } from "./abstract/WrappedTokenUserVaultFa
  * @title   SimpleWrappedTokenUserVaultFactory
  * @author  Dolomite
  *
- * @notice  Abstract contract for wrapping tokens via a per-user vault that credits a user's balance within
- *          DolomiteMargin
+ * @notice  Contract for wrapping tokens via a per-user vault that credits a user's balance within DolomiteMargin
  */
 contract SimpleWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
 
