@@ -5,7 +5,7 @@ import { verifyContract } from './deploy-utils';
  */
 async function main() {
   await verifyContract(
-    '0xb56d350b2c92156421c1f4795f6b3de5e108829f',
+    '0x275ce1229F4944ED7d04095E437880684A789b5f',
     [],
   );
 }

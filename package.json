@@ -18,7 +18,7 @@
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "test": "hardhat --network hardhat test",
     "test:specific": "hardhat --network hardhat test test/external/glp/GLPWrappedTokenUserVaultV1.ts",
-    "verify:contract": "hardhat --network arbitrum run scripts/verify-contract.ts"
+    "verify:contract": "hardhat --network arbitrum_goerli run scripts/verify-contract.ts"
   },
   "repository": {
     "type": "git",
