@@ -40,4 +40,6 @@ interface IGmxVault {
     function usdg() external view returns (address);
 
     function getMinPrice(address _token) external view returns (uint256);
+
+    function whitelistedTokens(address _token) external view returns (bool);
 }

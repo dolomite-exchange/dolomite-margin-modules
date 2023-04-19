@@ -1,5 +1,6 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { sleep } from '@openzeppelin/upgrades';
+import { BigNumberish, PopulatedTransaction } from 'ethers';
 import fs from 'fs';
 import { network, run } from 'hardhat';
 import { createContract } from '../src/utils/dolomite-utils';
@@ -22,10 +23,12 @@ export async function verifyContract(address: string, constructorArguments: any[
   }
 }
 
+type ConstructorArgument = string | BigNumberish | boolean | ConstructorArgument[];
+
 export async function deployContractAndSave(
   chainId: number,
   contractName: string,
-  args: any[],
+  args: ConstructorArgument[],
   contractRename?: string,
 ): Promise<address> {
   const fileBuffer = fs.readFileSync('./scripts/deployments.json');
@@ -90,6 +93,17 @@ async function prettyPrintAndVerifyContract(
   } else {
     console.log('Skipping Etherscan verification...');
   }
+}
+
+export async function prettyPrintEncodedData(
+  transactionPromise: Promise<PopulatedTransaction>,
+  methodName: string,
+): Promise<void> {
+  const transaction = await transactionPromise;
+  console.log(`=================================== ${methodName} ===================================`);
+  console.log('To: ', transaction.to);
+  console.log('Data: ', transaction.data);
+  console.log('='.repeat(72 + methodName.length));
 }
 
 function writeFile(file: any) {

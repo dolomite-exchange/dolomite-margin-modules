@@ -19,38 +19,42 @@ import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolom
 
 
 /**
- * @title   IWrappedTokenUserVaultWrapperTrader
+ * @title   IDolomiteMarginWrapperTrader
  * @author  Dolomite
  */
-interface IWrappedTokenUserVaultWrapperTrader is IDolomiteMarginExchangeWrapper {
+interface IDolomiteMarginWrapperTrader is IDolomiteMarginExchangeWrapper {
 
     /**
-     * @notice  Creates the necessary actions for selling the `_heldMarket` into `_owedMarket`. Note, `_owedMarket` must
-     *          equal `outputMarketId` depending on the implementation of this contract.
+     * @notice  Creates the necessary actions for selling the `_inputMarket` into `_outputMarket`.
      *
      * @param _solidAccountId       The index of the account (according the Accounts[] array) that is performing the
      *                              liquidation.
      * @param _liquidAccountId      The index of the account (according the Accounts[] array) that is being liquidated.
      * @param _solidAccountOwner    The address of the owner of the account that is performing the liquidation.
      * @param _liquidAccountOwner   The address of the owner of the account that is being liquidated.
-     * @param _owedMarket           The market that the liquid account owes and must be repaid via the liquidation.
-     * @param _heldMarket           The market that the liquid account holds and must be sold to repay the
-     *                              `_owedMarket`.
-     * @param _owedAmount           The amount of the `_owedMarket` that the liquid account owes and must repay.
-     * @param _heldAmount           The amount of the `_heldMarket` that the liquid account holds and must sell.
-     * @return                      The actions that will be executed to unwrap the `_heldMarket` into `outputMarketId`.
+     * @param _outputMarket         The market that the liquid account owes and must be repaid via the liquidation.
+     * @param _inputMarket          The market that the liquid account holds and must be sold to repay the
+     *                              `_outputMarket`.
+     * @param _outputAmount         The amount of the `_outputMarket` that the liquid account owes and must repay.
+     * @param _inputAmount          The amount of the `_inputMarket` that the liquid account holds and must sell.
+     * @return                      The actions that will be executed to wrap the `_inputMarket` into `outputMarket`.
      */
     function createActionsForWrapping(
         uint256 _solidAccountId,
         uint256 _liquidAccountId,
         address _solidAccountOwner,
         address _liquidAccountOwner,
-        uint256 _owedMarket,
-        uint256 _heldMarket,
-        uint256 _owedAmount,
-        uint256 _heldAmount
+        uint256 _outputMarket,
+        uint256 _inputMarket,
+        uint256 _outputAmount,
+        uint256 _inputAmount
     )
     external
     view
     returns (IDolomiteMargin.ActionArgs[] memory);
+
+    /**
+     * @return  The number of Actions used to wrap the LP token from a given `_inputMarket`.
+     */
+    function actionsLength() external view returns (uint256);
 }

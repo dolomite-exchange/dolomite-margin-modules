@@ -10,6 +10,7 @@
     "build": "hardhat --max-memory 16384 compile && hardhat --max-memory 16384 typechain",
     "clean": "hardhat clean",
     "coverage": "hardhat coverage --testfiles \"test/**/*.ts\" --network hardhat",
+    "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy-atlas-ecosystem.ts",
     "deploy:gmx-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-gmx-ecosystem.ts",
     "deploy:coveralls": "coveralls < coverage/lcov.info",
@@ -17,8 +18,8 @@
     "lint:sol": "hardhat check",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "test": "hardhat --network hardhat test",
-    "test:specific": "hardhat --network hardhat test test/external/glp/GLPWrappedTokenUserVaultV1.ts",
-    "verify:contract": "hardhat --network arbitrum run scripts/verify-contract.ts"
+    "test:specific": "hardhat --network hardhat test test/external/abracadabra/MagicGLPPriceOracle.ts",
+    "verify:contract": "hardhat --network arbitrum_goerli run scripts/verify-contract.ts"
   },
   "repository": {
     "type": "git",
