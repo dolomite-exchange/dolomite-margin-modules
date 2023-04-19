@@ -42,6 +42,7 @@ contract MagicGLPPriceOracle is IDolomitePriceOracle {
 
     IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
     IERC4626 immutable public MAGIC_GLP; // solhint-disable-line var-name-mixedcase
+    uint256 immutable public MAGIC_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
     uint256 immutable public DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
@@ -53,6 +54,7 @@ contract MagicGLPPriceOracle is IDolomitePriceOracle {
     ) {
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         MAGIC_GLP = IERC4626(_magicGlp);
+        MAGIC_GLP_MARKET_ID = DOLOMITE_MARGIN.getMarketIdByTokenAddress(_magicGlp);
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
     }
 
@@ -65,7 +67,13 @@ contract MagicGLPPriceOracle is IDolomitePriceOracle {
         Require.that(
             _token == address(MAGIC_GLP),
             _FILE,
-            "invalid token"
+            "invalid token",
+            _token
+        );
+        Require.that(
+            DOLOMITE_MARGIN.getMarketIsClosing(MAGIC_GLP_MARKET_ID),
+            _FILE,
+            "magicGLP cannot be borrowable"
         );
 
         return IDolomiteStructs.MonetaryPrice({

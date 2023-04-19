@@ -18,6 +18,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteMarginCallee } from "../../../protocol/interfaces/IDolomiteMarginCallee.sol";
 import { IDolomiteMarginExchangeWrapper } from "../../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 
@@ -25,7 +26,7 @@ import { Require } from "../../../protocol/lib/Require.sol";
 
 import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
 
-import { IWrappedTokenUserVaultUnwrapperTrader } from "../../interfaces/IWrappedTokenUserVaultUnwrapperTrader.sol";
+import { IDolomiteMarginUnwrapperTrader } from "../../interfaces/IDolomiteMarginUnwrapperTrader.sol";
 import { IWrappedTokenUserVaultFactory } from "../../interfaces/IWrappedTokenUserVaultFactory.sol";
 import { IWrappedTokenUserVaultV1 } from "../../interfaces/IWrappedTokenUserVaultV1.sol";
 
@@ -39,7 +40,11 @@ import { AccountActionLib } from "../../lib/AccountActionLib.sol";
  * @notice  Abstract contract for unwrapping a VaultWrapper token into the underlying token. Must be set as a token
  *          converter for the VaultWrapperFactory token.
  */
-abstract contract WrappedTokenUserVaultUnwrapperTrader is IWrappedTokenUserVaultUnwrapperTrader, OnlyDolomiteMargin {
+abstract contract WrappedTokenUserVaultUnwrapperTrader is
+    IDolomiteMarginUnwrapperTrader,
+    IDolomiteMarginCallee,
+    OnlyDolomiteMargin
+{
     using SafeERC20 for IERC20;
 
     // ======================== Constants ========================

@@ -23,8 +23,8 @@ import { Require } from "../../../protocol/lib/Require.sol";
 
 import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
 
+import { IDolomiteMarginWrapperTrader } from "../../interfaces/IDolomiteMarginWrapperTrader.sol";
 import { IWrappedTokenUserVaultFactory } from "../../interfaces/IWrappedTokenUserVaultFactory.sol";
-import { IWrappedTokenUserVaultWrapperTrader } from "../../interfaces/IWrappedTokenUserVaultWrapperTrader.sol";
 
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 
@@ -36,12 +36,13 @@ import { AccountActionLib } from "../../lib/AccountActionLib.sol";
  * @notice  Abstract contract for wrapping a token into a VaultWrapperFactory token. Must be set as a token converter
  *          for the VaultWrapperFactory token.
  */
-abstract contract WrappedTokenUserVaultWrapperTrader is IWrappedTokenUserVaultWrapperTrader, OnlyDolomiteMargin {
+abstract contract WrappedTokenUserVaultWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteMargin {
     using SafeERC20 for IERC20;
 
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "WrappedTokenUserVaultWrapper";
+    uint256 private constant _ACTIONS_LENGTH = 1;
 
     // ======================== Field Variables ========================
 
@@ -100,6 +101,10 @@ abstract contract WrappedTokenUserVaultWrapperTrader is IWrappedTokenUserVaultWr
         return outputAmount;
     }
 
+    function actionsLength() external override view returns (uint256) {
+        return _ACTIONS_LENGTH;
+    }
+
     function createActionsForWrapping(
         uint256 _solidAccountId,
         uint256,
@@ -120,7 +125,7 @@ abstract contract WrappedTokenUserVaultWrapperTrader is IWrappedTokenUserVaultWr
             "Invalid owed market",
             _owedMarket
         );
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](1);
+        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
 
         uint256 amountOut = getExchangeCost(
             DOLOMITE_MARGIN.getMarketTokenAddress(_heldMarket),

@@ -16,56 +16,102 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { IGLPRewardsRouterV2 } from "../interfaces/IGLPRewardsRouterV2.sol";
+import { GLPMathLib } from "../glp/GLPMathLib.sol";
+
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+
+import { IDolomiteMarginWrapperTrader } from "../interfaces/IDolomiteMarginWrapperTrader.sol";
+import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
-import { WrappedTokenUserVaultWrapperTrader } from "../proxies/abstract/WrappedTokenUserVaultWrapperTrader.sol";
 
-import { GLPMathLib } from "./GLPMathLib.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 
 /**
- * @title   GLPWrapperTraderV1
+ * @title   MagicGLPWrapperTrader
  * @author  Dolomite
  *
- * @notice  Used for wrapping GLP (via minting from the GLPRewardsRouter) from USDC. Upon settlement, the minted GLP is
- *          sent to the user's vault and dfsGLP is minted to `DolomiteMargin`.
+ * @notice  Used for wrapping any supported token into magicGLP. Upon settlement, the minted magicGLP is sent to
+ *          DolomiteMargin, like normally
  */
-contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
+contract MagicGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteMargin {
     using GLPMathLib for IGmxVault;
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "GLPWrapperTraderV1";
+    bytes32 private constant _FILE = "MagicGLPWrapperTrader";
+    uint256 private constant _ACTIONS_LENGTH = 1;
 
     // ============ Constructor ============
 
-    address public immutable USDC; // solhint-disable-line var-name-mixedcase
+    IERC4626 public immutable MAGIC_GLP; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor(
-        address _usdc,
+        address _magicGlp,
         address _gmxRegistry,
-        address _dfsGlp,
         address _dolomiteMargin
-    ) WrappedTokenUserVaultWrapperTrader(
-    _dfsGlp,
-    _dolomiteMargin
+    )
+    OnlyDolomiteMargin(
+        _dolomiteMargin
     ) {
-        USDC = _usdc;
+        MAGIC_GLP = IERC4626(_magicGlp);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
 
     // ============ External Functions ============
+
+    function exchange(
+        address,
+        address _receiver,
+        address _makerToken,
+        address _takerToken,
+        uint256 _amountTakerToken,
+        bytes calldata _orderData
+    )
+    external
+    onlyDolomiteMargin(msg.sender)
+    returns (uint256) {
+        Require.that(
+            GMX_REGISTRY.gmxVault().whitelistedTokens(_takerToken),
+            _FILE,
+            "Invalid taker token",
+            _takerToken
+        );
+        Require.that(
+            _makerToken == address(MAGIC_GLP),
+            _FILE,
+            "Invalid maker token",
+            _makerToken
+        );
+
+        // approve taker token and mint GLP
+        IERC20(_takerToken).safeApprove(address(GMX_REGISTRY.glpManager()), _amountTakerToken);
+        (uint256 minMakerAmount) = abi.decode(_orderData, (uint256));
+        uint256 glpAmount = GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(
+            _takerToken,
+            _amountTakerToken,
+            /* _minUsdg = */ 0,
+            minMakerAmount
+        );
+
+        // approve GLP and mint magicGLP
+        IERC20(GMX_REGISTRY.sGlp()).safeApprove(address(MAGIC_GLP), glpAmount);
+        uint256 magicGlpAmount = MAGIC_GLP.deposit(glpAmount, address(this));
+
+        // approve magicGLP for receiver and return the amount
+        IERC20(_makerToken).safeApprove(_receiver, magicGlpAmount);
+        return magicGlpAmount;
+    }
 
     function getExchangeCost(
         address _makerToken,
@@ -78,63 +124,66 @@ contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
     view
     returns (uint256) {
         Require.that(
-            _makerToken == USDC,
+            GMX_REGISTRY.gmxVault().whitelistedTokens(_makerToken),
             _FILE,
             "Invalid maker token",
             _makerToken
         );
         Require.that(
-            _takerToken == address(VAULT_FACTORY), // VAULT_FACTORY is the DFS_GLP token
+            _takerToken == address(MAGIC_GLP),
             _FILE,
             "Invalid taker token",
             _takerToken
         );
 
         uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_makerToken, _desiredMakerToken);
-        return GLPMathLib.getGlpMintAmount(GMX_REGISTRY, usdgAmount);
+        uint256 glpAmount = GLPMathLib.getGlpMintAmount(GMX_REGISTRY, usdgAmount);
+        return MAGIC_GLP.previewDeposit(glpAmount);
     }
 
-    // ============ Internal Functions ============
-
-    function _exchangeIntoUnderlyingToken(
+    function createActionsForWrapping(
+        uint256 _solidAccountId,
+        uint256,
         address,
         address,
-        address,
-        uint256 _minMakerAmount,
-        address _takerToken,
-        uint256 _amountTakerToken,
-        bytes memory
+        uint256 _outputMarket,
+        uint256 _inputMarket,
+        uint256,
+        uint256 _inputAmount
     )
-    internal
+    public
     override
-    returns (uint256) {
+    view
+    returns (IDolomiteMargin.ActionArgs[] memory) {
         Require.that(
-            _takerToken == USDC,
+            DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarket) == address(MAGIC_GLP),
             _FILE,
-            "Invalid taker token",
-            _takerToken
+            "Invalid output market",
+            _outputMarket
+        );
+        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
+
+        uint256 amountOut = getExchangeCost(
+            DOLOMITE_MARGIN.getMarketTokenAddress(_inputMarket),
+            DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarket),
+            _inputAmount,
+            /* _orderData = */ bytes("")
         );
 
-        IERC20(_takerToken).safeApprove(address(GMX_REGISTRY.glpManager()), _amountTakerToken);
-
-        return GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(
-            _takerToken,
-            _amountTakerToken,
-            /* _minUsdg = */ 0,
-            _minMakerAmount
+        actions[0] = AccountActionLib.encodeExternalSellAction(
+            _solidAccountId,
+            _inputMarket,
+            _outputMarket,
+            /* _trader = */ address(this),
+            /* _amountInWei = */ _inputAmount,
+            /* _amountOutMinWei = */ amountOut,
+            bytes("")
         );
+
+        return actions;
     }
 
-    function _approveWrappedTokenForTransfer(
-        address _vault,
-        address _receiver,
-        uint256 _amount
-    )
-    internal
-    override {
-        VAULT_FACTORY.enqueueTransferIntoDolomiteMargin(_vault, _amount);
-
-        IERC20(GMX_REGISTRY.sGlp()).safeApprove(_vault, _amount);
-        IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
+    function actionsLength() public pure returns (uint256) {
+        return _ACTIONS_LENGTH;
     }
 }

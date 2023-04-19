@@ -19,14 +19,13 @@ import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolom
 
 
 /**
- * @title   IWrappedTokenUserVaultWrapperTrader
+ * @title   IDolomiteMarginWrapperTrader
  * @author  Dolomite
  */
-interface IWrappedTokenUserVaultWrapperTrader is IDolomiteMarginExchangeWrapper {
+interface IDolomiteMarginWrapperTrader is IDolomiteMarginExchangeWrapper {
 
     /**
-     * @notice  Creates the necessary actions for selling the `_inputMarket` into `_outputMarket`. Note, `_outputMarket`
-     *          must equal `outputMarketId` depending on the implementation of this contract.
+     * @notice  Creates the necessary actions for selling the `_inputMarket` into `_outputMarket`.
      *
      * @param _solidAccountId       The index of the account (according the Accounts[] array) that is performing the
      *                              liquidation.
@@ -38,7 +37,7 @@ interface IWrappedTokenUserVaultWrapperTrader is IDolomiteMarginExchangeWrapper 
      *                              `_outputMarket`.
      * @param _outputAmount         The amount of the `_outputMarket` that the liquid account owes and must repay.
      * @param _inputAmount          The amount of the `_inputMarket` that the liquid account holds and must sell.
-     * @return                      The actions that will be executed to wrap the `_inputMarket` into `outputMarketId`.
+     * @return                      The actions that will be executed to wrap the `_inputMarket` into `outputMarket`.
      */
     function createActionsForWrapping(
         uint256 _solidAccountId,
@@ -53,4 +52,9 @@ interface IWrappedTokenUserVaultWrapperTrader is IDolomiteMarginExchangeWrapper 
     external
     view
     returns (IDolomiteMargin.ActionArgs[] memory);
+
+    /**
+     * @return  The number of Actions used to wrap the LP token from a given `_inputMarket`.
+     */
+    function actionsLength() external view returns (uint256);
 }

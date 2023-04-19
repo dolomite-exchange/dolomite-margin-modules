@@ -17,6 +17,8 @@ import { BaseContract, BigNumberish, ContractInterface } from 'ethers';
 import { ethers, network } from 'hardhat';
 import { Network } from 'src/utils/no-deps-constants';
 import {
+  AlwaysZeroInterestSetter,
+  AlwaysZeroInterestSetter__factory,
   BorrowPositionProxyV2,
   BorrowPositionProxyV2__factory,
   Expiry,
@@ -63,7 +65,9 @@ import {
   TestPriceOracle__factory,
 } from '../../src/types';
 import {
+  ALWAYS_ZERO_INTEREST_SETTER,
   ATLAS_SI_TOKEN_MAP,
+  DFS_GLP_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
   ES_GMX_MAP,
   FS_GLP_MAP,
@@ -73,6 +77,7 @@ import {
   GMX_MAP,
   GMX_REWARD_ROUTER_MAP,
   GMX_VAULT_MAP,
+  MAGIC_GLP_MAP,
   S_GLP_MAP,
   S_GMX_MAP,
   SBF_GMX_MAP,
@@ -98,6 +103,10 @@ export interface CoreProtocolSetupConfig {
 export interface CoreProtocolConfig {
   blockNumber: number;
   network: Network;
+}
+
+interface AbraEcosystem {
+  magicGlp: IERC20;
 }
 
 interface AtlasEcosystem {
@@ -138,6 +147,8 @@ export interface CoreProtocol {
   /// =========================
   /// Contracts and Ecosystems
   /// =========================
+  abraEcosystem: AbraEcosystem | undefined;
+  alwaysZeroInterestSetter: AlwaysZeroInterestSetter;
   atlasEcosystem: AtlasEcosystem | undefined;
   borrowPositionProxyV2: BorrowPositionProxyV2;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
@@ -145,9 +156,6 @@ export interface CoreProtocol {
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
   expiry: Expiry;
-  /**
-   * These contracts are only available on Arbitrum One as of now.
-   */
   gmxEcosystem: GmxEcosystem | undefined;
   liquidatorAssetRegistry: LiquidatorAssetRegistry | undefined;
   liquidatorProxyV1: LiquidatorProxyV1;
@@ -163,9 +171,12 @@ export interface CoreProtocol {
    * A mapping from token's symbol to its market ID
    */
   marketIds: {
+    dfsGlp: BigNumberish | undefined;
+    magicGlp: BigNumberish | undefined;
     usdc: BigNumberish;
     weth: BigNumberish;
   };
+  dfsGlp: IERC20 | undefined;
   usdc: IERC20;
   weth: IWETH;
 }
@@ -235,6 +246,11 @@ export async function setupCoreProtocol(
     await DOLOMITE_MARGIN.connect(hhUser1).owner(),
     true,
     hhUser1,
+  );
+
+  const alwaysZeroInterestSetter = AlwaysZeroInterestSetter__factory.connect(
+    ALWAYS_ZERO_INTEREST_SETTER[config.network],
+    governance,
   );
 
   const borrowPositionProxyV2 = BorrowPositionProxyV2__factory.connect(
@@ -307,10 +323,13 @@ export async function setupCoreProtocol(
     testPriceOracle = null as any;
   }
 
+  const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
 
   return {
+    abraEcosystem,
+    alwaysZeroInterestSetter,
     atlasEcosystem,
     borrowPositionProxyV2,
     depositWithdrawalProxy,
@@ -337,12 +356,23 @@ export async function setupCoreProtocol(
       network: config.network,
     },
     marketIds: {
+      dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
+      magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
       weth: WETH_MAP[config.network].marketId,
     },
+    dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
     usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
     weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
   };
+}
+
+function createIERC20Opt(address: string | undefined, signerOrProvider: SignerWithAddress): IERC20 | undefined {
+  if (!address) {
+    return undefined;
+  }
+
+  return IERC20__factory.connect(address, signerOrProvider);
 }
 
 export async function setupTestMarket(
@@ -361,6 +391,19 @@ export async function setupTestMarket(
     isClosing,
     false,
   );
+}
+
+async function createAbraEcosystem(network: Network, signer: SignerWithAddress): Promise<AbraEcosystem | undefined> {
+  if (!MAGIC_GLP_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    magicGlp: getContract(
+      MAGIC_GLP_MAP[network]?.address as string,
+      address => IERC20__factory.connect(address, signer),
+    ),
+  };
 }
 
 async function createAtlasEcosystem(network: Network, signer: SignerWithAddress): Promise<AtlasEcosystem | undefined> {
