@@ -25,7 +25,7 @@ async function main() {
     core.weth.address,
     core.marketIds.weth,
     gmxRegistryAddress,
-    core.gmxEcosystem?.fsGlp.address,
+    core.gmxEcosystem!.fsGlp.address,
     core.borrowPositionProxyV2.address,
     userVaultImplementationAddress,
     core.dolomiteMargin.address,

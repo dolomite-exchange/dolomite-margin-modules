@@ -1,19 +1,22 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { MagicGLPPriceOracle, MagicGLPPriceOracle__factory } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { CustomTestToken, IERC4626, MagicGLPPriceOracle, MagicGLPPriceOracle__factory } from '../../../src/types';
+import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
-const GLP_PRICE = BigNumber.from('913711474561791281'); // $0.913711
+const GLP_PRICE = BigNumber.from('1000974796933941049'); // $1.000974796933941049
 
 describe('MagicGLPPriceOracle', () => {
   let snapshotId: string;
 
   let magicGlpPriceOracle: MagicGLPPriceOracle;
+  let magicGlpPriceOracleWithNoTotalSupply: MagicGLPPriceOracle;
+  let magicGlp: IERC4626;
+  let magicGlpWithNoTotalSupply: CustomTestToken;
   let core: CoreProtocol;
 
   before(async () => {
@@ -21,11 +24,23 @@ describe('MagicGLPPriceOracle', () => {
       blockNumber: 81874000,
       network: Network.ArbitrumOne,
     });
+
+    magicGlp = core.abraEcosystem!.magicGlp;
+    magicGlpWithNoTotalSupply = await createTestToken();
+
     magicGlpPriceOracle = await createContractWithAbi<MagicGLPPriceOracle>(
       MagicGLPPriceOracle__factory.abi,
       MagicGLPPriceOracle__factory.bytecode,
-      [core.dolomiteMargin.address, core.abraEcosystem!.magicGlp, core.marketIds.dfsGlp!],
+      [core.dolomiteMargin.address, magicGlp.address, core.marketIds.dfsGlp!],
     );
+    magicGlpPriceOracleWithNoTotalSupply = await createContractWithAbi<MagicGLPPriceOracle>(
+      MagicGLPPriceOracle__factory.abi,
+      MagicGLPPriceOracle__factory.bytecode,
+      [core.dolomiteMargin.address, magicGlpWithNoTotalSupply.address, core.marketIds.dfsGlp!],
+    );
+
+    await setupTestMarket(core, magicGlp, true, magicGlpPriceOracle);
+    await setupTestMarket(core, magicGlpWithNoTotalSupply, true, magicGlpPriceOracleWithNoTotalSupply);
 
     snapshotId = await snapshot();
   });
@@ -42,13 +57,7 @@ describe('MagicGLPPriceOracle', () => {
 
   describe('#MAGIC_GLP', () => {
     it('returns the correct value', async () => {
-      expect(await magicGlpPriceOracle.MAGIC_GLP()).to.eq(core.abraEcosystem!.magicGlp);
-    });
-  });
-
-  describe('#MAGIC_GLP_MARKET_ID', () => {
-    it('returns the correct value', async () => {
-      expect(await magicGlpPriceOracle.MAGIC_GLP_MARKET_ID()).to.eq(core.marketIds.magicGlp!);
+      expect(await magicGlpPriceOracle.MAGIC_GLP()).to.eq(magicGlp.address);
     });
   });
 
@@ -59,10 +68,25 @@ describe('MagicGLPPriceOracle', () => {
   });
 
   describe('#getPrice', () => {
-    it('returns the correct value under the correct conditions for magicGLP', async () => {
-      const price = await magicGlpPriceOracle.getPrice(core.abraEcosystem!.magicGlp.address);
-      expect(price.value).to.eq(GLP_PRICE);
-      // TODO check exchange rate and calculate it against the GLP price
+    it('returns the correct value under normal conditions for magicGLP', async () => {
+      const glpPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.dfsGlp!);
+      expect(glpPrice.value).to.eq(GLP_PRICE);
+
+      const balance = await core.gmxEcosystem!.fsGlp.balanceOf(magicGlp.address);
+      const totalSupply = await magicGlp.totalSupply();
+      expect((await magicGlpPriceOracle.getPrice(magicGlp.address)).value)
+        .to
+        .eq(glpPrice.value.mul(balance).div(totalSupply));
+    });
+
+    it('returns the correct value when magicGLP total supply is 0', async () => {
+      const glpPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.dfsGlp!);
+      expect(glpPrice.value).to.eq(GLP_PRICE);
+      const totalSupply = await magicGlpWithNoTotalSupply.totalSupply();
+      expect(totalSupply).to.eq(0);
+      expect((await magicGlpPriceOracleWithNoTotalSupply.getPrice(magicGlpWithNoTotalSupply.address)).value)
+        .to
+        .eq(glpPrice.value);
     });
 
     it('fails when token sent is not magicGLP', async () => {
@@ -81,9 +105,9 @@ describe('MagicGLPPriceOracle', () => {
     });
 
     it('fails when magicGLP is borrowable', async () => {
-      await core.dolomiteMargin.connect(core.governance).ownerSetIsClosing(core.abraEcosystem!.magicGlp.address, false);
+      await core.dolomiteMargin.connect(core.governance).ownerSetIsClosing(core.marketIds.magicGlp!, false);
       await expectThrow(
-        magicGlpPriceOracle.getPrice(core.abraEcosystem!.magicGlp.address),
+        magicGlpPriceOracle.getPrice(magicGlp.address),
         'MagicGLPPriceOracle: magicGLP cannot be borrowable',
       );
     });

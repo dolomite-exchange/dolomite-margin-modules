@@ -91,20 +91,21 @@ contract MagicGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolomite
             _takerToken
         );
         Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_makerToken),
+            GMX_REGISTRY.gmxVault().whitelistedTokens(_makerToken)
+                && DOLOMITE_MARGIN.getMarketIdByTokenAddress(_makerToken) == outputMarketId(),
             _FILE,
             "Invalid maker token",
             _makerToken
         );
 
         // redeem magicGLP for GLP; we don't need to approve since the `_owner` param is msg.sender
-        MAGIC_GLP.redeem(_amountTakerToken, address(this), address(this));
+        uint256 glpAmount = MAGIC_GLP.redeem(_amountTakerToken, address(this), address(this));
 
         // redeem GLP for `_makerToken`; we don't need to approve because GLP has a handler that auto-approves for this
         (uint256 minMakerAmount) = abi.decode(_orderData, (uint256));
         uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
             /* _tokenOut = */ _makerToken,
-            /* _glpAmount = */ _amountTakerToken,
+            glpAmount,
             minMakerAmount,
             /* _receiver = */ address(this)
         );

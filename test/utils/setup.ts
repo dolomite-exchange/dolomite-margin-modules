@@ -32,13 +32,13 @@ import {
   IDolomiteMargin,
   IDolomiteMargin__factory,
   IERC20,
-  IERC20__factory,
+  IERC20__factory, IERC4626, IERC4626__factory,
   IEsGmxDistributor,
   IEsGmxDistributor__factory,
   IGLPManager,
   IGLPManager__factory,
   IGLPRewardsRouterV2,
-  IGLPRewardsRouterV2__factory,
+  IGLPRewardsRouterV2__factory, IGmxRegistryV1, IGmxRegistryV1__factory,
   IGmxRewardRouterV2,
   IGmxRewardRouterV2__factory,
   IGmxVault,
@@ -88,6 +88,7 @@ import {
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { impersonate, impersonateOrFallback, resetFork } from './index';
+import Deployments from '../../scripts/deployments.json';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -106,7 +107,7 @@ export interface CoreProtocolConfig {
 }
 
 interface AbraEcosystem {
-  magicGlp: IERC20;
+  magicGlp: IERC4626;
 }
 
 interface AtlasEcosystem {
@@ -156,6 +157,7 @@ export interface CoreProtocol {
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
   expiry: Expiry;
+  gmxRegistry: IGmxRegistryV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
   liquidatorAssetRegistry: LiquidatorAssetRegistry | undefined;
   liquidatorProxyV1: LiquidatorProxyV1;
@@ -280,6 +282,11 @@ export async function setupCoreProtocol(
     governance,
   );
 
+  const gmxRegistry = getContractOpt(
+    (Deployments.GmxRegistryV1 as any)[config.network]?.address,
+    IGmxRegistryV1__factory.connect,
+  );
+
   const liquidatorAssetRegistry = LiquidatorAssetRegistry__factory.connect(
     LiquidatorAssetRegistryJson.networks[config.network].address,
     governance,
@@ -338,6 +345,7 @@ export async function setupCoreProtocol(
     dolomiteMargin,
     expiry,
     gmxEcosystem,
+    gmxRegistry,
     governance,
     liquidatorAssetRegistry,
     liquidatorProxyV1,
@@ -401,7 +409,7 @@ async function createAbraEcosystem(network: Network, signer: SignerWithAddress):
   return {
     magicGlp: getContract(
       MAGIC_GLP_MAP[network]?.address as string,
-      address => IERC20__factory.connect(address, signer),
+      address => IERC4626__factory.connect(address, signer),
     ),
   };
 }

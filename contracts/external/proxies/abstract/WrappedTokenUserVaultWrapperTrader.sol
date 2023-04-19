@@ -101,10 +101,6 @@ abstract contract WrappedTokenUserVaultWrapperTrader is IDolomiteMarginWrapperTr
         return outputAmount;
     }
 
-    function actionsLength() external override view returns (uint256) {
-        return _ACTIONS_LENGTH;
-    }
-
     function createActionsForWrapping(
         uint256 _solidAccountId,
         uint256,
@@ -145,6 +141,10 @@ abstract contract WrappedTokenUserVaultWrapperTrader is IDolomiteMarginWrapperTr
         );
 
         return actions;
+    }
+
+    function actionsLength() external override pure returns (uint256) {
+        return _ACTIONS_LENGTH;
     }
 
     function getExchangeCost(

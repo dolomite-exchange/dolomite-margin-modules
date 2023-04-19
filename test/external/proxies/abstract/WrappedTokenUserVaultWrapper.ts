@@ -182,6 +182,12 @@ describe('WrappedTokenUserVaultWrapper', () => {
     });
   });
 
+  describe('#actionsLength', () => {
+    it('should return the correct amount', async () => {
+      expect(await wrapper.actionsLength()).to.eq(1);
+    });
+  });
+
   describe('#createActionsForWrapping', () => {
     it('should work for normal condition', async () => {
       const solidAccountId = 0;
