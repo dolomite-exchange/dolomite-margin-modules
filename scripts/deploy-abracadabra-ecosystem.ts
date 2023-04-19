@@ -1,10 +1,8 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
-import { depositIntoDolomiteMargin } from '../src/utils/dolomite-utils';
 import { setupCoreProtocol } from '../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
-import deploymentsJson from './deployments.json';
 
 /**
  * Deploys the GMX ecosystem smart contracts to the current network.
