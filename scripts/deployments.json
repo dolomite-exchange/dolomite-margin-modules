@@ -61,5 +61,26 @@
       "transaction": "0x3893a6904daab16ed655b05ec9631066a27cb948a2a1c42b0d8c7b952fceb95e",
       "isVerified": true
     }
+  },
+  "MagicGLPPriceOracle": {
+    "42161": {
+      "address": "0x4Dfbb88233c1EBBaF9fF55D4C0AbA97343A78f5F",
+      "transaction": "0x791b38870e2061f914addb50a0aeae890b05614e13c9d84c8e5d6f79ec9a2a12",
+      "isVerified": true
+    }
+  },
+  "MagicGLPUnwrapperTrader": {
+    "42161": {
+      "address": "0x9e8d909C340A7Af5d6623C6d7C7ACA436Eae345D",
+      "transaction": "0x76ddc419a2741cd1380b400b8f74011c4cd32d7d5b79cd846cd1310fd3d24375",
+      "isVerified": true
+    }
+  },
+  "MagicGLPWrapperTrader": {
+    "42161": {
+      "address": "0x36Ab95Afa0648598C3C5329b2c26B5179Ebb14a1",
+      "transaction": "0xa2daa24e4eaac7eb7a614b29b8946ee8327fa29124bdc0631cf666cef855cc53",
+      "isVerified": true
+    }
   }
 }

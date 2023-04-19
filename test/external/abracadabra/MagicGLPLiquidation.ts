@@ -1,21 +1,15 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
-  GLPPriceOracleV1,
-  GLPPriceOracleV1__factory,
-  GLPUnwrapperTraderV1,
-  GLPWrappedTokenUserVaultFactory,
-  GLPWrappedTokenUserVaultFactory__factory,
-  GLPWrappedTokenUserVaultV1,
-  GLPWrappedTokenUserVaultV1__factory,
-  GLPWrapperTraderV1,
-  GmxRegistryV1,
-  IERC20,
+  IERC4626,
+  MagicGLPPriceOracle,
+  MagicGLPPriceOracle__factory,
+  MagicGLPUnwrapperTrader,
+  MagicGLPUnwrapperTrader__factory,
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
@@ -26,31 +20,20 @@ import {
 } from '../../utils/assertions';
 import { setExpiry } from '../../utils/expiry-utils';
 import { getCalldataForParaswap } from '../../utils/liquidation-utils';
-import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '../../utils/setup';
-import { createGlpUnwrapperTrader, createGlpWrapperTrader, createGmxRegistry } from '../../utils/wrapped-token-utils';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUSDCBalance } from '../../utils/setup';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
 const heldAmountWei = BigNumber.from('200000000000000000000'); // $200
 
-describe('GLPLiquidation', () => {
+describe('MagicGLPLiquidation', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let underlyingToken: IERC20;
-  let underlyingMarketId: BigNumber;
-  let gmxRegistry: GmxRegistryV1;
-  let unwrapper: GLPUnwrapperTraderV1;
-  let wrapper: GLPWrapperTraderV1;
-  let factory: GLPWrappedTokenUserVaultFactory;
-  let vault: GLPWrappedTokenUserVaultV1;
-  let priceOracle: GLPPriceOracleV1;
+  let magicGlp: IERC4626;
+  let heldMarketId: BigNumber;
+  let unwrapper: MagicGLPUnwrapperTrader;
+  let priceOracle: MagicGLPPriceOracle;
   let defaultAccountStruct: Account.InfoStruct;
   let liquidAccountStruct: Account.InfoStruct;
   let solidAccountStruct: Account.InfoStruct;
@@ -61,66 +44,56 @@ describe('GLPLiquidation', () => {
       blockNumber,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.gmxEcosystem!.fsGlp;
-    const userVaultImplementation = await createContractWithAbi(
-      GLPWrappedTokenUserVaultV1__factory.abi,
-      GLPWrappedTokenUserVaultV1__factory.bytecode,
-      [],
+    magicGlp = core.abraEcosystem!.magicGlp;
+    priceOracle = await createContractWithAbi<MagicGLPPriceOracle>(
+      MagicGLPPriceOracle__factory.abi,
+      MagicGLPPriceOracle__factory.bytecode,
+      [core.dolomiteMargin.address, magicGlp.address, core.marketIds.dfsGlp!],
     );
-    gmxRegistry = await createGmxRegistry(core);
-    factory = await createContractWithAbi<GLPWrappedTokenUserVaultFactory>(
-      GLPWrappedTokenUserVaultFactory__factory.abi,
-      GLPWrappedTokenUserVaultFactory__factory.bytecode,
+
+    heldMarketId = await core.dolomiteMargin.getNumMarkets();
+    await setupTestMarket(core, magicGlp, true, priceOracle);
+
+    unwrapper = await createContractWithAbi<MagicGLPUnwrapperTrader>(
+      MagicGLPUnwrapperTrader__factory.abi,
+      MagicGLPUnwrapperTrader__factory.bytecode,
       [
-        core.weth.address,
-        core.marketIds.weth,
-        gmxRegistry.address,
-        underlyingToken.address,
-        core.borrowPositionProxyV2.address,
-        userVaultImplementation.address,
+        magicGlp.address,
+        core.gmxRegistry!.address,
+        core.marketIds.usdc,
         core.dolomiteMargin.address,
       ],
     );
-    priceOracle = await createContractWithAbi<GLPPriceOracleV1>(
-      GLPPriceOracleV1__factory.abi,
-      GLPPriceOracleV1__factory.bytecode,
-      [gmxRegistry.address, factory.address],
-    );
 
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, factory, true, priceOracle);
-
-    unwrapper = await createGlpUnwrapperTrader(core, factory, gmxRegistry);
-    wrapper = await createGlpWrapperTrader(core, factory, gmxRegistry);
-    await factory.connect(core.governance).initialize([unwrapper.address, wrapper.address]);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-
-    await factory.createVault(core.hhUser1.address);
-    const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    vault = setupUserVaultProxy<GLPWrappedTokenUserVaultV1>(
-      vaultAddress,
-      GLPWrappedTokenUserVaultV1__factory,
-      core.hhUser1,
-    );
-    defaultAccountStruct = { owner: vault.address, number: defaultAccountNumber };
-    liquidAccountStruct = { owner: vault.address, number: otherAccountNumber };
+    defaultAccountStruct = { owner: core.hhUser1.address, number: defaultAccountNumber };
+    liquidAccountStruct = { owner: core.hhUser1.address, number: otherAccountNumber };
     solidAccountStruct = { owner: core.hhUser5.address, number: defaultAccountNumber };
 
     const usdcAmount = heldAmountWei.div(1e12).mul(4);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
-    await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(vault.address, heldAmountWei);
-    await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
+    await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(magicGlp.address, heldAmountWei.mul(2));
+    await magicGlp.connect(core.hhUser1).mint(heldAmountWei, core.hhUser1.address);
 
-    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
-    expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, underlyingMarketId)).value)
-      .to
-      .eq(heldAmountWei);
+    await magicGlp.connect(core.hhUser1).approve(core.dolomiteMargin.address, heldAmountWei);
+    await depositIntoDolomiteMargin(
+      core,
+      core.hhUser1,
+      defaultAccountStruct.number,
+      heldMarketId,
+      heldAmountWei,
+      core.hhUser1.address,
+    );
+    expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, heldMarketId)).value).to.eq(heldAmountWei);
+
+    const actualHeldAmountWei = await core.dolomiteMargin.getAccountWei(defaultAccountStruct, heldMarketId);
+    expect(actualHeldAmountWei.value).to.eq(heldAmountWei);
+    expect(actualHeldAmountWei.sign).to.eq(true);
 
     await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV3!.address, true);
     await core.liquidatorProxyV3!.connect(core.governance).setMarketIdToTokenUnwrapperForLiquidationMap(
-      underlyingMarketId,
+      heldMarketId,
       unwrapper.address,
     );
 
@@ -138,8 +111,14 @@ describe('GLPLiquidation', () => {
 
       const usdcPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.usdc);
       const usdcDebtAmount = supplyValue.value.mul(100).div(116).div(usdcPrice.value);
-      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
-      await vault.transferFromPositionWithOtherToken(
+      await core.borrowPositionProxyV2.connect(core.hhUser1).openBorrowPosition(
+        defaultAccountNumber,
+        otherAccountNumber,
+        heldMarketId,
+        heldAmountWei,
+        BalanceCheckFlag.From,
+      );
+      await core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
         otherAccountNumber,
         defaultAccountNumber,
         core.marketIds.usdc,
@@ -153,10 +132,10 @@ describe('GLPLiquidation', () => {
       // check that the position is indeed under collateralized
       expect(newAccountValues[0].value).to.lt(newAccountValues[1].value.mul(115).div(100));
 
-      const glpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
+      const glpPrice = await core.dolomiteMargin.getMarketPrice(heldMarketId);
       const heldUpdatedWithReward = await newAccountValues[1].value.mul(105).div(100).div(glpPrice.value);
       const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
+        magicGlp.address,
         core.usdc.address,
         heldUpdatedWithReward,
         BYTES_EMPTY,
@@ -166,7 +145,7 @@ describe('GLPLiquidation', () => {
         solidAccountStruct,
         liquidAccountStruct,
         core.marketIds.usdc,
-        underlyingMarketId,
+        heldMarketId,
         NO_EXPIRY,
         BYTES_EMPTY,
       );
@@ -177,7 +156,7 @@ describe('GLPLiquidation', () => {
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
-        underlyingMarketId,
+        heldMarketId,
         ZERO_BI,
       );
       await expectProtocolBalanceIsGreaterThan(
@@ -190,7 +169,7 @@ describe('GLPLiquidation', () => {
       await expectProtocolBalanceIsGreaterThan(
         core,
         liquidAccountStruct,
-        underlyingMarketId,
+        heldMarketId,
         heldAmountWei.sub(heldUpdatedWithReward),
         '5',
       );
@@ -202,9 +181,9 @@ describe('GLPLiquidation', () => {
         ZERO_BI,
       );
 
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, factory.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, magicGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, core.weth.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.fsGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
 
@@ -214,8 +193,14 @@ describe('GLPLiquidation', () => {
 
       const wethPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.weth);
       const wethDebtAmount = supplyValue.value.mul(100).div(115).div(wethPrice.value);
-      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
-      await vault.transferFromPositionWithOtherToken(
+      await core.borrowPositionProxyV2.connect(core.hhUser1).openBorrowPosition(
+        defaultAccountNumber,
+        otherAccountNumber,
+        heldMarketId,
+        heldAmountWei,
+        BalanceCheckFlag.From,
+      );
+      await core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
         otherAccountNumber,
         defaultAccountNumber,
         core.marketIds.weth,
@@ -230,10 +215,10 @@ describe('GLPLiquidation', () => {
       // check that the position is indeed under collateralized
       expect(newAccountValues[0].value).to.lt(newAccountValues[1].value.mul(115).div(100));
 
-      const glpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
+      const glpPrice = await core.dolomiteMargin.getMarketPrice(heldMarketId);
       const heldUpdatedWithReward = await newAccountValues[1].value.mul(105).div(100).div(glpPrice.value);
       const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
+        magicGlp.address,
         core.usdc.address,
         heldUpdatedWithReward,
         BYTES_EMPTY,
@@ -258,7 +243,7 @@ describe('GLPLiquidation', () => {
         solidAccountStruct,
         liquidAccountStruct,
         core.marketIds.weth,
-        underlyingMarketId,
+        heldMarketId,
         NO_EXPIRY,
         paraswapCalldata,
       );
@@ -281,7 +266,7 @@ describe('GLPLiquidation', () => {
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
-        underlyingMarketId,
+        heldMarketId,
         ZERO_BI,
       );
       await expectProtocolBalance(
@@ -301,7 +286,7 @@ describe('GLPLiquidation', () => {
       await expectProtocolBalanceIsGreaterThan(
         core,
         liquidAccountStruct,
-        underlyingMarketId,
+        heldMarketId,
         heldAmountWei.sub(heldUpdatedWithReward),
         '10',
       );
@@ -337,8 +322,14 @@ describe('GLPLiquidation', () => {
     const collateralizationDenominator = 100;
 
     it('should work when expired account is borrowing the output token (USDC)', async () => {
-      const glpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
-      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
+      await core.borrowPositionProxyV2.connect(core.hhUser1)
+        .openBorrowPosition(
+          defaultAccountNumber,
+          otherAccountNumber,
+          heldMarketId,
+          heldAmountWei,
+          BalanceCheckFlag.From,
+        );
       const [supplyValue, borrowValue] = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       expect(borrowValue.value).to.eq(ZERO_BI);
 
@@ -346,7 +337,7 @@ describe('GLPLiquidation', () => {
       const usdcDebtAmount = supplyValue.value.mul(collateralizationDenominator)
         .div(collateralizationNumerator)
         .div(usdcPrice.value); // 186450975758540302400 | 1000000730000000000
-      await vault.transferFromPositionWithOtherToken(
+      await core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
         otherAccountNumber,
         defaultAccountNumber,
         core.marketIds.usdc,
@@ -365,14 +356,14 @@ describe('GLPLiquidation', () => {
       expect(newAccountValues[0].value).to.gte(newAccountValues[1].value.mul(115).div(collateralizationDenominator));
 
       const [heldPrice, owedPriceAdj] = await core.expiry.getSpreadAdjustedPrices(
-        underlyingMarketId,
+        heldMarketId,
         core.marketIds.usdc,
         expiry,
       );
 
       const heldUpdatedWithReward = usdcDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
       const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
+        magicGlp.address,
         core.usdc.address,
         heldUpdatedWithReward,
         BYTES_EMPTY,
@@ -382,7 +373,7 @@ describe('GLPLiquidation', () => {
         solidAccountStruct,
         liquidAccountStruct,
         core.marketIds.usdc,
-        underlyingMarketId,
+        heldMarketId,
         expiry,
         BYTES_EMPTY,
       );
@@ -393,7 +384,7 @@ describe('GLPLiquidation', () => {
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
-        underlyingMarketId,
+        heldMarketId,
         ZERO_BI,
       );
       await expectProtocolBalanceIsGreaterThan(
@@ -406,7 +397,7 @@ describe('GLPLiquidation', () => {
       await expectProtocolBalanceIsGreaterThan(
         core,
         liquidAccountStruct,
-        underlyingMarketId,
+        heldMarketId,
         heldAmountWei.sub(heldUpdatedWithReward),
         '5',
       );
@@ -418,7 +409,7 @@ describe('GLPLiquidation', () => {
         ZERO_BI,
       );
 
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, factory.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, magicGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, core.weth.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
@@ -432,8 +423,14 @@ describe('GLPLiquidation', () => {
       const wethDebtAmount = supplyValue.value.mul(collateralizationDenominator)
         .div(collateralizationNumerator)
         .div(wethPrice.value);
-      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
-      await vault.transferFromPositionWithOtherToken(
+      await core.borrowPositionProxyV2.connect(core.hhUser1).openBorrowPosition(
+        defaultAccountNumber,
+        otherAccountNumber,
+        heldMarketId,
+        heldAmountWei,
+        BalanceCheckFlag.From,
+      );
+      await core.borrowPositionProxyV2.connect(core.hhUser1).transferBetweenAccounts(
         otherAccountNumber,
         defaultAccountNumber,
         core.marketIds.weth,
@@ -452,14 +449,14 @@ describe('GLPLiquidation', () => {
       expect(expiry).to.not.eq(0);
 
       const [heldPrice, owedPriceAdj] = await core.expiry.getSpreadAdjustedPrices(
-        underlyingMarketId,
+        heldMarketId,
         core.marketIds.weth,
         expiry,
       );
 
       const heldUpdatedWithReward = wethDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
       const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
+        magicGlp.address,
         core.usdc.address,
         heldUpdatedWithReward,
         BYTES_EMPTY,
@@ -485,7 +482,7 @@ describe('GLPLiquidation', () => {
         solidAccountStruct,
         liquidAccountStruct,
         core.marketIds.weth,
-        underlyingMarketId,
+        heldMarketId,
         expiry,
         paraswapCalldata,
       );
@@ -508,7 +505,7 @@ describe('GLPLiquidation', () => {
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
-        underlyingMarketId,
+        heldMarketId,
         ZERO_BI,
       );
       await expectProtocolBalance(
@@ -528,7 +525,7 @@ describe('GLPLiquidation', () => {
       await expectProtocolBalanceIsGreaterThan(
         core,
         liquidAccountStruct,
-        underlyingMarketId,
+        heldMarketId,
         heldAmountWei.sub(heldUpdatedWithReward),
         '10',
       );

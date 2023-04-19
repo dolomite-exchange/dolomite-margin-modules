@@ -23,7 +23,7 @@ import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolom
  * @title   IWrappedTokenUserVaultUnwrapperTrader
  * @author  Dolomite
  */
-interface IWrappedTokenUserVaultUnwrapperTrader is IDolomiteMarginExchangeWrapper, IDolomiteMarginCallee {
+interface IDolomiteMarginUnwrapperTrader is IDolomiteMarginExchangeWrapper {
 
     /**
      * @return The liquidity token that this contract can unwrap

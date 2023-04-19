@@ -42,8 +42,11 @@ contract TestAdminPriceOracleV1 is IDolomitePriceOracle, OnlyDolomiteMargin {
 
     constructor(
         address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
-        // solhint-disable-line no-empty-blocks
+    )
+    OnlyDolomiteMargin(
+        _dolomiteMargin
+    ) {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     function ownerSetPrice(

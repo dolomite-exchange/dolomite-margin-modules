@@ -19,7 +19,7 @@ async function main() {
   await deployContractAndSave(Number(network), 'SimpleWrappedTokenUserVaultFactory', [
     [core.marketIds.usdc],
     [NONE_MARKET_ID],
-    ATLAS_SI_TOKEN_MAP[network],
+    ATLAS_SI_TOKEN_MAP[network]!,
     core.borrowPositionProxyV2.address,
     userVaultImplementation,
     core.dolomiteMargin.address,
