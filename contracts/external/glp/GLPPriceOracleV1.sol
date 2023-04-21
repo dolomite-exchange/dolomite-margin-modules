@@ -92,7 +92,12 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
     function _getCurrentPrice() internal view returns (uint256) {
         IGmxVault _gmxVault = gmxVault();
         uint256 fee = _gmxVault.mintBurnFeeBasisPoints() + _gmxVault.taxBasisPoints();
-        uint256 rawPrice = glpManager().getAumInUsdg(false) * GLP_PRECISION / glp().totalSupply();
+        uint256 totalSupply = glp().totalSupply();
+
+        // total supply should always be > 0 if the user is using GLP and interacting with Dolomite
+        assert(totalSupply > 0);
+
+        uint256 rawPrice = glpManager().getAumInUsdg(false) * GLP_PRECISION / totalSupply;
         // understate the price by the fees needed to burn GLP for USDG. This is okay to do because GLP cannot be
         // borrowed.
         return rawPrice - (rawPrice * fee / FEE_PRECISION);

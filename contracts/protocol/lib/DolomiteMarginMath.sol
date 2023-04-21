@@ -60,7 +60,7 @@ library DolomiteMarginMath {
     returns (uint256)
     {
         if (target == 0 || numerator == 0) {
-            return 0 / denominator;
+            return 0;
         }
         return (((target * numerator) - 1) / denominator) + 1;
     }
@@ -79,7 +79,7 @@ library DolomiteMarginMath {
     returns (uint256)
     {
         if (target == 0 || numerator == 0) {
-            return 0 / denominator;
+            return 0;
         }
         return (((target * numerator) + (denominator / 2)) / denominator);
     }

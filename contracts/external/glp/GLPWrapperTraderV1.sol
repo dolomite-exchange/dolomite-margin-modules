@@ -68,9 +68,9 @@ contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
     // ============ External Functions ============
 
     function getExchangeCost(
-        address _makerToken,
-        address _takerToken,
-        uint256 _desiredMakerToken,
+        address _inputToken,
+        address _vaultToken,
+        uint256 _inputAmount,
         bytes memory
     )
     public
@@ -78,19 +78,24 @@ contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
     view
     returns (uint256) {
         Require.that(
-            _makerToken == USDC,
+            _inputToken == USDC,
             _FILE,
             "Invalid maker token",
-            _makerToken
+            _inputToken
         );
         Require.that(
-            _takerToken == address(VAULT_FACTORY), // VAULT_FACTORY is the DFS_GLP token
+            _vaultToken == address(VAULT_FACTORY), // VAULT_FACTORY is the DFS_GLP token
             _FILE,
             "Invalid taker token",
-            _takerToken
+            _vaultToken
+        );
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
         );
 
-        uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_makerToken, _desiredMakerToken);
+        uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_inputToken, _inputAmount);
         return GLPMathLib.getGlpMintAmount(GMX_REGISTRY, usdgAmount);
     }
 

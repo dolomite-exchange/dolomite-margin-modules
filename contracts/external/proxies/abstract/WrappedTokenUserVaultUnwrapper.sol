@@ -50,11 +50,11 @@ abstract contract WrappedTokenUserVaultUnwrapperTrader is
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "WrappedTokenUserVaultUnwrapper";
+    uint256 private constant _ACTIONS_LENGTH = 2;
 
     // ======================== Field Variables ========================
 
     IWrappedTokenUserVaultFactory public immutable VAULT_FACTORY; // solhint-disable-line var-name-mixedcase
-    uint256 private immutable _ACTIONS_LENGTH = 2; // solhint-disable-line var-name-mixedcase
 
     // ======================== Constructor ========================
 

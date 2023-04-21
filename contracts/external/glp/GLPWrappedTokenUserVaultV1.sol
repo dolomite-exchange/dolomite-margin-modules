@@ -149,6 +149,11 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
     nonReentrant
     onlyVaultOwnerOrVaultFactory(msg.sender) {
         Require.that(
+            _sender != address(0),
+            _FILE,
+            "Invalid sender"
+        );
+        Require.that(
             !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0,
             _FILE,
             "Cannot transfer more than once"
@@ -172,31 +177,19 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
     }
 
     function vestGlp(uint256 _esGmxAmount) external override onlyVaultOwner(msg.sender) {
-        vGlp().deposit(_esGmxAmount);
+        _vestEsGmx(vGlp(), _esGmxAmount);
     }
 
     function unvestGlp(bool _shouldStakeGmx) external override onlyVaultOwner(msg.sender) {
-        vGlp().withdraw();
-        if (_shouldStakeGmx) {
-            IERC20 _gmx = gmx();
-            _stakeGmx(_gmx, _gmx.balanceOf(address(this)));
-        } else {
-            _withdrawAllGmx(msg.sender);
-        }
+        _unvestEsGmx(vGlp(), _shouldStakeGmx);
     }
 
     function vestGmx(uint256 _esGmxAmount) external override onlyVaultOwner(msg.sender) {
-        vGmx().deposit(_esGmxAmount);
+        _vestEsGmx(vGmx(), _esGmxAmount);
     }
 
     function unvestGmx(bool _shouldStakeGmx) external override onlyVaultOwner(msg.sender) {
-        vGmx().withdraw();
-        if (_shouldStakeGmx) {
-            IERC20 _gmx = gmx();
-            _stakeGmx(_gmx, _gmx.balanceOf(address(this)));
-        } else {
-            _withdrawAllGmx(msg.sender);
-        }
+        _unvestEsGmx(vGmx(), _shouldStakeGmx);
     }
 
     // ==================================================================
@@ -314,14 +307,28 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
         gmxRewardsRouter().stakeGmx(_amount);
     }
 
+    function _vestEsGmx(IGmxVester _vester, uint256 _esGmxAmount) internal {
+        _vester.deposit(_esGmxAmount);
+    }
+
+    function _unvestEsGmx(IGmxVester _vester, bool _shouldStakeGmx) internal {
+        _vester.withdraw();
+        if (_shouldStakeGmx) {
+            IERC20 _gmx = gmx();
+            _stakeGmx(_gmx, _gmx.balanceOf(address(this)));
+        } else {
+            _withdrawAllGmx(msg.sender);
+        }
+    }
+
     function _approveGmxForStaking(IERC20 _gmx, uint256 _amount) internal {
         address _sGmx = address(sGmx());
         uint256 allowance = _gmx.allowance(address(this), _sGmx);
-        if (_amount != allowance && _amount > 0 && allowance > 0) {
-            // reset the allowance to 0 if needed
+        if (_amount > 0 && allowance > 0) {
+            // reset the allowance to 0 if the approval is greater than zero and there is a non-zero allowance
             _gmx.safeApprove(_sGmx, 0);
         }
-        // approve only the amount needed and nothing more.
+
         _gmx.safeApprove(_sGmx, _amount);
     }
 

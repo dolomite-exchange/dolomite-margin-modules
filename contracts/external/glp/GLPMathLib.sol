@@ -14,6 +14,8 @@
 
 pragma solidity ^0.8.9;
 
+import { Require } from "../../protocol/lib/Require.sol";
+
 import { IGLPManager } from "../interfaces/IGLPManager.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
@@ -27,8 +29,18 @@ import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
  */
 library GLPMathLib {
 
+    // ===========================================================
+    // ======================== Constants ========================
+    // ===========================================================
+
+    bytes32 private constant _FILE = "GLPMathLib";
+
     uint256 public constant BASIS_POINTS_DIVISOR = 10000;
     uint256 public constant PRICE_PRECISION = 10 ** 30;
+
+    // ===========================================================
+    // ======================== Functions ========================
+    // ===========================================================
 
     function getGlpMintAmount(
         IGmxRegistryV1 _gmxRegistry,
@@ -39,7 +51,9 @@ library GLPMathLib {
         uint256 aumInUsdg = _gmxRegistry.glpManager().getAumInUsdg(true);
         uint256 glpSupply = _gmxRegistry.glp().totalSupply();
 
-        glpAmount = aumInUsdg == 0 ? _usdgAmount : _usdgAmount * glpSupply / aumInUsdg;
+        glpAmount = aumInUsdg == 0 || glpSupply == 0
+            ? _usdgAmount
+            : _usdgAmount * glpSupply / aumInUsdg;
     }
 
     function getUsdgAmountForBuy(
@@ -47,6 +61,12 @@ library GLPMathLib {
         address _inputToken,
         uint256 _inputAmount
     ) internal view returns (uint256 usdgAmount) {
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Input amount must be gt than 0"
+        );
+
         // This code is taken from gmxVault#buyUSDG (returns the usdgAmount). The contract address copied is:
         // https://arbiscan.io/address/0x489ee077994b6658eafa855c308275ead8097c4a#code
         uint256 price = _gmxVault.getMinPrice(_inputToken);

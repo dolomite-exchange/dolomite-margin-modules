@@ -188,8 +188,14 @@ abstract contract WrappedTokenUserVaultFactory is
     override
     requireIsInitialized
     onlyDolomiteMarginOwner(msg.sender) {
-        emit UserVaultImplementationSet(userVaultImplementation, _userVaultImplementation);
+        Require.that(
+            _userVaultImplementation != address(0),
+            _FILE,
+            "Invalid user implementation"
+        );
+        address _oldUserVaultImplementation = userVaultImplementation;
         userVaultImplementation = _userVaultImplementation;
+        emit UserVaultImplementationSet(_oldUserVaultImplementation, _userVaultImplementation);
     }
 
     function setIsTokenConverterTrusted(
@@ -382,6 +388,11 @@ abstract contract WrappedTokenUserVaultFactory is
     // ====================================================
 
     function _setIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) internal {
+        Require.that(
+            _tokenConverter != address(0),
+            _FILE,
+            "Invalid token converter"
+        );
         _tokenConverterToIsTrustedMap[_tokenConverter] = _isTrusted;
         emit TokenConverterSet(_tokenConverter, _isTrusted);
     }

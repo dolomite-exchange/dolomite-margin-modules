@@ -18,6 +18,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
+import { Require } from "../../protocol/lib/Require.sol";
+
 import { IGLPManager } from "../interfaces/IGLPManager.sol";
 import { IGLPRewardsRouterV2 } from "../interfaces/IGLPRewardsRouterV2.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
@@ -100,66 +102,131 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
     // ============ External Functions ============
 
     function setEsGmx(address _esGmx) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _esGmx != address(0),
+            _FILE,
+            "Invalid esGmx address"
+        );
         esGmx = _esGmx;
         emit EsGmxSet(_esGmx);
     }
 
     function setFSGlp(address _fsGlp) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _fsGlp != address(0),
+            _FILE,
+            "Invalid fsGlp address"
+        );
         fsGlp = IERC20(_fsGlp);
         emit FSGlpSet(_fsGlp);
     }
 
     function setGlp(address _glp) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _glp != address(0),
+            _FILE,
+            "Invalid glp address"
+        );
         glp = IERC20(_glp);
         emit GlpSet(_glp);
     }
 
     function setGlpManager(address _glpManager) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _glpManager != address(0),
+            _FILE,
+            "Invalid glpManager address"
+        );
         glpManager = IGLPManager(_glpManager);
         emit GlpManagerSet(_glpManager);
     }
 
     function setGlpRewardsRouter(address _glpRewardsRouter) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _glpRewardsRouter != address(0),
+            _FILE,
+            "Invalid glpRewardsRouter address"
+        );
         glpRewardsRouter = IGLPRewardsRouterV2(_glpRewardsRouter);
         emit GlpRewardsRouterSet(_glpRewardsRouter);
     }
 
     function setGmx(address _gmx) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _gmx != address(0),
+            _FILE,
+            "Invalid gmx address"
+        );
         gmx = IERC20(_gmx);
         emit GmxSet(_gmx);
     }
 
     function setGmxRewardsRouter(address _gmxRewardsRouter) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _gmxRewardsRouter != address(0),
+            _FILE,
+            "Invalid gmxRewardsRouter address"
+        );
         gmxRewardsRouter = IGmxRewardRouterV2(_gmxRewardsRouter);
         emit GmxRewardsRouterSet(_gmxRewardsRouter);
     }
 
     function setGmxVault(address _gmxVault) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _gmxVault != address(0),
+            _FILE,
+            "Invalid gmxVault address"
+        );
         gmxVault = IGmxVault(_gmxVault);
         emit GmxVaultSet(_gmxVault);
     }
 
     function setSGlp(address _sGlp) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _sGlp != address(0),
+            _FILE,
+            "Invalid sGlp address"
+        );
         sGlp = _sGlp;
         emit SGlpSet(_sGlp);
     }
 
     function setSGmx(address _sGmx) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _sGmx != address(0),
+            _FILE,
+            "Invalid sGmx address"
+        );
         sGmx = _sGmx;
         emit SGmxSet(_sGmx);
     }
 
     function setSbfGmx(address _sbfGmx) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _sbfGmx != address(0),
+            _FILE,
+            "Invalid sbfGmx address"
+        );
         sbfGmx = _sbfGmx;
         emit SbfGmxSet(_sbfGmx);
     }
 
     function setVGlp(address _vGlp) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _vGlp != address(0),
+            _FILE,
+            "Invalid vGlp address"
+        );
         vGlp = _vGlp;
         emit VGlpSet(_vGlp);
     }
 
     function setVGmx(address _vGmx) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _vGmx != address(0),
+            _FILE,
+            "Invalid vGmx address"
+        );
         vGmx = _vGmx;
         emit VGmxSet(_vGmx);
     }
