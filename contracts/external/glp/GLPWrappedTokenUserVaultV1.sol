@@ -1,43 +1,35 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/*
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+    Copyright 2023 Dolomite
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteMarginCallee } from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
-import { IDolomiteMarginLiquidationCallback } from "../../protocol/interfaces/IDolomiteMarginLiquidationCallback.sol";
-
 import { Require } from "../../protocol/lib/Require.sol";
-
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
-
-import { IBorrowPositionProxyV2 } from "../interfaces/IBorrowPositionProxyV2.sol";
-import { IGLPWrappedTokenUserVaultV1 } from "../interfaces/IGLPWrappedTokenUserVaultV1.sol";
-import { IGmxRewardRouterV2 } from"../interfaces/IGmxRewardRouterV2.sol";
 import { IGLPWrappedTokenUserVaultFactory } from "../interfaces/IGLPWrappedTokenUserVaultFactory.sol";
+import { IGLPWrappedTokenUserVaultV1 } from "../interfaces/IGLPWrappedTokenUserVaultV1.sol";
+import { IGmxRewardRouterV2 } from "../interfaces/IGmxRewardRouterV2.sol";
 import { IGmxVester } from "../interfaces/IGmxVester.sol";
 import { ISGMX } from "../interfaces/ISGMX.sol";
 import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
-import { IWrappedTokenUserVaultProxy } from "../interfaces/IWrappedTokenUserVaultProxy.sol";
-import { IWrappedTokenUserVaultV1 } from "../interfaces/IWrappedTokenUserVaultV1.sol";
-
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-
 import { WrappedTokenUserVaultV1 } from "../proxies/abstract/WrappedTokenUserVaultV1.sol";
 
 

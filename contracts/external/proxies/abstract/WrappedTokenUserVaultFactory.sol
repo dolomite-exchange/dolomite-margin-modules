@@ -1,39 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/*
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+    Copyright 2023 Dolomite
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 pragma solidity ^0.8.9;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
+import { WrappedTokenUserVaultUpgradeableProxy } from "../WrappedTokenUserVaultUpgradeableProxy.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
-
 import { Require } from "../../../protocol/lib/Require.sol";
-
 import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
-
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
 import { IWrappedTokenUserVaultFactory } from "../../interfaces/IWrappedTokenUserVaultFactory.sol";
 import { IWrappedTokenUserVaultProxy } from "../../interfaces/IWrappedTokenUserVaultProxy.sol";
 import { IWrappedTokenUserVaultV1 } from "../../interfaces/IWrappedTokenUserVaultV1.sol";
-
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
-
-import { WrappedTokenUserVaultUpgradeableProxy } from "../WrappedTokenUserVaultUpgradeableProxy.sol";
 
 
 /**
@@ -87,7 +86,11 @@ abstract contract WrappedTokenUserVaultFactory is
     // ===================================================
 
     modifier requireIsInitialized {
-        Require.that(isInitialized, _FILE, "Not initialized");
+        Require.that(
+            isInitialized,
+            _FILE,
+            "Not initialized"
+        );
         _;
     }
 

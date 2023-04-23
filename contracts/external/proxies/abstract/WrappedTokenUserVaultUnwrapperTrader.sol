@@ -1,35 +1,35 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/*
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+    Copyright 2023 Dolomite
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginCallee } from "../../../protocol/interfaces/IDolomiteMarginCallee.sol";
-import { IDolomiteMarginExchangeWrapper } from "../../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
-
 import { Require } from "../../../protocol/lib/Require.sol";
-
 import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
-
 import { IDolomiteMarginUnwrapperTrader } from "../../interfaces/IDolomiteMarginUnwrapperTrader.sol";
 import { IWrappedTokenUserVaultFactory } from "../../interfaces/IWrappedTokenUserVaultFactory.sol";
 import { IWrappedTokenUserVaultV1 } from "../../interfaces/IWrappedTokenUserVaultV1.sol";
-
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 
 
@@ -37,8 +37,8 @@ import { AccountActionLib } from "../../lib/AccountActionLib.sol";
  * @title   WrappedTokenUserVaultUnwrapperTrader
  * @author  Dolomite
  *
- * @notice  Abstract contract for unwrapping a VaultWrapper token into the underlying token. Must be set as a token
- *          converter for the VaultWrapperFactory token.
+ * @notice  Abstract contract for selling a vault token into the underlying token. Must be set as a token converter by
+ *          the DolomiteMargin admin on the corresponding `WrappedTokenUserVaultFactory` token to be used.
  */
 abstract contract WrappedTokenUserVaultUnwrapperTrader is
     IDolomiteMarginUnwrapperTrader,

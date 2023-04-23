@@ -20,7 +20,7 @@ import {
 } from '../../utils/assertions';
 import { setExpiry } from '../../utils/expiry-utils';
 import { getCalldataForParaswap } from '../../utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUSDCBalance } from '../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -51,8 +51,7 @@ describe('MagicGLPLiquidation', () => {
       [core.dolomiteMargin.address, magicGlp.address, core.marketIds.dfsGlp!],
     );
 
-    heldMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, magicGlp, true, priceOracle);
+    heldMarketId = BigNumber.from(core.marketIds.magicGlp!);
 
     unwrapper = await createContractWithAbi<MagicGLPUnwrapperTrader>(
       MagicGLPUnwrapperTrader__factory.abi,

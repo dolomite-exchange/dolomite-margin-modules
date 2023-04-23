@@ -1,3 +1,4 @@
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { GmxRegistryV1 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
@@ -61,6 +62,13 @@ describe('GmxRegistryV1', () => {
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setEsGmx(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid esGmx address',
+      );
+    });
   });
 
   describe('#setFSGlp', () => {
@@ -76,6 +84,13 @@ describe('GmxRegistryV1', () => {
       await expectThrow(
         registry.connect(core.hhUser1).setFSGlp(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setFSGlp(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid fsGlp address',
       );
     });
   });
@@ -95,6 +110,13 @@ describe('GmxRegistryV1', () => {
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setGlp(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid glp address',
+      );
+    });
   });
 
   describe('#setGlpManager', () => {
@@ -110,6 +132,13 @@ describe('GmxRegistryV1', () => {
       await expectThrow(
         registry.connect(core.hhUser1).setGlpManager(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setGlpManager(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid glpManager address',
       );
     });
   });
@@ -129,6 +158,13 @@ describe('GmxRegistryV1', () => {
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setGlpRewardsRouter(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid glpRewardsRouter address',
+      );
+    });
   });
 
   describe('#setGmx', () => {
@@ -144,6 +180,13 @@ describe('GmxRegistryV1', () => {
       await expectThrow(
         registry.connect(core.hhUser1).setGmx(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setGmx(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid gmx address',
       );
     });
   });
@@ -163,6 +206,13 @@ describe('GmxRegistryV1', () => {
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setGmxRewardsRouter(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid gmxRewardsRouter address',
+      );
+    });
   });
 
   describe('#setGmxVault', () => {
@@ -178,6 +228,13 @@ describe('GmxRegistryV1', () => {
       await expectThrow(
         registry.connect(core.hhUser1).setGmxVault(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setGmxVault(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid gmxVault address',
       );
     });
   });
@@ -197,6 +254,13 @@ describe('GmxRegistryV1', () => {
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setSGlp(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid sGlp address',
+      );
+    });
   });
 
   describe('#setSGmx', () => {
@@ -212,6 +276,13 @@ describe('GmxRegistryV1', () => {
       await expectThrow(
         registry.connect(core.hhUser1).setSGmx(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setSGmx(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid sGmx address',
       );
     });
   });
@@ -231,6 +302,13 @@ describe('GmxRegistryV1', () => {
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setSbfGmx(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid sbfGmx address',
+      );
+    });
   });
 
   describe('#setVGlp', () => {
@@ -248,6 +326,13 @@ describe('GmxRegistryV1', () => {
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setVGlp(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid vGlp address',
+      );
+    });
   });
 
   describe('#setVGmx', () => {
@@ -263,6 +348,13 @@ describe('GmxRegistryV1', () => {
       await expectThrow(
         registry.connect(core.hhUser1).setVGmx(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).setVGmx(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid vGmx address',
       );
     });
   });
