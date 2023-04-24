@@ -102,7 +102,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
 
     // ============ External Functions ============
 
-    function setEsGmx(address _esGmx) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetEsGmx(address _esGmx) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _esGmx != address(0),
             _FILE,
@@ -112,7 +112,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit EsGmxSet(_esGmx);
     }
 
-    function setFSGlp(address _fsGlp) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetFSGlp(address _fsGlp) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _fsGlp != address(0),
             _FILE,
@@ -122,7 +122,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit FSGlpSet(_fsGlp);
     }
 
-    function setGlp(address _glp) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetGlp(address _glp) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _glp != address(0),
             _FILE,
@@ -132,7 +132,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit GlpSet(_glp);
     }
 
-    function setGlpManager(address _glpManager) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetGlpManager(address _glpManager) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _glpManager != address(0),
             _FILE,
@@ -142,7 +142,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit GlpManagerSet(_glpManager);
     }
 
-    function setGlpRewardsRouter(address _glpRewardsRouter) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetGlpRewardsRouter(address _glpRewardsRouter) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _glpRewardsRouter != address(0),
             _FILE,
@@ -152,7 +152,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit GlpRewardsRouterSet(_glpRewardsRouter);
     }
 
-    function setGmx(address _gmx) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetGmx(address _gmx) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _gmx != address(0),
             _FILE,
@@ -162,7 +162,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit GmxSet(_gmx);
     }
 
-    function setGmxRewardsRouter(address _gmxRewardsRouter) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetGmxRewardsRouter(address _gmxRewardsRouter) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _gmxRewardsRouter != address(0),
             _FILE,
@@ -172,7 +172,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit GmxRewardsRouterSet(_gmxRewardsRouter);
     }
 
-    function setGmxVault(address _gmxVault) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetGmxVault(address _gmxVault) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _gmxVault != address(0),
             _FILE,
@@ -182,7 +182,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit GmxVaultSet(_gmxVault);
     }
 
-    function setSGlp(address _sGlp) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetSGlp(address _sGlp) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _sGlp != address(0),
             _FILE,
@@ -192,7 +192,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit SGlpSet(_sGlp);
     }
 
-    function setSGmx(address _sGmx) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetSGmx(address _sGmx) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _sGmx != address(0),
             _FILE,
@@ -202,7 +202,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit SGmxSet(_sGmx);
     }
 
-    function setSbfGmx(address _sbfGmx) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetSbfGmx(address _sbfGmx) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _sbfGmx != address(0),
             _FILE,
@@ -212,7 +212,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit SbfGmxSet(_sbfGmx);
     }
 
-    function setVGlp(address _vGlp) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetVGlp(address _vGlp) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _vGlp != address(0),
             _FILE,
@@ -222,7 +222,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, OnlyDolomiteMargin {
         emit VGlpSet(_vGlp);
     }
 
-    function setVGmx(address _vGmx) external override onlyDolomiteMarginOwner(msg.sender) {
+    function ownerSetVGmx(address _vGmx) external override onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _vGmx != address(0),
             _FILE,

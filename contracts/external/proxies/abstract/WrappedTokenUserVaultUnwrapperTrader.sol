@@ -106,52 +106,52 @@ abstract contract WrappedTokenUserVaultUnwrapperTrader is
     function exchange(
         address _tradeOriginator,
         address _receiver,
-        address _makerToken,
-        address _takerToken,
-        uint256 _amountTakerToken,
+        address _outputToken,
+        address _inputToken,
+        uint256 _inputAmount,
         bytes calldata _orderData
     )
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         Require.that(
-            _takerToken == address(VAULT_FACTORY),
+            _inputToken == address(VAULT_FACTORY),
             _FILE,
-            "Invalid taker token",
-            _takerToken
+            "Invalid input token",
+            _inputToken
         );
 
-        (uint256 minMakerAmount) = abi.decode(_orderData, (uint256));
+        (uint256 minOutputAmount) = abi.decode(_orderData, (uint256));
 
         {
             uint256 balance = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
             Require.that(
-                balance >= _amountTakerToken,
+                balance >= _inputAmount,
                 _FILE,
-                "Insufficient taker token",
+                "Insufficient input token",
                 balance,
-                _amountTakerToken
+                _inputAmount
             );
         }
 
         uint256 outputAmount = _exchangeUnderlyingTokenToOutputToken(
             _tradeOriginator,
             _receiver,
-            _makerToken,
-            minMakerAmount,
+            _outputToken,
+            minOutputAmount,
             address(VAULT_FACTORY),
-            _amountTakerToken,
+            _inputAmount,
             _orderData
         );
         Require.that(
-            outputAmount >= minMakerAmount,
+            outputAmount >= minOutputAmount,
             _FILE,
             "Insufficient output amount",
             outputAmount,
-            minMakerAmount
+            minOutputAmount
         );
 
-        IERC20(_makerToken).safeApprove(_receiver, outputAmount);
+        IERC20(_outputToken).safeApprove(_receiver, outputAmount);
 
         return outputAmount;
     }
@@ -209,9 +209,9 @@ abstract contract WrappedTokenUserVaultUnwrapperTrader is
     }
 
     function getExchangeCost(
-        address _makerToken,
-        address _takerToken,
-        uint256 _desiredMakerToken,
+        address _inputToken,
+        address _outputToken,
+        uint256 _desiredInputAmount,
         bytes memory _orderData
     )
     public
@@ -225,15 +225,15 @@ abstract contract WrappedTokenUserVaultUnwrapperTrader is
     // ============ Internal Functions ============
 
     /**
-     * @notice Performs the exchange from the factory's underlying token to `_makerToken` (could be anything).
+     * @notice Performs the exchange from the factory's underlying token to `_outputToken` (could be anything).
      */
     function _exchangeUnderlyingTokenToOutputToken(
         address _tradeOriginator,
         address _receiver,
-        address _makerToken,
-        uint256 _minMakerAmount,
-        address _takerToken,
-        uint256 _amountTakerToken,
+        address _outputToken,
+        uint256 _mintOutputAmount,
+        address _inputToken,
+        uint256 _inputAmount,
         bytes memory _orderData
     ) internal virtual returns (uint256);
 }

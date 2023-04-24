@@ -36,6 +36,7 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
 
     uint256[] private _allowableDebtMarketIds;
     uint256[] private _allowableCollateralMarketIds;
+    bool private _shouldSpendAllowance;
 
     constructor(
         address _underlyingToken,
@@ -48,7 +49,7 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
         _userVaultImplementation,
         _dolomiteMargin
     ) {
-        // solhint-disable-previous-line no-empty-blocks
+        _shouldSpendAllowance = true;
     }
 
     function testEnqueueTransfer(
@@ -103,11 +104,27 @@ contract TestWrappedTokenUserVaultFactory is WrappedTokenUserVaultFactory {
         _allowableCollateralMarketIds = __allowableCollateralMarketIds;
     }
 
+    function setShouldSpendAllowance(bool newShouldSpendAllowance) external {
+        _shouldSpendAllowance = newShouldSpendAllowance;
+    }
+
     function allowableDebtMarketIds() external view override returns (uint256[] memory) {
         return _allowableDebtMarketIds;
     }
 
     function allowableCollateralMarketIds() external view override returns (uint256[] memory) {
         return _allowableCollateralMarketIds;
+    }
+
+    // ========================= Internal Functions =========================
+
+    function _spendAllowance(
+        address _owner,
+        address _spender,
+        uint256 _amount
+    ) internal override {
+        if (_shouldSpendAllowance) {
+            super._spendAllowance(_owner, _spender, _amount);
+        }
     }
 }

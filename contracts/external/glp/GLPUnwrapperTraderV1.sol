@@ -76,9 +76,9 @@ contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
     // ==========================================
 
     function getExchangeCost(
-        address _makerToken,
-        address _takerToken,
-        uint256 _desiredMakerToken,
+        address _inputToken,
+        address _outputToken,
+        uint256 _desiredInputAmount,
         bytes memory
     )
     public
@@ -86,21 +86,26 @@ contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
     view
     returns (uint256) {
         Require.that(
-            _makerToken == address(VAULT_FACTORY),
+            _inputToken == address(VAULT_FACTORY),
             _FILE,
-            "Invalid maker token",
-            _makerToken
+            "Invalid input token",
+            _inputToken
         );
         Require.that(
-            _takerToken == USDC,
+            _outputToken == USDC,
             _FILE,
-            "Invalid taker token",
-            _takerToken
+            "Invalid output token",
+            _outputToken
+        );
+        Require.that(
+            _desiredInputAmount > 0,
+            _FILE,
+            "Invalid desired input amount"
         );
 
-        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, _desiredMakerToken);
+        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, _desiredInputAmount);
 
-        return GMX_REGISTRY.gmxVault().getGlpRedemptionAmount(_takerToken, usdgAmount);
+        return GMX_REGISTRY.gmxVault().getGlpRedemptionAmount(_outputToken, usdgAmount);
     }
 
     // ============================================
@@ -110,26 +115,31 @@ contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
     function _exchangeUnderlyingTokenToOutputToken(
         address,
         address,
-        address _makerToken,
-        uint256 _minMakerAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
         address,
-        uint256 _amountTakerToken,
+        uint256 _inputAmount,
         bytes memory
     )
     internal
     override
     returns (uint256) {
         Require.that(
-            _makerToken == USDC,
+            _outputToken == USDC,
             _FILE,
-            "Invalid maker token",
-            _makerToken
+            "Invalid output token",
+            _outputToken
+        );
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
         );
 
         uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
-            /* _tokenOut = */ _makerToken,
-            /* _glpAmount = */ _amountTakerToken,
-            _minMakerAmount,
+            /* _tokenOut = */ _outputToken,
+            /* _glpAmount = */ _inputAmount,
+            _minOutputAmount,
             /* _receiver = */ address(this)
         );
 

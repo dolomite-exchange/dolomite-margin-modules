@@ -18,7 +18,7 @@
     "lint:sol": "hardhat check && python scripts/lint-contracts.py",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "test": "hardhat --network hardhat test",
-    "test:specific": "hardhat --network hardhat test test/external/glp/GmxRegistryV1.ts",
+    "test:specific": "hardhat --network hardhat test test/external/proxies/abstract/WrappedTokenUserVaultFactory.ts",
     "verify:contract": "hardhat --network arbitrum_goerli run scripts/verify-contract.ts"
   },
   "repository": {
@@ -42,7 +42,7 @@
     "@nomiclabs/hardhat-vyper": "^3.0.1",
     "@nomiclabs/hardhat-waffle": "2.0.1",
     "@nomiclabs/hardhat-web3": "2.0.0",
-    "@openzeppelin/contracts": "^4.8.0-rc.2",
+    "@openzeppelin/contracts": "^4.8.3",
     "@openzeppelin/contracts-ethereum-package": "^3.0.0",
     "@openzeppelin/upgrades": "^2.8.0",
     "@typechain/ethers-v5": "^9.0.0",

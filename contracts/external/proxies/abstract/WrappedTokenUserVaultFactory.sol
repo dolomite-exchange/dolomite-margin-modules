@@ -135,7 +135,7 @@ abstract contract WrappedTokenUserVaultFactory is
     // ================ Write Functions ================
     // =================================================
 
-    function initialize(
+    function ownerInitialize(
         address[] calldata _tokenConverters
     )
     external
@@ -154,7 +154,7 @@ abstract contract WrappedTokenUserVaultFactory is
         );
 
         for (uint256 i = 0; i < _tokenConverters.length; i++) {
-            _setIsTokenConverterTrusted(_tokenConverters[i], true);
+            _ownerSetIsTokenConverterTrusted(_tokenConverters[i], true);
         }
 
         isInitialized = true;
@@ -184,7 +184,7 @@ abstract contract WrappedTokenUserVaultFactory is
         return vault;
     }
 
-    function setUserVaultImplementation(
+    function ownerSetUserVaultImplementation(
         address _userVaultImplementation
     )
     external
@@ -201,7 +201,7 @@ abstract contract WrappedTokenUserVaultFactory is
         emit UserVaultImplementationSet(_oldUserVaultImplementation, _userVaultImplementation);
     }
 
-    function setIsTokenConverterTrusted(
+    function ownerSetIsTokenConverterTrusted(
         address _tokenConverter,
         bool _isTrusted
     )
@@ -209,7 +209,7 @@ abstract contract WrappedTokenUserVaultFactory is
     override
     requireIsInitialized
     onlyDolomiteMarginOwner(msg.sender) {
-        _setIsTokenConverterTrusted(_tokenConverter, _isTrusted);
+        _ownerSetIsTokenConverterTrusted(_tokenConverter, _isTrusted);
     }
 
     function depositOtherTokenIntoDolomiteMarginForVaultOwner(
@@ -390,7 +390,7 @@ abstract contract WrappedTokenUserVaultFactory is
     // ================ Internal Functions ================
     // ====================================================
 
-    function _setIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) internal {
+    function _ownerSetIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) internal {
         Require.that(
             _tokenConverter != address(0),
             _FILE,

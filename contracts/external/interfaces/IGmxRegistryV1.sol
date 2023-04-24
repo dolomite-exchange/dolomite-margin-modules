@@ -59,31 +59,31 @@ interface IGmxRegistryV1 {
     // ==================== Functions ====================
     // ===================================================
 
-    function setEsGmx(address _esGmx) external;
+    function ownerSetEsGmx(address _esGmx) external;
 
-    function setFSGlp(address _fsGlp) external;
+    function ownerSetFSGlp(address _fsGlp) external;
 
-    function setGlp(address _glp) external;
+    function ownerSetGlp(address _glp) external;
 
-    function setGlpManager(address _glpManager) external;
+    function ownerSetGlpManager(address _glpManager) external;
 
-    function setGlpRewardsRouter(address _glpRewardsRouter) external;
+    function ownerSetGlpRewardsRouter(address _glpRewardsRouter) external;
 
-    function setGmx(address _gmx) external;
+    function ownerSetGmx(address _gmx) external;
 
-    function setGmxRewardsRouter(address _gmxRewardsRouter) external;
+    function ownerSetGmxRewardsRouter(address _gmxRewardsRouter) external;
 
-    function setGmxVault(address _gmxVault) external;
+    function ownerSetGmxVault(address _gmxVault) external;
 
-    function setSGlp(address _sGlp) external;
+    function ownerSetSGlp(address _sGlp) external;
 
-    function setSGmx(address _sGmx) external;
+    function ownerSetSGmx(address _sGmx) external;
 
-    function setSbfGmx(address _sbfGmx) external;
+    function ownerSetSbfGmx(address _sbfGmx) external;
 
-    function setVGlp(address _vGlp) external;
+    function ownerSetVGlp(address _vGlp) external;
 
-    function setVGmx(address _vGmx) external;
+    function ownerSetVGmx(address _vGmx) external;
 
     function esGmx() external view returns (address);
 

@@ -59,7 +59,7 @@ contract TestWrappedTokenUserVaultUnwrapper is WrappedTokenUserVaultUnwrapperTra
     function getExchangeCost(
         address,
         address,
-        uint256 _desiredMakerToken,
+        uint256 _desiredInputAmount,
         bytes memory
     )
     public
@@ -67,7 +67,7 @@ contract TestWrappedTokenUserVaultUnwrapper is WrappedTokenUserVaultUnwrapperTra
     pure
     returns (uint256) {
         // 1:1 conversion for the sake of testing
-        return _desiredMakerToken;
+        return _desiredInputAmount;
     }
 
     // ================ Internal Functions ================
@@ -75,24 +75,24 @@ contract TestWrappedTokenUserVaultUnwrapper is WrappedTokenUserVaultUnwrapperTra
     function _exchangeUnderlyingTokenToOutputToken(
         address,
         address,
-        address _makerToken,
+        address _outputToken,
         uint256,
-        address _takerToken,
-        uint256 _amountTakerToken,
+        address _inputToken,
+        uint256 _inputAmount,
         bytes memory
     )
     internal
     override
     returns (uint256) {
         // 1:1 conversion for the sake of testing
-        uint256 makerPrice = DOLOMITE_MARGIN.getMarketPrice(
+        uint256 outputPrice = DOLOMITE_MARGIN.getMarketPrice(
             DOLOMITE_MARGIN.getMarketIdByTokenAddress(address(VAULT_FACTORY))
         ).value;
-        uint256 takerPrice = DOLOMITE_MARGIN.getMarketPrice(
-            DOLOMITE_MARGIN.getMarketIdByTokenAddress(_takerToken)
+        uint256 inputPrice = DOLOMITE_MARGIN.getMarketPrice(
+            DOLOMITE_MARGIN.getMarketIdByTokenAddress(_inputToken)
         ).value;
-        uint256 outputAmount = _amountTakerToken * takerPrice / makerPrice;
-        ICustomTestToken(_makerToken).addBalance(address(this), outputAmount);
+        uint256 outputAmount = _inputAmount * inputPrice / outputPrice;
+        ICustomTestToken(_outputToken).addBalance(address(this), outputAmount);
         return outputAmount;
     }
 }

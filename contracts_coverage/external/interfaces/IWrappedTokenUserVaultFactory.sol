@@ -67,14 +67,34 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
         address vault
     );
 
-    // ================================================
-    // ================== Functions ===================
-    // ================================================
+    // ======================================================
+    // ================== Admin Functions ===================
+    // ======================================================
 
     /**
      * @notice  Initializes this contract's variables that are dependent on this token being added to DolomiteMargin.
      */
-    function initialize(address[] calldata _tokenConverters) external;
+    function ownerInitialize(address[] calldata _tokenConverters) external;
+
+    /**
+     *
+     * @param  _userVaultImplementation  The address of the new vault implementation contract
+     */
+    function ownerSetUserVaultImplementation(address _userVaultImplementation) external;
+
+    /**
+     * @notice  A token converter is used to convert this underlying token into a Dolomite-compatible one for deposit
+     *          or withdrawal
+     *
+     * @param  _tokenConverter   The address of the token converter contract to set whether or not it's trusted for
+     *                          executing transfers to/from vaults
+     * @param  _isTrusted        True if the token converter is trusted, false otherwise
+     */
+    function ownerSetIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) external;
+
+    // ======================================================
+    // ================== User Functions ===================
+    // ======================================================
 
     /**
      * @notice  Creates the vault for `_account`
@@ -93,22 +113,6 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
         uint256 _toAccountNumber,
         uint256 _amountWei
     ) external returns (address);
-
-    /**
-     *
-     * @param  _userVaultImplementation  The address of the new vault implementation contract
-     */
-    function setUserVaultImplementation(address _userVaultImplementation) external;
-
-    /**
-     * @notice  A token converter is used to convert this underlying token into a Dolomite-compatible one for deposit
-     *          or withdrawal
-     *
-     * @param  _tokenConverter   The address of the token converter contract to set whether or not it's trusted for
-     *                          executing transfers to/from vaults
-     * @param  _isTrusted        True if the token converter is trusted, false otherwise
-     */
-    function setIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) external;
 
     /**
      * @notice  Deposits a token into the vault owner's account at `_toAccountNumber`. This function can only be called

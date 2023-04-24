@@ -138,7 +138,7 @@ describe('MagicGLPUnwrapperTrader', () => {
       );
     });
 
-    it('should fail if taker token is incorrect', async () => {
+    it('should fail if input token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
@@ -149,11 +149,11 @@ describe('MagicGLPUnwrapperTrader', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `MagicGLPUnwrapperTrader: Invalid taker token <${core.weth.address.toLowerCase()}>`,
+        `MagicGLPUnwrapperTrader: Invalid input token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
-    it('should fail if maker token is incorrect', async () => {
+    it('should fail if output token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await core.gmxEcosystem!.sGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
@@ -165,7 +165,23 @@ describe('MagicGLPUnwrapperTrader', () => {
           amountWei,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `MagicGLPUnwrapperTrader: Invalid maker token <${core.weth.address.toLowerCase()}>`,
+        `MagicGLPUnwrapperTrader: Invalid output token <${core.weth.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if the input amount is 0', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await core.gmxEcosystem!.sGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          core.usdc.address,
+          magicGlp.address,
+          ZERO_BI,
+          abiCoder.encode(['uint256'], [otherAmountWei]),
+        ),
+        'MagicGLPUnwrapperTrader: Invalid input amount',
       );
     });
   });
@@ -242,17 +258,24 @@ describe('MagicGLPUnwrapperTrader', () => {
       }
     });
 
-    it('should fail if the maker token is not dsfGLP', async () => {
+    it('should fail if the input token is not dsfGLP', async () => {
       await expectThrow(
         unwrapper.getExchangeCost(core.weth.address, core.usdc.address, amountWei, BYTES_EMPTY),
-        `MagicGLPUnwrapperTrader: Invalid maker token <${core.weth.address.toLowerCase()}>`,
+        `MagicGLPUnwrapperTrader: Invalid input token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
-    it('should fail if the taker token is not USDC', async () => {
+    it('should fail if the output token is not USDC', async () => {
       await expectThrow(
         unwrapper.getExchangeCost(magicGlp.address, core.weth.address, amountWei, BYTES_EMPTY),
-        `MagicGLPUnwrapperTrader: Invalid taker token <${core.weth.address.toLowerCase()}>`,
+        `MagicGLPUnwrapperTrader: Invalid output token <${core.weth.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if the input token is not 0', async () => {
+      await expectThrow(
+        unwrapper.getExchangeCost(magicGlp.address, core.usdc.address, ZERO_BI, BYTES_EMPTY),
+        'MagicGLPUnwrapperTrader: Invalid desired input amount',
       );
     });
   });

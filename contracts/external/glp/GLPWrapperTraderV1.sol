@@ -69,7 +69,7 @@ contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
     function getExchangeCost(
         address _inputToken,
         address _vaultToken,
-        uint256 _inputAmount,
+        uint256 _desiredInputAmount,
         bytes memory
     )
     public
@@ -79,23 +79,23 @@ contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
         Require.that(
             _inputToken == USDC,
             _FILE,
-            "Invalid maker token",
+            "Invalid input token",
             _inputToken
         );
         // VAULT_FACTORY is the DFS_GLP token
         Require.that(
             _vaultToken == address(VAULT_FACTORY),
             _FILE,
-            "Invalid taker token",
+            "Invalid output token",
             _vaultToken
         );
         Require.that(
-            _inputAmount > 0,
+            _desiredInputAmount > 0,
             _FILE,
-            "Invalid input amount"
+            "Invalid desired input amount"
         );
 
-        uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_inputToken, _inputAmount);
+        uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_inputToken, _desiredInputAmount);
         return GLPMathLib.getGlpMintAmount(GMX_REGISTRY, usdgAmount);
     }
 
@@ -105,28 +105,33 @@ contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
         address,
         address,
         address,
-        uint256 _minMakerAmount,
-        address _takerToken,
-        uint256 _amountTakerToken,
+        uint256 _minOutputAmount,
+        address _inputToken,
+        uint256 _inputAmount,
         bytes memory
     )
     internal
     override
     returns (uint256) {
         Require.that(
-            _takerToken == USDC,
+            _inputToken == USDC,
             _FILE,
-            "Invalid taker token",
-            _takerToken
+            "Invalid input token",
+            _inputToken
+        );
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
         );
 
-        IERC20(_takerToken).safeApprove(address(GMX_REGISTRY.glpManager()), _amountTakerToken);
+        IERC20(_inputToken).safeApprove(address(GMX_REGISTRY.glpManager()), _inputAmount);
 
         return GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(
-            _takerToken,
-            _amountTakerToken,
+            _inputToken,
+            _inputAmount,
             /* _minUsdg = */ 0,
-            _minMakerAmount
+            _minOutputAmount
         );
     }
 

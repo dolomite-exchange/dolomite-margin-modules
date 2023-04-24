@@ -1,5 +1,4 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
@@ -38,6 +37,12 @@ import { createGlpUnwrapperTrader, createGlpWrapperTrader, createGmxRegistry } f
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
 const heldAmountWei = BigNumber.from('200000000000000000000'); // $200
+const minCollateralizationNumerator = BigNumber.from('115');
+const minCollateralizationDenominator = BigNumber.from('100');
+const liquidationSpreadNumerator = BigNumber.from('105');
+const liquidationSpreadDenominator = BigNumber.from('100');
+const expirationCollateralizationNumerator = BigNumber.from('150');
+const expirationCollateralizationDenominator = BigNumber.from('100');
 
 describe('GLPLiquidation', () => {
   let snapshotId: string;
@@ -92,7 +97,7 @@ describe('GLPLiquidation', () => {
 
     unwrapper = await createGlpUnwrapperTrader(core, factory, gmxRegistry);
     wrapper = await createGlpWrapperTrader(core, factory, gmxRegistry);
-    await factory.connect(core.governance).initialize([unwrapper.address, wrapper.address]);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     await factory.createVault(core.hhUser1.address);
@@ -137,7 +142,9 @@ describe('GLPLiquidation', () => {
       expect(borrowValue.value).to.eq(ZERO_BI);
 
       const usdcPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.usdc);
-      const usdcDebtAmount = supplyValue.value.mul(100).div(116).div(usdcPrice.value);
+      const usdcDebtAmount = supplyValue.value.mul(minCollateralizationDenominator)
+        .div(minCollateralizationNumerator)
+        .div(usdcPrice.value);
       await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
       await vault.transferFromPositionWithOtherToken(
         otherAccountNumber,
@@ -151,10 +158,14 @@ describe('GLPLiquidation', () => {
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       // check that the position is indeed under collateralized
-      expect(newAccountValues[0].value).to.lt(newAccountValues[1].value.mul(115).div(100));
+      expect(newAccountValues[0].value)
+        .to
+        .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const glpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
-      const heldUpdatedWithReward = await newAccountValues[1].value.mul(105).div(100).div(glpPrice.value);
+      const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
+        .div(liquidationSpreadDenominator)
+        .div(glpPrice.value);
       const usdcOutputAmount = await unwrapper.getExchangeCost(
         factory.address,
         core.usdc.address,
@@ -213,7 +224,9 @@ describe('GLPLiquidation', () => {
       expect(borrowValue.value).to.eq(ZERO_BI);
 
       const wethPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.weth);
-      const wethDebtAmount = supplyValue.value.mul(100).div(115).div(wethPrice.value);
+      const wethDebtAmount = supplyValue.value.mul(minCollateralizationDenominator)
+        .div(minCollateralizationNumerator)
+        .div(wethPrice.value);
       await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
       await vault.transferFromPositionWithOtherToken(
         otherAccountNumber,
@@ -223,15 +236,22 @@ describe('GLPLiquidation', () => {
         BalanceCheckFlag.To,
       );
       // set the price of USDC to be 105% of the current price
-      await core.testPriceOracle.setPrice(core.weth.address, wethPrice.value.mul(105).div(100));
+      await core.testPriceOracle.setPrice(
+        core.weth.address,
+        wethPrice.value.mul(liquidationSpreadNumerator).div(liquidationSpreadDenominator),
+      );
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testPriceOracle.address);
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       // check that the position is indeed under collateralized
-      expect(newAccountValues[0].value).to.lt(newAccountValues[1].value.mul(115).div(100));
+      expect(newAccountValues[0].value)
+        .to
+        .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const glpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
-      const heldUpdatedWithReward = await newAccountValues[1].value.mul(105).div(100).div(glpPrice.value);
+      const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
+        .div(liquidationSpreadDenominator)
+        .div(glpPrice.value);
       const usdcOutputAmount = await unwrapper.getExchangeCost(
         factory.address,
         core.usdc.address,
@@ -333,19 +353,15 @@ describe('GLPLiquidation', () => {
   });
 
   describe('Perform expiration with full integration', () => {
-    const collateralizationNumerator = 150;
-    const collateralizationDenominator = 100;
-
     it('should work when expired account is borrowing the output token (USDC)', async () => {
-      const glpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
       await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
       const [supplyValue, borrowValue] = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       expect(borrowValue.value).to.eq(ZERO_BI);
 
       const usdcPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.usdc);
-      const usdcDebtAmount = supplyValue.value.mul(collateralizationDenominator)
-        .div(collateralizationNumerator)
-        .div(usdcPrice.value); // 186450975758540302400 | 1000000730000000000
+      const usdcDebtAmount = supplyValue.value.mul(expirationCollateralizationDenominator)
+        .div(expirationCollateralizationNumerator)
+        .div(usdcPrice.value);
       await vault.transferFromPositionWithOtherToken(
         otherAccountNumber,
         defaultAccountNumber,
@@ -362,7 +378,9 @@ describe('GLPLiquidation', () => {
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       // check that the position is over collateralized
-      expect(newAccountValues[0].value).to.gte(newAccountValues[1].value.mul(115).div(collateralizationDenominator));
+      expect(newAccountValues[0].value)
+        .to
+        .gte(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const [heldPrice, owedPriceAdj] = await core.expiry.getSpreadAdjustedPrices(
         underlyingMarketId,
@@ -429,8 +447,8 @@ describe('GLPLiquidation', () => {
       expect(borrowValue.value).to.eq(ZERO_BI);
 
       const wethPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.weth);
-      const wethDebtAmount = supplyValue.value.mul(collateralizationDenominator)
-        .div(collateralizationNumerator)
+      const wethDebtAmount = supplyValue.value.mul(expirationCollateralizationDenominator)
+        .div(expirationCollateralizationNumerator)
         .div(wethPrice.value);
       await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
       await vault.transferFromPositionWithOtherToken(
@@ -443,7 +461,9 @@ describe('GLPLiquidation', () => {
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       // check that the position is indeed over collateralized
-      expect(newAccountValues[0].value).to.gte(newAccountValues[1].value.mul(115).div(collateralizationDenominator));
+      expect(newAccountValues[0].value)
+        .to
+        .gte(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const rampTime = await core.expiry.g_expiryRampTime();
       await setExpiry(core, liquidAccountStruct, core.marketIds.weth, 1);

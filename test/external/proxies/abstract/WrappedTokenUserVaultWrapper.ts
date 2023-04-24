@@ -78,7 +78,7 @@ describe('WrappedTokenUserVaultWrapper', () => {
       TestWrappedTokenUserVaultWrapper__factory.bytecode,
       [factory.address, core.dolomiteMargin.address],
     );
-    await factory.connect(core.governance).initialize([wrapper.address]);
+    await factory.connect(core.governance).ownerInitialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     solidUser = core.hhUser5;
@@ -151,7 +151,7 @@ describe('WrappedTokenUserVaultWrapper', () => {
       );
     });
 
-    it('should fail if maker token is incorrect', async () => {
+    it('should fail if output token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         wrapper.connect(dolomiteMarginImpersonator).exchange(
@@ -162,7 +162,7 @@ describe('WrappedTokenUserVaultWrapper', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `WrappedTokenUserVaultWrapper: Invalid maker token <${core.weth.address.toLowerCase()}>`,
+        `WrappedTokenUserVaultWrapper: Invalid output token <${core.weth.address.toLowerCase()}>`,
       );
     });
 

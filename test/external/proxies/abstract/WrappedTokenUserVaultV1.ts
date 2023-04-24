@@ -68,7 +68,7 @@ describe('WrappedTokenUserVaultV1', () => {
       TestWrappedTokenUserVaultUnwrapper__factory.bytecode,
       [core.usdc.address, factory.address, core.dolomiteMargin.address],
     );
-    await factory.connect(core.governance).initialize([tokenUnwrapper.address]);
+    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     solidUser = core.hhUser5;
