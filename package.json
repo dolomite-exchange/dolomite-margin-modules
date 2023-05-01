@@ -13,6 +13,7 @@
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy-atlas-ecosystem.ts",
     "deploy:gmx-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-gmx-ecosystem.ts",
+    "deploy:plutus-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-plutus-ecosystem.ts",
     "deploy:coveralls": "coveralls < coverage/lcov.info",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python scripts/lint-contracts.py",
