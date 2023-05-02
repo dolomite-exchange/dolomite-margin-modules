@@ -2,10 +2,9 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import {
-  GLPPriceOracleV1,
-  GLPPriceOracleV1__factory,
-  GmxRegistryV1,
   IERC4626,
+  IGmxRegistryV1,
+  PlutusVaultGLPPriceOracle,
   PlutusVaultGLPUnwrapperTrader,
   PlutusVaultGLPWrappedTokenUserVaultFactory,
   PlutusVaultGLPWrappedTokenUserVaultV1,
@@ -14,7 +13,6 @@ import {
   PlutusVaultRegistry,
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
@@ -26,7 +24,7 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import {
-  createGmxRegistry,
+  createPlutusVaultGLPPriceOracle,
   createPlutusVaultGLPUnwrapperTrader,
   createPlutusVaultGLPWrappedTokenUserVaultFactory,
   createPlutusVaultGLPWrappedTokenUserVaultV1,
@@ -47,14 +45,17 @@ describe('PlutusVaultGLPUnwrapperTrader', () => {
   let core: CoreProtocol;
   let underlyingToken: IERC4626;
   let underlyingMarketId: BigNumber;
-  let gmxRegistry: GmxRegistryV1;
+  let gmxRegistry: IGmxRegistryV1;
   let plutusVaultRegistry: PlutusVaultRegistry;
   let unwrapper: PlutusVaultGLPUnwrapperTrader;
   let wrapper: PlutusVaultGLPWrapperTrader;
   let factory: PlutusVaultGLPWrappedTokenUserVaultFactory;
   let vault: PlutusVaultGLPWrappedTokenUserVaultV1;
-  let priceOracle: GLPPriceOracleV1;
+  let priceOracle: PlutusVaultGLPPriceOracle;
   let defaultAccount: Account.InfoStruct;
+
+  let plvGlpExchangeRateNumerator: BigNumber;
+  let plvGlpExchangeRateDenominator: BigNumber;
 
   let solidUser: SignerWithAddress;
 
@@ -65,7 +66,7 @@ describe('PlutusVaultGLPUnwrapperTrader', () => {
     });
     underlyingToken = core.plutusEcosystem!.plvGlp;
     const userVaultImplementation = await createPlutusVaultGLPWrappedTokenUserVaultV1();
-    gmxRegistry = await createGmxRegistry(core);
+    gmxRegistry = core.gmxRegistry!;
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
     factory = await createPlutusVaultGLPWrappedTokenUserVaultFactory(
       core,
@@ -73,18 +74,15 @@ describe('PlutusVaultGLPUnwrapperTrader', () => {
       underlyingToken,
       userVaultImplementation,
     );
-    priceOracle = await createContractWithAbi<GLPPriceOracleV1>(
-      GLPPriceOracleV1__factory.abi,
-      GLPPriceOracleV1__factory.bytecode,
-      [gmxRegistry.address, factory.address],
-    );
+
+    unwrapper = await createPlutusVaultGLPUnwrapperTrader(core, plutusVaultRegistry, factory);
+    wrapper = await createPlutusVaultGLPWrapperTrader(core, factory);
+    priceOracle = await createPlutusVaultGLPPriceOracle(core, plutusVaultRegistry, factory, unwrapper);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
 
-    unwrapper = await createPlutusVaultGLPUnwrapperTrader(core, plutusVaultRegistry, factory);
-    wrapper = await createPlutusVaultGLPWrapperTrader(core, factory);
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
@@ -107,11 +105,11 @@ describe('PlutusVaultGLPUnwrapperTrader', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    const usdcAmount = amountWei.div(1e12).mul(4);
+    const usdcAmount = amountWei.div(1e12).mul(8);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
-    const glpAmount = amountWei.mul(2);
+    const glpAmount = amountWei.mul(4);
     await core.plutusEcosystem!.sGlp.connect(core.hhUser1)
       .approve(core.plutusEcosystem!.plvGlpRouter.address, glpAmount);
     await core.plutusEcosystem!.plvGlpRouter.connect(core.hhUser1).deposit(glpAmount);
@@ -120,6 +118,10 @@ describe('PlutusVaultGLPUnwrapperTrader', () => {
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
+
+    // account for the fee in the numerator
+    plvGlpExchangeRateNumerator = (await underlyingToken.totalAssets()).mul(98).div(100);
+    plvGlpExchangeRateDenominator = await underlyingToken.totalSupply();
 
     snapshotId = await snapshot();
   });
@@ -198,7 +200,7 @@ describe('PlutusVaultGLPUnwrapperTrader', () => {
 
     it('should fail if output token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.gmxEcosystem!.sGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await core.plutusEcosystem!.plvGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
@@ -214,7 +216,7 @@ describe('PlutusVaultGLPUnwrapperTrader', () => {
 
     it('should fail if input amount is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.gmxEcosystem!.sGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await core.plutusEcosystem!.plvGlp.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
@@ -275,11 +277,12 @@ describe('PlutusVaultGLPUnwrapperTrader', () => {
     });
 
     it('should work normally', async () => {
+      const glpAmount = amountWei.mul(plvGlpExchangeRateNumerator).div(plvGlpExchangeRateDenominator);
       const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
         .callStatic
         .unstakeAndRedeemGlp(
           core.usdc.address,
-          amountWei,
+          glpAmount,
           1,
           core.hhUser1.address,
         );
@@ -293,11 +296,12 @@ describe('PlutusVaultGLPUnwrapperTrader', () => {
         // create a random number from 1 to 99 and divide by 101 (making the number, at-most, slightly smaller)
         const randomNumber = BigNumber.from(Math.floor(Math.random() * 99) + 1);
         const weirdAmount = amountWei.mul(randomNumber).div(101);
+        const glpAmount = weirdAmount.mul(plvGlpExchangeRateNumerator).div(plvGlpExchangeRateDenominator);
         const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .unstakeAndRedeemGlp(
             core.usdc.address,
-            weirdAmount,
+            glpAmount,
             1,
             core.hhUser1.address,
           );
