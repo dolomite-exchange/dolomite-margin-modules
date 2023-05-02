@@ -31,7 +31,9 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  */
 interface IWrappedTokenUserVaultV1 {
 
-    // ============ Functions ============
+    // ===========================================================
+    // ======================== Functions ========================
+    // ===========================================================
 
     /**
      * @notice  End-user function for depositing the vault factory's underlying token into DolomiteMargin. Should only

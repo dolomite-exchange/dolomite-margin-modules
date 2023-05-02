@@ -22,45 +22,43 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { GLPMathLib } from "./GLPMathLib.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { GLPMathLib } from "../glp/GLPMathLib.sol";
+import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
-import { IGmxVault } from "../interfaces/IGmxVault.sol";
 import { WrappedTokenUserVaultWrapperTrader } from "../proxies/abstract/WrappedTokenUserVaultWrapperTrader.sol";
 
 
 /**
- * @title   GLPWrapperTraderV1
+ * @title   PlutusVaultGLPWrapperTrader
  * @author  Dolomite
  *
- * @notice  Used for wrapping GLP (via minting from the GLPRewardsRouter) from USDC. Upon settlement, the minted GLP is
- *          sent to the user's vault and dfsGLP is minted to `DolomiteMargin`.
+ * @notice  Used for wrapping plvGLP (via minting from the GLPRewardsRouter) from a valid input token (like USDC). Upon
+ *          wrapping, the minted plvGLP is sent to the user's vault and dplvGLP is minted to `DolomiteMargin`.
  */
-contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
-    using GLPMathLib for IGmxVault;
+contract PlutusVaultGLPWrapperTrader is WrappedTokenUserVaultWrapperTrader {
+    using GLPMathLib for *;
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "GLPWrapperTraderV1";
+    bytes32 private constant _FILE = "PlutusVaultGLPWrapperTrader";
 
     // ============ Constructor ============
 
-    address public immutable USDC; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor(
-        address _usdc,
         address _gmxRegistry,
-        address _dfsGlp,
+        address _dPlvGlp,
         address _dolomiteMargin
-    ) WrappedTokenUserVaultWrapperTrader(
-        _dfsGlp,
+    )
+    WrappedTokenUserVaultWrapperTrader(
+        _dPlvGlp,
         _dolomiteMargin
     ) {
-        USDC = _usdc;
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
 
@@ -77,7 +75,7 @@ contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
     view
     returns (uint256) {
         Require.that(
-            _inputToken == USDC,
+            GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
@@ -96,7 +94,8 @@ contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
         );
 
         uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_inputToken, _desiredInputAmount);
-        return GLPMathLib.getGlpMintAmount(GMX_REGISTRY, usdgAmount);
+        uint256 glpAmount = GMX_REGISTRY.getGlpMintAmount(usdgAmount);
+        return IERC4626(VAULT_FACTORY.UNDERLYING_TOKEN()).previewDeposit(glpAmount);
     }
 
     // ============ Internal Functions ============
@@ -114,37 +113,24 @@ contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
     override
     returns (uint256) {
         Require.that(
-            _inputToken == USDC,
+            GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
-        Require.that(
-            _inputAmount > 0,
-            _FILE,
-            "Invalid input amount"
-        );
 
         IERC20(_inputToken).safeApprove(address(GMX_REGISTRY.glpManager()), _inputAmount);
 
-        return GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(
+        uint256 glpAmount = GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(
             _inputToken,
             _inputAmount,
             /* _minUsdg = */ 0,
             _minOutputAmount
         );
-    }
 
-    function _approveWrappedTokenForTransfer(
-        address _vault,
-        address _receiver,
-        uint256 _amount
-    )
-    internal
-    override {
-        VAULT_FACTORY.enqueueTransferIntoDolomiteMargin(_vault, _amount);
+        address plvGlp = VAULT_FACTORY.UNDERLYING_TOKEN();
+        IERC20(GMX_REGISTRY.sGlp()).safeApprove(plvGlp, glpAmount);
 
-        IERC20(GMX_REGISTRY.sGlp()).safeApprove(_vault, _amount);
-        IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
+        return IERC4626(plvGlp).deposit(glpAmount, address(this));
     }
 }

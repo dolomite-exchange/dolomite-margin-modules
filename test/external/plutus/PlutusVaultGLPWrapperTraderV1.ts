@@ -52,7 +52,7 @@ describe('GLPWrapperTraderV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 53107700,
+      blockNumber: 86413000,
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.gmxEcosystem!.fsGlp;

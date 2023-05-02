@@ -82,6 +82,11 @@ abstract contract WrappedTokenUserVaultWrapperTrader is IDolomiteMarginWrapperTr
             "Invalid output token",
             _outputToken
         );
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
+        );
 
         (uint256 minOutputAmount) = abi.decode(_orderData, (uint256));
 

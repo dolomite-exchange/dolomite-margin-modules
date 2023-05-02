@@ -111,6 +111,26 @@ export const GMX_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const PLS_TOKEN_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x51318B7D00db7ACc4026C88c3952B66278B6A67F',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const PLV_GLP_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x5326E71Ff593Ecc2CF7AcaE5Fe57582D6e74CFF1',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const PLV_GLP_FARM_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x4E5Cf54FdE5E1237e80E87fcbA555d829e1307CE',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const PLV_GLP_ROUTER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xEAE85745232983CF117692a1CE2ECf3d19aDA683',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const S_GLP_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x5402B5F40310bDED796c7D0F3FF6683f5C0cFfdf',
   [Network.ArbitrumGoerli]: undefined,

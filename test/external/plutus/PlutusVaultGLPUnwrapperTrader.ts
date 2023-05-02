@@ -4,14 +4,14 @@ import { BigNumber, ethers } from 'ethers';
 import {
   GLPPriceOracleV1,
   GLPPriceOracleV1__factory,
-  GLPUnwrapperTraderV1,
-  GLPWrappedTokenUserVaultFactory,
-  GLPWrappedTokenUserVaultFactory__factory,
-  GLPWrappedTokenUserVaultV1,
-  GLPWrappedTokenUserVaultV1__factory,
-  GLPWrapperTraderV1,
   GmxRegistryV1,
-  IERC20,
+  IERC4626,
+  PlutusVaultGLPUnwrapperTrader,
+  PlutusVaultGLPWrappedTokenUserVaultFactory,
+  PlutusVaultGLPWrappedTokenUserVaultV1,
+  PlutusVaultGLPWrappedTokenUserVaultV1__factory,
+  PlutusVaultGLPWrapperTrader,
+  PlutusVaultRegistry,
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
@@ -25,7 +25,15 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createGlpUnwrapperTrader, createGlpWrapperTrader, createGmxRegistry } from '../../utils/wrapped-token-utils';
+import {
+  createGmxRegistry,
+  createPlutusVaultGLPUnwrapperTrader,
+  createPlutusVaultGLPWrappedTokenUserVaultFactory,
+  createPlutusVaultGLPWrappedTokenUserVaultV1,
+  createPlutusVaultGLPWrapperTrader,
+  createPlutusVaultRegistry,
+} from '../../utils/wrapped-token-utils';
+import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -33,17 +41,18 @@ const otherAmountWei = BigNumber.from('10000000'); // $10
 
 const abiCoder = ethers.utils.defaultAbiCoder;
 
-describe('GLPUnwrapperTraderV1', () => {
+describe('PlutusVaultGLPUnwrapperTrader', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let underlyingToken: IERC20;
+  let underlyingToken: IERC4626;
   let underlyingMarketId: BigNumber;
   let gmxRegistry: GmxRegistryV1;
-  let unwrapper: GLPUnwrapperTraderV1;
-  let wrapper: GLPWrapperTraderV1;
-  let factory: GLPWrappedTokenUserVaultFactory;
-  let vault: GLPWrappedTokenUserVaultV1;
+  let plutusVaultRegistry: PlutusVaultRegistry;
+  let unwrapper: PlutusVaultGLPUnwrapperTrader;
+  let wrapper: PlutusVaultGLPWrapperTrader;
+  let factory: PlutusVaultGLPWrappedTokenUserVaultFactory;
+  let vault: PlutusVaultGLPWrappedTokenUserVaultV1;
   let priceOracle: GLPPriceOracleV1;
   let defaultAccount: Account.InfoStruct;
 
@@ -51,28 +60,18 @@ describe('GLPUnwrapperTraderV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 53107700,
+      blockNumber: 86413000,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.gmxEcosystem!.fsGlp;
-    const userVaultImplementation = await createContractWithAbi(
-      GLPWrappedTokenUserVaultV1__factory.abi,
-      GLPWrappedTokenUserVaultV1__factory.bytecode,
-      [],
-    );
+    underlyingToken = core.plutusEcosystem!.plvGlp;
+    const userVaultImplementation = await createPlutusVaultGLPWrappedTokenUserVaultV1();
     gmxRegistry = await createGmxRegistry(core);
-    factory = await createContractWithAbi<GLPWrappedTokenUserVaultFactory>(
-      GLPWrappedTokenUserVaultFactory__factory.abi,
-      GLPWrappedTokenUserVaultFactory__factory.bytecode,
-      [
-        core.weth.address,
-        core.marketIds.weth,
-        gmxRegistry.address,
-        underlyingToken.address,
-        core.borrowPositionProxyV2.address,
-        userVaultImplementation.address,
-        core.dolomiteMargin.address,
-      ],
+    plutusVaultRegistry = await createPlutusVaultRegistry(core);
+    factory = await createPlutusVaultGLPWrappedTokenUserVaultFactory(
+      core,
+      plutusVaultRegistry,
+      underlyingToken,
+      userVaultImplementation,
     );
     priceOracle = await createContractWithAbi<GLPPriceOracleV1>(
       GLPPriceOracleV1__factory.abi,
@@ -84,18 +83,26 @@ describe('GLPUnwrapperTraderV1', () => {
     await setupTestMarket(core, factory, true, priceOracle);
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
 
-    unwrapper = await createGlpUnwrapperTrader(core, factory, gmxRegistry);
-    wrapper = await createGlpWrapperTrader(core, factory, gmxRegistry);
+    unwrapper = await createPlutusVaultGLPUnwrapperTrader(core, plutusVaultRegistry, factory);
+    wrapper = await createPlutusVaultGLPWrapperTrader(core, factory);
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     solidUser = core.hhUser5;
 
+    await createAndSetPlutusVaultWhitelist(
+      core,
+      core.plutusEcosystem!.plvGlpFarm,
+      unwrapper,
+      wrapper,
+      factory,
+    );
+
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    vault = setupUserVaultProxy<GLPWrappedTokenUserVaultV1>(
+    vault = setupUserVaultProxy<PlutusVaultGLPWrappedTokenUserVaultV1>(
       vaultAddress,
-      GLPWrappedTokenUserVaultV1__factory,
+      PlutusVaultGLPWrappedTokenUserVaultV1__factory,
       core.hhUser1,
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
@@ -104,7 +111,11 @@ describe('GLPUnwrapperTraderV1', () => {
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
-    await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(vault.address, amountWei);
+    const glpAmount = amountWei.mul(2);
+    await core.plutusEcosystem!.sGlp.connect(core.hhUser1)
+      .approve(core.plutusEcosystem!.plvGlpRouter.address, glpAmount);
+    await core.plutusEcosystem!.plvGlpRouter.connect(core.hhUser1).deposit(glpAmount);
+    await core.plutusEcosystem!.plvGlp.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
@@ -197,7 +208,7 @@ describe('GLPUnwrapperTraderV1', () => {
           amountWei,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `GLPUnwrapperTraderV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
+        `PlutusVaultGLPUnwrapperTrader: Invalid output token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -239,6 +250,12 @@ describe('GLPUnwrapperTraderV1', () => {
   describe('#gmxRegistry', () => {
     it('should work', async () => {
       expect(await unwrapper.GMX_REGISTRY()).to.eq(gmxRegistry.address);
+    });
+  });
+
+  describe('#plutusVaultRegistry', () => {
+    it('should work', async () => {
+      expect(await unwrapper.PLUTUS_VAULT_REGISTRY()).to.eq(plutusVaultRegistry.address);
     });
   });
 
@@ -293,21 +310,21 @@ describe('GLPUnwrapperTraderV1', () => {
     it('should fail if the input token is not dsfGLP', async () => {
       await expectThrow(
         unwrapper.getExchangeCost(core.weth.address, core.usdc.address, amountWei, BYTES_EMPTY),
-        `GLPUnwrapperTraderV1: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `PlutusVaultGLPUnwrapperTrader: Invalid input token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if the output token is not USDC', async () => {
       await expectThrow(
         unwrapper.getExchangeCost(factory.address, core.weth.address, amountWei, BYTES_EMPTY),
-        `GLPUnwrapperTraderV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
+        `PlutusVaultGLPUnwrapperTrader: Invalid output token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if the desired input amount is eq to 0', async () => {
       await expectThrow(
         unwrapper.getExchangeCost(factory.address, core.usdc.address, ZERO_BI, BYTES_EMPTY),
-        'GLPUnwrapperTraderV1: Invalid desired input amount',
+        'PlutusVaultGLPUnwrapperTrader: Invalid desired input amount',
       );
     });
   });

@@ -22,36 +22,34 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IPlutusVaultGLPRouter
+ * @title   IPlutusVaultGLPFarm
  * @author  Dolomite
  *
- * @notice  Interface for depositing/withdrawing plvGLP to/from the PlutusVaultGLPRouter contract.
+ * @notice  Interface for staking plvGLP for PLS rewards.
  */
-interface IPlutusVaultGLPRouter {
-
-    function deposit(uint256 _amount) external;
-
-    function redeem(uint256 _shares) external;
+interface IPlutusVaultGLPFarm {
 
     function setWhitelist(address _whitelist) external;
 
-    function previewRedeem(
-        address _user,
-        uint256 _shares
-    )
-    external
-    view
-    returns (
-        uint256 _exitFeeLessRebate,
-        uint256 _rebateAmount,
-        uint256 _assetsLessFee
-    );
+    function deposit(uint256 _amount) external;
 
-    function getFeeBp(address _user) external view returns (uint256 _exitFeeBp, uint256 _rebateBp);
+    /**
+     * @notice  Withdraws plvGLP from the staking contract and sends it to `msg.sender`. This call fails if `paused()`
+     *          returns true. Calling this function does *not* harvest PLS rewards.
+     *
+     * @param  _amount  The amount of plvGLP to withdraw from the staking contract
+     */
+    function withdraw(uint256 _amount) external;
 
-    function paused() external view returns (bool);
+    function harvest() external;
+
+    function emergencyWithdraw() external;
 
     function owner() external view returns (address);
 
     function whitelist() external view returns (address);
+
+    function paused() external view returns (bool);
+
+    function userInfo(address _user) external view returns (uint96 _balance, uint128 _plsRewardDebt);
 }
