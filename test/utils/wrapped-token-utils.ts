@@ -222,6 +222,7 @@ export function getPlutusVaultGLPWrappedTokenUserVaultFactoryConstructorParams(
 
 export function getPlutusVaultGLPWrapperTraderConstructorParams(
   core: CoreProtocol,
+  plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },
 ): any[] {
   if (!core.plutusEcosystem) {
@@ -230,6 +231,7 @@ export function getPlutusVaultGLPWrapperTraderConstructorParams(
 
   return [
     core.gmxRegistry!.address,
+    plutusVaultRegistry.address,
     dPlvGlpToken.address,
     core.dolomiteMargin.address,
   ];
@@ -321,11 +323,12 @@ export function createPlutusVaultRegistry(core: CoreProtocol): Promise<PlutusVau
 
 export function createPlutusVaultGLPWrapperTrader(
   core: CoreProtocol,
+  plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },
 ): Promise<PlutusVaultGLPWrapperTrader> {
   return createContractWithAbi<PlutusVaultGLPWrapperTrader>(
     PlutusVaultGLPWrapperTrader__factory.abi,
     PlutusVaultGLPWrapperTrader__factory.bytecode,
-    getPlutusVaultGLPWrapperTraderConstructorParams(core, dPlvGlpToken),
+    getPlutusVaultGLPWrapperTraderConstructorParams(core, plutusVaultRegistry, dPlvGlpToken),
   );
 }

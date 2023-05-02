@@ -244,6 +244,13 @@ describe('WrappedTokenUserVaultFactory', () => {
       await checkVaultCreationResults(result);
     });
 
+    it('should fail when account passed is the zero address', async () => {
+      await expectThrow(
+        factory.createVault(ZERO_ADDRESS),
+        'WrappedTokenUserVaultFactory: Invalid account',
+      );
+    });
+
     it('should fail when vault is already created', async () => {
       const result = await factory.createVault(core.hhUser1.address);
       await checkVaultCreationResults(result);
@@ -924,10 +931,10 @@ describe('WrappedTokenUserVaultFactory', () => {
     });
   });
 
-  describe('#getInitCodeHash', () => {
+  describe('#getProxyVaultInitCodeHash', () => {
     it('should work normally', async () => {
       const bytecode = WrappedTokenUserVaultUpgradeableProxy__factory.bytecode;
-      expect(await factory.getInitCodeHash()).to.eq(ethers.utils.keccak256(bytecode));
+      expect(await factory.getProxyVaultInitCodeHash()).to.eq(ethers.utils.keccak256(bytecode));
     });
   });
 

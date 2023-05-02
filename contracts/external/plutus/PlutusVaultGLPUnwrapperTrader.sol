@@ -144,8 +144,9 @@ contract PlutusVaultGLPUnwrapperTrader is WrappedTokenUserVaultUnwrapperTrader {
 
         IPlutusVaultGLPRouter plvGlpRouter = PLUTUS_VAULT_REGISTRY.plvGlpRouter();
 
+        // plvGlpRouter::redeem doesn't return a value so we need call previewRedeem first
         (,, uint256 glpAmount) = plvGlpRouter.previewRedeem(address(this), _inputAmount);
-
+        PLUTUS_VAULT_REGISTRY.plvGlpToken().approve(address(plvGlpRouter), _inputAmount);
         plvGlpRouter.redeem(_inputAmount);
 
         uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(

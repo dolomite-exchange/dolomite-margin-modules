@@ -97,7 +97,7 @@ contract PlutusVaultGLPWrappedTokenUserVaultV1 is
             }
         }
 
-        assert(_recipient != address(this));
+        /*assert(_recipient != address(this));*/
 
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }

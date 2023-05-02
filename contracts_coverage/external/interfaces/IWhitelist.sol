@@ -20,27 +20,14 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import { IPlutusVaultGLPFarm } from "./IPlutusVaultGLPFarm.sol";
-
 
 /**
- * @title   IPlutusVaultGLPWrappedTokenUserVaultV1
+ * @title   IWhitelist
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the PlutusVaultGLPWrappedTokenUserVaultV1
- *          implementation contract for each user's proxy vault.
+ * @notice  Interface for allowing only trusted callers to invoke functions that read from this whitelist.
  */
-interface IPlutusVaultGLPWrappedTokenUserVaultV1 {
+interface IWhitelist {
 
-    function harvest() external;
-
-    function stakePlvGlp(uint96 _amount) external;
-
-    function unstakePlvGlp(uint96 _amount) external;
-
-    function plvGlpFarm() external view returns (IPlutusVaultGLPFarm);
-
-    function pls() external view returns (IERC20);
+    function isWhitelisted(address) external view returns (bool);
 }

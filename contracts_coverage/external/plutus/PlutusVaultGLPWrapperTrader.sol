@@ -79,21 +79,21 @@ contract PlutusVaultGLPWrapperTrader is WrappedTokenUserVaultWrapperTrader {
     override
     view
     returns (uint256) {
-        Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
+        if (GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken)) { /* FOR COVERAGE TESTING */ }
+        Require.that(GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         // VAULT_FACTORY is the DFS_GLP token
-        Require.that(
-            _vaultToken == address(VAULT_FACTORY),
+        if (_vaultToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_vaultToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid output token",
             _vaultToken
         );
-        Require.that(
-            _desiredInputAmount > 0,
+        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(_desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );
@@ -117,8 +117,8 @@ contract PlutusVaultGLPWrapperTrader is WrappedTokenUserVaultWrapperTrader {
     internal
     override
     returns (uint256) {
-        Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
+        if (GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken)) { /* FOR COVERAGE TESTING */ }
+        Require.that(GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken

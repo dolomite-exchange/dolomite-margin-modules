@@ -48,7 +48,7 @@ describe('DolomiteCompatibleWhitelistForPlutusDAO', () => {
       userVaultImplementation,
     );
     unwrapperTrader = await createPlutusVaultGLPUnwrapperTrader(core, plutusVaultRegistry, factory);
-    wrapperTrader = await createPlutusVaultGLPWrapperTrader(core, factory);
+    wrapperTrader = await createPlutusVaultGLPWrapperTrader(core, plutusVaultRegistry, factory);
     plutusWhitelist = IWhitelist__factory.connect(
       await core.plutusEcosystem!.plvGlpFarm.whitelist(),
       core.hhUser1,

@@ -20,45 +20,54 @@
 
 pragma solidity ^0.8.9;
 
-import { GLPMathLib } from "./GLPMathLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { GLPMathLib } from "../glp/GLPMathLib.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
+import { IPlutusVaultGLPRouter } from "../interfaces/IPlutusVaultGLPRouter.sol";
+import { IPlutusVaultRegistry } from "../interfaces/IPlutusVaultRegistry.sol";
 import { WrappedTokenUserVaultUnwrapperTrader } from "../proxies/abstract/WrappedTokenUserVaultUnwrapperTrader.sol";
 
 
 /**
- * @title   GLPUnwrapperTraderV1
+ * @title   PlutusVaultGLPUnwrapperTrader
  * @author  Dolomite
  *
- * @notice  Used for unwrapping GLP (via burning via the GLPRewardsRouter) into USDC. Upon settlement, the burned GLP is
- *          sent from the user's vault to this contract and dfsGLP is burned from `DolomiteMargin`.
+ * @notice  Used for unwrapping plvGLP (via redeeming for GLP and burning GLP via the GLPRewardsRouter) into USDC.
+ *          During settlement, the redeemed plvGLP is sent from the user's vault to this contract to process the
+ *          unwrapping.
  */
-contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
+contract PlutusVaultGLPUnwrapperTrader is WrappedTokenUserVaultUnwrapperTrader {
     using GLPMathLib for IGmxVault;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "GLPUnwrapperTraderV1";
+    bytes32 private constant _FILE = "PlutusVaultGLPUnwrapperTrader";
 
     // ============ Immutable State Variables ============
 
     address public immutable USDC; // solhint-disable-line var-name-mixedcase
     uint256 public immutable USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
+    IPlutusVaultRegistry public immutable PLUTUS_VAULT_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor(
         address _usdc,
         address _gmxRegistry,
-        address _dfsGlp,
+        address _plutusVaultRegistry,
+        address _dPlvGlp,
         address _dolomiteMargin
     )
-    WrappedTokenUserVaultUnwrapperTrader(_dfsGlp, _dolomiteMargin) {
+    WrappedTokenUserVaultUnwrapperTrader(
+        _dPlvGlp,
+        _dolomiteMargin
+    ) {
         USDC = _usdc;
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
+        PLUTUS_VAULT_REGISTRY = IPlutusVaultRegistry(_plutusVaultRegistry);
 
         USDC_MARKET_ID = IDolomiteMargin(_dolomiteMargin).getMarketIdByTokenAddress(_usdc);
     }
@@ -103,7 +112,9 @@ contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
             "Invalid desired input amount"
         );
 
-        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, _desiredInputAmount);
+        (,,uint256 glpAmount) = PLUTUS_VAULT_REGISTRY.plvGlpRouter().previewRedeem(address(this), _desiredInputAmount);
+
+        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, glpAmount);
 
         return GMX_REGISTRY.gmxVault().getGlpRedemptionAmount(_outputToken, usdgAmount);
     }
@@ -131,9 +142,16 @@ contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
             _outputToken
         );
 
+        IPlutusVaultGLPRouter plvGlpRouter = PLUTUS_VAULT_REGISTRY.plvGlpRouter();
+
+        // plvGlpRouter::redeem doesn't return a value so we need call previewRedeem first
+        (,, uint256 glpAmount) = plvGlpRouter.previewRedeem(address(this), _inputAmount);
+        PLUTUS_VAULT_REGISTRY.plvGlpToken().approve(address(plvGlpRouter), _inputAmount);
+        plvGlpRouter.redeem(_inputAmount);
+
         uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
             /* _tokenOut = */ _outputToken,
-            /* _glpAmount = */ _inputAmount,
+            /* _glpAmount = */ glpAmount,
             _minOutputAmount,
             /* _receiver = */ address(this)
         );

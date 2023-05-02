@@ -37,6 +37,7 @@ import {
   createPlutusVaultGLPWrapperTrader,
   createPlutusVaultRegistry,
 } from '../../utils/wrapped-token-utils';
+import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -70,7 +71,7 @@ describe('PlutusVaultGLPLiquidation', () => {
       blockNumber,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.plutusEcosystem!.plvGlp;
+    underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
     const userVaultImplementation = await createPlutusVaultGLPWrappedTokenUserVaultV1();
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
     factory = await createPlutusVaultGLPWrappedTokenUserVaultFactory(
@@ -80,7 +81,7 @@ describe('PlutusVaultGLPLiquidation', () => {
       userVaultImplementation,
     );
     unwrapper = await createPlutusVaultGLPUnwrapperTrader(core, plutusVaultRegistry, factory);
-    wrapper = await createPlutusVaultGLPWrapperTrader(core, factory);
+    wrapper = await createPlutusVaultGLPWrapperTrader(core, plutusVaultRegistry, factory);
     priceOracle = await createPlutusVaultGLPPriceOracle(core, plutusVaultRegistry, factory, unwrapper);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
@@ -105,9 +106,11 @@ describe('PlutusVaultGLPLiquidation', () => {
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
     const glpAmount = heldAmountWei.mul(2);
-    await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(core.plutusEcosystem!.plvGlp.address, glpAmount);
-    await core.plutusEcosystem!.plvGlp.connect(core.hhUser1).deposit(glpAmount, core.hhUser1.address);
-    await core.plutusEcosystem!.plvGlp.connect(core.hhUser1).approve(vault.address, heldAmountWei);
+    await core.plutusEcosystem!.sGlp.connect(core.hhUser1)
+      .approve(core.plutusEcosystem!.plvGlpRouter.address, glpAmount);
+    await core.plutusEcosystem!.plvGlpRouter.connect(core.hhUser1).deposit(glpAmount);
+
+    await underlyingToken.approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
@@ -119,6 +122,8 @@ describe('PlutusVaultGLPLiquidation', () => {
       underlyingMarketId,
       unwrapper.address,
     );
+    await createAndSetPlutusVaultWhitelist(core, core.plutusEcosystem!.plvGlpRouter, unwrapper, wrapper, factory);
+    await createAndSetPlutusVaultWhitelist(core, core.plutusEcosystem!.plvGlpFarm, unwrapper, wrapper, factory);
 
     snapshotId = await snapshot();
   });

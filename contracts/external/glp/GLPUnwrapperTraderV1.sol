@@ -130,11 +130,6 @@ contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
             "Invalid output token",
             _outputToken
         );
-        Require.that(
-            _inputAmount > 0,
-            _FILE,
-            "Invalid input amount"
-        );
 
         uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
             /* _tokenOut = */ _outputToken,

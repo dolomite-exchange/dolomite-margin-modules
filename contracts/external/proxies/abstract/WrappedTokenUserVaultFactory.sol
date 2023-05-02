@@ -402,6 +402,11 @@ abstract contract WrappedTokenUserVaultFactory is
 
     function _createVault(address _account) internal returns (address) {
         Require.that(
+            _account != address(0),
+            _FILE,
+            "Invalid account"
+        );
+        Require.that(
             _userToVaultMap[_account] == address(0),
             _FILE,
             "Vault already exists"

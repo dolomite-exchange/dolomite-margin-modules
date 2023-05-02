@@ -76,7 +76,7 @@ describe('PlutusVaultGLPUnwrapperTrader', () => {
     );
 
     unwrapper = await createPlutusVaultGLPUnwrapperTrader(core, plutusVaultRegistry, factory);
-    wrapper = await createPlutusVaultGLPWrapperTrader(core, factory);
+    wrapper = await createPlutusVaultGLPWrapperTrader(core, plutusVaultRegistry, factory);
     priceOracle = await createPlutusVaultGLPPriceOracle(core, plutusVaultRegistry, factory, unwrapper);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
@@ -226,7 +226,7 @@ describe('PlutusVaultGLPUnwrapperTrader', () => {
           ZERO_BI,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        'WrappedTokenUserVaultUnwrapperTrader: Invalid input amount',
+        'WrappedTokenUserVaultUnwrapper: Invalid input amount',
       );
     });
   });
