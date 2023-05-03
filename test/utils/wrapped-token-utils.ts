@@ -147,7 +147,7 @@ export function getPlutusVaultRegistryConstructorParams(core: CoreProtocol): any
 export function getPlutusVaultGLPPriceOracleConstructorParams(
   core: CoreProtocol,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
-  dPlvGlpToken: { address: address },
+  dplvGlpToken: { address: address },
   plutusVaultGLPUnwrapperTrader: PlutusVaultGLPUnwrapperTrader,
 ): any[] {
   if (!core.plutusEcosystem) {
@@ -157,7 +157,7 @@ export function getPlutusVaultGLPPriceOracleConstructorParams(
   return [
     core.dolomiteMargin.address,
     core.marketIds.dfsGlp!,
-    dPlvGlpToken.address,
+    dplvGlpToken.address,
     plutusVaultRegistry.address,
     plutusVaultGLPUnwrapperTrader.address,
   ];
@@ -286,7 +286,7 @@ export function createPlutusVaultGLPWrappedTokenUserVaultV1(): Promise<PlutusVau
 export function createPlutusVaultGLPPriceOracle(
   core: CoreProtocol,
   plutusVaultRegistry: PlutusVaultRegistry,
-  dPlvGlpToken: { address: address },
+  dplvGlpToken: { address: address },
   plutusVaultGLPUnwrapperTrader: PlutusVaultGLPUnwrapperTrader,
 ): Promise<PlutusVaultGLPPriceOracle> {
   return createContractWithAbi<PlutusVaultGLPPriceOracle>(
@@ -295,7 +295,7 @@ export function createPlutusVaultGLPPriceOracle(
     getPlutusVaultGLPPriceOracleConstructorParams(
       core,
       plutusVaultRegistry,
-      dPlvGlpToken,
+      dplvGlpToken,
       plutusVaultGLPUnwrapperTrader,
     ),
   );
