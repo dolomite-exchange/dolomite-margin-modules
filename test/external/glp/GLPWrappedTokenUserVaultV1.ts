@@ -256,6 +256,16 @@ describe('GLPWrappedTokenUserVaultV1', () => {
         `WrappedTokenUserVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail when attempting to deposit WETH when not claiming', async () => {
+      await setupGmxStakingAndEsGmxVesting();
+
+      await waitDays(30);
+      await expectThrow(
+        vault.handleRewards(true, false, true, false, true, false, true, accountNumber),
+        'GLPWrappedTokenUserVaultV1: Can only deposit ETH if claiming',
+      );
+    });
   });
 
   describe('#stakeGmx', () => {
