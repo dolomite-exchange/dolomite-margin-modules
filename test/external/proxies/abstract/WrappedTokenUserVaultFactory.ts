@@ -105,7 +105,7 @@ describe('WrappedTokenUserVaultFactory', () => {
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(tokenWrapper.address, true);
     initializeResult = await factory.connect(core.governance)
-      .initialize([tokenUnwrapper.address, tokenWrapper.address]);
+      .ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     solidAccount = core.hhUser5;
@@ -163,7 +163,7 @@ describe('WrappedTokenUserVaultFactory', () => {
 
     it('should fail when already initialized', async () => {
       await expectThrow(
-        factory.connect(core.governance).initialize([]),
+        factory.connect(core.governance).ownerInitialize([]),
         'WrappedTokenUserVaultFactory: Already initialized',
       );
     });
@@ -195,7 +195,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
 
       await expectThrow(
-        badFactory.connect(core.hhUser1).initialize([]),
+        badFactory.connect(core.hhUser1).ownerInitialize([]),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -227,7 +227,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
 
       await expectThrow(
-        badFactory.connect(core.governance).initialize([]),
+        badFactory.connect(core.governance).ownerInitialize([]),
         'WrappedTokenUserVaultFactory: Market cannot allow borrowing',
       );
     });
@@ -298,7 +298,7 @@ describe('WrappedTokenUserVaultFactory', () => {
     });
   });
 
-  describe('#setUserVaultImplementation', () => {
+  describe('#ownerSetUserVaultImplementation', () => {
     it('should work when called by governance', async () => {
       const newImplementation = await createContractWithAbi(
         WrappedTokenUserVaultUpgradeableProxy__factory.abi,
@@ -306,7 +306,7 @@ describe('WrappedTokenUserVaultFactory', () => {
         [],
       );
       const result = await factory.connect(core.governance)
-        .setUserVaultImplementation(newImplementation.address);
+        .ownerSetUserVaultImplementation(newImplementation.address);
       expect(await factory.userVaultImplementation()).to.eq(newImplementation.address);
       await expectEvent(factory, result, 'UserVaultImplementationSet', {
         previousUserVaultImplementation: userVaultImplementation.address,
@@ -321,7 +321,7 @@ describe('WrappedTokenUserVaultFactory', () => {
         [],
       );
       await expectThrow(
-        factory.connect(core.hhUser1).setUserVaultImplementation(newImplementation.address),
+        factory.connect(core.hhUser1).ownerSetUserVaultImplementation(newImplementation.address),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -334,13 +334,20 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
       const uninitializedFactory = await createUninitializedFactory();
       await expectThrow(
-        uninitializedFactory.setUserVaultImplementation(newImplementation.address),
+        uninitializedFactory.ownerSetUserVaultImplementation(newImplementation.address),
         'WrappedTokenUserVaultFactory: Not initialized',
+      );
+    });
+
+    it('should fail when user vault implementation is not valid', async () => {
+      await expectThrow(
+        factory.connect(core.governance).ownerSetUserVaultImplementation(ZERO_ADDRESS),
+        'WrappedTokenUserVaultFactory: Invalid user implementation',
       );
     });
   });
 
-  describe('#setIsTokenConverterTrusted', () => {
+  describe('#ownerSetIsTokenConverterTrusted', () => {
     it('should work when called by governance', async () => {
       const newConverter = await createContractWithAbi(
         WrappedTokenUserVaultUpgradeableProxy__factory.abi,
@@ -348,7 +355,7 @@ describe('WrappedTokenUserVaultFactory', () => {
         [],
       );
       const result1 = await factory.connect(core.governance)
-        .setIsTokenConverterTrusted(newConverter.address, true);
+        .ownerSetIsTokenConverterTrusted(newConverter.address, true);
       expect(await factory.isTokenConverterTrusted(newConverter.address)).to.eq(true);
       await expectEvent(factory, result1, 'TokenConverterSet', {
         tokenConverter: newConverter.address,
@@ -356,7 +363,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       });
 
       const result2 = await factory.connect(core.governance)
-        .setIsTokenConverterTrusted(newConverter.address, false);
+        .ownerSetIsTokenConverterTrusted(newConverter.address, false);
       expect(await factory.isTokenConverterTrusted(newConverter.address)).to.eq(false);
       await expectEvent(factory, result2, 'TokenConverterSet', {
         tokenConverter: newConverter.address,
@@ -371,8 +378,15 @@ describe('WrappedTokenUserVaultFactory', () => {
         [],
       );
       await expectThrow(
-        factory.connect(core.hhUser1).setIsTokenConverterTrusted(newConverter.address, true),
+        factory.connect(core.hhUser1).ownerSetIsTokenConverterTrusted(newConverter.address, true),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when zero address is used', async () => {
+      await expectThrow(
+        factory.connect(core.governance).ownerSetIsTokenConverterTrusted(ZERO_ADDRESS, true),
+        'WrappedTokenUserVaultFactory: Invalid token converter',
       );
     });
 
@@ -384,7 +398,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       );
       const uninitializedFactory = await createUninitializedFactory();
       await expectThrow(
-        uninitializedFactory.setIsTokenConverterTrusted(newConverter.address, true),
+        uninitializedFactory.ownerSetIsTokenConverterTrusted(newConverter.address, true),
         'WrappedTokenUserVaultFactory: Not initialized',
       );
     });
@@ -537,7 +551,7 @@ describe('WrappedTokenUserVaultFactory', () => {
         vaultAddress,
       );
 
-      await factory.connect(core.governance).setIsTokenConverterTrusted(core.hhUser2.address, true);
+      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(core.hhUser2.address, true);
       const result = await factory.connect(core.hhUser2)
         .enqueueTransferIntoDolomiteMargin(vaultAddress, amountWei);
 
@@ -557,7 +571,7 @@ describe('WrappedTokenUserVaultFactory', () => {
     });
 
     it('should fail when vault is invalid', async () => {
-      await factory.connect(core.governance).setIsTokenConverterTrusted(core.hhUser3.address, true);
+      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(core.hhUser3.address, true);
       await expectThrow(
         factory.connect(core.hhUser3).enqueueTransferIntoDolomiteMargin(core.hhUser4.address, amountWei),
         `WrappedTokenUserVaultFactory: Invalid vault <${core.hhUser4.address.toLowerCase()}>`,
@@ -606,7 +620,7 @@ describe('WrappedTokenUserVaultFactory', () => {
       await core.dolomiteMargin.ownerSetGlobalOperator(vaultImplementation.address, true);
       await expectThrow(
         executeUnwrap(vaultImplementation, core.marketIds.weth, otherMarketId),
-        `WrappedTokenUserVaultUnwrapper: Invalid taker token <${core.weth.address.toLowerCase()}>`,
+        `WrappedTokenUserVaultUnwrapper: Invalid input token <${core.weth.address.toLowerCase()}>`,
       );
       const result = await executeUnwrap(vaultImplementation, underlyingMarketId, otherMarketId);
 
@@ -642,7 +656,7 @@ describe('WrappedTokenUserVaultFactory', () => {
     it('should overwrite cursor if already queued', async () => {
       await factory.connect(core.hhUser1).createVault(core.hhUser1.address);
       const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-      await factory.connect(core.governance).setIsTokenConverterTrusted(core.hhUser2.address, true);
+      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(core.hhUser2.address, true);
 
       await factory.connect(core.hhUser2).enqueueTransferIntoDolomiteMargin(vaultAddress, amountWei);
       expect(await factory.allowance(vaultAddress, core.dolomiteMargin.address)).to.eq(amountWei);
@@ -669,7 +683,7 @@ describe('WrappedTokenUserVaultFactory', () => {
     });
 
     it('should fail when vault is invalid', async () => {
-      await factory.connect(core.governance).setIsTokenConverterTrusted(core.hhUser3.address, true);
+      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(core.hhUser3.address, true);
       await expectThrow(
         factory.connect(core.hhUser3).enqueueTransferFromDolomiteMargin(core.hhUser4.address, amountWei),
         `WrappedTokenUserVaultFactory: Invalid vault <${core.hhUser4.address.toLowerCase()}>`,
@@ -792,6 +806,16 @@ describe('WrappedTokenUserVaultFactory', () => {
       await expectThrow(
         factory.connect(core.hhUser1).transfer(core.hhUser2.address, amountWei),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should not work when transferring from the 0 address', async () => {
+      const zeroSigner = await impersonate(ZERO_ADDRESS, true);
+      await factory.connect(zeroSigner).setShouldSpendAllowance(false);
+      const sender = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        factory.connect(sender).transferFrom(ZERO_ADDRESS, core.hhUser1.address, amountWei),
+        'WrappedTokenUserVaultFactory: Transfer from the zero address',
       );
     });
 

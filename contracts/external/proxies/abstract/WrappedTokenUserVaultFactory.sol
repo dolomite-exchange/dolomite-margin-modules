@@ -1,39 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/*
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+    Copyright 2023 Dolomite
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 pragma solidity ^0.8.9;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
+import { WrappedTokenUserVaultUpgradeableProxy } from "../WrappedTokenUserVaultUpgradeableProxy.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
-
 import { Require } from "../../../protocol/lib/Require.sol";
-
 import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
-
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
 import { IWrappedTokenUserVaultFactory } from "../../interfaces/IWrappedTokenUserVaultFactory.sol";
 import { IWrappedTokenUserVaultProxy } from "../../interfaces/IWrappedTokenUserVaultProxy.sol";
 import { IWrappedTokenUserVaultV1 } from "../../interfaces/IWrappedTokenUserVaultV1.sol";
-
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
-
-import { WrappedTokenUserVaultUpgradeableProxy } from "../WrappedTokenUserVaultUpgradeableProxy.sol";
 
 
 /**
@@ -87,7 +86,11 @@ abstract contract WrappedTokenUserVaultFactory is
     // ===================================================
 
     modifier requireIsInitialized {
-        Require.that(isInitialized, _FILE, "Not initialized");
+        Require.that(
+            isInitialized,
+            _FILE,
+            "Not initialized"
+        );
         _;
     }
 
@@ -132,7 +135,7 @@ abstract contract WrappedTokenUserVaultFactory is
     // ================ Write Functions ================
     // =================================================
 
-    function initialize(
+    function ownerInitialize(
         address[] calldata _tokenConverters
     )
     external
@@ -151,7 +154,7 @@ abstract contract WrappedTokenUserVaultFactory is
         );
 
         for (uint256 i = 0; i < _tokenConverters.length; i++) {
-            _setIsTokenConverterTrusted(_tokenConverters[i], true);
+            _ownerSetIsTokenConverterTrusted(_tokenConverters[i], true);
         }
 
         isInitialized = true;
@@ -181,18 +184,24 @@ abstract contract WrappedTokenUserVaultFactory is
         return vault;
     }
 
-    function setUserVaultImplementation(
+    function ownerSetUserVaultImplementation(
         address _userVaultImplementation
     )
     external
     override
     requireIsInitialized
     onlyDolomiteMarginOwner(msg.sender) {
-        emit UserVaultImplementationSet(userVaultImplementation, _userVaultImplementation);
+        Require.that(
+            _userVaultImplementation != address(0),
+            _FILE,
+            "Invalid user implementation"
+        );
+        address _oldUserVaultImplementation = userVaultImplementation;
         userVaultImplementation = _userVaultImplementation;
+        emit UserVaultImplementationSet(_oldUserVaultImplementation, _userVaultImplementation);
     }
 
-    function setIsTokenConverterTrusted(
+    function ownerSetIsTokenConverterTrusted(
         address _tokenConverter,
         bool _isTrusted
     )
@@ -200,7 +209,7 @@ abstract contract WrappedTokenUserVaultFactory is
     override
     requireIsInitialized
     onlyDolomiteMarginOwner(msg.sender) {
-        _setIsTokenConverterTrusted(_tokenConverter, _isTrusted);
+        _ownerSetIsTokenConverterTrusted(_tokenConverter, _isTrusted);
     }
 
     function depositOtherTokenIntoDolomiteMarginForVaultOwner(
@@ -381,7 +390,12 @@ abstract contract WrappedTokenUserVaultFactory is
     // ================ Internal Functions ================
     // ====================================================
 
-    function _setIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) internal {
+    function _ownerSetIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) internal {
+        Require.that(
+            _tokenConverter != address(0),
+            _FILE,
+            "Invalid token converter"
+        );
         _tokenConverterToIsTrustedMap[_tokenConverter] = _isTrusted;
         emit TokenConverterSet(_tokenConverter, _isTrusted);
     }

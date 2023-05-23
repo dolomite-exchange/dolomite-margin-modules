@@ -1,16 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/*
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+    Copyright 2023 Dolomite
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 pragma solidity ^0.8.9;
 
@@ -62,38 +68,38 @@ abstract contract WrappedTokenUserVaultWrapperTrader is IDolomiteMarginWrapperTr
     function exchange(
         address _tradeOriginator,
         address _receiver,
-        address _makerToken,
-        address _takerToken,
-        uint256 _amountTakerToken,
+        address _outputToken,
+        address _inputToken,
+        uint256 _inputAmount,
         bytes calldata _orderData
     )
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         Require.that(
-            _makerToken == address(VAULT_FACTORY),
+            _outputToken == address(VAULT_FACTORY),
             _FILE,
-            "Invalid maker token",
-            _makerToken
+            "Invalid output token",
+            _outputToken
         );
 
-        (uint256 minMakerAmount) = abi.decode(_orderData, (uint256));
+        (uint256 minOutputAmount) = abi.decode(_orderData, (uint256));
 
         uint256 outputAmount = _exchangeIntoUnderlyingToken(
             _tradeOriginator,
             _receiver,
             VAULT_FACTORY.UNDERLYING_TOKEN(),
-            minMakerAmount,
-            _takerToken,
-            _amountTakerToken,
+            minOutputAmount,
+            _inputToken,
+            _inputAmount,
             _orderData
         );
         Require.that(
-            outputAmount >= minMakerAmount,
+            outputAmount >= minOutputAmount,
             _FILE,
             "Insufficient output amount",
             outputAmount,
-            minMakerAmount
+            minOutputAmount
         );
 
         _approveWrappedTokenForTransfer(_tradeOriginator, _receiver, outputAmount);
@@ -148,9 +154,9 @@ abstract contract WrappedTokenUserVaultWrapperTrader is IDolomiteMarginWrapperTr
     }
 
     function getExchangeCost(
-        address _makerToken,
-        address _takerToken,
-        uint256 _desiredMakerToken,
+        address _inputToken,
+        address _outputToken,
+        uint256 _desiredInputAmount,
         bytes memory _orderData
     )
     public
@@ -162,15 +168,15 @@ abstract contract WrappedTokenUserVaultWrapperTrader is IDolomiteMarginWrapperTr
     // ============ Internal Functions ============
 
     /**
-     * @notice Performs the exchange from `_takerToken` (could be anything) into the factory's underlying token.
+     * @notice Performs the exchange from `_inputToken` (could be anything) into the factory's underlying token.
      */
     function _exchangeIntoUnderlyingToken(
         address _tradeOriginator,
         address _receiver,
-        address _makerTokenUnderlying,
-        uint256 _minMakerAmount,
-        address _takerToken,
-        uint256 _amountTakerToken,
+        address _outputTokenUnderlying,
+        uint256 _minOutputAmount,
+        address _inputToken,
+        uint256 _inputAmount,
         bytes memory _orderData
     ) internal virtual returns (uint256);
 

@@ -77,7 +77,7 @@ describe('WrappedTokenUserVaultUnwrapper', () => {
       TestWrappedTokenUserVaultUnwrapper__factory.bytecode,
       [otherToken.address, factory.address, core.dolomiteMargin.address],
     );
-    await factory.connect(core.governance).initialize([unwrapper.address]);
+    await factory.connect(core.governance).ownerInitialize([unwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     solidUser = core.hhUser5;
@@ -237,7 +237,7 @@ describe('WrappedTokenUserVaultUnwrapper', () => {
       );
     });
 
-    it('should fail if taker token is incorrect', async () => {
+    it('should fail if input token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
@@ -248,11 +248,11 @@ describe('WrappedTokenUserVaultUnwrapper', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `WrappedTokenUserVaultUnwrapper: Invalid taker token <${core.weth.address.toLowerCase()}>`,
+        `WrappedTokenUserVaultUnwrapper: Invalid input token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
-    it('should fail if there is an insufficient taker token balance', async () => {
+    it('should fail if there is an insufficient input token balance', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
@@ -261,9 +261,9 @@ describe('WrappedTokenUserVaultUnwrapper', () => {
           otherToken.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256'], [amountWei]), // minMakerAmount
+          abiCoder.encode(['uint256'], [amountWei]), // minOutputAmount
         ),
-        `WrappedTokenUserVaultUnwrapper: Insufficient taker token <0, ${amountWei.toString()}>`,
+        `WrappedTokenUserVaultUnwrapper: Insufficient input token <0, ${amountWei.toString()}>`,
       );
     });
 
@@ -279,7 +279,7 @@ describe('WrappedTokenUserVaultUnwrapper', () => {
           otherToken.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256'], [amountWei.mul(2)]), // minMakerAmount
+          abiCoder.encode(['uint256'], [amountWei.mul(2)]), // minOutputAmount
         ),
         `WrappedTokenUserVaultUnwrapper: Insufficient output amount <${amountWei.toString()}, ${amountWei.mul(2).toString()}>`,
       );

@@ -1,16 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/*
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+    Copyright 2023 Dolomite
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 pragma solidity ^0.8.9;
 
@@ -73,35 +79,40 @@ contract MagicGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteMarg
     function exchange(
         address,
         address _receiver,
-        address _makerToken,
-        address _takerToken,
-        uint256 _amountTakerToken,
+        address _outputToken,
+        address _inputToken,
+        uint256 _inputAmount,
         bytes calldata _orderData
     )
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_takerToken),
+            GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
-            "Invalid taker token",
-            _takerToken
+            "Invalid input token",
+            _inputToken
         );
         Require.that(
-            _makerToken == address(MAGIC_GLP),
+            _outputToken == address(MAGIC_GLP),
             _FILE,
-            "Invalid maker token",
-            _makerToken
+            "Invalid output token",
+            _outputToken
+        );
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
         );
 
-        // approve taker token and mint GLP
-        IERC20(_takerToken).safeApprove(address(GMX_REGISTRY.glpManager()), _amountTakerToken);
-        (uint256 minMakerAmount) = abi.decode(_orderData, (uint256));
+        // approve input token and mint GLP
+        IERC20(_inputToken).safeApprove(address(GMX_REGISTRY.glpManager()), _inputAmount);
+        (uint256 minOutputAmount) = abi.decode(_orderData, (uint256));
         uint256 glpAmount = GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(
-            _takerToken,
-            _amountTakerToken,
+            _inputToken,
+            _inputAmount,
             /* _minUsdg = */ 0,
-            minMakerAmount
+            minOutputAmount
         );
 
         // approve GLP and mint magicGLP
@@ -109,14 +120,14 @@ contract MagicGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteMarg
         uint256 magicGlpAmount = MAGIC_GLP.deposit(glpAmount, address(this));
 
         // approve magicGLP for receiver and return the amount
-        IERC20(_makerToken).safeApprove(_receiver, magicGlpAmount);
+        IERC20(_outputToken).safeApprove(_receiver, magicGlpAmount);
         return magicGlpAmount;
     }
 
     function getExchangeCost(
-        address _makerToken,
-        address _takerToken,
-        uint256 _desiredMakerToken,
+        address _inputToken,
+        address _outputToken,
+        uint256 _desiredInputAmount,
         bytes memory
     )
     public
@@ -124,19 +135,24 @@ contract MagicGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteMarg
     view
     returns (uint256) {
         Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_makerToken),
+            GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
-            "Invalid maker token",
-            _makerToken
+            "Invalid input token",
+            _inputToken
         );
         Require.that(
-            _takerToken == address(MAGIC_GLP),
+            _outputToken == address(MAGIC_GLP),
             _FILE,
-            "Invalid taker token",
-            _takerToken
+            "Invalid output token",
+            _outputToken
+        );
+        Require.that(
+            _desiredInputAmount > 0,
+            _FILE,
+            "Invalid desired input amount"
         );
 
-        uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_makerToken, _desiredMakerToken);
+        uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_inputToken, _desiredInputAmount);
         uint256 glpAmount = GLPMathLib.getGlpMintAmount(GMX_REGISTRY, usdgAmount);
         return MAGIC_GLP.previewDeposit(glpAmount);
     }

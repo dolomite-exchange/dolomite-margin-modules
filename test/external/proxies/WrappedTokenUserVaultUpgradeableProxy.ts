@@ -49,7 +49,7 @@ describe('WrappedTokenUserVaultUpgradeableProxy', () => {
       [core.usdc.address, factory.address, core.dolomiteMargin.address],
     );
 
-    await factory.connect(core.governance).initialize([tokenUnwrapper.address]);
+    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     await factory.createVault(core.hhUser1.address);

@@ -8,9 +8,10 @@ import {
   TestGLPMathLib,
   TestGLPMathLib__factory,
 } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
+import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
+import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { expectThrow } from '../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 import { createGmxRegistry } from '../../utils/wrapped-token-utils';
 
@@ -70,7 +71,7 @@ describe('GLPMathLib', () => {
         TestGLPManager__factory.bytecode,
         [],
       );
-      await registry.connect(core.governance).setGlpManager(testGLPManager.address);
+      await registry.connect(core.governance).ownerSetGlpManager(testGLPManager.address);
       await testGLPManager.setAumInUsdg(0);
 
       for (let i = 0; i < 10; i++) {
@@ -78,6 +79,26 @@ describe('GLPMathLib', () => {
         const weirdAmountUsdg = usdcAmount.mul(random).div(101);
         expect(await lib.GLPMathLibGetGlpMintAmount(weirdAmountUsdg)).to.eq(weirdAmountUsdg);
       }
+    });
+
+    it('should work when total supply is 0', async () => {
+      const glp = await createTestToken();
+      await registry.connect(core.governance).ownerSetGlp(glp.address);
+
+      expect(await glp.totalSupply()).to.eq(ZERO_BI);
+
+      for (let i = 0; i < 10; i++) {
+        const random = Math.floor(Math.random() * 99) + 1;
+        const weirdAmountUsdg = usdcAmount.mul(random).div(101);
+        expect(await lib.GLPMathLibGetGlpMintAmount(weirdAmountUsdg)).to.eq(weirdAmountUsdg);
+      }
+    });
+
+    it('should fail when input amount is 0', async () => {
+      await expectThrow(
+        lib.GLPMathLibGetUsdgAmountForBuy(core.usdc.address, ZERO_BI),
+        'GLPMathLib: Input amount must be gt than 0',
+      );
     });
   });
 

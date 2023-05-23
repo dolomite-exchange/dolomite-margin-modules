@@ -1,35 +1,35 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/*
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+    Copyright 2023 Dolomite
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginCallee } from "../../../protocol/interfaces/IDolomiteMarginCallee.sol";
-import { IDolomiteMarginExchangeWrapper } from "../../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
-
 import { Require } from "../../../protocol/lib/Require.sol";
-
 import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
-
 import { IDolomiteMarginUnwrapperTrader } from "../../interfaces/IDolomiteMarginUnwrapperTrader.sol";
 import { IWrappedTokenUserVaultFactory } from "../../interfaces/IWrappedTokenUserVaultFactory.sol";
 import { IWrappedTokenUserVaultV1 } from "../../interfaces/IWrappedTokenUserVaultV1.sol";
-
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 
 
@@ -37,8 +37,8 @@ import { AccountActionLib } from "../../lib/AccountActionLib.sol";
  * @title   WrappedTokenUserVaultUnwrapperTrader
  * @author  Dolomite
  *
- * @notice  Abstract contract for unwrapping a VaultWrapper token into the underlying token. Must be set as a token
- *          converter for the VaultWrapperFactory token.
+ * @notice  Abstract contract for selling a vault token into the underlying token. Must be set as a token converter by
+ *          the DolomiteMargin admin on the corresponding `WrappedTokenUserVaultFactory` token to be used.
  */
 abstract contract WrappedTokenUserVaultUnwrapperTrader is
     IDolomiteMarginUnwrapperTrader,
@@ -50,11 +50,11 @@ abstract contract WrappedTokenUserVaultUnwrapperTrader is
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "WrappedTokenUserVaultUnwrapper";
+    uint256 private constant _ACTIONS_LENGTH = 2;
 
     // ======================== Field Variables ========================
 
     IWrappedTokenUserVaultFactory public immutable VAULT_FACTORY; // solhint-disable-line var-name-mixedcase
-    uint256 private immutable _ACTIONS_LENGTH = 2; // solhint-disable-line var-name-mixedcase
 
     // ======================== Constructor ========================
 
@@ -75,8 +75,8 @@ abstract contract WrappedTokenUserVaultUnwrapperTrader is
     external
     onlyDolomiteMargin(msg.sender)
     onlyDolomiteMarginGlobalOperator(_sender) {
-        Require.that(
-            VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0),
+        if (VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0),
             _FILE,
             "Account owner is not a vault",
             _accountInfo.owner
@@ -85,15 +85,15 @@ abstract contract WrappedTokenUserVaultUnwrapperTrader is
         // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
         // designated recipient
         (uint256 transferAmount) = abi.decode(_data, (uint256));
-        Require.that(
-            transferAmount > 0,
+        if (transferAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(transferAmount > 0,
             _FILE,
             "Invalid transfer amount"
         );
 
         uint256 underlyingBalanceOf = IWrappedTokenUserVaultV1(_accountInfo.owner).underlyingBalanceOf();
-        Require.that(
-            underlyingBalanceOf >= transferAmount,
+        if (underlyingBalanceOf >= transferAmount) { /* FOR COVERAGE TESTING */ }
+        Require.that(underlyingBalanceOf >= transferAmount,
             _FILE,
             "Insufficient balance",
             underlyingBalanceOf,
@@ -106,52 +106,52 @@ abstract contract WrappedTokenUserVaultUnwrapperTrader is
     function exchange(
         address _tradeOriginator,
         address _receiver,
-        address _makerToken,
-        address _takerToken,
-        uint256 _amountTakerToken,
+        address _outputToken,
+        address _inputToken,
+        uint256 _inputAmount,
         bytes calldata _orderData
     )
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        Require.that(
-            _takerToken == address(VAULT_FACTORY),
+        if (_inputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_inputToken == address(VAULT_FACTORY),
             _FILE,
-            "Invalid taker token",
-            _takerToken
+            "Invalid input token",
+            _inputToken
         );
 
-        (uint256 minMakerAmount) = abi.decode(_orderData, (uint256));
+        (uint256 minOutputAmount) = abi.decode(_orderData, (uint256));
 
         {
             uint256 balance = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
-            Require.that(
-                balance >= _amountTakerToken,
+            if (balance >= _inputAmount) { /* FOR COVERAGE TESTING */ }
+            Require.that(balance >= _inputAmount,
                 _FILE,
-                "Insufficient taker token",
+                "Insufficient input token",
                 balance,
-                _amountTakerToken
+                _inputAmount
             );
         }
 
         uint256 outputAmount = _exchangeUnderlyingTokenToOutputToken(
             _tradeOriginator,
             _receiver,
-            _makerToken,
-            minMakerAmount,
+            _outputToken,
+            minOutputAmount,
             address(VAULT_FACTORY),
-            _amountTakerToken,
+            _inputAmount,
             _orderData
         );
-        Require.that(
-            outputAmount >= minMakerAmount,
+        if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
+        Require.that(outputAmount >= minOutputAmount,
             _FILE,
             "Insufficient output amount",
             outputAmount,
-            minMakerAmount
+            minOutputAmount
         );
 
-        IERC20(_makerToken).safeApprove(_receiver, outputAmount);
+        IERC20(_outputToken).safeApprove(_receiver, outputAmount);
 
         return outputAmount;
     }
@@ -209,9 +209,9 @@ abstract contract WrappedTokenUserVaultUnwrapperTrader is
     }
 
     function getExchangeCost(
-        address _makerToken,
-        address _takerToken,
-        uint256 _desiredMakerToken,
+        address _inputToken,
+        address _outputToken,
+        uint256 _desiredInputAmount,
         bytes memory _orderData
     )
     public
@@ -225,15 +225,15 @@ abstract contract WrappedTokenUserVaultUnwrapperTrader is
     // ============ Internal Functions ============
 
     /**
-     * @notice Performs the exchange from the factory's underlying token to `_makerToken` (could be anything).
+     * @notice Performs the exchange from the factory's underlying token to `_outputToken` (could be anything).
      */
     function _exchangeUnderlyingTokenToOutputToken(
         address _tradeOriginator,
         address _receiver,
-        address _makerToken,
-        uint256 _minMakerAmount,
-        address _takerToken,
-        uint256 _amountTakerToken,
+        address _outputToken,
+        uint256 _mintOutputAmount,
+        address _inputToken,
+        uint256 _inputAmount,
         bytes memory _orderData
     ) internal virtual returns (uint256);
 }

@@ -9,16 +9,16 @@
   "scripts": {
     "build": "hardhat --max-memory 16384 compile && hardhat --max-memory 16384 typechain",
     "clean": "hardhat clean",
-    "coverage": "hardhat coverage --testfiles \"test/**/*.ts\" --network hardhat",
+    "coverage": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/**/*.ts\" --network hardhat",
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy-atlas-ecosystem.ts",
     "deploy:gmx-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-gmx-ecosystem.ts",
     "deploy:coveralls": "coveralls < coverage/lcov.info",
     "lint": "yarn lint:sol && yarn lint:ts",
-    "lint:sol": "hardhat check",
+    "lint:sol": "hardhat check && python scripts/lint-contracts.py",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "test": "hardhat --network hardhat test",
-    "test:specific": "hardhat --network hardhat test test/external/abracadabra/MagicGLPPriceOracle.ts",
+    "test:specific": "hardhat --network hardhat test test/external/glp/GLPWrappedTokenUserVaultV1.ts",
     "verify:contract": "hardhat --network arbitrum_goerli run scripts/verify-contract.ts"
   },
   "repository": {
@@ -42,7 +42,7 @@
     "@nomiclabs/hardhat-vyper": "^3.0.1",
     "@nomiclabs/hardhat-waffle": "2.0.1",
     "@nomiclabs/hardhat-web3": "2.0.0",
-    "@openzeppelin/contracts": "^4.8.0-rc.2",
+    "@openzeppelin/contracts": "^4.8.3",
     "@openzeppelin/contracts-ethereum-package": "^3.0.0",
     "@openzeppelin/upgrades": "^2.8.0",
     "@typechain/ethers-v5": "^9.0.0",

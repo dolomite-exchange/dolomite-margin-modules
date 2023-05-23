@@ -1,16 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/*
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+    Copyright 2023 Dolomite
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 pragma solidity ^0.8.9;
 
@@ -92,7 +98,12 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
     function _getCurrentPrice() internal view returns (uint256) {
         IGmxVault _gmxVault = gmxVault();
         uint256 fee = _gmxVault.mintBurnFeeBasisPoints() + _gmxVault.taxBasisPoints();
-        uint256 rawPrice = glpManager().getAumInUsdg(false) * GLP_PRECISION / glp().totalSupply();
+        uint256 totalSupply = glp().totalSupply();
+
+        // total supply should always be > 0 if the user is using GLP and interacting with Dolomite
+        assert(totalSupply > 0);
+
+        uint256 rawPrice = glpManager().getAumInUsdg(false) * GLP_PRECISION / totalSupply;
         // understate the price by the fees needed to burn GLP for USDG. This is okay to do because GLP cannot be
         // borrowed.
         return rawPrice - (rawPrice * fee / FEE_PRECISION);

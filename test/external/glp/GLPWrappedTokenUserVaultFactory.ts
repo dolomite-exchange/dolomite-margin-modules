@@ -94,7 +94,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       await core.testPriceOracle.setPrice(factory.address, '1000000000000000000');
       await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
       await setupTestMarket(core, factory, true);
-      await factory.connect(core.governance).initialize([]);
+      await factory.connect(core.governance).ownerInitialize([]);
 
       await factory.connect(core.hhUser2).createVaultAndAcceptFullAccountTransfer(core.hhUser1.address);
       const vault = setupUserVaultProxy<GLPWrappedTokenUserVaultV1>(

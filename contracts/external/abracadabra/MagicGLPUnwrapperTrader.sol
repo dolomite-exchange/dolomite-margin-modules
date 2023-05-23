@@ -1,16 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/*
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+    Copyright 2023 Dolomite
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 pragma solidity ^0.8.9;
 
@@ -76,49 +82,54 @@ contract MagicGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolomite
     function exchange(
         address,
         address _receiver,
-        address _makerToken,
-        address _takerToken,
-        uint256 _amountTakerToken,
+        address _outputToken,
+        address _inputToken,
+        uint256 _inputAmount,
         bytes calldata _orderData
     )
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         Require.that(
-            _takerToken == address(MAGIC_GLP),
+            _inputToken == address(MAGIC_GLP),
             _FILE,
-            "Invalid taker token",
-            _takerToken
+            "Invalid input token",
+            _inputToken
         );
         Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_makerToken)
-                && DOLOMITE_MARGIN.getMarketIdByTokenAddress(_makerToken) == outputMarketId(),
+            GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
+                && DOLOMITE_MARGIN.getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
             _FILE,
-            "Invalid maker token",
-            _makerToken
+            "Invalid output token",
+            _outputToken
+        );
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
         );
 
-        // redeem magicGLP for GLP; we don't need to approve since the `_owner` param is msg.sender
-        uint256 glpAmount = MAGIC_GLP.redeem(_amountTakerToken, address(this), address(this));
+        // redeems magicGLP for GLP; we don't need to approve since the `_owner` parameter is msg.sender
+        uint256 glpAmount = MAGIC_GLP.redeem(_inputAmount, address(this), address(this));
 
-        // redeem GLP for `_makerToken`; we don't need to approve because GLP has a handler that auto-approves for this
-        (uint256 minMakerAmount) = abi.decode(_orderData, (uint256));
+        // redeem GLP for `_outputToken`; we don't need to approve because GLP has a handler that auto-approves for this
+        (uint256 minOutputAmount) = abi.decode(_orderData, (uint256));
         uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
-            /* _tokenOut = */ _makerToken,
+            /* _tokenOut = */ _outputToken,
             glpAmount,
-            minMakerAmount,
+            minOutputAmount,
             /* _receiver = */ address(this)
         );
 
-        // approve the `_makerToken` to be spent by the receiver
-        IERC20(_makerToken).safeApprove(_receiver, amountOut);
+        // approve the `_outputToken` to be spent by the receiver
+        IERC20(_outputToken).safeApprove(_receiver, amountOut);
         return amountOut;
     }
 
     function getExchangeCost(
-        address _makerToken,
-        address _takerToken,
-        uint256 _desiredMakerToken,
+        address _inputToken,
+        address _outputToken,
+        uint256 _desiredInputAmount,
         bytes memory
     )
     public
@@ -126,22 +137,27 @@ contract MagicGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolomite
     view
     returns (uint256) {
         Require.that(
-            _makerToken == address(MAGIC_GLP),
+            _inputToken == address(MAGIC_GLP),
             _FILE,
-            "Invalid maker token",
-            _makerToken
+            "Invalid input token",
+            _inputToken
         );
         Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_takerToken)
-                && DOLOMITE_MARGIN.getMarketIdByTokenAddress(_takerToken) == outputMarketId(),
+            GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
+                && DOLOMITE_MARGIN.getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
             _FILE,
-            "Invalid taker token",
-            _takerToken
+            "Invalid output token",
+            _outputToken
+        );
+        Require.that(
+            _desiredInputAmount > 0,
+            _FILE,
+            "Invalid desired input amount"
         );
 
-        uint256 glpAmount = MAGIC_GLP.previewRedeem(_desiredMakerToken);
+        uint256 glpAmount = MAGIC_GLP.previewRedeem(_desiredInputAmount);
         uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, glpAmount);
-        return GLPMathLib.getGlpRedemptionAmount(GMX_REGISTRY.gmxVault(), _takerToken, usdgAmount);
+        return GLPMathLib.getGlpRedemptionAmount(GMX_REGISTRY.gmxVault(), _outputToken, usdgAmount);
     }
 
     function token() public override view returns (address) {

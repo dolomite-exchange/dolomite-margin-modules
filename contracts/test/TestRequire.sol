@@ -19,11 +19,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-
-import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { TypesLib } from "../protocol/lib/TypesLib.sol";
 
 
 /**

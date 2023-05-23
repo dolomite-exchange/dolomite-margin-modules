@@ -1,22 +1,28 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/*
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+    Copyright 2023 Dolomite
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 pragma solidity ^0.8.9;
 
-import { IGLPManager } from "../interfaces/IGLPManager.sol";
-import { IGmxVault } from "../interfaces/IGmxVault.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
+import { IGmxVault } from "../interfaces/IGmxVault.sol";
 
 
 /**
@@ -27,8 +33,18 @@ import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
  */
 library GLPMathLib {
 
+    // ===========================================================
+    // ======================== Constants ========================
+    // ===========================================================
+
+    bytes32 private constant _FILE = "GLPMathLib";
+
     uint256 public constant BASIS_POINTS_DIVISOR = 10000;
     uint256 public constant PRICE_PRECISION = 10 ** 30;
+
+    // ===========================================================
+    // ======================== Functions ========================
+    // ===========================================================
 
     function getGlpMintAmount(
         IGmxRegistryV1 _gmxRegistry,
@@ -39,7 +55,9 @@ library GLPMathLib {
         uint256 aumInUsdg = _gmxRegistry.glpManager().getAumInUsdg(true);
         uint256 glpSupply = _gmxRegistry.glp().totalSupply();
 
-        glpAmount = aumInUsdg == 0 ? _usdgAmount : _usdgAmount * glpSupply / aumInUsdg;
+        glpAmount = aumInUsdg == 0 || glpSupply == 0
+            ? _usdgAmount
+            : _usdgAmount * glpSupply / aumInUsdg;
     }
 
     function getUsdgAmountForBuy(
@@ -47,6 +65,12 @@ library GLPMathLib {
         address _inputToken,
         uint256 _inputAmount
     ) internal view returns (uint256 usdgAmount) {
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Input amount must be gt than 0"
+        );
+
         // This code is taken from gmxVault#buyUSDG (returns the usdgAmount). The contract address copied is:
         // https://arbiscan.io/address/0x489ee077994b6658eafa855c308275ead8097c4a#code
         uint256 price = _gmxVault.getMinPrice(_inputToken);

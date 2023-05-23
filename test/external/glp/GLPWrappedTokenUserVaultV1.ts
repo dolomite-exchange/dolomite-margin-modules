@@ -1,3 +1,4 @@
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
@@ -69,7 +70,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
     await core.testPriceOracle.setPrice(factory.address, '1000000000000000000');
     await setupTestMarket(core, factory, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).initialize([]);
+    await factory.connect(core.governance).ownerInitialize([]);
 
     await factory.createVault(core.hhUser1.address);
     vault = setupUserVaultProxy<TestGLPWrappedTokenUserVaultV1>(
@@ -110,7 +111,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
     if (daysToWait > 0) {
       await waitDays(daysToWait);
     }
-    await vault.handleRewards(true, false, true, false, true, true, false);
+    await vault.handleRewards(true, false, true, false, true, true, false, accountNumber);
   }
 
   describe('#handleRewards', () => {
@@ -136,7 +137,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       await setupGmxStakingAndEsGmxVesting();
 
       await waitDays(30);
-      await vault.handleRewards(true, false, true, false, true, true, false);
+      await vault.handleRewards(true, false, true, false, true, true, false, accountNumber);
 
       expect((await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).gt(esGmxAmount)).to.eq(true);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
@@ -152,7 +153,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       await vault.vestGmx(esGmxAmount);
 
       await waitDays(366);
-      await vault.handleRewards(true, false, true, false, true, true, false);
+      await vault.handleRewards(true, false, true, false, true, true, false, accountNumber);
 
       // GMX rewards should be passed along to the vault owner if they're NOT staked
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
@@ -164,7 +165,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
 
       // Don't stake anything on the first go-around. We need the esGMX to initialize vesting
       await waitDays(30);
-      await vault.handleRewards(true, false, true, false, false, true, false);
+      await vault.handleRewards(true, false, true, false, false, true, false, accountNumber);
 
       // The user has not vested any esGMX into GMX, so the balance should be 0
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
@@ -186,7 +187,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
 
       await waitDays(366);
       const sbfGmxBalanceBefore = await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address);
-      await vault.handleRewards(true, true, true, true, true, true, false);
+      await vault.handleRewards(true, true, true, true, true, true, false, accountNumber);
       const sbfGmxBalanceAfter = await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address);
 
       // the esGMX should have been converted to GMX and staked into sbfGMX
@@ -206,7 +207,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       await setupGmxStakingAndEsGmxVesting();
 
       await waitDays(30);
-      await vault.handleRewards(true, false, true, false, true, true, true);
+      await vault.handleRewards(true, false, true, false, true, true, true, accountNumber);
 
       expect((await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).gt(ZERO_BI)).to.eq(true);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
@@ -226,7 +227,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       await setupGmxStakingAndEsGmxVesting();
 
       await waitDays(30);
-      await vault.handleRewards(false, false, false, false, false, false, false);
+      await vault.handleRewards(false, false, false, false, false, false, false, accountNumber);
 
       expect(await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
@@ -242,10 +243,27 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       expect(balance2.value).to.eq(ZERO_BI);
     });
 
+    it('should fail when reentrancy is triggered', async () => {
+      await expectThrow(
+        vault.callHandleRewardsAndTriggerReentrancy(false, false, false, false, false, false, false, accountNumber),
+        'WrappedTokenUserVaultV1: Reentrant call',
+      );
+    });
+
     it('should fail when not called by vault owner', async () => {
       await expectThrow(
-        vault.connect(core.hhUser2).handleRewards(false, false, false, false, false, false, false),
+        vault.connect(core.hhUser2).handleRewards(false, false, false, false, false, false, false, accountNumber),
         `WrappedTokenUserVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when attempting to deposit WETH when not claiming', async () => {
+      await setupGmxStakingAndEsGmxVesting();
+
+      await waitDays(30);
+      await expectThrow(
+        vault.handleRewards(true, false, true, false, true, false, true, accountNumber),
+        'GLPWrappedTokenUserVaultV1: Can only deposit ETH if claiming',
       );
     });
   });
@@ -253,6 +271,14 @@ describe('GLPWrappedTokenUserVaultV1', () => {
   describe('#stakeGmx', () => {
     it('should work normally', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, vault);
+      await vault.stakeGmx(gmxAmount);
+      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
+      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address)).to.eq(gmxAmount);
+    });
+
+    it('should work when GMX is already approved for staking', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, vault);
+      await vault.setApprovalForGmxForStaking(gmxAmount.div(2)); // use an amount < gmxAmount
       await vault.stakeGmx(gmxAmount);
       expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address)).to.eq(gmxAmount);
@@ -350,7 +376,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
   });
 
   describe('#unvestGlp', () => {
-    it('should work GMX is staked', async () => {
+    it('should work GLP is staked', async () => {
       await doHandleRewardsWithWaitTime(30);
       await vault.vestGlp(esGmxAmount);
       await waitDays(366);
@@ -362,7 +388,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       expect((await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address))).to.eq(ZERO_BI);
     });
 
-    it('should work GMX is withdrawn', async () => {
+    it('should work GLP is withdrawn', async () => {
       await doHandleRewardsWithWaitTime(30);
       await vault.vestGlp(esGmxAmount);
       await waitDays(366);
@@ -535,6 +561,13 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       await expectThrow(
         newVault.acceptFullAccountTransfer(core.hhUser2.address),
         'GLPWrappedTokenUserVaultV1: Cannot transfer more than once',
+      );
+    });
+
+    it('should fail when sender is the zero addres', async () => {
+      await expectThrow(
+        vault.acceptFullAccountTransfer(ZERO_ADDRESS),
+        'GLPWrappedTokenUserVaultV1: Invalid sender',
       );
     });
 

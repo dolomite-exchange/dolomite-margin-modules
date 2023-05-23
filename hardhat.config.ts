@@ -5,15 +5,15 @@ import '@nomiclabs/hardhat-solhint';
 import '@nomiclabs/hardhat-vyper';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
-import 'hardhat-gas-reporter';
-import 'solidity-coverage';
 
 import chai from 'chai';
 import { solidity } from 'ethereum-waffle';
+import 'hardhat-gas-reporter';
 import { HardhatUserConfig } from 'hardhat/types';
-import { DEFAULT_BLOCK_NUMBER } from './src/utils/no-deps-constants';
+import 'solidity-coverage';
 
 import 'tsconfig-paths/register';
+import { DEFAULT_BLOCK_NUMBER } from './src/utils/no-deps-constants';
 
 chai.use(solidity);
 require('dotenv').config();
@@ -31,6 +31,7 @@ if (!arbiscanApiKey) {
   throw new Error('No ARBISCAN_API_KEY provided!');
 }
 
+const contractsDirectory = process.env.COVERAGE === 'true' ? './contracts_coverage' : './contracts';
 export const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -60,12 +61,15 @@ export const config: HardhatUserConfig = {
             enabled: true,
             runs: 10000,
             details: {
-              yul: false, // set this to false to fix some extraneous "stack too deep" errors that don't make sense
+              yul: false, // To fix some extraneous "stack too deep" errors that don't make sense, set this to false.
             },
           },
         },
       },
     ],
+  },
+  paths: {
+    sources: contractsDirectory,
   },
   mocha: {
     timeout: 2000000,

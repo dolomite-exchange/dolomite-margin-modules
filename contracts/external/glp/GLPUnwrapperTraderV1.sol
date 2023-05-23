@@ -1,29 +1,31 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/*
 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
+    Copyright 2023 Dolomite
 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 pragma solidity ^0.8.9;
 
+import { GLPMathLib } from "./GLPMathLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-
 import { Require } from "../../protocol/lib/Require.sol";
-
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/IGmxVault.sol";
-
-import { WrappedTokenUserVaultUnwrapperTrader } from "../proxies/abstract/WrappedTokenUserVaultUnwrapper.sol";
-
-import { GLPMathLib } from "./GLPMathLib.sol";
+import { WrappedTokenUserVaultUnwrapperTrader } from "../proxies/abstract/WrappedTokenUserVaultUnwrapperTrader.sol";
 
 
 /**
@@ -74,9 +76,9 @@ contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
     // ==========================================
 
     function getExchangeCost(
-        address _makerToken,
-        address _takerToken,
-        uint256 _desiredMakerToken,
+        address _inputToken,
+        address _outputToken,
+        uint256 _desiredInputAmount,
         bytes memory
     )
     public
@@ -84,21 +86,26 @@ contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
     view
     returns (uint256) {
         Require.that(
-            _makerToken == address(VAULT_FACTORY),
+            _inputToken == address(VAULT_FACTORY),
             _FILE,
-            "Invalid maker token",
-            _makerToken
+            "Invalid input token",
+            _inputToken
         );
         Require.that(
-            _takerToken == USDC,
+            _outputToken == USDC,
             _FILE,
-            "Invalid taker token",
-            _takerToken
+            "Invalid output token",
+            _outputToken
+        );
+        Require.that(
+            _desiredInputAmount > 0,
+            _FILE,
+            "Invalid desired input amount"
         );
 
-        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, _desiredMakerToken);
+        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, _desiredInputAmount);
 
-        return GMX_REGISTRY.gmxVault().getGlpRedemptionAmount(_takerToken, usdgAmount);
+        return GMX_REGISTRY.gmxVault().getGlpRedemptionAmount(_outputToken, usdgAmount);
     }
 
     // ============================================
@@ -108,26 +115,31 @@ contract GLPUnwrapperTraderV1 is WrappedTokenUserVaultUnwrapperTrader {
     function _exchangeUnderlyingTokenToOutputToken(
         address,
         address,
-        address _makerToken,
-        uint256 _minMakerAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
         address,
-        uint256 _amountTakerToken,
+        uint256 _inputAmount,
         bytes memory
     )
     internal
     override
     returns (uint256) {
         Require.that(
-            _makerToken == USDC,
+            _outputToken == USDC,
             _FILE,
-            "Invalid maker token",
-            _makerToken
+            "Invalid output token",
+            _outputToken
+        );
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
         );
 
         uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
-            /* _tokenOut = */ _makerToken,
-            /* _glpAmount = */ _amountTakerToken,
-            _minMakerAmount,
+            /* _tokenOut = */ _outputToken,
+            /* _glpAmount = */ _inputAmount,
+            _minOutputAmount,
             /* _receiver = */ address(this)
         );
 
