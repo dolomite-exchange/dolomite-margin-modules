@@ -73,6 +73,12 @@ contract GLPWrappedTokenUserVaultV1 is IGLPWrappedTokenUserVaultV1, WrappedToken
     override
     nonReentrant
     onlyVaultOwner(msg.sender) {
+        if ((!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth) { /* FOR COVERAGE TESTING */ }
+        Require.that((!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
+            _FILE,
+            "Can only deposit ETH if claiming"
+        );
+
         if (_shouldStakeGmx) {
             // we don't know how much GMX will be staked, so we have to approve all
             _approveGmxForStaking(gmx(), type(uint256).max);
