@@ -213,7 +213,7 @@ describe('GLPWrapperTraderV1', () => {
           ZERO_BI,
           abiCoder.encode(['uint256'], [ZERO_BI]),
         ),
-        'GLPWrapperTraderV1: Invalid input amount',
+        'WrappedTokenUserVaultWrapper: Invalid input amount',
       );
     });
   });

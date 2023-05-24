@@ -119,11 +119,6 @@ contract GLPWrapperTraderV1 is WrappedTokenUserVaultWrapperTrader {
             "Invalid input token",
             _inputToken
         );
-        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputAmount > 0,
-            _FILE,
-            "Invalid input amount"
-        );
 
         IERC20(_inputToken).safeApprove(address(GMX_REGISTRY.glpManager()), _inputAmount);
 

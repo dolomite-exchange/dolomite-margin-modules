@@ -265,4 +265,6 @@ interface IWrappedTokenUserVaultFactory is IOnlyDolomiteMargin {
      * @return  True if the token converter is currently in-use by this contract.
      */
     function isTokenConverterTrusted(address _tokenConverter) external view returns (bool);
+
+    function getProxyVaultInitCodeHash() external pure returns (bytes32);
 }

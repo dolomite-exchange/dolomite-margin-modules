@@ -16,6 +16,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface } from 'ethers';
 import { ethers, network } from 'hardhat';
 import { Network } from 'src/utils/no-deps-constants';
+import Deployments from '../../scripts/deployments.json';
 import {
   AlwaysZeroInterestSetter,
   AlwaysZeroInterestSetter__factory,
@@ -32,19 +33,27 @@ import {
   IDolomiteMargin,
   IDolomiteMargin__factory,
   IERC20,
-  IERC20__factory, IERC4626, IERC4626__factory,
+  IERC20__factory,
+  IERC4626,
+  IERC4626__factory,
   IEsGmxDistributor,
   IEsGmxDistributor__factory,
   IGLPManager,
   IGLPManager__factory,
   IGLPRewardsRouterV2,
-  IGLPRewardsRouterV2__factory, IGmxRegistryV1, IGmxRegistryV1__factory,
+  IGLPRewardsRouterV2__factory,
+  IGmxRegistryV1,
+  IGmxRegistryV1__factory,
   IGmxRewardRouterV2,
   IGmxRewardRouterV2__factory,
   IGmxVault,
   IGmxVault__factory,
   IGmxVester,
   IGmxVester__factory,
+  IPlutusVaultGLPFarm,
+  IPlutusVaultGLPFarm__factory,
+  IPlutusVaultGLPRouter,
+  IPlutusVaultGLPRouter__factory,
   ISGMX,
   ISGMX__factory,
   IWETH,
@@ -78,6 +87,10 @@ import {
   GMX_REWARD_ROUTER_MAP,
   GMX_VAULT_MAP,
   MAGIC_GLP_MAP,
+  PLS_TOKEN_MAP,
+  PLV_GLP_FARM_MAP,
+  PLV_GLP_MAP,
+  PLV_GLP_ROUTER_MAP,
   S_GLP_MAP,
   S_GMX_MAP,
   SBF_GMX_MAP,
@@ -88,7 +101,6 @@ import {
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { impersonate, impersonateOrFallback, resetFork } from './index';
-import Deployments from '../../scripts/deployments.json';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -131,6 +143,14 @@ interface GmxEcosystem {
   vGmx: IGmxVester;
 }
 
+interface PlutusEcosystem {
+  plvGlp: IERC4626;
+  plsToken: IERC20;
+  plvGlpFarm: IPlutusVaultGLPFarm;
+  plvGlpRouter: IPlutusVaultGLPRouter;
+  sGlp: IERC20;
+}
+
 export interface CoreProtocol {
   /// =========================
   /// Config and Signers
@@ -164,6 +184,7 @@ export interface CoreProtocol {
   liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
   liquidatorProxyV2: LiquidatorProxyV2WithExternalLiquidity | undefined;
   liquidatorProxyV3: LiquidatorProxyV3WithLiquidityToken | undefined;
+  plutusEcosystem: PlutusEcosystem | undefined;
   testInterestSetter: TestInterestSetter;
   testPriceOracle: TestPriceOracle;
   /// =========================
@@ -333,6 +354,7 @@ export async function setupCoreProtocol(
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
+  const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
 
   return {
     abraEcosystem,
@@ -352,13 +374,14 @@ export async function setupCoreProtocol(
     liquidatorProxyV1WithAmm,
     liquidatorProxyV2,
     liquidatorProxyV3,
-    testInterestSetter,
-    testPriceOracle,
     hhUser1,
     hhUser2,
     hhUser3,
     hhUser4,
     hhUser5,
+    plutusEcosystem,
+    testInterestSetter,
+    testPriceOracle,
     config: {
       blockNumber: config.blockNumber,
       network: config.network,
@@ -458,6 +481,30 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
     sbfGmx: getContract(SBF_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     vGlp: getContract(V_GLP_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
     vGmx: getContract(V_GMX_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
+  };
+}
+
+async function createPlutusEcosystem(
+  network: Network,
+  signer: SignerWithAddress,
+): Promise<PlutusEcosystem | undefined> {
+  if (!PLV_GLP_MAP[network]) {
+    return undefined;
+  }
+
+  const sGlpAddressForPlutus = '0x2F546AD4eDD93B956C8999Be404cdCAFde3E89AE';
+  return {
+    plvGlp: getContract(PLV_GLP_MAP[network] as string, address => IERC4626__factory.connect(address, signer)),
+    plsToken: getContract(PLS_TOKEN_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
+    plvGlpFarm: getContract(
+      PLV_GLP_FARM_MAP[network] as string,
+      address => IPlutusVaultGLPFarm__factory.connect(address, signer),
+    ),
+    plvGlpRouter: getContract(
+      PLV_GLP_ROUTER_MAP[network] as string,
+      address => IPlutusVaultGLPRouter__factory.connect(address, signer),
+    ),
+    sGlp: getContract(sGlpAddressForPlutus, address => IERC20__factory.connect(address, signer)),
   };
 }
 
