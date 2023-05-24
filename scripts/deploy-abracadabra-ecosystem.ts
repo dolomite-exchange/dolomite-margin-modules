@@ -10,12 +10,12 @@ import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
-  await deployContractAndSave(Number(network), 'MagicGLPPriceOracle', [
+  const magicGlpPriceOracle = await deployContractAndSave(Number(network), 'MagicGLPPriceOracle', [
     core.dolomiteMargin.address,
     core.abraEcosystem!.magicGlp.address,
     core.marketIds.dfsGlp!,
   ]);
-  await deployContractAndSave(Number(network), 'MagicGLPUnwrapperTrader', [
+  const unwrapperTraderAddress = await deployContractAndSave(Number(network), 'MagicGLPUnwrapperTrader', [
     core.abraEcosystem!.magicGlp.address,
     core.gmxRegistry!.address,
     core.marketIds.usdc,
@@ -27,11 +27,10 @@ async function main() {
     core.dolomiteMargin.address,
   ]);
 
-  const deploymentsJson = require('./deployments.json');
   await prettyPrintEncodedData(
     core.dolomiteMargin.populateTransaction.ownerAddMarket(
       core.abraEcosystem!.magicGlp.address,
-      deploymentsJson.MagicGLPPriceOracle[network].address,
+      magicGlpPriceOracle,
       core.alwaysZeroInterestSetter.address,
       { value: BigNumber.from('43478260869565217') }, // 4.347% --> 120% collateralization
       { value: ZERO_BI },
@@ -45,7 +44,7 @@ async function main() {
   await prettyPrintEncodedData(
     core.liquidatorProxyV3!.populateTransaction.setMarketIdToTokenUnwrapperForLiquidationMap(
       expectedMagicGlpMarketId,
-      deploymentsJson.MagicGLPUnwrapperTrader[network].address,
+      unwrapperTraderAddress,
     ),
     'liquidatorProxyV3.setMarketIdToTokenUnwrapperForLiquidationMap',
   );

@@ -120,6 +120,11 @@ abstract contract WrappedTokenUserVaultUnwrapperTrader is
             "Invalid input token",
             _inputToken
         );
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(_inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
+        );
 
         (uint256 minOutputAmount) = abi.decode(_orderData, (uint256));
 

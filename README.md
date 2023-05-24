@@ -7,7 +7,7 @@
     <img src='https://coveralls.io/repos/github/dolomite-exchange/dolomite-margin-modules/badge.svg?branch=master&longCache=false' alt='Coverage Status' />
   </a>
   <a href='https://github.com/dolomite-exchange/dolomite-margin-modules/blob/master/LICENSE' style="text-decoration:none;">
-    <img src='https://img.shields.io/badge/GPL--2.0-llicense-red?longCache=true' alt='License' />
+    <img src='https://img.shields.io/badge/GPL--3.0-llicense-red?longCache=true' alt='License' />
   </a>
   <a href='https://discord.com/invite/uDRzrB2YgP' style="text-decoration:none;">
     <img src='https://img.shields.io/badge/chat-on%20discord-7289DA.svg?longCache=true' alt='Discord' />
@@ -20,8 +20,8 @@
   </a>
 </div>
 
-> Solidity Smart Contracts for integration tests against the live `DolomiteMargin` instance on Arbitrum One for
-> testing new modules against the live deployment.
+> Solidity Smart Contracts for integration tests against the live `DolomiteMargin` instance on all deployed networks for
+> adding new modules that hook into a live deployment.
 
 ## Installation
 

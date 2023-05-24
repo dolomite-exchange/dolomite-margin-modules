@@ -82,5 +82,61 @@
       "transaction": "0xa2daa24e4eaac7eb7a614b29b8946ee8327fa29124bdc0631cf666cef855cc53",
       "isVerified": true
     }
+  },
+  "PlutusVaultRegistry": {
+    "42161": {
+      "address": "0xccB35971036a6FD0C37E04Cb3d6658a57a113cE5",
+      "transaction": "0x92e74795378b8b8aa509973b5a5750e8b96824bc011d7c7c7b73b872bca88ed9",
+      "isVerified": true
+    }
+  },
+  "PlutusVaultGLPWrappedTokenUserVaultV1": {
+    "42161": {
+      "address": "0x978D4694F02474FAeF4e1D7aC19038968066f8Aa",
+      "transaction": "0x1a42636f98e5dfa9048fd88a08f4112181bfba143be7f73438c3b8eb38c3efb2",
+      "isVerified": true
+    }
+  },
+  "PlutusVaultGLPWrappedTokenUserVaultFactory": {
+    "42161": {
+      "address": "0x5c80aC681B6b0E7EF6E0751211012601e6cFB043",
+      "transaction": "0xc66a1a98de72ee3495aa59ca0d34ca45be34d839394b7570be8c9c3aec79c502",
+      "isVerified": true
+    }
+  },
+  "PlutusVaultGLPUnwrapperTrader": {
+    "42161": {
+      "address": "0xB5010ba20fD127aF143cCFd9d77fd4c6923f6d37",
+      "transaction": "0x6729db08f915ee6d335b5ae8731a5030cdc9be072b6faba95d45bfe990774591",
+      "isVerified": true
+    }
+  },
+  "PlutusVaultGLPWrapperTrader": {
+    "42161": {
+      "address": "0xc2fA9F48b166BCa8706Ab53A60dcA28979010b92",
+      "transaction": "0x773c5afde88b586c121c287044a74e1c6aa474bc1eff04b95f683d818e237937",
+      "isVerified": true
+    }
+  },
+  "PlutusVaultGLPPriceOracle": {
+    "42161": {
+      "address": "0xcaba6d6Ea33f17fE01D514fE3E402771dCf956A7",
+      "transaction": "0x019b8daf350f3fac73e5dd33170018926644ca2c9140fd3826466df5793d1f57",
+      "isVerified": true
+    }
+  },
+  "DolomiteWhitelistForPlutusChef": {
+    "42161": {
+      "address": "0x4F8B6EF682Ee0e3a66eb5507dfb0DaA647362C20",
+      "transaction": "0x0f6d6b0d8bd1af245fab4a624d48506eca70236434eb320342fa436dfc87e9d7",
+      "isVerified": true
+    }
+  },
+  "DolomiteWhitelistForGlpDepositorV2": {
+    "42161": {
+      "address": "0xD873e5D8020cfd47b6268CA5d3732c4F75ccA7EC",
+      "transaction": "0xfc0e248a0041aa1a6ee95e903e2cb5efa312beb7c51d62c5f030e221397ba2ee",
+      "isVerified": true
+    }
   }
 }

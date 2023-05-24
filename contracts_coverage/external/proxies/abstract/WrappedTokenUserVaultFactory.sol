@@ -355,22 +355,22 @@ abstract contract WrappedTokenUserVaultFactory is
         return _cursorToQueuedTransferMap[_transferCursor];
     }
 
-    function isTokenConverterTrusted(address _tokenConverter) external override view returns (bool) {
+    function isTokenConverterTrusted(address _tokenConverter) external view override returns (bool) {
         return _tokenConverterToIsTrustedMap[_tokenConverter];
     }
 
-    function getVaultByAccount(address _account) external override view returns (address _vault) {
+    function getVaultByAccount(address _account) external view override returns (address _vault) {
         _vault = _userToVaultMap[_account];
     }
 
-    function calculateVaultByAccount(address _account) external override view returns (address _vault) {
+    function calculateVaultByAccount(address _account) external view override returns (address _vault) {
         _vault = Create2.computeAddress(
             keccak256(abi.encodePacked(_account)),
-            getInitCodeHash()
+            getProxyVaultInitCodeHash()
         );
     }
 
-    function getAccountByVault(address _vault) external override view returns (address _account) {
+    function getAccountByVault(address _vault) external view override returns (address _account) {
         _account = _vaultToUserMap[_vault];
     }
 
@@ -382,7 +382,7 @@ abstract contract WrappedTokenUserVaultFactory is
     // ================= Public Functions =================
     // ====================================================
 
-    function getInitCodeHash() public pure returns (bytes32) {
+    function getProxyVaultInitCodeHash() public pure override returns (bytes32) {
         return keccak256(type(WrappedTokenUserVaultUpgradeableProxy).creationCode);
     }
 
@@ -401,6 +401,11 @@ abstract contract WrappedTokenUserVaultFactory is
     }
 
     function _createVault(address _account) internal returns (address) {
+        if (_account != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_account != address(0),
+            _FILE,
+            "Invalid account"
+        );
         if (_userToVaultMap[_account] == address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(_userToVaultMap[_account] == address(0),
             _FILE,
