@@ -32,6 +32,7 @@ import { GLPMathLib } from "../glp/GLPMathLib.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 import { IDolomiteMarginUnwrapperTrader } from "../interfaces/IDolomiteMarginUnwrapperTrader.sol";
+import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
 import { IPendlePtMarket } from "../interfaces/IPendlePtMarket.sol";
 import { IPendlePtToken } from "../interfaces/IPendlePtToken.sol";
 
@@ -56,7 +57,7 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
     // ============ Constructor ============
 
     IPendlePtToken public immutable PT_GLP; // solhint-disable-line var-name-mixedcase
-    IPendlePtMarket public immutable PT_GLP_MARKET; // solhint-disable-line var-name-mixedcase
+    IPendleRouter public immutable PENDLE_ROUTER; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
     uint256 public immutable USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
@@ -65,6 +66,7 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
     constructor(
         address _ptGlp,
         address _ptGlpMarket,
+        address _gmxRegistry,
         uint256 _usdcMarketId,
         address _dolomiteMargin
     )
@@ -73,6 +75,7 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
     ) {
         PT_GLP = IPendlePtToken(_ptGlp);
         PT_GLP_MARKET = IPtGlpMarket(_ptGlpMarket);
+        GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
         USDC_MARKET_ID = _usdcMarketId;
     }
 
@@ -92,7 +95,7 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         Require.that(
-            _inputToken == address(MAGIC_GLP),
+            _inputToken == address(PT_GLP),
             _FILE,
             "Invalid input token",
             _inputToken
@@ -111,7 +114,7 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
         );
 
         // redeems magicGLP for GLP; we don't need to approve since the `_owner` parameter is msg.sender
-        uint256 glpAmount = MAGIC_GLP.redeem(_inputAmount, address(this), address(this));
+        uint256 glpAmount = PT_GLP_MARKET.redeem(_inputAmount, address(this), address(this));
 
         // redeem GLP for `_outputToken`; we don't need to approve because GLP has a handler that auto-approves for this
         (uint256 minOutputAmount) = abi.decode(_orderData, (uint256));
