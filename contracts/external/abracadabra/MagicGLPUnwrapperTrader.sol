@@ -42,8 +42,8 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
  * @title   MagicGLPUnwrapperTrader
  * @author  Dolomite
  *
- * @notice  Used for unwrapping GLP (via minting from the GLPRewardsRouter) from USDC. Upon settlement, the minted GLP
- *          is sent to the user's vault and dfsGLP is minted to `DolomiteMargin`.
+ * @notice  Used for unwrapping magicGLP (via redeeming from the ERC 4626 vault then redeeming the underlying GLP to
+ *          USDC).
  */
 contract MagicGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolomiteMargin {
     using SafeERC20 for IERC20;

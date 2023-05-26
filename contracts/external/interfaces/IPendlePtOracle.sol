@@ -30,7 +30,6 @@ pragma solidity ^0.8.9;
 interface IPendlePtOracle {
 
     /**
-     * This function returns the twap rate PT/Asset on market
      * @param _market   The market to get the rate from
      * @param _duration The TWAP duration (in seconds)
      * @return the TWAP rate PT/Asset on market (uses 18 decimals of precision)
@@ -39,4 +38,17 @@ interface IPendlePtOracle {
         address _market,
         uint32 _duration
     ) external view returns (uint256);
+
+    /**
+     * @param _market   The market to check that oracle state for
+     * @param _duration The TWAP duration (in seconds)
+     * @return The state of the oracle (whether or not it can be validly accessed now for the given market and duration)
+     */
+    function getOracleState(
+        address _market,
+        uint32 _duration
+    )
+        external
+        view
+        returns (bool increaseCardinalityRequired, uint16 cardinalityRequired, bool oldestObservationSatisfied);
 }

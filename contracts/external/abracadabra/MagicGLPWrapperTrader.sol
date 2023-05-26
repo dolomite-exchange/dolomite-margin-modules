@@ -44,7 +44,7 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
  * @author  Dolomite
  *
  * @notice  Used for wrapping any supported token into magicGLP. Upon settlement, the minted magicGLP is sent to
- *          DolomiteMargin, like normally
+ *          DolomiteMargin.
  */
 contract MagicGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteMargin {
     using GLPMathLib for IGmxVault;

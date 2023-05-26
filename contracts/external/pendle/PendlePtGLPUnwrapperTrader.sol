@@ -32,46 +32,47 @@ import { GLPMathLib } from "../glp/GLPMathLib.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 import { IDolomiteMarginUnwrapperTrader } from "../interfaces/IDolomiteMarginUnwrapperTrader.sol";
-import { IERC4626 } from "../interfaces/IERC4626.sol";
-import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
+import { IPendlePtMarket } from "../interfaces/IPendlePtMarket.sol";
+import { IPendlePtToken } from "../interfaces/IPendlePtToken.sol";
 
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 
 /**
- * @title   MagicGLPUnwrapperTrader
+ * @title   PendlePtGLPUnwrapperTrader
  * @author  Dolomite
  *
- * @notice  Used for unwrapping GLP (via minting from the GLPRewardsRouter) from USDC. Upon settlement, the minted GLP
- *          is sent to the user's vault and dfsGLP is minted to `DolomiteMargin`.
+ * @notice  Used for unwrapping ptGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
+ *          USDC).
  */
-contract MagicGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolomiteMargin {
+contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolomiteMargin {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "MagicGLPUnwrapperTrader";
+    bytes32 private constant _FILE = "PendlePtGLPUnwrapperTrader";
     uint256 private constant _ACTIONS_LENGTH = 1;
 
     // ============ Constructor ============
 
-    IERC4626 public immutable MAGIC_GLP; // solhint-disable-line var-name-mixedcase
+    IPendlePtToken public immutable PT_GLP; // solhint-disable-line var-name-mixedcase
+    IPendlePtMarket public immutable PT_GLP_MARKET; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
     uint256 public immutable USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor(
-        address _magicGlp,
-        address _gmxRegistry,
+        address _ptGlp,
+        address _ptGlpMarket,
         uint256 _usdcMarketId,
         address _dolomiteMargin
     )
     OnlyDolomiteMargin(
         _dolomiteMargin
     ) {
-        MAGIC_GLP = IERC4626(_magicGlp);
-        GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
+        PT_GLP = IPendlePtToken(_ptGlp);
+        PT_GLP_MARKET = IPtGlpMarket(_ptGlpMarket);
         USDC_MARKET_ID = _usdcMarketId;
     }
 
