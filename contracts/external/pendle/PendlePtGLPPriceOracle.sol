@@ -40,7 +40,7 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "PendlePtGLPPriceOracle";
-    uint256 public constant TWAP_DURATION = 900; // 15 minutes
+    uint32 public constant TWAP_DURATION = 900; // 15 minutes
     uint256 public constant PT_ASSET_SCALE = 1e18; // 18 decimals
 
     // ============================ Public State Variables ============================
@@ -69,7 +69,7 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
         (
             bool increaseCardinalityRequired,,
             bool oldestObservationSatisfied
-        ) = PT_ORACLE.getOracleState(market, twapDuration);
+        ) = PT_ORACLE.getOracleState(PT_GLP_MARKET, TWAP_DURATION);
 
         Require.that(
             !increaseCardinalityRequired && oldestObservationSatisfied,

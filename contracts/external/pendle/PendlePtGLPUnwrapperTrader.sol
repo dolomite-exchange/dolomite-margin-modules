@@ -22,21 +22,20 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-
 import { Require } from "../../protocol/lib/Require.sol";
-
-import { GLPMathLib } from "../glp/GLPMathLib.sol";
-
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-
 import { IDolomiteMarginUnwrapperTrader } from "../interfaces/IDolomiteMarginUnwrapperTrader.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
-import { IPendlePtMarket } from "../interfaces/IPendlePtMarket.sol";
 import { IPendlePtToken } from "../interfaces/IPendlePtToken.sol";
-
+import { IPendleRouter } from "../interfaces/IPendleRouter.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
+
+
+
+
+
+
 
 
 /**
@@ -48,6 +47,7 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
  */
 contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolomiteMargin {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IPendlePtToken;
 
     // ============ Constants ============
 
@@ -58,6 +58,7 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
 
     IPendlePtToken public immutable PT_GLP; // solhint-disable-line var-name-mixedcase
     IPendleRouter public immutable PENDLE_ROUTER; // solhint-disable-line var-name-mixedcase
+    address public immutable PT_GLP_MARKET; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
     uint256 public immutable USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
@@ -65,6 +66,7 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
 
     constructor(
         address _ptGlp,
+        address _pendleRouter,
         address _ptGlpMarket,
         address _gmxRegistry,
         uint256 _usdcMarketId,
@@ -74,7 +76,8 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
         _dolomiteMargin
     ) {
         PT_GLP = IPendlePtToken(_ptGlp);
-        PT_GLP_MARKET = IPtGlpMarket(_ptGlpMarket);
+        PENDLE_ROUTER = IPendleRouter(_pendleRouter);
+        PT_GLP_MARKET = _ptGlpMarket;
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
         USDC_MARKET_ID = _usdcMarketId;
     }
@@ -113,11 +116,21 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
             "Invalid input amount"
         );
 
-        // redeems magicGLP for GLP; we don't need to approve since the `_owner` parameter is msg.sender
-        uint256 glpAmount = PT_GLP_MARKET.redeem(_inputAmount, address(this), address(this));
+        (
+            uint256 minOutputAmount,
+            IPendleRouter.TokenOutput memory tokenOutput
+        ) = abi.decode(_orderData, (uint256, IPendleRouter.TokenOutput));
+
+        // redeem ptGLP for GLP
+        PT_GLP.safeApprove(address(PENDLE_ROUTER), _inputAmount);
+        (uint256 glpAmount,) = PENDLE_ROUTER.swapExactPtForToken(
+            /* _receiver */ address(this),
+            PT_GLP_MARKET,
+            _inputAmount,
+            tokenOutput
+        );
 
         // redeem GLP for `_outputToken`; we don't need to approve because GLP has a handler that auto-approves for this
-        (uint256 minOutputAmount) = abi.decode(_orderData, (uint256));
         uint256 amountOut = GMX_REGISTRY.glpRewardsRouter().unstakeAndRedeemGlp(
             /* _tokenOut = */ _outputToken,
             glpAmount,
@@ -130,42 +143,8 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
         return amountOut;
     }
 
-    function getExchangeCost(
-        address _inputToken,
-        address _outputToken,
-        uint256 _desiredInputAmount,
-        bytes memory
-    )
-    public
-    override
-    view
-    returns (uint256) {
-        Require.that(
-            _inputToken == address(MAGIC_GLP),
-            _FILE,
-            "Invalid input token",
-            _inputToken
-        );
-        Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
-                && DOLOMITE_MARGIN.getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
-            _FILE,
-            "Invalid output token",
-            _outputToken
-        );
-        Require.that(
-            _desiredInputAmount > 0,
-            _FILE,
-            "Invalid desired input amount"
-        );
-
-        uint256 glpAmount = MAGIC_GLP.previewRedeem(_desiredInputAmount);
-        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, glpAmount);
-        return GLPMathLib.getGlpRedemptionAmount(GMX_REGISTRY.gmxVault(), _outputToken, usdgAmount);
-    }
-
     function token() public override view returns (address) {
-        return address(MAGIC_GLP);
+        return address(PT_GLP);
     }
 
     function outputMarketId() public override view returns (uint256) {
@@ -177,9 +156,9 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
         uint256,
         address,
         address,
-        uint256,
+        uint256 _outputMarketId,
         uint256 _inputMarketId,
-        uint256,
+        uint256 _minOutputAmount,
         uint256 _inputAmount
     )
     public
@@ -187,26 +166,31 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
-
-        uint256 _outputMarketId = outputMarketId();
-        uint256 amountOut = getExchangeCost(
-            DOLOMITE_MARGIN.getMarketTokenAddress(_inputMarketId),
-            DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarketId),
-            _inputAmount,
-            /* _orderData = */ bytes("")
-        );
-
         actions[0] = AccountActionLib.encodeExternalSellAction(
             _solidAccountId,
             _inputMarketId,
             _outputMarketId,
             /* _trader = */ address(this),
             /* _amountInWei = */ _inputAmount,
-            /* _amountOutMinWei = */ amountOut,
+            /* _amountOutMinWei = */ _minOutputAmount,
             bytes("")
         );
 
         return actions;
+    }
+
+    function getExchangeCost(
+        address,
+        address,
+        uint256,
+        bytes memory
+    )
+        public
+        override
+        pure
+        returns (uint256)
+    {
+        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), "getExchangeCost is not implemented")));
     }
 
     function actionsLength() public override pure returns (uint256) {
