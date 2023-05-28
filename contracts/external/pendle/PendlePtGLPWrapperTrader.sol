@@ -22,20 +22,20 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+
 import { Require } from "../../protocol/lib/Require.sol";
+
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+
 import { IDolomiteMarginWrapperTrader } from "../interfaces/IDolomiteMarginWrapperTrader.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
+import { IPendleGlp2024Registry } from "../interfaces/IPendleGlp2024Registry.sol";
 import { IPendlePtToken } from "../interfaces/IPendlePtToken.sol";
 import { IPendleRouter } from "../interfaces/IPendleRouter.sol";
+
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-
-
-
-
-
-
 
 
 /**
@@ -55,26 +55,20 @@ contract PendlePtGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteM
 
     // ============ Constructor ============
 
-    IPendlePtToken public immutable PT_GLP; // solhint-disable-line var-name-mixedcase
-    IPendleRouter public immutable PENDLE_ROUTER; // solhint-disable-line var-name-mixedcase
-    address public immutable PT_GLP_MARKET; // solhint-disable-line var-name-mixedcase
+    IPendleGlp2024Registry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor(
-        address _ptGlp,
-        address _pendleRouter,
-        address _ptGlpMarket,
+        address _pendleRegistry,
         address _gmxRegistry,
         address _dolomiteMargin
     )
     OnlyDolomiteMargin(
         _dolomiteMargin
     ) {
-        PT_GLP = IPendlePtToken(_ptGlp);
-        PENDLE_ROUTER = IPendleRouter(_pendleRouter);
-        PT_GLP_MARKET = _ptGlpMarket;
+        PENDLE_REGISTRY = IPendleGlp2024Registry(_pendleRegistry);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
 
@@ -93,6 +87,7 @@ contract PendlePtGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteM
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
+        IPendlePtToken ptGlpToken = PENDLE_REGISTRY.ptGlpToken();
         Require.that(
             GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
@@ -100,10 +95,15 @@ contract PendlePtGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteM
             _inputToken
         );
         Require.that(
-            _outputToken == address(PT_GLP),
+            _outputToken == address(ptGlpToken),
             _FILE,
             "Invalid output token",
             _outputToken
+        );
+        Require.that(
+            !ptGlpToken.isExpired(),
+            _FILE,
+            "ptGLP is expired"
         );
         Require.that(
             _inputAmount > 0,
@@ -117,7 +117,6 @@ contract PendlePtGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteM
             IPendleRouter.TokenInput memory tokenInput
         ) = abi.decode(_orderData, (uint256, IPendleRouter.ApproxParams, IPendleRouter.TokenInput));
 
-
         // approve input token and mint GLP
         IERC20(_inputToken).safeApprove(address(GMX_REGISTRY.glpManager()), _inputAmount);
         uint256 glpAmount = GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(
@@ -127,15 +126,20 @@ contract PendlePtGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteM
             /* _minGlp = */ 0
         );
 
-        // approve GLP and swap for ptGLP
-        IERC20(GMX_REGISTRY.sGlp()).safeApprove(address(PENDLE_ROUTER), glpAmount);
-        (uint256 ptGlpAmount,) = PENDLE_ROUTER.swapExactTokenForPt(
+        uint256 ptGlpAmount;
+        {
+            // Create a new scope to avoid stack too deep errors
+            // approve GLP and swap for ptGLP
+            IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
+            IERC20(GMX_REGISTRY.sGlp()).safeApprove(address(pendleRouter), glpAmount);
+            (ptGlpAmount,) = pendleRouter.swapExactTokenForPt(
             /* _receiver = */ address(this),
-            PT_GLP_MARKET,
-            minOutputAmount,
-            guessPtOut,
-            tokenInput
-        );
+                address(PENDLE_REGISTRY.ptGlpMarket()),
+                minOutputAmount,
+                guessPtOut,
+                tokenInput
+            );
+        }
 
         // approve ptGLP for receiver and return the amount
         IERC20(_outputToken).safeApprove(_receiver, ptGlpAmount);

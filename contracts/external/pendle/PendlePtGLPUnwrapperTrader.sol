@@ -22,20 +22,20 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+
 import { Require } from "../../protocol/lib/Require.sol";
+
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+
 import { IDolomiteMarginUnwrapperTrader } from "../interfaces/IDolomiteMarginUnwrapperTrader.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
+import { IPendleGlp2024Registry } from "../interfaces/IPendleGlp2024Registry.sol";
 import { IPendlePtToken } from "../interfaces/IPendlePtToken.sol";
 import { IPendleRouter } from "../interfaces/IPendleRouter.sol";
+
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-
-
-
-
-
-
 
 
 /**
@@ -56,18 +56,14 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
 
     // ============ Constructor ============
 
-    IPendlePtToken public immutable PT_GLP; // solhint-disable-line var-name-mixedcase
-    IPendleRouter public immutable PENDLE_ROUTER; // solhint-disable-line var-name-mixedcase
-    address public immutable PT_GLP_MARKET; // solhint-disable-line var-name-mixedcase
+    IPendleGlp2024Registry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
     uint256 public immutable USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor(
-        address _ptGlp,
-        address _pendleRouter,
-        address _ptGlpMarket,
+        address _pendleRegistry,
         address _gmxRegistry,
         uint256 _usdcMarketId,
         address _dolomiteMargin
@@ -75,9 +71,7 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
     OnlyDolomiteMargin(
         _dolomiteMargin
     ) {
-        PT_GLP = IPendlePtToken(_ptGlp);
-        PENDLE_ROUTER = IPendleRouter(_pendleRouter);
-        PT_GLP_MARKET = _ptGlpMarket;
+        PENDLE_REGISTRY = IPendleGlp2024Registry(_pendleRegistry);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
         USDC_MARKET_ID = _usdcMarketId;
     }
@@ -97,8 +91,9 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
+        IPendlePtToken ptGlp = PENDLE_REGISTRY.ptGlpToken();
         Require.that(
-            _inputToken == address(PT_GLP),
+            _inputToken == address(ptGlp),
             _FILE,
             "Invalid input token",
             _inputToken
@@ -116,16 +111,18 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
             "Invalid input amount"
         );
 
+        // TODO: if the pt token is expired, do a direct redemption instead of going through the AMM
         (
             uint256 minOutputAmount,
             IPendleRouter.TokenOutput memory tokenOutput
         ) = abi.decode(_orderData, (uint256, IPendleRouter.TokenOutput));
 
         // redeem ptGLP for GLP
-        PT_GLP.safeApprove(address(PENDLE_ROUTER), _inputAmount);
-        (uint256 glpAmount,) = PENDLE_ROUTER.swapExactPtForToken(
+        IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
+        ptGlp.safeApprove(address(pendleRouter), _inputAmount);
+        (uint256 glpAmount,) = pendleRouter.swapExactPtForToken(
             /* _receiver */ address(this),
-            PT_GLP_MARKET,
+            address(PENDLE_REGISTRY.ptGlpMarket()),
             _inputAmount,
             tokenOutput
         );
@@ -144,7 +141,7 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
     }
 
     function token() public override view returns (address) {
-        return address(PT_GLP);
+        return address(PENDLE_REGISTRY.ptGlpToken());
     }
 
     function outputMarketId() public override view returns (uint256) {

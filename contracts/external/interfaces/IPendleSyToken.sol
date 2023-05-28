@@ -24,14 +24,22 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
- * @title   IPendlePtToken
+ * @title   IPendleSyToken
  * @author  Dolomite
  *
- * @notice  Interface for interacting with Pendle's principal tokens (PTs).
+ * @notice  Interface for interacting with Pendle's standard yield tokens (SYs).
  */
-interface IPendlePtToken is IERC20 {
+interface IPendleSyToken is IERC20 {
 
-    function expiry() external view returns (uint256);
+    function pause() external;
 
-    function isExpired() external view returns (bool);
+    function transferOwnership(
+        address newOwner,
+        bool direct,
+        bool renounce
+    ) external;
+
+    function paused() external view returns (bool);
+
+    function owner() external view returns (address);
 }

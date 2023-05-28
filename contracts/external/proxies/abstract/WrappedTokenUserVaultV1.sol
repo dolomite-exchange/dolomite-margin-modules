@@ -347,25 +347,15 @@ abstract contract WrappedTokenUserVaultV1 is IWrappedTokenUserVaultV1 {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
+    virtual
     onlyVaultOwner(msg.sender) {
-        Require.that(
-            _marketId != marketId(),
-            _FILE,
-            "Invalid marketId",
-            _marketId
-        );
-
-        BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-            /* _fromAccountOwner = */ address(this),
+        _transferFromPositionWithOtherToken(
             _borrowAccountNumber,
-            /* _toAccountOwner = */ msg.sender,
             _toAccountNumber,
             _marketId,
             _amountWei,
             _balanceCheckFlag
         );
-
-        _checkAllowableDebtMarket(address(this), _borrowAccountNumber, _marketId);
     }
 
     function repayAllForBorrowPosition(
@@ -440,6 +430,33 @@ abstract contract WrappedTokenUserVaultV1 is IWrappedTokenUserVaultV1 {
     }
 
     // ============ Internal Functions ============
+
+    function _transferFromPositionWithOtherToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _marketId,
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    ) internal {
+        Require.that(
+            _marketId != marketId(),
+            _FILE,
+            "Invalid marketId",
+            _marketId
+        );
+
+        BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
+        /* _fromAccountOwner = */ address(this),
+            _borrowAccountNumber,
+            /* _toAccountOwner = */ msg.sender,
+            _toAccountNumber,
+            _marketId,
+            _amountWei,
+            _balanceCheckFlag
+        );
+
+        _checkAllowableDebtMarket(address(this), _borrowAccountNumber, _marketId);
+    }
 
     function _checkAllowableCollateralMarket(
         address _accountOwner,
