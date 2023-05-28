@@ -86,5 +86,4 @@ abstract contract WrappedTokenUserVaultV1WithPausable is WrappedTokenUserVaultV1
     // ===================================================
 
     function _isEcosystemPaused() internal virtual view returns (bool);
-
 }

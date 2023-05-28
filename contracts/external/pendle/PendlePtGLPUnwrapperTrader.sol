@@ -111,7 +111,6 @@ contract PendlePtGLPUnwrapperTrader is IDolomiteMarginUnwrapperTrader, OnlyDolom
             "Invalid input amount"
         );
 
-        // TODO: if the pt token is expired, do a direct redemption instead of going through the AMM
         (
             uint256 minOutputAmount,
             IPendleRouter.TokenOutput memory tokenOutput

@@ -24,10 +24,11 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { DolomiteMarginMath } from "../../protocol/lib/DolomiteMarginMath.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IPlutusVaultGLP } from "../interfaces/IPlutusVaultGLP.sol";
 import { IPlutusVaultGLPFarm } from "../interfaces/IPlutusVaultGLPFarm.sol";
 import { IPlutusVaultGLPWrappedTokenUserVaultFactory } from "../interfaces/IPlutusVaultGLPWrappedTokenUserVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPlutusVaultGLPWrappedTokenUserVaultV1 } from "../interfaces/IPlutusVaultGLPWrappedTokenUserVaultV1.sol";
-import { WrappedTokenUserVaultV1 } from "../proxies/abstract/WrappedTokenUserVaultV1.sol";
+import { WrappedTokenUserVaultV1WithPausable } from "../proxies/abstract/WrappedTokenUserVaultV1WithPausable.sol";
 
 
 /**
@@ -41,7 +42,7 @@ import { WrappedTokenUserVaultV1 } from "../proxies/abstract/WrappedTokenUserVau
  */
 contract PlutusVaultGLPWrappedTokenUserVaultV1 is
     IPlutusVaultGLPWrappedTokenUserVaultV1,
-    WrappedTokenUserVaultV1,
+    WrappedTokenUserVaultV1WithPausable,
     ProxyContractHelpers
 {
     using DolomiteMarginMath for uint256;
@@ -122,5 +123,10 @@ contract PlutusVaultGLPWrappedTokenUserVaultV1 is
     function _withdrawAllPls(address _recipient) internal {
         IERC20 _pls = pls();
         _pls.safeTransfer(_recipient, _pls.balanceOf(address(this)));
+    }
+
+    function _isEcosystemPaused() internal view returns (bool) {
+        (,,bool canRedeem,) = IPlutusVaultGLP(UNDERLYING_TOKEN()).vaultParams();
+        return !canRedeem;
     }
 }
