@@ -116,6 +116,11 @@ contract PlutusVaultGLPWrappedTokenUserVaultV1 is
         return IPlutusVaultGLPWrappedTokenUserVaultFactory(VAULT_FACTORY()).plutusVaultRegistry().plutusToken();
     }
 
+    function isExternalRedemptionPaused() public override view returns (bool) {
+        (,,bool canRedeem,) = IPlutusVaultGLP(UNDERLYING_TOKEN()).vaultParams();
+        return !canRedeem;
+    }
+
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
@@ -123,10 +128,5 @@ contract PlutusVaultGLPWrappedTokenUserVaultV1 is
     function _withdrawAllPls(address _recipient) internal {
         IERC20 _pls = pls();
         _pls.safeTransfer(_recipient, _pls.balanceOf(address(this)));
-    }
-
-    function _isEcosystemPaused() internal view returns (bool) {
-        (,,bool canRedeem,) = IPlutusVaultGLP(UNDERLYING_TOKEN()).vaultParams();
-        return !canRedeem;
     }
 }

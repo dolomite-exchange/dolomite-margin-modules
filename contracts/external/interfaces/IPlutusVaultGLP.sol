@@ -34,10 +34,10 @@ interface IPlutusVaultGLP is IERC4626 {
     /**
      * @notice  Sets the risk parameters for the vault. Can only be called by owner.
      *
-     * @return canMint      True if the mint function can be called
-     * @return canWithdraw  True if the withdraw function can be called
-     * @return canRedeem    True if the redeem function can be called
-     * @return canDeposit   True if the deposit function can be called
+     * @param  canMint      True if the mint function can be called
+     * @param  canWithdraw  True if the withdraw function can be called
+     * @param  canRedeem    True if the redeem function can be called
+     * @param  canDeposit   True if the deposit function can be called
      */
     function setParams(bool canMint, bool canWithdraw, bool canRedeem, bool canDeposit) external;
 

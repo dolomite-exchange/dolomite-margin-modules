@@ -70,8 +70,8 @@ abstract contract WrappedTokenUserVaultV1WithPausable is WrappedTokenUserVaultV1
 
         IDolomiteMargin.TotalPar memory valueAfter = DOLOMITE_MARGIN().getMarketTotalPar(_marketId);
 
-        if (_isEcosystemPaused()) {
-            // If the ecosystem is paused, the borrowed value should not increase
+        if (isExternalRedemptionPaused()) {
+            // If redemptions are paused (preventing liquidations), the borrowed value should not increase
             Require.that(
                 valueAfter.borrow <= valueBefore.borrow,
                 _FILE,
@@ -81,9 +81,5 @@ abstract contract WrappedTokenUserVaultV1WithPausable is WrappedTokenUserVaultV1
         }
     }
 
-    // ===================================================
-    // ================ Abstract Functions ===============
-    // ===================================================
-
-    function _isEcosystemPaused() internal virtual view returns (bool);
+    function isExternalRedemptionPaused() public virtual view returns (bool);
 }

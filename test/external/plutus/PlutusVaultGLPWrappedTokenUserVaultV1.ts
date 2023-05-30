@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   IERC20,
-  IERC4626,
+  IERC4626, IPlutusVaultGLP__factory,
   IPlutusVaultGLPFarm,
   PlutusVaultGLPPriceOracle,
   PlutusVaultGLPUnwrapperTrader,
@@ -256,6 +256,21 @@ describe('PlutusVaultGLPWrappedTokenUserVaultV1', () => {
     it('should work when funds are in vault and staked', async () => {
       await vault.stakePlvGlp(stakedAmountWei);
       expect(await vault.underlyingBalanceOf()).to.equal(amountWei); // amount should be unchanged
+    });
+  });
+
+  describe('#isExternalRedemptionPaused', () => {
+    it('should work normally', async () => {
+      expect(await vault.isExternalRedemptionPaused()).to.be.false;
+    });
+
+    it('should work vault params are set to false', async () => {
+      expect(await vault.isExternalRedemptionPaused()).to.be.false;
+      const plvGlp = IPlutusVaultGLP__factory.connect(await plutusVaultRegistry.plvGlpToken(), core.hhUser1);
+      const owner = await impersonate(await plvGlp.owner(), true);
+      const canDoAnything = false;
+      await plvGlp.connect(owner).setParams(canDoAnything, canDoAnything, canDoAnything, canDoAnything);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
   });
 });

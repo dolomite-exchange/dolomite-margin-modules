@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendleGlp2024Registry } from "../interfaces/IPendleGlp2024Registry.sol";
+import { IPendleGlp2024WrappedTokenUserVaultFactory } from "../interfaces/IPendleGlp2024WrappedTokenUserVaultFactory.sol"; // solhint-disable-line max-line-length
 import { WrappedTokenUserVaultV1WithPausable } from "../proxies/abstract/WrappedTokenUserVaultV1WithPausable.sol";
 
 
@@ -41,11 +41,13 @@ contract PendleGlp2024WrappedTokenUserVaultV1 is WrappedTokenUserVaultV1WithPaus
     bytes32 private constant _FILE = "PendleGlp2024UserVaultV1";
 
     // ==================================================================
-    // ======================= Internal Functions =======================
+    // ======================== Public Functions ========================
     // ==================================================================
 
-    function _isEcosystemPaused() internal view returns (bool) {
-        IPendleGlp2024Registry registry = IPendleGlp2024WrappedTokenUserVaultFactory(VAULT_FACTORY()).registry();
-        return registry.syGlpToken().paused();
+    function isExternalRedemptionPaused() public override view returns (bool) {
+        return IPendleGlp2024WrappedTokenUserVaultFactory(VAULT_FACTORY())
+            .pendleGlp2024Registry()
+            .syGlpToken()
+            .paused();
     }
 }
