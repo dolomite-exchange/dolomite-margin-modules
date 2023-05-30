@@ -29,7 +29,7 @@ import {
   expectWalletBalance,
 } from '../../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
-import { createTestWrappedTokenFactory } from '../../../utils/wrapped-token-utils';
+import { createTestWrappedTokenFactory } from '../../../utils/wrapped-token-utils/testers';
 
 const toAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units

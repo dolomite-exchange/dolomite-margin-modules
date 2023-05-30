@@ -22,14 +22,13 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import { IWrappedTokenUserVaultFactory } from "../external/interfaces/IWrappedTokenUserVaultFactory.sol";
-
 import { WrappedTokenUserVaultV1WithPausable } from "../external/proxies/abstract/WrappedTokenUserVaultV1WithPausable.sol"; // solhint-disable-line max-line-length
 
 
+
+
 /**
- * @title   TestTestWrappedTokenUserVaultV1WithPausable
+ * @title   TestWrappedTokenUserVaultV1WithPausable
  * @author  Dolomite
  *
  * @notice  A test contract for the TestWrappedTokenUserVaultV1WithPausable contract.

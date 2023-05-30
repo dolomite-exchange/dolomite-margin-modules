@@ -7,6 +7,7 @@ import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { createMagicGLPPriceOracle } from '../../utils/wrapped-token-utils/abracadabra';
 
 const GLP_PRICE = BigNumber.from('1000974796933941049'); // $1.000974796933941049
 
@@ -28,11 +29,7 @@ describe('MagicGLPPriceOracle', () => {
     magicGlp = core.abraEcosystem!.magicGlp;
     magicGlpWithNoTotalSupply = await createTestToken();
 
-    magicGlpPriceOracle = await createContractWithAbi<MagicGLPPriceOracle>(
-      MagicGLPPriceOracle__factory.abi,
-      MagicGLPPriceOracle__factory.bytecode,
-      [core.dolomiteMargin.address, magicGlp.address, core.marketIds.dfsGlp!],
-    );
+    magicGlpPriceOracle = await createMagicGLPPriceOracle(core);
     magicGlpPriceOracleWithNoTotalSupply = await createContractWithAbi<MagicGLPPriceOracle>(
       MagicGLPPriceOracle__factory.abi,
       MagicGLPPriceOracle__factory.bytecode,

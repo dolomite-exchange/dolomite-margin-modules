@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   GLPWrappedTokenUserVaultFactory,
-  GLPWrappedTokenUserVaultFactory__factory,
   GLPWrappedTokenUserVaultV1,
   GLPWrappedTokenUserVaultV1__factory,
   TestGLPWrappedTokenUserVaultV1,
@@ -22,7 +21,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createGmxRegistry } from '../../utils/wrapped-token-utils';
+import { createGLPWrappedTokenUserVaultFactory, createGmxRegistry } from '../../utils/wrapped-token-utils/gmx';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -52,19 +51,7 @@ describe('GLPWrappedTokenUserVaultV1', () => {
       [],
     );
     const gmxRegistry = await createGmxRegistry(core);
-    factory = await createContractWithAbi<GLPWrappedTokenUserVaultFactory>(
-      GLPWrappedTokenUserVaultFactory__factory.abi,
-      GLPWrappedTokenUserVaultFactory__factory.bytecode,
-      [
-        core.weth.address,
-        core.marketIds.weth,
-        gmxRegistry.address,
-        core.gmxEcosystem!.fsGlp.address,
-        core.borrowPositionProxyV2.address,
-        vaultImplementation.address,
-        core.dolomiteMargin.address,
-      ],
-    );
+    factory = await createGLPWrappedTokenUserVaultFactory(core, gmxRegistry, vaultImplementation);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await core.testPriceOracle.setPrice(factory.address, '1000000000000000000');

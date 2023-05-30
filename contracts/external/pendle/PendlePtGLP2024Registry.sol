@@ -24,15 +24,16 @@ import { Require } from "../../protocol/lib/Require.sol";
 
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
-import { IPendleGLP2024Registry } from "../interfaces/IPendleGLP2024Registry.sol";
+import { IPendlePtGLP2024Registry } from "../interfaces/IPendlePtGLP2024Registry.sol";
 import { IPendlePtMarket } from "../interfaces/IPendlePtMarket.sol";
+import { IPendlePtOracle } from "../interfaces/IPendlePtOracle.sol";
 import { IPendlePtToken } from "../interfaces/IPendlePtToken.sol";
 import { IPendleRouter } from "../interfaces/IPendleRouter.sol";
 import { IPendleSyToken } from "../interfaces/IPendleSyToken.sol";
 
 
 /**
- * @title   PendleGLP2024Registry
+ * @title   PendlePtGLP2024Registry
  * @author  Dolomite
  *
  * @notice  Implementation for a registry that contains all of the PlutusDAO-related addresses. This registry is needed
@@ -40,64 +41,53 @@ import { IPendleSyToken } from "../interfaces/IPendleSyToken.sol";
  *          without having to deprecate the system and force users to migrate when Dolomite needs to point to new
  *          contracts or functions that PlutusDAO introduces.
  */
-contract PendleGLP2024Registry is IPendleGLP2024Registry, OnlyDolomiteMargin {
+contract PendlePtGLP2024Registry is IPendlePtGLP2024Registry, OnlyDolomiteMargin {
 
     // ==================== Constants ====================
 
-    bytes32 private constant _FILE = "PendleGLP2024Registry";
+    bytes32 private constant _FILE = "PendlePtGLP2024Registry";
 
     // ==================== Storage ====================
 
-    IPendlePtToken public override ptGlpToken;
-    IPendleSyToken public override syGlpToken;
-    IPendlePtMarket public override ptGlpMarket;
     IPendleRouter public override pendleRouter;
+    IPendlePtMarket public override ptGlpMarket;
+    IPendlePtToken public override ptGlpToken;
+    IPendlePtOracle public override ptOracle;
+    IPendleSyToken public override syGlpToken;
 
     // ==================== Constructor ====================
 
     constructor(
-        address _ptGlpToken,
-        address _syGlpToken,
-        address _ptGlpMarket,
         address _pendleRouter,
+        address _ptGlpMarket,
+        address _ptGlpToken,
+        address _ptOracle,
+        address _syGlpToken,
         address _dolomiteMargin
     )
     OnlyDolomiteMargin(
         _dolomiteMargin
     )
     {
-        ptGlpToken = IPendlePtToken(_ptGlpToken);
-        syGlpToken = IPendleSyToken(_syGlpToken);
-        ptGlpMarket = IPendlePtMarket(_ptGlpMarket);
         pendleRouter = IPendleRouter(_pendleRouter);
-    }
-
-    function ownerSetPtGlpToken(
-        address _ptGlpToken
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _ptGlpToken != address(0),
-            _FILE,
-            "Invalid ptGlpToken address"
-        );
+        ptGlpMarket = IPendlePtMarket(_ptGlpMarket);
         ptGlpToken = IPendlePtToken(_ptGlpToken);
-        emit PtGlpTokenSet(_ptGlpToken);
+        ptOracle = IPendlePtOracle(_ptOracle);
+        syGlpToken = IPendleSyToken(_syGlpToken);
     }
 
-    function ownerSetSyGlpToken(
-        address _syGlpToken
+    function ownerSetPendleRouter(
+        address _pendleRouter
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
-            _syGlpToken != address(0),
+            _pendleRouter != address(0),
             _FILE,
-            "Invalid syGlpToken address"
+            "Invalid pendleRouter address"
         );
-        syGlpToken = IPendleSyToken(_syGlpToken);
-        emit SyGlpTokenSet(_syGlpToken);
+        pendleRouter = IPendleRouter(_pendleRouter);
+        emit PendleRouterSet(_pendleRouter);
     }
 
     function ownerSetPtGlpMarket(
@@ -114,17 +104,45 @@ contract PendleGLP2024Registry is IPendleGLP2024Registry, OnlyDolomiteMargin {
         emit PtGlpMarketSet(_ptGlpMarket);
     }
 
-    function ownerSetPendleRouter(
-        address _pendleRouter
+    function ownerSetPtGlpToken(
+        address _ptGlpToken
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
-            _pendleRouter != address(0),
+            _ptGlpToken != address(0),
             _FILE,
-            "Invalid pendleRouter address"
+            "Invalid ptGlpToken address"
         );
-        pendleRouter = IPendleRouter(_pendleRouter);
-        emit PendleRouterSet(_pendleRouter);
+        ptGlpToken = IPendlePtToken(_ptGlpToken);
+        emit PtGlpTokenSet(_ptGlpToken);
+    }
+
+    function ownerSetPtOracle(
+        address _ptOracle
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _ptOracle != address(0),
+            _FILE,
+            "Invalid ptOracle address"
+        );
+        ptOracle = IPendlePtOracle(_ptOracle);
+        emit PtOracleSet(_ptOracle);
+    }
+
+    function ownerSetSyGlpToken(
+        address _syGlpToken
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _syGlpToken != address(0),
+            _FILE,
+            "Invalid syGlpToken address"
+        );
+        syGlpToken = IPendleSyToken(_syGlpToken);
+        emit SyGlpTokenSet(_syGlpToken);
     }
 }

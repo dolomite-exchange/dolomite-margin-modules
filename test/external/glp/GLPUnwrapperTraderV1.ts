@@ -3,10 +3,8 @@ import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import {
   GLPPriceOracleV1,
-  GLPPriceOracleV1__factory,
   GLPUnwrapperTraderV1,
   GLPWrappedTokenUserVaultFactory,
-  GLPWrappedTokenUserVaultFactory__factory,
   GLPWrappedTokenUserVaultV1,
   GLPWrappedTokenUserVaultV1__factory,
   GLPWrapperTraderV1,
@@ -14,7 +12,6 @@ import {
   IERC20,
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
@@ -25,7 +22,14 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createGlpUnwrapperTrader, createGlpWrapperTrader, createGmxRegistry } from '../../utils/wrapped-token-utils';
+import {
+  createGLPPriceOracleV1,
+  createGLPUnwrapperTrader,
+  createGLPWrappedTokenUserVaultFactory,
+  createGLPWrappedTokenUserVaultV1,
+  createGLPWrapperTrader,
+  createGmxRegistry,
+} from '../../utils/wrapped-token-utils/gmx';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -55,37 +59,17 @@ describe('GLPUnwrapperTraderV1', () => {
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.gmxEcosystem!.fsGlp;
-    const userVaultImplementation = await createContractWithAbi(
-      GLPWrappedTokenUserVaultV1__factory.abi,
-      GLPWrappedTokenUserVaultV1__factory.bytecode,
-      [],
-    );
+    const userVaultImplementation = await createGLPWrappedTokenUserVaultV1();
     gmxRegistry = await createGmxRegistry(core);
-    factory = await createContractWithAbi<GLPWrappedTokenUserVaultFactory>(
-      GLPWrappedTokenUserVaultFactory__factory.abi,
-      GLPWrappedTokenUserVaultFactory__factory.bytecode,
-      [
-        core.weth.address,
-        core.marketIds.weth,
-        gmxRegistry.address,
-        underlyingToken.address,
-        core.borrowPositionProxyV2.address,
-        userVaultImplementation.address,
-        core.dolomiteMargin.address,
-      ],
-    );
-    priceOracle = await createContractWithAbi<GLPPriceOracleV1>(
-      GLPPriceOracleV1__factory.abi,
-      GLPPriceOracleV1__factory.bytecode,
-      [gmxRegistry.address, factory.address],
-    );
+    factory = await createGLPWrappedTokenUserVaultFactory(core, gmxRegistry, userVaultImplementation);
+    priceOracle = await createGLPPriceOracleV1(factory, gmxRegistry);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
 
-    unwrapper = await createGlpUnwrapperTrader(core, factory, gmxRegistry);
-    wrapper = await createGlpWrapperTrader(core, factory, gmxRegistry);
+    unwrapper = await createGLPUnwrapperTrader(core, factory, gmxRegistry);
+    wrapper = await createGLPWrapperTrader(core, factory, gmxRegistry);
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 

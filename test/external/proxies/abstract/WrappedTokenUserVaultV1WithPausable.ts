@@ -19,7 +19,7 @@ import { Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectProtocolBalance, expectThrow } from '../../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
-import { createTestWrappedTokenFactory } from '../../../utils/wrapped-token-utils';
+import { createTestWrappedTokenFactory } from '../../../utils/wrapped-token-utils/testers';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';

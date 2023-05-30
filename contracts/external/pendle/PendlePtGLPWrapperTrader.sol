@@ -31,7 +31,7 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 import { IDolomiteMarginWrapperTrader } from "../interfaces/IDolomiteMarginWrapperTrader.sol";
 import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
-import { IPendleGLP2024Registry } from "../interfaces/IPendleGLP2024Registry.sol";
+import { IPendlePtGLP2024Registry } from "../interfaces/IPendlePtGLP2024Registry.sol";
 import { IPendlePtToken } from "../interfaces/IPendlePtToken.sol";
 import { IPendleRouter } from "../interfaces/IPendleRouter.sol";
 
@@ -55,7 +55,7 @@ contract PendlePtGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteM
 
     // ============ Constructor ============
 
-    IPendleGLP2024Registry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
+    IPendlePtGLP2024Registry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
@@ -68,7 +68,7 @@ contract PendlePtGLPWrapperTrader is IDolomiteMarginWrapperTrader, OnlyDolomiteM
     OnlyDolomiteMargin(
         _dolomiteMargin
     ) {
-        PENDLE_REGISTRY = IPendleGLP2024Registry(_pendleRegistry);
+        PENDLE_REGISTRY = IPendlePtGLP2024Registry(_pendleRegistry);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
 

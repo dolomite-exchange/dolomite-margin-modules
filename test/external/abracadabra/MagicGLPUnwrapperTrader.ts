@@ -14,6 +14,7 @@ import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-consta
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUSDCBalance } from '../../utils/setup';
+import { createMagicGLPPriceOracle, createMagicGLPUnwrapperTrader } from '../../utils/wrapped-token-utils/abracadabra';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -37,25 +38,12 @@ describe('MagicGLPUnwrapperTrader', () => {
       network: Network.ArbitrumOne,
     });
     magicGlp = core.abraEcosystem!.magicGlp;
-    priceOracle = await createContractWithAbi<MagicGLPPriceOracle>(
-      MagicGLPPriceOracle__factory.abi,
-      MagicGLPPriceOracle__factory.bytecode,
-      [core.dolomiteMargin.address, magicGlp.address, core.marketIds.dfsGlp!],
-    );
+    priceOracle = await createMagicGLPPriceOracle(core);
 
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, magicGlp, true, priceOracle);
 
-    unwrapper = await createContractWithAbi<MagicGLPUnwrapperTrader>(
-      MagicGLPUnwrapperTrader__factory.abi,
-      MagicGLPUnwrapperTrader__factory.bytecode,
-      [
-        magicGlp.address,
-        core.gmxRegistry!.address,
-        core.marketIds.usdc,
-        core.dolomiteMargin.address,
-      ],
-    );
+    unwrapper = await createMagicGLPUnwrapperTrader(core);
 
     defaultAccount = { owner: core.hhUser1.address, number: defaultAccountNumber };
 

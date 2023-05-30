@@ -5,7 +5,7 @@ import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
-import { createGmxRegistry } from '../../utils/wrapped-token-utils';
+import { createGmxRegistry } from '../../utils/wrapped-token-utils/gmx';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -186,7 +186,7 @@ describe('GmxRegistryV1', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmx(ZERO_ADDRESS),
-        'GmxRegistryV1: Invalid gmx address',
+        'GmxRegistryV1: Invalid wrapped-token-utils address',
       );
     });
   });

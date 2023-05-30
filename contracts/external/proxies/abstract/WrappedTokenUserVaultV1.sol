@@ -167,28 +167,7 @@ abstract contract WrappedTokenUserVaultV1 is IWrappedTokenUserVaultV1 {
     )
     external
     onlyVaultOwner(msg.sender) {
-        Require.that(
-            _fromAccountNumber == 0,
-            _FILE,
-            "Invalid fromAccountNumber",
-            _fromAccountNumber
-        );
-        Require.that(
-            _toAccountNumber != 0,
-            _FILE,
-            "Invalid toAccountNumber",
-            _toAccountNumber
-        );
-
-        BORROW_POSITION_PROXY().openBorrowPositionWithDifferentAccounts(
-            /* _fromAccountOwner = */ address(this),
-            _fromAccountNumber,
-            /* _toAccountOwner = */ address(this),
-            _toAccountNumber,
-            marketId(),
-            _amountWei,
-            AccountBalanceLib.BalanceCheckFlag.Both
-        );
+        _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
 
     function closeBorrowPositionWithUnderlyingVaultToken(
@@ -229,23 +208,7 @@ abstract contract WrappedTokenUserVaultV1 is IWrappedTokenUserVaultV1 {
     )
     external
     onlyVaultOwner(msg.sender) {
-        uint256 underlyingMarketId = marketId();
-        for (uint256 i = 0; i < _collateralMarketIds.length; i++) {
-            Require.that(
-                _collateralMarketIds[i] != underlyingMarketId,
-                _FILE,
-                "Cannot withdraw market to wallet",
-                underlyingMarketId
-            );
-        }
-
-        BORROW_POSITION_PROXY().closeBorrowPositionWithDifferentAccounts(
-            /* _borrowAccountOwner = */ address(this),
-            _borrowAccountNumber,
-            /* _toAccountOwner = */ msg.sender,
-            _toAccountNumber,
-            _collateralMarketIds
-        );
+        _closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
     }
 
     function transferIntoPositionWithUnderlyingToken(
@@ -255,28 +218,7 @@ abstract contract WrappedTokenUserVaultV1 is IWrappedTokenUserVaultV1 {
     )
     external
     onlyVaultOwner(msg.sender) {
-        Require.that(
-            _fromAccountNumber == 0,
-            _FILE,
-            "Invalid fromAccountNumber",
-            _fromAccountNumber
-        );
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-
-        BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-            /* _fromAccountOwner = */ address(this),
-            _fromAccountNumber,
-            /* _toAccountOwner = */ address(this),
-            _borrowAccountNumber,
-            marketId(),
-            _amountWei,
-            AccountBalanceLib.BalanceCheckFlag.Both
-        );
+        _transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
     }
 
     function transferIntoPositionWithOtherToken(
@@ -430,6 +372,90 @@ abstract contract WrappedTokenUserVaultV1 is IWrappedTokenUserVaultV1 {
     }
 
     // ============ Internal Functions ============
+
+    function _openBorrowPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+    internal {
+        Require.that(
+            _fromAccountNumber == 0,
+            _FILE,
+            "Invalid fromAccountNumber",
+            _fromAccountNumber
+        );
+        Require.that(
+            _toAccountNumber != 0,
+            _FILE,
+            "Invalid toAccountNumber",
+            _toAccountNumber
+        );
+
+        BORROW_POSITION_PROXY().openBorrowPositionWithDifferentAccounts(
+        /* _fromAccountOwner = */ address(this),
+            _fromAccountNumber,
+            /* _toAccountOwner = */ address(this),
+            _toAccountNumber,
+            marketId(),
+            _amountWei,
+            AccountBalanceLib.BalanceCheckFlag.Both
+        );
+    }
+
+    function _closeBorrowPositionWithOtherTokens(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256[] calldata _collateralMarketIds
+    )
+    internal {
+        uint256 underlyingMarketId = marketId();
+        for (uint256 i = 0; i < _collateralMarketIds.length; i++) {
+            Require.that(
+                _collateralMarketIds[i] != underlyingMarketId,
+                _FILE,
+                "Cannot withdraw market to wallet",
+                underlyingMarketId
+            );
+        }
+
+        BORROW_POSITION_PROXY().closeBorrowPositionWithDifferentAccounts(
+        /* _borrowAccountOwner = */ address(this),
+            _borrowAccountNumber,
+            /* _toAccountOwner = */ msg.sender,
+            _toAccountNumber,
+            _collateralMarketIds
+        );
+    }
+
+    function _transferIntoPositionWithUnderlyingToken(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256 _amountWei
+    ) internal {
+        Require.that(
+            _fromAccountNumber == 0,
+            _FILE,
+            "Invalid fromAccountNumber",
+            _fromAccountNumber
+        );
+        Require.that(
+            _borrowAccountNumber != 0,
+            _FILE,
+            "Invalid borrowAccountNumber",
+            _borrowAccountNumber
+        );
+
+        BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
+            /* _fromAccountOwner = */ address(this),
+            _fromAccountNumber,
+            /* _toAccountOwner = */ address(this),
+            _borrowAccountNumber,
+            marketId(),
+            _amountWei,
+            AccountBalanceLib.BalanceCheckFlag.Both
+        );
+    }
 
     function _transferFromPositionWithOtherToken(
         uint256 _borrowAccountNumber,

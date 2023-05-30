@@ -111,6 +111,31 @@ export const GMX_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const PENDLE_PT_GLP_2024_MARKET_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x7D49E5Adc0EAAD9C027857767638613253eF125f',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const PENDLE_PT_GLP_2024_TOKEN_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x96015D0Fb97139567a9ba675951816a0Bb719E3c',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const PENDLE_PT_ORACLE_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x428f2f93afAc3F96B0DE59854038c585e06165C8',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const PENDLE_ROUTER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x0000000001E4ef00d069e71d6bA041b0A16F7eA0',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const PENDLE_SY_GLP_2024_TOKEN_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x2066a650AF4b6895f72E618587Aad5e8120B7790',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const PLS_TOKEN_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x51318B7D00db7ACc4026C88c3952B66278B6A67F',
   [Network.ArbitrumGoerli]: undefined,

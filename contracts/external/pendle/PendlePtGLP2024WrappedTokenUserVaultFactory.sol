@@ -20,34 +20,34 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendleGLP2024WrappedTokenUserVaultFactory } from "../interfaces/IPendleGLP2024WrappedTokenUserVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IPendleGLP2024Registry } from "../interfaces/IPendleGLP2024Registry.sol";
+import { IPendlePtGLP2024Registry } from "../interfaces/IPendlePtGLP2024Registry.sol";
+import { IPendlePtGLP2024WrappedTokenUserVaultFactory } from "../interfaces/IPendlePtGLP2024WrappedTokenUserVaultFactory.sol"; // solhint-disable-line max-line-length
 import { WrappedTokenUserVaultFactory } from "../proxies/abstract/WrappedTokenUserVaultFactory.sol";
 
 
 /**
- * @title   PendleGLP2024WrappedTokenUserVaultFactory
+ * @title   PendlePtGLP2024WrappedTokenUserVaultFactory
  * @author  Dolomite
  *
  * @notice  The wrapper around the ptGLP token that is used to create user vaults and manage the entry points that a
  *          user can use to interact with DolomiteMargin from the vault.
  */
-contract PendleGLP2024WrappedTokenUserVaultFactory is
-    IPendleGLP2024WrappedTokenUserVaultFactory,
+contract PendlePtGLP2024WrappedTokenUserVaultFactory is
+    IPendlePtGLP2024WrappedTokenUserVaultFactory,
     WrappedTokenUserVaultFactory
 {
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "PendleGLP2024VaultFactory"; // needed to be shortened to fit into 32 bytes
+    bytes32 private constant _FILE = "PendlePtGLP2024VaultFactory"; // needed to be shortened to fit into 32 bytes
 
     // ============ Field Variables ============
 
-    IPendleGLP2024Registry public override pendleGLP2024Registry;
+    IPendlePtGLP2024Registry public override pendlePtGLP2024Registry;
 
     // ============ Constructor ============
 
     constructor(
-        address _pendleGLP2024Registry,
+        address _pendlePtGLP2024Registry,
         address _ptGlp, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
@@ -59,19 +59,19 @@ contract PendleGLP2024WrappedTokenUserVaultFactory is
         _userVaultImplementation,
         _dolomiteMargin
     ) {
-        pendleGLP2024Registry = IPendleGLP2024Registry(_pendleGLP2024Registry);
+        pendlePtGLP2024Registry = IPendlePtGLP2024Registry(_pendlePtGLP2024Registry);
     }
 
     // ============ External Functions ============
 
-    function ownerSetPendleGLP2024Registry(
-        address _pendleGLP2024Registry
+    function ownerSetPendlePtGLP2024Registry(
+        address _pendlePtGLP2024Registry
     )
     external
     override
     onlyDolomiteMarginOwner(msg.sender) {
-        pendleGLP2024Registry = IPendleGLP2024Registry(_pendleGLP2024Registry);
-        emit PendleGLP2024RegistrySet(_pendleGLP2024Registry);
+        pendlePtGLP2024Registry = IPendlePtGLP2024Registry(_pendlePtGLP2024Registry);
+        emit PendlePtGLP2024RegistrySet(_pendlePtGLP2024Registry);
     }
 
     function allowableDebtMarketIds() external pure returns (uint256[] memory) {

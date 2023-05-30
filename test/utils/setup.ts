@@ -50,6 +50,14 @@ import {
   IGmxVault__factory,
   IGmxVester,
   IGmxVester__factory,
+  IPendlePtMarket,
+  IPendlePtMarket__factory, IPendlePtOracle, IPendlePtOracle__factory,
+  IPendlePtToken,
+  IPendlePtToken__factory,
+  IPendleRouter,
+  IPendleRouter__factory,
+  IPendleSyToken,
+  IPendleSyToken__factory,
   IPlutusVaultGLPFarm,
   IPlutusVaultGLPFarm__factory,
   IPlutusVaultGLPRouter,
@@ -87,6 +95,10 @@ import {
   GMX_REWARD_ROUTER_MAP,
   GMX_VAULT_MAP,
   MAGIC_GLP_MAP,
+  PENDLE_PT_GLP_2024_MARKET_MAP,
+  PENDLE_PT_GLP_2024_TOKEN_MAP, PENDLE_PT_ORACLE_MAP,
+  PENDLE_ROUTER_MAP,
+  PENDLE_SY_GLP_2024_TOKEN_MAP,
   PLS_TOKEN_MAP,
   PLV_GLP_FARM_MAP,
   PLV_GLP_MAP,
@@ -143,6 +155,14 @@ interface GmxEcosystem {
   vGmx: IGmxVester;
 }
 
+interface PendleEcosystem {
+  pendleRouter: IPendleRouter;
+  ptGlpMarket: IPendlePtMarket;
+  ptGlpToken: IPendlePtToken;
+  ptOracle: IPendlePtOracle;
+  syGlpToken: IPendleSyToken;
+}
+
 interface PlutusEcosystem {
   plvGlp: IERC4626;
   plsToken: IERC20;
@@ -184,6 +204,7 @@ export interface CoreProtocol {
   liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
   liquidatorProxyV2: LiquidatorProxyV2WithExternalLiquidity | undefined;
   liquidatorProxyV3: LiquidatorProxyV3WithLiquidityToken | undefined;
+  pendleEcosystem: PendleEcosystem | undefined;
   plutusEcosystem: PlutusEcosystem | undefined;
   testInterestSetter: TestInterestSetter;
   testPriceOracle: TestPriceOracle;
@@ -354,6 +375,7 @@ export async function setupCoreProtocol(
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
+  const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
 
   return {
@@ -379,6 +401,7 @@ export async function setupCoreProtocol(
     hhUser3,
     hhUser4,
     hhUser5,
+    pendleEcosystem,
     plutusEcosystem,
     testInterestSetter,
     testPriceOracle,
@@ -481,6 +504,38 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
     sbfGmx: getContract(SBF_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     vGlp: getContract(V_GLP_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
     vGmx: getContract(V_GMX_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
+  };
+}
+
+async function createPendleEcosystem(
+  network: Network,
+  signer: SignerWithAddress,
+): Promise<PendleEcosystem | undefined> {
+  if (!PENDLE_PT_GLP_2024_MARKET_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    pendleRouter: getContract(
+      PENDLE_ROUTER_MAP[network] as string,
+      address => IPendleRouter__factory.connect(address, signer),
+    ),
+    ptGlpMarket: getContract(
+      PENDLE_PT_GLP_2024_MARKET_MAP[network] as string,
+      address => IPendlePtMarket__factory.connect(address, signer),
+    ),
+    ptGlpToken: getContract(
+      PENDLE_PT_GLP_2024_TOKEN_MAP[network] as string,
+      address => IPendlePtToken__factory.connect(address, signer),
+    ),
+    ptOracle: getContract(
+      PENDLE_PT_ORACLE_MAP[network] as string,
+      address => IPendlePtOracle__factory.connect(address, signer),
+    ),
+    syGlpToken: getContract(
+      PENDLE_SY_GLP_2024_TOKEN_MAP[network] as string,
+      address => IPendleSyToken__factory.connect(address, signer),
+    ),
   };
 }
 

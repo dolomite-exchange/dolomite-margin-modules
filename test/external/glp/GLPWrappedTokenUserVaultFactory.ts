@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   GLPWrappedTokenUserVaultFactory,
-  GLPWrappedTokenUserVaultFactory__factory,
   GLPWrappedTokenUserVaultV1,
   GLPWrappedTokenUserVaultV1__factory,
   GmxRegistryV1,
@@ -20,7 +19,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createGmxRegistry } from '../../utils/wrapped-token-utils';
+import { createGLPWrappedTokenUserVaultFactory, createGmxRegistry } from '../../utils/wrapped-token-utils/gmx';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -43,19 +42,7 @@ describe('GLPWrappedTokenUserVaultFactory', () => {
       TestGLPWrappedTokenUserVaultV1__factory.bytecode,
       [],
     );
-    factory = await createContractWithAbi<GLPWrappedTokenUserVaultFactory>(
-      GLPWrappedTokenUserVaultFactory__factory.abi,
-      GLPWrappedTokenUserVaultFactory__factory.bytecode,
-      [
-        core.weth.address,
-        core.marketIds.weth,
-        gmxRegistry.address,
-        core.gmxEcosystem!.fsGlp.address,
-        core.borrowPositionProxyV2.address,
-        vaultImplementation.address,
-        core.dolomiteMargin.address,
-      ],
-    );
+    factory = await createGLPWrappedTokenUserVaultFactory(core, gmxRegistry, vaultImplementation);
 
     snapshotId = await snapshot();
   });

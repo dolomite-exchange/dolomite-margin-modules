@@ -26,7 +26,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { IPendlePtOracle } from "../interfaces/IPendlePtOracle.sol";
+import { IPendlePtGLP2024Registry } from "../interfaces/IPendlePtGLP2024Registry.sol";
 
 
 /**
@@ -45,31 +45,28 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
 
     // ============================ Public State Variables ============================
 
-    IPendlePtOracle immutable public PT_ORACLE; // solhint-disable-line var-name-mixedcase
+    address immutable public DPT_GLP; // solhint-disable-line var-name-mixedcase
+    IPendlePtGLP2024Registry immutable public REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
-    address immutable public PT_GLP; // solhint-disable-line var-name-mixedcase
-    address immutable public PT_GLP_MARKET; // solhint-disable-line var-name-mixedcase
     uint256 immutable public DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
 
     constructor(
-        IPendlePtOracle _ptOracle,
+        address _dptGlp,
+        address _pendlePtGLP2024Registry,
         address _dolomiteMargin,
-        address _ptGlp,
-        address _ptGlpMarket,
         uint256 _dfsGlpMarketId
     ) {
-        PT_ORACLE = IPendlePtOracle(_ptOracle);
+        DPT_GLP = _dptGlp;
+        REGISTRY = IPendlePtGLP2024Registry(_pendlePtGLP2024Registry);
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
-        PT_GLP = _ptGlp;
-        PT_GLP_MARKET = _ptGlpMarket;
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
 
         (
             bool increaseCardinalityRequired,,
             bool oldestObservationSatisfied
-        ) = PT_ORACLE.getOracleState(PT_GLP_MARKET, TWAP_DURATION);
+        ) = REGISTRY.ptOracle().getOracleState(address(REGISTRY.ptGlpMarket()), TWAP_DURATION);
 
         Require.that(
             !increaseCardinalityRequired && oldestObservationSatisfied,
@@ -85,7 +82,7 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
-            _token == address(PT_GLP),
+            _token == address(DPT_GLP),
             _FILE,
             "invalid token",
             _token
@@ -105,7 +102,7 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
 
     function _getCurrentPrice() internal view returns (uint256) {
         uint256 glpPrice = DOLOMITE_MARGIN.getMarketPrice(DFS_GLP_MARKET_ID).value;
-        uint256 ptExchangeRate = IPendlePtOracle(PT_ORACLE).getPtToAssetRate(PT_GLP_MARKET, TWAP_DURATION);
+        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptGlpMarket()), TWAP_DURATION);
         return glpPrice * ptExchangeRate / PT_ASSET_SCALE;
     }
 }

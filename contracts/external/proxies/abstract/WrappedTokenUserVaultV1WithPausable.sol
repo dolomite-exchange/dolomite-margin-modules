@@ -44,8 +44,57 @@ abstract contract WrappedTokenUserVaultV1WithPausable is WrappedTokenUserVaultV1
     bytes32 private constant _FILE = "WrappedTokenUserVaultV1Pausable";
 
     // ===================================================
+    // ==================== Modifiers ====================
+    // ===================================================
+
+    modifier requireNotPaused() {
+        Require.that(
+            !isExternalRedemptionPaused(),
+            _FILE,
+            "Cannot execute when paused"
+        );
+        _;
+    }
+
+    // ===================================================
     // ==================== Functions ====================
     // ===================================================
+
+    /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
+    function openBorrowPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+    external
+    requireNotPaused
+    onlyVaultOwner(msg.sender) {
+        _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+    }
+
+    /// @dev   Cannot reduce collateralization of a position by withdrawing good tokens when underlying is paused
+    function closeBorrowPositionWithOtherTokens(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256[] calldata _collateralMarketIds
+    )
+    external
+    requireNotPaused
+    onlyVaultOwner(msg.sender) {
+        _closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+    }
+
+    /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
+    function transferIntoPositionWithUnderlyingToken(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256 _amountWei
+    )
+    external
+    requireNotPaused
+    onlyVaultOwner(msg.sender) {
+        _transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
+    }
 
     function transferFromPositionWithOtherToken(
         uint256 _borrowAccountNumber,

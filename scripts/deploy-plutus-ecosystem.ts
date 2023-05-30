@@ -16,7 +16,7 @@ import {
   getPlutusVaultGLPWrappedTokenUserVaultFactoryConstructorParams,
   getPlutusVaultGLPWrapperTraderConstructorParams,
   getPlutusVaultRegistryConstructorParams,
-} from '../test/utils/wrapped-token-utils';
+} from '../src/utils/constructors/plutus';
 import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
 
 /**

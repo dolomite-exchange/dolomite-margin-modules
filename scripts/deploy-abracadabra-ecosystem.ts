@@ -1,6 +1,11 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
+import {
+  getMagicGLPPriceOracleConstructorParams,
+  getMagicGLPUnwrapperTraderConstructorParams,
+  getMagicGLPWrapperTraderConstructorParams,
+} from '../src/utils/constructors/abracadabra';
 import { setupCoreProtocol } from '../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
 
@@ -10,22 +15,21 @@ import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
-  const magicGlpPriceOracle = await deployContractAndSave(Number(network), 'MagicGLPPriceOracle', [
-    core.dolomiteMargin.address,
-    core.abraEcosystem!.magicGlp.address,
-    core.marketIds.dfsGlp!,
-  ]);
-  const unwrapperTraderAddress = await deployContractAndSave(Number(network), 'MagicGLPUnwrapperTrader', [
-    core.abraEcosystem!.magicGlp.address,
-    core.gmxRegistry!.address,
-    core.marketIds.usdc,
-    core.dolomiteMargin.address,
-  ]);
-  await deployContractAndSave(Number(network), 'MagicGLPWrapperTrader', [
-    core.abraEcosystem!.magicGlp.address,
-    core.gmxRegistry!.address,
-    core.dolomiteMargin.address,
-  ]);
+  const magicGlpPriceOracle = await deployContractAndSave(
+    Number(network),
+    'MagicGLPPriceOracle',
+    getMagicGLPPriceOracleConstructorParams(core),
+  );
+  const unwrapperTraderAddress = await deployContractAndSave(
+    Number(network),
+    'MagicGLPUnwrapperTrader',
+    getMagicGLPUnwrapperTraderConstructorParams(core),
+  );
+  await deployContractAndSave(
+    Number(network),
+    'MagicGLPWrapperTrader',
+    getMagicGLPWrapperTraderConstructorParams(core),
+  );
 
   await prettyPrintEncodedData(
     core.dolomiteMargin.populateTransaction.ownerAddMarket(

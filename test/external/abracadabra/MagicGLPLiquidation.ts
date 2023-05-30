@@ -21,6 +21,7 @@ import {
 import { setExpiry } from '../../utils/expiry-utils';
 import { getCalldataForParaswap } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+import { createMagicGLPPriceOracle, createMagicGLPUnwrapperTrader } from '../../utils/wrapped-token-utils/abracadabra';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -51,24 +52,11 @@ describe('MagicGLPLiquidation', () => {
       network: Network.ArbitrumOne,
     });
     magicGlp = core.abraEcosystem!.magicGlp;
-    priceOracle = await createContractWithAbi<MagicGLPPriceOracle>(
-      MagicGLPPriceOracle__factory.abi,
-      MagicGLPPriceOracle__factory.bytecode,
-      [core.dolomiteMargin.address, magicGlp.address, core.marketIds.dfsGlp!],
-    );
+    priceOracle = await createMagicGLPPriceOracle(core);
 
     heldMarketId = BigNumber.from(core.marketIds.magicGlp!);
 
-    unwrapper = await createContractWithAbi<MagicGLPUnwrapperTrader>(
-      MagicGLPUnwrapperTrader__factory.abi,
-      MagicGLPUnwrapperTrader__factory.bytecode,
-      [
-        magicGlp.address,
-        core.gmxRegistry!.address,
-        core.marketIds.usdc,
-        core.dolomiteMargin.address,
-      ],
-    );
+    unwrapper = await createMagicGLPUnwrapperTrader(core);
 
     defaultAccountStruct = { owner: core.hhUser1.address, number: defaultAccountNumber };
     liquidAccountStruct = { owner: core.hhUser1.address, number: otherAccountNumber };

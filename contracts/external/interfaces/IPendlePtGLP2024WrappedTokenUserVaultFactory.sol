@@ -20,29 +20,29 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendleGLP2024Registry } from "./IPendleGLP2024Registry.sol";
+import { IPendlePtGLP2024Registry } from "./IPendlePtGLP2024Registry.sol";
 import { IWrappedTokenUserVaultFactory } from "./IWrappedTokenUserVaultFactory.sol";
 
 
 /**
- * @title   IPendleGLP2024WrappedTokenUserVaultFactory
+ * @title   IPendlePtGLP2024WrappedTokenUserVaultFactory
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of WrappedTokenUserVaultFactory that creates vaults for ptGLP tokens.
  */
-interface IPendleGLP2024WrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
+interface IPendlePtGLP2024WrappedTokenUserVaultFactory is IWrappedTokenUserVaultFactory {
 
     // ================================================
     // ==================== Events ====================
     // ================================================
 
-    event PendleGLP2024RegistrySet(address _pendleGLP2024Registry);
+    event PendlePtGLP2024RegistrySet(address _pendlePtGLP2024Registry);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function ownerSetPendleGLP2024Registry(address _pendleGLP2024Registry) external;
+    function ownerSetPendlePtGLP2024Registry(address _pendlePtGLP2024Registry) external;
 
-    function pendleGLP2024Registry() external view returns (IPendleGLP2024Registry);
+    function pendlePtGLP2024Registry() external view returns (IPendlePtGLP2024Registry);
 }

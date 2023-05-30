@@ -21,50 +21,56 @@
 pragma solidity ^0.8.9;
 
 import { IPendlePtMarket } from "../interfaces/IPendlePtMarket.sol";
+import { IPendlePtOracle } from "../interfaces/IPendlePtOracle.sol";
 import { IPendlePtToken } from "../interfaces/IPendlePtToken.sol";
 import { IPendleRouter } from "../interfaces/IPendleRouter.sol";
 import { IPendleSyToken } from "../interfaces/IPendleSyToken.sol";
 
 
 /**
- * @title   IPendleGLP2024Registry
+ * @title   IPendlePtGLP2024Registry
  * @author  Dolomite
  *
  * @notice  A registry contract for storing all of the addresses that can interact with the Pendle ecosystem for GLP
  *          (March 2024).
  */
-interface IPendleGLP2024Registry {
+interface IPendlePtGLP2024Registry {
 
     // ========================================================
     // ======================== Events ========================
     // ========================================================
 
-    event PtGlpTokenSet(address indexed _ptGlpToken);
-    event SyGlpTokenSet(address indexed _syGlpToken);
-    event PtGlpMarketSet(address indexed _ptGlpMarket);
     event PendleRouterSet(address indexed _pendleRouter);
+    event PtGlpMarketSet(address indexed _ptGlpMarket);
+    event PtGlpTokenSet(address indexed _ptGlpToken);
+    event PtOracleSet(address indexed _ptOracle);
+    event SyGlpTokenSet(address indexed _syGlpToken);
 
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================
 
-    function ownerSetPtGlpToken(address _ptGlpToken) external;
-
-    function ownerSetSyGlpToken(address _syGlpToken) external;
+    function ownerSetPendleRouter(address _pendleRouter) external;
 
     function ownerSetPtGlpMarket(address _ptGlpMarket) external;
 
-    function ownerSetPendleRouter(address _pendleRouter) external;
+    function ownerSetPtGlpToken(address _ptGlpToken) external;
+
+    function ownerSetPtOracle(address _ptOracle) external;
+
+    function ownerSetSyGlpToken(address _syGlpToken) external;
 
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
 
-    function ptGlpToken() external view returns (IPendlePtToken);
-
-    function syGlpToken() external view returns (IPendleSyToken);
+    function pendleRouter() external view returns (IPendleRouter);
 
     function ptGlpMarket() external view returns (IPendlePtMarket);
 
-    function pendleRouter() external view returns (IPendleRouter);
+    function ptGlpToken() external view returns (IPendlePtToken);
+
+    function ptOracle() external view returns (IPendlePtOracle);
+
+    function syGlpToken() external view returns (IPendleSyToken);
 }

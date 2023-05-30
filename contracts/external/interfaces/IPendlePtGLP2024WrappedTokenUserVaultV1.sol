@@ -20,15 +20,16 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendleGLP2024Registry } from "./IPendleGLP2024Registry.sol";
 import { IWrappedTokenUserVaultV1 } from "./IWrappedTokenUserVaultV1.sol";
 
 
 /**
- * @title   IPendleGLP2024WrappedTokenUserVaultV1
+ * @title   IPendlePtGLP2024WrappedTokenUserVaultV1
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of WrappedTokenUserVaultV1 that serves as the implementation for the user's proxy
  *          vault for ptGLP tokens.
  */
-interface IPendleGLP2024WrappedTokenUserVaultV1 is IWrappedTokenUserVaultV1 {}
+interface IPendlePtGLP2024WrappedTokenUserVaultV1 is IWrappedTokenUserVaultV1 {
+    // solhint-disable-previous-line no-empty-blocks
+}

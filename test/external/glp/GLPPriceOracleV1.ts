@@ -1,13 +1,17 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { GLPPriceOracleV1, GLPPriceOracleV1__factory, GmxRegistryV1 } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { GLPPriceOracleV1, GmxRegistryV1 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import { setupCoreProtocol } from '../../utils/setup';
-import { createGmxRegistry } from '../../utils/wrapped-token-utils';
+import {
+  createGLPPriceOracleV1,
+  createGLPWrappedTokenUserVaultFactory,
+  createGLPWrappedTokenUserVaultV1,
+  createGmxRegistry,
+} from '../../utils/wrapped-token-utils/gmx';
 
 const GLP_PRICE = BigNumber.from('913711474561791281'); // $0.913711
 
@@ -23,11 +27,9 @@ describe('GLPPriceOracleV1', () => {
       network: Network.ArbitrumOne,
     });
     gmxRegistry = await createGmxRegistry(core);
-    glpPriceOracle = await createContractWithAbi<GLPPriceOracleV1>(
-      GLPPriceOracleV1__factory.abi,
-      GLPPriceOracleV1__factory.bytecode,
-      [gmxRegistry.address, core.gmxEcosystem!.fsGlp.address], // technically should be DFS_GLP
-    );
+    const userVaultImplementation = await createGLPWrappedTokenUserVaultV1();
+    const factory = await createGLPWrappedTokenUserVaultFactory(core, gmxRegistry, userVaultImplementation);
+    glpPriceOracle = await createGLPPriceOracleV1(factory, gmxRegistry);
 
     snapshotId = await snapshot();
   });
