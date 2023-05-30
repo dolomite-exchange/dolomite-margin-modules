@@ -24,7 +24,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
-import { IPendleGlp2024Registry } from "../interfaces/IPendleGlp2024Registry.sol";
+import { IPendleGLP2024Registry } from "../interfaces/IPendleGLP2024Registry.sol";
 import { IPendlePtMarket } from "../interfaces/IPendlePtMarket.sol";
 import { IPendlePtToken } from "../interfaces/IPendlePtToken.sol";
 import { IPendleRouter } from "../interfaces/IPendleRouter.sol";
@@ -32,7 +32,7 @@ import { IPendleSyToken } from "../interfaces/IPendleSyToken.sol";
 
 
 /**
- * @title   PendleGlp2024Registry
+ * @title   PendleGLP2024Registry
  * @author  Dolomite
  *
  * @notice  Implementation for a registry that contains all of the PlutusDAO-related addresses. This registry is needed
@@ -40,11 +40,11 @@ import { IPendleSyToken } from "../interfaces/IPendleSyToken.sol";
  *          without having to deprecate the system and force users to migrate when Dolomite needs to point to new
  *          contracts or functions that PlutusDAO introduces.
  */
-contract PendleGlp2024Registry is IPendleGlp2024Registry, OnlyDolomiteMargin {
+contract PendleGLP2024Registry is IPendleGLP2024Registry, OnlyDolomiteMargin {
 
     // ==================== Constants ====================
 
-    bytes32 private constant _FILE = "PendleGlp2024Registry";
+    bytes32 private constant _FILE = "PendleGLP2024Registry";
 
     // ==================== Storage ====================
 

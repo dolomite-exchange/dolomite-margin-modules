@@ -27,13 +27,13 @@ import { IPendleSyToken } from "../interfaces/IPendleSyToken.sol";
 
 
 /**
- * @title   IPendleGlp2024Registry
+ * @title   IPendleGLP2024Registry
  * @author  Dolomite
  *
  * @notice  A registry contract for storing all of the addresses that can interact with the Pendle ecosystem for GLP
  *          (March 2024).
  */
-interface IPendleGlp2024Registry {
+interface IPendleGLP2024Registry {
 
     // ========================================================
     // ======================== Events ========================

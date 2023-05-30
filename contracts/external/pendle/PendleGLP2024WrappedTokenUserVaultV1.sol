@@ -20,33 +20,34 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendleGlp2024WrappedTokenUserVaultFactory } from "../interfaces/IPendleGlp2024WrappedTokenUserVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPendleGLP2024WrappedTokenUserVaultFactory } from "../interfaces/IPendleGLP2024WrappedTokenUserVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPendleGLP2024WrappedTokenUserVaultV1 } from "../interfaces/IPendleGLP2024WrappedTokenUserVaultV1.sol";
 import { WrappedTokenUserVaultV1WithPausable } from "../proxies/abstract/WrappedTokenUserVaultV1WithPausable.sol";
 
 
 /**
- * @title   PendleGlp2024WrappedTokenUserVaultV1
+ * @title   PendleGLP2024WrappedTokenUserVaultV1
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the ptGLP (March 2024 expiration)
  *          token that can be used to credit a user's Dolomite balance.
  */
-contract PendleGlp2024WrappedTokenUserVaultV1 is WrappedTokenUserVaultV1WithPausable
+contract PendleGLP2024WrappedTokenUserVaultV1 is IPendleGLP2024WrappedTokenUserVaultV1, WrappedTokenUserVaultV1WithPausable
 {
 
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "PendleGlp2024UserVaultV1";
+    bytes32 private constant _FILE = "PendleGLP2024UserVaultV1";
 
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
 
     function isExternalRedemptionPaused() public override view returns (bool) {
-        return IPendleGlp2024WrappedTokenUserVaultFactory(VAULT_FACTORY())
-            .pendleGlp2024Registry()
+        return IPendleGLP2024WrappedTokenUserVaultFactory(VAULT_FACTORY())
+            .pendleGLP2024Registry()
             .syGlpToken()
             .paused();
     }

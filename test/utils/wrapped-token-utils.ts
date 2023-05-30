@@ -7,9 +7,12 @@ import {
   GLPWrapperTraderV1,
   GLPWrapperTraderV1__factory,
   GmxRegistryV1,
-  GmxRegistryV1__factory,
+  GmxRegistryV1__factory, IPendleGLP2024Registry, IPendleGLP2024WrappedTokenUserVaultV1,
   IPlutusVaultGLPWrappedTokenUserVaultV1,
-  IPlutusVaultRegistry, PendleGlp2024WrappedTokenUserVaultV1, PendleGlp2024WrappedTokenUserVaultV1__factory,
+  IPlutusVaultRegistry,
+  PendleGLP2024Registry, PendleGLP2024WrappedTokenUserVaultFactory, PendleGLP2024WrappedTokenUserVaultFactory__factory,
+  PendleGLP2024WrappedTokenUserVaultV1,
+  PendleGLP2024WrappedTokenUserVaultV1__factory,
   PlutusVaultGLPPriceOracle,
   PlutusVaultGLPPriceOracle__factory,
   PlutusVaultGLPUnwrapperTrader,
@@ -21,7 +24,8 @@ import {
   PlutusVaultGLPWrapperTrader,
   PlutusVaultGLPWrapperTrader__factory,
   PlutusVaultRegistry,
-  PlutusVaultRegistry__factory, SimpleWrappedTokenUserVaultFactory,
+  PlutusVaultRegistry__factory,
+  SimpleWrappedTokenUserVaultFactory,
   TestWrappedTokenUserVaultFactory,
   TestWrappedTokenUserVaultFactory__factory,
 } from '../../src/types';
@@ -257,27 +261,27 @@ export function createDolomiteCompatibleWhitelistForPlutusDAO(
   );
 }
 
-export function createPendleGlp2024WrappedTokenUserVaultV1(): Promise<PendleGlp2024WrappedTokenUserVaultV1> {
+export function createPendleGLP2024WrappedTokenUserVaultV1(): Promise<PendleGLP2024WrappedTokenUserVaultV1> {
   return createContractWithAbi(
-    PendleGlp2024WrappedTokenUserVaultV1__factory.abi,
-    PendleGlp2024WrappedTokenUserVaultV1__factory.bytecode,
+    PendleGLP2024WrappedTokenUserVaultV1__factory.abi,
+    PendleGLP2024WrappedTokenUserVaultV1__factory.bytecode,
     [],
   );
 }
 
-export function createPendleGlp2024WrappedTokenUserVaultFactory(
+export function createPendleGLP2024WrappedTokenUserVaultFactory(
   core: CoreProtocol,
-  plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
-  plvGlpToken: { address: address },
-  userVaultImplementation: IPendleGlp2024WrappedTokenUserVaultV1 | PendleGlp2024WrappedTokenUserVaultV1,
-): Promise<SimpleWrappedTokenUserVaultFactory> {
-  return createContractWithAbi<SimpleWrappedTokenUserVaultFactory>(
-    SimpleWrappedTokenUserVaultFactory__factory.abi,
-    SimpleWrappedTokenUserVaultFactory__factory.bytecode,
-    getSimpleWrappedTokenUserVaultFactoryConstructorParams(
+  registry: IPendleGLP2024Registry | PendleGLP2024Registry,
+  ptGlpToken: { address: address },
+  userVaultImplementation: IPendleGLP2024WrappedTokenUserVaultV1 | PendleGLP2024WrappedTokenUserVaultV1,
+): Promise<PendleGLP2024WrappedTokenUserVaultFactory> {
+  return createContractWithAbi<PendleGLP2024WrappedTokenUserVaultFactory>(
+    PendleGLP2024WrappedTokenUserVaultFactory__factory.abi,
+    PendleGLP2024WrappedTokenUserVaultFactory__factory.bytecode,
+    getPendleGLP2024WrappedTokenUserVaultFactoryConstructorParams(
       core,
-      plutusVaultRegistry,
-      plvGlpToken,
+      registry,
+      ptGlpToken,
       userVaultImplementation,
     ),
   );

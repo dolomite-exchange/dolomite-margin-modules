@@ -2,20 +2,20 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   IERC20,
-  IERC4626, IPlutusVaultGLP__factory,
-  IPlutusVaultGLPFarm,
+  IERC4626,
+  IPlutusVaultGLP__factory,
+  IPlutusVaultGLPFarm, PendleGlp2024Registry, PendleGlp2024WrappedTokenUserVaultFactory,
+  PendleGlp2024WrappedTokenUserVaultV1, PendlePtGLPPriceOracle, PendlePtGLPUnwrapperTrader, PendlePtGLPWrapperTrader,
   PlutusVaultGLPPriceOracle,
   PlutusVaultGLPUnwrapperTrader,
-  SimpleWrappedTokenUserVaultFactory,
-  PendleGlp2024WrappedTokenUserVaultV1,
   PlutusVaultGLPWrappedTokenUserVaultV1__factory,
   PlutusVaultGLPWrapperTrader,
   PlutusVaultRegistry,
+  SimpleWrappedTokenUserVaultFactory,
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
 import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   CoreProtocol,
   setupCoreProtocol,
@@ -24,15 +24,13 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import {
+  createPendleGLP2024WrappedTokenUserVaultFactory,
   createPendleGlp2024WrappedTokenUserVaultV1,
   createPlutusVaultGLPPriceOracle,
   createPlutusVaultGLPUnwrapperTrader,
-  createPlutusVaultGLPWrappedTokenUserVaultFactory,
-  createPlutusVaultGLPWrappedTokenUserVaultV1,
   createPlutusVaultGLPWrapperTrader,
   createPlutusVaultRegistry,
 } from '../../utils/wrapped-token-utils';
-import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
 
 const amountWei = BigNumber.from('1250000000000000000000'); // 1,250 plvGLP tokens
 const stakedAmountWei = amountWei.mul(2).div(3); // 833.3333 plvGLP tokens
@@ -45,11 +43,11 @@ describe('PendleGlp2024WrappedTokenUserVaultV1', () => {
 
   let core: CoreProtocol;
   let underlyingToken: IERC4626;
-  let plutusVaultRegistry: PlutusVaultRegistry;
-  let unwrapper: PlutusVaultGLPUnwrapperTrader;
-  let wrapper: PlutusVaultGLPWrapperTrader;
-  let priceOracle: PlutusVaultGLPPriceOracle;
-  let factory: SimpleWrappedTokenUserVaultFactory;
+  let pendleRegistry: PendleGlp2024Registry;
+  let unwrapper: PendlePtGLPUnwrapperTrader;
+  let wrapper: PendlePtGLPWrapperTrader;
+  let priceOracle: PendlePtGLPPriceOracle;
+  let factory: PendleGlp2024WrappedTokenUserVaultFactory;
   let vault: PendleGlp2024WrappedTokenUserVaultV1;
   let underlyingMarketId: BigNumber;
   let account: Account.InfoStruct;
@@ -65,16 +63,16 @@ describe('PendleGlp2024WrappedTokenUserVaultV1', () => {
     rewardToken = core.plutusEcosystem!.plsToken.connect(core.hhUser1);
     farm = core.plutusEcosystem!.plvGlpFarm.connect(core.hhUser1);
     const userVaultImplementation = await createPendleGlp2024WrappedTokenUserVaultV1();
-    plutusVaultRegistry = await createPlutusVaultRegistry(core);
-    factory = await createPendleGlp2024GLPWrappedTokenUserVaultFactory(
+    pendleRegistry = await createPendleGlp2024Registry(core);
+    factory = await createPendleGLP2024WrappedTokenUserVaultFactory(
       core,
-      plutusVaultRegistry,
+      pendleRegistry,
       underlyingToken,
       userVaultImplementation,
     );
-    unwrapper = await createPlutusVaultGLPUnwrapperTrader(core, plutusVaultRegistry, factory);
-    wrapper = await createPlutusVaultGLPWrapperTrader(core, plutusVaultRegistry, factory);
-    priceOracle = await createPlutusVaultGLPPriceOracle(core, plutusVaultRegistry, factory, unwrapper);
+    unwrapper = await createPendleGLP2024UnwrapperTrader(core, pendleRegistry, factory);
+    wrapper = await createPendleGLP2024WrapperTrader(core, pendleRegistry, factory);
+    priceOracle = await createPendleGLP2024PriceOracle(core, pendleRegistry, factory, unwrapper);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
@@ -105,9 +103,6 @@ describe('PendleGlp2024WrappedTokenUserVaultV1', () => {
     expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
     expect(await vault.underlyingBalanceOf()).to.eq(amountWei);
 
-    await createAndSetPlutusVaultWhitelist(core, core.plutusEcosystem!.plvGlpFarm, unwrapper, wrapper, factory);
-    await createAndSetPlutusVaultWhitelist(core, core.plutusEcosystem!.plvGlpRouter, unwrapper, wrapper, factory);
-
     const glpProtocolBalance = await core.dolomiteMargin.getAccountWei(account, underlyingMarketId);
     expect(glpProtocolBalance.sign).to.eq(true);
     expect(glpProtocolBalance.value).to.eq(amountWei);
@@ -126,7 +121,7 @@ describe('PendleGlp2024WrappedTokenUserVaultV1', () => {
 
     it('should work vault params are set to false', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
-      const plvGlp = IPlutusVaultGLP__factory.connect(await plutusVaultRegistry.plvGlpToken(), core.hhUser1);
+      const plvGlp = IPlutusVaultGLP__factory.connect(await pendleRegistry.plvGlpToken(), core.hhUser1);
       const owner = await impersonate(await plvGlp.owner(), true);
       const canDoAnything = false;
       await plvGlp.connect(owner).setParams(canDoAnything, canDoAnything, canDoAnything, canDoAnything);
