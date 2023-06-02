@@ -118,12 +118,6 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         Require.that(
-            VAULT_FACTORY.getAccountByVault(_tradeOriginator) != address(0),
-            _FILE,
-            "Invalid trade originator",
-            _tradeOriginator
-        );
-        Require.that(
             _inputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid input token",

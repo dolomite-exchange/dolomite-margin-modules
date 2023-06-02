@@ -217,21 +217,6 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
-          core.hhUser1.address,
-          core.dolomiteMargin.address,
-          core.usdc.address,
-          factory.address,
-          amountWei,
-          BYTES_EMPTY,
-        ),
-        `IsolationModeUnwrapperTraderV2: Invalid trade originator <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if input token is incorrect', async () => {
-      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await expectThrow(
-        unwrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
           core.dolomiteMargin.address,
           core.usdc.address,

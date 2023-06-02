@@ -111,6 +111,16 @@ export const GMX_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const PARASWAP_TRANSFER_PROXY_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x216B4B4Ba9F3e719726886d34a177484278Bfcae',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const PENDLE_PT_GLP_2024_MARKET_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x7D49E5Adc0EAAD9C027857767638613253eF125f',
   [Network.ArbitrumGoerli]: undefined,

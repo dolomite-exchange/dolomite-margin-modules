@@ -1,23 +1,26 @@
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import { BalanceCheckFlag, TxResult } from '@dolomite-margin/dist/src';
+import { BaseRouter, Router } from '@pendle/sdk-v2';
+import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import {
-  IERC4626, IPendlePtToken,
+  IPendlePtToken,
   PendlePtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeTokenVaultV1__factory,
   PendlePtGLP2024IsolationModeUnwrapperTraderV2,
   PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtGLP2024IsolationModeWrapperTraderV2, PendlePtGLP2024Registry,
+  PendlePtGLP2024IsolationModeWrapperTraderV2,
+  PendlePtGLP2024Registry,
   PendlePtGLPPriceOracle,
-  PlutusVaultRegistry,
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
+import { IGenericTraderProxyBase } from '../../../src/types/LiquidatorProxyV4WithGenericTrader';
 import { BYTES_EMPTY, Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
-  expectThrow,
+  expectThrow, expectWalletBalance,
   expectWalletBalanceOrDustyIfZero,
 } from '../../utils/assertions';
 import {
@@ -25,8 +28,8 @@ import {
   createPendlePtGLP2024IsolationModeUnwrapperTraderV2,
   createPendlePtGLP2024IsolationModeVaultFactory,
   createPendlePtGLP2024IsolationModeWrapperTraderV2,
-  createPendlePtGLPPriceOracle,
   createPendlePtGLP2024Registry,
+  createPendlePtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
 import { setExpiry } from '../../utils/expiry-utils';
 import { getCalldataForParaswap } from '../../utils/liquidation-utils';
@@ -47,6 +50,7 @@ const liquidationSpreadNumerator = BigNumber.from('105');
 const liquidationSpreadDenominator = BigNumber.from('100');
 const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
+const FIVE_BIPS = 0.0005;
 
 describe('PendlePtGLP2024IsolationModeLiquidation', () => {
   let snapshotId: string;
@@ -63,6 +67,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
   let defaultAccountStruct: Account.InfoStruct;
   let liquidAccountStruct: Account.InfoStruct;
   let solidAccountStruct: Account.InfoStruct;
+  let router: BaseRouter;
 
   before(async () => {
     const blockNumber = await getRealLatestBlockNumber(true);
@@ -100,16 +105,27 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
     liquidAccountStruct = { owner: vault.address, number: otherAccountNumber };
     solidAccountStruct = { owner: core.hhUser5.address, number: defaultAccountNumber };
 
-    const usdcAmount = heldAmountWei.div(1e12).mul(4);
+    router = Router.getRouter({
+      chainId: CHAIN_ID_MAPPING.ARBITRUM,
+      provider: core.hhUser1.provider,
+      signer: core.hhUser1,
+    });
+
+    const usdcAmount = heldAmountWei.div(1e12).mul(8);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
-    const glpAmount = heldAmountWei.mul(2);
-    await core.pendleEcosystem!.sGlp.connect(core.hhUser1)
-      .approve(core.pendleEcosystem!.plvGlpRouter.address, glpAmount);
-    await core.pendleEcosystem!.plvGlpRouter.connect(core.hhUser1).deposit(glpAmount);
+    const glpAmount = heldAmountWei.mul(4);
+    await core.gmxEcosystem!.sGlp.connect(core.hhUser1)
+      .approve(core.pendleEcosystem!.pendleRouter.address, glpAmount);
 
-    await underlyingToken.approve(vault.address, heldAmountWei);
+    await router.swapExactTokenForPt(
+      core.pendleEcosystem!.ptGlpMarket.address as any,
+      core.gmxEcosystem!.sGlp.address as any,
+      glpAmount,
+      FIVE_BIPS,
+    );
+    await core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
@@ -117,10 +133,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       .to
       .eq(heldAmountWei);
 
-    await core.liquidatorProxyV3!.connect(core.governance).setMarketIdToTokenUnwrapperForLiquidationMap(
-      underlyingMarketId,
-      unwrapper.address,
-    );
+    await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
 
     snapshotId = await snapshot();
   });
@@ -166,7 +179,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         BYTES_EMPTY,
       );
 
-      const txResult = await core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+      const txResult = await core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
         solidAccountStruct,
         liquidAccountStruct,
         core.marketIds.usdc,
@@ -206,9 +219,14 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         ZERO_BI,
       );
 
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, factory.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, core.weth.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.pendleEcosystem!.plvGlp.address, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(
+        core,
+        unwrapper.address,
+        core.pendleEcosystem!.ptGlpToken.address,
+        ZERO_BI,
+      );
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
 
@@ -259,15 +277,11 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         core.weth,
         18,
         core.hhUser5,
-        core.liquidatorProxyV3!,
+        core.liquidatorProxyV4!,
         core,
       );
-      const usdcLiquidatorBalanceBefore = await core.usdc.connect(core.hhUser1)
-        .balanceOf(core.liquidatorProxyV3!.address);
-      const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
-        .balanceOf(core.liquidatorProxyV3!.address);
 
-      const txResultPromise = core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+      const txResultPromise = core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
         solidAccountStruct,
         liquidAccountStruct,
         core.marketIds.weth,
@@ -326,21 +340,22 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         ZERO_BI,
       );
 
-      await expectWalletBalanceOrDustyIfZero(
-        core,
-        core.liquidatorProxyV3!.address,
-        core.usdc.address,
+      await expectWalletBalance(
+        core.liquidatorProxyV4!.address,
+        core.usdc,
         ZERO_BI,
-        usdcLiquidatorBalanceBefore,
+      );
+      await expectWalletBalance(
+        core.liquidatorProxyV4!.address,
+        core.weth,
+        ZERO_BI,
       );
       await expectWalletBalanceOrDustyIfZero(
         core,
-        core.liquidatorProxyV3!.address,
-        core.weth.address,
+        unwrapper.address,
+        core.pendleEcosystem!.ptGlpToken.address,
         ZERO_BI,
-        wethLiquidatorBalanceBefore,
       );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.pendleEcosystem!.plvGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
   });
@@ -389,7 +404,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         BYTES_EMPTY,
       );
 
-      const txResult = await core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+      const txResult = await core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
         solidAccountStruct,
         liquidAccountStruct,
         core.marketIds.usdc,
@@ -429,9 +444,14 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         ZERO_BI,
       );
 
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, factory.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, core.weth.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.pendleEcosystem!.plvGlp.address, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(
+        core,
+        unwrapper.address,
+        core.pendleEcosystem!.ptGlpToken.address,
+        ZERO_BI,
+      );
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
 
@@ -485,16 +505,11 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         core.weth,
         18,
         core.hhUser5,
-        core.liquidatorProxyV3!,
+        core.liquidatorProxyV4!,
         core,
       );
 
-      const usdcLiquidatorBalanceBefore = await core.usdc.connect(core.hhUser1)
-        .balanceOf(core.liquidatorProxyV3!.address);
-      const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
-        .balanceOf(core.liquidatorProxyV3!.address);
-
-      const txResultPromise = core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+      const txResultPromise = core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
         solidAccountStruct,
         liquidAccountStruct,
         core.marketIds.weth,
@@ -553,22 +568,47 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         ZERO_BI,
       );
 
-      await expectWalletBalanceOrDustyIfZero(
-        core,
-        core.liquidatorProxyV3!.address,
-        core.usdc.address,
+      await expectWalletBalance(
+        core.liquidatorProxyV4!.address,
+        core.usdc,
         ZERO_BI,
-        usdcLiquidatorBalanceBefore,
+      );
+      await expectWalletBalance(
+        core.liquidatorProxyV4!.address,
+        core.weth,
+        ZERO_BI,
       );
       await expectWalletBalanceOrDustyIfZero(
         core,
-        core.liquidatorProxyV3!.address,
-        core.weth.address,
+        unwrapper.address,
+        core.pendleEcosystem!.ptGlpToken.address,
         ZERO_BI,
-        wethLiquidatorBalanceBefore,
       );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.pendleEcosystem!.plvGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
   });
+
+  function paraswapTraderParam(): IGenericTraderProxyBase.TraderParamStruct {
+    return {
+      trader: paraswapTrader.address,
+      traderData: BYTES_EMPTY,
+    };
+  }
+
+  function liquidate(
+    marketIdsPath: BigNumberish[],
+    amountWeisPath: BigNumberish[],
+    tradersPath: IGenericTraderProxyBase.TraderParamStruct[],
+    expiry: BigNumberish[],
+  ): Promise<TxResult> {
+    return core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
+      solidAccountStruct,
+      liquidAccountStruct,
+      marketIdsPath,
+      amountWeisPath,
+      tradersPath,
+      [],
+      expiry,
+    );
+  }
 });

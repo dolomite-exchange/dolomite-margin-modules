@@ -11,6 +11,8 @@ import * as LiquidatorProxyV2WithExternalLiquidityJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV2WithExternalLiquidity.json';
 import * as LiquidatorProxyV3WithLiquidityTokenJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV3WithLiquidityToken.json';
+import * as LiquidatorProxyV4WithGenericTraderJson
+  from '@dolomite-margin/deployed-contracts/LiquidatorProxyV4WithGenericTrader.json';
 import { address } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface } from 'ethers';
@@ -82,6 +84,8 @@ import {
   LiquidatorProxyV2WithExternalLiquidity__factory,
   LiquidatorProxyV3WithLiquidityToken,
   LiquidatorProxyV3WithLiquidityToken__factory,
+  LiquidatorProxyV4WithGenericTrader,
+  LiquidatorProxyV4WithGenericTrader__factory,
   TestInterestSetter,
   TestInterestSetter__factory,
   TestPriceOracle,
@@ -100,7 +104,7 @@ import {
   GMX_MAP,
   GMX_REWARD_ROUTER_MAP,
   GMX_VAULT_MAP,
-  MAGIC_GLP_MAP,
+  MAGIC_GLP_MAP, PARASWAP_AUGUSTUS_ROUTER_MAP, PARASWAP_TRANSFER_PROXY_MAP,
   PENDLE_PT_GLP_2024_MARKET_MAP,
   PENDLE_PT_GLP_2024_TOKEN_MAP,
   PENDLE_PT_ORACLE_MAP,
@@ -162,6 +166,11 @@ interface GmxEcosystem {
   vGmx: IGmxVester;
 }
 
+interface ParaswapEcosystem {
+  augustusRouter: address;
+  transferProxy: address;
+}
+
 interface PendleEcosystem {
   pendleRouter: IPendleRouter;
   ptGlpMarket: IPendlePtMarket;
@@ -213,6 +222,8 @@ export interface CoreProtocol {
   liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
   liquidatorProxyV2: LiquidatorProxyV2WithExternalLiquidity | undefined;
   liquidatorProxyV3: LiquidatorProxyV3WithLiquidityToken | undefined;
+  liquidatorProxyV4: LiquidatorProxyV4WithGenericTrader;
+  paraswapEcosystem: ParaswapEcosystem | undefined;
   pendleEcosystem: PendleEcosystem | undefined;
   plutusEcosystem: PlutusEcosystem | undefined;
   testInterestSetter: TestInterestSetter;
@@ -373,6 +384,11 @@ export async function setupCoreProtocol(
     LiquidatorProxyV3WithLiquidityToken__factory.connect,
   );
 
+  const liquidatorProxyV4 = getContract(
+    (LiquidatorProxyV4WithGenericTraderJson.networks as any)[config.network].address,
+    LiquidatorProxyV4WithGenericTrader__factory.connect,
+  );
+
   let testInterestSetter: TestInterestSetter;
   let testPriceOracle: TestPriceOracle;
   if (network.name === 'hardhat') {
@@ -394,6 +410,7 @@ export async function setupCoreProtocol(
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
+  const paraswapEcosystem = await createParaswapEcosystem(config.network, hhUser1);
   const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
 
@@ -417,11 +434,13 @@ export async function setupCoreProtocol(
     liquidatorProxyV1WithAmm,
     liquidatorProxyV2,
     liquidatorProxyV3,
+    liquidatorProxyV4,
     hhUser1,
     hhUser2,
     hhUser3,
     hhUser4,
     hhUser5,
+    paraswapEcosystem,
     pendleEcosystem,
     plutusEcosystem,
     testInterestSetter,
@@ -523,6 +542,20 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
     sbfGmx: getContract(SBF_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     vGlp: getContract(V_GLP_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
     vGmx: getContract(V_GMX_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
+  };
+}
+
+async function createParaswapEcosystem(
+  network: Network,
+  signer: SignerWithAddress,
+): Promise<ParaswapEcosystem | undefined> {
+  if (!PARASWAP_AUGUSTUS_ROUTER_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    augustusRouter: PARASWAP_AUGUSTUS_ROUTER_MAP[network]!,
+    transferProxy: PARASWAP_TRANSFER_PROXY_MAP[network]!,
   };
 }
 

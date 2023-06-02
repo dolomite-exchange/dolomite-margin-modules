@@ -85,13 +85,17 @@ export async function impersonateOrFallback(
   return impersonate(targetAccount, giveEther);
 }
 
-export async function impersonate(targetAccount: string, giveEther: boolean = false): Promise<SignerWithAddress> {
+export async function impersonate(
+  targetAccount: string,
+  giveEther: boolean = false,
+  balance = BigNumber.from('1000000000000000000'),
+): Promise<SignerWithAddress> {
   await hardhatNetwork.provider.request({
     method: 'hardhat_impersonateAccount',
     params: [targetAccount],
   });
   if (giveEther) {
-    await setEtherBalance(targetAccount);
+    await setEtherBalance(targetAccount, balance);
   }
   return ethers.getSigner(targetAccount);
 }
