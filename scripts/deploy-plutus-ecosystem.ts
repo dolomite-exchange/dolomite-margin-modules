@@ -1,10 +1,10 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import {
-  PlutusVaultGLPUnwrapperTrader__factory,
-  PlutusVaultGLPWrappedTokenUserVaultFactory__factory,
-  PlutusVaultGLPWrappedTokenUserVaultV1__factory,
-  PlutusVaultGLPWrapperTrader__factory,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory,
+  PlutusVaultGLPIsolationModeVaultFactory__factory,
+  PlutusVaultGLPIsolationModeTokenVaultV1__factory,
+  PlutusVaultGLPIsolationModeWrapperTraderV1__factory,
   PlutusVaultRegistry__factory,
 } from 'src/types';
 import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
@@ -12,9 +12,9 @@ import { setupCoreProtocol } from '../test/utils/setup';
 import {
   getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
   getPlutusVaultGLPPriceOracleConstructorParams,
-  getPlutusVaultGLPUnwrapperTraderConstructorParams,
-  getPlutusVaultGLPWrappedTokenUserVaultFactoryConstructorParams,
-  getPlutusVaultGLPWrapperTraderConstructorParams,
+  getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams,
+  getPlutusVaultGLPIsolationModeVaultFactoryConstructorParams,
+  getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../src/utils/constructors/plutus';
 import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
@@ -35,39 +35,39 @@ async function main() {
 
   const userVaultImplementationAddress = await deployContractAndSave(
     Number(network),
-    'PlutusVaultGLPWrappedTokenUserVaultV1',
+    'PlutusVaultGLPIsolationModeTokenVaultV1',
     [],
   );
-  const userVaultImplementation = PlutusVaultGLPWrappedTokenUserVaultV1__factory.connect(
+  const userVaultImplementation = PlutusVaultGLPIsolationModeTokenVaultV1__factory.connect(
     userVaultImplementationAddress,
     core.hhUser1,
   );
 
   const dplvGlpTokenAddress = await deployContractAndSave(
     Number(network),
-    'PlutusVaultGLPWrappedTokenUserVaultFactory',
-    getPlutusVaultGLPWrappedTokenUserVaultFactoryConstructorParams(
+    'PlutusVaultGLPIsolationModeVaultFactory',
+    getPlutusVaultGLPIsolationModeVaultFactoryConstructorParams(
       core,
       plutusVaultRegistry,
       core.plutusEcosystem!.plvGlp,
       userVaultImplementation,
     ),
   );
-  const dplvGlpToken = PlutusVaultGLPWrappedTokenUserVaultFactory__factory.connect(dplvGlpTokenAddress, core.hhUser1);
+  const dplvGlpToken = PlutusVaultGLPIsolationModeVaultFactory__factory.connect(dplvGlpTokenAddress, core.hhUser1);
 
   const unwrapperAddress = await deployContractAndSave(
     Number(network),
-    'PlutusVaultGLPUnwrapperTrader',
-    getPlutusVaultGLPUnwrapperTraderConstructorParams(core, plutusVaultRegistry, dplvGlpToken),
+    'PlutusVaultGLPIsolationModeUnwrapperTraderV1',
+    getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams(core, plutusVaultRegistry, dplvGlpToken),
   );
-  const unwrapper = PlutusVaultGLPUnwrapperTrader__factory.connect(unwrapperAddress, core.hhUser1);
+  const unwrapper = PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory.connect(unwrapperAddress, core.hhUser1);
 
   const wrapperAddress = await deployContractAndSave(
     Number(network),
-    'PlutusVaultGLPWrapperTrader',
-    getPlutusVaultGLPWrapperTraderConstructorParams(core, plutusVaultRegistry, dplvGlpToken),
+    'PlutusVaultGLPIsolationModeWrapperTraderV1',
+    getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams(core, plutusVaultRegistry, dplvGlpToken),
   );
-  const wrapper = PlutusVaultGLPWrapperTrader__factory.connect(wrapperAddress, core.hhUser1);
+  const wrapper = PlutusVaultGLPIsolationModeWrapperTraderV1__factory.connect(wrapperAddress, core.hhUser1);
 
   const priceOracleAddress = await deployContractAndSave(
     Number(network),

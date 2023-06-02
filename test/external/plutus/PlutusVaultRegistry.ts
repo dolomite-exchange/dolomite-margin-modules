@@ -4,8 +4,8 @@ import { PlutusVaultRegistry } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
+import { createPlutusVaultRegistry } from '../../utils/ecosystem-token-utils/plutus';
 import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
-import { createPlutusVaultRegistry } from '../../utils/wrapped-token-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 

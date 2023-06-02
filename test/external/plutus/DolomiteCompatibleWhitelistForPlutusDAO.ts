@@ -4,23 +4,22 @@ import {
   DolomiteCompatibleWhitelistForPlutusDAO,
   IWhitelist,
   IWhitelist__factory,
-  PlutusVaultGLPUnwrapperTrader,
-  PlutusVaultGLPWrappedTokenUserVaultFactory,
-  PlutusVaultGLPWrapperTrader,
-  PlutusVaultRegistry,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  PlutusVaultGLPIsolationModeVaultFactory,
+  PlutusVaultGLPIsolationModeWrapperTraderV1,
 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 import {
   createDolomiteCompatibleWhitelistForPlutusDAO,
-  createPlutusVaultGLPUnwrapperTrader,
-  createPlutusVaultGLPWrappedTokenUserVaultFactory,
-  createPlutusVaultGLPWrappedTokenUserVaultV1,
-  createPlutusVaultGLPWrapperTrader,
+  createPlutusVaultGLPIsolationModeTokenVaultV1,
+  createPlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  createPlutusVaultGLPIsolationModeVaultFactory,
+  createPlutusVaultGLPIsolationModeWrapperTraderV1,
   createPlutusVaultRegistry,
-} from '../../utils/wrapped-token-utils';
+} from '../../utils/ecosystem-token-utils/plutus';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -29,10 +28,10 @@ describe('DolomiteCompatibleWhitelistForPlutusDAO', () => {
 
   let core: CoreProtocol;
   let dolomiteWhitelist: DolomiteCompatibleWhitelistForPlutusDAO;
-  let unwrapperTrader: PlutusVaultGLPUnwrapperTrader;
-  let wrapperTrader: PlutusVaultGLPWrapperTrader;
+  let unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1;
+  let wrapperTrader: PlutusVaultGLPIsolationModeWrapperTraderV1;
   let plutusWhitelist: IWhitelist;
-  let factory: PlutusVaultGLPWrappedTokenUserVaultFactory;
+  let factory: PlutusVaultGLPIsolationModeVaultFactory;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -40,15 +39,15 @@ describe('DolomiteCompatibleWhitelistForPlutusDAO', () => {
       network: Network.ArbitrumOne,
     });
     const plutusVaultRegistry = await createPlutusVaultRegistry(core);
-    const userVaultImplementation = await createPlutusVaultGLPWrappedTokenUserVaultV1();
-    factory = await createPlutusVaultGLPWrappedTokenUserVaultFactory(
+    const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1();
+    factory = await createPlutusVaultGLPIsolationModeVaultFactory(
       core,
       plutusVaultRegistry,
       core.plutusEcosystem!.plvGlp,
       userVaultImplementation,
     );
-    unwrapperTrader = await createPlutusVaultGLPUnwrapperTrader(core, plutusVaultRegistry, factory);
-    wrapperTrader = await createPlutusVaultGLPWrapperTrader(core, plutusVaultRegistry, factory);
+    unwrapperTrader = await createPlutusVaultGLPIsolationModeUnwrapperTraderV1(core, plutusVaultRegistry, factory);
+    wrapperTrader = await createPlutusVaultGLPIsolationModeWrapperTraderV1(core, plutusVaultRegistry, factory);
     plutusWhitelist = IWhitelist__factory.connect(
       await core.plutusEcosystem!.plvGlpFarm.whitelist(),
       core.hhUser1,

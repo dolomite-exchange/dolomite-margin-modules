@@ -6,8 +6,8 @@ import { createContractWithAbi, createTestToken } from '../../../src/utils/dolom
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
+import { createMagicGLPPriceOracle } from '../../utils/ecosystem-token-utils/abracadabra';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
-import { createMagicGLPPriceOracle } from '../../utils/wrapped-token-utils/abracadabra';
 
 const GLP_PRICE = BigNumber.from('1000974796933941049'); // $1.000974796933941049
 

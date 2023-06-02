@@ -12,8 +12,8 @@ import { createContractWithAbi, createTestToken } from '../../../src/utils/dolom
 import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
+import { createGmxRegistry } from '../../utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
-import { createGmxRegistry } from '../../utils/wrapped-token-utils/gmx';
 
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const usdcAmount = BigNumber.from('10000000'); // $10

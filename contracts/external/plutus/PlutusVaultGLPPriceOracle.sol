@@ -56,13 +56,13 @@ contract PlutusVaultGLPPriceOracle is IDolomitePriceOracle {
         uint256 _dfsGlpMarketId,
         address _dplvGlp,
         address _plutusVaultRegistry,
-        address _plutusVaultGlpUnwrapperTrader
+        address _plutusVaultGLPUnwrapperTrader
     ) {
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
         DPLV_GLP = _dplvGlp;
         PLUTUS_VAULT_REGISTRY = IPlutusVaultRegistry(_plutusVaultRegistry);
-        PLUTUS_VAULT_GLP_UNWRAPPER_TRADER = _plutusVaultGlpUnwrapperTrader;
+        PLUTUS_VAULT_GLP_UNWRAPPER_TRADER = _plutusVaultGLPUnwrapperTrader;
     }
 
     function getPrice(

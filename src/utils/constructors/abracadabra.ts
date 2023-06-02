@@ -8,7 +8,7 @@ export function getMagicGLPPriceOracleConstructorParams(core: CoreProtocol): any
   ];
 }
 
-export function getMagicGLPUnwrapperTraderConstructorParams(core: CoreProtocol): any[] {
+export function getMagicGLPUnwrapperTraderV1ConstructorParams(core: CoreProtocol): any[] {
   if (!core.abraEcosystem) {
     throw new Error('Abra ecosystem not initialized');
   }
@@ -21,7 +21,7 @@ export function getMagicGLPUnwrapperTraderConstructorParams(core: CoreProtocol):
   ];
 }
 
-export function getMagicGLPWrapperTraderConstructorParams(core: CoreProtocol): any[] {
+export function getMagicGLPWrapperTraderV1ConstructorParams(core: CoreProtocol): any[] {
   if (!core.abraEcosystem) {
     throw new Error('Abra ecosystem not initialized');
   }

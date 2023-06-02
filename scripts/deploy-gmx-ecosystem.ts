@@ -2,14 +2,14 @@ import { ethers } from 'hardhat';
 import { Network } from 'src/utils/no-deps-constants';
 import {
   GLPPriceOracleV1,
-  GLPWrappedTokenUserVaultV1__factory,
-  IGLPWrappedTokenUserVaultFactory__factory,
+  GLPIsolationModeTokenVaultV1__factory,
+  IGLPIsolationModeVaultFactory__factory,
   IGmxRegistryV1__factory,
 } from '../src/types';
 import {
   getGLPPriceOracleV1ConstructorParams,
   getGLPUnwrapperTraderConstructorParams,
-  getGLPWrappedTokenUserVaultFactoryConstructorParams,
+  getGLPIsolationModeVaultFactoryConstructorParams,
   getGLPWrapperTraderConstructorParams,
   getGmxRegistryConstructorParams,
 } from '../src/utils/constructors/gmx';
@@ -30,18 +30,18 @@ async function main() {
   );
   const gmxRegistry = IGmxRegistryV1__factory.connect(gmxRegistryAddress, core.hhUser1);
 
-  const userVaultImplementationAddress = await deployContractAndSave(chainId, 'GLPWrappedTokenUserVaultV1', []);
-  const userVaultImplementation = GLPWrappedTokenUserVaultV1__factory.connect(
+  const userVaultImplementationAddress = await deployContractAndSave(chainId, 'GLPIsolationModeTokenVaultV1', []);
+  const userVaultImplementation = GLPIsolationModeTokenVaultV1__factory.connect(
     userVaultImplementationAddress,
     core.hhUser1,
   );
 
   const factoryAddress = await deployContractAndSave(
     chainId,
-    'GLPWrappedTokenUserVaultFactory',
-    getGLPWrappedTokenUserVaultFactoryConstructorParams(core, gmxRegistry, userVaultImplementation),
+    'GLPIsolationModeVaultFactory',
+    getGLPIsolationModeVaultFactoryConstructorParams(core, gmxRegistry, userVaultImplementation),
   );
-  const factory = IGLPWrappedTokenUserVaultFactory__factory.connect(factoryAddress, core.hhUser1);
+  const factory = IGLPIsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
 
   await deployContractAndSave(
     chainId,
@@ -50,12 +50,12 @@ async function main() {
   );
   await deployContractAndSave(
     chainId,
-    'GLPWrapperTraderV1',
+    'GLPIsolationModeWrapperTraderV1',
     getGLPWrapperTraderConstructorParams(core, factory, gmxRegistry),
   );
   await deployContractAndSave(
     chainId,
-    'GLPUnwrapperTraderV1',
+    'GLPIsolationModeUnwrapperTraderV1',
     getGLPUnwrapperTraderConstructorParams(core, factory, gmxRegistry),
   );
 }

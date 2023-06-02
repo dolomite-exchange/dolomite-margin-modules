@@ -3,8 +3,8 @@ import { ethers } from 'hardhat';
 import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
 import {
   getMagicGLPPriceOracleConstructorParams,
-  getMagicGLPUnwrapperTraderConstructorParams,
-  getMagicGLPWrapperTraderConstructorParams,
+  getMagicGLPUnwrapperTraderV1ConstructorParams,
+  getMagicGLPWrapperTraderV1ConstructorParams,
 } from '../src/utils/constructors/abracadabra';
 import { setupCoreProtocol } from '../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
@@ -22,13 +22,13 @@ async function main() {
   );
   const unwrapperTraderAddress = await deployContractAndSave(
     Number(network),
-    'MagicGLPUnwrapperTrader',
-    getMagicGLPUnwrapperTraderConstructorParams(core),
+    'MagicGLPUnwrapperTraderV1',
+    getMagicGLPUnwrapperTraderV1ConstructorParams(core),
   );
   await deployContractAndSave(
     Number(network),
-    'MagicGLPWrapperTrader',
-    getMagicGLPWrapperTraderConstructorParams(core),
+    'MagicGLPWrapperTraderV1',
+    getMagicGLPWrapperTraderV1ConstructorParams(core),
   );
 
   await prettyPrintEncodedData(

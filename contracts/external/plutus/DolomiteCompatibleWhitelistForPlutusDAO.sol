@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IWhitelist } from "../interfaces/IWhitelist.sol";
-import { IWrappedTokenUserVaultFactory } from "../interfaces/IWrappedTokenUserVaultFactory.sol";
 
 
 /**
@@ -42,7 +42,7 @@ contract DolomiteCompatibleWhitelistForPlutusDAO is IWhitelist, OnlyDolomiteMarg
     // ============================ Immutable State Variables ============================
 
     IWhitelist immutable public PLUTUS_WHITELIST; // solhint-disable-line var-name-mixedcase
-    IWrappedTokenUserVaultFactory immutable public DOLOMITE_PLV_GLP_WRAPPER; // solhint-disable-line var-name-mixedcase
+    IIsolationModeVaultFactory immutable public DOLOMITE_PLV_GLP_WRAPPER; // solhint-disable-line var-name-mixedcase
 
     // ============================ Mutable State Variables ============================
 
@@ -73,7 +73,7 @@ contract DolomiteCompatibleWhitelistForPlutusDAO is IWhitelist, OnlyDolomiteMarg
     )
     {
         PLUTUS_WHITELIST = IWhitelist(_plutusWhitelist);
-        DOLOMITE_PLV_GLP_WRAPPER = IWrappedTokenUserVaultFactory(_dolomitePlvGlpWrapper);
+        DOLOMITE_PLV_GLP_WRAPPER = IIsolationModeVaultFactory(_dolomitePlvGlpWrapper);
 
         _setPlvGlpUnwrapperTrader(_plvGlpUnwrapperTrader);
         _setPlvGlpWrapperTrader(_plvGlpWrapperTrader);

@@ -1,10 +1,10 @@
 import { address } from '@dolomite-margin/dist/src';
 import { CoreProtocol } from '../../../test/utils/setup';
 import {
-  IPlutusVaultGLPWrappedTokenUserVaultV1,
+  IPlutusVaultGLPIsolationModeTokenVaultV1,
   IPlutusVaultRegistry,
-  PlutusVaultGLPUnwrapperTrader, PlutusVaultGLPWrappedTokenUserVaultV1,
-  PlutusVaultGLPWrapperTrader,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV1, PlutusVaultGLPIsolationModeTokenVaultV1,
+  PlutusVaultGLPIsolationModeWrapperTraderV1,
   PlutusVaultRegistry,
 } from '../../types';
 
@@ -26,7 +26,7 @@ export function getPlutusVaultGLPPriceOracleConstructorParams(
   core: CoreProtocol,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dplvGlpToken: { address: address },
-  plutusVaultGLPUnwrapperTrader: PlutusVaultGLPUnwrapperTrader,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV1: PlutusVaultGLPIsolationModeUnwrapperTraderV1,
 ): any[] {
   if (!core.plutusEcosystem) {
     throw new Error('Plutus ecosystem not initialized');
@@ -37,11 +37,11 @@ export function getPlutusVaultGLPPriceOracleConstructorParams(
     core.marketIds.dfsGlp!,
     dplvGlpToken.address,
     plutusVaultRegistry.address,
-    plutusVaultGLPUnwrapperTrader.address,
+    PlutusVaultGLPIsolationModeUnwrapperTraderV1.address,
   ];
 }
 
-export function getPlutusVaultGLPUnwrapperTraderConstructorParams(
+export function getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams(
   core: CoreProtocol,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },
@@ -61,8 +61,8 @@ export function getPlutusVaultGLPUnwrapperTraderConstructorParams(
 
 export function getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams(
   core: CoreProtocol,
-  unwrapperTrader: PlutusVaultGLPUnwrapperTrader,
-  wrapperTrader: PlutusVaultGLPWrapperTrader,
+  unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  wrapperTrader: PlutusVaultGLPIsolationModeWrapperTraderV1,
   plutusWhitelist: address,
   dplvGlpToken: { address: address },
 ): any[] {
@@ -79,11 +79,11 @@ export function getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams(
   ];
 }
 
-export function getPlutusVaultGLPWrappedTokenUserVaultFactoryConstructorParams(
+export function getPlutusVaultGLPIsolationModeVaultFactoryConstructorParams(
   core: CoreProtocol,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   plvGlpToken: { address: address },
-  userVaultImplementation: IPlutusVaultGLPWrappedTokenUserVaultV1 | PlutusVaultGLPWrappedTokenUserVaultV1,
+  userVaultImplementation: IPlutusVaultGLPIsolationModeTokenVaultV1 | PlutusVaultGLPIsolationModeTokenVaultV1,
 ): any[] {
   if (!core.plutusEcosystem) {
     throw new Error('Plutus ecosystem not initialized');
@@ -98,7 +98,7 @@ export function getPlutusVaultGLPWrappedTokenUserVaultFactoryConstructorParams(
   ];
 }
 
-export function getPlutusVaultGLPWrapperTraderConstructorParams(
+export function getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams(
   core: CoreProtocol,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },

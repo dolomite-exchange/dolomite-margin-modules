@@ -5,13 +5,13 @@ import { GLPPriceOracleV1, GmxRegistryV1 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
-import { setupCoreProtocol } from '../../utils/setup';
 import {
+  createGLPIsolationModeTokenVaultV1,
+  createGLPIsolationModeVaultFactory,
   createGLPPriceOracleV1,
-  createGLPWrappedTokenUserVaultFactory,
-  createGLPWrappedTokenUserVaultV1,
   createGmxRegistry,
-} from '../../utils/wrapped-token-utils/gmx';
+} from '../../utils/ecosystem-token-utils/gmx';
+import { setupCoreProtocol } from '../../utils/setup';
 
 const GLP_PRICE = BigNumber.from('913711474561791281'); // $0.913711
 
@@ -27,8 +27,8 @@ describe('GLPPriceOracleV1', () => {
       network: Network.ArbitrumOne,
     });
     gmxRegistry = await createGmxRegistry(core);
-    const userVaultImplementation = await createGLPWrappedTokenUserVaultV1();
-    const factory = await createGLPWrappedTokenUserVaultFactory(core, gmxRegistry, userVaultImplementation);
+    const userVaultImplementation = await createGLPIsolationModeTokenVaultV1();
+    const factory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, userVaultImplementation);
     glpPriceOracle = await createGLPPriceOracleV1(factory, gmxRegistry);
 
     snapshotId = await snapshot();

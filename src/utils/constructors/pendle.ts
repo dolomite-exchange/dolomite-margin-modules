@@ -1,15 +1,14 @@
-import { address } from '@dolomite-exchange/dolomite-margin';
 import { CoreProtocol } from '../../../test/utils/setup';
 import {
-  IPendlePtGLP2024Registry, IPendlePtGLP2024WrappedTokenUserVaultFactory,
-  IPendlePtGLP2024WrappedTokenUserVaultV1,
-  PendlePtGLP2024Registry, PendlePtGLP2024WrappedTokenUserVaultFactory,
-  PendlePtGLP2024WrappedTokenUserVaultV1,
+  IPendlePtGLP2024Registry, IPendlePtGLP2024IsolationModeVaultFactory,
+  IPendlePtGLP2024IsolationModeTokenVaultV1,
+  PendlePtGLP2024Registry, PendlePtGLP2024IsolationModeVaultFactory,
+  PendlePtGLP2024IsolationModeTokenVaultV1, IPendlePtToken,
 } from '../../types';
 
 export function getPendlePtGLPPriceOracleConstructorParams(
   core: CoreProtocol,
-  dptGlp: IPendlePtGLP2024WrappedTokenUserVaultFactory | PendlePtGLP2024WrappedTokenUserVaultFactory,
+  dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendlePtGLP2024Registry | PendlePtGLP2024Registry,
 ): any[] {
   if (!core.pendleEcosystem) {
@@ -41,8 +40,9 @@ export function getPendlePtGLP2024RegistryConstructorParams(
   ];
 }
 
-export function getPendlePtGLP2024UnwrapperTraderConstructorParams(
+export function getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
   core: CoreProtocol,
+  dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendlePtGLP2024Registry | PendlePtGLP2024Registry,
 ): any[] {
   if (!core.pendleEcosystem) {
@@ -52,16 +52,16 @@ export function getPendlePtGLP2024UnwrapperTraderConstructorParams(
   return [
     pendleRegistry.address,
     core.gmxRegistry!.address,
-    core.marketIds.usdc!,
+    dptGlp.address,
     core.dolomiteMargin.address,
   ];
 }
 
-export function getPendlePtGLP2024WrappedTokenUserVaultFactoryConstructorParams(
+export function getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams(
   core: CoreProtocol,
   pendleRegistry: IPendlePtGLP2024Registry | PendlePtGLP2024Registry,
-  ptGlpToken: { address: address },
-  userVaultImplementation: IPendlePtGLP2024WrappedTokenUserVaultV1 | PendlePtGLP2024WrappedTokenUserVaultV1,
+  ptGlpToken: IPendlePtToken,
+  userVaultImplementation: IPendlePtGLP2024IsolationModeTokenVaultV1 | PendlePtGLP2024IsolationModeTokenVaultV1,
 ): any[] {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
@@ -76,8 +76,9 @@ export function getPendlePtGLP2024WrappedTokenUserVaultFactoryConstructorParams(
   ];
 }
 
-export function getPendlePtGLP2024WrapperTraderConstructorParams(
+export function getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
   core: CoreProtocol,
+  dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendlePtGLP2024Registry | PendlePtGLP2024Registry,
 ): any[] {
   if (!core.pendleEcosystem) {
@@ -87,6 +88,7 @@ export function getPendlePtGLP2024WrapperTraderConstructorParams(
   return [
     pendleRegistry.address,
     core.gmxRegistry!.address,
+    dptGlp.address,
     core.dolomiteMargin.address,
   ];
 }

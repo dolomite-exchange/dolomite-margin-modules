@@ -12,11 +12,11 @@ async function main() {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
   const userVaultImplementation = await deployContractAndSave(
     Number(network),
-    'SimpleWrappedTokenUserVaultV1',
+    'SimpleIsolationModeTokenVaultV1',
     [],
     'AtlasSIUserVaultV1',
   );
-  await deployContractAndSave(Number(network), 'SimpleWrappedTokenUserVaultFactory', [
+  await deployContractAndSave(Number(network), 'SimpleIsolationModeTokenFactory', [
     [core.marketIds.usdc],
     [NONE_MARKET_ID],
     ATLAS_SI_TOKEN_MAP[network]!,

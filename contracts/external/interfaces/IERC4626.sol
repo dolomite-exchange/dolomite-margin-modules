@@ -31,19 +31,19 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 interface IERC4626 is IERC20 {
 
-    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
+    function redeem(uint256 _shares, address _receiver, address _owner) external returns (uint256 _assets);
 
-    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
+    function deposit(uint256 _assets, address _receiver) external returns (uint256 _shares);
 
-    function mint(uint256 shares, address receiver) external returns (uint256 assets);
+    function mint(uint256 _shares, address _receiver) external returns (uint256 _assets);
 
     function totalAssets() external view returns (uint256);
 
-    function previewDeposit(uint256 assets) external view returns (uint256);
+    function previewDeposit(uint256 _assets) external view returns (uint256);
 
-    function previewMint(uint256 shares) external view returns (uint256);
+    function previewMint(uint256 _shares) external view returns (uint256);
 
-    function previewRedeem(uint256 shares) external view returns (uint256);
+    function previewRedeem(uint256 _shares) external view returns (uint256);
 
-    function previewWithdraw(uint256 assets) external view returns (uint256);
+    function previewWithdraw(uint256 _assets) external view returns (uint256);
 }

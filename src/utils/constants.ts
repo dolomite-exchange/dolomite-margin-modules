@@ -79,7 +79,7 @@ export const FS_GLP_MAP: Record<Network, string | undefined> = {
 };
 
 /**
- * The underlying token the for WrappedTokenUserVaultFactory
+ * The underlying token the for IsolationModeVaultFactory
  */
 export const GLP_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x4277f8F2c384827B5273592FF7CeBd9f2C1ac258',

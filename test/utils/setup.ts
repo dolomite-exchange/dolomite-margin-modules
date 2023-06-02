@@ -24,6 +24,10 @@ import {
   BorrowPositionProxyV2__factory,
   Expiry,
   Expiry__factory,
+  GLPIsolationModeUnwrapperTraderV1,
+  GLPIsolationModeUnwrapperTraderV1__factory,
+  GLPIsolationModeWrapperTraderV1,
+  GLPIsolationModeWrapperTraderV1__factory,
   IDepositWithdrawalProxy,
   IDepositWithdrawalProxy__factory,
   IDolomiteAmmFactory,
@@ -51,7 +55,9 @@ import {
   IGmxVester,
   IGmxVester__factory,
   IPendlePtMarket,
-  IPendlePtMarket__factory, IPendlePtOracle, IPendlePtOracle__factory,
+  IPendlePtMarket__factory,
+  IPendlePtOracle,
+  IPendlePtOracle__factory,
   IPendlePtToken,
   IPendlePtToken__factory,
   IPendleRouter,
@@ -96,7 +102,8 @@ import {
   GMX_VAULT_MAP,
   MAGIC_GLP_MAP,
   PENDLE_PT_GLP_2024_MARKET_MAP,
-  PENDLE_PT_GLP_2024_TOKEN_MAP, PENDLE_PT_ORACLE_MAP,
+  PENDLE_PT_GLP_2024_TOKEN_MAP,
+  PENDLE_PT_ORACLE_MAP,
   PENDLE_ROUTER_MAP,
   PENDLE_SY_GLP_2024_TOKEN_MAP,
   PLS_TOKEN_MAP,
@@ -197,6 +204,8 @@ export interface CoreProtocol {
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
   expiry: Expiry;
+  glpIsolationModeUnwrapperTraderV1: GLPIsolationModeUnwrapperTraderV1 | undefined;
+  glpIsolationModeWrapperTraderV1: GLPIsolationModeWrapperTraderV1 | undefined;
   gmxRegistry: IGmxRegistryV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
   liquidatorAssetRegistry: LiquidatorAssetRegistry | undefined;
@@ -324,6 +333,16 @@ export async function setupCoreProtocol(
     governance,
   );
 
+  const glpIsolationModeUnwrapperTraderV1 = getContractOpt(
+    (Deployments.GLPIsolationModeUnwrapperTraderV1 as any)[config.network]?.address,
+    GLPIsolationModeUnwrapperTraderV1__factory.connect,
+  );
+
+  const glpIsolationModeWrapperTraderV1 = getContractOpt(
+    (Deployments.GLPIsolationModeWrapperTraderV1 as any)[config.network]?.address,
+    GLPIsolationModeWrapperTraderV1__factory.connect,
+  );
+
   const gmxRegistry = getContractOpt(
     (Deployments.GmxRegistryV1 as any)[config.network]?.address,
     IGmxRegistryV1__factory.connect,
@@ -389,6 +408,8 @@ export async function setupCoreProtocol(
     dolomiteMargin,
     expiry,
     gmxEcosystem,
+    glpIsolationModeUnwrapperTraderV1,
+    glpIsolationModeWrapperTraderV1,
     gmxRegistry,
     governance,
     liquidatorAssetRegistry,
@@ -477,9 +498,7 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
   }
 
   const esGmxDistributor = getContract(esGmxDistributorAddress, IEsGmxDistributor__factory.connect);
-  const esGmxAdmin = esGmxDistributor
-    ? await impersonateOrFallback(await esGmxDistributor.connect(signer).admin(), true, signer)
-    : undefined;
+  const esGmxAdmin = await impersonateOrFallback(await esGmxDistributor.connect(signer).admin(), true, signer);
   return {
     esGmx: getContract(ES_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     esGmxDistributor: esGmxDistributor.connect(esGmxAdmin),

@@ -2,7 +2,7 @@ import { BigNumber, INTEGERS } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { TestDolomiteMarginMath, TestDolomiteMarginMath__factory } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { snapshot, revertToSnapshotAndCapture } from '../../utils';
+import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 
 describe('DolomiteMarginMath', () => {

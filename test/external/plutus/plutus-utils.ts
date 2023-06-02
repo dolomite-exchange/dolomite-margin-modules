@@ -1,20 +1,21 @@
-import { address } from '@dolomite-exchange/dolomite-margin';
 import {
   IPlutusVaultGLPFarm,
+  IPlutusVaultGLPIsolationModeVaultFactory,
   IPlutusVaultGLPRouter,
-  PlutusVaultGLPUnwrapperTrader,
-  PlutusVaultGLPWrapperTrader,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  PlutusVaultGLPIsolationModeVaultFactory,
+  PlutusVaultGLPIsolationModeWrapperTraderV1,
 } from '../../../src/types';
 import { impersonate } from '../../utils';
+import { createDolomiteCompatibleWhitelistForPlutusDAO } from '../../utils/ecosystem-token-utils/plutus';
 import { CoreProtocol } from '../../utils/setup';
-import { createDolomiteCompatibleWhitelistForPlutusDAO } from '../../utils/wrapped-token-utils';
 
 export async function createAndSetPlutusVaultWhitelist(
   core: CoreProtocol,
   routerOrFarm: IPlutusVaultGLPRouter | IPlutusVaultGLPFarm,
-  unwrapperTrader: PlutusVaultGLPUnwrapperTrader,
-  wrapperTrader: PlutusVaultGLPWrapperTrader,
-  dplvGlpToken: { address: address },
+  unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  wrapperTrader: PlutusVaultGLPIsolationModeWrapperTraderV1,
+  dplvGlpToken: IPlutusVaultGLPIsolationModeVaultFactory | PlutusVaultGLPIsolationModeVaultFactory,
 ) {
   const plutusWhitelist = await routerOrFarm.connect(core.hhUser1).whitelist();
   const dolomiteWhitelist = await createDolomiteCompatibleWhitelistForPlutusDAO(

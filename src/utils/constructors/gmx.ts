@@ -1,15 +1,16 @@
 import { CoreProtocol } from '../../../test/utils/setup';
 import {
-  GLPWrappedTokenUserVaultFactory,
-  GLPWrappedTokenUserVaultV1,
+  GLPIsolationModeTokenVaultV1,
+  GLPIsolationModeVaultFactory,
   GmxRegistryV1,
-  IGLPWrappedTokenUserVaultFactory,
-  IGLPWrappedTokenUserVaultV1,
-  IGmxRegistryV1, TestGLPWrappedTokenUserVaultV1,
+  IGLPIsolationModeTokenVaultV1,
+  IGLPIsolationModeVaultFactory,
+  IGmxRegistryV1,
+  TestGLPIsolationModeTokenVaultV1,
 } from '../../types';
 
 export function getGLPPriceOracleV1ConstructorParams(
-  dfsGlp: IGLPWrappedTokenUserVaultFactory | GLPWrappedTokenUserVaultFactory,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
   return [gmxRegistry.address, dfsGlp.address];
@@ -17,7 +18,7 @@ export function getGLPPriceOracleV1ConstructorParams(
 
 export function getGLPUnwrapperTraderConstructorParams(
   core: CoreProtocol,
-  dfsGlp: IGLPWrappedTokenUserVaultFactory | GLPWrappedTokenUserVaultFactory,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
   return [
@@ -28,10 +29,15 @@ export function getGLPUnwrapperTraderConstructorParams(
   ];
 }
 
-export function getGLPWrappedTokenUserVaultFactoryConstructorParams(
+export type GmxUserVaultImplementation =
+  IGLPIsolationModeTokenVaultV1
+  | GLPIsolationModeTokenVaultV1
+  | TestGLPIsolationModeTokenVaultV1;
+
+export function getGLPIsolationModeVaultFactoryConstructorParams(
   core: CoreProtocol,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
-  userVaultImplementation: IGLPWrappedTokenUserVaultV1 | GLPWrappedTokenUserVaultV1 | TestGLPWrappedTokenUserVaultV1,
+  userVaultImplementation: GmxUserVaultImplementation,
 ): any[] {
   return [
     core.weth.address,
@@ -46,7 +52,7 @@ export function getGLPWrappedTokenUserVaultFactoryConstructorParams(
 
 export function getGLPWrapperTraderConstructorParams(
   core: CoreProtocol,
-  dfsGlp: IGLPWrappedTokenUserVaultFactory | GLPWrappedTokenUserVaultFactory,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
   return [

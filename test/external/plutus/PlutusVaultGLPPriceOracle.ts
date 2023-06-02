@@ -2,23 +2,23 @@ import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
+  PlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  PlutusVaultGLPIsolationModeVaultFactory,
   PlutusVaultGLPPriceOracle,
-  PlutusVaultGLPUnwrapperTrader,
-  PlutusVaultGLPWrappedTokenUserVaultFactory,
   PlutusVaultRegistry,
 } from '../../../src/types';
 import { createTestToken } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 import {
+  createPlutusVaultGLPIsolationModeTokenVaultV1,
+  createPlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  createPlutusVaultGLPIsolationModeVaultFactory,
   createPlutusVaultGLPPriceOracle,
-  createPlutusVaultGLPUnwrapperTrader,
-  createPlutusVaultGLPWrappedTokenUserVaultFactory,
-  createPlutusVaultGLPWrappedTokenUserVaultV1,
   createPlutusVaultRegistry,
-} from '../../utils/wrapped-token-utils';
+} from '../../utils/ecosystem-token-utils/plutus';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 const GLP_PRICE = BigNumber.from('951856689348643550'); // $0.95185668
 const PLV_GLP_PRICE = BigNumber.from('1122820703434687401'); // $1.12282070
@@ -29,8 +29,8 @@ describe('PlutusVaultGLPPriceOracle', () => {
   let core: CoreProtocol;
   let plvGlpPriceOracle: PlutusVaultGLPPriceOracle;
   let plutusVaultRegistry: PlutusVaultRegistry;
-  let factory: PlutusVaultGLPWrappedTokenUserVaultFactory;
-  let unwrapperTrader: PlutusVaultGLPUnwrapperTrader;
+  let factory: PlutusVaultGLPIsolationModeVaultFactory;
+  let unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1;
   let marketId: BigNumberish;
 
   before(async () => {
@@ -39,14 +39,14 @@ describe('PlutusVaultGLPPriceOracle', () => {
       network: Network.ArbitrumOne,
     });
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
-    const userVaultImplementation = await createPlutusVaultGLPWrappedTokenUserVaultV1();
-    factory = await createPlutusVaultGLPWrappedTokenUserVaultFactory(
+    const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1();
+    factory = await createPlutusVaultGLPIsolationModeVaultFactory(
       core,
       plutusVaultRegistry,
       core.plutusEcosystem!.plvGlp,
       userVaultImplementation,
     );
-    unwrapperTrader = await createPlutusVaultGLPUnwrapperTrader(core, plutusVaultRegistry, factory);
+    unwrapperTrader = await createPlutusVaultGLPIsolationModeUnwrapperTraderV1(core, plutusVaultRegistry, factory);
     plvGlpPriceOracle = await createPlutusVaultGLPPriceOracle(
       core,
       plutusVaultRegistry,

@@ -1,15 +1,9 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import {
-  IERC4626,
-  MagicGLPPriceOracle,
-  MagicGLPPriceOracle__factory,
-  MagicGLPUnwrapperTrader,
-  MagicGLPUnwrapperTrader__factory,
-} from '../../../src/types';
+import { IERC4626, MagicGLPPriceOracle, MagicGLPUnwrapperTraderV1 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
-import { createContractWithAbi, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
+import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
@@ -18,10 +12,13 @@ import {
   expectThrow,
   expectWalletBalanceOrDustyIfZero,
 } from '../../utils/assertions';
+import {
+  createMagicGLPPriceOracle,
+  createMagicGLPUnwrapperTraderV1,
+} from '../../utils/ecosystem-token-utils/abracadabra';
 import { setExpiry } from '../../utils/expiry-utils';
 import { getCalldataForParaswap } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
-import { createMagicGLPPriceOracle, createMagicGLPUnwrapperTrader } from '../../utils/wrapped-token-utils/abracadabra';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -39,7 +36,7 @@ describe('MagicGLPLiquidation', () => {
   let core: CoreProtocol;
   let magicGlp: IERC4626;
   let heldMarketId: BigNumber;
-  let unwrapper: MagicGLPUnwrapperTrader;
+  let unwrapper: MagicGLPUnwrapperTraderV1;
   let priceOracle: MagicGLPPriceOracle;
   let defaultAccountStruct: Account.InfoStruct;
   let liquidAccountStruct: Account.InfoStruct;
@@ -56,7 +53,7 @@ describe('MagicGLPLiquidation', () => {
 
     heldMarketId = BigNumber.from(core.marketIds.magicGlp!);
 
-    unwrapper = await createMagicGLPUnwrapperTrader(core);
+    unwrapper = await createMagicGLPUnwrapperTraderV1(core);
 
     defaultAccountStruct = { owner: core.hhUser1.address, number: defaultAccountNumber };
     liquidAccountStruct = { owner: core.hhUser1.address, number: otherAccountNumber };

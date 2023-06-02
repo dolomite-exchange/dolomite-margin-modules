@@ -3,7 +3,7 @@ import chai from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { TestRequire, TestRequire__factory } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { snapshot, revertToSnapshotAndCapture } from '../../utils';
+import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 
 chai.use(solidity);
