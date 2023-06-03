@@ -10,8 +10,8 @@ import {
   TestIsolationModeFactory__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
-  TestIsolationModeWrapperTraderV1,
-  TestIsolationModeWrapperTraderV1__factory,
+  TestIsolationModeWrapperTraderV2,
+  TestIsolationModeWrapperTraderV2__factory,
 } from '../../../../src/types';
 import { Account } from '../../../../src/types/IDolomiteMargin';
 import { createContractWithAbi, createTestToken } from '../../../../src/utils/dolomite-utils';
@@ -27,7 +27,7 @@ const TEN = BigNumber.from('10000000000000000000');
 
 const abiCoder = ethers.utils.defaultAbiCoder;
 
-describe('IsolationModeWrapperTraderV1', () => {
+describe('IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
@@ -35,7 +35,7 @@ describe('IsolationModeWrapperTraderV1', () => {
   let underlyingMarketId: BigNumber;
   let otherToken: CustomTestToken;
   let otherMarketId: BigNumber;
-  let wrapper: TestIsolationModeWrapperTraderV1;
+  let wrapper: TestIsolationModeWrapperTraderV2;
   let factory: TestIsolationModeFactory;
   let vault: TestIsolationModeTokenVaultV1;
   let defaultAccount: Account.InfoStruct;
@@ -74,8 +74,8 @@ describe('IsolationModeWrapperTraderV1', () => {
     await setupTestMarket(core, otherToken, false);
 
     wrapper = await createContractWithAbi(
-      TestIsolationModeWrapperTraderV1__factory.abi,
-      TestIsolationModeWrapperTraderV1__factory.bytecode,
+      TestIsolationModeWrapperTraderV2__factory.abi,
+      TestIsolationModeWrapperTraderV2__factory.bytecode,
       [factory.address, core.dolomiteMargin.address],
     );
     await factory.connect(core.governance).ownerInitialize([wrapper.address]);
@@ -121,6 +121,7 @@ describe('IsolationModeWrapperTraderV1', () => {
         otherMarketId,
         ZERO_BI,
         otherAmountWei,
+        BYTES_EMPTY,
       );
 
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
@@ -162,7 +163,7 @@ describe('IsolationModeWrapperTraderV1', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeWrapperTraderV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeWrapperTraderV2: Invalid output token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -175,9 +176,9 @@ describe('IsolationModeWrapperTraderV1', () => {
           factory.address,
           otherToken.address,
           amountWei.div(1e12), // normalize the amount to match the # of decimals otherToken has
-          defaultAbiCoder.encode(['uint256'], [amountWei.mul(2)]), // minOutputAmount is too large
+          defaultAbiCoder.encode(['uint256'], [amountWei.mul(2), BYTES_EMPTY]), // minOutputAmount is too large
         ),
-        `IsolationModeWrapperTraderV1: Insufficient output amount <${amountWei.toString()}, ${amountWei.mul(2)
+        `IsolationModeWrapperTraderV2: Insufficient output amount <${amountWei.toString()}, ${amountWei.mul(2)
           .toString()}>`,
       );
     });
@@ -202,6 +203,7 @@ describe('IsolationModeWrapperTraderV1', () => {
         otherMarketId,
         otherAmountWei,
         amountWei,
+        BYTES_EMPTY,
       );
       expect(actions.length).to.eq(1);
 
@@ -216,13 +218,25 @@ describe('IsolationModeWrapperTraderV1', () => {
       expect(actions[0].secondaryMarketId).to.eq(underlyingMarketId);
       expect(actions[0].otherAddress).to.eq(wrapper.address);
       expect(actions[0].otherAccountId).to.eq(ZERO_BI);
-      const amountOut = await wrapper.getExchangeCost(
-        factory.address,
-        otherToken.address,
-        amountWei,
-        BYTES_EMPTY,
+      expect(actions[0].data).to.eq(abiCoder.encode(['uint', 'bytes'], [otherAmountWei, BYTES_EMPTY]));
+    });
+
+    it('should fail when input market is invalid', async () => {
+      const solidAccount = 0;
+      await expectThrow(
+        wrapper.createActionsForWrapping(
+          solidAccount,
+          solidAccount,
+          ZERO_ADDRESS,
+          ZERO_ADDRESS,
+          underlyingMarketId,
+          core.marketIds.weth,
+          ZERO_BI,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `IsolationModeWrapperTraderV2: Invalid input market <${core.marketIds.weth.toString()}>`,
       );
-      expect(actions[0].data).to.eq(abiCoder.encode(['uint', 'bytes'], [amountOut, BYTES_EMPTY]));
     });
 
     it('should fail when output market is invalid', async () => {
@@ -237,8 +251,9 @@ describe('IsolationModeWrapperTraderV1', () => {
           otherMarketId,
           ZERO_BI,
           amountWei,
+          BYTES_EMPTY,
         ),
-        `IsolationModeWrapperTraderV1: Invalid outpout market <${core.marketIds.weth.toString()}>`,
+        `IsolationModeWrapperTraderV2: Invalid output market <${core.marketIds.weth.toString()}>`,
       );
     });
   });

@@ -60,11 +60,11 @@ describe('SimpleIsolationModeVaultFactory', () => {
         core.dolomiteMargin.address,
       ],
     );
-    await core.testPriceOracle.setPrice(
+    await core.testPriceOracle!.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
     );
-    await core.testPriceOracle.setPrice(
+    await core.testPriceOracle!.setPrice(
       otherToken.address,
       '1000000000000000000', // $1.00
     );
@@ -76,7 +76,7 @@ describe('SimpleIsolationModeVaultFactory', () => {
     await setupTestMarket(core, otherToken, false);
 
     rewardToken = await createTestToken();
-    await core.testPriceOracle.setPrice(
+    await core.testPriceOracle!.setPrice(
       rewardToken.address,
       '1000000000000000000', // $1.00
     );

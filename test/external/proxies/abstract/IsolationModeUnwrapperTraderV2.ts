@@ -10,8 +10,8 @@ import {
   TestIsolationModeFactory__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
-  TestIsolationModeUnwrapperTraderV1,
-  TestIsolationModeUnwrapperTraderV1__factory,
+  TestIsolationModeUnwrapperTraderV2,
+  TestIsolationModeUnwrapperTraderV2__factory,
 } from '../../../../src/types';
 import { Account } from '../../../../src/types/IDolomiteMargin';
 import { createContractWithAbi, createTestToken } from '../../../../src/utils/dolomite-utils';
@@ -26,7 +26,7 @@ const otherAmountWei = BigNumber.from('10000000'); // $10
 
 const abiCoder = ethers.utils.defaultAbiCoder;
 
-describe('IsolationModeUnwrapperTraderV1', () => {
+describe('IsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
@@ -34,7 +34,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
   let underlyingMarketId: BigNumber;
   let otherToken: CustomTestToken;
   let otherMarketId: BigNumber;
-  let unwrapper: TestIsolationModeUnwrapperTraderV1;
+  let unwrapper: TestIsolationModeUnwrapperTraderV2;
   let factory: TestIsolationModeFactory;
   let vault: TestIsolationModeTokenVaultV1;
   let defaultAccount: Account.InfoStruct;
@@ -73,8 +73,8 @@ describe('IsolationModeUnwrapperTraderV1', () => {
     await setupTestMarket(core, otherToken, true);
 
     unwrapper = await createContractWithAbi(
-      TestIsolationModeUnwrapperTraderV1__factory.abi,
-      TestIsolationModeUnwrapperTraderV1__factory.bytecode,
+      TestIsolationModeUnwrapperTraderV2__factory.abi,
+      TestIsolationModeUnwrapperTraderV2__factory.bytecode,
       [otherToken.address, factory.address, core.dolomiteMargin.address],
     );
     await factory.connect(core.governance).ownerInitialize([unwrapper.address]);
@@ -109,7 +109,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
-      const actions = await unwrapper.createActionsForUnwrappingForLiquidation(
+      const actions = await unwrapper.createActionsForUnwrapping(
         solidAccountId,
         liquidAccountId,
         ZERO_ADDRESS,
@@ -118,6 +118,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
         underlyingMarketId,
         ZERO_BI,
         amountWei,
+        BYTES_EMPTY,
       );
 
       const amountOut = await unwrapper.getExchangeCost(
@@ -190,7 +191,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
           { owner: core.hhUser1.address, number: defaultAccountNumber },
           defaultAbiCoder.encode(['uint256'], [amountWei]),
         ),
-        `IsolationModeUnwrapperTraderV1: Account owner is not a vault <${core.hhUser1.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Account owner is not a vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -203,7 +204,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
           { owner: vault.address, number: defaultAccountNumber },
           defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
         ),
-        'IsolationModeUnwrapperTraderV1: Invalid transfer amount',
+        'IsolationModeUnwrapperTraderV2: Invalid transfer amount',
       );
     });
 
@@ -216,7 +217,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
           { owner: vault.address, number: defaultAccountNumber },
           defaultAbiCoder.encode(['uint256'], [amountWei.mul(111)]),
         ),
-        `IsolationModeUnwrapperTraderV1: Insufficient balance <${amountWei.toString()}, ${amountWei.mul(111)
+        `IsolationModeUnwrapperTraderV2: Insufficient balance <${amountWei.toString()}, ${amountWei.mul(111)
           .toString()}>`,
       );
     });
@@ -248,7 +249,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV1: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -261,9 +262,9 @@ describe('IsolationModeUnwrapperTraderV1', () => {
           otherToken.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256'], [amountWei]), // minOutputAmount
+          abiCoder.encode(['uint256'], [amountWei, BYTES_EMPTY]), // minOutputAmount
         ),
-        `IsolationModeUnwrapperTraderV1: Insufficient input token <0, ${amountWei.toString()}>`,
+        `IsolationModeUnwrapperTraderV2: Insufficient input token <0, ${amountWei.toString()}>`,
       );
     });
 
@@ -279,9 +280,9 @@ describe('IsolationModeUnwrapperTraderV1', () => {
           otherToken.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256'], [amountWei.mul(2)]), // minOutputAmount
+          abiCoder.encode(['uint256'], [amountWei.mul(2), BYTES_EMPTY]), // minOutputAmount
         ),
-        `IsolationModeUnwrapperTraderV1: Insufficient output amount <${amountWei.toString()}, ${amountWei.mul(2)
+        `IsolationModeUnwrapperTraderV2: Insufficient output amount <${amountWei.toString()}, ${amountWei.mul(2)
           .toString()}>`,
       );
     });
@@ -293,9 +294,11 @@ describe('IsolationModeUnwrapperTraderV1', () => {
     });
   });
 
-  describe('#outputMarketId', () => {
-    it('should work', async () => {
-      expect(await unwrapper.outputMarketId()).to.eq(otherMarketId);
+  describe('#isValidOutputToken', () => {
+    it('should work as expected', async () => {
+      expect(await unwrapper.isValidOutputToken(otherToken.address)).to.be.true;
+      expect(await unwrapper.isValidOutputToken(core.weth.address)).to.be.false;
+      expect(await unwrapper.isValidOutputToken(core.usdc.address)).to.be.false;
     });
   });
 
@@ -303,7 +306,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
     it('should work for normal condition', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 1;
-      const actions = await unwrapper.createActionsForUnwrappingForLiquidation(
+      const actions = await unwrapper.createActionsForUnwrapping(
         solidAccountId,
         liquidAccountId,
         solidUser.address,
@@ -312,6 +315,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
         underlyingMarketId,
         otherAmountWei,
         amountWei,
+        BYTES_EMPTY,
       );
       expect(actions.length).to.eq(2);
 
@@ -332,13 +336,41 @@ describe('IsolationModeUnwrapperTraderV1', () => {
       expect(actions[1].secondaryMarketId).to.eq(otherMarketId);
       expect(actions[1].otherAddress).to.eq(unwrapper.address);
       expect(actions[1].otherAccountId).to.eq(ZERO_BI);
-      const amountOut = await unwrapper.getExchangeCost(
-        factory.address,
-        core.usdc.address,
-        amountWei,
-        BYTES_EMPTY,
+      expect(actions[1].data).to.eq(abiCoder.encode(['uint', 'bytes'], [otherAmountWei, BYTES_EMPTY]));
+    });
+
+    it('should fail if invalid input token is passed', async () => {
+      await expectThrow(
+        unwrapper.createActionsForUnwrapping(
+          0,
+          0,
+          solidUser.address,
+          core.hhUser1.address,
+          otherMarketId,
+          core.marketIds.weth,
+          otherAmountWei,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `IsolationModeUnwrapperTraderV2: Invalid input market <${core.marketIds.weth.toString()}>`,
       );
-      expect(actions[1].data).to.eq(abiCoder.encode(['uint', 'bytes'], [amountOut, BYTES_EMPTY]));
+    });
+
+    it('should fail if invalid output token is passed', async () => {
+      await expectThrow(
+        unwrapper.createActionsForUnwrapping(
+          0,
+          0,
+          solidUser.address,
+          core.hhUser1.address,
+          core.marketIds.weth,
+          underlyingMarketId,
+          otherAmountWei,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `IsolationModeUnwrapperTraderV2: Invalid output market <${core.marketIds.weth.toString()}>`,
+      );
     });
   });
 

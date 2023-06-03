@@ -36,7 +36,7 @@ describe('IsolationModeUpgradeableProxy', () => {
       [],
     );
     factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
-    await core.testPriceOracle.setPrice(
+    await core.testPriceOracle!.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
     );

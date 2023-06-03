@@ -55,7 +55,7 @@ describe('IsolationModeTokenVaultV1', () => {
       [],
     );
     factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
-    await core.testPriceOracle.setPrice(
+    await core.testPriceOracle!.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
     );
@@ -83,7 +83,7 @@ describe('IsolationModeTokenVaultV1', () => {
     await userVault.initialize();
 
     otherToken = await createTestToken();
-    await core.testPriceOracle.setPrice(
+    await core.testPriceOracle!.setPrice(
       otherToken.address,
       '1000000000000000000000000000000', // $1.00 in USDC
     );

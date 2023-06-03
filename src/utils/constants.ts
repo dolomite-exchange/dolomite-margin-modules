@@ -53,7 +53,7 @@ export const WETH_MAP: Record<Network, TokenWithMarketId> = {
 
 // ************************* External Addresses *************************
 
-export const ALWAYS_ZERO_INTEREST_SETTER: Record<Network, string> = {
+export const ALWAYS_ZERO_INTEREST_SETTER_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0x37b6fF70654EDfBdAA3c9a723fdAdF5844De2168',
   [Network.ArbitrumGoerli]: '0x2536ef4105a6173683C7fFCE9547091960F6d939',
 };

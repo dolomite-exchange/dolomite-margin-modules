@@ -55,7 +55,7 @@ describe('AccountActionLib', () => {
     await core.dolomiteMargin.ownerSetGlobalOperator(testLib.address, true);
 
     underlyingToken = await createTestToken();
-    await core.testPriceOracle.setPrice(
+    await core.testPriceOracle!.setPrice(
       underlyingToken.address,
       '1000000000000000000', // $1.00 in USDC
     );
@@ -63,7 +63,7 @@ describe('AccountActionLib', () => {
     await setupTestMarket(core, underlyingToken, false);
 
     otherToken = await createTestToken();
-    await core.testPriceOracle.setPrice(
+    await core.testPriceOracle!.setPrice(
       otherToken.address,
       '1000000000000000000', // $1.00 in USDC
     );

@@ -53,7 +53,7 @@ describe('DolomiteCompatibleWhitelistForPlutusDAO', () => {
       core.hhUser1,
     );
     expect(plutusWhitelist.address).to.eql('0x16240aC2fBD41F4087421E1525f74338Bc95Cf64');
-    await core.testPriceOracle.setPrice(factory.address, '1');
+    await core.testPriceOracle!.setPrice(factory.address, '1');
     await setupTestMarket(core, factory, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize([unwrapperTrader.address, wrapperTrader.address]);

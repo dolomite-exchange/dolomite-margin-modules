@@ -11,7 +11,13 @@ import {
   createMagicGLPPriceOracle,
   createMagicGLPWrapperTraderV1,
 } from '../../utils/ecosystem-token-utils/abracadabra';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUSDCBalance } from '../../utils/setup';
+import {
+  CoreProtocol,
+  disableInterestAccrual,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance,
+} from '../../utils/setup';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -47,7 +53,7 @@ describe('MagicGLPWrapperTraderV1', () => {
     defaultAccount = { owner: core.hhUser1.address, number: defaultAccountNumber };
 
     // setting the interest rate to 0 makes calculations more consistent
-    await core.dolomiteMargin.ownerSetInterestSetter(core.marketIds.usdc, core.alwaysZeroInterestSetter.address);
+    await disableInterestAccrual(core, core.marketIds.usdc);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
     await core.usdc.connect(core.hhUser1).approve(core.gmxEcosystem!.glpManager.address, usdcAmount);

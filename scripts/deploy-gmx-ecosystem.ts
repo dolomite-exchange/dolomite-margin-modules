@@ -16,9 +16,6 @@ import {
 import { setupCoreProtocol } from '../test/utils/setup';
 import { deployContractAndSave } from './deploy-utils';
 
-/**
- * Deploys the GMX ecosystem smart contracts to the current network.
- */
 async function main() {
   const chainId = (await ethers.provider.getNetwork()).chainId;
   const core = await setupCoreProtocol({ blockNumber: 0, network: chainId.toString() as Network });

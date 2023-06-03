@@ -2,16 +2,6 @@ import { BigNumber, BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
 import Web3 from 'web3';
 
-export async function getLatestTimestamp(): Promise<number> {
-  const block = await ethers.provider.getBlock('latest');
-  return block.timestamp;
-}
-
-export async function getLatestBlockNumber(): Promise<number> {
-  const block = await ethers.provider.getBlock('latest');
-  return block.number;
-}
-
 export function calculateApr(
   newValue: BigNumberish,
   oldValue: BigNumberish,

@@ -1,6 +1,6 @@
 import { CoreProtocol } from '../../../test/utils/setup';
 
-export function getParaswapTraderConstructorParams(core: CoreProtocol): any[] {
+export function getParaswapAggregatorTraderConstructorParams(core: CoreProtocol): any[] {
   return [
     core.paraswapEcosystem!.augustusRouter,
     core.paraswapEcosystem!.transferProxy,

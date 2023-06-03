@@ -4,9 +4,6 @@ import { ATLAS_SI_TOKEN_MAP } from '../src/utils/constants';
 import { setupCoreProtocol } from '../test/utils/setup';
 import { deployContractAndSave } from './deploy-utils';
 
-/**
- * Deploys the GMX ecosystem smart contracts to the current network.
- */
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
   const core = await setupCoreProtocol({ network, blockNumber: 0 });

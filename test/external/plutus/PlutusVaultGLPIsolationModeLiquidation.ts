@@ -66,7 +66,7 @@ describe('PlutusVaultGLPLiquidation', () => {
   let solidAccountStruct: Account.InfoStruct;
 
   before(async () => {
-    const blockNumber = await getRealLatestBlockNumber(true);
+    const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
     core = await setupCoreProtocol({
       blockNumber,
       network: Network.ArbitrumOne,
@@ -149,8 +149,8 @@ describe('PlutusVaultGLPLiquidation', () => {
         usdcDebtAmount,
         BalanceCheckFlag.To,
       );
-      await core.testPriceOracle.setPrice(core.usdc.address, '1050000000000000000000000000000');
-      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.usdc, core.testPriceOracle.address);
+      await core.testPriceOracle!.setPrice(core.usdc.address, '1050000000000000000000000000000');
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.usdc, core.testPriceOracle!.address);
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       // check that the position is indeed under collateralized
@@ -232,11 +232,11 @@ describe('PlutusVaultGLPLiquidation', () => {
         BalanceCheckFlag.To,
       );
       // set the price of USDC to be 105% of the current price
-      await core.testPriceOracle.setPrice(
+      await core.testPriceOracle!.setPrice(
         core.weth.address,
         wethPrice.value.mul(liquidationSpreadNumerator).div(liquidationSpreadDenominator),
       );
-      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testPriceOracle.address);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testPriceOracle!.address);
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       // check that the position is indeed under collateralized

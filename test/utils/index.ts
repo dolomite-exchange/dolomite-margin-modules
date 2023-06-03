@@ -10,9 +10,14 @@ const gasLoggerNumberOfCalls: Record<string, number> = {};
 /**
  * Gets the most recent block number from the real network, NOT the forked network.
  * @param include32BlockBuffer Hardhat works better when there's > 31 block confirmations
+ * @param network The network to get the latest block number from
  */
-export async function getRealLatestBlockNumber(include32BlockBuffer: boolean): Promise<number> {
-  const provider = new ethers.providers.JsonRpcProvider(hardhatConfig?.networks?.hardhat?.forking?.url);
+export async function getRealLatestBlockNumber(
+  include32BlockBuffer: boolean,
+  network: Network,
+): Promise<number> {
+  const networkConfig = hardhatConfig?.networks?.[networkToNetworkNameMap[network]] as HttpNetworkConfig;
+  const provider = new ethers.providers.JsonRpcProvider(networkConfig.url);
   const blockNumber = await provider.send('eth_blockNumber', []);
   return Number.parseInt(blockNumber, 16) - (include32BlockBuffer ? 32 : 0);
 }
@@ -25,7 +30,7 @@ export async function resetFork(blockNumber: number, network: Network) {
       {
         forking: {
           blockNumber,
-          jsonRpcUrl: networkConfig?.url,
+          jsonRpcUrl: networkConfig.url,
         },
       },
     ],

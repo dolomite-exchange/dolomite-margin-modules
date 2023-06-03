@@ -1,13 +1,17 @@
+import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { ParaswapAggregatorTrader } from '../../../src/types';
+import { AccountStruct } from '../../../src/utils/constants';
+import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../../utils/assertions';
 import { createParaswapAggregatorTrader } from '../../utils/ecosystem-token-utils/traders';
 import { getCalldataForParaswap } from '../../utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
+import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
 
+const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');
 const minAmountOut = BigNumber.from('123123123');
 
@@ -16,16 +20,22 @@ describe('ParaswapAggregatorTrader', () => {
 
   let core: CoreProtocol;
   let trader: ParaswapAggregatorTrader;
+  let defaultAccount: AccountStruct;
 
   before(async () => {
+    const latestBlockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
     core = await setupCoreProtocol({
-      blockNumber: 96118000,
+      blockNumber: latestBlockNumber,
       network: Network.ArbitrumOne,
     });
     trader = (await createParaswapAggregatorTrader(core)).connect(core.hhUser1);
+    defaultAccount = { owner: core.hhUser1.address, number: defaultAccountNumber };
 
-    const traderSigner = await impersonate(trader.address, true, amountIn.mul(3));
-    await setupWETHBalance(core, traderSigner, amountIn.mul(2), { address: await trader.PARASWAP_TRANSFER_PROXY() });
+    // prevent interest accrual between calls
+    await disableInterestAccrual(core, core.marketIds.weth);
+
+    await setupWETHBalance(core, core.hhUser1, amountIn, { address: core.dolomiteMargin.address });
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountIn);
 
     snapshotId = await snapshot();
   });
@@ -43,7 +53,8 @@ describe('ParaswapAggregatorTrader', () => {
 
   describe('#exchange', () => {
     it('should succeed under normal conditions', async () => {
-      const caller = await impersonate(core.dolomiteMargin.address, true);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountIn);
+
       const { calldata } = await getCalldataForParaswap(
         amountIn,
         core.weth,
@@ -55,18 +66,30 @@ describe('ParaswapAggregatorTrader', () => {
         trader,
         core,
       );
-      await expectThrow(
-        trader.connect(caller)
-          .exchange(
-            core.hhUser1.address,
-            core.dolomiteMargin.address,
-            core.weth.address,
-            core.usdc.address,
-            amountIn,
-            calldata,
-          ),
-        'ParaswapAggregatorTrader: revert',
+      const actualCalldata = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [minAmountOut, calldata],
       );
+      await core.dolomiteMargin.connect(core.hhUser1).operate(
+        [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
+        [
+          {
+            actionType: ActionType.Sell,
+            primaryMarketId: core.marketIds.weth,
+            secondaryMarketId: core.marketIds.usdc,
+            accountId: 0,
+            otherAccountId: 0,
+            amount: { sign: false, denomination: AmountDenomination.Wei, ref: AmountReference.Delta, value: amountIn },
+            otherAddress: trader.address,
+            data: actualCalldata,
+          },
+        ],
+      );
+
+      expect(await core.weth.balanceOf(trader.address)).to.eq(ZERO_BI);
+      expect(await core.usdc.balanceOf(trader.address)).to.eq(ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(core, defaultAccount, core.marketIds.usdc, minAmountOut, 0);
     });
 
     it('should fail when caller is not DolomiteMargin', async () => {
@@ -97,9 +120,15 @@ describe('ParaswapAggregatorTrader', () => {
         trader,
         core,
       );
-      const actualCalldata = calldata.replace(
-        core.weth.address.toLowerCase().substring(2),
-        core.weth.address.toLowerCase().substring(2).replace('4', '3'),
+      const actualCalldata = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [
+          minAmountOut,
+          calldata.replace(
+            core.weth.address.toLowerCase().substring(2),
+            core.weth.address.toLowerCase().substring(2).replace('4', '3'),
+          ),
+        ],
       );
       await expectThrow(
         trader.connect(caller)
@@ -111,7 +140,7 @@ describe('ParaswapAggregatorTrader', () => {
             amountIn,
             actualCalldata,
           ),
-        'ParaswapAggregatorTrader: revert',
+        'ParaswapAggregatorTrader: Address: call to non-contract',
       );
     });
 
@@ -128,9 +157,9 @@ describe('ParaswapAggregatorTrader', () => {
         trader,
         core,
       );
-      const actualCalldata = calldata.replace(
-        amountIn.toHexString().substring(2).toLowerCase(),
-        amountIn.mul(11).div(10).toHexString().substring(2).toLowerCase(),
+      const actualCalldata = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [minAmountOut, calldata.replace('5', '6')],
       );
       await expectThrow(
         trader.connect(caller)
@@ -139,7 +168,7 @@ describe('ParaswapAggregatorTrader', () => {
             core.dolomiteMargin.address,
             core.weth.address,
             core.usdc.address,
-            amountIn.mul(2),
+            amountIn,
             actualCalldata,
           ),
         'ParaswapAggregatorTrader: revert',

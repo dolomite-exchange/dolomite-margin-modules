@@ -86,13 +86,15 @@ import {
   LiquidatorProxyV3WithLiquidityToken__factory,
   LiquidatorProxyV4WithGenericTrader,
   LiquidatorProxyV4WithGenericTrader__factory,
+  ParaswapAggregatorTrader,
+  ParaswapAggregatorTrader__factory,
   TestInterestSetter,
   TestInterestSetter__factory,
   TestPriceOracle,
   TestPriceOracle__factory,
 } from '../../src/types';
 import {
-  ALWAYS_ZERO_INTEREST_SETTER,
+  ALWAYS_ZERO_INTEREST_SETTER_MAP,
   ATLAS_SI_TOKEN_MAP,
   DFS_GLP_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
@@ -104,7 +106,9 @@ import {
   GMX_MAP,
   GMX_REWARD_ROUTER_MAP,
   GMX_VAULT_MAP,
-  MAGIC_GLP_MAP, PARASWAP_AUGUSTUS_ROUTER_MAP, PARASWAP_TRANSFER_PROXY_MAP,
+  MAGIC_GLP_MAP,
+  PARASWAP_AUGUSTUS_ROUTER_MAP,
+  PARASWAP_TRANSFER_PROXY_MAP,
   PENDLE_PT_GLP_2024_MARKET_MAP,
   PENDLE_PT_GLP_2024_TOKEN_MAP,
   PENDLE_PT_ORACLE_MAP,
@@ -224,10 +228,11 @@ export interface CoreProtocol {
   liquidatorProxyV3: LiquidatorProxyV3WithLiquidityToken | undefined;
   liquidatorProxyV4: LiquidatorProxyV4WithGenericTrader;
   paraswapEcosystem: ParaswapEcosystem | undefined;
+  paraswapTrader: ParaswapAggregatorTrader | undefined;
   pendleEcosystem: PendleEcosystem | undefined;
   plutusEcosystem: PlutusEcosystem | undefined;
-  testInterestSetter: TestInterestSetter;
-  testPriceOracle: TestPriceOracle;
+  testInterestSetter: TestInterestSetter | undefined;
+  testPriceOracle: TestPriceOracle | undefined;
   /// =========================
   /// Markets and Tokens
   /// =========================
@@ -243,6 +248,10 @@ export interface CoreProtocol {
   dfsGlp: IERC20 | undefined;
   usdc: IERC20;
   weth: IWETH;
+}
+
+export async function disableInterestAccrual(core: CoreProtocol, marketId: BigNumberish) {
+  return core.dolomiteMargin.ownerSetInterestSetter(marketId, core.alwaysZeroInterestSetter.address);
 }
 
 export async function setupWETHBalance(
@@ -313,7 +322,7 @@ export async function setupCoreProtocol(
   );
 
   const alwaysZeroInterestSetter = AlwaysZeroInterestSetter__factory.connect(
-    ALWAYS_ZERO_INTEREST_SETTER[config.network],
+    ALWAYS_ZERO_INTEREST_SETTER_MAP[config.network],
     governance,
   );
 
@@ -389,28 +398,17 @@ export async function setupCoreProtocol(
     LiquidatorProxyV4WithGenericTrader__factory.connect,
   );
 
-  let testInterestSetter: TestInterestSetter;
-  let testPriceOracle: TestPriceOracle;
-  if (network.name === 'hardhat') {
-    testInterestSetter = await createContractWithAbi<TestInterestSetter>(
-      TestInterestSetter__factory.abi,
-      TestInterestSetter__factory.bytecode,
-      [],
-    );
-    testPriceOracle = await createContractWithAbi<TestPriceOracle>(
-      TestPriceOracle__factory.abi,
-      TestPriceOracle__factory.bytecode,
-      [],
-    );
-  } else {
-    testInterestSetter = null as any;
-    testPriceOracle = null as any;
-  }
+  const paraswapTrader = getContractOpt(
+    (Deployments.ParaswapAggregatorTrader as any)[config.network]?.address,
+    ParaswapAggregatorTrader__factory.connect,
+  );
+
+  const { testInterestSetter, testPriceOracle } = await getTestContracts();
 
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
-  const paraswapEcosystem = await createParaswapEcosystem(config.network, hhUser1);
+  const paraswapEcosystem = await createParaswapEcosystem(config.network);
   const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
 
@@ -441,6 +439,7 @@ export async function setupCoreProtocol(
     hhUser4,
     hhUser5,
     paraswapEcosystem,
+    paraswapTrader,
     pendleEcosystem,
     plutusEcosystem,
     testInterestSetter,
@@ -477,14 +476,39 @@ export async function setupTestMarket(
 ) {
   await core.dolomiteMargin.connect(core.governance).ownerAddMarket(
     token.address,
-    (priceOracle ?? core.testPriceOracle).address,
-    core.testInterestSetter.address,
+    (priceOracle ?? core.testPriceOracle)!.address,
+    core.testInterestSetter!.address,
     { value: 0 },
     { value: 0 },
     0,
     isClosing,
     false,
   );
+}
+
+async function getTestContracts(): Promise<{
+  testPriceOracle?: TestPriceOracle;
+  testInterestSetter?: TestInterestSetter
+}> {
+  let testInterestSetter: TestInterestSetter;
+  let testPriceOracle: TestPriceOracle;
+  if (network.name === 'hardhat') {
+    testInterestSetter = await createContractWithAbi<TestInterestSetter>(
+      TestInterestSetter__factory.abi,
+      TestInterestSetter__factory.bytecode,
+      [],
+    );
+    testPriceOracle = await createContractWithAbi<TestPriceOracle>(
+      TestPriceOracle__factory.abi,
+      TestPriceOracle__factory.bytecode,
+      [],
+    );
+  } else {
+    testInterestSetter = null as any;
+    testPriceOracle = null as any;
+  }
+
+  return { testInterestSetter, testPriceOracle };
 }
 
 async function createAbraEcosystem(network: Network, signer: SignerWithAddress): Promise<AbraEcosystem | undefined> {
@@ -547,7 +571,6 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
 
 async function createParaswapEcosystem(
   network: Network,
-  signer: SignerWithAddress,
 ): Promise<ParaswapEcosystem | undefined> {
   if (!PARASWAP_AUGUSTUS_ROUTER_MAP[network]) {
     return undefined;

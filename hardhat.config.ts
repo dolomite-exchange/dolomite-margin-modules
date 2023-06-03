@@ -13,7 +13,7 @@ import { HardhatUserConfig } from 'hardhat/types';
 import 'solidity-coverage';
 
 import 'tsconfig-paths/register';
-import { DEFAULT_BLOCK_NUMBER } from './src/utils/no-deps-constants';
+import { DEFAULT_BLOCK_NUMBER, NetworkName } from './src/utils/no-deps-constants';
 
 chai.use(solidity);
 require('dotenv').config();
@@ -41,12 +41,12 @@ export const config: HardhatUserConfig = {
         blockNumber: DEFAULT_BLOCK_NUMBER,
       },
     },
-    arbitrum_one: {
+    [NetworkName.ArbitrumOne]: {
       chainId: 42161,
       url: arbitrumOneWeb3Url,
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
-    arbitrum_goerli: {
+    [NetworkName.ArbitrumGoerli]: {
       chainId: 421613,
       url: arbitrumGoerliWeb3Url,
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],

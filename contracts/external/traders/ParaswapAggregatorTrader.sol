@@ -28,6 +28,8 @@ import { Require } from "../../protocol/lib/Require.sol";
 
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
+import { ERC20Lib } from "../lib/ERC20Lib.sol";
+
 
 /**
  * @title ParaswapAggregatorTrader
@@ -65,25 +67,21 @@ contract ParaswapAggregatorTrader is OnlyDolomiteMargin, IDolomiteMarginExchange
     function exchange(
         address /* _tradeOriginator */,
         address _receiver,
-        address _makerToken,
-        address _takerToken,
-        uint256 _requestedFillAmount,
+        address _outputToken,
+        address _inputToken,
+        uint256 _inputAmount,
         bytes calldata _orderData
     )
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        if (IERC20(_takerToken).allowance(address(this), PARASWAP_TRANSFER_PROXY) > 0) {
-            // If the allowance is already set, set it to 0 first
-            IERC20(_takerToken).safeApprove(PARASWAP_TRANSFER_PROXY, 0);
-        }
-        IERC20(_takerToken).safeApprove(PARASWAP_TRANSFER_PROXY, _requestedFillAmount);
+        ERC20Lib.resetAllowanceIfNeededAndApprove(IERC20(_inputToken), PARASWAP_TRANSFER_PROXY, _inputAmount);
 
         (uint256 minAmountOutWei, bytes memory paraswapCallData) = abi.decode(_orderData, (uint256, bytes));
 
         _callAndCheckSuccess(paraswapCallData);
 
-        uint256 amount = IERC20(_makerToken).balanceOf(address(this));
+        uint256 amount = IERC20(_outputToken).balanceOf(address(this));
 
         Require.that(
             amount >= minAmountOutWei,
@@ -93,7 +91,7 @@ contract ParaswapAggregatorTrader is OnlyDolomiteMargin, IDolomiteMarginExchange
             minAmountOutWei
         );
 
-        IERC20(_makerToken).safeApprove(_receiver, _requestedFillAmount);
+        IERC20(_outputToken).safeApprove(_receiver, _inputAmount);
 
         return amount;
     }

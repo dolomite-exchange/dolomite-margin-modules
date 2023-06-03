@@ -1,5 +1,5 @@
 import { ParaswapAggregatorTrader, ParaswapAggregatorTrader__factory } from '../../../src/types';
-import { getParaswapTraderConstructorParams } from '../../../src/utils/constructors/traders';
+import { getParaswapAggregatorTraderConstructorParams } from '../../../src/utils/constructors/traders';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
 
@@ -9,6 +9,6 @@ export async function createParaswapAggregatorTrader(
   return await createContractWithAbi<ParaswapAggregatorTrader>(
     ParaswapAggregatorTrader__factory.abi,
     ParaswapAggregatorTrader__factory.bytecode,
-    getParaswapTraderConstructorParams(core),
+    getParaswapAggregatorTraderConstructorParams(core),
   );
 }

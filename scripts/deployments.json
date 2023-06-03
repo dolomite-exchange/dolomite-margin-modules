@@ -138,5 +138,12 @@
       "transaction": "0xfc0e248a0041aa1a6ee95e903e2cb5efa312beb7c51d62c5f030e221397ba2ee",
       "isVerified": true
     }
+  },
+  "ParaswapAggregatorTrader": {
+    "42161": {
+      "address": "0x8CA96f3Dc9597e4BF8770Ad36d516a4550F5bFD9",
+      "transaction": "0x44cda6fc3cb3738200d6dec0ff84a10a5e9fabce1e85821aa0655a864484222f",
+      "isVerified": true
+    }
   }
 }
