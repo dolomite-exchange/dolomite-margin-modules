@@ -76,7 +76,7 @@ describe('IsolationModeWrapperTraderV2', () => {
     wrapper = await createContractWithAbi(
       TestIsolationModeWrapperTraderV2__factory.abi,
       TestIsolationModeWrapperTraderV2__factory.bytecode,
-      [factory.address, core.dolomiteMargin.address],
+      [otherToken.address, factory.address, core.dolomiteMargin.address],
     );
     await factory.connect(core.governance).ownerInitialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -152,11 +152,26 @@ describe('IsolationModeWrapperTraderV2', () => {
       );
     });
 
-    it('should fail if output token is incorrect', async () => {
+    it('should fail if trade originator is not a vault', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         wrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
+          core.dolomiteMargin.address,
+          core.weth.address,
+          otherToken.address,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `IsolationModeWrapperTraderV2: Invalid trade originator <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if output token is incorrect', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
+          vault.address,
           core.dolomiteMargin.address,
           core.weth.address,
           otherToken.address,
@@ -176,7 +191,7 @@ describe('IsolationModeWrapperTraderV2', () => {
           factory.address,
           otherToken.address,
           amountWei.div(1e12), // normalize the amount to match the # of decimals otherToken has
-          defaultAbiCoder.encode(['uint256'], [amountWei.mul(2), BYTES_EMPTY]), // minOutputAmount is too large
+          defaultAbiCoder.encode(['uint256', 'bytes'], [amountWei.mul(2), BYTES_EMPTY]), // minOutputAmount is too large
         ),
         `IsolationModeWrapperTraderV2: Insufficient output amount <${amountWei.toString()}, ${amountWei.mul(2)
           .toString()}>`,

@@ -32,8 +32,8 @@ import { ERC20Lib } from "../lib/ERC20Lib.sol";
 
 
 /**
- * @title ParaswapAggregatorTrader
- * @author Dolomite
+ * @title   ParaswapAggregatorTrader
+ * @author  Dolomite
  *
  * Contract for performing an external trade with Paraswap.
  */
@@ -111,13 +111,13 @@ contract ParaswapAggregatorTrader is OnlyDolomiteMargin, IDolomiteMarginExchange
     // ============ Private Functions ============
 
     function _callAndCheckSuccess(bytes memory _paraswapCallData) internal {
-        // solium-disable-next-line security/no-low-level-calls
+        // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory result) = PARASWAP_AUGUSTUS_ROUTER.call(_paraswapCallData);
         if (!success) {
             if (result.length < 68) {
                 revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": revert")));
             } else {
-                // solium-disable-next-line security/no-inline-assembly
+                // solhint-disable-next-line no-inline-assembly
                 assembly {
                     result := add(result, 0x04)
                 }

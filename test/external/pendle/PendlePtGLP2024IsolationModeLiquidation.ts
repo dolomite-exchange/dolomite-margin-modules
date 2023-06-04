@@ -3,7 +3,7 @@ import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTrad
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import {
   IPendlePtToken,
   PendlePtGLP2024IsolationModeTokenVaultV1,
@@ -16,7 +16,14 @@ import {
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
 import { IGenericTraderProxyBase } from '../../../src/types/LiquidatorProxyV4WithGenericTrader';
-import { BYTES_EMPTY, Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import {
+  BYTES_EMPTY, LIQUIDATE_ALL,
+  MAX_UINT_256_BI,
+  Network,
+  NO_EXPIRY,
+  ONE_BI,
+  ZERO_BI,
+} from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
   expectProtocolBalance,
@@ -42,6 +49,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import { encodeSwapExactPtForTokens } from './pendle-utils';
 import TraderParamStruct = IGenericTraderProxyBase.TraderParamStruct;
 
 const defaultAccountNumber = '0';
@@ -53,7 +61,9 @@ const liquidationSpreadNumerator = BigNumber.from('105');
 const liquidationSpreadDenominator = BigNumber.from('100');
 const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
+
 const FIVE_BIPS = 0.0005;
+const NO_PARASWAP_TRADER_PARAM = undefined;
 
 describe('PendlePtGLP2024IsolationModeLiquidation', () => {
   let snapshotId: string;
@@ -171,24 +181,17 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         .to
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
-      const plvGlpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
+      const ptGlpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
       const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
-        .div(plvGlpPrice.value);
-      const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
-        core.usdc.address,
-        heldUpdatedWithReward,
-        BYTES_EMPTY,
-      );
+        .div(ptGlpPrice.value);
+      const { extraOrderData } = await encodeSwapExactPtForTokens(router, core, heldUpdatedWithReward);
 
-      const txResult = await core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
-        solidAccountStruct,
-        liquidAccountStruct,
+      const txResult = await liquidateWithDefaultUnwrapper(
         [underlyingMarketId, core.marketIds.usdc],
-        [],
-        [],
-        [],
+        [heldUpdatedWithReward, LIQUIDATE_ALL],
+        extraOrderData,
+        NO_PARASWAP_TRADER_PARAM,
         NO_EXPIRY,
       );
       const receipt = await txResult.wait();
@@ -205,7 +208,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         core,
         solidAccountStruct,
         core.marketIds.usdc,
-        usdcOutputAmount.sub(usdcDebtAmount),
+        usdcDebtAmount.mul(5).div(100),
         '5',
       );
       await expectProtocolBalanceIsGreaterThan(
@@ -610,7 +613,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
     unwrapperTradeData: string,
     paraswapTraderParam: IGenericTraderProxyBase.TraderParamStruct | undefined,
     expiry: BigNumberish,
-  ): Promise<TxResult> {
+  ): Promise<ContractTransaction> {
     const defaultUnwrapperTraderParam: TraderParamStruct = {
       traderType: GenericTraderType.IsolationModeUnwrapper,
       makerAccountIndex: 0,
@@ -623,6 +626,9 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       tradersPath.push(paraswapTraderParam);
     }
 
+    console.log('marketIdsPath', marketIdsPath.map(x => x.toString()));
+    console.log('amountWeisPath', amountWeisPath.map(x => x.toString()));
+    console.log('tradersPath', tradersPath);
     return core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
       solidAccountStruct,
       liquidAccountStruct,

@@ -33,13 +33,11 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import { encodeSwapExactPtForTokens, FIVE_BIPS_NUMBER } from './pendle-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
-const FIVE_BIPS = 0.0005;
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
@@ -117,7 +115,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
       core.pendleEcosystem!.ptGlpMarket.address as any,
       core.gmxEcosystem!.sGlp.address as any,
       glpAmount,
-      FIVE_BIPS,
+      FIVE_BIPS_NUMBER,
     );
     await core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -137,32 +135,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
 
-      const [, , , tokenOutput] = await router.swapExactPtForToken(
-        core.pendleEcosystem!.ptGlpMarket.address as any,
-        amountWei,
-        core.gmxEcosystem!.sGlp.address as any,
-        FIVE_BIPS,
-        { method: 'extractParams' },
-      );
-
-      const extraOrderData = abiCoder.encode(
-        ['tuple(address,uint256,address,address,address,tuple(uint8,address,bytes,bool))'],
-        [
-          [
-            tokenOutput.tokenOut,
-            tokenOutput.minTokenOut,
-            tokenOutput.tokenRedeemSy,
-            tokenOutput.bulk,
-            tokenOutput.pendleSwap,
-            [
-              tokenOutput.swapData.swapType,
-              tokenOutput.swapData.extRouter,
-              tokenOutput.swapData.extCalldata,
-              tokenOutput.swapData.needScale,
-            ],
-          ],
-        ],
-      );
+      const { tokenOutput, extraOrderData } = await encodeSwapExactPtForTokens(router, core, amountWei);
       const amountOut = await core.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5).getExchangeCost(
         core.dfsGlp!.address,
         core.usdc.address,
@@ -238,7 +211,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
           core.dfsGlp!.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          ethers.utils.defaultAbiCoder.encode(['uint256'], [otherAmountWei]),
         ),
         `IsolationModeUnwrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
       );
@@ -254,7 +227,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
           core.usdc.address,
           factory.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          ethers.utils.defaultAbiCoder.encode(['uint256'], [otherAmountWei]),
         ),
         'IsolationModeUnwrapperTraderV2: Invalid input amount',
       );

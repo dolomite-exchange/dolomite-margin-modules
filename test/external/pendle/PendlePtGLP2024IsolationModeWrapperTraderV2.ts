@@ -34,6 +34,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import { encodeSwapExactTokensForPt } from './pendle-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -43,8 +44,6 @@ const usableUsdcAmount = usdcAmount.div(2);
 const FIVE_BIPS = 0.0005;
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
@@ -149,41 +148,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
         BYTES_EMPTY,
       );
 
-      const [, , , approxParams, tokenInput] = await router.swapExactTokenForPt(
-        core.pendleEcosystem!.ptGlpMarket.address as any,
-        core.gmxEcosystem!.sGlp.address as any,
-        glpAmount,
-        FIVE_BIPS,
-        { method: 'extractParams' },
-      );
-
-      const approxParamsType = 'tuple(uint256,uint256,uint256,uint256,uint256)';
-      const tokenInputType = 'tuple(address,uint256,address,address,address,tuple(uint8,address,bytes,bool))';
-      const extraOrderData = abiCoder.encode(
-        [approxParamsType, tokenInputType],
-        [
-          [
-            approxParams.guessMin,
-            approxParams.guessMax,
-            approxParams.guessOffchain,
-            approxParams.maxIteration,
-            approxParams.eps,
-          ],
-          [
-            tokenInput.tokenIn,
-            tokenInput.netTokenIn,
-            tokenInput.tokenMintSy,
-            tokenInput.bulk,
-            tokenInput.pendleSwap,
-            [
-              tokenInput.swapData.swapType,
-              tokenInput.swapData.extRouter,
-              tokenInput.swapData.extCalldata,
-              tokenInput.swapData.needScale,
-            ],
-          ],
-        ],
-      );
+      const { extraOrderData, approxParams } = await encodeSwapExactTokensForPt(router, core, glpAmount);
 
       const actions = await wrapper.createActionsForWrapping(
         solidAccountId,
@@ -240,7 +205,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
           factory.address,
           OTHER_ADDRESS,
           usableUsdcAmount,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
+          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
         ),
         `IsolationModeWrapperTraderV2: Invalid trade originator <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -255,7 +220,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
           factory.address,
           OTHER_ADDRESS,
           usableUsdcAmount,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
+          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
         ),
         `IsolationModeWrapperTraderV2: Invalid input token <${OTHER_ADDRESS.toLowerCase()}>`,
       );
@@ -270,7 +235,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
           core.weth.address,
           core.usdc.address,
           amountWei,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          ethers.utils.defaultAbiCoder.encode(['uint256'], [otherAmountWei]),
         ),
         `IsolationModeWrapperTraderV2: Invalid output token <${core.weth.address.toLowerCase()}>`,
       );
@@ -285,7 +250,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
           factory.address,
           core.usdc.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
+          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
         ),
         'IsolationModeWrapperTraderV2: Invalid input amount',
       );

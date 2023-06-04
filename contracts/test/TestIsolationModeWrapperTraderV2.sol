@@ -52,6 +52,10 @@ contract TestIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
 
     // ============ Public Functions ============
 
+    function isValidInputToken(address _inputToken) public override view returns (bool) {
+        return _inputToken == INPUT_TOKEN;
+    }
+
     function getExchangeCost(
         address,
         address,
@@ -64,10 +68,6 @@ contract TestIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     returns (uint256) {
         // 1:1 conversion for the sake of testing
         return _desiredInputAmount;
-    }
-
-    function isValidInputToken(address _inputToken) public override view returns (bool) {
-        return _inputToken == INPUT_TOKEN;
     }
 
     // ================ Internal Functions ================

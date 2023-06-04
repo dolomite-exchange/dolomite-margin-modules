@@ -262,7 +262,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
           otherToken.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256'], [amountWei, BYTES_EMPTY]), // minOutputAmount
+          abiCoder.encode(['uint256', 'bytes'], [amountWei, BYTES_EMPTY]), // minOutputAmount
         ),
         `IsolationModeUnwrapperTraderV2: Insufficient input token <0, ${amountWei.toString()}>`,
       );
@@ -280,7 +280,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
           otherToken.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256'], [amountWei.mul(2), BYTES_EMPTY]), // minOutputAmount
+          abiCoder.encode(['uint256', 'bytes'], [amountWei.mul(2), BYTES_EMPTY]), // minOutputAmount
         ),
         `IsolationModeUnwrapperTraderV2: Insufficient output amount <${amountWei.toString()}, ${amountWei.mul(2)
           .toString()}>`,

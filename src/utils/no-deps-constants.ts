@@ -40,3 +40,5 @@ export const ZERO_BI = BigNumber.from('0');
 export const ONE_BI = BigNumber.from('1');
 
 export const MAX_UINT_256_BI = BigNumber.from('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
+
+export const LIQUIDATE_ALL = MAX_UINT_256_BI;
