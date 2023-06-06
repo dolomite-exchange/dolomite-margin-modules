@@ -3,9 +3,19 @@ import { expect } from 'chai';
 import { BaseContract, BigNumber, BigNumberish, CallOverrides, ContractTransaction } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { ERC20__factory } from '../../src/types';
+import { Account } from '../../src/types/IDolomiteMargin';
 import { AccountStruct } from '../../src/utils/constants';
 import { valueStructToBigNumber } from '../../src/utils/dolomite-utils';
+import { ZERO_BI } from '../../src/utils/no-deps-constants';
 import { CoreProtocol } from './setup';
+
+export async function expectThrowWithMatchingReason(call: Promise<any>, reason: RegExp) {
+  if (reason) {
+    await expect(call).to.be.revertedWith(reason);
+  } else {
+    await expect(call).to.be.reverted;
+  }
+}
 
 export async function expectThrow(call: Promise<any>, reason?: string) {
   if (reason) {
@@ -53,6 +63,7 @@ export async function expectProtocolBalanceIsGreaterThan(
     .gte(expectedBalanceWithMarginOfError);
 }
 
+const TEN_CENTS = BigNumber.from('100000000000000000000000000000000000'); // $1 eq 1e36. Take off 1 decimal
 const ONE_CENT = BigNumber.from('10000000000000000000000000000000000'); // $1 eq 1e36. Take off 2 decimals
 
 export async function expectWalletBalanceOrDustyIfZero(
@@ -108,6 +119,23 @@ export async function expectProtocolBalance(
   expect(balanceWei).eq(amountWei);
 }
 
+export async function expectProtocolBalanceDusty(
+  core: CoreProtocol,
+  accountOwner: { address: address } | address,
+  accountNumber: BigNumberish,
+  marketId: BigNumberish,
+) {
+  const account = {
+    owner: typeof accountOwner === 'object' ? accountOwner.address : accountOwner,
+    number: accountNumber,
+  };
+  const rawBalanceWei = await core.dolomiteMargin.getAccountWei(account, marketId);
+  const balanceWei = rawBalanceWei.sign ? rawBalanceWei.value : rawBalanceWei.value.mul(-1);
+  const price = await core.dolomiteMargin.getMarketPrice(marketId);
+  expect(balanceWei).to.be.gt(ZERO_BI);
+  expect(balanceWei.mul(price.value)).to.be.lt(TEN_CENTS);
+}
+
 export async function expectWalletBalance(
   accountOwner: { address: address } | address,
   token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber> },
@@ -115,6 +143,19 @@ export async function expectWalletBalance(
 ) {
   const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
   expect(await token.balanceOf(owner)).eq(amount);
+}
+
+export async function expectVaultBalanceToMatchAccountBalances(
+  core: CoreProtocol,
+  vault: { underlyingBalanceOf(overrides?: CallOverrides): Promise<BigNumber> },
+  accounts: Account.InfoStruct[],
+  marketId: BigNumberish,
+) {
+  let totalBalance = ZERO_BI;
+  for (let i = 0; i < accounts.length; i++) {
+    totalBalance = totalBalance.add((await core.dolomiteMargin.getAccountWei(accounts[i], marketId)).value);
+  }
+  expect(await vault.underlyingBalanceOf()).eq(totalBalance);
 }
 
 export async function expectWalletAllowance(

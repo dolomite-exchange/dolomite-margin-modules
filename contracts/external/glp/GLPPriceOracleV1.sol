@@ -27,9 +27,9 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { IGLPManager } from "../interfaces/IGLPManager.sol";
-import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
-import { IGmxVault } from "../interfaces/IGmxVault.sol";
+import { IGLPManager } from "../interfaces/gmx/IGLPManager.sol";
+import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
+import { IGmxVault } from "../interfaces/gmx/IGmxVault.sol";
 
 
 /**

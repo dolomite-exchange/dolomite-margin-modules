@@ -91,7 +91,7 @@ contract ParaswapAggregatorTrader is OnlyDolomiteMargin, IDolomiteMarginExchange
             minAmountOutWei
         );
 
-        IERC20(_outputToken).safeApprove(_receiver, _inputAmount);
+        IERC20(_outputToken).safeApprove(_receiver, amount);
 
         return amount;
     }

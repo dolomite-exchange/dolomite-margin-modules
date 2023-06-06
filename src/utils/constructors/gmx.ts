@@ -16,13 +16,25 @@ export function getGLPPriceOracleV1ConstructorParams(
   return [gmxRegistry.address, dfsGlp.address];
 }
 
-export function getGLPUnwrapperTraderConstructorParams(
+export function getGLPUnwrapperTraderV1ConstructorParams(
   core: CoreProtocol,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
   return [
     core.usdc.address,
+    gmxRegistry.address,
+    dfsGlp.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getGLPUnwrapperTraderV2ConstructorParams(
+  core: CoreProtocol,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
+  gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
+): any[] {
+  return [
     gmxRegistry.address,
     dfsGlp.address,
     core.dolomiteMargin.address,
@@ -50,13 +62,25 @@ export function getGLPIsolationModeVaultFactoryConstructorParams(
   ];
 }
 
-export function getGLPWrapperTraderConstructorParams(
+export function getGLPWrapperTraderV1ConstructorParams(
   core: CoreProtocol,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
   return [
     core.usdc.address,
+    gmxRegistry.address,
+    dfsGlp.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getGLPWrapperTraderV2ConstructorParams(
+  core: CoreProtocol,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
+  gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
+): any[] {
+  return [
     gmxRegistry.address,
     dfsGlp.address,
     core.dolomiteMargin.address,

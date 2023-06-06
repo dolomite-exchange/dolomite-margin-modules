@@ -141,8 +141,8 @@
   },
   "ParaswapAggregatorTrader": {
     "42161": {
-      "address": "0x8CA96f3Dc9597e4BF8770Ad36d516a4550F5bFD9",
-      "transaction": "0x44cda6fc3cb3738200d6dec0ff84a10a5e9fabce1e85821aa0655a864484222f",
+      "address": "0x6173C34E01A18d5897C06b4991152F2969059A68",
+      "transaction": "0x8106116a66329d85552b528378c795339f4f887e0400f2fa17e6ee9e8321191a",
       "isVerified": true
     }
   }

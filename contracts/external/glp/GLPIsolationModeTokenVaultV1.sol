@@ -24,12 +24,12 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
-import { IGLPIsolationModeTokenVaultV1 } from "../interfaces/IGLPIsolationModeTokenVaultV1.sol";
-import { IGLPIsolationModeVaultFactory } from "../interfaces/IGLPIsolationModeVaultFactory.sol";
-import { IGmxRewardRouterV2 } from "../interfaces/IGmxRewardRouterV2.sol";
-import { IGmxVester } from "../interfaces/IGmxVester.sol";
+import { IGLPIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV1.sol";
+import { IGLPIsolationModeVaultFactory } from "../interfaces/gmx/IGLPIsolationModeVaultFactory.sol";
+import { IGmxRewardRouterV2 } from "../interfaces/gmx/IGmxRewardRouterV2.sol";
+import { IGmxVester } from "../interfaces/gmx/IGmxVester.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
-import { ISGMX } from "../interfaces/ISGMX.sol";
+import { ISGMX } from "../interfaces/gmx/ISGMX.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 
 

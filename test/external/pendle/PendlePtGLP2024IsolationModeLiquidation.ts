@@ -1,4 +1,4 @@
-import { BalanceCheckFlag, TxResult } from '@dolomite-margin/dist/src';
+import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
@@ -17,20 +17,21 @@ import {
 import { Account } from '../../../src/types/IDolomiteMargin';
 import { IGenericTraderProxyBase } from '../../../src/types/LiquidatorProxyV4WithGenericTrader';
 import {
-  BYTES_EMPTY, LIQUIDATE_ALL,
-  MAX_UINT_256_BI,
+  BYTES_EMPTY,
+  LIQUIDATE_ALL,
   Network,
   NO_EXPIRY,
   ONE_BI,
+  SELL_ALL,
   ZERO_BI,
 } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
   expectProtocolBalance,
+  expectProtocolBalanceDusty,
   expectProtocolBalanceIsGreaterThan,
-  expectThrow,
+  expectVaultBalanceToMatchAccountBalances,
   expectWalletBalance,
-  expectWalletBalanceOrDustyIfZero,
 } from '../../utils/assertions';
 import {
   createPendlePtGLP2024IsolationModeTokenVaultV1,
@@ -41,9 +42,10 @@ import {
   createPendlePtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
 import { setExpiry } from '../../utils/expiry-utils';
-import { getCalldataForParaswap } from '../../utils/liquidation-utils';
+import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/liquidation-utils';
 import {
   CoreProtocol,
+  disableInterestAccrual,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -53,10 +55,10 @@ import { encodeSwapExactPtForTokens } from './pendle-utils';
 import TraderParamStruct = IGenericTraderProxyBase.TraderParamStruct;
 
 const defaultAccountNumber = '0';
-const otherAccountNumber = '420';
-const heldAmountWei = BigNumber.from('200000000000000000000'); // $200
-const minCollateralizationNumerator = BigNumber.from('115');
-const minCollateralizationDenominator = BigNumber.from('100');
+const borrowAccountNumber = '420';
+const heldAmountWei = BigNumber.from('200000000000000000000'); // 200 units
+const minCollateralizationNumerator = BigNumber.from('11501');
+const minCollateralizationDenominator = BigNumber.from('10000');
 const liquidationSpreadNumerator = BigNumber.from('105');
 const liquidationSpreadDenominator = BigNumber.from('100');
 const expirationCollateralizationNumerator = BigNumber.from('150');
@@ -115,8 +117,11 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       core.hhUser1,
     );
     defaultAccountStruct = { owner: vault.address, number: defaultAccountNumber };
-    liquidAccountStruct = { owner: vault.address, number: otherAccountNumber };
+    liquidAccountStruct = { owner: vault.address, number: borrowAccountNumber };
     solidAccountStruct = { owner: core.hhUser5.address, number: defaultAccountNumber };
+
+    await disableInterestAccrual(core, core.marketIds.usdc);
+    await disableInterestAccrual(core, core.marketIds.weth);
 
     router = Router.getRouter({
       chainId: CHAIN_ID_MAPPING.ARBITRUM,
@@ -164,9 +169,9 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       const usdcDebtAmount = supplyValue.value.mul(minCollateralizationDenominator)
         .div(minCollateralizationNumerator)
         .div(usdcPrice.value);
-      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
+      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, heldAmountWei);
       await vault.transferFromPositionWithOtherToken(
-        otherAccountNumber,
+        borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.usdc,
         usdcDebtAmount,
@@ -181,15 +186,17 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         .to
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
+      const owedMarketPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.usdc);
       const ptGlpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
-      const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
-        .div(liquidationSpreadDenominator)
+      const owedAmount = await core.dolomiteMargin.getAccountWei(liquidAccountStruct, core.marketIds.usdc);
+      const heldUpdatedWithReward = await owedAmount.value
+        .mul(owedMarketPrice.value.mul(liquidationSpreadNumerator).div(liquidationSpreadDenominator))
         .div(ptGlpPrice.value);
       const { extraOrderData } = await encodeSwapExactPtForTokens(router, core, heldUpdatedWithReward);
 
       const txResult = await liquidateWithDefaultUnwrapper(
         [underlyingMarketId, core.marketIds.usdc],
-        [heldUpdatedWithReward, LIQUIDATE_ALL],
+        [SELL_ALL, LIQUIDATE_ALL],
         extraOrderData,
         NO_PARASWAP_TRADER_PARAM,
         NO_EXPIRY,
@@ -225,16 +232,16 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         core.marketIds.usdc,
         ZERO_BI,
       );
-
+      await expectVaultBalanceToMatchAccountBalances(
+        core,
+        vault,
+        [liquidAccountStruct, defaultAccountStruct],
+        underlyingMarketId,
+      );
       await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(
-        core,
-        unwrapper.address,
-        core.pendleEcosystem!.ptGlpToken.address,
-        ZERO_BI,
-      );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
     });
 
     it('should work when liquid account is borrowing a different output token (WETH)', async () => {
@@ -245,9 +252,9 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       const wethDebtAmount = supplyValue.value.mul(minCollateralizationDenominator)
         .div(minCollateralizationNumerator)
         .div(wethPrice.value);
-      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
+      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, heldAmountWei);
       await vault.transferFromPositionWithOtherToken(
-        otherAccountNumber,
+        borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.weth,
         wethDebtAmount,
@@ -256,7 +263,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       // set the price of USDC to be 105% of the current price
       await core.testPriceOracle!.setPrice(
         core.weth.address,
-        wethPrice.value.mul(liquidationSpreadNumerator).div(liquidationSpreadDenominator),
+        wethPrice.value.mul('105').div('100'),
       );
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testPriceOracle!.address);
 
@@ -270,45 +277,39 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
         .div(glpPrice.value);
-      const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
-        core.usdc.address,
+      const { extraOrderData: unwrapperTradeData, tokenOutput } = await encodeSwapExactPtForTokens(
+        router,
+        core,
         heldUpdatedWithReward,
+      );
+      const usdcAmountOut = await core.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5).getExchangeCost(
+        core.dfsGlp!.address,
+        core.usdc.address,
+        tokenOutput.minTokenOut,
         BYTES_EMPTY,
       );
       const { calldata: paraswapCalldata, outputAmount: wethOutputAmount } = await getCalldataForParaswap(
-        usdcOutputAmount,
+        usdcAmountOut,
         core.usdc,
         6,
-        ONE_BI,
+        wethDebtAmount,
         core.weth,
         18,
         core.hhUser5,
-        core.liquidatorProxyV4!,
+        core.paraswapTrader!,
         core,
       );
 
-      const txResultPromise = core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
-        solidAccountStruct,
-        liquidAccountStruct,
-        [underlyingMarketId, core.marketIds.weth],
-        [],
-        [],
-        [],
-        NO_EXPIRY,
+      const isSuccessful = await checkForParaswapSuccess(
+        liquidateWithDefaultUnwrapper(
+          [underlyingMarketId, core.marketIds.usdc, core.marketIds.weth],
+          [SELL_ALL, usdcAmountOut, LIQUIDATE_ALL],
+          unwrapperTradeData,
+          getParaswapTraderParam(paraswapCalldata),
+          NO_EXPIRY,
+        ),
       );
-      try {
-        const txResult = await txResultPromise;
-        const receipt = await txResult.wait();
-        console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
-      } catch (e) {
-        await expectThrow(
-          txResultPromise,
-          'ParaswapTraderProxyWithBackup: External call failed',
-        );
-        console.warn(
-          '\tParaswap call failed. This can happen when mixing a mainnet data with  Skipping the rest of the test.',
-        );
+      if (!isSuccessful) {
         return;
       }
 
@@ -319,12 +320,11 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         underlyingMarketId,
         ZERO_BI,
       );
-      await expectProtocolBalance(
+      await expectProtocolBalanceDusty(
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
         core.marketIds.usdc,
-        ZERO_BI,
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
@@ -347,30 +347,24 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         core.marketIds.weth,
         ZERO_BI,
       );
-
-      await expectWalletBalance(
-        core.liquidatorProxyV4!.address,
-        core.usdc,
-        ZERO_BI,
-      );
-      await expectWalletBalance(
-        core.liquidatorProxyV4!.address,
-        core.weth,
-        ZERO_BI,
-      );
-      await expectWalletBalanceOrDustyIfZero(
+      await expectVaultBalanceToMatchAccountBalances(
         core,
-        unwrapper.address,
-        core.pendleEcosystem!.ptGlpToken.address,
-        ZERO_BI,
+        vault,
+        [liquidAccountStruct, defaultAccountStruct],
+        underlyingMarketId,
       );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.usdc, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.weth, ZERO_BI);
     });
   });
 
   describe('Perform expiration with full integration', () => {
     it('should work when expired account is borrowing the output token (USDC)', async () => {
-      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
+      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, heldAmountWei);
       const [supplyValue, borrowValue] = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       expect(borrowValue.value).to.eq(ZERO_BI);
 
@@ -379,7 +373,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         .div(expirationCollateralizationNumerator)
         .div(usdcPrice.value);
       await vault.transferFromPositionWithOtherToken(
-        otherAccountNumber,
+        borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.usdc,
         usdcDebtAmount,
@@ -405,20 +399,19 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       );
 
       const heldUpdatedWithReward = usdcDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
-      const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
+      const { extraOrderData, tokenOutput } = await encodeSwapExactPtForTokens(router, core, heldUpdatedWithReward);
+      const usdcAmountOut = await core.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5).getExchangeCost(
+        core.dfsGlp!.address,
         core.usdc.address,
-        heldUpdatedWithReward,
+        tokenOutput.minTokenOut,
         BYTES_EMPTY,
       );
 
-      const txResult = await core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
-        solidAccountStruct,
-        liquidAccountStruct,
+      const txResult = await liquidateWithDefaultUnwrapper(
         [underlyingMarketId, core.marketIds.usdc],
-        [],
-        [],
-        [],
+        [SELL_ALL, LIQUIDATE_ALL],
+        extraOrderData,
+        NO_PARASWAP_TRADER_PARAM,
         expiry,
       );
       const receipt = await txResult.wait();
@@ -435,7 +428,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         core,
         solidAccountStruct,
         core.marketIds.usdc,
-        usdcOutputAmount.sub(usdcDebtAmount),
+        usdcAmountOut.sub(usdcDebtAmount),
         '5',
       );
       await expectProtocolBalanceIsGreaterThan(
@@ -452,29 +445,30 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         core.marketIds.usdc,
         ZERO_BI,
       );
-
-      await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
-      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(
+      await expectVaultBalanceToMatchAccountBalances(
         core,
-        unwrapper.address,
-        core.pendleEcosystem!.ptGlpToken.address,
-        ZERO_BI,
+        vault,
+        [liquidAccountStruct, defaultAccountStruct],
+        underlyingMarketId,
       );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.usdc, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.weth, ZERO_BI);
     });
 
     it('should work when expired account is borrowing a different output token (WETH)', async () => {
-      const [supplyValue, borrowValue] = await core.dolomiteMargin.getAccountValues(defaultAccountStruct);
-      expect(borrowValue.value).to.eq(ZERO_BI);
-
+      const ptGlpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
       const wethPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.weth);
-      const wethDebtAmount = supplyValue.value.mul(expirationCollateralizationDenominator)
+      const wethDebtAmount = heldAmountWei.mul(ptGlpPrice.value)
+        .mul(expirationCollateralizationDenominator)
         .div(expirationCollateralizationNumerator)
         .div(wethPrice.value);
-      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
+      await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, heldAmountWei);
       await vault.transferFromPositionWithOtherToken(
-        otherAccountNumber,
+        borrowAccountNumber,
         defaultAccountNumber,
         core.marketIds.weth,
         wethDebtAmount,
@@ -499,46 +493,41 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         expiry,
       );
 
-      const heldUpdatedWithReward = wethDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
-      const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
-        core.usdc.address,
+      const owedAmount = (await core.dolomiteMargin.getAccountWei(liquidAccountStruct, core.marketIds.weth)).value;
+      const heldUpdatedWithReward = owedAmount.mul(owedPriceAdj.value).div(heldPrice.value);
+      const { extraOrderData: unwrapperTradeData, tokenOutput } = await encodeSwapExactPtForTokens(
+        router,
+        core,
         heldUpdatedWithReward,
+      );
+      const usdcAmountOut = await core.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5).getExchangeCost(
+        core.dfsGlp!.address,
+        core.usdc.address,
+        tokenOutput.minTokenOut,
         BYTES_EMPTY,
       );
       const { calldata: paraswapCalldata, outputAmount: wethOutputAmount } = await getCalldataForParaswap(
-        usdcOutputAmount,
+        usdcAmountOut,
         core.usdc,
         6,
-        wethDebtAmount,
+        owedAmount,
         core.weth,
         18,
         core.hhUser5,
-        core.liquidatorProxyV4!,
+        core.paraswapTrader!,
         core,
       );
 
-      const txResultPromise = core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
-        solidAccountStruct,
-        liquidAccountStruct,
-        [underlyingMarketId, core.marketIds.weth],
-        [],
-        [],
-        [],
-        expiry,
+      const isSuccessful = await checkForParaswapSuccess(
+        liquidateWithDefaultUnwrapper(
+          [underlyingMarketId, core.marketIds.usdc, core.marketIds.weth],
+          [SELL_ALL, usdcAmountOut, LIQUIDATE_ALL],
+          unwrapperTradeData,
+          getParaswapTraderParam(paraswapCalldata),
+          expiry,
+        ),
       );
-      try {
-        const txResult = await txResultPromise;
-        const receipt = await txResult.wait();
-        console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
-      } catch (e) {
-        await expectThrow(
-          txResultPromise,
-          'ParaswapTraderProxyWithBackup: External call failed',
-        );
-        console.warn(
-          '\tParaswap call failed. This can happen when mixing a mainnet data with  Skipping the rest of the test.',
-        );
+      if (!isSuccessful) {
         return;
       }
 
@@ -549,18 +538,17 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         underlyingMarketId,
         ZERO_BI,
       );
-      await expectProtocolBalance(
+      await expectProtocolBalanceDusty(
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
         core.marketIds.usdc,
-        ZERO_BI,
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
         solidAccountStruct,
         core.marketIds.weth,
-        wethOutputAmount.sub(wethDebtAmount),
+        wethOutputAmount.sub(owedAmount),
         '500',
       );
       await expectProtocolBalanceIsGreaterThan(
@@ -577,24 +565,18 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         core.marketIds.weth,
         ZERO_BI,
       );
-
-      await expectWalletBalance(
-        core.liquidatorProxyV4!.address,
-        core.usdc,
-        ZERO_BI,
-      );
-      await expectWalletBalance(
-        core.liquidatorProxyV4!.address,
-        core.weth,
-        ZERO_BI,
-      );
-      await expectWalletBalanceOrDustyIfZero(
+      await expectVaultBalanceToMatchAccountBalances(
         core,
-        unwrapper.address,
-        core.pendleEcosystem!.ptGlpToken.address,
-        ZERO_BI,
+        vault,
+        [liquidAccountStruct, defaultAccountStruct],
+        underlyingMarketId,
       );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.usdc, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.weth, ZERO_BI);
     });
   });
 
@@ -626,9 +608,6 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       tradersPath.push(paraswapTraderParam);
     }
 
-    console.log('marketIdsPath', marketIdsPath.map(x => x.toString()));
-    console.log('amountWeisPath', amountWeisPath.map(x => x.toString()));
-    console.log('tradersPath', tradersPath);
     return core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
       solidAccountStruct,
       liquidAccountStruct,

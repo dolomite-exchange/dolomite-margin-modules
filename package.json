@@ -9,7 +9,7 @@
   "scripts": {
     "build": "hardhat --max-memory 16384 compile && hardhat --max-memory 16384 typechain",
     "clean": "hardhat clean",
-    "coverage": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/**/*.ts\" --network hardhat",
+    "coverage": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/**/!(*Liquidation)*.ts\" --network hardhat",
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy-atlas-ecosystem.ts",
     "deploy:gmx-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-gmx-ecosystem.ts",
@@ -20,7 +20,7 @@
     "lint:sol": "hardhat check && python scripts/lint-contracts.py fix",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "test": "hardhat --network hardhat test",
-    "test:specific": "hardhat --network hardhat test test/external/pendle/PendlePtGLP2024IsolationModeLiquidation.ts",
+    "test:specific": "hardhat --network hardhat test test/external/pendle/PendlePTGLPPriceOracle.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
   "repository": {
@@ -36,7 +36,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.5",
     "@babel/eslint-parser": "^7.19.1",
-    "@dolomite-exchange/dolomite-margin": "^0.9.21",
+    "@dolomite-exchange/dolomite-margin": "^0.9.23",
     "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-etherscan": "^3.1.7",
     "@nomiclabs/hardhat-solhint": "^3.0.0",

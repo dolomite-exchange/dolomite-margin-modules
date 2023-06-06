@@ -21,7 +21,31 @@ export function getMagicGLPUnwrapperTraderV1ConstructorParams(core: CoreProtocol
   ];
 }
 
+export function getMagicGLPUnwrapperTraderV2ConstructorParams(core: CoreProtocol): any[] {
+  if (!core.abraEcosystem) {
+    throw new Error('Abra ecosystem not initialized');
+  }
+
+  return [
+    core.abraEcosystem!.magicGlp.address,
+    core.gmxRegistry!.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export function getMagicGLPWrapperTraderV1ConstructorParams(core: CoreProtocol): any[] {
+  if (!core.abraEcosystem) {
+    throw new Error('Abra ecosystem not initialized');
+  }
+
+  return [
+    core.abraEcosystem!.magicGlp.address,
+    core.gmxRegistry!.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getMagicGLPWrapperTraderV2ConstructorParams(core: CoreProtocol): any[] {
   if (!core.abraEcosystem) {
     throw new Error('Abra ecosystem not initialized');
   }

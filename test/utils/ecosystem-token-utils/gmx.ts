@@ -3,10 +3,14 @@ import {
   GLPIsolationModeTokenVaultV1__factory,
   GLPIsolationModeUnwrapperTraderV1,
   GLPIsolationModeUnwrapperTraderV1__factory,
+  GLPIsolationModeUnwrapperTraderV2,
+  GLPIsolationModeUnwrapperTraderV2__factory,
   GLPIsolationModeVaultFactory,
   GLPIsolationModeVaultFactory__factory,
   GLPIsolationModeWrapperTraderV1,
   GLPIsolationModeWrapperTraderV1__factory,
+  GLPIsolationModeWrapperTraderV2,
+  GLPIsolationModeWrapperTraderV2__factory,
   GLPPriceOracleV1,
   GLPPriceOracleV1__factory,
   GmxRegistryV1,
@@ -17,8 +21,8 @@ import {
 import {
   getGLPIsolationModeVaultFactoryConstructorParams,
   getGLPPriceOracleV1ConstructorParams,
-  getGLPUnwrapperTraderConstructorParams,
-  getGLPWrapperTraderConstructorParams,
+  getGLPUnwrapperTraderV1ConstructorParams, getGLPUnwrapperTraderV2ConstructorParams,
+  getGLPWrapperTraderV1ConstructorParams, getGLPWrapperTraderV2ConstructorParams,
   getGmxRegistryConstructorParams,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
@@ -36,7 +40,7 @@ export async function createGLPPriceOracleV1(
   );
 }
 
-export async function createGLPUnwrapperTrader(
+export async function createGLPUnwrapperTraderV1(
   core: CoreProtocol,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
@@ -44,7 +48,19 @@ export async function createGLPUnwrapperTrader(
   return createContractWithAbi<GLPIsolationModeUnwrapperTraderV1>(
     GLPIsolationModeUnwrapperTraderV1__factory.abi,
     GLPIsolationModeUnwrapperTraderV1__factory.bytecode,
-    getGLPUnwrapperTraderConstructorParams(core, dfsGlp, gmxRegistry),
+    getGLPUnwrapperTraderV1ConstructorParams(core, dfsGlp, gmxRegistry),
+  );
+}
+
+export async function createGLPUnwrapperTraderV2(
+  core: CoreProtocol,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
+  gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
+): Promise<GLPIsolationModeUnwrapperTraderV2> {
+  return createContractWithAbi<GLPIsolationModeUnwrapperTraderV2>(
+    GLPIsolationModeUnwrapperTraderV2__factory.abi,
+    GLPIsolationModeUnwrapperTraderV2__factory.bytecode,
+    getGLPUnwrapperTraderV2ConstructorParams(core, dfsGlp, gmxRegistry),
   );
 }
 
@@ -68,7 +84,7 @@ export async function createGLPIsolationModeVaultFactory(
   );
 }
 
-export async function createGLPWrapperTrader(
+export async function createGLPWrapperTraderV1(
   core: CoreProtocol,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
@@ -76,7 +92,19 @@ export async function createGLPWrapperTrader(
   return createContractWithAbi<GLPIsolationModeWrapperTraderV1>(
     GLPIsolationModeWrapperTraderV1__factory.abi,
     GLPIsolationModeWrapperTraderV1__factory.bytecode,
-    getGLPWrapperTraderConstructorParams(core, dfsGlp, gmxRegistry),
+    getGLPWrapperTraderV1ConstructorParams(core, dfsGlp, gmxRegistry),
+  );
+}
+
+export async function createGLPWrapperTraderV2(
+  core: CoreProtocol,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
+  gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
+): Promise<GLPIsolationModeWrapperTraderV2> {
+  return createContractWithAbi<GLPIsolationModeWrapperTraderV2>(
+    GLPIsolationModeWrapperTraderV2__factory.abi,
+    GLPIsolationModeWrapperTraderV2__factory.bytecode,
+    getGLPWrapperTraderV2ConstructorParams(core, dfsGlp, gmxRegistry),
   );
 }
 

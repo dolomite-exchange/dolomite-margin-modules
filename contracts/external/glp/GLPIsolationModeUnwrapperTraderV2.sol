@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 
 import { GLPMathLib } from "./GLPMathLib.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
-import { IGmxVault } from "../interfaces/IGmxVault.sol";
+import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
+import { IGmxVault } from "../interfaces/gmx/IGmxVault.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
 
 

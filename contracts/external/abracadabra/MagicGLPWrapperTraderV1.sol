@@ -33,8 +33,8 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 import { IDolomiteMarginWrapperTraderForLiquidatorV3 } from "../interfaces/IDolomiteMarginWrapperTraderForLiquidatorV3.sol"; // solhint-disable-line max-line-length
 import { IERC4626 } from "../interfaces/IERC4626.sol";
-import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
-import { IGmxVault } from "../interfaces/IGmxVault.sol";
+import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
+import { IGmxVault } from "../interfaces/gmx/IGmxVault.sol";
 
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 

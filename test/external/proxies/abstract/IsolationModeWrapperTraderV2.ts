@@ -108,6 +108,14 @@ describe('IsolationModeWrapperTraderV2', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
+  describe('constructor', () => {
+    it('should work', async () => {
+      expect(await wrapper.token()).to.eq(factory.address);
+      expect(await wrapper.VAULT_FACTORY()).to.eq(factory.address);
+      expect(await wrapper.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
+    });
+  });
+
   describe('Call and Exchange for non-liquidation sale', () => {
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;

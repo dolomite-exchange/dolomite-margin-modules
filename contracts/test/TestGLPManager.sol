@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IGLPManager } from "../external/interfaces/IGLPManager.sol";
+import { IGLPManager } from "../external/interfaces/gmx/IGLPManager.sol";
 
 
 /**

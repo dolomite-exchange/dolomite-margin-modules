@@ -238,7 +238,7 @@ describe('IsolationModeWrapperTraderV1', () => {
           ZERO_BI,
           amountWei,
         ),
-        `IsolationModeWrapperTraderV1: Invalid outpout market <${core.marketIds.weth.toString()}>`,
+        `IsolationModeWrapperTraderV1: Invalid output market <${core.marketIds.weth.toString()}>`,
       );
     });
   });

@@ -5,10 +5,10 @@ import {
   SimpleIsolationModeVaultFactory,
   SimpleIsolationModeVaultFactory__factory,
   TestIsolationModeTokenVaultV1__factory,
-  TestIsolationModeUnwrapperTrader,
-  TestIsolationModeUnwrapperTrader__factory,
-  TestIsolationModeWrapperTrader,
-  TestIsolationModeWrapperTrader__factory,
+  TestIsolationModeUnwrapperTraderV1,
+  TestIsolationModeUnwrapperTraderV1__factory,
+  TestIsolationModeWrapperTraderV1,
+  TestIsolationModeWrapperTraderV1__factory,
 } from '../../../src/types';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
@@ -26,8 +26,8 @@ describe('SimpleIsolationModeVaultFactory', () => {
   let otherMarketId: BigNumber;
   let rewardToken: CustomTestToken;
   let rewardMarketId: BigNumber;
-  let tokenUnwrapper: TestIsolationModeUnwrapperTrader;
-  let tokenWrapper: TestIsolationModeWrapperTrader;
+  let tokenUnwrapper: TestIsolationModeUnwrapperTraderV1;
+  let tokenWrapper: TestIsolationModeWrapperTraderV1;
   let factory: SimpleIsolationModeVaultFactory;
   let userVaultImplementation: BaseContract;
   let initializeResult: ContractTransaction;
@@ -83,18 +83,18 @@ describe('SimpleIsolationModeVaultFactory', () => {
     rewardMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, rewardToken, false);
 
-    tokenUnwrapper = await createContractWithAbi<TestIsolationModeUnwrapperTrader>(
-      TestIsolationModeUnwrapperTrader__factory.abi,
-      TestIsolationModeUnwrapperTrader__factory.bytecode,
+    tokenUnwrapper = await createContractWithAbi<TestIsolationModeUnwrapperTraderV1>(
+      TestIsolationModeUnwrapperTraderV1__factory.abi,
+      TestIsolationModeUnwrapperTraderV1__factory.bytecode,
       [
         otherToken.address,
         factory.address,
         core.dolomiteMargin.address,
       ],
     );
-    tokenWrapper = await createContractWithAbi<TestIsolationModeWrapperTrader>(
-      TestIsolationModeWrapperTrader__factory.abi,
-      TestIsolationModeWrapperTrader__factory.bytecode,
+    tokenWrapper = await createContractWithAbi<TestIsolationModeWrapperTraderV1>(
+      TestIsolationModeWrapperTraderV1__factory.abi,
+      TestIsolationModeWrapperTraderV1__factory.bytecode,
       [factory.address, core.dolomiteMargin.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(tokenWrapper.address, true);

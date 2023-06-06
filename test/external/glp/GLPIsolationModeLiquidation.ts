@@ -17,19 +17,18 @@ import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTim
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
-  expectThrow,
   expectWalletBalanceOrDustyIfZero,
 } from '../../utils/assertions';
 import {
   createGLPIsolationModeTokenVaultV1,
   createGLPIsolationModeVaultFactory,
   createGLPPriceOracleV1,
-  createGLPUnwrapperTrader,
-  createGLPWrapperTrader,
+  createGLPUnwrapperTraderV1,
+  createGLPWrapperTraderV1,
   createGmxRegistry,
 } from '../../utils/ecosystem-token-utils/gmx';
 import { setExpiry } from '../../utils/expiry-utils';
-import { getCalldataForParaswap } from '../../utils/liquidation-utils';
+import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/liquidation-utils';
 import {
   CoreProtocol,
   setupCoreProtocol,
@@ -79,8 +78,8 @@ describe('GLPLiquidation', () => {
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
 
-    unwrapper = await createGLPUnwrapperTrader(core, factory, gmxRegistry);
-    wrapper = await createGLPWrapperTrader(core, factory, gmxRegistry);
+    unwrapper = await createGLPUnwrapperTraderV1(core, factory, gmxRegistry);
+    wrapper = await createGLPWrapperTraderV1(core, factory, gmxRegistry);
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
@@ -258,26 +257,17 @@ describe('GLPLiquidation', () => {
       const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV3!.address);
 
-      const txResultPromise = core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
-        solidAccountStruct,
-        liquidAccountStruct,
-        core.marketIds.weth,
-        underlyingMarketId,
-        NO_EXPIRY,
-        paraswapCalldata,
+      const isSuccessful = await checkForParaswapSuccess(
+        core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+          solidAccountStruct,
+          liquidAccountStruct,
+          core.marketIds.weth,
+          underlyingMarketId,
+          NO_EXPIRY,
+          paraswapCalldata,
+        ),
       );
-      try {
-        const txResult = await txResultPromise;
-        const receipt = await txResult.wait();
-        console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
-      } catch (e) {
-        await expectThrow(
-          txResultPromise,
-          'ParaswapTraderProxyWithBackup: External call failed',
-        );
-        console.warn(
-          '\tParaswap call failed. This can happen when mixing a mainnet data with  Skipping the rest of the test.',
-        );
+      if (!isSuccessful) {
         return;
       }
 
@@ -485,26 +475,17 @@ describe('GLPLiquidation', () => {
       const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV3!.address);
 
-      const txResultPromise = core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
-        solidAccountStruct,
-        liquidAccountStruct,
-        core.marketIds.weth,
-        underlyingMarketId,
-        expiry,
-        paraswapCalldata,
+      const isSuccessful = await checkForParaswapSuccess(
+        core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+          solidAccountStruct,
+          liquidAccountStruct,
+          core.marketIds.weth,
+          underlyingMarketId,
+          expiry,
+          paraswapCalldata,
+        ),
       );
-      try {
-        const txResult = await txResultPromise;
-        const receipt = await txResult.wait();
-        console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
-      } catch (e) {
-        await expectThrow(
-          txResultPromise,
-          'ParaswapTraderProxyWithBackup: External call failed',
-        );
-        console.warn(
-          '\tParaswap call failed. This can happen when mixing a mainnet data with  Skipping the rest of the test.',
-        );
+      if (!isSuccessful) {
         return;
       }
 

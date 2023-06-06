@@ -8,10 +8,14 @@ import {
   PlutusVaultGLPIsolationModeTokenVaultV1__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV2,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory,
   PlutusVaultGLPIsolationModeVaultFactory,
   PlutusVaultGLPIsolationModeVaultFactory__factory,
   PlutusVaultGLPIsolationModeWrapperTraderV1,
   PlutusVaultGLPIsolationModeWrapperTraderV1__factory,
+  PlutusVaultGLPIsolationModeWrapperTraderV2,
+  PlutusVaultGLPIsolationModeWrapperTraderV2__factory,
   PlutusVaultGLPPriceOracle,
   PlutusVaultGLPPriceOracle__factory,
   PlutusVaultRegistry,
@@ -20,8 +24,10 @@ import {
 import {
   getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
   getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams,
+  getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getPlutusVaultGLPIsolationModeVaultFactoryConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
+  getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
   getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../../../src/utils/constructors/plutus';
@@ -30,8 +36,8 @@ import { CoreProtocol } from '../setup';
 
 export function createDolomiteCompatibleWhitelistForPlutusDAO(
   core: CoreProtocol,
-  unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1,
-  wrapperTrader: PlutusVaultGLPIsolationModeWrapperTraderV1,
+  unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
+  wrapperTrader: PlutusVaultGLPIsolationModeWrapperTraderV1 | PlutusVaultGLPIsolationModeWrapperTraderV2,
   plutusWhitelist: address,
   dplvGlpToken: { address: address },
 ): Promise<DolomiteCompatibleWhitelistForPlutusDAO> {
@@ -78,7 +84,7 @@ export function createPlutusVaultGLPPriceOracle(
   core: CoreProtocol,
   plutusVaultRegistry: PlutusVaultRegistry,
   dplvGlpToken: { address: address },
-  PlutusVaultGLPIsolationModeUnwrapperTraderV1: PlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
 ): Promise<PlutusVaultGLPPriceOracle> {
   return createContractWithAbi<PlutusVaultGLPPriceOracle>(
     PlutusVaultGLPPriceOracle__factory.abi,
@@ -87,7 +93,7 @@ export function createPlutusVaultGLPPriceOracle(
       core,
       plutusVaultRegistry,
       dplvGlpToken,
-      PlutusVaultGLPIsolationModeUnwrapperTraderV1,
+      unwrapper,
     ),
   );
 }
@@ -101,6 +107,18 @@ export function createPlutusVaultGLPIsolationModeUnwrapperTraderV1(
     PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory.abi,
     PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory.bytecode,
     getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams(core, plutusVaultRegistry, dPlvGlpToken),
+  );
+}
+
+export function createPlutusVaultGLPIsolationModeUnwrapperTraderV2(
+  core: CoreProtocol,
+  plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
+  dPlvGlpToken: { address: address },
+): Promise<PlutusVaultGLPIsolationModeUnwrapperTraderV2> {
+  return createContractWithAbi<PlutusVaultGLPIsolationModeUnwrapperTraderV2>(
+    PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.abi,
+    PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.bytecode,
+    getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams(core, plutusVaultRegistry, dPlvGlpToken),
   );
 }
 
@@ -121,5 +139,17 @@ export function createPlutusVaultGLPIsolationModeWrapperTraderV1(
     PlutusVaultGLPIsolationModeWrapperTraderV1__factory.abi,
     PlutusVaultGLPIsolationModeWrapperTraderV1__factory.bytecode,
     getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams(core, plutusVaultRegistry, dPlvGlpToken),
+  );
+}
+
+export function createPlutusVaultGLPIsolationModeWrapperTraderV2(
+  core: CoreProtocol,
+  plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
+  dPlvGlpToken: { address: address },
+): Promise<PlutusVaultGLPIsolationModeWrapperTraderV2> {
+  return createContractWithAbi<PlutusVaultGLPIsolationModeWrapperTraderV2>(
+    PlutusVaultGLPIsolationModeWrapperTraderV2__factory.abi,
+    PlutusVaultGLPIsolationModeWrapperTraderV2__factory.bytecode,
+    getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams(core, plutusVaultRegistry, dPlvGlpToken),
   );
 }

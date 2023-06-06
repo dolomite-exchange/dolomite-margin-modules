@@ -26,7 +26,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { IPendlePtGLP2024Registry } from "../interfaces/IPendlePtGLP2024Registry.sol";
+import { IPendlePtGLP2024Registry } from "../interfaces/pendle/IPendlePtGLP2024Registry.sol";
 
 
 /**

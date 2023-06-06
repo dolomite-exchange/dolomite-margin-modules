@@ -25,7 +25,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Require } from "../../protocol/lib/Require.sol";
 import { GLPMathLib } from "../glp/GLPMathLib.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
-import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
+import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IPlutusVaultGLPRouter } from "../interfaces/IPlutusVaultGLPRouter.sol";
 import { IPlutusVaultRegistry } from "../interfaces/IPlutusVaultRegistry.sol";
 import { IsolationModeWrapperTraderV1 } from "../proxies/abstract/IsolationModeWrapperTraderV1.sol";

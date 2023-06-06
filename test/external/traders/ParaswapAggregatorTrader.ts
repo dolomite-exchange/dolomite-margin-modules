@@ -6,7 +6,12 @@ import { AccountStruct } from '../../../src/utils/constants';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../../utils/assertions';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectThrow,
+  expectThrowWithMatchingReason,
+} from '../../utils/assertions';
 import { createParaswapAggregatorTrader } from '../../utils/ecosystem-token-utils/traders';
 import { getCalldataForParaswap } from '../../utils/liquidation-utils';
 import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
@@ -94,16 +99,56 @@ describe('ParaswapAggregatorTrader', () => {
 
     it('should fail when caller is not DolomiteMargin', async () => {
       await expectThrow(
-        trader.connect(core.hhUser1)
-          .exchange(
-            core.hhUser1.address,
-            core.dolomiteMargin.address,
-            core.weth.address,
-            core.usdc.address,
-            ZERO_BI,
-            BYTES_EMPTY,
-          ),
+        trader.connect(core.hhUser1).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          core.weth.address,
+          core.usdc.address,
+          ZERO_BI,
+          BYTES_EMPTY,
+        ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when output is insufficient', async () => {
+      const { calldata: tradeData, outputAmount } = await getCalldataForParaswap(
+        amountIn,
+        core.weth,
+        18,
+        minAmountOut,
+        core.usdc,
+        6,
+        core.hhUser1,
+        trader,
+        core,
+      );
+      const actualOrderData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [outputAmount.mul(10), tradeData],
+      );
+      await expectThrowWithMatchingReason(
+        core.dolomiteMargin.connect(core.hhUser1).operate(
+          [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
+          [
+            {
+              actionType: ActionType.Sell,
+              primaryMarketId: core.marketIds.weth,
+              secondaryMarketId: core.marketIds.usdc,
+              accountId: 0,
+              otherAccountId: 0,
+              amount: {
+                sign: false,
+                denomination: AmountDenomination.Wei,
+                ref: AmountReference.Delta,
+                value: amountIn,
+              },
+              otherAddress: trader.address,
+              data: actualOrderData,
+            },
+          ],
+        ),
+        /ParaswapAggregatorTrader: Insufficient output amount <\d+, \d+>/,
       );
     });
 
@@ -159,7 +204,7 @@ describe('ParaswapAggregatorTrader', () => {
       );
       const actualCalldata = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'bytes'],
-        [minAmountOut, calldata.replace('5', '6')],
+        [minAmountOut, calldata.substring(0, 32)],
       );
       await expectThrow(
         trader.connect(caller)

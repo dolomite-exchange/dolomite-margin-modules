@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import { IGLPIsolationModeTokenVaultV1 } from "../interfaces/IGLPIsolationModeTokenVaultV1.sol";
-import { IGLPIsolationModeVaultFactory } from "../interfaces/IGLPIsolationModeVaultFactory.sol";
-import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
+import { IGLPIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV1.sol";
+import { IGLPIsolationModeVaultFactory } from "../interfaces/gmx/IGLPIsolationModeVaultFactory.sol";
+import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
 
 

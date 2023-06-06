@@ -1,9 +1,30 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import axios from 'axios';
-import { BigNumber } from 'ethers';
+import { BigNumber, ContractTransaction } from 'ethers';
+import { expectThrow } from './assertions';
 import { CoreProtocol } from './setup';
 
 const API_URL = 'https://apiv5.paraswap.io';
+
+export async function checkForParaswapSuccess(
+  contractTransactionPromise: Promise<ContractTransaction>,
+): Promise<boolean> {
+  try {
+    const txResult = await contractTransactionPromise;
+    const receipt = await txResult.wait();
+    console.log('\t#liquidate gas used:', receipt.gasUsed.toString());
+    return true;
+  } catch (e) {
+    await expectThrow(
+      contractTransactionPromise,
+      'ParaswapAggregatorTrader: External call failed',
+    );
+    console.warn(
+      '\tParaswap call failed. This can happen when mixing a mainnet data with the test environment. Skipping the rest of the test',
+    );
+    return false;
+  }
+}
 
 export async function getCalldataForParaswap(
   inputAmount: BigNumber,

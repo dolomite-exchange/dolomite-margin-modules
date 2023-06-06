@@ -23,9 +23,9 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
-import { IPendlePtGLP2024Registry } from "../interfaces/IPendlePtGLP2024Registry.sol";
-import { IPendleRouter } from "../interfaces/IPendleRouter.sol";
+import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
+import { IPendlePtGLP2024Registry } from "../interfaces/pendle/IPendlePtGLP2024Registry.sol";
+import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 
 

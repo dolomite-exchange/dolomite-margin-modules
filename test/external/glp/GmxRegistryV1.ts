@@ -186,7 +186,7 @@ describe('GmxRegistryV1', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmx(ZERO_ADDRESS),
-        'GmxRegistryV1: Invalid ecosystem-token-utils address',
+        'GmxRegistryV1: Invalid gmx address',
       );
     });
   });

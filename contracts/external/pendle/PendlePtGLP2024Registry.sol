@@ -24,12 +24,12 @@ import { Require } from "../../protocol/lib/Require.sol";
 
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
-import { IPendlePtGLP2024Registry } from "../interfaces/IPendlePtGLP2024Registry.sol";
-import { IPendlePtMarket } from "../interfaces/IPendlePtMarket.sol";
-import { IPendlePtOracle } from "../interfaces/IPendlePtOracle.sol";
-import { IPendlePtToken } from "../interfaces/IPendlePtToken.sol";
-import { IPendleRouter } from "../interfaces/IPendleRouter.sol";
-import { IPendleSyToken } from "../interfaces/IPendleSyToken.sol";
+import { IPendlePtGLP2024Registry } from "../interfaces/pendle/IPendlePtGLP2024Registry.sol";
+import { IPendlePtMarket } from "../interfaces/pendle/IPendlePtMarket.sol";
+import { IPendlePtOracle } from "../interfaces/pendle/IPendlePtOracle.sol";
+import { IPendlePtToken } from "../interfaces/pendle/IPendlePtToken.sol";
+import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
+import { IPendleSyToken } from "../interfaces/pendle/IPendleSyToken.sol";
 
 
 /**

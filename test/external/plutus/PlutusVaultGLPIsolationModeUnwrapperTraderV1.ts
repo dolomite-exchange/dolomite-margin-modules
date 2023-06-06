@@ -210,7 +210,7 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
           amountWei,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `PlutusVaultGLPIsolationModeUnwrapperTraderV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
+        `PlutusVaultGLPUnwrapperV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -314,21 +314,21 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
     it('should fail if the input token is not dsfGLP', async () => {
       await expectThrow(
         unwrapper.getExchangeCost(core.weth.address, core.usdc.address, amountWei, BYTES_EMPTY),
-        `PlutusVaultGLPIsolationModeUnwrapperTraderV1: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `PlutusVaultGLPUnwrapperV1: Invalid input token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if the output token is not USDC', async () => {
       await expectThrow(
         unwrapper.getExchangeCost(factory.address, core.weth.address, amountWei, BYTES_EMPTY),
-        `PlutusVaultGLPIsolationModeUnwrapperTraderV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
+        `PlutusVaultGLPUnwrapperV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if the desired input amount is eq to 0', async () => {
       await expectThrow(
         unwrapper.getExchangeCost(factory.address, core.usdc.address, ZERO_BI, BYTES_EMPTY),
-        'PlutusVaultGLPIsolationModeUnwrapperTraderV1: Invalid desired input amount',
+        'PlutusVaultGLPUnwrapperV1: Invalid desired input amount',
       );
     });
   });

@@ -28,8 +28,8 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { GLPMathLib } from "../glp/GLPMathLib.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
-import { IGmxRegistryV1 } from "../interfaces/IGmxRegistryV1.sol";
-import { IGmxVault } from "../interfaces/IGmxVault.sol";
+import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
+import { IGmxVault } from "../interfaces/gmx/IGmxVault.sol";
 
 
 /**

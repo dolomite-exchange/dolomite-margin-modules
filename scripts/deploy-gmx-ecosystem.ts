@@ -8,9 +8,9 @@ import {
 } from '../src/types';
 import {
   getGLPPriceOracleV1ConstructorParams,
-  getGLPUnwrapperTraderConstructorParams,
+  getGLPUnwrapperTraderV1ConstructorParams,
   getGLPIsolationModeVaultFactoryConstructorParams,
-  getGLPWrapperTraderConstructorParams,
+  getGLPWrapperTraderV1ConstructorParams,
   getGmxRegistryConstructorParams,
 } from '../src/utils/constructors/gmx';
 import { setupCoreProtocol } from '../test/utils/setup';
@@ -48,12 +48,12 @@ async function main() {
   await deployContractAndSave(
     chainId,
     'GLPIsolationModeWrapperTraderV1',
-    getGLPWrapperTraderConstructorParams(core, factory, gmxRegistry),
+    getGLPWrapperTraderV1ConstructorParams(core, factory, gmxRegistry),
   );
   await deployContractAndSave(
     chainId,
     'GLPIsolationModeUnwrapperTraderV1',
-    getGLPUnwrapperTraderConstructorParams(core, factory, gmxRegistry),
+    getGLPUnwrapperTraderV1ConstructorParams(core, factory, gmxRegistry),
   );
 }
 

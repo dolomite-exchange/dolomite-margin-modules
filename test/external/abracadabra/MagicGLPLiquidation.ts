@@ -9,7 +9,6 @@ import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTim
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
-  expectThrow,
   expectWalletBalanceOrDustyIfZero,
 } from '../../utils/assertions';
 import {
@@ -17,7 +16,7 @@ import {
   createMagicGLPUnwrapperTraderV1,
 } from '../../utils/ecosystem-token-utils/abracadabra';
 import { setExpiry } from '../../utils/expiry-utils';
-import { getCalldataForParaswap } from '../../utils/liquidation-utils';
+import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 
 const defaultAccountNumber = '0';
@@ -247,26 +246,17 @@ describe('MagicGLPLiquidation', () => {
       const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV3!.address);
 
-      const txResultPromise = core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
-        solidAccountStruct,
-        liquidAccountStruct,
-        core.marketIds.weth,
-        heldMarketId,
-        NO_EXPIRY,
-        paraswapCalldata,
+      const isSuccessful = await checkForParaswapSuccess(
+        core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+          solidAccountStruct,
+          liquidAccountStruct,
+          core.marketIds.weth,
+          heldMarketId,
+          NO_EXPIRY,
+          paraswapCalldata,
+        ),
       );
-      try {
-        const txResult = await txResultPromise;
-        const receipt = await txResult.wait();
-        console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
-      } catch (e) {
-        await expectThrow(
-          txResultPromise,
-          'ParaswapTraderProxyWithBackup: External call failed',
-        );
-        console.warn(
-          '\tParaswap call failed. This can happen when mixing a mainnet data with  Skipping the rest of the test.',
-        );
+      if (!isSuccessful) {
         return;
       }
 
@@ -487,26 +477,17 @@ describe('MagicGLPLiquidation', () => {
       const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV3!.address);
 
-      const txResultPromise = core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
-        solidAccountStruct,
-        liquidAccountStruct,
-        core.marketIds.weth,
-        heldMarketId,
-        expiry,
-        paraswapCalldata,
+      const isSuccessful = checkForParaswapSuccess(
+        core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+          solidAccountStruct,
+          liquidAccountStruct,
+          core.marketIds.weth,
+          heldMarketId,
+          expiry,
+          paraswapCalldata,
+        ),
       );
-      try {
-        const txResult = await txResultPromise;
-        const receipt = await txResult.wait();
-        console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
-      } catch (e) {
-        await expectThrow(
-          txResultPromise,
-          'ParaswapTraderProxyWithBackup: External call failed',
-        );
-        console.warn(
-          '\tParaswap call failed. This can happen when mixing a mainnet data with  Skipping the rest of the test.',
-        );
+      if (!isSuccessful) {
         return;
       }
 

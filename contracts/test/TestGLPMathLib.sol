@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { GLPMathLib } from "../external/glp/GLPMathLib.sol";
 
-import { IGmxRegistryV1 } from "../external/interfaces/IGmxRegistryV1.sol";
+import { IGmxRegistryV1 } from "../external/interfaces/gmx/IGmxRegistryV1.sol";
 
 
 /**
