@@ -164,3 +164,11 @@ export const V_GMX_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x199070DDfd1CFb69173aa2F7e20906F26B363004',
   [Network.ArbitrumGoerli]: undefined,
 };
+
+/**
+ * Suhiswap router
+ */
+export const SUSHI_ROUTER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506',
+  [Network.ArbitrumGoerli]: undefined,
+};

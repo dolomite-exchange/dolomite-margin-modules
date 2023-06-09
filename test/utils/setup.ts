@@ -72,6 +72,8 @@ import {
   TestInterestSetter__factory,
   TestPriceOracle,
   TestPriceOracle__factory,
+  IUniswapV2Router02,
+  IUniswapV2Router02__factory,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER,
@@ -98,6 +100,7 @@ import {
   V_GLP_MAP,
   V_GMX_MAP,
   WETH_MAP,
+  SUSHI_ROUTER_MAP,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { impersonate, impersonateOrFallback, resetFork } from './index';
@@ -120,6 +123,10 @@ export interface CoreProtocolConfig {
 
 interface AbraEcosystem {
   magicGlp: IERC4626;
+}
+
+interface SushiEcosystem {
+  router: IUniswapV2Router02;
 }
 
 interface AtlasEcosystem {
@@ -169,6 +176,7 @@ export interface CoreProtocol {
   /// Contracts and Ecosystems
   /// =========================
   abraEcosystem: AbraEcosystem | undefined;
+  sushiEcosystem: SushiEcosystem | undefined;
   alwaysZeroInterestSetter: AlwaysZeroInterestSetter;
   atlasEcosystem: AtlasEcosystem | undefined;
   borrowPositionProxyV2: BorrowPositionProxyV2;
@@ -355,9 +363,11 @@ export async function setupCoreProtocol(
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
+  const sushiEcosystem = await createSushiEcosystem(config.network, hhUser1);
 
   return {
     abraEcosystem,
+    sushiEcosystem,
     alwaysZeroInterestSetter,
     atlasEcosystem,
     borrowPositionProxyV2,
@@ -505,6 +515,19 @@ async function createPlutusEcosystem(
       address => IPlutusVaultGLPRouter__factory.connect(address, signer),
     ),
     sGlp: getContract(sGlpAddressForPlutus, address => IERC20__factory.connect(address, signer)),
+  };
+}
+
+async function createSushiEcosystem(network: Network, signer: SignerWithAddress): Promise<SushiEcosystem | undefined> {
+  if (!SUSHI_ROUTER_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    router: getContract(
+      SUSHI_ROUTER_MAP[network] as string,
+      address => IUniswapV2Router02__factory.connect(address, signer),
+    ),
   };
 }
 
