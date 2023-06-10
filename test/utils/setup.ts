@@ -170,6 +170,23 @@ interface GmxEcosystem {
   vGmx: IGmxVester;
 }
 
+interface JonesEcosystem {
+  esGmx: IERC20;
+  esGmxDistributor: IEsGmxDistributor;
+  fsGlp: IERC20;
+  glp: IERC20;
+  glpManager: IGLPManager;
+  glpRewardsRouter: IGLPRewardsRouterV2;
+  gmxRewardsRouter: IGmxRewardRouterV2;
+  gmx: IERC20;
+  gmxVault: IGmxVault;
+  sGlp: IERC20;
+  sGmx: ISGMX;
+  sbfGmx: IERC20;
+  vGlp: IGmxVester;
+  vGmx: IGmxVester;
+}
+
 interface ParaswapEcosystem {
   augustusRouter: address;
   transferProxy: address;
@@ -221,6 +238,7 @@ export interface CoreProtocol {
   glpIsolationModeWrapperTraderV1: GLPIsolationModeWrapperTraderV1 | undefined;
   gmxRegistry: IGmxRegistryV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
+  jonesEcosystem: JonesEcosystem | undefined;
   liquidatorAssetRegistry: LiquidatorAssetRegistry | undefined;
   liquidatorProxyV1: LiquidatorProxyV1;
   liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;

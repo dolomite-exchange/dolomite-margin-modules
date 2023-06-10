@@ -63,7 +63,7 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
         address _dolomiteMargin
     )
     OnlyDolomiteMargin(
-    _dolomiteMargin
+        _dolomiteMargin
     )
     {
         glpAdapter = IJonesGLPAdapter(_glpAdapter);
