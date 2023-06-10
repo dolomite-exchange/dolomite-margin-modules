@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
 import { IPlutusVaultRegistry } from "./IPlutusVaultRegistry.sol";
+import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
 
 
 /**

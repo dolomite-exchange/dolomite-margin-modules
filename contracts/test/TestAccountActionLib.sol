@@ -80,7 +80,8 @@ contract TestAccountActionLib {
         address _toAccountOwner,
         uint256 _toAccountNumber,
         uint256 _marketId,
-        uint256 _amountWei,
+        IDolomiteStructs.AssetDenomination _denomination,
+        uint256 _amount,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) public {
         DOLOMITE_MARGIN.transfer(
@@ -89,7 +90,8 @@ contract TestAccountActionLib {
             _toAccountOwner,
             _toAccountNumber,
             _marketId,
-            _amountWei,
+            _denomination,
+            _amount,
             _balanceCheckFlag
         );
     }
@@ -216,13 +218,15 @@ contract TestAccountActionLib {
         uint256 _fromAccountId,
         uint256 _toAccountId,
         uint256 _marketId,
-        uint256 _amountWei
+        IDolomiteStructs.AssetDenomination _denomination,
+        uint256 _amount
     ) public pure returns (IDolomiteStructs.ActionArgs memory) {
         return AccountActionLib.encodeTransferAction(
             _fromAccountId,
             _toAccountId,
             _marketId,
-            _amountWei
+            _denomination,
+            _amount
         );
     }
 

@@ -379,4 +379,52 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       expect(await unwrapper.actionsLength()).to.eq(2);
     });
   });
+
+  describe('#getExchangeCost', () => {
+    it('should work normally', async () => {
+      const outputAmount = await unwrapper.getExchangeCost(
+        factory.address,
+        core.usdc.address,
+        amountWei,
+        BYTES_EMPTY,
+      );
+      expect(outputAmount).to.eq(amountWei);
+    });
+
+    it('should fail when input token is invalid', async () => {
+      await expectThrow(
+        unwrapper.getExchangeCost(
+          core.dfsGlp!.address,
+          core.usdc.address,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.dfsGlp!.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail when output token is invalid', async () => {
+      await expectThrow(
+        unwrapper.getExchangeCost(
+          factory.address,
+          core.dfsGlp!.address,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail when input amount is invalid', async () => {
+      await expectThrow(
+        unwrapper.getExchangeCost(
+          factory.address,
+          core.usdc.address,
+          ZERO_BI,
+          BYTES_EMPTY,
+        ),
+        'IsolationModeUnwrapperTraderV2: Invalid desired input amount',
+      );
+    });
+  });
 });

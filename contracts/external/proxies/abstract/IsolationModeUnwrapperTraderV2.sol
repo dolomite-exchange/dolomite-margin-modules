@@ -239,9 +239,33 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     )
     public
     override
-    virtual
     view
-    returns (uint256);
+    returns (uint256) {
+        Require.that(
+            _inputToken == address(VAULT_FACTORY),
+            _FILE,
+            "Invalid input token",
+            _inputToken
+        );
+        Require.that(
+            isValidOutputToken(_outputToken),
+            _FILE,
+            "Invalid output token",
+            _outputToken
+        );
+        Require.that(
+            _desiredInputAmount > 0,
+            _FILE,
+            "Invalid desired input amount"
+        );
+
+        return _getExchangeCost(
+            _inputToken,
+            _outputToken,
+            _desiredInputAmount,
+            _orderData
+        );
+    }
 
     // ============ Internal Functions ============
 
@@ -257,4 +281,11 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         uint256 _inputAmount,
         bytes memory _extraOrderData
     ) internal virtual returns (uint256);
+
+    function _getExchangeCost(
+        address _inputToken,
+        address _outputToken,
+        uint256 _desiredInputAmount,
+        bytes memory _orderData
+    ) internal virtual view returns (uint256);
 }

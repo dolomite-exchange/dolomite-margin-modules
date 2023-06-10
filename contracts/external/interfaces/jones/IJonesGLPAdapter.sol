@@ -20,16 +20,15 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
-
 
 /**
- * @title   IPendlePtGLP2024IsolationModeTokenVaultV1
+ * @title   IJonesGLPAdapter
  * @author  Dolomite
  *
- * @notice  Interface for a subclass of IsolationModeTokenVaultV1 that serves as the implementation for the user's proxy
- *          vault for ptGLP tokens.
+ * @notice  Interface for interacting with Jones DAO's GLP adapter (0x42EfE3E686808ccA051A49BCDE34C5CbA2EBEfc1). The
+ *          adapter serves as the primary entry/exit point for users looking to mint/redeem jUSDC.
  */
-interface IPendlePtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
-    // solhint-disable-previous-line no-empty-blocks
+interface IJonesGLPAdapter {
+
+    function depositStable(uint256 _assets,bool _compound) external;
 }

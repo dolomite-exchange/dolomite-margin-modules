@@ -261,7 +261,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
   describe('#getExchangeCost', () => {
     it('should fail because it is not implemented', async () => {
       await expectThrow(
-        unwrapper.getExchangeCost(factory.address, core.usdc.address, ZERO_BI, BYTES_EMPTY),
+        unwrapper.getExchangeCost(factory.address, core.usdc.address, amountWei, BYTES_EMPTY),
         'PendlePtGLP2024UnwrapperV2: getExchangeCost is not implemented',
       );
     });

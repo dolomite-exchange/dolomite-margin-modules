@@ -22,12 +22,11 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { GLPMathLib } from "../glp/GLPMathLib.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
-import { IPlutusVaultGLPRouter } from "../interfaces/IPlutusVaultGLPRouter.sol";
-import { IPlutusVaultRegistry } from "../interfaces/IPlutusVaultRegistry.sol";
+import { IPlutusVaultGLPRouter } from "../interfaces/plutus/IPlutusVaultGLPRouter.sol";
+import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 
 
@@ -67,41 +66,7 @@ contract PlutusVaultGLPIsolationModeWrapperTraderV2 is IsolationModeWrapperTrade
         PLUTUS_VAULT_REGISTRY = IPlutusVaultRegistry(_plutusVaultRegistry);
     }
 
-    // ============ External Functions ============
-
-    function getExchangeCost(
-        address _inputToken,
-        address _vaultToken,
-        uint256 _desiredInputAmount,
-        bytes memory
-    )
-    public
-    override
-    view
-    returns (uint256) {
-        Require.that(
-            isValidInputToken(_inputToken),
-            _FILE,
-            "Invalid input token",
-            _inputToken
-        );
-        // VAULT_FACTORY is the DFS_GLP token
-        Require.that(
-            _vaultToken == address(VAULT_FACTORY),
-            _FILE,
-            "Invalid output token",
-            _vaultToken
-        );
-        Require.that(
-            _desiredInputAmount > 0,
-            _FILE,
-            "Invalid desired input amount"
-        );
-
-        uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_inputToken, _desiredInputAmount);
-        uint256 glpAmount = GMX_REGISTRY.getGlpMintAmount(usdgAmount);
-        return IERC4626(VAULT_FACTORY.UNDERLYING_TOKEN()).previewDeposit(glpAmount);
-    }
+    // ============ Public Functions ============
 
     function isValidInputToken(address _inputToken) public override view returns (bool) {
         return GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken);
@@ -137,5 +102,20 @@ contract PlutusVaultGLPIsolationModeWrapperTraderV2 is IsolationModeWrapperTrade
         plvGlpRouter.deposit(glpAmount);
 
         return outputAmount;
+    }
+
+    function _getExchangeCost(
+        address _inputToken,
+        address,
+        uint256 _desiredInputAmount,
+        bytes memory
+    )
+    internal
+    override
+    view
+    returns (uint256) {
+        uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_inputToken, _desiredInputAmount);
+        uint256 glpAmount = GMX_REGISTRY.getGlpMintAmount(usdgAmount);
+        return IERC4626(VAULT_FACTORY.UNDERLYING_TOKEN()).previewDeposit(glpAmount);
     }
 }

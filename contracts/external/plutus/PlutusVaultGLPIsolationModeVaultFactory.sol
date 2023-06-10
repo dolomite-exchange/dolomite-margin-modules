@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IPlutusVaultGLPIsolationModeVaultFactory } from "../interfaces/IPlutusVaultGLPIsolationModeVaultFactory.sol";
-import { IPlutusVaultRegistry } from "../interfaces/IPlutusVaultRegistry.sol";
+import { IPlutusVaultGLPIsolationModeVaultFactory } from "../interfaces/plutus/IPlutusVaultGLPIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
 import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
 
 

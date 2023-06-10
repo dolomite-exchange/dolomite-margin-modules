@@ -60,20 +60,6 @@ contract TestIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         return _outputToken == OUTPUT_TOKEN;
     }
 
-    function getExchangeCost(
-        address,
-        address,
-        uint256 _desiredInputAmount,
-        bytes memory
-    )
-    public
-    override
-    pure
-    returns (uint256) {
-        // 1:1 conversion for the sake of testing
-        return _desiredInputAmount;
-    }
-
     // ================ Internal Functions ================
 
     function _exchangeUnderlyingTokenToOutputToken(
@@ -98,5 +84,19 @@ contract TestIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         uint256 outputAmount = _inputAmount * inputPrice / outputPrice;
         ICustomTestToken(_outputToken).addBalance(address(this), outputAmount);
         return outputAmount;
+    }
+
+    function _getExchangeCost(
+        address,
+        address,
+        uint256 _desiredInputAmount,
+        bytes memory
+    )
+    internal
+    override
+    pure
+    returns (uint256) {
+        // 1:1 conversion for the sake of testing
+        return _desiredInputAmount;
     }
 }

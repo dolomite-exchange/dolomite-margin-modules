@@ -72,20 +72,6 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
         return GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken);
     }
 
-    function getExchangeCost(
-        address,
-        address,
-        uint256,
-        bytes memory
-    )
-        public
-        override
-        pure
-        returns (uint256)
-    {
-        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
-    }
-
     // ============================================
     // ============ Internal Functions ============
     // ============================================
@@ -133,5 +119,19 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
         }
 
         return ptGlpAmount;
+    }
+
+    function _getExchangeCost(
+        address,
+        address,
+        uint256,
+        bytes memory
+    )
+    internal
+    override
+    pure
+    returns (uint256)
+    {
+        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
 }

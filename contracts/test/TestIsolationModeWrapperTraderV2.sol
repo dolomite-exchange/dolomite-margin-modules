@@ -56,20 +56,6 @@ contract TestIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         return _inputToken == INPUT_TOKEN;
     }
 
-    function getExchangeCost(
-        address,
-        address,
-        uint256 _desiredInputAmount,
-        bytes memory
-    )
-    public
-    override
-    pure
-    returns (uint256) {
-        // 1:1 conversion for the sake of testing
-        return _desiredInputAmount;
-    }
-
     // ================ Internal Functions ================
 
     function _exchangeIntoUnderlyingToken(
@@ -85,14 +71,30 @@ contract TestIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     override
     returns (uint256) {
         // 1:1 conversion for the sake of testing
-        uint256 outputPrice = DOLOMITE_MARGIN.getMarketPrice(
-            DOLOMITE_MARGIN.getMarketIdByTokenAddress(address(VAULT_FACTORY))
-        ).value;
-        uint256 inputPrice = DOLOMITE_MARGIN.getMarketPrice(
-            DOLOMITE_MARGIN.getMarketIdByTokenAddress(_inputToken)
-        ).value;
+        uint256 outputPrice = _getMarketPriceForToken(address(VAULT_FACTORY));
+        uint256 inputPrice = _getMarketPriceForToken(_inputToken);
         uint256 outputAmount = _inputAmount * inputPrice / outputPrice;
+
         ICustomTestToken(_outputTokenUnderlying).addBalance(address(this), outputAmount);
+
         return outputAmount;
+    }
+
+    function _getExchangeCost(
+        address,
+        address,
+        uint256 _desiredInputAmount,
+        bytes memory
+    )
+    internal
+    override
+    pure
+    returns (uint256) {
+        // 1:1 conversion for the sake of testing
+        return _desiredInputAmount;
+    }
+
+    function _getMarketPriceForToken(address _token) private view returns (uint256) {
+        return DOLOMITE_MARGIN.getMarketPrice(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)).value;
     }
 }

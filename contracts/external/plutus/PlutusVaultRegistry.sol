@@ -24,9 +24,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
-import { IPlutusVaultGLPFarm } from "../interfaces/IPlutusVaultGLPFarm.sol";
-import { IPlutusVaultGLPRouter } from "../interfaces/IPlutusVaultGLPRouter.sol";
-import { IPlutusVaultRegistry } from "../interfaces/IPlutusVaultRegistry.sol";
+import { IPlutusVaultGLPFarm } from "../interfaces/plutus/IPlutusVaultGLPFarm.sol";
+import { IPlutusVaultGLPRouter } from "../interfaces/plutus/IPlutusVaultGLPRouter.sol";
+import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
 
 
 /**

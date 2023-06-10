@@ -24,10 +24,10 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { DolomiteMarginMath } from "../../protocol/lib/DolomiteMarginMath.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
-import { IPlutusVaultGLP } from "../interfaces/IPlutusVaultGLP.sol";
-import { IPlutusVaultGLPFarm } from "../interfaces/IPlutusVaultGLPFarm.sol";
-import { IPlutusVaultGLPIsolationModeTokenVaultV1 } from "../interfaces/IPlutusVaultGLPIsolationModeTokenVaultV1.sol";
-import { IPlutusVaultGLPIsolationModeVaultFactory } from "../interfaces/IPlutusVaultGLPIsolationModeVaultFactory.sol";
+import { IPlutusVaultGLP } from "../interfaces/plutus/IPlutusVaultGLP.sol";
+import { IPlutusVaultGLPFarm } from "../interfaces/plutus/IPlutusVaultGLPFarm.sol";
+import { IPlutusVaultGLPIsolationModeTokenVaultV1 } from "../interfaces/plutus/IPlutusVaultGLPIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IPlutusVaultGLPIsolationModeVaultFactory } from "../interfaces/plutus/IPlutusVaultGLPIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
 

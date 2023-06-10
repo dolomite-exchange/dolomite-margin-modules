@@ -287,26 +287,5 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
           .eq(expectedAmount);
       }
     });
-
-    it('should fail if the input token is not dsfGLP', async () => {
-      await expectThrow(
-        unwrapper.getExchangeCost(core.weth.address, core.usdc.address, amountWei, BYTES_EMPTY),
-        `GLPIsolationModeUnwrapperV2: Invalid input token <${core.weth.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if the output token is not USDC', async () => {
-      await expectThrow(
-        unwrapper.getExchangeCost(factory.address, core.dfsGlp!.address, amountWei, BYTES_EMPTY),
-        `GLPIsolationModeUnwrapperV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if the desired input amount is eq to 0', async () => {
-      await expectThrow(
-        unwrapper.getExchangeCost(factory.address, core.usdc.address, ZERO_BI, BYTES_EMPTY),
-        'GLPIsolationModeUnwrapperV2: Invalid desired input amount',
-      );
-    });
   });
 });

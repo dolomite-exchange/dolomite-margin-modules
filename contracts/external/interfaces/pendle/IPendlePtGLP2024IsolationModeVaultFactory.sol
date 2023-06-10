@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
 import { IPendlePtGLP2024Registry } from "./IPendlePtGLP2024Registry.sol";
+import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
 
 
 /**

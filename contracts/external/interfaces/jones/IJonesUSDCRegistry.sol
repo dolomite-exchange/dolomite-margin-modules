@@ -20,50 +20,55 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IPlutusVaultGLPFarm } from "./IPlutusVaultGLPFarm.sol";
-import { IPlutusVaultGLPRouter } from "./IPlutusVaultGLPRouter.sol";
+import { IJonesGLPAdapter } from "./IJonesGLPAdapter.sol";
+import { IJonesGLPVaultRouter } from "./IJonesGLPVaultRouter.sol";
+import { IJonesWhitelistController } from "./IJonesWhitelistController.sol";
 import { IERC4626 } from "../IERC4626.sol";
 
 
 /**
- * @title   IPlutusVaultRegistry
+ * @title   IJonesUSDCRegistry
  * @author  Dolomite
  *
- * @notice  A registry contract for storing all of the addresses that can interact with the PlutusDAO ecosystem.
+ * @notice  A registry contract for storing all of the addresses that can interact with Jones DAO's jUSDC token
  */
-interface IPlutusVaultRegistry {
+interface IJonesUSDCRegistry {
 
     // ========================================================
     // ======================== Events ========================
     // ========================================================
 
-    event PlutusTokenSet(address indexed _plutusToken);
-    event PlvGlpTokenSet(address indexed _plvGlpToken);
-    event PlvGlpRouterSet(address indexed _plvGlpRouter);
-    event PlvGlpFarmSet(address indexed _plvGlpFarm);
+    event GlpAdapterSet(address indexed _glpAdapter);
+    event GlpVaultRouterSet(address indexed _glpVaultRouter);
+    event WhitelistControllerSet(address indexed _whitelistController);
+    event JUSDCSet(address indexed _jUSDC);
+    event UnwrapperTraderSet(address indexed _unwrapperTrader);
 
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================
 
-    function ownerSetPlutusToken(address _plutusToken) external;
+    function ownerGlpAdapter(address _glpAdapter) external;
 
-    function ownerSetPlvGlpToken(address _plvGlpToken) external;
+    function ownerSetGlpVaultRouter(address _glpVaultRouter) external;
 
-    function ownerSetPlvGlpRouter(address _plvGlpRouter) external;
+    function ownerSetWhitelistController(address _whitelistController) external;
 
-    function ownerSetPlvGlpFarm(address _plvGlpFarm) external;
+    function ownerSetJUSDC(address _jUSDC) external;
+
+    function ownerSetUnwrapperTrader(address _unwrapperTrader) external;
 
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
 
-    function plutusToken() external view returns (IERC20);
+    function glpAdapter() external view returns (IJonesGLPAdapter);
 
-    function plvGlpToken() external view returns (IERC4626);
+    function glpVaultRouter() external view returns (IJonesGLPVaultRouter);
 
-    function plvGlpRouter() external view returns (IPlutusVaultGLPRouter);
+    function whitelistController() external view returns (IJonesWhitelistController);
 
-    function plvGlpFarm() external view returns (IPlutusVaultGLPFarm);
+    function jUSDC() external view returns (IERC4626);
+
+    function unwrapperTrader() external view returns (address);
 }

@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC4626 } from "./IERC4626.sol";
+import { IERC4626 } from "../IERC4626.sol";
 
 
 /**

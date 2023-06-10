@@ -20,16 +20,18 @@
 
 pragma solidity ^0.8.9;
 
+import { IJonesUSDCRegistry } from "./IJonesUSDCRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
 
 
+
 /**
- * @title   IPendlePtGLP2024IsolationModeTokenVaultV1
+ * @title   IJonesUSDCIsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  Interface for a subclass of IsolationModeTokenVaultV1 that serves as the implementation for the user's proxy
- *          vault for ptGLP tokens.
+ * @notice  Interface for the user vault implementation that holds each user's jUSDC isolation mode.
  */
-interface IPendlePtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
-    // solhint-disable-previous-line no-empty-blocks
+interface IJonesUSDCIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
+
+    function registry() external view returns (IJonesUSDCRegistry);
 }

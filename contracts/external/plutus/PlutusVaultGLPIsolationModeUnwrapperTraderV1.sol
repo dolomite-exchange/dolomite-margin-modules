@@ -25,8 +25,8 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { GLPMathLib } from "../glp/GLPMathLib.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/gmx/IGmxVault.sol";
-import { IPlutusVaultGLPRouter } from "../interfaces/IPlutusVaultGLPRouter.sol";
-import { IPlutusVaultRegistry } from "../interfaces/IPlutusVaultRegistry.sol";
+import { IPlutusVaultGLPRouter } from "../interfaces/plutus/IPlutusVaultGLPRouter.sol";
+import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
 import { IsolationModeUnwrapperTraderV1 } from "../proxies/abstract/IsolationModeUnwrapperTraderV1.sol";
 
 

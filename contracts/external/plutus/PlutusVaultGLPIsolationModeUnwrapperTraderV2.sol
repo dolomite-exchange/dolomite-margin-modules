@@ -20,12 +20,11 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "../../protocol/lib/Require.sol";
 import { GLPMathLib } from "../glp/GLPMathLib.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/gmx/IGmxVault.sol";
-import { IPlutusVaultGLPRouter } from "../interfaces/IPlutusVaultGLPRouter.sol";
-import { IPlutusVaultRegistry } from "../interfaces/IPlutusVaultRegistry.sol";
+import { IPlutusVaultGLPRouter } from "../interfaces/plutus/IPlutusVaultGLPRouter.sol";
+import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
 
 
@@ -69,41 +68,6 @@ contract PlutusVaultGLPIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperT
     // ============ Public Functions ============
     // ==========================================
 
-    function getExchangeCost(
-        address _inputToken,
-        address _outputToken,
-        uint256 _desiredInputAmount,
-        bytes memory
-    )
-    public
-    override
-    view
-    returns (uint256) {
-        Require.that(
-            _inputToken == address(VAULT_FACTORY),
-            _FILE,
-            "Invalid input token",
-            _inputToken
-        );
-        Require.that(
-            isValidOutputToken(_outputToken),
-            _FILE,
-            "Invalid output token",
-            _outputToken
-        );
-        Require.that(
-            _desiredInputAmount > 0,
-            _FILE,
-            "Invalid desired input amount"
-        );
-
-        (,,uint256 glpAmount) = PLUTUS_VAULT_REGISTRY.plvGlpRouter().previewRedeem(address(this), _desiredInputAmount);
-
-        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, glpAmount);
-
-        return GMX_REGISTRY.gmxVault().getGlpRedemptionAmount(_outputToken, usdgAmount);
-    }
-
     function isValidOutputToken(address _outputToken) public override view returns (bool) {
         return GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken);
     }
@@ -139,5 +103,22 @@ contract PlutusVaultGLPIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperT
         );
 
         return amountOut;
+    }
+
+    function _getExchangeCost(
+        address,
+        address _outputToken,
+        uint256 _desiredInputAmount,
+        bytes memory
+    )
+    internal
+    override
+    view
+    returns (uint256) {
+        (,,uint256 glpAmount) = PLUTUS_VAULT_REGISTRY.plvGlpRouter().previewRedeem(address(this), _desiredInputAmount);
+
+        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, glpAmount);
+
+        return GMX_REGISTRY.gmxVault().getGlpRedemptionAmount(_outputToken, usdgAmount);
     }
 }

@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import { IJonesUSDCIsolationModeVaultFactory } from "../interfaces/IJonesUSDCIsolationModeVaultFactory.sol";
-import { IPlutusVaultRegistry } from "../interfaces/IPlutusVaultRegistry.sol";
-import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
+import { IJonesUSDCIsolationModeVaultFactory } from "../../interfaces/jones/IJonesUSDCIsolationModeVaultFactory.sol";
+import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
+import { SimpleIsolationModeVaultFactory } from "../../proxies/SimpleIsolationModeVaultFactory.sol";
 
 
 /**
@@ -34,53 +34,47 @@ import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaul
  */
 contract JonesUSDCIsolationModeVaultFactory is
     IJonesUSDCIsolationModeVaultFactory,
-    IsolationModeVaultFactory
+    SimpleIsolationModeVaultFactory
 {
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "PlutusVaultGLPVaultFactory"; // needed to be shortened to fit into 32 bytes
+    bytes32 private constant _FILE = "JonesUSDCVaultFactory"; // needed to be shortened to fit into 32 bytes
 
     // ============ Field Variables ============
 
-    IPlutusVaultRegistry public override plutusVaultRegistry;
+    IJonesUSDCRegistry public override jonesUSDCRegistry;
 
     // ============ Constructor ============
 
     constructor(
-        address _plutusVaultRegistry,
-        address _plvGlp, // this serves as the underlying token
+        address _jonesUSDCRegistry,
+        uint256[] memory _initialAllowableDebtMarketIds,
+        uint256[] memory _initialAllowableCollateralMarketIds,
+        address _jUSDC, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
         address _dolomiteMargin
     )
-    IsolationModeVaultFactory(
-        _plvGlp,
+    SimpleIsolationModeVaultFactory(
+        _initialAllowableDebtMarketIds,
+        _initialAllowableCollateralMarketIds,
+        _jUSDC,
         _borrowPositionProxy,
         _userVaultImplementation,
         _dolomiteMargin
     ) {
-        plutusVaultRegistry = IPlutusVaultRegistry(_plutusVaultRegistry);
+        jonesUSDCRegistry = IJonesUSDCRegistry(_jonesUSDCRegistry);
     }
 
     // ============ External Functions ============
 
-    function ownerSetPlutusVaultRegistry(
-        address _plutusVaultRegistry
+    function ownerSetJonesUSDCRegistry(
+        address _jonesUSDCRegistry
     )
     external
     override
     onlyDolomiteMarginOwner(msg.sender) {
-        plutusVaultRegistry = IPlutusVaultRegistry(_plutusVaultRegistry);
-        emit PlutusVaultRegistrySet(_plutusVaultRegistry);
-    }
-
-    function allowableDebtMarketIds() external pure returns (uint256[] memory) {
-        // allow all markets
-        return new uint256[](0);
-    }
-
-    function allowableCollateralMarketIds() external pure returns (uint256[] memory) {
-        // allow all markets
-        return new uint256[](0);
+        jonesUSDCRegistry = IJonesUSDCRegistry(_jonesUSDCRegistry);
+        emit JonesUSDCRegistrySet(_jonesUSDCRegistry);
     }
 }

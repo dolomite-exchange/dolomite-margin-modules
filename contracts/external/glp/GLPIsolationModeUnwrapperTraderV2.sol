@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { GLPMathLib } from "./GLPMathLib.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/gmx/IGmxVault.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
@@ -63,39 +62,6 @@ contract GLPIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
     // ============ Public Functions ============
     // ==========================================
 
-    function getExchangeCost(
-        address _inputToken,
-        address _outputToken,
-        uint256 _desiredInputAmount,
-        bytes memory
-    )
-    public
-    override
-    view
-    returns (uint256) {
-        Require.that(
-            _inputToken == address(VAULT_FACTORY),
-            _FILE,
-            "Invalid input token",
-            _inputToken
-        );
-        Require.that(
-            isValidOutputToken(_outputToken),
-            _FILE,
-            "Invalid output token",
-            _outputToken
-        );
-        Require.that(
-            _desiredInputAmount > 0,
-            _FILE,
-            "Invalid desired input amount"
-        );
-
-        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, _desiredInputAmount);
-
-        return GMX_REGISTRY.gmxVault().getGlpRedemptionAmount(_outputToken, usdgAmount);
-    }
-
     function isValidOutputToken(address _outputToken) public override view returns (bool) {
         return GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken);
     }
@@ -124,5 +90,19 @@ contract GLPIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         );
 
         return amountOut;
+    }
+
+    function _getExchangeCost(
+        address,
+        address _outputToken,
+        uint256 _desiredInputAmount,
+        bytes memory
+    )
+    internal
+    override
+    view
+    returns (uint256) {
+        uint256 usdgAmount = GLPMathLib.getUsdgAmountForSell(GMX_REGISTRY, _desiredInputAmount);
+        return GMX_REGISTRY.gmxVault().getGlpRedemptionAmount(_outputToken, usdgAmount);
     }
 }

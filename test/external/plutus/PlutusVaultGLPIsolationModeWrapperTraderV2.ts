@@ -298,32 +298,5 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV2', () => {
           .eq(expectedAmount);
       }
     });
-
-    it('should fail if the input token is not whitelisted', async () => {
-      await expectThrow(
-        wrapper.getExchangeCost(OTHER_ADDRESS, factory.address, usableUsdcAmount, BYTES_EMPTY),
-        `PlutusVaultGLPWrapperV2: Invalid input token <${OTHER_ADDRESS.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if the output token is not dplvGLP', async () => {
-      await expectThrow(
-        wrapper.getExchangeCost(core.usdc.address, OTHER_ADDRESS, usableUsdcAmount, BYTES_EMPTY),
-        `PlutusVaultGLPWrapperV2: Invalid output token <${OTHER_ADDRESS.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if the input amount is 0', async () => {
-      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).getExchangeCost(
-          core.usdc.address,
-          factory.address,
-          ZERO_BI,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
-        ),
-        'PlutusVaultGLPWrapperV2: Invalid desired input amount',
-      );
-    });
   });
 });

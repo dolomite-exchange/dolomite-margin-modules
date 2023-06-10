@@ -242,32 +242,5 @@ describe('GLPIsolationModeWrapperTraderV2', () => {
           .eq(expectedAmount);
       }
     });
-
-    it('should fail if the input token is not USDC', async () => {
-      await expectThrow(
-        wrapper.getExchangeCost(core.dfsGlp!.address, factory.address, usableUsdcAmount, BYTES_EMPTY),
-        `GLPIsolationModeWrapperV2: Invalid input token <${core.dfsGlp!.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if the output token is not dfsGLP', async () => {
-      await expectThrow(
-        wrapper.getExchangeCost(core.usdc.address, core.weth.address, usableUsdcAmount, BYTES_EMPTY),
-        `GLPIsolationModeWrapperV2: Invalid output token <${core.weth.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if the input amount is 0', async () => {
-      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await expectThrow(
-        wrapper.connect(dolomiteMarginImpersonator).getExchangeCost(
-          core.usdc.address,
-          factory.address,
-          ZERO_BI,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
-        ),
-        'GLPIsolationModeWrapperV2: Invalid desired input amount',
-      );
-    });
   });
 });

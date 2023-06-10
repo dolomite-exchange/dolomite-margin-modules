@@ -121,7 +121,8 @@ library AccountActionLib {
         address _toAccountOwner,
         uint256 _toAccountNumber,
         uint256 _marketId,
-        uint256 _amountWei,
+        IDolomiteStructs.AssetDenomination _amountDenomination,
+        uint256 _amount,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) internal {
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
@@ -139,7 +140,8 @@ library AccountActionLib {
             /* _fromAccountId = */ 0,
             /* _toAccountId = */ 1,
             _marketId,
-            _amountWei
+            _amountDenomination,
+            _amount
         );
 
         _dolomiteMargin.operate(accounts, actions);
@@ -363,22 +365,23 @@ library AccountActionLib {
         uint256 _fromAccountId,
         uint256 _toAccountId,
         uint256 _marketId,
-        uint256 _amountWei
+        IDolomiteStructs.AssetDenomination _amountDenomination,
+        uint256 _amount
     ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
         IDolomiteStructs.AssetAmount memory assetAmount;
-        if (_amountWei == _ALL) {
+        if (_amount == _ALL) {
             assetAmount = IDolomiteStructs.AssetAmount({
                 sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                denomination: _amountDenomination,
                 ref: IDolomiteStructs.AssetReference.Target,
                 value: 0
             });
         } else {
             assetAmount = IDolomiteStructs.AssetAmount({
                 sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                denomination: _amountDenomination,
                 ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
+                value: _amount
             });
         }
         return IDolomiteStructs.ActionArgs({

@@ -255,6 +255,7 @@ abstract contract IsolationModeVaultFactory is
             /* _fromAccountId = */ 0,
             /* _toAccountId = */ 1,
             _otherMarketId,
+            IDolomiteStructs.AssetDenomination.Wei,
             AccountActionLib.all()
         );
 

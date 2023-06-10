@@ -207,6 +207,54 @@ describe('IsolationModeWrapperTraderV2', () => {
     });
   });
 
+  describe('#getExchangeCost', () => {
+    it('should work normally', async () => {
+      const outputAmount = await wrapper.getExchangeCost(
+        core.usdc.address,
+        factory.address,
+        amountWei,
+        BYTES_EMPTY,
+      );
+      expect(outputAmount).to.eq(amountWei);
+    });
+
+    it('should fail when input token is invalid', async () => {
+      await expectThrow(
+        wrapper.getExchangeCost(
+          core.dfsGlp!.address,
+          factory.address,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `IsolationModeWrapperTraderV2: Invalid input token <${core.dfsGlp!.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail when output token is invalid', async () => {
+      await expectThrow(
+        wrapper.getExchangeCost(
+          core.usdc.address,
+          core.dfsGlp!.address,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `IsolationModeWrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail when input amount is invalid', async () => {
+      await expectThrow(
+        wrapper.getExchangeCost(
+          core.usdc.address,
+          factory.address,
+          ZERO_BI,
+          BYTES_EMPTY,
+        ),
+        'IsolationModeWrapperTraderV2: Invalid desired input amount',
+      );
+    });
+  });
+
   describe('#actionsLength', () => {
     it('should return the correct amount', async () => {
       expect(await wrapper.actionsLength()).to.eq(1);

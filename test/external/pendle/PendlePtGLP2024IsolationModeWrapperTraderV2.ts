@@ -272,7 +272,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
   describe('#getExchangeCost', () => {
     it('should fail because it is not implemented', async () => {
       await expectThrow(
-        wrapper.getExchangeCost(core.usdc.address, factory.address, ZERO_BI, BYTES_EMPTY),
+        wrapper.getExchangeCost(core.usdc.address, factory.address, amountWei, BYTES_EMPTY),
         'PendlePtGLP2024WrapperV2: getExchangeCost is not implemented',
       );
     });

@@ -23,7 +23,6 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { GLPMathLib } from "./GLPMathLib.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IGmxVault } from "../interfaces/gmx/IGmxVault.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
@@ -64,38 +63,6 @@ contract GLPIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
 
     // ============ External Functions ============
 
-    function getExchangeCost(
-        address _inputToken,
-        address _vaultToken,
-        uint256 _desiredInputAmount,
-        bytes memory
-    )
-    public
-    override
-    view
-    returns (uint256) {
-        Require.that(
-            isValidInputToken(_inputToken),
-            _FILE,
-            "Invalid input token",
-            _inputToken
-        );
-        Require.that(
-            _vaultToken == address(VAULT_FACTORY),
-            _FILE,
-            "Invalid output token",
-            _vaultToken
-        );
-        Require.that(
-            _desiredInputAmount > 0,
-            _FILE,
-            "Invalid desired input amount"
-        );
-
-        uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_inputToken, _desiredInputAmount);
-        return GLPMathLib.getGlpMintAmount(GMX_REGISTRY, usdgAmount);
-    }
-
     function isValidInputToken(address _inputToken) public override view returns (bool) {
         return GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken);
     }
@@ -135,5 +102,19 @@ contract GLPIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
 
         IERC20(GMX_REGISTRY.sGlp()).safeApprove(_vault, _amount);
         IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
+    }
+
+    function _getExchangeCost(
+        address _inputToken,
+        address,
+        uint256 _desiredInputAmount,
+        bytes memory
+    )
+    internal
+    override
+    view
+    returns (uint256) {
+        uint256 usdgAmount = GMX_REGISTRY.gmxVault().getUsdgAmountForBuy(_inputToken, _desiredInputAmount);
+        return GLPMathLib.getGlpMintAmount(GMX_REGISTRY, usdgAmount);
     }
 }

@@ -178,9 +178,33 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, O
     )
     public
     override
-    virtual
     view
-    returns (uint256);
+    returns (uint256) {
+        Require.that(
+            isValidInputToken(_inputToken),
+            _FILE,
+            "Invalid input token",
+            _inputToken
+        );
+        Require.that(
+            _outputToken == address(VAULT_FACTORY),
+            _FILE,
+            "Invalid output token",
+            _outputToken
+        );
+        Require.that(
+            _desiredInputAmount > 0,
+            _FILE,
+            "Invalid desired input amount"
+        );
+
+        return _getExchangeCost(
+            _inputToken,
+            _outputToken,
+            _desiredInputAmount,
+            _orderData
+        );
+    }
 
     function isValidInputToken(address _inputToken) public override virtual view returns (bool);
 
@@ -212,4 +236,15 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, O
         IERC20(underlyingToken).safeApprove(_vault, _amount);
         IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
     }
+
+    function _getExchangeCost(
+        address _inputToken,
+        address _outputToken,
+        uint256 _desiredInputAmount,
+        bytes memory _orderData
+    )
+    internal
+    virtual
+    view
+    returns (uint256);
 }

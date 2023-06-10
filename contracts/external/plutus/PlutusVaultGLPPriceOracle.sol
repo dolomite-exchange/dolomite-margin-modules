@@ -25,7 +25,7 @@ import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOr
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
-import { IPlutusVaultRegistry } from "../interfaces/IPlutusVaultRegistry.sol";
+import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
 
 
 /**
