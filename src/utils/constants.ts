@@ -111,6 +111,31 @@ export const GMX_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const JONES_ECOSYSTEM_GOVERNOR_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xDD0556DDCFE7CdaB3540E7F09cB366f498d90774',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const JONES_GLP_ADAPTER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x42EfE3E686808ccA051A49BCDE34C5CbA2EBEfc1',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const JONES_GLP_VAULT_ROUTER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x2F43c6475f1ecBD051cE486A9f3Ccc4b03F3d713',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const JONES_JUSDC_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xe66998533a1992ecE9eA99cDf47686F4fc8458E0',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const JONES_WHITELIST_CONTROLLER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.ArbitrumGoerli]: undefined,

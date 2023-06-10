@@ -49,7 +49,7 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTrader
 
     constructor(
         address _usdc,
-        address _jonesVaultRegistry,
+        address _jonesUSDCRegistry,
         address _djUSDC,
         address _dolomiteMargin
     )
@@ -58,7 +58,7 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTrader
         _dolomiteMargin
     ) {
         USDC = IERC20(_usdc);
-        JONES_USDC_REGISTRY = IJonesUSDCRegistry(_jonesVaultRegistry);
+        JONES_USDC_REGISTRY = IJonesUSDCRegistry(_jonesUSDCRegistry);
     }
 
     // ==========================================

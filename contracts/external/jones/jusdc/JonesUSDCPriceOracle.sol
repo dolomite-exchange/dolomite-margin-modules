@@ -47,17 +47,20 @@ contract JonesUSDCPriceOracle is IDolomitePriceOracle {
     IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
     IJonesUSDCRegistry immutable public JONES_USDC_REGISTRY; // solhint-disable-line var-name-mixedcase
     uint256 immutable public USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    address immutable public DJUSDC; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
 
     constructor(
         address _dolomiteMargin,
         address _jonesUSDCRegistry,
-        uint256 _usdcMarketId
+        uint256 _usdcMarketId,
+        address djUSDC
     ) {
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         JONES_USDC_REGISTRY = IJonesUSDCRegistry(_jonesUSDCRegistry);
         USDC_MARKET_ID = _usdcMarketId;
+        DJUSDC = djUSDC;
     }
 
     function getPrice(
@@ -67,9 +70,9 @@ contract JonesUSDCPriceOracle is IDolomitePriceOracle {
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
-            _token == address(JONES_USDC_REGISTRY.jUSDC()),
+            _token == DJUSDC,
             _FILE,
-            "invalid token",
+            "Invalid token",
             _token
         );
         Require.that(

@@ -56,6 +56,12 @@ import {
   IGmxVault__factory,
   IGmxVester,
   IGmxVester__factory,
+  IJonesGLPAdapter,
+  IJonesGLPAdapter__factory,
+  IJonesGLPVaultRouter,
+  IJonesGLPVaultRouter__factory,
+  IJonesWhitelistController,
+  IJonesWhitelistController__factory,
   IPendlePtMarket,
   IPendlePtMarket__factory,
   IPendlePtOracle,
@@ -106,6 +112,11 @@ import {
   GMX_MAP,
   GMX_REWARD_ROUTER_MAP,
   GMX_VAULT_MAP,
+  JONES_ECOSYSTEM_GOVERNOR_MAP,
+  JONES_GLP_ADAPTER_MAP,
+  JONES_GLP_VAULT_ROUTER_MAP,
+  JONES_JUSDC_MAP,
+  JONES_WHITELIST_CONTROLLER_MAP,
   MAGIC_GLP_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
   PARASWAP_TRANSFER_PROXY_MAP,
@@ -171,20 +182,11 @@ interface GmxEcosystem {
 }
 
 interface JonesEcosystem {
-  esGmx: IERC20;
-  esGmxDistributor: IEsGmxDistributor;
-  fsGlp: IERC20;
-  glp: IERC20;
-  glpManager: IGLPManager;
-  glpRewardsRouter: IGLPRewardsRouterV2;
-  gmxRewardsRouter: IGmxRewardRouterV2;
-  gmx: IERC20;
-  gmxVault: IGmxVault;
-  sGlp: IERC20;
-  sGmx: ISGMX;
-  sbfGmx: IERC20;
-  vGlp: IGmxVester;
-  vGmx: IGmxVester;
+  glpAdapter: IJonesGLPAdapter;
+  glpVaultRouter: IJonesGLPVaultRouter;
+  whitelistController: IJonesWhitelistController;
+  jUSDC: IERC4626;
+  admin: SignerWithAddress;
 }
 
 interface ParaswapEcosystem {
@@ -426,6 +428,7 @@ export async function setupCoreProtocol(
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
+  const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
   const paraswapEcosystem = await createParaswapEcosystem(config.network);
   const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
@@ -445,6 +448,7 @@ export async function setupCoreProtocol(
     glpIsolationModeWrapperTraderV1,
     gmxRegistry,
     governance,
+    jonesEcosystem,
     liquidatorAssetRegistry,
     liquidatorProxyV1,
     liquidatorProxyV1WithAmm,
@@ -549,6 +553,29 @@ async function createAtlasEcosystem(network: Network, signer: SignerWithAddress)
 
   return {
     siToken: getContract(ATLAS_SI_TOKEN_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
+  };
+}
+
+async function createJonesEcosystem(network: Network, signer: SignerWithAddress): Promise<JonesEcosystem | undefined> {
+  if (!JONES_ECOSYSTEM_GOVERNOR_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    admin: await impersonate(JONES_ECOSYSTEM_GOVERNOR_MAP[network]!, true),
+    glpAdapter: getContract(
+      JONES_GLP_ADAPTER_MAP[network] as string,
+      address => IJonesGLPAdapter__factory.connect(address, signer),
+    ),
+    glpVaultRouter: getContract(
+      JONES_GLP_VAULT_ROUTER_MAP[network] as string,
+      address => IJonesGLPVaultRouter__factory.connect(address, signer),
+    ),
+    jUSDC: getContract(JONES_JUSDC_MAP[network] as string, address => IERC4626__factory.connect(address, signer)),
+    whitelistController: getContract(
+      JONES_WHITELIST_CONTROLLER_MAP[network] as string,
+      address => IJonesWhitelistController__factory.connect(address, signer),
+    ),
   };
 }
 

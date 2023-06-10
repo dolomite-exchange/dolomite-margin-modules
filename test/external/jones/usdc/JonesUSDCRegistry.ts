@@ -4,7 +4,10 @@ import { JonesUSDCRegistry } from '../../../../src/types';
 import { Network } from '../../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectEvent, expectThrow } from '../../../utils/assertions';
-import { createJonesUSDCRegistry } from '../../../utils/ecosystem-token-utils/jones';
+import {
+  createJonesUSDCIsolationModeUnwrapperTraderV2,
+  createJonesUSDCRegistry,
+} from '../../../utils/ecosystem-token-utils/jones';
 import { CoreProtocol, setupCoreProtocol } from '../../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
@@ -20,6 +23,7 @@ describe('JonesUSDCRegistry', () => {
       blockNumber: 86413000,
       network: Network.ArbitrumOne,
     });
+    const unwrapper = createJonesUSDCIsolationModeUnwrapperTraderV2(core);
     registry = await createJonesUSDCRegistry(core);
 
     snapshotId = await snapshot();
@@ -35,7 +39,7 @@ describe('JonesUSDCRegistry', () => {
       expect(await registry.glpVaultRouter()).to.equal(core.jonesEcosystem!.glpVaultRouter.address);
       expect(await registry.whitelistController()).to.equal(core.jonesEcosystem!.whitelistController.address);
       expect(await registry.jUSDC()).to.equal(core.jonesEcosystem!.jUSDC.address);
-      expect(await registry.unwrapperTrader()).to.equal(core.jonesEcosystem!.unwrapperTrader.address);
+      expect(await registry.unwrapperTrader()).to.equal(unwrapper.address);
     });
   });
 
