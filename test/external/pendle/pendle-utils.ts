@@ -2,20 +2,20 @@ import { ApproxParamsStruct, BaseRouter, TokenInput, TokenOutput } from '@pendle
 import { BigNumberish, ethers } from 'ethers';
 import { CoreProtocol } from '../../utils/setup';
 
-export const FIVE_BIPS_NUMBER = 0.0005;
+export const ONE_TENTH_OF_ONE_BIPS_NUMBER = 0.00001; // 0.001%
 
 export async function encodeSwapExactPtForTokens(
   router: BaseRouter,
   core: CoreProtocol,
   ptAmountIn: BigNumberish,
-  slippageTolerance: number = FIVE_BIPS_NUMBER,
+  slippageTolerance: number = ONE_TENTH_OF_ONE_BIPS_NUMBER,
   tokenOut: string = core.gmxEcosystem!.sGlp.address,
 ): Promise<{ extraOrderData: string; tokenOutput: TokenOutput }> {
   const [, , , tokenOutput] = await router.swapExactPtForToken(
     core.pendleEcosystem!.ptGlpMarket.address as any,
     ptAmountIn,
     tokenOut as any,
-    FIVE_BIPS_NUMBER,
+    ONE_TENTH_OF_ONE_BIPS_NUMBER,
     { method: 'extractParams' },
   );
 
@@ -45,7 +45,7 @@ export async function encodeSwapExactTokensForPt(
   router: BaseRouter,
   core: CoreProtocol,
   tokenAmountIn: BigNumberish,
-  slippageTolerance: number = FIVE_BIPS_NUMBER,
+  slippageTolerance: number = ONE_TENTH_OF_ONE_BIPS_NUMBER,
   tokenIn: string = core.gmxEcosystem!.sGlp.address,
 ): Promise<{ extraOrderData: string; tokenInput: TokenInput, approxParams: ApproxParamsStruct }> {
   const [, , , approxParams, tokenInput] = await router.swapExactTokenForPt(

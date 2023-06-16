@@ -66,7 +66,7 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
     });
     underlyingToken = core.plutusEcosystem!.plvGlp;
     const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1();
-    gmxRegistry = core.gmxRegistry!;
+    gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
     factory = await createPlutusVaultGLPIsolationModeVaultFactory(
       core,

@@ -191,7 +191,7 @@ describe('MagicGLPUnwrapperTraderV1', () => {
 
   describe('#gmxRegistry', () => {
     it('should work', async () => {
-      expect(await unwrapper.GMX_REGISTRY()).to.eq(core.gmxRegistry!.address);
+      expect(await unwrapper.GMX_REGISTRY()).to.eq(core.gmxEcosystem!.live.gmxRegistry!.address);
     });
   });
 

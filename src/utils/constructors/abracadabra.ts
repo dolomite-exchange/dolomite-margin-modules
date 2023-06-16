@@ -15,7 +15,7 @@ export function getMagicGLPUnwrapperTraderV1ConstructorParams(core: CoreProtocol
 
   return [
     core.abraEcosystem!.magicGlp.address,
-    core.gmxRegistry!.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
     core.marketIds.usdc,
     core.dolomiteMargin.address,
   ];
@@ -28,7 +28,7 @@ export function getMagicGLPUnwrapperTraderV2ConstructorParams(core: CoreProtocol
 
   return [
     core.abraEcosystem!.magicGlp.address,
-    core.gmxRegistry!.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
     core.dolomiteMargin.address,
   ];
 }
@@ -40,7 +40,7 @@ export function getMagicGLPWrapperTraderV1ConstructorParams(core: CoreProtocol):
 
   return [
     core.abraEcosystem!.magicGlp.address,
-    core.gmxRegistry!.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
     core.dolomiteMargin.address,
   ];
 }
@@ -52,7 +52,7 @@ export function getMagicGLPWrapperTraderV2ConstructorParams(core: CoreProtocol):
 
   return [
     core.abraEcosystem!.magicGlp.address,
-    core.gmxRegistry!.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
     core.dolomiteMargin.address,
   ];
 }

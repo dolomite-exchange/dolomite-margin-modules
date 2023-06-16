@@ -65,7 +65,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
     });
     underlyingToken = core.jonesEcosystem!.jUSDC;
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
-    gmxRegistry = core.gmxRegistry!;
+    gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,

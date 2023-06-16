@@ -16,13 +16,16 @@ import {
   GmxRegistryV1,
   GmxRegistryV1__factory,
   IGLPIsolationModeVaultFactory,
+  IGLPIsolationModeVaultFactoryOld,
   IGmxRegistryV1,
 } from '../../../src/types';
 import {
   getGLPIsolationModeVaultFactoryConstructorParams,
   getGLPPriceOracleV1ConstructorParams,
-  getGLPUnwrapperTraderV1ConstructorParams, getGLPUnwrapperTraderV2ConstructorParams,
-  getGLPWrapperTraderV1ConstructorParams, getGLPWrapperTraderV2ConstructorParams,
+  getGLPUnwrapperTraderV1ConstructorParams,
+  getGLPUnwrapperTraderV2ConstructorParams,
+  getGLPWrapperTraderV1ConstructorParams,
+  getGLPWrapperTraderV2ConstructorParams,
   getGmxRegistryConstructorParams,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
@@ -54,7 +57,7 @@ export async function createGLPUnwrapperTraderV1(
 
 export async function createGLPUnwrapperTraderV2(
   core: CoreProtocol,
-  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): Promise<GLPIsolationModeUnwrapperTraderV2> {
   return createContractWithAbi<GLPIsolationModeUnwrapperTraderV2>(
@@ -98,7 +101,7 @@ export async function createGLPWrapperTraderV1(
 
 export async function createGLPWrapperTraderV2(
   core: CoreProtocol,
-  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): Promise<GLPIsolationModeWrapperTraderV2> {
   return createContractWithAbi<GLPIsolationModeWrapperTraderV2>(

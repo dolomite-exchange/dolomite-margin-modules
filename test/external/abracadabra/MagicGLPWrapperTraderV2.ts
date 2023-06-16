@@ -177,7 +177,7 @@ describe('MagicGLPWrapperTraderV2', () => {
 
   describe('#GMX_REGISTRY', () => {
     it('should work', async () => {
-      expect(await wrapper.GMX_REGISTRY()).to.eq(core.gmxRegistry!.address);
+      expect(await wrapper.GMX_REGISTRY()).to.eq(core.gmxEcosystem!.live.gmxRegistry!.address);
     });
   });
 

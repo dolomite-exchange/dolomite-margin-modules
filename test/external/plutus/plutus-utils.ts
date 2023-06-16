@@ -2,9 +2,11 @@ import {
   IPlutusVaultGLPFarm,
   IPlutusVaultGLPIsolationModeVaultFactory,
   IPlutusVaultGLPRouter,
-  PlutusVaultGLPIsolationModeUnwrapperTraderV1, PlutusVaultGLPIsolationModeUnwrapperTraderV2,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   PlutusVaultGLPIsolationModeVaultFactory,
-  PlutusVaultGLPIsolationModeWrapperTraderV1, PlutusVaultGLPIsolationModeWrapperTraderV2,
+  PlutusVaultGLPIsolationModeWrapperTraderV1,
+  PlutusVaultGLPIsolationModeWrapperTraderV2,
 } from '../../../src/types';
 import { impersonate } from '../../utils';
 import { createDolomiteCompatibleWhitelistForPlutusDAO } from '../../utils/ecosystem-token-utils/plutus';

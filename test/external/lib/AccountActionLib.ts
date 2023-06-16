@@ -250,6 +250,7 @@ describe('AccountActionLib', () => {
         core.hhUser1.address,
         otherAccountNumber,
         underlyingMarketId,
+        AmountDenomination.Wei,
         amountWei,
         BalanceCheckFlag.Both,
       );
@@ -272,6 +273,7 @@ describe('AccountActionLib', () => {
         core.hhUser1.address,
         otherAccountNumber,
         underlyingMarketId,
+        AmountDenomination.Wei,
         amountWei,
         BalanceCheckFlag.Both,
       );
@@ -294,6 +296,7 @@ describe('AccountActionLib', () => {
         core.hhUser1.address,
         otherAccountNumber,
         underlyingMarketId,
+        AmountDenomination.Wei,
         amountWei,
         BalanceCheckFlag.Both,
       );
@@ -316,6 +319,7 @@ describe('AccountActionLib', () => {
         core.hhUser1.address,
         otherAccountNumber,
         underlyingMarketId,
+        AmountDenomination.Wei,
         amountWei,
         BalanceCheckFlag.Both,
       );
@@ -340,6 +344,7 @@ describe('AccountActionLib', () => {
           core.hhUser1.address,
           otherAccountNumber,
           underlyingMarketId,
+          AmountDenomination.Wei,
           amountWeiBig,
           BalanceCheckFlag.Both,
         ),
@@ -354,6 +359,7 @@ describe('AccountActionLib', () => {
           core.hhUser1.address,
           otherAccountNumber,
           underlyingMarketId,
+          AmountDenomination.Wei,
           amountWeiBig,
           BalanceCheckFlag.From,
         ),
@@ -368,6 +374,7 @@ describe('AccountActionLib', () => {
         core.hhUser1.address,
         otherAccountNumber,
         underlyingMarketId,
+        AmountDenomination.Wei,
         amountWeiBig,
         BalanceCheckFlag.None,
       );
@@ -378,6 +385,7 @@ describe('AccountActionLib', () => {
           core.hhUser1.address,
           defaultAccountNumber,
           underlyingMarketId,
+          AmountDenomination.Wei,
           amountWei,
           BalanceCheckFlag.To,
         ),
@@ -694,6 +702,7 @@ describe('AccountActionLib', () => {
         fromAccountId,
         toAccountId,
         marketId,
+        AmountDenomination.Wei,
         amountWei,
       );
       expect(transferAction.actionType).to.eq(ActionType.Transfer);
@@ -719,6 +728,7 @@ describe('AccountActionLib', () => {
         fromAccountId,
         toAccountId,
         marketId,
+        AmountDenomination.Wei,
         ethers.constants.MaxUint256,
       );
       expect(transferAction.actionType).to.eq(ActionType.Transfer);

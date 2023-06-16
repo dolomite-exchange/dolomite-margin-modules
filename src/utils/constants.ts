@@ -21,6 +21,14 @@ export const DFS_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const DPLV_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x5c80aC681B6b0E7EF6E0751211012601e6cFB043',
+    marketId: 9,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const MAGIC_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x85667409a723684Fe1e57Dd1ABDe8D88C2f54214',

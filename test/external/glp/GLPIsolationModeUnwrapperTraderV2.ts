@@ -154,7 +154,7 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid input market <${core.marketIds.weth.toString()}>`
+        `IsolationModeUnwrapperTraderV2: Invalid input market <${core.marketIds.weth.toString()}>`,
       );
     });
   });

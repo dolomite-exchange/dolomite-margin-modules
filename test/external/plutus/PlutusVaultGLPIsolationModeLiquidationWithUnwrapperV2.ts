@@ -1,65 +1,67 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import {
   IERC4626,
+  IPlutusVaultGLPIsolationModeVaultFactory,
   PlutusVaultGLPIsolationModeTokenVaultV1,
   PlutusVaultGLPIsolationModeTokenVaultV1__factory,
-  PlutusVaultGLPIsolationModeUnwrapperTraderV1,
-  PlutusVaultGLPIsolationModeVaultFactory,
-  PlutusVaultGLPIsolationModeWrapperTraderV1,
-  PlutusVaultGLPPriceOracle,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV2,
+  PlutusVaultGLPIsolationModeWrapperTraderV2,
   PlutusVaultRegistry,
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
-import { BYTES_EMPTY, Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import {
+  BYTES_EMPTY,
+  LIQUIDATE_ALL,
+  Network,
+  NO_PARASWAP_TRADER_PARAM,
+  ONE_BI,
+  SELL_ALL,
+  ZERO_BI,
+} from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
   expectProtocolBalance,
+  expectProtocolBalanceDustyOrZero,
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
 } from '../../utils/assertions';
 import {
-  createPlutusVaultGLPIsolationModeTokenVaultV1,
-  createPlutusVaultGLPIsolationModeUnwrapperTraderV1,
-  createPlutusVaultGLPIsolationModeVaultFactory,
-  createPlutusVaultGLPIsolationModeWrapperTraderV1,
-  createPlutusVaultGLPPriceOracle,
+  createPlutusVaultGLPIsolationModeUnwrapperTraderV2,
+  createPlutusVaultGLPIsolationModeWrapperTraderV2,
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
 import { setExpiry } from '../../utils/expiry-utils';
-import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/liquidation-utils';
 import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '../../utils/setup';
-import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
+  checkForParaswapSuccess,
+  getCalldataForParaswap,
+  getParaswapTraderParamStruct,
+  liquidateV4WithIsolationMode,
+} from '../../utils/liquidation-utils';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
 const heldAmountWei = BigNumber.from('200000000000000000000'); // $200
-const minCollateralizationNumerator = BigNumber.from('115');
+const minCollateralizationNumerator = BigNumber.from('120');
 const minCollateralizationDenominator = BigNumber.from('100');
 const liquidationSpreadNumerator = BigNumber.from('105');
 const liquidationSpreadDenominator = BigNumber.from('100');
 const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
 
-describe('PlutusVaultGLPLiquidation', () => {
+describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
   let underlyingToken: IERC4626;
-  let underlyingMarketId: BigNumber;
+  let underlyingMarketId: BigNumberish;
   let plutusVaultRegistry: PlutusVaultRegistry;
-  let unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1;
-  let wrapper: PlutusVaultGLPIsolationModeWrapperTraderV1;
-  let factory: PlutusVaultGLPIsolationModeVaultFactory;
+  let unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV2;
+  let wrapper: PlutusVaultGLPIsolationModeWrapperTraderV2;
+  let factory: IPlutusVaultGLPIsolationModeVaultFactory;
   let vault: PlutusVaultGLPIsolationModeTokenVaultV1;
-  let priceOracle: PlutusVaultGLPPriceOracle;
   let defaultAccountStruct: Account.InfoStruct;
   let liquidAccountStruct: Account.InfoStruct;
   let solidAccountStruct: Account.InfoStruct;
@@ -71,22 +73,15 @@ describe('PlutusVaultGLPLiquidation', () => {
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
-    const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1();
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
-    factory = await createPlutusVaultGLPIsolationModeVaultFactory(
-      core,
-      plutusVaultRegistry,
-      core.plutusEcosystem!.plvGlp,
-      userVaultImplementation,
-    );
-    unwrapper = await createPlutusVaultGLPIsolationModeUnwrapperTraderV1(core, plutusVaultRegistry, factory);
-    wrapper = await createPlutusVaultGLPIsolationModeWrapperTraderV1(core, plutusVaultRegistry, factory);
-    priceOracle = await createPlutusVaultGLPPriceOracle(core, plutusVaultRegistry, factory, unwrapper);
+    factory = core.plutusEcosystem!.live.plvGlpIsolationModeFactory.connect(core.hhUser1);
+    unwrapper = await createPlutusVaultGLPIsolationModeUnwrapperTraderV2(core, plutusVaultRegistry, factory);
+    wrapper = await createPlutusVaultGLPIsolationModeWrapperTraderV2(core, plutusVaultRegistry, factory);
 
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, factory, true, priceOracle);
+    underlyingMarketId = await core.marketIds.dplvGlp!;
 
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
+    await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(unwrapper.address, true);
+    await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(wrapper.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     await factory.createVault(core.hhUser1.address);
@@ -117,12 +112,10 @@ describe('PlutusVaultGLPLiquidation', () => {
       .to
       .eq(heldAmountWei);
 
-    await core.liquidatorProxyV3!.connect(core.governance).setMarketIdToTokenUnwrapperForLiquidationMap(
-      underlyingMarketId,
-      unwrapper.address,
-    );
-    await createAndSetPlutusVaultWhitelist(core, core.plutusEcosystem!.plvGlpRouter, unwrapper, wrapper, factory);
-    await createAndSetPlutusVaultWhitelist(core, core.plutusEcosystem!.plvGlpFarm, unwrapper, wrapper, factory);
+    await core.plutusEcosystem!.dolomiteWhitelistForGlpDepositor.connect(core.governance)
+      .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
+    await core.plutusEcosystem!.dolomiteWhitelistForPlutusChef.connect(core.governance)
+      .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
 
     snapshotId = await snapshot();
   });
@@ -168,13 +161,13 @@ describe('PlutusVaultGLPLiquidation', () => {
         BYTES_EMPTY,
       );
 
-      const txResult = await core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+      const txResult = await liquidateV4WithIsolationMode(
+        core,
         solidAccountStruct,
         liquidAccountStruct,
-        core.marketIds.usdc,
-        underlyingMarketId,
-        NO_EXPIRY,
-        BYTES_EMPTY,
+        [underlyingMarketId, core.marketIds.usdc],
+        [SELL_ALL, LIQUIDATE_ALL],
+        unwrapper,
       );
       const receipt = await txResult.wait();
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
@@ -208,8 +201,8 @@ describe('PlutusVaultGLPLiquidation', () => {
         ZERO_BI,
       );
 
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, factory.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, core.weth.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.weth.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.plutusEcosystem!.plvGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
@@ -261,22 +254,24 @@ describe('PlutusVaultGLPLiquidation', () => {
         core.weth,
         18,
         core.hhUser5,
-        core.liquidatorProxyV3!,
+        core.paraswapTrader!,
         core,
       );
       const usdcLiquidatorBalanceBefore = await core.usdc.connect(core.hhUser1)
-        .balanceOf(core.liquidatorProxyV3!.address);
+        .balanceOf(core.liquidatorProxyV4!.address);
       const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
-        .balanceOf(core.liquidatorProxyV3!.address);
+        .balanceOf(core.liquidatorProxyV4!.address);
 
       const isSuccessful = await checkForParaswapSuccess(
-        core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+        liquidateV4WithIsolationMode(
+          core,
           solidAccountStruct,
           liquidAccountStruct,
-          core.marketIds.weth,
-          underlyingMarketId,
-          NO_EXPIRY,
-          paraswapCalldata,
+          [underlyingMarketId, core.marketIds.usdc, core.marketIds.weth],
+          [SELL_ALL, usdcOutputAmount, LIQUIDATE_ALL],
+          unwrapper,
+          BYTES_EMPTY,
+          getParaswapTraderParamStruct(core, paraswapCalldata),
         ),
       );
       if (!isSuccessful) {
@@ -290,12 +285,11 @@ describe('PlutusVaultGLPLiquidation', () => {
         underlyingMarketId,
         ZERO_BI,
       );
-      await expectProtocolBalance(
+      await expectProtocolBalanceDustyOrZero(
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
         core.marketIds.usdc,
-        ZERO_BI,
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
@@ -321,14 +315,14 @@ describe('PlutusVaultGLPLiquidation', () => {
 
       await expectWalletBalanceOrDustyIfZero(
         core,
-        core.liquidatorProxyV3!.address,
+        core.liquidatorProxyV4!.address,
         core.usdc.address,
         ZERO_BI,
         usdcLiquidatorBalanceBefore,
       );
       await expectWalletBalanceOrDustyIfZero(
         core,
-        core.liquidatorProxyV3!.address,
+        core.liquidatorProxyV4!.address,
         core.weth.address,
         ZERO_BI,
         wethLiquidatorBalanceBefore,
@@ -382,13 +376,16 @@ describe('PlutusVaultGLPLiquidation', () => {
         BYTES_EMPTY,
       );
 
-      const txResult = await core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+      const txResult = await liquidateV4WithIsolationMode(
+        core,
         solidAccountStruct,
         liquidAccountStruct,
-        core.marketIds.usdc,
-        underlyingMarketId,
-        expiry,
+        [underlyingMarketId, core.marketIds.usdc],
+        [SELL_ALL, LIQUIDATE_ALL],
+        unwrapper,
         BYTES_EMPTY,
+        NO_PARASWAP_TRADER_PARAM,
+        expiry,
       );
       const receipt = await txResult.wait();
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
@@ -422,8 +419,8 @@ describe('PlutusVaultGLPLiquidation', () => {
         ZERO_BI,
       );
 
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, factory.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, core.weth.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.weth.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.plutusEcosystem!.plvGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
@@ -478,23 +475,26 @@ describe('PlutusVaultGLPLiquidation', () => {
         core.weth,
         18,
         core.hhUser5,
-        core.liquidatorProxyV3!,
+        core.paraswapTrader!,
         core,
       );
 
       const usdcLiquidatorBalanceBefore = await core.usdc.connect(core.hhUser1)
-        .balanceOf(core.liquidatorProxyV3!.address);
+        .balanceOf(core.liquidatorProxyV4!.address);
       const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
-        .balanceOf(core.liquidatorProxyV3!.address);
+        .balanceOf(core.liquidatorProxyV4!.address);
 
       const isSuccessful = await checkForParaswapSuccess(
-        core.liquidatorProxyV3!.connect(core.hhUser5).liquidate(
+        liquidateV4WithIsolationMode(
+          core,
           solidAccountStruct,
           liquidAccountStruct,
-          core.marketIds.weth,
-          underlyingMarketId,
+          [underlyingMarketId, core.marketIds.usdc, core.marketIds.weth],
+          [SELL_ALL, usdcOutputAmount, LIQUIDATE_ALL],
+          unwrapper,
+          BYTES_EMPTY,
+          getParaswapTraderParamStruct(core, paraswapCalldata),
           expiry,
-          paraswapCalldata,
         ),
       );
       if (!isSuccessful) {
@@ -539,14 +539,14 @@ describe('PlutusVaultGLPLiquidation', () => {
 
       await expectWalletBalanceOrDustyIfZero(
         core,
-        core.liquidatorProxyV3!.address,
+        core.liquidatorProxyV4!.address,
         core.usdc.address,
         ZERO_BI,
         usdcLiquidatorBalanceBefore,
       );
       await expectWalletBalanceOrDustyIfZero(
         core,
-        core.liquidatorProxyV3!.address,
+        core.liquidatorProxyV4!.address,
         core.weth.address,
         ZERO_BI,
         wethLiquidatorBalanceBefore,

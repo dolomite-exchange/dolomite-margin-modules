@@ -4,7 +4,7 @@ import axios from 'axios';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { Account } from '../../src/types/IDolomiteMargin';
 import { IGenericTraderProxyBase } from '../../src/types/LiquidatorProxyV4WithGenericTrader';
-import { BYTES_EMPTY, NO_EXPIRY } from '../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, NO_EXPIRY, NO_PARASWAP_TRADER_PARAM } from '../../src/utils/no-deps-constants';
 import { expectThrow } from './assertions';
 import { CoreProtocol } from './setup';
 import TraderParamStruct = IGenericTraderProxyBase.TraderParamStruct;
@@ -23,7 +23,7 @@ export function getParaswapTraderParamStruct(
   };
 }
 
-export async function liquidateV4(
+export async function liquidateV4WithIsolationMode(
   core: CoreProtocol,
   solidAccountStruct: Account.InfoStruct,
   liquidAccountStruct: Account.InfoStruct,
@@ -31,11 +31,45 @@ export async function liquidateV4(
   amountWeisPath: BigNumberish[],
   unwrapper: { address: address },
   unwrapperTradeData: string = BYTES_EMPTY,
-  paraswapTraderParam: IGenericTraderProxyBase.TraderParamStruct | undefined = undefined,
+  paraswapTraderParam: IGenericTraderProxyBase.TraderParamStruct | undefined = NO_PARASWAP_TRADER_PARAM,
   expiry: BigNumberish = NO_EXPIRY,
 ): Promise<ContractTransaction> {
   const defaultUnwrapperTraderParam: TraderParamStruct = {
     traderType: GenericTraderType.IsolationModeUnwrapper,
+    makerAccountIndex: 0,
+    trader: unwrapper.address,
+    tradeData: unwrapperTradeData,
+  };
+
+  const tradersPath = [defaultUnwrapperTraderParam];
+  if (paraswapTraderParam) {
+    tradersPath.push(paraswapTraderParam);
+  }
+
+  return core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
+    solidAccountStruct,
+    liquidAccountStruct,
+    marketIdsPath,
+    amountWeisPath,
+    tradersPath,
+    [],
+    expiry,
+  );
+}
+
+export async function liquidateV4WithLiquidityToken(
+  core: CoreProtocol,
+  solidAccountStruct: Account.InfoStruct,
+  liquidAccountStruct: Account.InfoStruct,
+  marketIdsPath: BigNumberish[],
+  amountWeisPath: BigNumberish[],
+  unwrapper: { address: address },
+  unwrapperTradeData: string = BYTES_EMPTY,
+  paraswapTraderParam: IGenericTraderProxyBase.TraderParamStruct | undefined = NO_PARASWAP_TRADER_PARAM,
+  expiry: BigNumberish = NO_EXPIRY,
+): Promise<ContractTransaction> {
+  const defaultUnwrapperTraderParam: TraderParamStruct = {
+    traderType: GenericTraderType.ExternalLiquidity,
     makerAccountIndex: 0,
     trader: unwrapper.address,
     tradeData: unwrapperTradeData,
@@ -89,16 +123,16 @@ export async function getCalldataForParaswap(
   core: CoreProtocol,
 ): Promise<{ calldata: string, outputAmount: BigNumber }> {
   const priceRouteResponse = await axios.get(`${API_URL}/prices`, {
-    params: {
-      network: core.config.network,
-      srcToken: inputToken.address,
-      srcDecimals: inputDecimals,
-      destToken: outputToken.address,
-      destDecimals: outputDecimals,
-      amount: inputAmount.toString(),
-      includeContractMethods: 'simpleSwap,multiSwap,megaSwap',
-    },
-  })
+      params: {
+        network: core.config.network,
+        srcToken: inputToken.address,
+        srcDecimals: inputDecimals,
+        destToken: outputToken.address,
+        destDecimals: outputDecimals,
+        amount: inputAmount.toString(),
+        includeContractMethods: 'simpleSwap,multiSwap,megaSwap',
+      },
+    })
     .then(response => response.data)
     .catch((error) => {
       console.error('Found error in prices', error);
@@ -111,18 +145,18 @@ export async function getCalldataForParaswap(
     onlyParams: 'false',
   }).toString();
   const result = await axios.post(`${API_URL}/transactions/${core.config.network}?${queryParams}`, {
-    priceRoute: priceRouteResponse?.priceRoute,
-    txOrigin: txOrigin.address,
-    srcToken: inputToken.address,
-    srcDecimals: inputDecimals,
-    destToken: outputToken.address,
-    destDecimals: outputDecimals,
-    srcAmount: inputAmount.toString(),
-    destAmount: minOutputAmount.toString(),
-    userAddress: receiver.address,
-    receiver: receiver.address,
-    deadline: 9999999999,
-  })
+      priceRoute: priceRouteResponse?.priceRoute,
+      txOrigin: txOrigin.address,
+      srcToken: inputToken.address,
+      srcDecimals: inputDecimals,
+      destToken: outputToken.address,
+      destDecimals: outputDecimals,
+      srcAmount: inputAmount.toString(),
+      destAmount: minOutputAmount.toString(),
+      userAddress: receiver.address,
+      receiver: receiver.address,
+      deadline: 9999999999,
+    })
     .then(response => response.data)
     .catch((error) => {
       console.error('Found error in transactions', error);

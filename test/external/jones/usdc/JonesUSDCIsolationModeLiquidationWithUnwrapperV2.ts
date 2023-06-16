@@ -12,6 +12,7 @@ import {
   JonesUSDCRegistry,
 } from '../../../../src/types';
 import { Account } from '../../../../src/types/IDolomiteMargin';
+import { depositIntoDolomiteMargin } from '../../../../src/utils/dolomite-utils';
 import {
   BYTES_EMPTY,
   LIQUIDATE_ALL,
@@ -36,7 +37,7 @@ import {
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
 import { setExpiry } from '../../../utils/expiry-utils';
-import { liquidateV4 } from '../../../utils/liquidation-utils';
+import { liquidateV4WithIsolationMode } from '../../../utils/liquidation-utils';
 import {
   CoreProtocol,
   setupCoreProtocol,
@@ -58,7 +59,7 @@ const liquidationSpreadDenominator = BigNumber.from('100');
 const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
 
-describe('JonesUSDCLiquidation', () => {
+describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
@@ -140,7 +141,7 @@ describe('JonesUSDCLiquidation', () => {
       expect(borrowValue.value).to.eq(ZERO_BI);
 
       const usdcPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.usdc);
-      const usdcDebtAmount = supplyValue.value
+      const usdcDebtAmountBefore = supplyValue.value
         .mul(minCollateralizationDenominator)
         .div(minCollateralizationNumerator)
         .div(usdcPrice.value);
@@ -149,19 +150,16 @@ describe('JonesUSDCLiquidation', () => {
         otherAccountNumber,
         defaultAccountNumber,
         core.marketIds.usdc,
-        usdcDebtAmount,
+        usdcDebtAmountBefore,
         BalanceCheckFlag.To,
       );
-      const oldAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
-      console.log('assets after: ', oldAccountValues[0].toString());
-      console.log('debt after: ', oldAccountValues[1].value.toString());
       await core.testInterestSetter!.setInterestRate(core.usdc.address, { value: '33295281582' }); // 100% APR
       await core.dolomiteMargin.ownerSetInterestSetter(core.marketIds.usdc, core.testInterestSetter!.address);
       await waitDays(10); // accrue interest to push towards liquidation
+      // deposit 0 to refresh account index
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
-      console.log('assets after: ', newAccountValues[0].toString());
-      console.log('debt after: ', newAccountValues[1].value.toString());
       // check that the position is indeed under collateralized
       expect(newAccountValues[0].value)
         .to
@@ -172,7 +170,7 @@ describe('JonesUSDCLiquidation', () => {
         .div(liquidationSpreadDenominator)
         .div(jUSDCPrice.value);
 
-      const txResult = await liquidateV4(
+      const txResult = await liquidateV4WithIsolationMode(
         core,
         solidAccountStruct,
         liquidAccountStruct,
@@ -183,6 +181,10 @@ describe('JonesUSDCLiquidation', () => {
       const receipt = await txResult.wait();
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
 
+      const heldUsdcAfter = (await core.dolomiteMargin.getAccountWei(
+        solidAccountStruct,
+        core.marketIds.usdc,
+      )).value;
       const usdcOutputAmount = await unwrapper.getExchangeCost(
         factory.address,
         core.usdc.address,
@@ -202,7 +204,7 @@ describe('JonesUSDCLiquidation', () => {
         core,
         solidAccountStruct,
         core.marketIds.usdc,
-        usdcOutputAmount.sub(usdcDebtAmount),
+        heldUsdcAfter.sub(usdcOutputAmount),
         '5',
       );
       await expectProtocolBalanceIsGreaterThan(
@@ -265,7 +267,7 @@ describe('JonesUSDCLiquidation', () => {
 
       const heldUpdatedWithReward = usdcDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
 
-      const txResult = await liquidateV4(
+      const txResult = await liquidateV4WithIsolationMode(
         core,
         solidAccountStruct,
         liquidAccountStruct,

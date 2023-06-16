@@ -7,9 +7,9 @@ import {
   IPlutusVaultGLPFarm,
   PendlePtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeTokenVaultV1__factory,
-  PendlePtGLP2024IsolationModeUnwrapperTraderV1,
+  PendlePtGLP2024IsolationModeUnwrapperTraderV2,
   PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtGLP2024IsolationModeWrapperTraderV1,
+  PendlePtGLP2024IsolationModeWrapperTraderV2,
   PendlePtGLP2024Registry,
   PendlePtGLPPriceOracle,
 } from '../../../src/types';
@@ -31,8 +31,8 @@ describe('PendlePtGLP2024IsolationModeTokenVaultV1', () => {
   let core: CoreProtocol;
   let underlyingToken: IPendlePtToken;
   let pendleRegistry: PendlePtGLP2024Registry;
-  let unwrapper: PendlePtGLP2024IsolationModeUnwrapperTraderV1;
-  let wrapper: PendlePtGLP2024IsolationModeWrapperTraderV1;
+  let unwrapper: PendlePtGLP2024IsolationModeUnwrapperTraderV2;
+  let wrapper: PendlePtGLP2024IsolationModeWrapperTraderV2;
   let priceOracle: PendlePtGLPPriceOracle;
   let factory: PendlePtGLP2024IsolationModeVaultFactory;
   let vault: PendlePtGLP2024IsolationModeTokenVaultV1;

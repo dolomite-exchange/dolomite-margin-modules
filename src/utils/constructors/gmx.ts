@@ -4,7 +4,7 @@ import {
   GLPIsolationModeVaultFactory,
   GmxRegistryV1,
   IGLPIsolationModeTokenVaultV1,
-  IGLPIsolationModeVaultFactory,
+  IGLPIsolationModeVaultFactory, IGLPIsolationModeVaultFactoryOld,
   IGmxRegistryV1,
   TestGLPIsolationModeTokenVaultV1,
 } from '../../types';
@@ -31,7 +31,7 @@ export function getGLPUnwrapperTraderV1ConstructorParams(
 
 export function getGLPUnwrapperTraderV2ConstructorParams(
   core: CoreProtocol,
-  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
   return [
@@ -77,7 +77,7 @@ export function getGLPWrapperTraderV1ConstructorParams(
 
 export function getGLPWrapperTraderV2ConstructorParams(
   core: CoreProtocol,
-  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
   return [

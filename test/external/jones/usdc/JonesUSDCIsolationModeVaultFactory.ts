@@ -80,13 +80,17 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
 
   describe('#allowableCollateralMarketIds', () => {
     it('should work normally', async () => {
-      expect(await factory.allowableCollateralMarketIds()).to.deep.equal([NONE_MARKET_ID]);
+      const result = await factory.allowableCollateralMarketIds();
+      expect(result.length).to.eql(1);
+      expect(result[0]).to.eq(NONE_MARKET_ID);
     });
   });
 
   describe('#allowableDebtMarketIds', () => {
     it('should work normally', async () => {
-      expect(await factory.allowableDebtMarketIds()).to.deep.equal([core.marketIds.usdc]);
+      const result = await factory.allowableDebtMarketIds();
+      expect(result.length).to.eql(1);
+      expect(result[0].toNumber()).to.eq(core.marketIds.usdc);
     });
   });
 });

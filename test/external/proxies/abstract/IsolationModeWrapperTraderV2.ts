@@ -210,7 +210,7 @@ describe('IsolationModeWrapperTraderV2', () => {
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
       const outputAmount = await wrapper.getExchangeCost(
-        core.usdc.address,
+        otherToken.address,
         factory.address,
         amountWei,
         BYTES_EMPTY,
@@ -226,26 +226,26 @@ describe('IsolationModeWrapperTraderV2', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeWrapperTraderV2: Invalid input token <${core.dfsGlp!.address.toLowerCase()}>`
+        `IsolationModeWrapperTraderV2: Invalid input token <${core.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
     it('should fail when output token is invalid', async () => {
       await expectThrow(
         wrapper.getExchangeCost(
-          core.usdc.address,
+          otherToken.address,
           core.dfsGlp!.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeWrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`
+        `IsolationModeWrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
     it('should fail when input amount is invalid', async () => {
       await expectThrow(
         wrapper.getExchangeCost(
-          core.usdc.address,
+          otherToken.address,
           factory.address,
           ZERO_BI,
           BYTES_EMPTY,

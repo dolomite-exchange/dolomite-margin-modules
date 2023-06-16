@@ -26,7 +26,7 @@ import {
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
   expectProtocolBalance,
-  expectProtocolBalanceDusty,
+  expectProtocolBalanceDustyOrZero,
   expectProtocolBalanceIsGreaterThan,
   expectVaultBalanceToMatchAccountBalances,
   expectWalletBalance,
@@ -44,7 +44,7 @@ import {
   checkForParaswapSuccess,
   getCalldataForParaswap,
   getParaswapTraderParamStruct,
-  liquidateV4,
+  liquidateV4WithIsolationMode,
 } from '../../utils/liquidation-utils';
 import {
   CoreProtocol,
@@ -152,8 +152,6 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       .to
       .eq(heldAmountWei);
 
-    await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
-
     snapshotId = await snapshot();
   });
 
@@ -195,7 +193,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         .div(ptGlpPrice.value);
       const { extraOrderData } = await encodeSwapExactPtForTokens(router, core, heldUpdatedWithReward);
 
-      const txResult = await liquidateV4(
+      const txResult = await liquidateV4WithIsolationMode(
         core,
         solidAccountStruct,
         liquidAccountStruct,
@@ -285,12 +283,13 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         core,
         heldUpdatedWithReward,
       );
-      const usdcAmountOut = await core.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5).getExchangeCost(
-        core.dfsGlp!.address,
-        core.usdc.address,
-        tokenOutput.minTokenOut,
-        BYTES_EMPTY,
-      );
+      const usdcAmountOut = await core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5)
+        .getExchangeCost(
+          core.dfsGlp!.address,
+          core.usdc.address,
+          tokenOutput.minTokenOut,
+          BYTES_EMPTY,
+        );
       const { calldata: paraswapCalldata, outputAmount: wethOutputAmount } = await getCalldataForParaswap(
         usdcAmountOut,
         core.usdc,
@@ -304,7 +303,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       );
 
       const isSuccessful = await checkForParaswapSuccess(
-        liquidateV4(
+        liquidateV4WithIsolationMode(
           core,
           solidAccountStruct,
           liquidAccountStruct,
@@ -326,7 +325,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         underlyingMarketId,
         ZERO_BI,
       );
-      await expectProtocolBalanceDusty(
+      await expectProtocolBalanceDustyOrZero(
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
@@ -406,14 +405,15 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
 
       const heldUpdatedWithReward = usdcDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
       const { extraOrderData, tokenOutput } = await encodeSwapExactPtForTokens(router, core, heldUpdatedWithReward);
-      const usdcAmountOut = await core.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5).getExchangeCost(
-        core.dfsGlp!.address,
-        core.usdc.address,
-        tokenOutput.minTokenOut,
-        BYTES_EMPTY,
-      );
+      const usdcAmountOut = await core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5)
+        .getExchangeCost(
+          core.dfsGlp!.address,
+          core.usdc.address,
+          tokenOutput.minTokenOut,
+          BYTES_EMPTY,
+        );
 
-      const txResult = await liquidateV4(
+      const txResult = await liquidateV4WithIsolationMode(
         core,
         solidAccountStruct,
         liquidAccountStruct,
@@ -510,12 +510,13 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         core,
         heldUpdatedWithReward,
       );
-      const usdcAmountOut = await core.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5).getExchangeCost(
-        core.dfsGlp!.address,
-        core.usdc.address,
-        tokenOutput.minTokenOut,
-        BYTES_EMPTY,
-      );
+      const usdcAmountOut = await core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5)
+        .getExchangeCost(
+          core.dfsGlp!.address,
+          core.usdc.address,
+          tokenOutput.minTokenOut,
+          BYTES_EMPTY,
+        );
       const { calldata: paraswapCalldata, outputAmount: wethOutputAmount } = await getCalldataForParaswap(
         usdcAmountOut,
         core.usdc,
@@ -529,7 +530,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       );
 
       const isSuccessful = await checkForParaswapSuccess(
-        liquidateV4(
+        liquidateV4WithIsolationMode(
           core,
           solidAccountStruct,
           liquidAccountStruct,
@@ -552,7 +553,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         underlyingMarketId,
         ZERO_BI,
       );
-      await expectProtocolBalanceDusty(
+      await expectProtocolBalanceDustyOrZero(
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,

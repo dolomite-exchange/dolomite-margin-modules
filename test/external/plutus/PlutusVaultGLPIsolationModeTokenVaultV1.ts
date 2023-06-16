@@ -18,13 +18,6 @@ import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '../../utils/setup';
-import {
   createPlutusVaultGLPIsolationModeTokenVaultV1,
   createPlutusVaultGLPIsolationModeUnwrapperTraderV1,
   createPlutusVaultGLPIsolationModeVaultFactory,
@@ -32,6 +25,13 @@ import {
   createPlutusVaultGLPPriceOracle,
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
+import {
+  CoreProtocol,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '../../utils/setup';
 import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
 
 const amountWei = BigNumber.from('1250000000000000000000'); // 1,250 plvGLP tokens

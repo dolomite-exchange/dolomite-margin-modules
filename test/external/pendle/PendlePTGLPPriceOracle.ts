@@ -22,7 +22,7 @@ import {
 } from '../../utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
-const PT_GLP_PRICE = BigNumber.from('811234157995327500'); // $0.811234157995327500
+const PT_GLP_PRICE = BigNumber.from('811234399925272202'); // $0.811234399925272202
 
 describe('PendlePtGLPPriceOracle', () => {
   let snapshotId: string;

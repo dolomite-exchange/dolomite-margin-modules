@@ -52,7 +52,7 @@ export function getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams
 
   return [
     core.usdc.address,
-    core.gmxRegistry!.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
     plutusVaultRegistry.address,
     dPlvGlpToken.address,
     core.dolomiteMargin.address,
@@ -69,7 +69,7 @@ export function getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams
   }
 
   return [
-    core.gmxRegistry!.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
     plutusVaultRegistry.address,
     dPlvGlpToken.address,
     core.dolomiteMargin.address,
@@ -125,7 +125,7 @@ export function getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams(
   }
 
   return [
-    core.gmxRegistry!.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
     plutusVaultRegistry.address,
     dPlvGlpToken.address,
     core.dolomiteMargin.address,
@@ -142,7 +142,7 @@ export function getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams(
   }
 
   return [
-    core.gmxRegistry!.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
     plutusVaultRegistry.address,
     dPlvGlpToken.address,
     core.dolomiteMargin.address,

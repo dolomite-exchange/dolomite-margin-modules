@@ -26,7 +26,8 @@ import {
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
 import {
-  CoreProtocol, disableInterestAccrual,
+  CoreProtocol,
+  disableInterestAccrual,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -68,7 +69,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
     underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
 
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
-    gmxRegistry = core.gmxRegistry!;
+    gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,

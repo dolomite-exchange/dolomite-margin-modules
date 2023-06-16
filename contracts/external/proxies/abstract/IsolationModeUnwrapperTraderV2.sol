@@ -31,7 +31,6 @@ import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeToken
 import { IIsolationModeUnwrapperTrader } from "../../interfaces/IIsolationModeUnwrapperTrader.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
-import { console } from "hardhat/console.sol";
 
 
 /**
@@ -213,8 +212,6 @@ abstract contract IsolationModeUnwrapperTraderV2 is
             /* _transferAmount[encoded] = */ abi.encode(_inputAmount)
         );
 
-        console.log("inputAmount: ", _inputAmount);
-        console.log("minAmountOut: ", _minAmountOut);
         actions[1] = AccountActionLib.encodeExternalSellAction(
             _solidAccountId,
             _inputMarket,

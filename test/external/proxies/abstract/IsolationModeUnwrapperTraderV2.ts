@@ -123,7 +123,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
 
       const amountOut = await unwrapper.getExchangeCost(
         factory.address,
-        core.usdc.address,
+        otherToken.address,
         amountWei,
         BYTES_EMPTY,
       );
@@ -384,7 +384,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
     it('should work normally', async () => {
       const outputAmount = await unwrapper.getExchangeCost(
         factory.address,
-        core.usdc.address,
+        otherToken.address,
         amountWei,
         BYTES_EMPTY,
       );
@@ -399,7 +399,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.dfsGlp!.address.toLowerCase()}>`
+        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
@@ -411,7 +411,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`
+        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
@@ -419,7 +419,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       await expectThrow(
         unwrapper.getExchangeCost(
           factory.address,
-          core.usdc.address,
+          otherToken.address,
           ZERO_BI,
           BYTES_EMPTY,
         ),

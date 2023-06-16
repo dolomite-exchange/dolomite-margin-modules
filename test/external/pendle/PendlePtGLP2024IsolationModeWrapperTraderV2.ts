@@ -71,7 +71,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
     underlyingToken = core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1);
 
     const userVaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
-    gmxRegistry = core.gmxRegistry!;
+    gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     pendleRegistry = await createPendlePtGLP2024Registry(core);
     factory = await createPendlePtGLP2024IsolationModeVaultFactory(
       core,
@@ -141,12 +141,13 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
 
-      const glpAmount = await core.glpIsolationModeWrapperTraderV1!.connect(core.hhUser5).getExchangeCost(
-        core.usdc.address,
-        core.dfsGlp!.address,
-        usableUsdcAmount,
-        BYTES_EMPTY,
-      );
+      const glpAmount = await core.gmxEcosystem!.live.glpIsolationModeWrapperTraderV1!.connect(core.hhUser5)
+        .getExchangeCost(
+          core.usdc.address,
+          core.dfsGlp!.address,
+          usableUsdcAmount,
+          BYTES_EMPTY,
+        );
 
       const { extraOrderData, approxParams } = await encodeSwapExactTokensForPt(router, core, glpAmount);
 

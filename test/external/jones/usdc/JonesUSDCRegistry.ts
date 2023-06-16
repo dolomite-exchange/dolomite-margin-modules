@@ -6,7 +6,8 @@ import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectEvent, expectThrow } from '../../../utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
-  createJonesUSDCIsolationModeUnwrapperTraderV2, createJonesUSDCIsolationModeVaultFactory,
+  createJonesUSDCIsolationModeUnwrapperTraderV2,
+  createJonesUSDCIsolationModeVaultFactory,
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
 import { CoreProtocol, setupCoreProtocol } from '../../../utils/setup';

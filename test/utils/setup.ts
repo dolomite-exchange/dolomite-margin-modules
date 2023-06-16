@@ -24,6 +24,8 @@ import {
   AlwaysZeroInterestSetter__factory,
   BorrowPositionProxyV2,
   BorrowPositionProxyV2__factory,
+  DolomiteCompatibleWhitelistForPlutusDAO,
+  DolomiteCompatibleWhitelistForPlutusDAO__factory,
   Expiry,
   Expiry__factory,
   GLPIsolationModeUnwrapperTraderV1,
@@ -44,6 +46,8 @@ import {
   IERC4626__factory,
   IEsGmxDistributor,
   IEsGmxDistributor__factory,
+  IGLPIsolationModeVaultFactoryOld,
+  IGLPIsolationModeVaultFactoryOld__factory,
   IGLPManager,
   IGLPManager__factory,
   IGLPRewardsRouterV2,
@@ -74,6 +78,8 @@ import {
   IPendleSyToken__factory,
   IPlutusVaultGLPFarm,
   IPlutusVaultGLPFarm__factory,
+  IPlutusVaultGLPIsolationModeVaultFactory,
+  IPlutusVaultGLPIsolationModeVaultFactory__factory,
   IPlutusVaultGLPRouter,
   IPlutusVaultGLPRouter__factory,
   ISGMX,
@@ -94,6 +100,12 @@ import {
   LiquidatorProxyV4WithGenericTrader__factory,
   ParaswapAggregatorTrader,
   ParaswapAggregatorTrader__factory,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory,
+  PlutusVaultGLPIsolationModeWrapperTraderV1,
+  PlutusVaultGLPIsolationModeWrapperTraderV1__factory,
+  PlutusVaultRegistry,
+  PlutusVaultRegistry__factory,
   TestInterestSetter,
   TestInterestSetter__factory,
   TestPriceOracle,
@@ -103,6 +115,7 @@ import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
   ATLAS_SI_TOKEN_MAP,
   DFS_GLP_MAP,
+  DPLV_GLP_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
   ES_GMX_MAP,
   FS_GLP_MAP,
@@ -172,14 +185,20 @@ interface GmxEcosystem {
   glp: IERC20;
   glpManager: IGLPManager;
   glpRewardsRouter: IGLPRewardsRouterV2;
-  gmxRewardsRouter: IGmxRewardRouterV2;
   gmx: IERC20;
+  gmxRewardsRouter: IGmxRewardRouterV2;
   gmxVault: IGmxVault;
   sGlp: IERC20;
   sGmx: ISGMX;
   sbfGmx: IERC20;
   vGlp: IGmxVester;
   vGmx: IGmxVester;
+  live: {
+    glpIsolationModeFactory: IGLPIsolationModeVaultFactoryOld;
+    glpIsolationModeUnwrapperTraderV1: GLPIsolationModeUnwrapperTraderV1;
+    glpIsolationModeWrapperTraderV1: GLPIsolationModeWrapperTraderV1;
+    gmxRegistry: IGmxRegistryV1;
+  };
 }
 
 interface JonesEcosystem {
@@ -205,11 +224,19 @@ interface PendleEcosystem {
 }
 
 interface PlutusEcosystem {
+  dolomiteWhitelistForGlpDepositor: DolomiteCompatibleWhitelistForPlutusDAO;
+  dolomiteWhitelistForPlutusChef: DolomiteCompatibleWhitelistForPlutusDAO;
   plvGlp: IERC4626;
   plsToken: IERC20;
   plvGlpFarm: IPlutusVaultGLPFarm;
   plvGlpRouter: IPlutusVaultGLPRouter;
   sGlp: IERC20;
+  live: {
+    plutusVaultRegistry: PlutusVaultRegistry;
+    plvGlpIsolationModeFactory: IPlutusVaultGLPIsolationModeVaultFactory;
+    plvGlpIsolationModeUnwrapperTraderV1: PlutusVaultGLPIsolationModeUnwrapperTraderV1;
+    plvGlpIsolationModeWrapperTraderV1: PlutusVaultGLPIsolationModeWrapperTraderV1;
+  };
 }
 
 export interface CoreProtocol {
@@ -238,9 +265,6 @@ export interface CoreProtocol {
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
   expiry: Expiry;
-  glpIsolationModeUnwrapperTraderV1: GLPIsolationModeUnwrapperTraderV1 | undefined;
-  glpIsolationModeWrapperTraderV1: GLPIsolationModeWrapperTraderV1 | undefined;
-  gmxRegistry: IGmxRegistryV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
   jonesEcosystem: JonesEcosystem | undefined;
   liquidatorAssetRegistry: LiquidatorAssetRegistry | undefined;
@@ -263,6 +287,7 @@ export interface CoreProtocol {
    */
   marketIds: {
     dfsGlp: BigNumberish | undefined;
+    dplvGlp: BigNumberish | undefined;
     magicGlp: BigNumberish | undefined;
     usdc: BigNumberish;
     weth: BigNumberish;
@@ -375,21 +400,6 @@ export async function setupCoreProtocol(
     governance,
   );
 
-  const glpIsolationModeUnwrapperTraderV1 = getContractOpt(
-    (Deployments.GLPIsolationModeUnwrapperTraderV1 as any)[config.network]?.address,
-    GLPIsolationModeUnwrapperTraderV1__factory.connect,
-  );
-
-  const glpIsolationModeWrapperTraderV1 = getContractOpt(
-    (Deployments.GLPIsolationModeWrapperTraderV1 as any)[config.network]?.address,
-    GLPIsolationModeWrapperTraderV1__factory.connect,
-  );
-
-  const gmxRegistry = getContractOpt(
-    (Deployments.GmxRegistryV1 as any)[config.network]?.address,
-    IGmxRegistryV1__factory.connect,
-  );
-
   const liquidatorAssetRegistry = LiquidatorAssetRegistry__factory.connect(
     LiquidatorAssetRegistryJson.networks[config.network].address,
     governance,
@@ -446,9 +456,6 @@ export async function setupCoreProtocol(
     dolomiteMargin,
     expiry,
     gmxEcosystem,
-    glpIsolationModeUnwrapperTraderV1,
-    glpIsolationModeWrapperTraderV1,
-    gmxRegistry,
     governance,
     jonesEcosystem,
     liquidatorAssetRegistry,
@@ -474,6 +481,7 @@ export async function setupCoreProtocol(
     },
     marketIds: {
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
+      dplvGlp: DPLV_GLP_MAP[config.network]?.marketId,
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
       weth: WETH_MAP[config.network].marketId,
@@ -618,6 +626,24 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
     sbfGmx: getContract(SBF_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     vGlp: getContract(V_GLP_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
     vGmx: getContract(V_GMX_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
+    live: {
+      glpIsolationModeFactory: getContract(
+        (Deployments.GLPIsolationModeVaultFactory as any)[network]?.address,
+        IGLPIsolationModeVaultFactoryOld__factory.connect,
+      ),
+      glpIsolationModeUnwrapperTraderV1: getContract(
+        (Deployments.GLPIsolationModeUnwrapperTraderV1 as any)[network]?.address,
+        GLPIsolationModeUnwrapperTraderV1__factory.connect,
+      ),
+      glpIsolationModeWrapperTraderV1: getContract(
+        (Deployments.GLPIsolationModeWrapperTraderV1 as any)[network]?.address,
+        GLPIsolationModeWrapperTraderV1__factory.connect,
+      ),
+      gmxRegistry: getContract(
+        (Deployments.GmxRegistryV1 as any)[network]?.address,
+        IGmxRegistryV1__factory.connect,
+      ),
+    },
   };
 }
 
@@ -676,6 +702,14 @@ async function createPlutusEcosystem(
 
   const sGlpAddressForPlutus = '0x2F546AD4eDD93B956C8999Be404cdCAFde3E89AE';
   return {
+    dolomiteWhitelistForGlpDepositor: getContract(
+      (Deployments.DolomiteWhitelistForGlpDepositorV2 as any)[network]?.address,
+      address => DolomiteCompatibleWhitelistForPlutusDAO__factory.connect(address, signer),
+    ),
+    dolomiteWhitelistForPlutusChef: getContract(
+      (Deployments.DolomiteWhitelistForPlutusChef as any)[network]?.address,
+      address => DolomiteCompatibleWhitelistForPlutusDAO__factory.connect(address, signer),
+    ),
     plvGlp: getContract(PLV_GLP_MAP[network] as string, address => IERC4626__factory.connect(address, signer)),
     plsToken: getContract(PLS_TOKEN_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     plvGlpFarm: getContract(
@@ -687,6 +721,24 @@ async function createPlutusEcosystem(
       address => IPlutusVaultGLPRouter__factory.connect(address, signer),
     ),
     sGlp: getContract(sGlpAddressForPlutus, address => IERC20__factory.connect(address, signer)),
+    live: {
+      plutusVaultRegistry: getContract(
+        (Deployments.PlutusVaultRegistry as any)[network]?.address,
+        PlutusVaultRegistry__factory.connect,
+      ),
+      plvGlpIsolationModeFactory: getContract(
+        (Deployments.PlutusVaultGLPIsolationModeVaultFactory as any)[network]?.address,
+        IPlutusVaultGLPIsolationModeVaultFactory__factory.connect,
+      ),
+      plvGlpIsolationModeUnwrapperTraderV1: getContract(
+        (Deployments.PlutusVaultGLPIsolationModeUnwrapperTraderV1 as any)[network]?.address,
+        PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory.connect,
+      ),
+      plvGlpIsolationModeWrapperTraderV1: getContract(
+        (Deployments.PlutusVaultGLPIsolationModeWrapperTraderV1 as any)[network]?.address,
+        PlutusVaultGLPIsolationModeWrapperTraderV1__factory.connect,
+      ),
+    },
   };
 }
 

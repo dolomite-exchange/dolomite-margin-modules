@@ -56,12 +56,34 @@ library InterestIndexLib {
         if (_amountPar.sign) {
             return IDolomiteStructs.Wei({
                 sign: true,
-                value: _amountPar.value.getPartialRoundUp(index.supply, BASE)
+                value: _amountPar.value.getPartialRoundHalfUp(index.supply, BASE)
             });
         } else {
             return IDolomiteStructs.Wei({
                 sign: false,
-                value: _amountPar.value.getPartialRoundUp(index.borrow, BASE)
+                value: _amountPar.value.getPartialRoundHalfUp(index.borrow, BASE)
+            });
+        }
+    }
+
+    /**
+     *  Converts an actual Wei value to a scaled Par value
+     */
+    function weiToPar(
+        IDolomiteMargin dolomiteMargin,
+        uint256 _marketId,
+        IDolomiteStructs.Wei memory _amountWei
+    ) internal view returns (IDolomiteStructs.Par memory) {
+        IDolomiteStructs.InterestIndex memory index = dolomiteMargin.getMarketCurrentIndex(_marketId);
+        if (_amountWei.sign) {
+            return IDolomiteStructs.Par({
+                sign: true,
+                value: _amountWei.value.getPartialRoundHalfUp(BASE, index.supply)
+            });
+        } else {
+            return IDolomiteStructs.Par({
+                sign: false,
+                value: _amountWei.value.getPartialRoundHalfUp(BASE, index.borrow)
             });
         }
     }

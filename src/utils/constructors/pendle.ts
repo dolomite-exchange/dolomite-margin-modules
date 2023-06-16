@@ -51,7 +51,7 @@ export function getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParam
 
   return [
     pendleRegistry.address,
-    core.gmxRegistry!.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
     dptGlp.address,
     core.dolomiteMargin.address,
   ];
@@ -87,7 +87,7 @@ export function getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
 
   return [
     pendleRegistry.address,
-    core.gmxRegistry!.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
     dptGlp.address,
     core.dolomiteMargin.address,
   ];

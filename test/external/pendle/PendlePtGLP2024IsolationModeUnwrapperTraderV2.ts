@@ -33,7 +33,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { encodeSwapExactPtForTokens, FIVE_BIPS_NUMBER } from './pendle-utils';
+import { encodeSwapExactPtForTokens, ONE_TENTH_OF_ONE_BIPS_NUMBER } from './pendle-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -65,7 +65,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
     });
     underlyingToken = core.pendleEcosystem!.ptGlpToken;
     const userVaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
-    gmxRegistry = core.gmxRegistry!;
+    gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     pendleRegistry = await createPendlePtGLP2024Registry(core);
     factory = await createPendlePtGLP2024IsolationModeVaultFactory(
       core,
@@ -115,7 +115,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
       core.pendleEcosystem!.ptGlpMarket.address as any,
       core.gmxEcosystem!.sGlp.address as any,
       glpAmount,
-      FIVE_BIPS_NUMBER,
+      ONE_TENTH_OF_ONE_BIPS_NUMBER,
     );
     await core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -136,12 +136,13 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
       const liquidAccountId = 0;
 
       const { tokenOutput, extraOrderData } = await encodeSwapExactPtForTokens(router, core, amountWei);
-      const amountOut = await core.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5).getExchangeCost(
-        core.dfsGlp!.address,
-        core.usdc.address,
-        tokenOutput.minTokenOut,
-        BYTES_EMPTY,
-      );
+      const amountOut = await core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5)
+        .getExchangeCost(
+          core.dfsGlp!.address,
+          core.usdc.address,
+          tokenOutput.minTokenOut,
+          BYTES_EMPTY,
+        );
 
       const actions = await unwrapper.createActionsForUnwrapping(
         solidAccountId,

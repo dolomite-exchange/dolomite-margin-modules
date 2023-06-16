@@ -2,14 +2,20 @@ import {
   MagicGLPPriceOracle,
   MagicGLPPriceOracle__factory,
   MagicGLPUnwrapperTraderV1,
-  MagicGLPUnwrapperTraderV1__factory, MagicGLPUnwrapperTraderV2, MagicGLPUnwrapperTraderV2__factory,
+  MagicGLPUnwrapperTraderV1__factory,
+  MagicGLPUnwrapperTraderV2,
+  MagicGLPUnwrapperTraderV2__factory,
   MagicGLPWrapperTraderV1,
-  MagicGLPWrapperTraderV1__factory, MagicGLPWrapperTraderV2, MagicGLPWrapperTraderV2__factory,
+  MagicGLPWrapperTraderV1__factory,
+  MagicGLPWrapperTraderV2,
+  MagicGLPWrapperTraderV2__factory,
 } from '../../../src/types';
 import {
   getMagicGLPPriceOracleConstructorParams,
-  getMagicGLPUnwrapperTraderV1ConstructorParams, getMagicGLPUnwrapperTraderV2ConstructorParams,
-  getMagicGLPWrapperTraderV1ConstructorParams, getMagicGLPWrapperTraderV2ConstructorParams,
+  getMagicGLPUnwrapperTraderV1ConstructorParams,
+  getMagicGLPUnwrapperTraderV2ConstructorParams,
+  getMagicGLPWrapperTraderV1ConstructorParams,
+  getMagicGLPWrapperTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/abracadabra';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';

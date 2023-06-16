@@ -74,7 +74,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV2', () => {
     plvGlpExchangeRateDenominator = await underlyingToken.totalSupply();
 
     const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1();
-    gmxRegistry = core.gmxRegistry!;
+    gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
     factory = await createPlutusVaultGLPIsolationModeVaultFactory(
       core,
