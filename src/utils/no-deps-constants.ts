@@ -44,3 +44,5 @@ export const MAX_UINT_256_BI = BigNumber.from('0xfffffffffffffffffffffffffffffff
 export const LIQUIDATE_ALL = MAX_UINT_256_BI;
 
 export const SELL_ALL = MAX_UINT_256_BI;
+
+export const NO_PARASWAP_TRADER_PARAM = undefined;

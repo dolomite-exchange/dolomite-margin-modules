@@ -1,10 +1,61 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
+import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
-import { BigNumber, ContractTransaction } from 'ethers';
+import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
+import { Account } from '../../src/types/IDolomiteMargin';
+import { IGenericTraderProxyBase } from '../../src/types/LiquidatorProxyV4WithGenericTrader';
+import { BYTES_EMPTY, NO_EXPIRY } from '../../src/utils/no-deps-constants';
 import { expectThrow } from './assertions';
 import { CoreProtocol } from './setup';
+import TraderParamStruct = IGenericTraderProxyBase.TraderParamStruct;
 
 const API_URL = 'https://apiv5.paraswap.io';
+
+export function getParaswapTraderParamStruct(
+  core: CoreProtocol,
+  encodedTradeData: string,
+): IGenericTraderProxyBase.TraderParamStruct {
+  return {
+    traderType: GenericTraderType.ExternalLiquidity,
+    makerAccountIndex: 0,
+    trader: core.paraswapTrader!.address,
+    tradeData: encodedTradeData,
+  };
+}
+
+export async function liquidateV4(
+  core: CoreProtocol,
+  solidAccountStruct: Account.InfoStruct,
+  liquidAccountStruct: Account.InfoStruct,
+  marketIdsPath: BigNumberish[],
+  amountWeisPath: BigNumberish[],
+  unwrapper: { address: address },
+  unwrapperTradeData: string = BYTES_EMPTY,
+  paraswapTraderParam: IGenericTraderProxyBase.TraderParamStruct | undefined = undefined,
+  expiry: BigNumberish = NO_EXPIRY,
+): Promise<ContractTransaction> {
+  const defaultUnwrapperTraderParam: TraderParamStruct = {
+    traderType: GenericTraderType.IsolationModeUnwrapper,
+    makerAccountIndex: 0,
+    trader: unwrapper.address,
+    tradeData: unwrapperTradeData,
+  };
+
+  const tradersPath = [defaultUnwrapperTraderParam];
+  if (paraswapTraderParam) {
+    tradersPath.push(paraswapTraderParam);
+  }
+
+  return core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
+    solidAccountStruct,
+    liquidAccountStruct,
+    marketIdsPath,
+    amountWeisPath,
+    tradersPath,
+    [],
+    expiry,
+  );
+}
 
 export async function checkForParaswapSuccess(
   contractTransactionPromise: Promise<ContractTransaction>,

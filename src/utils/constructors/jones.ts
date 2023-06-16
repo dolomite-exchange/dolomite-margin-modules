@@ -4,13 +4,12 @@ import {
   IJonesUSDCIsolationModeTokenVaultV1,
   IJonesUSDCRegistry,
   JonesUSDCIsolationModeTokenVaultV1,
-  JonesUSDCIsolationModeUnwrapperTraderV2,
   JonesUSDCRegistry,
 } from '../../types';
+import { NONE_MARKET_ID } from '../no-deps-constants';
 
 export function getJonesUSDCRegistryConstructorParams(
   core: CoreProtocol,
-  unwrapper: JonesUSDCIsolationModeUnwrapperTraderV2,
 ): any[] {
   if (!core.jonesEcosystem) {
     throw new Error('Jones ecosystem not initialized');
@@ -20,8 +19,8 @@ export function getJonesUSDCRegistryConstructorParams(
     core.jonesEcosystem.glpAdapter.address,
     core.jonesEcosystem.glpVaultRouter.address,
     core.jonesEcosystem.whitelistController.address,
+    core.jonesEcosystem.usdcReceiptToken.address,
     core.jonesEcosystem.jUSDC.address,
-    unwrapper.address,
     core.dolomiteMargin.address,
   ];
 }
@@ -72,6 +71,8 @@ export function getJonesUSDCIsolationModeVaultFactoryConstructorParams(
 
   return [
     jonesUSDCRegistry.address,
+    [core.marketIds.usdc],
+    [NONE_MARKET_ID],
     jUSDCToken.address,
     core.borrowPositionProxyV2.address,
     userVaultImplementation.address,

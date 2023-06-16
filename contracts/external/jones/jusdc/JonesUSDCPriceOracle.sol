@@ -41,6 +41,8 @@ contract JonesUSDCPriceOracle is IDolomitePriceOracle {
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "JonesUSDCPriceOracle";
+    uint256 private constant USDC_DECIMALS_DIFF = 12;
+    uint256 private constant USDC_SCALE_DIFF = 10 ** USDC_DECIMALS_DIFF;
 
     // ============================ Public State Variables ============================
 
@@ -89,14 +91,12 @@ contract JonesUSDCPriceOracle is IDolomitePriceOracle {
     // ============================ Internal Functions ============================
 
     function _getCurrentPrice() internal view returns (uint256) {
-        uint256 usdcPrice = DOLOMITE_MARGIN.getMarketPrice(USDC_MARKET_ID).value;
+        uint256 usdcPrice = DOLOMITE_MARGIN.getMarketPrice(USDC_MARKET_ID).value / USDC_SCALE_DIFF;
         IERC4626 jUSDC = JONES_USDC_REGISTRY.jUSDC();
         uint256 totalSupply = jUSDC.totalSupply();
-        if (totalSupply == 0) {
-            // exchange rate is 1 if the total supply is 0
-            return usdcPrice;
-        }
-        uint256 price = usdcPrice * jUSDC.totalAssets() / totalSupply;
+        uint256 price = totalSupply == 0
+                ? usdcPrice
+                : usdcPrice * jUSDC.totalAssets() / totalSupply;
         (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee();
         return price - (price * retentionFee / retentionFeeBase);
     }

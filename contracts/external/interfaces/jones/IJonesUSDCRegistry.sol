@@ -41,6 +41,7 @@ interface IJonesUSDCRegistry {
     event GlpAdapterSet(address indexed _glpAdapter);
     event GlpVaultRouterSet(address indexed _glpVaultRouter);
     event WhitelistControllerSet(address indexed _whitelistController);
+    event UsdcReceiptTokenSet(address indexed _usdcReceiptToken);
     event JUSDCSet(address indexed _jUSDC);
     event UnwrapperTraderSet(address indexed _unwrapperTrader);
 
@@ -48,11 +49,15 @@ interface IJonesUSDCRegistry {
     // =================== Admin Functions ====================
     // ========================================================
 
+    function initializeUnwrapperTrader(address _unwrapperTrader) external;
+
     function ownerGlpAdapter(address _glpAdapter) external;
 
     function ownerSetGlpVaultRouter(address _glpVaultRouter) external;
 
     function ownerSetWhitelistController(address _whitelistController) external;
+
+    function ownerSetUsdcReceiptToken(address _usdcReceiptToken) external;
 
     function ownerSetJUSDC(address _jUSDC) external;
 
@@ -67,6 +72,8 @@ interface IJonesUSDCRegistry {
     function glpVaultRouter() external view returns (IJonesGLPVaultRouter);
 
     function whitelistController() external view returns (IJonesWhitelistController);
+
+    function usdcReceiptToken() external view returns (IERC4626);
 
     function jUSDC() external view returns (IERC4626);
 

@@ -116,6 +116,7 @@ import {
   JONES_GLP_ADAPTER_MAP,
   JONES_GLP_VAULT_ROUTER_MAP,
   JONES_JUSDC_MAP,
+  JONES_JUSDC_RECEIPT_TOKEN_MAP,
   JONES_WHITELIST_CONTROLLER_MAP,
   MAGIC_GLP_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
@@ -185,6 +186,7 @@ interface JonesEcosystem {
   glpAdapter: IJonesGLPAdapter;
   glpVaultRouter: IJonesGLPVaultRouter;
   whitelistController: IJonesWhitelistController;
+  usdcReceiptToken: IERC4626;
   jUSDC: IERC4626;
   admin: SignerWithAddress;
 }
@@ -561,6 +563,10 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
     return undefined;
   }
 
+  const whitelist = getContract(
+    JONES_WHITELIST_CONTROLLER_MAP[network] as string,
+    address => IJonesWhitelistController__factory.connect(address, signer),
+  );
   return {
     admin: await impersonate(JONES_ECOSYSTEM_GOVERNOR_MAP[network]!, true),
     glpAdapter: getContract(
@@ -571,11 +577,12 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
       JONES_GLP_VAULT_ROUTER_MAP[network] as string,
       address => IJonesGLPVaultRouter__factory.connect(address, signer),
     ),
-    jUSDC: getContract(JONES_JUSDC_MAP[network] as string, address => IERC4626__factory.connect(address, signer)),
-    whitelistController: getContract(
-      JONES_WHITELIST_CONTROLLER_MAP[network] as string,
-      address => IJonesWhitelistController__factory.connect(address, signer),
+    usdcReceiptToken: getContract(
+      JONES_JUSDC_RECEIPT_TOKEN_MAP[network] as string,
+      address => IERC4626__factory.connect(address, signer),
     ),
+    jUSDC: getContract(JONES_JUSDC_MAP[network] as string, address => IERC4626__factory.connect(address, signer)),
+    whitelistController: whitelist,
   };
 }
 

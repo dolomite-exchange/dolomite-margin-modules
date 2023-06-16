@@ -38,7 +38,7 @@ interface IJonesGLPVaultRouter {
      * Withdraws `_shares` of jUSDC from the vault and sends the USDC to the caller. Assuming the caller is whitelisted,
      * this function will redeem the jUSDC for USDC immediately instead of enqueueing it.
      */
-    function stableWithdrawalSignal(uint256 _shares, bool _compound) external;
+    function stableWithdrawalSignal(uint256 _shares, bool _compound) external returns (uint256);
 
     /**
      * @return True if redemptions for jUSDC are paused and cannot be processed.

@@ -131,8 +131,13 @@ export const JONES_JUSDC_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const JONES_JUSDC_RECEIPT_TOKEN_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xa485a0bc44988B95245D5F20497CCaFF58a73E99',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const JONES_WHITELIST_CONTROLLER_MAP: Record<Network, string | undefined> = {
-  [Network.ArbitrumOne]: '',
+  [Network.ArbitrumOne]: '0x2ACc798DA9487fdD7F4F653e04D8E8411cd73e88',
   [Network.ArbitrumGoerli]: undefined,
 };
 

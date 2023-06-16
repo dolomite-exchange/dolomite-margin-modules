@@ -55,7 +55,6 @@ export function createJonesUSDCPriceOracle(
   core: CoreProtocol,
   jonesUSDCRegistry: JonesUSDCRegistry,
   djUSDCToken: { address: address },
-  unwrapper: JonesUSDCIsolationModeUnwrapperTraderV2,
 ): Promise<JonesUSDCPriceOracle> {
   return createContractWithAbi<JonesUSDCPriceOracle>(
     JonesUSDCPriceOracle__factory.abi,
@@ -64,7 +63,6 @@ export function createJonesUSDCPriceOracle(
       core,
       jonesUSDCRegistry,
       djUSDCToken,
-      unwrapper,
     ),
   );
 }
@@ -83,12 +81,11 @@ export function createJonesUSDCIsolationModeUnwrapperTraderV2(
 
 export function createJonesUSDCRegistry(
   core: CoreProtocol,
-  unwrapper: JonesUSDCIsolationModeUnwrapperTraderV2,
 ): Promise<JonesUSDCRegistry> {
   return createContractWithAbi<JonesUSDCRegistry>(
     JonesUSDCRegistry__factory.abi,
     JonesUSDCRegistry__factory.bytecode,
-    getJonesUSDCRegistryConstructorParams(core, unwrapper),
+    getJonesUSDCRegistryConstructorParams(core),
   );
 }
 

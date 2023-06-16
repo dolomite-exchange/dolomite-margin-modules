@@ -79,8 +79,8 @@ export const config: HardhatUserConfig = {
     target: 'ethers-v5',
     alwaysGenerateOverloads: false,
     externalArtifacts: [
-      'node_modules/@dolomite-exchange/dolomite-margin/build/contracts/*.json',
-      'node_modules/@openzeppelin/contracts/build/contracts/*.json',
+      'node_modules/@dolomite-exchange/dolomite-margin/build/contracts/*!(Multicall).json',
+      'node_modules/@openzeppelin/contracts/build/contracts/*!(Multicall).json',
     ],
   },
   etherscan: {

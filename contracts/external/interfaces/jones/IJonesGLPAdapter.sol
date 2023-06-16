@@ -30,5 +30,5 @@ pragma solidity ^0.8.9;
  */
 interface IJonesGLPAdapter {
 
-    function depositStable(uint256 _assets,bool _compound) external;
+    function depositStable(uint256 _assets, bool _compound) external returns (uint256);
 }

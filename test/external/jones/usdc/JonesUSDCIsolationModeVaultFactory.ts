@@ -7,7 +7,7 @@ import {
   TestGLPIsolationModeTokenVaultV1__factory,
 } from '../../../../src/types';
 import { createContractWithAbi } from '../../../../src/utils/dolomite-utils';
-import { Network } from '../../../../src/utils/no-deps-constants';
+import { Network, NONE_MARKET_ID } from '../../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectEvent, expectThrow } from '../../../utils/assertions';
 import {
@@ -40,7 +40,7 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       jonesUSDCRegistry,
-      core.plutusEcosystem!.plvGlp,
+      core.jonesEcosystem!.jUSDC,
       (vaultImplementation as any) as JonesUSDCIsolationModeTokenVaultV1,
     );
 
@@ -54,7 +54,7 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.jonesUSDCRegistry()).to.equal(jonesUSDCRegistry.address);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.plutusEcosystem!.plvGlp.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.jonesEcosystem!.jUSDC.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
@@ -80,13 +80,13 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
 
   describe('#allowableCollateralMarketIds', () => {
     it('should work normally', async () => {
-      expect(await factory.allowableCollateralMarketIds()).to.deep.equal([]);
+      expect(await factory.allowableCollateralMarketIds()).to.deep.equal([NONE_MARKET_ID]);
     });
   });
 
   describe('#allowableDebtMarketIds', () => {
     it('should work normally', async () => {
-      expect(await factory.allowableDebtMarketIds()).to.deep.equal([]);
+      expect(await factory.allowableDebtMarketIds()).to.deep.equal([core.marketIds.usdc]);
     });
   });
 });

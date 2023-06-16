@@ -74,7 +74,7 @@ contract JonesUSDCIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     function _exchangeIntoUnderlyingToken(
         address,
         address,
-        address _outputTokenUnderlying,
+        address,
         uint256,
         address,
         uint256 _inputAmount,
@@ -84,10 +84,7 @@ contract JonesUSDCIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     override
     returns (uint256) {
         USDC.approve(address(JONES_USDC_REGISTRY.glpAdapter()), _inputAmount);
-        JONES_USDC_REGISTRY.glpAdapter().depositStable(_inputAmount, /* _compound = */ true);
-
-        // report the amount of jUSDC in this contract as amountOut
-        return IERC20(_outputTokenUnderlying).balanceOf(address(this));
+        return JONES_USDC_REGISTRY.glpAdapter().depositStable(_inputAmount, /* _compound = */ true);
     }
 
     function _getExchangeCost(
@@ -100,6 +97,7 @@ contract JonesUSDCIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     override
     view
     returns (uint256) {
-        return JONES_USDC_REGISTRY.jUSDC().previewDeposit(_desiredInputAmount);
+        uint256 receiptTokenAmount = JONES_USDC_REGISTRY.usdcReceiptToken().previewDeposit(_desiredInputAmount);
+        return JONES_USDC_REGISTRY.jUSDC().previewDeposit(receiptTokenAmount);
     }
 }

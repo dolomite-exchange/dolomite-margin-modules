@@ -1,9 +1,8 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
-import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
-import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   IPendlePtToken,
   PendlePtGLP2024IsolationModeTokenVaultV1,
@@ -15,12 +14,11 @@ import {
   PendlePtGLPPriceOracle,
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
-import { IGenericTraderProxyBase } from '../../../src/types/LiquidatorProxyV4WithGenericTrader';
 import {
   BYTES_EMPTY,
   LIQUIDATE_ALL,
   Network,
-  NO_EXPIRY,
+  NO_PARASWAP_TRADER_PARAM,
   ONE_BI,
   SELL_ALL,
   ZERO_BI,
@@ -42,7 +40,12 @@ import {
   createPendlePtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
 import { setExpiry } from '../../utils/expiry-utils';
-import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/liquidation-utils';
+import {
+  checkForParaswapSuccess,
+  getCalldataForParaswap,
+  getParaswapTraderParamStruct,
+  liquidateV4,
+} from '../../utils/liquidation-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,
@@ -52,7 +55,6 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { encodeSwapExactPtForTokens } from './pendle-utils';
-import TraderParamStruct = IGenericTraderProxyBase.TraderParamStruct;
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '420';
@@ -65,7 +67,6 @@ const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
 
 const FIVE_BIPS = 0.0005;
-const NO_PARASWAP_TRADER_PARAM = undefined;
 
 describe('PendlePtGLP2024IsolationModeLiquidation', () => {
   let snapshotId: string;
@@ -194,12 +195,14 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         .div(ptGlpPrice.value);
       const { extraOrderData } = await encodeSwapExactPtForTokens(router, core, heldUpdatedWithReward);
 
-      const txResult = await liquidateWithDefaultUnwrapper(
+      const txResult = await liquidateV4(
+        core,
+        solidAccountStruct,
+        liquidAccountStruct,
         [underlyingMarketId, core.marketIds.usdc],
         [SELL_ALL, LIQUIDATE_ALL],
+        unwrapper,
         extraOrderData,
-        NO_PARASWAP_TRADER_PARAM,
-        NO_EXPIRY,
       );
       const receipt = await txResult.wait();
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
@@ -301,12 +304,15 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       );
 
       const isSuccessful = await checkForParaswapSuccess(
-        liquidateWithDefaultUnwrapper(
+        liquidateV4(
+          core,
+          solidAccountStruct,
+          liquidAccountStruct,
           [underlyingMarketId, core.marketIds.usdc, core.marketIds.weth],
           [SELL_ALL, usdcAmountOut, LIQUIDATE_ALL],
+          unwrapper,
           unwrapperTradeData,
-          getParaswapTraderParam(paraswapCalldata),
-          NO_EXPIRY,
+          getParaswapTraderParamStruct(core, paraswapCalldata),
         ),
       );
       if (!isSuccessful) {
@@ -407,9 +413,13 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         BYTES_EMPTY,
       );
 
-      const txResult = await liquidateWithDefaultUnwrapper(
+      const txResult = await liquidateV4(
+        core,
+        solidAccountStruct,
+        liquidAccountStruct,
         [underlyingMarketId, core.marketIds.usdc],
         [SELL_ALL, LIQUIDATE_ALL],
+        unwrapper,
         extraOrderData,
         NO_PARASWAP_TRADER_PARAM,
         expiry,
@@ -519,11 +529,15 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       );
 
       const isSuccessful = await checkForParaswapSuccess(
-        liquidateWithDefaultUnwrapper(
+        liquidateV4(
+          core,
+          solidAccountStruct,
+          liquidAccountStruct,
           [underlyingMarketId, core.marketIds.usdc, core.marketIds.weth],
           [SELL_ALL, usdcAmountOut, LIQUIDATE_ALL],
+          unwrapper,
           unwrapperTradeData,
-          getParaswapTraderParam(paraswapCalldata),
+          getParaswapTraderParamStruct(core, paraswapCalldata),
           expiry,
         ),
       );
@@ -579,43 +593,4 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       await expectWalletBalance(unwrapper, core.weth, ZERO_BI);
     });
   });
-
-  function getParaswapTraderParam(encodedTradeData: string): IGenericTraderProxyBase.TraderParamStruct {
-    return {
-      traderType: GenericTraderType.ExternalLiquidity,
-      makerAccountIndex: 0,
-      trader: core.paraswapTrader!.address,
-      tradeData: encodedTradeData,
-    };
-  }
-
-  function liquidateWithDefaultUnwrapper(
-    marketIdsPath: BigNumberish[],
-    amountWeisPath: BigNumberish[],
-    unwrapperTradeData: string,
-    paraswapTraderParam: IGenericTraderProxyBase.TraderParamStruct | undefined,
-    expiry: BigNumberish,
-  ): Promise<ContractTransaction> {
-    const defaultUnwrapperTraderParam: TraderParamStruct = {
-      traderType: GenericTraderType.IsolationModeUnwrapper,
-      makerAccountIndex: 0,
-      trader: unwrapper.address,
-      tradeData: unwrapperTradeData,
-    };
-
-    const tradersPath = [defaultUnwrapperTraderParam];
-    if (paraswapTraderParam) {
-      tradersPath.push(paraswapTraderParam);
-    }
-
-    return core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
-      solidAccountStruct,
-      liquidAccountStruct,
-      marketIdsPath,
-      amountWeisPath,
-      tradersPath,
-      [],
-      expiry,
-    );
-  }
 });

@@ -2,7 +2,7 @@ import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
-  JonesUSDCIsolationModeUnwrapperTraderV1,
+  JonesUSDCIsolationModeUnwrapperTraderV2,
   JonesUSDCIsolationModeVaultFactory,
   JonesUSDCPriceOracle,
   JonesUSDCRegistry,
@@ -13,24 +13,24 @@ import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
-  createJonesUSDCIsolationModeUnwrapperTraderV1,
+  createJonesUSDCIsolationModeUnwrapperTraderV2,
   createJonesUSDCIsolationModeVaultFactory,
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../../utils/setup';
 
-const GLP_PRICE = BigNumber.from('951856689348643550'); // $0.95185668
-const PLV_GLP_PRICE = BigNumber.from('1122820703434687401'); // $1.12282070
+const USDC_PRICE = BigNumber.from('999904540000000000000000000000'); // $0.99990454
+const JONES_USDC_PRICE = BigNumber.from('1021871542224830000'); // $1.02187...
 
 describe('JonesUSDCPriceOracle', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let plvGlpPriceOracle: JonesUSDCPriceOracle;
+  let jonesUSDCPriceOracle: JonesUSDCPriceOracle;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let factory: JonesUSDCIsolationModeVaultFactory;
-  let unwrapperTrader: JonesUSDCIsolationModeUnwrapperTraderV1;
+  let unwrapperTrader: JonesUSDCIsolationModeUnwrapperTraderV2;
   let marketId: BigNumberish;
 
   before(async () => {
@@ -43,18 +43,18 @@ describe('JonesUSDCPriceOracle', () => {
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       jonesUSDCRegistry,
-      core.plutusEcosystem!.plvGlp,
+      core.jonesEcosystem!.jUSDC,
       userVaultImplementation,
     );
-    unwrapperTrader = await createJonesUSDCIsolationModeUnwrapperTraderV1(core, jonesUSDCRegistry, factory);
-    plvGlpPriceOracle = await createJonesUSDCPriceOracle(
+    unwrapperTrader = await createJonesUSDCIsolationModeUnwrapperTraderV2(core, jonesUSDCRegistry, factory);
+    await jonesUSDCRegistry.initializeUnwrapperTrader(unwrapperTrader.address);
+    jonesUSDCPriceOracle = await createJonesUSDCPriceOracle(
       core,
       jonesUSDCRegistry,
       factory,
-      unwrapperTrader,
     );
     marketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, factory, true, plvGlpPriceOracle);
+    await setupTestMarket(core, factory, true, jonesUSDCPriceOracle);
 
     snapshotId = await snapshot();
   });
@@ -64,42 +64,44 @@ describe('JonesUSDCPriceOracle', () => {
   });
 
   describe('#getPrice', () => {
-    it('returns the correct value under normal conditions for dplvGLP', async () => {
-      const price = await plvGlpPriceOracle.getPrice(factory.address);
-      expect(price.value).to.eq(PLV_GLP_PRICE);
+    it('returns the correct value under normal conditions for djUSDC', async () => {
+      const price = await jonesUSDCPriceOracle.getPrice(factory.address);
+      expect(price.value).to.eq(JONES_USDC_PRICE);
     });
 
-    it('returns the correct value plvGLP has a total supply of 0', async () => {
+    it('returns the correct value jUSDC has a total supply of 0', async () => {
       const testToken = await createTestToken();
-      await jonesUSDCRegistry.connect(core.governance).ownerSetPlvGlpToken(testToken.address);
-      const price = await plvGlpPriceOracle.getPrice(factory.address);
-      expect(price.value).to.eq(GLP_PRICE);
+      await jonesUSDCRegistry.connect(core.governance).ownerSetJUSDC(testToken.address);
+      const price = await jonesUSDCPriceOracle.getPrice(factory.address);
+      const usdcPrice = USDC_PRICE.div(1e12);
+      const retentionFee = usdcPrice.mul(97).div(10000);
+      expect(price.value).to.eq(usdcPrice.sub(retentionFee));
     });
 
-    it('fails when token sent is not dplvGLP', async () => {
+    it('fails when token sent is not djUSDC', async () => {
       await expectThrow(
-        plvGlpPriceOracle.getPrice(ADDRESSES.ZERO),
-        `JonesUSDCPriceOracle: invalid token <${ADDRESSES.ZERO}>`,
+        jonesUSDCPriceOracle.getPrice(ADDRESSES.ZERO),
+        `JonesUSDCPriceOracle: Invalid token <${ADDRESSES.ZERO}>`,
       );
       await expectThrow(
-        plvGlpPriceOracle.getPrice(core.gmxEcosystem!.fsGlp.address),
-        `JonesUSDCPriceOracle: invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`,
+        jonesUSDCPriceOracle.getPrice(core.gmxEcosystem!.fsGlp.address),
+        `JonesUSDCPriceOracle: Invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`,
       );
       await expectThrow(
-        plvGlpPriceOracle.getPrice(core.dfsGlp!.address),
-        `JonesUSDCPriceOracle: invalid token <${(core.dfsGlp!.address).toLowerCase()}>`,
+        jonesUSDCPriceOracle.getPrice(core.dfsGlp!.address),
+        `JonesUSDCPriceOracle: Invalid token <${(core.dfsGlp!.address).toLowerCase()}>`,
       );
       await expectThrow(
-        plvGlpPriceOracle.getPrice(core.gmxEcosystem!.glp.address),
-        `JonesUSDCPriceOracle: invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`,
+        jonesUSDCPriceOracle.getPrice(core.gmxEcosystem!.glp.address),
+        `JonesUSDCPriceOracle: Invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`,
       );
     });
 
-    it('fails when plvGLP is borrowable', async () => {
+    it('fails when jUSDC is borrowable', async () => {
       await core.dolomiteMargin.ownerSetIsClosing(marketId, false);
       await expectThrow(
-        plvGlpPriceOracle.getPrice(factory.address),
-        'JonesUSDCPriceOracle: plvGLP cannot be borrowable',
+        jonesUSDCPriceOracle.getPrice(factory.address),
+        'JonesUSDCPriceOracle: jUSDC cannot be borrowable',
       );
     });
   });

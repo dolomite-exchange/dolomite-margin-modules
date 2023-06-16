@@ -64,12 +64,21 @@ export async function deployContractAndSave(
   };
 
   if (network.name !== 'hardhat') {
-    writeFile(file);
+    writeFile(sortFile(file));
   }
 
   await prettyPrintAndVerifyContract(file, chainId, usedContractName, args);
 
   return contract.address;
+}
+
+export function sortFile(file: Record<string, Record<ChainId, any>>) {
+  const sortedFileKeys = Object.keys(file).sort();
+  const sortedFile: Record<string, Record<ChainId, any>> = {};
+  for (const key of sortedFileKeys) {
+    sortedFile[key] = file[key];
+  }
+  return sortedFile;
 }
 
 async function prettyPrintAndVerifyContract(
@@ -106,6 +115,6 @@ export async function prettyPrintEncodedData(
   console.log('='.repeat(72 + methodName.length));
 }
 
-function writeFile(file: any) {
+export function writeFile(file: any) {
   fs.writeFileSync('./scripts/deployments.json', JSON.stringify(file, null, 2), { encoding: 'utf8', flag: 'w' });
 }

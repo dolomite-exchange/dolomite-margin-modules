@@ -26,19 +26,19 @@ import {
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
 import {
-  CoreProtocol,
+  CoreProtocol, disableInterestAccrual,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../../utils/setup';
+import { createRoleAndWhitelistTrader } from './jones-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const usdcAmount = amountWei.div(1e12).mul(8);
 const usableUsdcAmount = usdcAmount.div(2);
-const glpAmount = amountWei.mul(3);
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -58,9 +58,6 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
   let vault: JonesUSDCIsolationModeTokenVaultV1;
   let priceOracle: JonesUSDCPriceOracle;
   let defaultAccount: Account.InfoStruct;
-
-  let plvGlpExchangeRateNumerator: BigNumber;
-  let plvGlpExchangeRateDenominator: BigNumber;
   let solidUser: SignerWithAddress;
 
   before(async () => {
@@ -68,9 +65,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
       blockNumber: 86413000,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
-    plvGlpExchangeRateNumerator = await underlyingToken.totalAssets();
-    plvGlpExchangeRateDenominator = await underlyingToken.totalSupply();
+    underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
 
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     gmxRegistry = core.gmxRegistry!;
@@ -78,13 +73,17 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       jonesUSDCRegistry,
-      core.plutusEcosystem!.plvGlp,
+      core.jonesEcosystem!.jUSDC,
       userVaultImplementation,
     );
 
     unwrapper = await createJonesUSDCIsolationModeUnwrapperTraderV2(core, jonesUSDCRegistry, factory);
+    await jonesUSDCRegistry.initializeUnwrapperTrader(unwrapper.address);
     wrapper = await createJonesUSDCIsolationModeWrapperTraderV2(core, jonesUSDCRegistry, factory);
-    priceOracle = await createJonesUSDCPriceOracle(core, jonesUSDCRegistry, factory, unwrapper);
+    await createRoleAndWhitelistTrader(core, unwrapper, wrapper);
+    priceOracle = await createJonesUSDCPriceOracle(core, jonesUSDCRegistry, factory);
+
+    await disableInterestAccrual(core, core.marketIds.usdc);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
@@ -104,13 +103,9 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
-    await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-      .mintAndStakeGlp(core.usdc.address, usableUsdcAmount, 0, 0);
-    await core.plutusEcosystem!.sGlp.connect(core.hhUser1)
-      .approve(core.plutusEcosystem!.plvGlpRouter.address, glpAmount);
-    await core.plutusEcosystem!.plvGlpRouter.connect(core.hhUser1).deposit(glpAmount);
-    await core.plutusEcosystem!.plvGlp.connect(core.hhUser1).approve(vault.address, amountWei);
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
+    await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
+    await core.jonesEcosystem!.jUSDC.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
@@ -139,18 +134,17 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
         BYTES_EMPTY,
       );
 
+      await core.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      const result = await core.dolomiteMargin.connect(core.hhUser5).operate([defaultAccount], actions);
+
+      // jUSDC's value goes up every second. To get the correct amountOut, we need to use the same block #
       const amountOut = await wrapper.getExchangeCost(
         core.usdc.address,
         factory.address,
         usableUsdcAmount,
         BYTES_EMPTY,
-      );
-
-      await core.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await core.dolomiteMargin.connect(core.hhUser5).operate(
-        [defaultAccount],
-        actions,
+        { blockTag: result.blockNumber },
       );
 
       const expectedTotalBalance = amountWei.add(amountOut);
@@ -243,47 +237,45 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
 
   describe('#jonesUSDCRegistry', () => {
     it('should work', async () => {
-      expect(await wrapper.PLUTUS_VAULT_REGISTRY()).to.eq(jonesUSDCRegistry.address);
-    });
-  });
-
-  describe('#gmxRegistry', () => {
-    it('should work', async () => {
-      expect(await wrapper.GMX_REGISTRY()).to.eq(gmxRegistry.address);
+      expect(await wrapper.JONES_USDC_REGISTRY()).to.eq(jonesUSDCRegistry.address);
     });
   });
 
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
+      const receiptToken = core.jonesEcosystem!.usdcReceiptToken.connect(core.hhUser1);
+      const receiptTokenExchangeRateNumerator = await receiptToken.totalAssets();
+      const jUSDCExchangeRateNumerator = await underlyingToken.totalAssets();
+      const receiptTokenExchangeRateDenominator = await await receiptToken.totalSupply();
+      const jUSDCExchangeRateDenominator = await underlyingToken.totalSupply();
+
       const inputAmount = usableUsdcAmount;
-      const glpAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-        .callStatic
-        .mintAndStakeGlp(
-          core.usdc.address,
-          inputAmount,
-          1,
-          1,
-        );
-      const expectedAmount = glpAmount.mul(plvGlpExchangeRateDenominator).div(plvGlpExchangeRateNumerator);
+      const expectedAmount = inputAmount
+        .mul(receiptTokenExchangeRateDenominator)
+        .div(receiptTokenExchangeRateNumerator)
+        .mul(jUSDCExchangeRateDenominator)
+        .div(jUSDCExchangeRateNumerator);
       expect(await wrapper.getExchangeCost(core.usdc.address, factory.address, inputAmount, BYTES_EMPTY))
         .to
         .eq(expectedAmount);
     });
 
     it('should work for 10 random numbers, as long as balance is sufficient', async () => {
+      const receiptToken = core.jonesEcosystem!.usdcReceiptToken.connect(core.hhUser1);
+      const receiptTokenExchangeRateNumerator = await receiptToken.totalAssets();
+      const jUSDCExchangeRateNumerator = await underlyingToken.totalAssets();
+      const receiptTokenExchangeRateDenominator = await await receiptToken.totalSupply();
+      const jUSDCExchangeRateDenominator = await underlyingToken.totalSupply();
+
       for (let i = 0; i < 10; i++) {
         // create a random number from 1 to 99 and divide by 101 (making the number, at-most, slightly smaller)
         const randomNumber = BigNumber.from(Math.floor(Math.random() * 99) + 1);
         const weirdAmount = usableUsdcAmount.mul(randomNumber).div(101);
-        const glpAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-          .callStatic
-          .mintAndStakeGlp(
-            core.usdc.address,
-            weirdAmount,
-            1,
-            1,
-          );
-        const expectedAmount = glpAmount.mul(plvGlpExchangeRateDenominator).div(plvGlpExchangeRateNumerator);
+        const expectedAmount = weirdAmount
+          .mul(receiptTokenExchangeRateDenominator)
+          .div(receiptTokenExchangeRateNumerator)
+          .mul(jUSDCExchangeRateDenominator)
+          .div(jUSDCExchangeRateNumerator);
         expect(await wrapper.getExchangeCost(core.usdc.address, factory.address, weirdAmount, BYTES_EMPTY))
           .to
           .eq(expectedAmount);

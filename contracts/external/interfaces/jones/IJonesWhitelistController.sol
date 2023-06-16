@@ -38,7 +38,13 @@ interface IJonesWhitelistController {
 
     function createRole(bytes32 _roleName, RoleInfo memory _roleInfo) external;
 
+    function addToRole(bytes32 _roleName, address _account) external;
+
+    function removeUserFromRole(address _account) external;
+
     function addToWhitelistContracts(address _account) external;
+
+    function removeFromWhitelistContracts(address _account) external;
 
     function getUserRole(address _role) external view returns (bytes32);
 
