@@ -28,7 +28,7 @@ import { CoreProtocol, setupCoreProtocol, setupWETHBalance } from '../../utils/s
 const USDC_PRICE = BigNumber.from('1000000000000000000000000000000');
 const solidNumber = '321';
 const liquidNumber = '123';
-const ONE_BPS = BigNumber.from('1');
+const FIFTY_BPS = BigNumber.from('50');
 
 describe('LiquidatorProxyV2WithExternalLiquidity', () => {
   let core: CoreProtocol;
@@ -58,10 +58,7 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
     liquidatorProxy = core.liquidatorProxyV2!.connect(solidAccount);
     const owner = await impersonate(governance.address, true);
 
-    if (!(await dolomiteMargin.getIsGlobalOperator(liquidatorProxy.address))) {
-      await dolomiteMargin.connect(owner).ownerSetGlobalOperator(liquidatorProxy.address, true);
-      expect(await dolomiteMargin.getIsGlobalOperator(liquidatorProxy.address)).to.eql(true);
-    }
+    expect(await dolomiteMargin.getIsGlobalOperator(liquidatorProxy.address)).to.eql(true);
 
     testPriceOracle = await createContractWithAbi<TestPriceOracle>(
       TestPriceOracle__factory.abi,
@@ -148,14 +145,14 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
         solidAccountStruct,
         core.marketIds.usdc,
         outputAmount.sub(owedAmountWei),
-        ONE_BPS,
+        FIFTY_BPS,
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
         liquidAccountStruct,
         core.marketIds.weth,
         heldAmountWei.sub(inputAmount),
-        ONE_BPS,
+        FIFTY_BPS,
       );
       await expectProtocolBalance(
         core,
