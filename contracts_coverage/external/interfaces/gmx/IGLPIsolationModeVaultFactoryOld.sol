@@ -36,12 +36,6 @@ interface IGLPIsolationModeVaultFactoryOld is IIsolationModeVaultFactoryOld {
     // ==================== Functions ====================
     // ===================================================
 
-    function initialize(address[] calldata _tokenConverters) external;
-
-    function setUserVaultImplementation(address _userVaultImplementation) external;
-
-    function setIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) external;
-
     function createVaultAndAcceptFullAccountTransfer(address _sender) external returns (address);
 
     function setGmxRegistry(address _gmxRegistry) external;

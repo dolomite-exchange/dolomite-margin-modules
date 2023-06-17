@@ -42,8 +42,8 @@ export async function deployContractAndSave(
 
   const usedContractName = contractRename ?? contractName;
   if (file[usedContractName]?.[chainId.toString()]) {
-    console.log(`Contract ${usedContractName} has already been deployed to chainId ${chainId}. Skipping...`);
     const contract = file[usedContractName][chainId.toString()];
+    console.log(`Contract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`);
     if (!contract.isVerified) {
       await prettyPrintAndVerifyContract(file, chainId, usedContractName, args);
     }

@@ -29,8 +29,8 @@
   },
   "GLPIsolationModeTokenVaultV1": {
     "42161": {
-      "address": "0xDc525ABaDae4C27B40C462faE8A1E7011e3F1531",
-      "transaction": "0x9b2e0e6543c439bbc09fad1402c03065f3682fd1c6c353e97b8441e09b0ff814",
+      "address": "0x0dbbd1dA9bF685b079d8d7e1575a5df0d305Eb4c",
+      "transaction": "0x260f768cf3bf49fc80c8ce595f3138a396d0d53dc7a9b5774f9b3d10cf6dc8c3",
       "isVerified": true
     }
   },
@@ -99,8 +99,8 @@
   },
   "PlutusVaultGLPIsolationModeTokenVaultV1": {
     "42161": {
-      "address": "0x978D4694F02474FAeF4e1D7aC19038968066f8Aa",
-      "transaction": "0x1a42636f98e5dfa9048fd88a08f4112181bfba143be7f73438c3b8eb38c3efb2",
+      "address": "0xE8E7E8B6B5104716502e5eFfbA9735775F7bc9E9",
+      "transaction": "0x235d5f53f18e793b4a1fa58ea6b7677ed59019d01461a23996a262c63dd047e5",
       "isVerified": true
     }
   },

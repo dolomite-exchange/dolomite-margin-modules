@@ -98,7 +98,16 @@ describe('GLPIsolationModeTokenVaultV1', () => {
     if (daysToWait > 0) {
       await waitDays(daysToWait);
     }
-    await vault.handleRewards(true, false, true, false, true, true, false, accountNumber);
+    await vault.handleRewardsWithSpecificDepositAccountNumber(
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      accountNumber,
+    );
   }
 
   describe('#handleRewards', () => {
@@ -124,7 +133,15 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       await setupGmxStakingAndEsGmxVesting();
 
       await waitDays(30);
-      await vault.handleRewards(true, false, true, false, true, true, false, accountNumber);
+      await vault.handleRewards(
+        true,
+        false,
+        true,
+        false,
+        true,
+        true,
+        false,
+      );
 
       expect((await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).gt(esGmxAmount)).to.eq(true);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
@@ -140,7 +157,15 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       await vault.vestGmx(esGmxAmount);
 
       await waitDays(366);
-      await vault.handleRewards(true, false, true, false, true, true, false, accountNumber);
+      await vault.handleRewards(
+        true,
+        false,
+        true,
+        false,
+        true,
+        true,
+        false,
+      );
 
       // GMX rewards should be passed along to the vault owner if they're NOT staked
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
@@ -152,7 +177,15 @@ describe('GLPIsolationModeTokenVaultV1', () => {
 
       // Don't stake anything on the first go-around. We need the esGMX to initialize vesting
       await waitDays(30);
-      await vault.handleRewards(true, false, true, false, false, true, false, accountNumber);
+      await vault.handleRewards(
+        true,
+        false,
+        true,
+        false,
+        false,
+        true,
+        false,
+      );
 
       // The user has not vested any esGMX into GMX, so the balance should be 0
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
@@ -174,7 +207,15 @@ describe('GLPIsolationModeTokenVaultV1', () => {
 
       await waitDays(366);
       const sbfGmxBalanceBefore = await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address);
-      await vault.handleRewards(true, true, true, true, true, true, false, accountNumber);
+      await vault.handleRewards(
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+      );
       const sbfGmxBalanceAfter = await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address);
 
       // the esGMX should have been converted to GMX and staked into sbfGMX
@@ -194,7 +235,15 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       await setupGmxStakingAndEsGmxVesting();
 
       await waitDays(30);
-      await vault.handleRewards(true, false, true, false, true, true, true, accountNumber);
+      await vault.handleRewards(
+        true,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+      );
 
       expect((await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).gt(ZERO_BI)).to.eq(true);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
@@ -214,7 +263,15 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       await setupGmxStakingAndEsGmxVesting();
 
       await waitDays(30);
-      await vault.handleRewards(false, false, false, false, false, false, false, accountNumber);
+      await vault.handleRewards(
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+      );
 
       expect(await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
@@ -232,14 +289,31 @@ describe('GLPIsolationModeTokenVaultV1', () => {
 
     it('should fail when reentrancy is triggered', async () => {
       await expectThrow(
-        vault.callHandleRewardsAndTriggerReentrancy(false, false, false, false, false, false, false, accountNumber),
+        vault.callHandleRewardsAndTriggerReentrancy(
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+        ),
         'IsolationModeTokenVaultV1: Reentrant call',
       );
     });
 
     it('should fail when not called by vault owner', async () => {
       await expectThrow(
-        vault.connect(core.hhUser2).handleRewards(false, false, false, false, false, false, false, accountNumber),
+        vault.connect(core.hhUser2)
+          .handleRewards(
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+          ),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
@@ -249,7 +323,237 @@ describe('GLPIsolationModeTokenVaultV1', () => {
 
       await waitDays(30);
       await expectThrow(
-        vault.handleRewards(true, false, true, false, true, false, true, accountNumber),
+        vault.handleRewards(true, false, true, false, true, false, true),
+        'GLPIsolationModeTokenVaultV1: Can only deposit ETH if claiming',
+      );
+    });
+  });
+
+  describe('#handleRewardsWithSpecificDepositAccountNumber', () => {
+    const accountNumber = BigNumber.from(123);
+    async function setupGmxStakingAndEsGmxVesting() {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, vault);
+      await vault.stakeGmx(gmxAmount);
+
+      expect(await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      // The user has not vested any esGMX into GMX, so the balance should be 0
+      expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      expect((await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address)).gte(gmxAmount)).to.eq(true);
+      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.weth.balanceOf(core.hhUser1.address)).to.be.eq(ZERO_BI);
+    }
+
+    it('should work when assets are claimed and not staked', async () => {
+      await setupGmxStakingAndEsGmxVesting();
+
+      await waitDays(30);
+      await vault.handleRewardsWithSpecificDepositAccountNumber(
+        true,
+        false,
+        true,
+        false,
+        true,
+        true,
+        false,
+        accountNumber,
+      );
+
+      expect((await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).gt(esGmxAmount)).to.eq(true);
+      expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      // The user has not vested any esGMX into GMX, so the balance should be 0
+      expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await core.weth.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
+
+      await vault.vestGlp(esGmxAmount);
+      await vault.vestGmx(esGmxAmount);
+
+      await waitDays(366);
+      await vault.handleRewardsWithSpecificDepositAccountNumber(
+        true,
+        false,
+        true,
+        false,
+        true,
+        true,
+        false,
+        accountNumber,
+      );
+
+      // GMX rewards should be passed along to the vault owner if they're NOT staked
+      expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
+    });
+
+    it('should work when assets are claimed and staked', async () => {
+      await setupGmxStakingAndEsGmxVesting();
+
+      // Don't stake anything on the first go-around. We need the esGMX to initialize vesting
+      await waitDays(30);
+      await vault.handleRewardsWithSpecificDepositAccountNumber(
+        true,
+        false,
+        true,
+        false,
+        false,
+        true,
+        false,
+        accountNumber,
+      );
+
+      // The user has not vested any esGMX into GMX, so the balance should be 0
+      expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await core.weth.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
+
+      const glpVestableAmount = await core.gmxEcosystem!.vGlp.getMaxVestableAmount(vault.address);
+      const gmxVestableAmount = await core.gmxEcosystem!.vGmx.getMaxVestableAmount(vault.address);
+      expect(glpVestableAmount.gt(ZERO_BI)).to.eq(true);
+      expect(gmxVestableAmount.gt(ZERO_BI)).to.eq(true);
+
+      await vault.vestGlp(glpVestableAmount);
+      await vault.vestGmx(gmxVestableAmount);
+      expect(await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+
+      const stakedGmx = await core.gmxEcosystem!.vGmx.pairAmounts(vault.address);
+
+      await waitDays(366);
+      const sbfGmxBalanceBefore = await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address);
+      await vault.handleRewardsWithSpecificDepositAccountNumber(
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        accountNumber,
+      );
+      const sbfGmxBalanceAfter = await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address);
+
+      // the esGMX should have been converted to GMX and staked into sbfGMX
+      expect((await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address)).gt(esGmxAmount.add(gmxAmount).sub(stakedGmx)))
+        .to
+        .eq(true);
+      expect(await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      // GMX rewards should be passed along to the vault as sbfGMX if they're staked
+      expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(sbfGmxBalanceAfter.gt(sbfGmxBalanceBefore)).to.eq(true);
+    });
+
+    it('should work when assets are claimed and not staked and deposited into Dolomite', async () => {
+      await setupGmxStakingAndEsGmxVesting();
+
+      await waitDays(30);
+      await vault.handleRewardsWithSpecificDepositAccountNumber(
+        true,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        accountNumber,
+      );
+
+      expect((await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).gt(ZERO_BI)).to.eq(true);
+      expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      // The user has not vested any esGMX into GMX, so the balance should be 0
+      expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      const account = { owner: core.hhUser1.address, number: accountNumber };
+      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.weth.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      const balance2 = await core.dolomiteMargin.getAccountWei(account, core.marketIds.weth);
+      expect(balance2.sign).to.eq(true);
+      expect(balance2.value.eq(ZERO_BI)).to.eq(false);
+    });
+
+    it('should work when assets are not claimed and not staked', async () => {
+      await setupGmxStakingAndEsGmxVesting();
+
+      await waitDays(30);
+      await vault.handleRewardsWithSpecificDepositAccountNumber(
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        accountNumber,
+      );
+
+      expect(await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      // The user has not vested any esGMX into GMX, so the balance should be 0
+      expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+
+      const account = { owner: core.hhUser1.address, number: accountNumber };
+      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.weth.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      const balance2 = await core.dolomiteMargin.getAccountWei(account, core.marketIds.weth);
+      expect(balance2.sign).to.eq(false);
+      expect(balance2.value).to.eq(ZERO_BI);
+    });
+
+    it('should fail when reentrancy is triggered', async () => {
+      await expectThrow(
+        vault.callHandleRewardsWithSpecificDepositAccountNumberAndTriggerReentrancy(
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          accountNumber,
+        ),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
+    });
+
+    it('should fail when not called by vault owner', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser2)
+          .handleRewardsWithSpecificDepositAccountNumber(
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            accountNumber,
+          ),
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when attempting to deposit WETH when not claiming', async () => {
+      await setupGmxStakingAndEsGmxVesting();
+
+      await waitDays(30);
+      await expectThrow(
+        vault.handleRewardsWithSpecificDepositAccountNumber(true, false, true, false, true, false, true, accountNumber),
         'GLPIsolationModeTokenVaultV1: Can only deposit ETH if claiming',
       );
     });

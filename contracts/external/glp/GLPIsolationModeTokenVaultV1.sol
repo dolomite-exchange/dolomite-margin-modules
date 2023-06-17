@@ -70,6 +70,31 @@ contract GLPIsolationModeTokenVaultV1 is
         bool _shouldStakeEsGmx,
         bool _shouldStakeMultiplierPoints,
         bool _shouldClaimWeth,
+        bool _shouldDepositWethIntoDolomite
+    )
+    external
+    override
+    nonReentrant
+    onlyVaultOwner(msg.sender) {
+        _handleRewards(
+            _shouldClaimGmx,
+            _shouldStakeGmx,
+            _shouldClaimEsGmx,
+            _shouldStakeEsGmx,
+            _shouldStakeMultiplierPoints,
+            _shouldClaimWeth,
+            _shouldDepositWethIntoDolomite,
+            /* _depositAccountNumberForWeth = */ 0
+        );
+    }
+
+    function handleRewardsWithSpecificDepositAccountNumber(
+        bool _shouldClaimGmx,
+        bool _shouldStakeGmx,
+        bool _shouldClaimEsGmx,
+        bool _shouldStakeEsGmx,
+        bool _shouldStakeMultiplierPoints,
+        bool _shouldClaimWeth,
         bool _shouldDepositWethIntoDolomite,
         uint256 _depositAccountNumberForWeth
     )
@@ -77,49 +102,16 @@ contract GLPIsolationModeTokenVaultV1 is
     override
     nonReentrant
     onlyVaultOwner(msg.sender) {
-        Require.that(
-            (!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
-            _FILE,
-            "Can only deposit ETH if claiming"
-        );
-
-        if (_shouldStakeGmx) {
-            // we don't know how much GMX will be staked, so we have to approve all
-            _approveGmxForStaking(gmx(), type(uint256).max);
-        }
-        gmxRewardsRouter().handleRewards(
+        _handleRewards(
             _shouldClaimGmx,
             _shouldStakeGmx,
             _shouldClaimEsGmx,
             _shouldStakeEsGmx,
             _shouldStakeMultiplierPoints,
             _shouldClaimWeth,
-            /* _shouldConvertWethToEth = */ false
+            _shouldDepositWethIntoDolomite,
+            _depositAccountNumberForWeth
         );
-
-        if (_shouldStakeGmx) {
-            // we can reset the allowance back to 0 here
-            _approveGmxForStaking(gmx(), 0);
-        } else {
-            // If the user isn't staking GMX, transfer it to the vault owner
-            _withdrawAllGmx(msg.sender);
-        }
-
-        if (_shouldClaimWeth) {
-            address factory = VAULT_FACTORY();
-            address weth = IGLPIsolationModeVaultFactory(factory).WETH();
-            uint256 wethAmountWei = IERC20(weth).balanceOf(address(this));
-            if (_shouldDepositWethIntoDolomite) {
-                IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), wethAmountWei);
-                IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                    _depositAccountNumberForWeth,
-                    IGLPIsolationModeVaultFactory(factory).WETH_MARKET_ID(),
-                    wethAmountWei
-                );
-            } else {
-                IERC20(weth).safeTransfer(msg.sender, wethAmountWei);
-            }
-        }
     }
 
     function stakeGmx(uint256 _amount) external override onlyVaultOwner(msg.sender) {
@@ -303,6 +295,61 @@ contract GLPIsolationModeTokenVaultV1 is
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
+
+    function _handleRewards(
+        bool _shouldClaimGmx,
+        bool _shouldStakeGmx,
+        bool _shouldClaimEsGmx,
+        bool _shouldStakeEsGmx,
+        bool _shouldStakeMultiplierPoints,
+        bool _shouldClaimWeth,
+        bool _shouldDepositWethIntoDolomite,
+        uint256 _depositAccountNumberForWeth
+    ) internal {
+        Require.that(
+            (!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
+            _FILE,
+            "Can only deposit ETH if claiming"
+        );
+
+        if (_shouldStakeGmx) {
+            // we don't know how much GMX will be staked, so we have to approve all
+            _approveGmxForStaking(gmx(), type(uint256).max);
+        }
+        gmxRewardsRouter().handleRewards(
+            _shouldClaimGmx,
+            _shouldStakeGmx,
+            _shouldClaimEsGmx,
+            _shouldStakeEsGmx,
+            _shouldStakeMultiplierPoints,
+            _shouldClaimWeth,
+            /* _shouldConvertWethToEth = */ false
+        );
+
+        if (_shouldStakeGmx) {
+            // we can reset the allowance back to 0 here
+            _approveGmxForStaking(gmx(), 0);
+        } else {
+            // If the user isn't staking GMX, transfer it to the vault owner
+            _withdrawAllGmx(msg.sender);
+        }
+
+        if (_shouldClaimWeth) {
+            address factory = VAULT_FACTORY();
+            address weth = IGLPIsolationModeVaultFactory(factory).WETH();
+            uint256 wethAmountWei = IERC20(weth).balanceOf(address(this));
+            if (_shouldDepositWethIntoDolomite) {
+                IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), wethAmountWei);
+                IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
+                    _depositAccountNumberForWeth,
+                    IGLPIsolationModeVaultFactory(factory).WETH_MARKET_ID(),
+                    wethAmountWei
+                );
+            } else {
+                IERC20(weth).safeTransfer(msg.sender, wethAmountWei);
+            }
+        }
+    }
 
     function _stakeGmx(IERC20 _gmx, uint256 _amount) internal {
         _approveGmxForStaking(_gmx, _amount);

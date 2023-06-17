@@ -44,13 +44,49 @@ contract TestGLPIsolationModeTokenVaultV1 is GLPIsolationModeTokenVaultV1 {
         bool _shouldStakeEsGmx,
         bool _shouldStakeMultiplierPoints,
         bool _shouldClaimWeth,
+        bool _shouldDepositWethIntoDolomite
+    ) external nonReentrant {
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool isSuccessful, bytes memory result) = address(this).delegatecall(
+            abi.encodeWithSignature(
+                "handleRewards(bool,bool,bool,bool,bool,bool,bool)",
+                _shouldClaimGmx,
+                _shouldStakeGmx,
+                _shouldClaimEsGmx,
+                _shouldStakeEsGmx,
+                _shouldStakeMultiplierPoints,
+                _shouldClaimWeth,
+                _shouldDepositWethIntoDolomite
+            )
+        );
+        if (!isSuccessful) {
+            if (result.length < 68) {
+                revert("No reversion message!");
+            } else {
+                // solhint-disable-next-line no-inline-assembly
+                assembly {
+                    result := add(result, 0x04) // Slice the sighash.
+                }
+            }
+            (string memory errorMessage) = abi.decode(result, (string));
+            revert(errorMessage);
+        }
+    }
+
+    function callHandleRewardsWithSpecificDepositAccountNumberAndTriggerReentrancy(
+        bool _shouldClaimGmx,
+        bool _shouldStakeGmx,
+        bool _shouldClaimEsGmx,
+        bool _shouldStakeEsGmx,
+        bool _shouldStakeMultiplierPoints,
+        bool _shouldClaimWeth,
         bool _shouldDepositWethIntoDolomite,
         uint256 _depositAccountNumberForWeth
     ) external nonReentrant {
         // solhint-disable-next-line avoid-low-level-calls
         (bool isSuccessful, bytes memory result) = address(this).delegatecall(
             abi.encodeWithSignature(
-                "handleRewards(bool,bool,bool,bool,bool,bool,bool,uint256)",
+                "handleRewardsWithSpecificDepositAccountNumber(bool,bool,bool,bool,bool,bool,bool,uint256)",
                 _shouldClaimGmx,
                 _shouldStakeGmx,
                 _shouldClaimEsGmx,

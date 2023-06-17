@@ -9,7 +9,7 @@
   "scripts": {
     "build": "hardhat --max-memory 16384 compile && hardhat --max-memory 16384 typechain",
     "clean": "hardhat clean",
-    "coverage": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/**/!(*Liquidation)*.ts\" --network hardhat",
+    "coverage": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/**/!(*Liquidation*|*LiquidatorProxyV2*)*.ts\" --network hardhat",
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy-atlas-ecosystem.ts",
     "deploy:deprecate-trader-v1": "hardhat --network arbitrum_one run scripts/deploy-deprecate-trader-v1.ts",
@@ -25,7 +25,7 @@
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "test": "hardhat --network hardhat test",
     "sort:contracts": "hardhat --network hardhat run scripts/sort-contract.ts",
-    "test:specific": "hardhat --network hardhat test test/external/jones/usdc/JonesUSDCIsolationModeLiquidationWithUnwrapperV2.ts",
+    "test:specific": "hardhat --network hardhat test test/external/glp/GLPIsolationModeTokenVaultV1.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
   "repository": {

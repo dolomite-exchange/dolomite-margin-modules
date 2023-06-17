@@ -44,6 +44,7 @@ export const config: HardhatUserConfig = {
     [NetworkName.ArbitrumOne]: {
       chainId: 42161,
       url: arbitrumOneWeb3Url,
+      gas: 50_000_000, // 50M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     [NetworkName.ArbitrumGoerli]: {

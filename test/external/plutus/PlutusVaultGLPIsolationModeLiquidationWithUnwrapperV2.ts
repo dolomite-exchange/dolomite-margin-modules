@@ -112,10 +112,14 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
       .to
       .eq(heldAmountWei);
 
-    await core.plutusEcosystem!.dolomiteWhitelistForGlpDepositor.connect(core.governance)
+    await core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.connect(core.governance)
       .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
-    await core.plutusEcosystem!.dolomiteWhitelistForPlutusChef.connect(core.governance)
+    await core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.connect(core.governance)
       .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
+    await core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.connect(core.governance)
+      .ownerSetPlvGlpWrapperTrader(wrapper.address);
+    await core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.connect(core.governance)
+      .ownerSetPlvGlpWrapperTrader(wrapper.address);
 
     snapshotId = await snapshot();
   });

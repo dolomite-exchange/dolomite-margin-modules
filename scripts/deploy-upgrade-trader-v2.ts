@@ -30,6 +30,11 @@ async function main() {
     getMagicGLPWrapperTraderV2ConstructorParams(core),
   );
 
+  const glpTokenVaultAddress = await deployContractAndSave(
+    Number(network),
+    'GLPIsolationModeTokenVaultV1',
+    []
+  );
   const glpUnwrapperV2Address = await deployContractAndSave(
     Number(network),
     'GLPIsolationModeUnwrapperTraderV2',
@@ -49,6 +54,11 @@ async function main() {
     ),
   );
 
+  const plvGlpTokenVaultAddress = await deployContractAndSave(
+    Number(network),
+    'PlutusVaultGLPIsolationModeTokenVaultV1',
+    []
+  );
   const plvGlpUnwrapperV2Address = await deployContractAndSave(
     Number(network),
     'PlutusVaultGLPIsolationModeUnwrapperTraderV2',
@@ -95,6 +105,44 @@ async function main() {
       true,
     ),
     'plvGlpIsolationModeFactory.ownerSetIsTokenConverterTrusted(plvGlpWrapperV2, true)',
+  );
+
+  await prettyPrintEncodedData(
+    core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.populateTransaction.ownerSetPlvGlpUnwrapperTrader(
+      plvGlpUnwrapperV2Address,
+    ),
+    'dolomiteWhitelistForGlpDepositor.ownerSetPlvGlpUnwrapperTrader(plvGlpUnwrapperV2)',
+  );
+  await prettyPrintEncodedData(
+    core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.populateTransaction.ownerSetPlvGlpWrapperTrader(
+      plvGlpWrapperV2Address,
+    ),
+    'dolomiteWhitelistForGlpDepositor.ownerSetPlvGlpWrapperTrader(plvGlpWrapperV2)',
+  );
+  await prettyPrintEncodedData(
+    core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.populateTransaction.ownerSetPlvGlpUnwrapperTrader(
+      plvGlpUnwrapperV2Address,
+    ),
+    'dolomiteWhitelistForPlutusChef.ownerSetPlvGlpUnwrapperTrader(plvGlpUnwrapperV2)',
+  );
+  await prettyPrintEncodedData(
+    core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.populateTransaction.ownerSetPlvGlpWrapperTrader(
+      plvGlpWrapperV2Address,
+    ),
+    'dolomiteWhitelistForPlutusChef.ownerSetPlvGlpWrapperTrader(plvGlpWrapperV2)',
+  );
+
+  await prettyPrintEncodedData(
+    core.gmxEcosystem!.live.glpIsolationModeFactory.populateTransaction.setUserVaultImplementation(
+      glpTokenVaultAddress,
+    ),
+    'glpIsolationModeFactory.setUserVaultImplementation(glpTokenVault)',
+  );
+  await prettyPrintEncodedData(
+    core.plutusEcosystem!.live.plvGlpIsolationModeFactory.populateTransaction.ownerSetUserVaultImplementation(
+      plvGlpTokenVaultAddress,
+    ),
+    'plvGlpIsolationModeFactory.ownerSetUserVaultImplementation(plvGlpTokenVault)',
   );
 }
 

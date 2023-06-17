@@ -52,7 +52,7 @@ interface IGLPIsolationModeTokenVaultV1 {
      * @param  _depositAccountNumberForWeth     The account number to which the WETH tokens should be deposited if
      *                                          the user decides to deposit them into Dolomite.
      */
-    function handleRewards(
+    function handleRewardsWithSpecificDepositAccountNumber(
         bool _shouldClaimGmx,
         bool _shouldStakeGmx,
         bool _shouldClaimEsGmx,
@@ -61,6 +61,21 @@ interface IGLPIsolationModeTokenVaultV1 {
         bool _shouldClaimWeth,
         bool _shouldDepositWethIntoDolomite,
         uint256 _depositAccountNumberForWeth
+    )
+    external;
+
+    /**
+     * @notice  The same function as #handleRewardsWithSpecificDepositAccountNumber but defaults
+     *          `_depositAccountNumberForWeth` to `0`.
+     */
+    function handleRewards(
+        bool _shouldClaimGmx,
+        bool _shouldStakeGmx,
+        bool _shouldClaimEsGmx,
+        bool _shouldStakeEsGmx,
+        bool _shouldStakeMultiplierPoints,
+        bool _shouldClaimWeth,
+        bool _shouldDepositWethIntoDolomite
     )
     external;
 

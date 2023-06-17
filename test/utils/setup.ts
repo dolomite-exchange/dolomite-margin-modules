@@ -224,14 +224,14 @@ interface PendleEcosystem {
 }
 
 interface PlutusEcosystem {
-  dolomiteWhitelistForGlpDepositor: DolomiteCompatibleWhitelistForPlutusDAO;
-  dolomiteWhitelistForPlutusChef: DolomiteCompatibleWhitelistForPlutusDAO;
   plvGlp: IERC4626;
   plsToken: IERC20;
   plvGlpFarm: IPlutusVaultGLPFarm;
   plvGlpRouter: IPlutusVaultGLPRouter;
   sGlp: IERC20;
   live: {
+    dolomiteWhitelistForGlpDepositor: DolomiteCompatibleWhitelistForPlutusDAO;
+    dolomiteWhitelistForPlutusChef: DolomiteCompatibleWhitelistForPlutusDAO;
     plutusVaultRegistry: PlutusVaultRegistry;
     plvGlpIsolationModeFactory: IPlutusVaultGLPIsolationModeVaultFactory;
     plvGlpIsolationModeUnwrapperTraderV1: PlutusVaultGLPIsolationModeUnwrapperTraderV1;
@@ -702,14 +702,6 @@ async function createPlutusEcosystem(
 
   const sGlpAddressForPlutus = '0x2F546AD4eDD93B956C8999Be404cdCAFde3E89AE';
   return {
-    dolomiteWhitelistForGlpDepositor: getContract(
-      (Deployments.DolomiteWhitelistForGlpDepositorV2 as any)[network]?.address,
-      address => DolomiteCompatibleWhitelistForPlutusDAO__factory.connect(address, signer),
-    ),
-    dolomiteWhitelistForPlutusChef: getContract(
-      (Deployments.DolomiteWhitelistForPlutusChef as any)[network]?.address,
-      address => DolomiteCompatibleWhitelistForPlutusDAO__factory.connect(address, signer),
-    ),
     plvGlp: getContract(PLV_GLP_MAP[network] as string, address => IERC4626__factory.connect(address, signer)),
     plsToken: getContract(PLS_TOKEN_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     plvGlpFarm: getContract(
@@ -722,6 +714,14 @@ async function createPlutusEcosystem(
     ),
     sGlp: getContract(sGlpAddressForPlutus, address => IERC20__factory.connect(address, signer)),
     live: {
+      dolomiteWhitelistForGlpDepositor: getContract(
+        (Deployments.DolomiteWhitelistForGlpDepositorV2 as any)[network]?.address,
+        address => DolomiteCompatibleWhitelistForPlutusDAO__factory.connect(address, signer),
+      ),
+      dolomiteWhitelistForPlutusChef: getContract(
+        (Deployments.DolomiteWhitelistForPlutusChef as any)[network]?.address,
+        address => DolomiteCompatibleWhitelistForPlutusDAO__factory.connect(address, signer),
+      ),
       plutusVaultRegistry: getContract(
         (Deployments.PlutusVaultRegistry as any)[network]?.address,
         PlutusVaultRegistry__factory.connect,
