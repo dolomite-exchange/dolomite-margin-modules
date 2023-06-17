@@ -104,15 +104,17 @@ async function prettyPrintAndVerifyContract(
   }
 }
 
+let counter = 1;
 export async function prettyPrintEncodedData(
   transactionPromise: Promise<PopulatedTransaction>,
   methodName: string,
 ): Promise<void> {
   const transaction = await transactionPromise;
-  console.log(`=================================== ${methodName} ===================================`);
+  console.log(`=================================== ${counter++} - ${methodName} ===================================`);
   console.log('To: ', transaction.to);
   console.log('Data: ', transaction.data);
-  console.log('='.repeat(72 + methodName.length));
+  console.log('='.repeat(76 + methodName.length));
+  console.log(''); // add a new line
 }
 
 export function writeFile(file: any) {

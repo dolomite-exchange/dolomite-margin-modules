@@ -1,3 +1,4 @@
+import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import {
@@ -70,6 +71,11 @@ async function main() {
     'JonesUSDCPriceOracle',
     getJonesUSDCPriceOracleConstructorParams(core, jonesUsdcRegistry, djUSDCToken),
   );
+
+  if ((await jonesUsdcRegistry.unwrapperTrader()) === ADDRESSES.ZERO) {
+    console.log('Initializing unwrapper trader on JonesUSDCRegistry...');
+    await jonesUsdcRegistry.initializeUnwrapperTrader(unwrapper.address);
+  }
 
   await prettyPrintEncodedData(
     core.dolomiteMargin.populateTransaction.ownerAddMarket(

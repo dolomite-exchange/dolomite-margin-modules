@@ -99,8 +99,13 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
 
+    // admin setup
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await core.liquidatorAssetRegistry!.connect(core.governance).ownerAddLiquidatorToAssetWhitelist(
+      underlyingMarketId,
+      core.liquidatorProxyV4.address,
+    );
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -122,11 +127,6 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
     expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, underlyingMarketId)).value)
       .to
       .eq(heldAmountWei);
-
-    await core.liquidatorProxyV3!.connect(core.governance).setMarketIdToTokenUnwrapperForLiquidationMap(
-      underlyingMarketId,
-      unwrapper.address,
-    );
 
     snapshotId = await snapshot();
   });
@@ -222,8 +222,8 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         ZERO_BI,
       );
 
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, factory.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, core.weth.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.weth.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUSDC.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
@@ -318,8 +318,8 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         ZERO_BI,
       );
 
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, factory.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV3!.address, core.weth.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.weth.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUSDC.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });

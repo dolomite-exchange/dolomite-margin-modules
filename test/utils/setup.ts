@@ -576,7 +576,7 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
     address => IJonesWhitelistController__factory.connect(address, signer),
   );
   return {
-    admin: await impersonate(JONES_ECOSYSTEM_GOVERNOR_MAP[network]!, true),
+    admin: await impersonateOrFallback(JONES_ECOSYSTEM_GOVERNOR_MAP[network]!, true, signer),
     glpAdapter: getContract(
       JONES_GLP_ADAPTER_MAP[network] as string,
       address => IJonesGLPAdapter__factory.connect(address, signer),

@@ -1,6 +1,10 @@
 import { ethers } from 'hardhat';
 import { Network } from 'src/utils/no-deps-constants';
 import {
+  getMagicGLPUnwrapperTraderV2ConstructorParams,
+  getMagicGLPWrapperTraderV2ConstructorParams,
+} from '../src/utils/constructors/abracadabra';
+import {
   getGLPUnwrapperTraderV2ConstructorParams,
   getGLPWrapperTraderV2ConstructorParams,
 } from '../src/utils/constructors/gmx';
@@ -14,6 +18,17 @@ import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
+
+  await deployContractAndSave(
+    Number(network),
+    'MagicGLPUnwrapperTraderV2',
+    getMagicGLPUnwrapperTraderV2ConstructorParams(core),
+  );
+  await deployContractAndSave(
+    Number(network),
+    'MagicGLPWrapperTraderV2',
+    getMagicGLPWrapperTraderV2ConstructorParams(core),
+  );
 
   const glpUnwrapperV2Address = await deployContractAndSave(
     Number(network),
@@ -65,7 +80,7 @@ async function main() {
       glpWrapperV2Address,
       true,
     ),
-    'glpIsolationModeFactory.setIsTokenConverterTrusted(glpWrapperV2Address, true)',
+    'glpIsolationModeFactory.setIsTokenConverterTrusted(glpWrapperV2, true)',
   );
   await prettyPrintEncodedData(
     core.plutusEcosystem!.live.plvGlpIsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(
@@ -79,7 +94,7 @@ async function main() {
       plvGlpWrapperV2Address,
       true,
     ),
-    'plvGlpIsolationModeFactory.ownerSetIsTokenConverterTrusted(plvGlpWrapperV2Address, true)',
+    'plvGlpIsolationModeFactory.ownerSetIsTokenConverterTrusted(plvGlpWrapperV2, true)',
   );
 }
 
