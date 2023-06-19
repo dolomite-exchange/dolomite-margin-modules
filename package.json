@@ -1,5 +1,5 @@
 {
-  "name": "@dolomite-exchange/dolomite-protocol-modules",
+  "name": "@dolomite-exchange/dolomite-margin-modules",
   "version": "0.0.1",
   "description": "Repository uses the DolomiteMargin instance on Arbitrum One for testing new modules and features against the live deployment.",
   "directories": {
