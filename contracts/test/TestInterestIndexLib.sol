@@ -20,10 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { InterestIndexLib } from "../external/lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
-import { InterestIndexLib } from "../external/lib/InterestIndexLib.sol";
 
 
 /**

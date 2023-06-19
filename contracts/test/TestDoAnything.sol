@@ -30,7 +30,7 @@ pragma solidity ^0.8.9;
 contract TestDoAnything {
 
     function callAnything(address _target, bytes memory _data) external {
-        (bool success, bytes memory returnData) = _target.call(_data);
+        (bool success, bytes memory returnData) = _target.call(_data); // solhint-disable-line avoid-low-level-calls
         if (!success) {
             // solhint-disable-next-line no-inline-assembly
             assembly {

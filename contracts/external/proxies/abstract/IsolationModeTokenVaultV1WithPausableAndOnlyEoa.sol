@@ -21,9 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IsolationModeTokenVaultV1WithPausable } from "./IsolationModeTokenVaultV1WithPausable.sol";
-import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
-import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
 
 /**
@@ -48,7 +46,7 @@ abstract contract IsolationModeTokenVaultV1WithPausableAndOnlyEoa is IsolationMo
     function _requireOnlyVaultOwner(address _from) internal override view {
         super._requireOnlyVaultOwner(_from);
         Require.that(
-            _from == tx.origin,
+            _from == tx.origin, // solhint-disable-line avoid-tx-origin
             _FILE,
             "Only EOA can call",
             _from
@@ -58,7 +56,7 @@ abstract contract IsolationModeTokenVaultV1WithPausableAndOnlyEoa is IsolationMo
     function _requireOnlyVaultOwnerOrVaultFactory(address _from) internal override view {
         super._requireOnlyVaultOwnerOrVaultFactory(_from);
         Require.that(
-            _proxySelf().owner() == tx.origin,
+            _proxySelf().owner() == tx.origin, // solhint-disable-line avoid-tx-origin
             _FILE,
             "Vault owner is not an EOA",
             _proxySelf().owner()

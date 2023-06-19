@@ -318,24 +318,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     // ============ Internal Functions ============
 
-    function _requireOnlyVaultOwner(address _from) internal virtual view {
-        Require.that(
-            _from == _proxySelf().owner(),
-            _FILE,
-            "Only owner can call",
-            _from
-        );
-    }
-
-    function _requireOnlyVaultOwnerOrVaultFactory(address _from) internal virtual view {
-        Require.that(
-            _from == address(_proxySelf().owner()) || _from == VAULT_FACTORY(),
-            _FILE,
-            "Only owner or factory can call",
-            _from
-        );
-    }
-
     function _depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -550,6 +532,24 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
             _borrowAccountNumber,
             _marketId,
             _balanceCheckFlag
+        );
+    }
+
+    function _requireOnlyVaultOwner(address _from) internal virtual view {
+        Require.that(
+            _from == _proxySelf().owner(),
+            _FILE,
+            "Only owner can call",
+            _from
+        );
+    }
+
+    function _requireOnlyVaultOwnerOrVaultFactory(address _from) internal virtual view {
+        Require.that(
+            _from == address(_proxySelf().owner()) || _from == VAULT_FACTORY(),
+            _FILE,
+            "Only owner or factory can call",
+            _from
         );
     }
 

@@ -23,6 +23,12 @@ pragma solidity ^0.8.9;
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 
+/**
+ * @title   IDolomiteChef
+ * @author  Dolomite
+ *
+ * Interface for a yield farming contract that's inspired by MasterChef
+ */
 interface IDolomiteChef {
 
     // ==================================================

@@ -22,10 +22,8 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-
 import { DolomiteMarginMath } from "../../protocol/lib/DolomiteMarginMath.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-import { TypesLib } from "../../protocol/lib/TypesLib.sol";
+
 
 
 /**
@@ -40,7 +38,7 @@ library InterestIndexLib {
     // ============ Constants ============
 
     bytes32 private constant _FILE = "InterestIndexLib";
-    uint256 private constant BASE = 1e18;
+    uint256 private constant _BASE = 1e18;
 
     // ============ Functions ============
 
@@ -56,12 +54,12 @@ library InterestIndexLib {
         if (_amountPar.sign) {
             return IDolomiteStructs.Wei({
                 sign: true,
-                value: _amountPar.value.getPartialRoundHalfUp(index.supply, BASE)
+                value: _amountPar.value.getPartialRoundHalfUp(index.supply, _BASE)
             });
         } else {
             return IDolomiteStructs.Wei({
                 sign: false,
-                value: _amountPar.value.getPartialRoundHalfUp(index.borrow, BASE)
+                value: _amountPar.value.getPartialRoundHalfUp(index.borrow, _BASE)
             });
         }
     }
@@ -78,12 +76,12 @@ library InterestIndexLib {
         if (_amountWei.sign) {
             return IDolomiteStructs.Par({
                 sign: true,
-                value: _amountWei.value.getPartialRoundHalfUp(BASE, index.supply)
+                value: _amountWei.value.getPartialRoundHalfUp(_BASE, index.supply)
             });
         } else {
             return IDolomiteStructs.Par({
                 sign: false,
-                value: _amountWei.value.getPartialRoundHalfUp(BASE, index.borrow)
+                value: _amountWei.value.getPartialRoundHalfUp(_BASE, index.borrow)
             });
         }
     }

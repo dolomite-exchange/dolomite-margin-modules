@@ -20,12 +20,19 @@
 
 pragma solidity ^0.8.9;
 
+/**
+ * @title   ILiquidatorAssetRegistry
+ * @author  Dolomite
+ *
+ * Interface for a registry that tracks which assets can be liquidated and by each contract
+ */
 interface ILiquidatorAssetRegistry {
 
     /**
-     * @param _marketId    The market ID of the asset to check
-     * @return  An array of whitelisted liquidators for the asset. An empty array is returned if any liquidator can be
-     *          used for this asset
+     *
+     * @param  _marketId    The market ID of the asset to check
+     * @return              An array of whitelisted liquidators for the asset. An empty array is returned if any
+     *                      liquidator can be used for this asset
      */
     function getLiquidatorsForAsset(
         uint256 _marketId
@@ -33,8 +40,9 @@ interface ILiquidatorAssetRegistry {
     external view returns (address[] memory);
 
     /**
-     * @param _marketId     The market ID of the asset to check
-     * @param _liquidator   The address of the liquidator to check
+     *
+     * @param  _marketId    The market ID of the asset to check
+     * @param  _liquidator  The address of the liquidator to check
      * @return              True if the liquidator is whitelisted for the asset, false otherwise. Returns true if there
      *                      are no whitelisted liquidators for the asset. Should ALWAYS have at least ONE whitelisted
      *                      liquidator for IsolationMode assets.

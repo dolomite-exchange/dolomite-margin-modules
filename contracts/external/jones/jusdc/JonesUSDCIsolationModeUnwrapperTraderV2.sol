@@ -21,9 +21,9 @@
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { JonesUSDCMathLib } from "./JonesUSDCMathLib.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
-import { JonesUSDCMathLib } from "./JonesUSDCMathLib.sol";
 import { ILiquidatorAssetRegistry } from "../../interfaces/ILiquidatorAssetRegistry.sol";
 import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
