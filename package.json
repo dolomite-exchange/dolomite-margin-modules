@@ -1,11 +1,13 @@
 {
   "name": "dolomite-protocol-modules",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Repository uses the DolomiteMargin instance on Arbitrum One for testing new modules and features against the live deployment.",
-  "main": "hardhat.config.ts",
   "directories": {
     "test": "test"
   },
+  "files": [
+    "scripts/deployments.json"
+  ],
   "scripts": {
     "build": "hardhat --max-memory 16384 compile && hardhat --max-memory 16384 typechain",
     "clean": "hardhat clean",
