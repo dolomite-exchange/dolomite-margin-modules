@@ -102,7 +102,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
     // admin setup
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await core.liquidatorAssetRegistry!.connect(core.governance).ownerAddLiquidatorToAssetWhitelist(
+    await core.liquidatorAssetRegistry.connect(core.governance).ownerAddLiquidatorToAssetWhitelist(
       underlyingMarketId,
       core.liquidatorProxyV4.address,
     );

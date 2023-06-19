@@ -22,16 +22,16 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IsolationModeTokenVaultV1WithPausable } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1WithPausableAndOnlyEoa } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithPausableAndOnlyEoa.sol"; // solhint-disable-line max-line-length
 
 
 /**
- * @title   TestIsolationModeTokenVaultV1WithPausable
+ * @title   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa
  * @author  Dolomite
  *
- * @notice  A test contract for the TestIsolationModeTokenVaultV1WithPausable contract.
+ * @notice  A test contract for the TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa contract.
  */
-contract TestIsolationModeTokenVaultV1WithPausable is IsolationModeTokenVaultV1WithPausable {
+contract TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa is IsolationModeTokenVaultV1WithPausableAndOnlyEoa {
     using SafeERC20 for IERC20;
 
     bool private _isExternalRedemptionPaused;

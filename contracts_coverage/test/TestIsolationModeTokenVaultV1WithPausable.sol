@@ -25,8 +25,6 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IsolationModeTokenVaultV1WithPausable } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol"; // solhint-disable-line max-line-length
 
 
-
-
 /**
  * @title   TestIsolationModeTokenVaultV1WithPausable
  * @author  Dolomite

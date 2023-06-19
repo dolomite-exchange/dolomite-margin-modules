@@ -24,7 +24,7 @@ import { IJonesUSDCIsolationModeTokenVaultV1 } from "../../interfaces/jones/IJon
 import { IJonesUSDCIsolationModeVaultFactory } from "../../interfaces/jones/IJonesUSDCIsolationModeVaultFactory.sol";
 import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
 import { IJonesWhitelistController } from "../../interfaces/jones/IJonesWhitelistController.sol";
-import { IsolationModeTokenVaultV1WithPausable } from "../../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1WithPausableAndOnlyEoa } from "../../proxies/abstract/IsolationModeTokenVaultV1WithPausableAndOnlyEoa.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -38,7 +38,7 @@ import { IsolationModeTokenVaultV1WithPausable } from "../../proxies/abstract/Is
  */
 contract JonesUSDCIsolationModeTokenVaultV1 is
     IJonesUSDCIsolationModeTokenVaultV1,
-    IsolationModeTokenVaultV1WithPausable
+    IsolationModeTokenVaultV1WithPausableAndOnlyEoa
 {
     // ==================================================================
     // =========================== Constants ============================

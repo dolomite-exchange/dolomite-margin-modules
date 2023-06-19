@@ -76,34 +76,10 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         bytes calldata _data
     )
     external
+    virtual
     onlyDolomiteMargin(msg.sender)
     onlyDolomiteMarginGlobalOperator(_sender) {
-        Require.that(
-            VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0),
-            _FILE,
-            "Account owner is not a vault",
-            _accountInfo.owner
-        );
-
-        // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
-        // designated recipient
-        (uint256 transferAmount) = abi.decode(_data, (uint256));
-        Require.that(
-            transferAmount > 0,
-            _FILE,
-            "Invalid transfer amount"
-        );
-
-        uint256 underlyingBalanceOf = IIsolationModeTokenVaultV1(_accountInfo.owner).underlyingBalanceOf();
-        Require.that(
-            underlyingBalanceOf >= transferAmount,
-            _FILE,
-            "Insufficient balance",
-            underlyingBalanceOf,
-            transferAmount
-        );
-
-        VAULT_FACTORY.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
+        _callFunction(_sender, _accountInfo, _data);
     }
 
     function exchange(
@@ -268,6 +244,41 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     }
 
     // ============ Internal Functions ============
+
+    function _callFunction(
+        address /* _sender */,
+        IDolomiteStructs.AccountInfo calldata _accountInfo,
+        bytes calldata _data
+    )
+    internal
+    virtual {
+        Require.that(
+            VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0),
+            _FILE,
+            "Account owner is not a vault",
+            _accountInfo.owner
+        );
+
+        // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
+        // designated recipient
+        (uint256 transferAmount) = abi.decode(_data, (uint256));
+        Require.that(
+            transferAmount > 0,
+            _FILE,
+            "Invalid transfer amount"
+        );
+
+        uint256 underlyingBalanceOf = IIsolationModeTokenVaultV1(_accountInfo.owner).underlyingBalanceOf();
+        Require.that(
+            underlyingBalanceOf >= transferAmount,
+            _FILE,
+            "Insufficient balance",
+            underlyingBalanceOf,
+            transferAmount
+        );
+
+        VAULT_FACTORY.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
+    }
 
     /**
      * @notice Performs the exchange from the Isolation Mode's underlying token to `_outputToken`.

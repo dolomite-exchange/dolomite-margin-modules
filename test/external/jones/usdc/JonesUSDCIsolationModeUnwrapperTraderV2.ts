@@ -60,7 +60,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 86413000,
+      blockNumber: 100_000_001,
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.jonesEcosystem!.jUSDC;
@@ -86,6 +86,10 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(
+      underlyingMarketId,
+      core.liquidatorProxyV4.address,
+    );
 
     solidUser = core.hhUser5;
 
@@ -130,6 +134,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
       );
 
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(underlyingMarketId, core.hhUser5.address);
       const result = await core.dolomiteMargin.connect(core.hhUser5).operate(
         [defaultAccount],
         actions,
@@ -151,6 +156,48 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
       const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
       expect(otherBalanceWei.sign).to.eq(true);
       expect(otherBalanceWei.value).to.eq(amountOut);
+    });
+  });
+
+  describe('#callFunction', () => {
+    it('should fail if sender function param is not a valid liquidator', async () => {
+      const impersonator = await impersonate(core.dolomiteMargin.address, true);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser1.address, true);
+      const liquidators = await core.liquidatorAssetRegistry.getLiquidatorsForAsset(underlyingMarketId);
+      expect(liquidators.length).to.eq(1);
+      expect(liquidators[0]).to.eq(core.liquidatorProxyV4.address);
+
+      expect(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
+        underlyingMarketId,
+        core.hhUser1.address,
+      )).to.eq(false);
+      await expectThrow(
+        unwrapper.connect(impersonator).callFunction(
+          core.hhUser1.address,
+          { owner: solidUser.address, number: ZERO_BI },
+          BYTES_EMPTY,
+        ),
+        `JonesUSDCUnwrapperV2: Sender must be a liquidator <${core.hhUser1.address.toLowerCase()}>`,
+      );
+
+      await core.liquidatorAssetRegistry.ownerRemoveLiquidatorFromAssetWhitelist(
+        underlyingMarketId,
+        core.liquidatorProxyV4.address,
+      );
+      expect((await core.liquidatorAssetRegistry.getLiquidatorsForAsset(underlyingMarketId)).length).to.eq(0);
+      expect(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
+        underlyingMarketId,
+        core.hhUser1.address,
+      )).to.eq(true); // returns true because the length is 0
+
+      await expectThrow(
+        unwrapper.connect(impersonator).callFunction(
+          core.hhUser1.address,
+          { owner: solidUser.address, number: ZERO_BI },
+          BYTES_EMPTY,
+        ),
+        `JonesUSDCUnwrapperV2: Sender must be a liquidator <${core.hhUser1.address.toLowerCase()}>`,
+      );
     });
   });
 

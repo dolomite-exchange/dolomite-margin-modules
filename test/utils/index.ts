@@ -3,9 +3,14 @@ import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { config as hardhatConfig, ethers, network as hardhatNetwork } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/src/types/config';
 import { Network, networkToNetworkNameMap } from 'src/utils/no-deps-constants';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
 
 const gasLogger: Record<string, BigNumber> = {};
 const gasLoggerNumberOfCalls: Record<string, number> = {};
+
+export async function increaseToTimestamp(timestamp: number): Promise<void> {
+  await time.increaseTo(timestamp);
+}
 
 /**
  * Gets the most recent block number from the real network, NOT the forked network.
@@ -49,6 +54,22 @@ export async function snapshot(): Promise<string> {
     params: [],
   });
   return result as string;
+}
+
+export async function getLatestBlockNumber(): Promise<number> {
+  const block = await hardhatNetwork.provider.request({
+    method: 'eth_getBlockByNumber',
+    params: ['latest', false],
+  });
+  return Number.parseInt((block as any).number, 16);
+}
+
+export async function getBlockTimestamp(blockNumber: number): Promise<number> {
+  const block = await hardhatNetwork.provider.request({
+    method: 'eth_getBlockByNumber',
+    params: [`0x${blockNumber.toString(16)}`, false],
+  });
+  return Number.parseInt((block as any).timestamp, 16);
 }
 
 /**

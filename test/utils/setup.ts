@@ -267,7 +267,7 @@ export interface CoreProtocol {
   expiry: Expiry;
   gmxEcosystem: GmxEcosystem | undefined;
   jonesEcosystem: JonesEcosystem | undefined;
-  liquidatorAssetRegistry: LiquidatorAssetRegistry | undefined;
+  liquidatorAssetRegistry: LiquidatorAssetRegistry;
   liquidatorProxyV1: LiquidatorProxyV1;
   liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
   liquidatorProxyV2: LiquidatorProxyV2WithExternalLiquidity | undefined;
