@@ -64,7 +64,7 @@ export async function deployContractAndSave(
   };
 
   if (network.name !== 'hardhat') {
-    writeFile(sortFile(file));
+    writeFile(file);
   }
 
   await prettyPrintAndVerifyContract(file, chainId, usedContractName, args);
@@ -105,6 +105,7 @@ async function prettyPrintAndVerifyContract(
 }
 
 let counter = 1;
+
 export async function prettyPrintEncodedData(
   transactionPromise: Promise<PopulatedTransaction>,
   methodName: string,
@@ -117,6 +118,10 @@ export async function prettyPrintEncodedData(
   console.log(''); // add a new line
 }
 
-export function writeFile(file: any) {
-  fs.writeFileSync('./scripts/deployments.json', JSON.stringify(file, null, 2), { encoding: 'utf8', flag: 'w' });
+export function writeFile(file: Record<string, Record<ChainId, any>>) {
+  fs.writeFileSync(
+    './scripts/deployments.json',
+    JSON.stringify(sortFile(file), null, 2),
+    { encoding: 'utf8', flag: 'w' },
+  );
 }
