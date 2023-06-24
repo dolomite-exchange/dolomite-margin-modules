@@ -52,8 +52,6 @@ const liquidationSpreadDenominator = BigNumber.from('100');
 const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
 
-const FIVE_BIPS = 0.0005;
-
 describe('PendlePtGLP2024IsolationModeLiquidation', () => {
   let snapshotId: string;
 
@@ -71,7 +69,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
   let zap: DolomiteZap;
   let ptGlpApiToken: ApiToken;
 
-  const defaultSlippageNumerator = BigNumber.from('30');
+  const defaultSlippageNumerator = BigNumber.from('10');
   const defaultSlippageDenominator = BigNumber.from('10000');
   const defaultSlippage = defaultSlippageNumerator.toNumber() / defaultSlippageDenominator.toNumber();
 
@@ -81,11 +79,12 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       blockNumber,
       network: Network.ArbitrumOne,
     });
+    const cacheDurationSeconds = 60;
     zap = new DolomiteZap(
       ZapNetwork.ARBITRUM_ONE,
       process.env.SUBGRAPH_URL as string,
       core.hhUser1.provider!,
-      60,
+      cacheDurationSeconds,
       defaultSlippage,
     );
     underlyingToken = core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1);
@@ -146,7 +145,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       core.pendleEcosystem!.ptGlpMarket.address as any,
       core.gmxEcosystem!.sGlp.address as any,
       glpAmount,
-      FIVE_BIPS,
+      defaultSlippage,
     );
     await core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
@@ -319,7 +318,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         solidAccountStruct.owner,
         solidAccountStruct.number,
         core.marketIds.usdc,
-        newAccountValues[1].value.mul(105).div(100).mul(defaultSlippageNumerator).div(defaultSlippageDenominator),
+        newAccountValues[1].value.mul(106).div(100).mul(defaultSlippageNumerator).div(defaultSlippageDenominator),
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
@@ -527,7 +526,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
         solidAccountStruct.owner,
         solidAccountStruct.number,
         core.marketIds.usdc,
-        borrowValue.value.mul(105).div(100).mul(defaultSlippageNumerator).div(defaultSlippageDenominator),
+        borrowValue.value.mul(106).div(100).mul(defaultSlippageNumerator).div(defaultSlippageDenominator),
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
