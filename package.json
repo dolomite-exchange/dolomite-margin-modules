@@ -18,7 +18,7 @@
     "deploy:gmx-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-gmx-ecosystem.ts",
     "deploy:jones-usdc-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-jones-usdc-ecosystem.ts",
     "deploy:paraswap-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-paraswap-ecosystem.ts",
-    "deploy:pendle-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-pendle-ecosystem.ts",
+    "deploy:pendle-pt-glp-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-pendle-pt-glp-ecosystem.ts",
     "deploy:plutus-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-plutus-ecosystem.ts",
     "deploy:upgrade-trader-v2": "hardhat --network arbitrum_one run scripts/deploy-upgrade-trader-v2.ts",
     "deploy:coveralls": "coveralls < coverage/lcov.info",

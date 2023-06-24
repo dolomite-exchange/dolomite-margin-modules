@@ -248,6 +248,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
       await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
       await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
     });
 
@@ -351,6 +352,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.usdc, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
       await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
       await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
       await expectWalletBalance(unwrapper, core.weth, ZERO_BI);
     });
@@ -451,6 +453,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.usdc, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
       await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
       await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
       await expectWalletBalance(unwrapper, core.weth, ZERO_BI);
     });
@@ -559,6 +562,7 @@ describe('PendlePtGLP2024IsolationModeLiquidation', () => {
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.usdc, ZERO_BI);
       await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
       await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
       await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
       await expectWalletBalance(unwrapper, core.weth, ZERO_BI);
     });
