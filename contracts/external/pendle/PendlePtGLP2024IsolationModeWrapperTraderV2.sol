@@ -102,6 +102,7 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
             /* _minUsdg = */ 0,
             /* _minGlp = */ 0
         );
+        tokenInput.netTokenIn = glpAmount;
 
         uint256 ptGlpAmount;
         {

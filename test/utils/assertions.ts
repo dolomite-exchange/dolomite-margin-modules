@@ -64,7 +64,7 @@ export async function expectProtocolBalanceIsGreaterThan(
 }
 
 // const TEN_CENTS = BigNumber.from('100000000000000000000000000000000000'); // $1 eq 1e36. Take off 1 decimal
-const ONE_CENT = BigNumber.from('10000000000000000000000000000000000'); // $1 eq 1e36. Take off 2 decimals
+const ONE_CENT: BigNumber = BigNumber.from('10000000000000000000000000000000000'); // $1 eq 1e36. Take off 2 decimals
 
 export async function expectWalletBalanceOrDustyIfZero(
   coreProtocol: CoreProtocol,
@@ -124,6 +124,7 @@ export async function expectProtocolBalanceDustyOrZero(
   accountOwner: { address: address } | address,
   accountNumber: BigNumberish,
   marketId: BigNumberish,
+  maxDustyValueUsd: BigNumber = ONE_CENT,
 ) {
   const account = {
     owner: typeof accountOwner === 'object' ? accountOwner.address : accountOwner,
@@ -132,7 +133,7 @@ export async function expectProtocolBalanceDustyOrZero(
   const rawBalanceWei = await core.dolomiteMargin.getAccountWei(account, marketId);
   const balanceWei = rawBalanceWei.sign ? rawBalanceWei.value : rawBalanceWei.value.mul(-1);
   const price = await core.dolomiteMargin.getMarketPrice(marketId);
-  expect(balanceWei.mul(price.value)).to.be.lt(ONE_CENT);
+  expect(balanceWei.mul(price.value)).to.be.lt(maxDustyValueUsd);
 }
 
 export async function expectWalletBalance(

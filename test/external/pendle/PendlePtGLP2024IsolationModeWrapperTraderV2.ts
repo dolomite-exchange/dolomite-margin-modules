@@ -18,7 +18,7 @@ import {
 import { Account } from '../../../src/types/IDolomiteMargin';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { expectThrow, expectWalletBalance } from '../../utils/assertions';
 import {
   createPendlePtGLP2024IsolationModeTokenVaultV1,
   createPendlePtGLP2024IsolationModeUnwrapperTraderV2,
@@ -179,6 +179,10 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
       const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
       expect(otherBalanceWei.sign).to.eq(false);
       expect(otherBalanceWei.value).to.eq(usableUsdcAmount);
+
+      await expectWalletBalance(wrapper.address, core.usdc, ZERO_BI);
+      await expectWalletBalance(wrapper.address, core.gmxEcosystem!.fsGlp, ZERO_BI);
+      await expectWalletBalance(wrapper.address, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
     });
   });
 

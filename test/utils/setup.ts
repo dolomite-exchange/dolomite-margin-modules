@@ -1,3 +1,4 @@
+import { ApiToken } from '@dolomite-exchange/zap-sdk/src';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
 import * as DolomiteAmmFactoryJson from '@dolomite-margin/deployed-contracts/DolomiteAmmFactory.json';
@@ -292,6 +293,10 @@ export interface CoreProtocol {
     usdc: BigNumberish;
     weth: BigNumberish;
   };
+  apiTokens: {
+    usdc: ApiToken;
+    weth: ApiToken;
+  };
   dfsGlp: IERC20 | undefined;
   usdc: IERC20;
   weth: IWETH;
@@ -478,6 +483,22 @@ export async function setupCoreProtocol(
     config: {
       blockNumber: config.blockNumber,
       network: config.network,
+    },
+    apiTokens: {
+      usdc: {
+        marketId: USDC_MAP[config.network].marketId,
+        symbol: 'USDC',
+        name: 'USD Coin',
+        decimals: 6,
+        tokenAddress: USDC_MAP[config.network].address,
+      },
+      weth: {
+        marketId: WETH_MAP[config.network].marketId,
+        symbol: 'WETH',
+        name: 'Wrapped Ether',
+        decimals: 18,
+        tokenAddress: WETH_MAP[config.network].address,
+      },
     },
     marketIds: {
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
