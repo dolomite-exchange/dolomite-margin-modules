@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 
 /**
@@ -29,13 +30,15 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  *
  * @notice  Interface for vault token contracts
  */
-interface IERC4626 is IERC20 {
+interface IERC4626 is IERC20, IERC20Metadata {
 
     function redeem(uint256 _shares, address _receiver, address _owner) external returns (uint256 _assets);
 
     function deposit(uint256 _assets, address _receiver) external returns (uint256 _shares);
 
     function mint(uint256 _shares, address _receiver) external returns (uint256 _assets);
+
+    function asset() external view returns (address);
 
     function totalAssets() external view returns (uint256);
 
