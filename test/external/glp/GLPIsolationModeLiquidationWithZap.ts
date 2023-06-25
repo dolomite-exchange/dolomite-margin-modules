@@ -1,25 +1,18 @@
+import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk/dist';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
-  IERC4626,
-  IPlutusVaultGLPIsolationModeVaultFactory,
-  PlutusVaultGLPIsolationModeTokenVaultV1,
-  PlutusVaultGLPIsolationModeTokenVaultV1__factory,
-  PlutusVaultGLPIsolationModeUnwrapperTraderV2,
-  PlutusVaultGLPIsolationModeWrapperTraderV2,
-  PlutusVaultRegistry,
+  GLPIsolationModeTokenVaultV1,
+  GLPIsolationModeTokenVaultV1__factory,
+  GLPIsolationModeUnwrapperTraderV2,
+  GLPIsolationModeWrapperTraderV2,
+  IERC20,
+  IGLPIsolationModeVaultFactoryOld,
+  IGmxRegistryV1,
 } from '../../../src/types';
 import { Account } from '../../../src/types/IDolomiteMargin';
-import {
-  BYTES_EMPTY,
-  LIQUIDATE_ALL,
-  Network,
-  NO_PARASWAP_TRADER_PARAM,
-  ONE_BI,
-  SELL_ALL,
-  ZERO_BI,
-} from '../../../src/utils/no-deps-constants';
+import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
   expectProtocolBalance,
@@ -27,17 +20,13 @@ import {
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
 } from '../../utils/assertions';
-import {
-  createPlutusVaultGLPIsolationModeUnwrapperTraderV2,
-  createPlutusVaultGLPIsolationModeWrapperTraderV2,
-  createPlutusVaultRegistry,
-} from '../../utils/ecosystem-token-utils/plutus';
+import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from '../../utils/ecosystem-token-utils/gmx';
 import { setExpiry } from '../../utils/expiry-utils';
 import {
   checkForParaswapSuccess,
-  getCalldataForParaswap,
-  getParaswapTraderParamStruct,
+  getLastZapAmountToBigNumber,
   liquidateV4WithZap,
+  toZapBigNumber,
 } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
 
@@ -51,20 +40,22 @@ const liquidationSpreadDenominator = BigNumber.from('100');
 const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
 
-describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
+describe('GLPIsolationModeLiquidationWithZap', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let underlyingToken: IERC4626;
-  let underlyingMarketId: BigNumberish;
-  let plutusVaultRegistry: PlutusVaultRegistry;
-  let unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV2;
-  let wrapper: PlutusVaultGLPIsolationModeWrapperTraderV2;
-  let factory: IPlutusVaultGLPIsolationModeVaultFactory;
-  let vault: PlutusVaultGLPIsolationModeTokenVaultV1;
+  let underlyingToken: IERC20;
+  let heldMarketId: BigNumberish;
+  let gmxRegistry: IGmxRegistryV1;
+  let unwrapper: GLPIsolationModeUnwrapperTraderV2;
+  let wrapper: GLPIsolationModeWrapperTraderV2;
+  let factory: IGLPIsolationModeVaultFactoryOld;
+  let vault: GLPIsolationModeTokenVaultV1;
   let defaultAccountStruct: Account.InfoStruct;
   let liquidAccountStruct: Account.InfoStruct;
   let solidAccountStruct: Account.InfoStruct;
+  let glpApiToken: ApiToken;
+  let zap: DolomiteZap;
 
   before(async () => {
     const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
@@ -72,23 +63,34 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
       blockNumber,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
-    plutusVaultRegistry = await createPlutusVaultRegistry(core);
-    factory = core.plutusEcosystem!.live.plvGlpIsolationModeFactory.connect(core.hhUser1);
-    unwrapper = await createPlutusVaultGLPIsolationModeUnwrapperTraderV2(core, plutusVaultRegistry, factory);
-    wrapper = await createPlutusVaultGLPIsolationModeWrapperTraderV2(core, plutusVaultRegistry, factory);
+    underlyingToken = core.gmxEcosystem!.fsGlp;
+    gmxRegistry = core.gmxEcosystem!.live.gmxRegistry;
+    factory = core.gmxEcosystem!.live.glpIsolationModeFactory.connect(core.hhUser1);
 
-    underlyingMarketId = await core.marketIds.dplvGlp!;
+    heldMarketId = BigNumber.from(core.marketIds.dfsGlp!);
+    glpApiToken = {
+      marketId: heldMarketId.toNumber(),
+      symbol: 'dfsGLP',
+      name: 'Dolomite Isolation: Fee + Staked GLP',
+      decimals: 18,
+      tokenAddress: factory.address,
+    };
+    zap = new DolomiteZap(
+      ZapNetwork.ARBITRUM_ONE,
+      process.env.SUBGRAPH_URL as string,
+      core.hhUser1.provider!,
+    );
 
-    await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(unwrapper.address, true);
-    await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(wrapper.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    unwrapper = await createGLPUnwrapperTraderV2(core, factory, gmxRegistry);
+    wrapper = await createGLPWrapperTraderV2(core, factory, gmxRegistry);
+    await factory.connect(core.governance).setIsTokenConverterTrusted(unwrapper.address, true);
+    await factory.connect(core.governance).setIsTokenConverterTrusted(wrapper.address, true);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    vault = setupUserVaultProxy<PlutusVaultGLPIsolationModeTokenVaultV1>(
+    vault = setupUserVaultProxy<GLPIsolationModeTokenVaultV1>(
       vaultAddress,
-      PlutusVaultGLPIsolationModeTokenVaultV1__factory,
+      GLPIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
     defaultAccountStruct = { owner: vault.address, number: defaultAccountNumber };
@@ -99,27 +101,13 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
-    const glpAmount = heldAmountWei.mul(2);
-    await core.plutusEcosystem!.sGlp.connect(core.hhUser1)
-      .approve(core.plutusEcosystem!.plvGlpRouter.address, glpAmount);
-    await core.plutusEcosystem!.plvGlpRouter.connect(core.hhUser1).deposit(glpAmount);
-
-    await underlyingToken.approve(vault.address, heldAmountWei);
+    await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
-    expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, underlyingMarketId)).value)
+    expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, heldMarketId)).value)
       .to
       .eq(heldAmountWei);
-
-    await core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.connect(core.governance)
-      .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
-    await core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.connect(core.governance)
-      .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
-    await core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.connect(core.governance)
-      .ownerSetPlvGlpWrapperTrader(wrapper.address);
-    await core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.connect(core.governance)
-      .ownerSetPlvGlpWrapperTrader(wrapper.address);
 
     snapshotId = await snapshot();
   });
@@ -154,24 +142,23 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         .to
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
-      const plvGlpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
+      const glpPrice = await core.dolomiteMargin.getMarketPrice(heldMarketId);
       const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
-        .div(plvGlpPrice.value);
-      const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
-        core.usdc.address,
-        heldUpdatedWithReward,
-        BYTES_EMPTY,
-      );
+        .div(glpPrice.value);
 
+      const zapOutputs = await zap.getSwapExactTokensForTokensParams(
+        glpApiToken,
+        toZapBigNumber(heldUpdatedWithReward),
+        core.apiTokens.usdc,
+        toZapBigNumber(usdcDebtAmount),
+        core.hhUser5.address,
+      );
       const txResult = await liquidateV4WithZap(
         core,
         solidAccountStruct,
         liquidAccountStruct,
-        [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
-        unwrapper,
+        zapOutputs,
       );
       const receipt = await txResult.wait();
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
@@ -180,20 +167,20 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
-        underlyingMarketId,
+        heldMarketId,
         ZERO_BI,
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
         solidAccountStruct,
         core.marketIds.usdc,
-        usdcOutputAmount.sub(usdcDebtAmount),
+        getLastZapAmountToBigNumber(zapOutputs[0]).sub(usdcDebtAmount),
         '5',
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
         liquidAccountStruct,
-        underlyingMarketId,
+        heldMarketId,
         heldAmountWei.sub(heldUpdatedWithReward),
         '5',
       );
@@ -207,7 +194,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.weth.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.plutusEcosystem!.plvGlp.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
 
@@ -240,42 +227,28 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         .to
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
-      const glpPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
+      const glpPrice = await core.dolomiteMargin.getMarketPrice(heldMarketId);
       const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
         .div(glpPrice.value);
-      const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
-        core.usdc.address,
-        heldUpdatedWithReward,
-        BYTES_EMPTY,
-      );
-      const { calldata: paraswapCalldata, outputAmount: wethOutputAmount } = await getCalldataForParaswap(
-        usdcOutputAmount,
-        core.usdc,
-        6,
-        ONE_BI,
-        core.weth,
-        18,
-        core.hhUser5,
-        core.paraswapTrader!,
-        core,
-      );
       const usdcLiquidatorBalanceBefore = await core.usdc.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV4!.address);
       const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV4!.address);
 
+      const zapOutputs = await zap.getSwapExactTokensForTokensParams(
+        glpApiToken,
+        toZapBigNumber(heldUpdatedWithReward),
+        core.apiTokens.weth,
+        toZapBigNumber(wethDebtAmount),
+        core.hhUser5.address,
+      );
       const isSuccessful = await checkForParaswapSuccess(
         liquidateV4WithZap(
           core,
           solidAccountStruct,
           liquidAccountStruct,
-          [underlyingMarketId, core.marketIds.usdc, core.marketIds.weth],
-          [SELL_ALL, usdcOutputAmount, LIQUIDATE_ALL],
-          unwrapper,
-          BYTES_EMPTY,
-          getParaswapTraderParamStruct(core, paraswapCalldata),
+          zapOutputs,
         ),
       );
       if (!isSuccessful) {
@@ -286,7 +259,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
-        underlyingMarketId,
+        heldMarketId,
         ZERO_BI,
       );
       await expectProtocolBalanceDustyOrZero(
@@ -299,13 +272,13 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         core,
         solidAccountStruct,
         core.marketIds.weth,
-        wethOutputAmount.sub(wethDebtAmount),
+        getLastZapAmountToBigNumber(zapOutputs[0]).sub(wethDebtAmount),
         '500',
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
         liquidAccountStruct,
-        underlyingMarketId,
+        heldMarketId,
         heldAmountWei.sub(heldUpdatedWithReward),
         '10',
       );
@@ -331,7 +304,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         ZERO_BI,
         wethLiquidatorBalanceBefore,
       );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.plutusEcosystem!.plvGlp.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
   });
@@ -367,28 +340,25 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         .gte(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const [heldPrice, owedPriceAdj] = await core.expiry.getSpreadAdjustedPrices(
-        underlyingMarketId,
+        heldMarketId,
         core.marketIds.usdc,
         expiry,
       );
 
       const heldUpdatedWithReward = usdcDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
-      const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
-        core.usdc.address,
-        heldUpdatedWithReward,
-        BYTES_EMPTY,
-      );
 
+      const zapOutputs = await zap.getSwapExactTokensForTokensParams(
+        glpApiToken,
+        toZapBigNumber(heldUpdatedWithReward),
+        core.apiTokens.usdc,
+        toZapBigNumber(usdcDebtAmount),
+        core.hhUser5.address,
+      );
       const txResult = await liquidateV4WithZap(
         core,
         solidAccountStruct,
         liquidAccountStruct,
-        [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
-        unwrapper,
-        BYTES_EMPTY,
-        NO_PARASWAP_TRADER_PARAM,
+        zapOutputs,
         expiry,
       );
       const receipt = await txResult.wait();
@@ -398,20 +368,20 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
-        underlyingMarketId,
+        heldMarketId,
         ZERO_BI,
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
         solidAccountStruct,
         core.marketIds.usdc,
-        usdcOutputAmount.sub(usdcDebtAmount),
+        getLastZapAmountToBigNumber(zapOutputs[0]).sub(usdcDebtAmount),
         '5',
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
         liquidAccountStruct,
-        underlyingMarketId,
+        heldMarketId,
         heldAmountWei.sub(heldUpdatedWithReward),
         '5',
       );
@@ -425,7 +395,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.weth.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.plutusEcosystem!.plvGlp.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
 
@@ -459,77 +429,62 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
       expect(expiry).to.not.eq(0);
 
       const [heldPrice, owedPriceAdj] = await core.expiry.getSpreadAdjustedPrices(
-        underlyingMarketId,
+        heldMarketId,
         core.marketIds.weth,
         expiry,
       );
 
       const heldUpdatedWithReward = wethDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
-      const usdcOutputAmount = await unwrapper.getExchangeCost(
-        factory.address,
-        core.usdc.address,
-        heldUpdatedWithReward,
-        BYTES_EMPTY,
-      );
-      const { calldata: paraswapCalldata, outputAmount: wethOutputAmount } = await getCalldataForParaswap(
-        usdcOutputAmount,
-        core.usdc,
-        6,
-        wethDebtAmount,
-        core.weth,
-        18,
-        core.hhUser5,
-        core.paraswapTrader!,
-        core,
-      );
 
       const usdcLiquidatorBalanceBefore = await core.usdc.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV4!.address);
       const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV4!.address);
 
+      const zapOutputs = await zap.getSwapExactTokensForTokensParams(
+        glpApiToken,
+        toZapBigNumber(heldUpdatedWithReward),
+        core.apiTokens.weth,
+        toZapBigNumber(wethDebtAmount),
+        core.hhUser5.address,
+      );
       const isSuccessful = await checkForParaswapSuccess(
         liquidateV4WithZap(
           core,
           solidAccountStruct,
           liquidAccountStruct,
-          [underlyingMarketId, core.marketIds.usdc, core.marketIds.weth],
-          [SELL_ALL, usdcOutputAmount, LIQUIDATE_ALL],
-          unwrapper,
-          BYTES_EMPTY,
-          getParaswapTraderParamStruct(core, paraswapCalldata),
+          zapOutputs,
           expiry,
         ),
       );
       if (!isSuccessful) {
-        return false;
+        return;
       }
 
       await expectProtocolBalance(
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
-        underlyingMarketId,
+        heldMarketId,
         ZERO_BI,
       );
-      await expectProtocolBalance(
+      await expectProtocolBalanceDustyOrZero(
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
         core.marketIds.usdc,
-        ZERO_BI,
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
         solidAccountStruct,
         core.marketIds.weth,
-        wethOutputAmount.sub(wethDebtAmount),
+        getLastZapAmountToBigNumber(zapOutputs[0]).sub(wethDebtAmount),
         '500',
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
         liquidAccountStruct,
-        underlyingMarketId,
+        heldMarketId,
         heldAmountWei.sub(heldUpdatedWithReward),
         '10',
       );
@@ -555,7 +510,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         ZERO_BI,
         wethLiquidatorBalanceBefore,
       );
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.plutusEcosystem!.plvGlp.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
     });
   });

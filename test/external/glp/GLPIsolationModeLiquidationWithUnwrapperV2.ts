@@ -34,7 +34,7 @@ import {
   checkForParaswapSuccess,
   getCalldataForParaswap,
   getParaswapTraderParamStruct,
-  liquidateV4WithIsolationMode,
+  liquidateV4WithZap,
 } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
 
@@ -147,7 +147,7 @@ describe('GLPLiquidationWithUnwrapperV2', () => {
         BYTES_EMPTY,
       );
 
-      const txResult = await liquidateV4WithIsolationMode(
+      const txResult = await liquidateV4WithZap(
         core,
         solidAccountStruct,
         liquidAccountStruct,
@@ -249,7 +249,7 @@ describe('GLPLiquidationWithUnwrapperV2', () => {
         .balanceOf(core.liquidatorProxyV4!.address);
 
       const isSuccessful = await checkForParaswapSuccess(
-        liquidateV4WithIsolationMode(
+        liquidateV4WithZap(
           core,
           solidAccountStruct,
           liquidAccountStruct,
@@ -363,7 +363,7 @@ describe('GLPLiquidationWithUnwrapperV2', () => {
         BYTES_EMPTY,
       );
 
-      const txResult = await liquidateV4WithIsolationMode(
+      const txResult = await liquidateV4WithZap(
         core,
         solidAccountStruct,
         liquidAccountStruct,
@@ -472,7 +472,7 @@ describe('GLPLiquidationWithUnwrapperV2', () => {
         .balanceOf(core.liquidatorProxyV4!.address);
 
       const isSuccessful = await checkForParaswapSuccess(
-        liquidateV4WithIsolationMode(
+        liquidateV4WithZap(
           core,
           solidAccountStruct,
           liquidAccountStruct,

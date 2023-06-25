@@ -1,4 +1,4 @@
-import { ApiToken } from '@dolomite-exchange/zap-sdk/src';
+import { ApiToken } from '@dolomite-exchange/zap-sdk/dist';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
 import * as DolomiteAmmFactoryJson from '@dolomite-margin/deployed-contracts/DolomiteAmmFactory.json';

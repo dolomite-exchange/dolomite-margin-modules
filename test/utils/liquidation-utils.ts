@@ -1,13 +1,14 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
-import { ZapOutputParam } from '@dolomite-exchange/zap-sdk/dist';
+import { BigNumber as ZapBigNumber, ZapOutputParam } from '@dolomite-exchange/zap-sdk/dist';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
 import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
 import { Account } from '../../src/types/IDolomiteMargin';
 import { IGenericTraderProxyBase } from '../../src/types/LiquidatorProxyV4WithGenericTrader';
-import { NO_EXPIRY } from '../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, NO_EXPIRY, NO_PARASWAP_TRADER_PARAM } from '../../src/utils/no-deps-constants';
 import { expectThrow } from './assertions';
 import { CoreProtocol } from './setup';
+import TraderParamStruct = IGenericTraderProxyBase.TraderParamStruct;
 
 const API_URL = 'https://apiv5.paraswap.io';
 
@@ -23,37 +24,123 @@ export function getParaswapTraderParamStruct(
   };
 }
 
+export function toZapBigNumber(amount: BigNumberish): ZapBigNumber {
+  return new ZapBigNumber(amount.toString());
+}
+
+export function getLastZapAmountToBigNumber(zapOutput: ZapOutputParam): BigNumber {
+  return BigNumber.from(zapOutput.amountWeisPath[zapOutput.amountWeisPath.length - 1].toString());
+}
+
 export async function liquidateV4WithIsolationMode(
   core: CoreProtocol,
   solidAccountStruct: Account.InfoStruct,
   liquidAccountStruct: Account.InfoStruct,
-  zapOutput: ZapOutputParam,
+  marketIdsPath: BigNumberish[],
+  amountWeisPath: BigNumberish[],
+  unwrapper: { address: address },
+  unwrapperTradeData: string = BYTES_EMPTY,
+  paraswapTraderParam: IGenericTraderProxyBase.TraderParamStruct | undefined = NO_PARASWAP_TRADER_PARAM,
   expiry: BigNumberish = NO_EXPIRY,
 ): Promise<ContractTransaction> {
-  const amountWeisPath = zapOutput.amountWeisPath.map((amount, i) => {
-    if (i === zapOutput.amountWeisPath.length - 1) {
-      return ethers.constants.MaxUint256.toString();
-    }
-    if (i === 0) {
-      return ethers.constants.MaxUint256.toString();
-    }
-    return amount.toString();
-  });
+  const defaultUnwrapperTraderParam: TraderParamStruct = {
+    traderType: GenericTraderType.IsolationModeUnwrapper,
+    makerAccountIndex: 0,
+    trader: unwrapper.address,
+    tradeData: unwrapperTradeData,
+  };
+
+  const tradersPath = [defaultUnwrapperTraderParam];
+  if (paraswapTraderParam) {
+    tradersPath.push(paraswapTraderParam);
+  }
+
   return core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
     solidAccountStruct,
     liquidAccountStruct,
-    zapOutput.marketIdsPath,
+    marketIdsPath,
     amountWeisPath,
-    zapOutput.traderParams,
-    zapOutput.makerAccounts,
+    tradersPath,
+    [],
     expiry,
   );
+}
+
+export async function liquidateV4WithLiquidityToken(
+  core: CoreProtocol,
+  solidAccountStruct: Account.InfoStruct,
+  liquidAccountStruct: Account.InfoStruct,
+  marketIdsPath: BigNumberish[],
+  amountWeisPath: BigNumberish[],
+  unwrapper: { address: address },
+  unwrapperTradeData: string = BYTES_EMPTY,
+  paraswapTraderParam: IGenericTraderProxyBase.TraderParamStruct | undefined = NO_PARASWAP_TRADER_PARAM,
+  expiry: BigNumberish = NO_EXPIRY,
+): Promise<ContractTransaction> {
+  const defaultUnwrapperTraderParam: TraderParamStruct = {
+    traderType: GenericTraderType.ExternalLiquidity,
+    makerAccountIndex: 0,
+    trader: unwrapper.address,
+    tradeData: unwrapperTradeData,
+  };
+
+  const tradersPath = [defaultUnwrapperTraderParam];
+  if (paraswapTraderParam) {
+    tradersPath.push(paraswapTraderParam);
+  }
+
+  return core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
+    solidAccountStruct,
+    liquidAccountStruct,
+    marketIdsPath,
+    amountWeisPath,
+    tradersPath,
+    [],
+    expiry,
+  );
+}
+
+export async function liquidateV4WithZap(
+  core: CoreProtocol,
+  solidAccountStruct: Account.InfoStruct,
+  liquidAccountStruct: Account.InfoStruct,
+  zapOutputs: ZapOutputParam[],
+  expiry: BigNumberish = NO_EXPIRY,
+): Promise<ContractTransaction> {
+  let latestError = new Error('No zap output found');
+  for (let i = 0; i < zapOutputs.length; i++) {
+    const zapOutput = zapOutputs[i];
+    const amountWeisPath = zapOutput.amountWeisPath.map((amount, i) => {
+      if (i === zapOutput.amountWeisPath.length - 1) {
+        return ethers.constants.MaxUint256.toString();
+      }
+      if (i === 0) {
+        return ethers.constants.MaxUint256.toString();
+      }
+      return amount.toString();
+    });
+    try {
+      return await core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
+        solidAccountStruct,
+        liquidAccountStruct,
+        zapOutput.marketIdsPath,
+        amountWeisPath,
+        zapOutput.traderParams,
+        zapOutput.makerAccounts,
+        expiry,
+      );
+    } catch (e) {
+      console.warn(`Failed to liquidate with zap at index ${i}. Trying next zap output...`, e);
+      latestError = e as Error;
+    }
+  }
+
+  return Promise.reject(latestError);
 }
 
 export async function checkForParaswapSuccess(
   contractTransactionPromise: Promise<ContractTransaction>,
 ): Promise<boolean> {
-  // 489388144448000000000000000000000000
   try {
     const txResult = await contractTransactionPromise;
     const receipt = await txResult.wait();

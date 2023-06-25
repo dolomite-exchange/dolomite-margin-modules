@@ -1,50 +1,34 @@
+import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk/dist';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import deployments from '../../../../scripts/deployments.json';
 import {
   IERC4626,
   JonesUSDCIsolationModeTokenVaultV1,
   JonesUSDCIsolationModeTokenVaultV1__factory,
   JonesUSDCIsolationModeUnwrapperTraderV2,
+  JonesUSDCIsolationModeUnwrapperTraderV2__factory,
   JonesUSDCIsolationModeVaultFactory,
-  JonesUSDCIsolationModeWrapperTraderV2,
+  JonesUSDCIsolationModeVaultFactory__factory,
+  JonesUSDCIsolationModeWrapperTraderV2, JonesUSDCIsolationModeWrapperTraderV2__factory,
   JonesUSDCPriceOracle,
+  JonesUSDCPriceOracle__factory,
   JonesUSDCRegistry,
+  JonesUSDCRegistry__factory,
 } from '../../../../src/types';
 import { Account } from '../../../../src/types/IDolomiteMargin';
 import { depositIntoDolomiteMargin } from '../../../../src/utils/dolomite-utils';
-import {
-  BYTES_EMPTY,
-  LIQUIDATE_ALL,
-  Network,
-  NO_PARASWAP_TRADER_PARAM,
-  ONE_BI,
-  SELL_ALL,
-  ZERO_BI,
-} from '../../../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../../utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
 } from '../../../utils/assertions';
-import {
-  createJonesUSDCIsolationModeTokenVaultV1,
-  createJonesUSDCIsolationModeUnwrapperTraderV2,
-  createJonesUSDCIsolationModeVaultFactory,
-  createJonesUSDCIsolationModeWrapperTraderV2,
-  createJonesUSDCPriceOracle,
-  createJonesUSDCRegistry,
-} from '../../../utils/ecosystem-token-utils/jones';
 import { setExpiry } from '../../../utils/expiry-utils';
-import { liquidateV4WithZap } from '../../../utils/liquidation-utils';
-import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '../../../utils/setup';
+import { liquidateV4WithZap, toZapBigNumber } from '../../../utils/liquidation-utils';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../../utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
 
 const defaultAccountNumber = '0';
@@ -59,12 +43,12 @@ const liquidationSpreadDenominator = BigNumber.from('100');
 const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
 
-describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
+describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
   let underlyingToken: IERC4626;
-  let underlyingMarketId: BigNumber;
+  let heldMarketId: BigNumber;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let unwrapper: JonesUSDCIsolationModeUnwrapperTraderV2;
   let wrapper: JonesUSDCIsolationModeWrapperTraderV2;
@@ -74,36 +58,58 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
   let defaultAccountStruct: Account.InfoStruct;
   let liquidAccountStruct: Account.InfoStruct;
   let solidAccountStruct: Account.InfoStruct;
+  let jUsdcApiToken: ApiToken;
+  let zap: DolomiteZap;
 
   before(async () => {
-    const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
+    const network = Network.ArbitrumOne;
+    const blockNumber = await getRealLatestBlockNumber(true, network);
     core = await setupCoreProtocol({
       blockNumber,
-      network: Network.ArbitrumOne,
+      network,
     });
     underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
-    const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
-    jonesUSDCRegistry = await createJonesUSDCRegistry(core);
-    factory = await createJonesUSDCIsolationModeVaultFactory(
-      core,
-      jonesUSDCRegistry,
-      underlyingToken,
-      userVaultImplementation,
+    jonesUSDCRegistry = await JonesUSDCRegistry__factory.connect(
+      deployments.JonesUSDCRegistry[network].address,
+      core.hhUser1,
     );
-    unwrapper = await createJonesUSDCIsolationModeUnwrapperTraderV2(core, jonesUSDCRegistry, factory);
-    await jonesUSDCRegistry.initializeUnwrapperTrader(unwrapper.address);
-    wrapper = await createJonesUSDCIsolationModeWrapperTraderV2(core, jonesUSDCRegistry, factory);
+    factory = JonesUSDCIsolationModeVaultFactory__factory.connect(
+      deployments.JonesUSDCIsolationModeVaultFactory[network].address,
+      core.hhUser1,
+    );
+    unwrapper = JonesUSDCIsolationModeUnwrapperTraderV2__factory.connect(
+      deployments.JonesUSDCIsolationModeUnwrapperTraderV2[network].address,
+      core.hhUser1,
+    );
+    wrapper = JonesUSDCIsolationModeWrapperTraderV2__factory.connect(
+      deployments.JonesUSDCIsolationModeWrapperTraderV2[network].address,
+      core.hhUser1,
+    );
     await createRoleAndWhitelistTrader(core, unwrapper, wrapper);
-    priceOracle = await createJonesUSDCPriceOracle(core, jonesUSDCRegistry, factory);
+    priceOracle = JonesUSDCPriceOracle__factory.connect(
+      deployments.JonesUSDCPriceOracle[network].address,
+      core.hhUser1,
+    );
 
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, factory, true, priceOracle);
+    heldMarketId = await core.dolomiteMargin.getMarketIdByTokenAddress(factory.address);
+
+    jUsdcApiToken = {
+      marketId: heldMarketId.toNumber(),
+      symbol: 'jUSDC',
+      name: 'Dolomite Isolation: Jones USDC',
+      decimals: 18,
+      tokenAddress: factory.address,
+    };
+    zap = new DolomiteZap(
+      ZapNetwork.ARBITRUM_ONE,
+      process.env.SUBGRAPH_URL as string,
+      core.hhUser1.provider!,
+    );
 
     // admin setup
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await core.liquidatorAssetRegistry.connect(core.governance).ownerAddLiquidatorToAssetWhitelist(
-      underlyingMarketId,
+      heldMarketId,
       core.liquidatorProxyV4.address,
     );
 
@@ -124,7 +130,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
-    expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, underlyingMarketId)).value)
+    expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, heldMarketId)).value)
       .to
       .eq(heldAmountWei);
 
@@ -165,18 +171,23 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         .to
         .lt(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
-      const jUSDCPrice = await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
+      const jUSDCPrice = await core.dolomiteMargin.getMarketPrice(heldMarketId);
       const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
         .div(jUSDCPrice.value);
 
+      const zapOutputs = await zap.getSwapExactTokensForTokensParams(
+        jUsdcApiToken,
+        toZapBigNumber(heldUpdatedWithReward),
+        core.apiTokens.usdc,
+        toZapBigNumber(usdcDebtAmountBefore),
+        core.hhUser5.address,
+      );
       const txResult = await liquidateV4WithZap(
         core,
         solidAccountStruct,
         liquidAccountStruct,
-        [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
-        unwrapper,
+        zapOutputs,
       );
       const receipt = await txResult.wait();
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
@@ -197,7 +208,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
-        underlyingMarketId,
+        heldMarketId,
         ZERO_BI,
       );
       await expectProtocolBalanceIsGreaterThan(
@@ -210,7 +221,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectProtocolBalanceIsGreaterThan(
         core,
         liquidAccountStruct,
-        underlyingMarketId,
+        heldMarketId,
         heldAmountWei.sub(heldUpdatedWithReward),
         '5',
       );
@@ -260,22 +271,25 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         .gte(newAccountValues[1].value.mul(minCollateralizationNumerator).div(minCollateralizationDenominator));
 
       const [heldPrice, owedPriceAdj] = await core.expiry.getSpreadAdjustedPrices(
-        underlyingMarketId,
+        heldMarketId,
         core.marketIds.usdc,
         expiry,
       );
 
       const heldUpdatedWithReward = usdcDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
 
+      const zapOutputs = await zap.getSwapExactTokensForTokensParams(
+        jUsdcApiToken,
+        toZapBigNumber(heldUpdatedWithReward),
+        core.apiTokens.usdc,
+        toZapBigNumber(usdcDebtAmount),
+        core.hhUser5.address,
+      );
       const txResult = await liquidateV4WithZap(
         core,
         solidAccountStruct,
         liquidAccountStruct,
-        [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
-        unwrapper,
-        BYTES_EMPTY,
-        NO_PARASWAP_TRADER_PARAM,
+        zapOutputs,
         expiry,
       );
       const receipt = await txResult.wait();
@@ -293,7 +307,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         core,
         solidAccountStruct.owner,
         solidAccountStruct.number,
-        underlyingMarketId,
+        heldMarketId,
         ZERO_BI,
       );
       await expectProtocolBalanceIsGreaterThan(
@@ -306,7 +320,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectProtocolBalanceIsGreaterThan(
         core,
         liquidAccountStruct,
-        underlyingMarketId,
+        heldMarketId,
         heldAmountWei.sub(heldUpdatedWithReward),
         '5',
       );
