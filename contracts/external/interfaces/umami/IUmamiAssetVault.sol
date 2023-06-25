@@ -32,6 +32,16 @@ import { IERC4626 } from "../IERC4626.sol";
 interface IUmamiAssetVault is IERC4626 {
 
     /**
+     * @notice Pause deposit and withdrawal operations
+     */
+    function pauseDepositWithdraw() external;
+
+    /**
+     * @notice Unpause deposit and withdrawal operations
+     */
+    function unpauseDepositWithdraw() external;
+
+    /**
      * @notice Preview the deposit fee for a specified amount of assets
      *
      * @param  _size            The amount of assets to preview the deposit fee for

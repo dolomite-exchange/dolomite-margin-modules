@@ -85,6 +85,10 @@ import {
   IPlutusVaultGLPRouter__factory,
   ISGMX,
   ISGMX__factory,
+  IUmamiAssetVault,
+  IUmamiAssetVault__factory,
+  IUmamiAssetVaultWhitelist,
+  IUmamiAssetVaultWhitelist__factory,
   IWETH,
   IWETH__factory,
   LiquidatorAssetRegistry,
@@ -147,6 +151,12 @@ import {
   S_GLP_MAP,
   S_GMX_MAP,
   SBF_GMX_MAP,
+  UMAMI_LINK_VAULT_MAP,
+  UMAMI_UNI_VAULT_MAP,
+  UMAMI_USDC_VAULT_MAP,
+  UMAMI_WBTC_VAULT_MAP,
+  UMAMI_WETH_VAULT_MAP,
+  UMAMI_WHITELIST_MAP,
   USDC_MAP,
   V_GLP_MAP,
   V_GMX_MAP,
@@ -240,6 +250,15 @@ interface PlutusEcosystem {
   };
 }
 
+interface UmamiEcosystem {
+  umLink: IUmamiAssetVault;
+  umUni: IUmamiAssetVault;
+  umUsdc: IUmamiAssetVault;
+  umWbtc: IUmamiAssetVault;
+  umWeth: IUmamiAssetVault;
+  whitelist: IUmamiAssetVaultWhitelist;
+}
+
 export interface CoreProtocol {
   /// =========================
   /// Config and Signers
@@ -280,6 +299,7 @@ export interface CoreProtocol {
   plutusEcosystem: PlutusEcosystem | undefined;
   testInterestSetter: TestInterestSetter | undefined;
   testPriceOracle: TestPriceOracle | undefined;
+  umamiEcosystem: UmamiEcosystem | undefined;
   /// =========================
   /// Markets and Tokens
   /// =========================
@@ -449,6 +469,7 @@ export async function setupCoreProtocol(
   const paraswapEcosystem = await createParaswapEcosystem(config.network);
   const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
+  const umamiEcosystem = await createUmamiEcosystem(config.network, hhUser1);
 
   return {
     abraEcosystem,
@@ -480,6 +501,7 @@ export async function setupCoreProtocol(
     plutusEcosystem,
     testInterestSetter,
     testPriceOracle,
+    umamiEcosystem,
     config: {
       blockNumber: config.blockNumber,
       network: config.network,
@@ -760,6 +782,42 @@ async function createPlutusEcosystem(
         PlutusVaultGLPIsolationModeWrapperTraderV1__factory.connect,
       ),
     },
+  };
+}
+
+async function createUmamiEcosystem(
+  network: Network,
+  signer: SignerWithAddress,
+): Promise<UmamiEcosystem | undefined> {
+  if (!PLV_GLP_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    umLink: getContract(
+      UMAMI_LINK_VAULT_MAP[network] as string,
+      address => IUmamiAssetVault__factory.connect(address, signer),
+    ),
+    umUni: getContract(
+      UMAMI_UNI_VAULT_MAP[network] as string,
+      address => IUmamiAssetVault__factory.connect(address, signer),
+    ),
+    umUsdc: getContract(
+      UMAMI_USDC_VAULT_MAP[network] as string,
+      address => IUmamiAssetVault__factory.connect(address, signer),
+    ),
+    umWbtc: getContract(
+      UMAMI_WBTC_VAULT_MAP[network] as string,
+      address => IUmamiAssetVault__factory.connect(address, signer),
+    ),
+    umWeth: getContract(
+      UMAMI_WETH_VAULT_MAP[network] as string,
+      address => IUmamiAssetVault__factory.connect(address, signer),
+    ),
+    whitelist: getContract(
+      UMAMI_WHITELIST_MAP[network] as string,
+      address => IUmamiAssetVaultWhitelist__factory.connect(address, signer),
+    ),
   };
 }
 

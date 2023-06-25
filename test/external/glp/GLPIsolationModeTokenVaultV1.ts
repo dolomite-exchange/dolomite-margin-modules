@@ -331,6 +331,7 @@ describe('GLPIsolationModeTokenVaultV1', () => {
 
   describe('#handleRewardsWithSpecificDepositAccountNumber', () => {
     const accountNumber = BigNumber.from(123);
+
     async function setupGmxStakingAndEsGmxVesting() {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, vault);
       await vault.stakeGmx(gmxAmount);

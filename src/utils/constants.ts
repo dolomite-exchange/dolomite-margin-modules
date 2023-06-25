@@ -222,6 +222,36 @@ export const SBF_GMX_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const UMAMI_LINK_VAULT_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xe0A21a475f8DA0ee7FA5af8C1809D8AC5257607d',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const UMAMI_UNI_VAULT_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x37c0705A65948EA5e0Ae1aDd13552BCaD7711A23',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const UMAMI_USDC_VAULT_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x727eD4eF04bB2a96Ec77e44C1a91dbB01B605e42',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const UMAMI_WBTC_VAULT_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x6a89FaF99587a12E6bB0351F2fA9006c6Cd12257',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const UMAMI_WETH_VAULT_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xbb84D79159D6bBE1DE148Dc82640CaA677e06126',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const UMAMI_WHITELIST_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xFEA5Fc6EDDB3Affc2aa41Cd8c2bfB7AB4B867b23',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 /**
  * Token that holds fsGLP for vesting esGMX into GMX
  */
