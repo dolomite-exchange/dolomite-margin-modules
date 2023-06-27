@@ -13,6 +13,17 @@ interface TokenWithMarketId {
   marketId: number;
 }
 
+export const DAI_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
+    marketId: 1,
+  },
+  [Network.ArbitrumGoerli]: {
+    address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
+    marketId: 1,
+  },
+};
+
 export const DFS_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x34DF4E8062A8C8Ae97E3382B452bd7BF60542698',
@@ -46,6 +57,14 @@ export const USDC_MAP: Record<Network, TokenWithMarketId> = {
     address: '0x7317eb743583250739862644cef74B982708eBB4',
     marketId: 2,
   },
+};
+
+export const USDT_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
+    marketId: 5,
+  },
+  [Network.ArbitrumGoerli]: undefined,
 };
 
 export const WETH_MAP: Record<Network, TokenWithMarketId> = {

@@ -265,6 +265,13 @@
       "isVerified": true
     }
   },
+  "StablecoinLinearStepFunctionInterestSetter": {
+    "42161": {
+      "address": "0xD3D3803177bd12cC8735cB360Ec1C06208d4a94a",
+      "transaction": "0xcb917ae8109a407089912e7710e1eccc05aa34a399b2ebc312591281c0f31c60",
+      "isVerified": true
+    }
+  },
   "TestAdminPriceOracleV1": {
     "421613": {
       "address": "0xB54b35897388d0E022a66DDf4ec71B01049c403D",

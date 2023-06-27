@@ -34,14 +34,14 @@ async function main() {
       core.plutusEcosystem!.live.plvGlpIsolationModeUnwrapperTraderV1.address,
       false,
     ),
-    'glpIsolationModeFactory.ownerSetIsTokenConverterTrusted(unwrapper, false)',
+    'plvGlpIsolationModeFactory.ownerSetIsTokenConverterTrusted(unwrapper, false)',
   );
   await prettyPrintEncodedData(
     core.plutusEcosystem!.live.plvGlpIsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(
       core.plutusEcosystem!.live.plvGlpIsolationModeWrapperTraderV1.address,
       false,
     ),
-    'glpIsolationModeFactory.ownerSetIsTokenConverterTrusted(wrapper, false)',
+    'plvGlpIsolationModeFactory.ownerSetIsTokenConverterTrusted(wrapper, false)',
   );
   await prettyPrintEncodedData(
     core.liquidatorAssetRegistry!.populateTransaction.ownerRemoveLiquidatorFromAssetWhitelist(

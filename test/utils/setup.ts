@@ -118,7 +118,7 @@ import {
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
-  ATLAS_SI_TOKEN_MAP,
+  ATLAS_SI_TOKEN_MAP, DAI_MAP,
   DFS_GLP_MAP,
   DPLV_GLP_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
@@ -157,7 +157,7 @@ import {
   UMAMI_WBTC_VAULT_MAP,
   UMAMI_WETH_VAULT_MAP,
   UMAMI_WHITELIST_MAP,
-  USDC_MAP,
+  USDC_MAP, USDT_MAP,
   V_GLP_MAP,
   V_GMX_MAP,
   WETH_MAP,
@@ -307,10 +307,12 @@ export interface CoreProtocol {
    * A mapping from token's symbol to its market ID
    */
   marketIds: {
+    dai: BigNumberish | undefined;
     dfsGlp: BigNumberish | undefined;
     dplvGlp: BigNumberish | undefined;
     magicGlp: BigNumberish | undefined;
     usdc: BigNumberish;
+    usdt: BigNumberish | undefined;
     weth: BigNumberish;
   };
   apiTokens: {
@@ -523,10 +525,12 @@ export async function setupCoreProtocol(
       },
     },
     marketIds: {
+      dai: DAI_MAP[config.network]?.marketId,
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
       dplvGlp: DPLV_GLP_MAP[config.network]?.marketId,
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
+      usdt: USDT_MAP[config.network]?.marketId,
       weth: WETH_MAP[config.network].marketId,
     },
     dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
