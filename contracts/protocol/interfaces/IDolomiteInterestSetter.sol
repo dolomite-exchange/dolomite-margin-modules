@@ -30,6 +30,14 @@ pragma solidity ^0.8.9;
  */
 interface IDolomiteInterestSetter {
 
+    // ============ Enum ============
+
+    enum InterestSetterType {
+        None,
+        Linear,
+        DoubleExponential
+    }
+
     // ============ Structs ============
 
     struct InterestRate {
@@ -54,4 +62,6 @@ interface IDolomiteInterestSetter {
     external
     view
     returns (InterestRate memory);
+
+    function interestSetterType() external pure returns (InterestSetterType);
 }

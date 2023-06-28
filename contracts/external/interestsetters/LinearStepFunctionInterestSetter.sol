@@ -20,7 +20,7 @@
 pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
-import { IDolomiteInterestSetter } from "../../protocol/interfaces/IDolomiteInterestSetter.sol";
+import { ILinearStepFunctionInterestSetter } from "../interfaces/ILinearStepFunctionInterestSetter.sol";
 
 
 /**
@@ -30,7 +30,7 @@ import { IDolomiteInterestSetter } from "../../protocol/interfaces/IDolomiteInte
  * @notice  Applies a linear utilization model to reach the optimal utilization until interest rates reach 90%
  *          utilization. Then interest rates scale linearly to 100% APR.
  */
-contract LinearStepFunctionInterestSetter is IDolomiteInterestSetter {
+contract LinearStepFunctionInterestSetter is ILinearStepFunctionInterestSetter {
 
     // =============== Constants ===============
 
@@ -42,8 +42,9 @@ contract LinearStepFunctionInterestSetter is IDolomiteInterestSetter {
 
     // =============== Immutable Storage ===============
 
-    uint256 public immutable UPPER_OPTIMAL_PERCENT; // solhint-disable-line
-    uint256 public immutable LOWER_OPTIMAL_PERCENT; // solhint-disable-line
+    uint256 public immutable override LOWER_OPTIMAL_PERCENT; // solhint-disable-line
+    uint256 public immutable override UPPER_OPTIMAL_PERCENT; // solhint-disable-line
+    uint256 public immutable override OPTIMAL_UTILIZATION; // solhint-disable-line
 
     constructor(
         uint256 _lowerOptimalPercent,
@@ -56,6 +57,7 @@ contract LinearStepFunctionInterestSetter is IDolomiteInterestSetter {
         );
         LOWER_OPTIMAL_PERCENT = _lowerOptimalPercent;
         UPPER_OPTIMAL_PERCENT = _upperOptimalPercent;
+        OPTIMAL_UTILIZATION = NINETY_PERCENT;
     }
 
     function getInterestRate(
@@ -64,6 +66,7 @@ contract LinearStepFunctionInterestSetter is IDolomiteInterestSetter {
         uint256 _supplyWei
     )
     external
+    override
     view
     returns (InterestRate memory)
     {
@@ -93,5 +96,9 @@ contract LinearStepFunctionInterestSetter is IDolomiteInterestSetter {
                 value: LOWER_OPTIMAL_PERCENT * utilization / NINETY_PERCENT / SECONDS_IN_A_YEAR
             });
         }
+    }
+
+    function interestSetterType() external override pure returns (InterestSetterType) {
+        return InterestSetterType.Linear;
     }
 }

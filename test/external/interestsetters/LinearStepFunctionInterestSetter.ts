@@ -10,8 +10,8 @@ import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
 
 const zero = BigNumber.from(0);
 const lowerRate = BigNumber.from('60000000000000000');
-const upperRate = BigNumber.from('840000000000000000');
-const maximumRate = lowerRate.add(upperRate); // 90%
+const upperRate = BigNumber.from('1000000000000000000');
+const maximumRate = lowerRate.add(upperRate); // 106%
 const secondsPerYear = BigNumber.from(31_536_000);
 describe('LinearStepFunctionInterestSetter', () => {
   let snapshotId: string;
@@ -29,6 +29,7 @@ describe('LinearStepFunctionInterestSetter', () => {
       LinearStepFunctionInterestSetter__factory.bytecode,
       [lowerRate, upperRate],
     );
+    expect(await interestSetter.interestSetterType()).to.eq(1); // linear
 
     snapshotId = await snapshot();
   });
