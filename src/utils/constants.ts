@@ -246,6 +246,11 @@ export const UMAMI_LINK_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const UMAMI_STORAGE_VIEWER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x86e7D5D04888540CdB6429542eC3DeC1978e6ea4',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const UMAMI_UNI_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x37c0705A65948EA5e0Ae1aDd13552BCaD7711A23',
   [Network.ArbitrumGoerli]: undefined,

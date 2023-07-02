@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
+import { IUmamiAssetVault } from "../interfaces/umami/IUmamiAssetVault.sol";
 import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
@@ -55,6 +55,7 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
     }
 
     function isExternalRedemptionPaused() public override view returns (bool) {
-        return Pausable(IUmamiAssetVaultIsolationModeVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN()).paused();
+        address underlyingToken = IUmamiAssetVaultIsolationModeVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN();
+        return IUmamiAssetVault(underlyingToken).withdrawalPaused();
     }
 }

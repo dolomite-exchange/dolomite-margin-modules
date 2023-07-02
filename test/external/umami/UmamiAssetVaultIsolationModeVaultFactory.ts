@@ -28,7 +28,7 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 104861700,
+      blockNumber: 107150300,
       network: Network.ArbitrumOne,
     });
     umamiRegistry = await createUmamiAssetVaultRegistry(core);
@@ -40,7 +40,7 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
     factory = await createUmamiAssetVaultIsolationModeVaultFactory(
       core,
       umamiRegistry,
-      core.umamiEcosystem!.umUsdc,
+      core.umamiEcosystem!.glpUsdc,
       core.usdc,
       (vaultImplementation as any) as UmamiAssetVaultIsolationModeTokenVaultV1,
     );
@@ -55,7 +55,7 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.umamiAssetVaultRegistry()).to.equal(umamiRegistry.address);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.umamiEcosystem!.umUsdc.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.umamiEcosystem!.glpUsdc.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);

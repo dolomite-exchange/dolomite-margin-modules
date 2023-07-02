@@ -21,8 +21,10 @@
 pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
+import { BaseRegistry } from "../general/BaseRegistry.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
+import { IUmamiAssetVaultStorageViewer } from "../interfaces/umami/IUmamiAssetVaultStorageViewer.sol";
 import { IUmamiAssetVaultWhitelist } from "../interfaces/umami/IUmamiAssetVaultWhitelist.sol";
 
 
@@ -35,7 +37,7 @@ import { IUmamiAssetVaultWhitelist } from "../interfaces/umami/IUmamiAssetVaultW
  *          without having to deprecate the system and force users to migrate when Dolomite needs to point to new
  *          contracts or functions that Umami introduces.
  */
-contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, OnlyDolomiteMargin {
+contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, OnlyDolomiteMargin, BaseRegistry {
 
     // ==================== Constants ====================
 
@@ -44,11 +46,13 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, OnlyDolomiteMargin
     // ==================== Storage ====================
 
     IUmamiAssetVaultWhitelist public override whitelist;
+    IUmamiAssetVaultStorageViewer public override storageViewer;
 
     // ==================== Constructor ====================
 
     constructor(
         address _whitelist,
+        address _storageViewer,
         address _dolomiteMargin
     )
     OnlyDolomiteMargin(
@@ -56,6 +60,7 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, OnlyDolomiteMargin
     )
     {
         whitelist = IUmamiAssetVaultWhitelist(_whitelist);
+        storageViewer = IUmamiAssetVaultStorageViewer(_storageViewer);
     }
 
     function ownerSetWhitelist(
@@ -68,7 +73,29 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, OnlyDolomiteMargin
             _FILE,
             "Invalid whitelist address"
         );
+
+        (bytes memory data) = _callAndCheckSuccess(_whitelist, whitelist.aggregateVault.selector, bytes(""));
+        abi.decode(data, (address)); // If this doesn't work, it'll revert
+
         whitelist = IUmamiAssetVaultWhitelist(_whitelist);
         emit WhitelistSet(_whitelist);
+    }
+
+    function ownerSetStorageViewer(
+        address _storageViewer
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _storageViewer != address(0),
+            _FILE,
+            "Invalid storageViewer address"
+        );
+
+        (bytes memory data) = _callAndCheckSuccess(_storageViewer, storageViewer.getVaultFees.selector, bytes(""));
+        abi.decode(data, (IUmamiAssetVaultStorageViewer.VaultFees)); // If this doesn't work, it'll revert
+
+        storageViewer = IUmamiAssetVaultStorageViewer(_storageViewer);
+        emit StorageViewerSet(_storageViewer);
     }
 }

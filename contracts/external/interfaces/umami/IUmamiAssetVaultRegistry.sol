@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IUmamiAssetVaultStorageViewer } from "./IUmamiAssetVaultStorageViewer.sol";
 import { IUmamiAssetVaultWhitelist } from "./IUmamiAssetVaultWhitelist.sol";
-
 
 /**
  * @title   IUmamiAssetVaultRegistry
@@ -36,6 +36,7 @@ interface IUmamiAssetVaultRegistry {
     // ========================================================
 
     event WhitelistSet(address indexed _whitelist);
+    event StorageViewerSet(address indexed _storageViewer);
 
     // ========================================================
     // =================== Admin Functions ====================
@@ -43,9 +44,13 @@ interface IUmamiAssetVaultRegistry {
 
     function ownerSetWhitelist(address _whitelist) external;
 
+    function ownerSetStorageViewer(address _storageViewer) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
 
     function whitelist() external view returns (IUmamiAssetVaultWhitelist);
+
+    function storageViewer() external view returns (IUmamiAssetVaultStorageViewer);
 }

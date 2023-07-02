@@ -22,7 +22,7 @@ import {
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 const USDC_PRICE = BigNumber.from('999904540000000000000000000000'); // $0.99990454
-const UMAMI_USDC_PRICE = BigNumber.from('1021871542224830000'); // $1.02187...
+const UMAMI_USDC_PRICE = BigNumber.from('1013175832451905400798540480529'); // $1.0131...
 
 describe('UmamiAssetVaultPriceOracle', () => {
   let snapshotId: string;
@@ -37,7 +37,7 @@ describe('UmamiAssetVaultPriceOracle', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 104861700,
+      blockNumber: 107150300,
       network: Network.ArbitrumOne,
     });
     umamiRegistry = await createUmamiAssetVaultRegistry(core);
@@ -45,7 +45,7 @@ describe('UmamiAssetVaultPriceOracle', () => {
     factory = await createUmamiAssetVaultIsolationModeVaultFactory(
       core,
       umamiRegistry,
-      core.umamiEcosystem!.umUsdc,
+      core.umamiEcosystem!.glpUsdc,
       core.usdc,
       userVaultImplementation,
     );
@@ -82,9 +82,11 @@ describe('UmamiAssetVaultPriceOracle', () => {
       );
       const umamiAssetVaultPriceOracle = await createUmamiAssetVaultPriceOracle(core, umamiRegistry, newFactory);
       const price = await umamiAssetVaultPriceOracle.getPrice(factory.address);
+      const usdcPriceReal = await core.dolomiteMargin.getMarketPrice(core.marketIds.usdc);
+      console.log('usdcPriceReal', usdcPriceReal.value.toString());
       const usdcPrice = USDC_PRICE.div(1e12);
-      const retentionFee = usdcPrice.mul(97).div(10000);
-      expect(price.value).to.eq(usdcPrice.sub(retentionFee));
+      const withdrawalFee = usdcPrice.mul(75).div(10000);
+      expect(price.value).to.eq(usdcPrice.sub(withdrawalFee));
     });
 
     it('fails when token sent is not umUSDC', async () => {

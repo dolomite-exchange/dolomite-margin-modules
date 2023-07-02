@@ -62,7 +62,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
       blockNumber: 100_000_001,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.umamiEcosystem!.umUsdc;
+    underlyingToken = core.umamiEcosystem!.glpUsdc;
     const userVaultImplementation = await createUmamiAssetVaultIsolationModeTokenVaultV1();
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     umamiRegistry = await createUmamiAssetVaultRegistry(core);
@@ -100,9 +100,9 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.umamiEcosystem!.umUsdc);
-    await core.umamiEcosystem!.umUsdc.connect(core.hhUser1).deposit(usableUsdcAmount, core.hhUser1.address);
-    await core.umamiEcosystem!.umUsdc.connect(core.hhUser1).approve(vault.address, amountWei);
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.umamiEcosystem!.glpUsdc);
+    await core.umamiEcosystem!.glpUsdc.connect(core.hhUser1).deposit(usableUsdcAmount, core.hhUser1.address);
+    await core.umamiEcosystem!.glpUsdc.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
@@ -231,7 +231,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
 
     it('should fail if output token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.umamiEcosystem!.umUsdc.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await core.umamiEcosystem!.glpUsdc.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
@@ -247,7 +247,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
 
     it('should fail if input amount is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.umamiEcosystem!.umUsdc.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await core.umamiEcosystem!.glpUsdc.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,

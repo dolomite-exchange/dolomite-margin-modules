@@ -39,6 +39,7 @@ contract UmamiAssetVaultPriceOracle is IDolomitePriceOracle {
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "UmamiAssetVaultPriceOracle";
+    uint256 public constant FEE_PRECISION = 100 * (10 ** 18);
 
     // ============================ Public State Variables ============================
 
@@ -90,9 +91,8 @@ contract UmamiAssetVaultPriceOracle is IDolomitePriceOracle {
         uint256 price = totalSupply == 0
                 ? underlyingPrice
                 : underlyingPrice * vaultToken.totalAssets() / totalSupply;
-        uint256 base = 10 ** uint256(vaultToken.decimals());
-        uint256 fee = vaultToken.previewWithdrawalFee(base); // TODO replace with better fee mechanism
-        return price - (price * fee / base);
+        uint256 withdrawalFee = UMAMI_ASSET_VAULT_REGISTRY.storageViewer().getVaultFees().withdrawalFee;
+        return price - (price * withdrawalFee / FEE_PRECISION);
     }
 
     function _getUnderlyingMarketId(IUmamiAssetVault _vaultToken) internal view returns (uint256) {

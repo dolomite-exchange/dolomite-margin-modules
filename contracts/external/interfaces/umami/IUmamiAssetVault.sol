@@ -32,28 +32,17 @@ import { IERC4626 } from "../IERC4626.sol";
 interface IUmamiAssetVault is IERC4626 {
 
     /**
-     * @notice Pause deposit and withdrawal operations
+     * @notice Pause deposit and withdrawal operations. Only callable by AggregateVault.
      */
     function pauseDepositWithdraw() external;
 
     /**
-     * @notice Unpause deposit and withdrawal operations
+     * @notice Unpause deposit and withdrawal operations. Only callable by AggregateVault.
      */
     function unpauseDepositWithdraw() external;
 
     /**
-     * @notice Preview the deposit fee for a specified amount of assets
-     *
-     * @param  _size            The amount of assets to preview the deposit fee for
-     * @return _totalDepositFee The total deposit fee for the specified amount of assets
+     * @dev Returns true if withdrawing from the contract is paused, and false otherwise.
      */
-    function previewDepositFee(uint256 _size) external view returns (uint256 _totalDepositFee);
-
-    /**
-     * @notice Preview the withdrawal fee for a specified amount of assets
-     *
-     * @param  _size                The amount of assets to preview the withdrawal fee for
-     * @return _totalWithdrawalFee  The total withdrawal fee for the specified amount of assets
-     */
-    function previewWithdrawalFee(uint256 _size) external view returns (uint256 _totalWithdrawalFee);
+    function withdrawalPaused() external view returns (bool);
 }

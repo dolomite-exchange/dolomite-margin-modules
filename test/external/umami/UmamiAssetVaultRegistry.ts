@@ -23,7 +23,7 @@ describe('UmamiAssetVaultRegistry', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 104861700,
+      blockNumber: 107150300,
       network: Network.ArbitrumOne,
     });
     registry = await createUmamiAssetVaultRegistry(core);
@@ -31,7 +31,7 @@ describe('UmamiAssetVaultRegistry', () => {
     const factory = await createUmamiAssetVaultIsolationModeVaultFactory(
       core,
       registry,
-      core.umamiEcosystem!.umUsdc,
+      core.umamiEcosystem!.glpUsdc,
       core.usdc,
       userVaultImplementation,
     );
@@ -47,16 +47,25 @@ describe('UmamiAssetVaultRegistry', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.whitelist()).to.equal(core.umamiEcosystem!.whitelist.address);
+      expect(await registry.storageViewer()).to.equal(core.umamiEcosystem!.storageViewer.address);
     });
   });
 
   describe('#ownerSetWhitelist', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetWhitelist(OTHER_ADDRESS);
-      await expectEvent(registry, result, 'GlpAdapterSet', {
-        glpAdapter: OTHER_ADDRESS,
+      const whitelist = core.umamiEcosystem!.whitelist.address;
+      const result = await registry.connect(core.governance).ownerSetWhitelist(whitelist);
+      await expectEvent(registry, result, 'WhitelistSet', {
+        whitelist,
       });
-      expect(await registry.whitelist()).to.equal(OTHER_ADDRESS);
+      expect(await registry.whitelist()).to.equal(whitelist);
+    });
+
+    it('should fail if whitelist is invalid', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetWhitelist(OTHER_ADDRESS),
+        `BaseRegistry: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
+      );
     });
 
     it('should fail when not called by owner', async () => {
@@ -70,6 +79,39 @@ describe('UmamiAssetVaultRegistry', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetWhitelist(ZERO_ADDRESS),
         'UmamiAssetVaultRegistry: Invalid whitelist address',
+      );
+    });
+  });
+
+  describe('#ownerSetStorageViewer', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetStorageViewer(
+        core.umamiEcosystem!.storageViewer.address,
+      );
+      await expectEvent(registry, result, 'StorageViewerSet', {
+        storageViewer: core.umamiEcosystem!.storageViewer.address,
+      });
+      expect(await registry.storageViewer()).to.equal(core.umamiEcosystem!.storageViewer.address);
+    });
+
+    it('should fail if storageViewer is invalid', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetStorageViewer(OTHER_ADDRESS),
+        `BaseRegistry: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetStorageViewer(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetStorageViewer(ZERO_ADDRESS),
+        'UmamiAssetVaultRegistry: Invalid storageViewer address',
       );
     });
   });

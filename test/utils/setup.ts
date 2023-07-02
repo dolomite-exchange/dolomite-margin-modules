@@ -85,6 +85,8 @@ import {
   IPlutusVaultGLPRouter__factory,
   ISGMX,
   ISGMX__factory,
+  IUmamiAssetVaultStorageViewer,
+  IUmamiAssetVaultStorageViewer__factory,
   IUmamiAssetVault,
   IUmamiAssetVault__factory,
   IUmamiAssetVaultWhitelist,
@@ -118,7 +120,8 @@ import {
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
-  ATLAS_SI_TOKEN_MAP, DAI_MAP,
+  ATLAS_SI_TOKEN_MAP,
+  DAI_MAP,
   DFS_GLP_MAP,
   DPLV_GLP_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
@@ -152,12 +155,14 @@ import {
   S_GMX_MAP,
   SBF_GMX_MAP,
   UMAMI_LINK_VAULT_MAP,
+  UMAMI_STORAGE_VIEWER_MAP,
   UMAMI_UNI_VAULT_MAP,
   UMAMI_USDC_VAULT_MAP,
   UMAMI_WBTC_VAULT_MAP,
   UMAMI_WETH_VAULT_MAP,
   UMAMI_WHITELIST_MAP,
-  USDC_MAP, USDT_MAP,
+  USDC_MAP,
+  USDT_MAP,
   V_GLP_MAP,
   V_GMX_MAP,
   WETH_MAP,
@@ -251,11 +256,12 @@ interface PlutusEcosystem {
 }
 
 interface UmamiEcosystem {
-  umLink: IUmamiAssetVault;
-  umUni: IUmamiAssetVault;
-  umUsdc: IUmamiAssetVault;
-  umWbtc: IUmamiAssetVault;
-  umWeth: IUmamiAssetVault;
+  glpLink: IUmamiAssetVault;
+  glpUni: IUmamiAssetVault;
+  glpUsdc: IUmamiAssetVault;
+  glpWbtc: IUmamiAssetVault;
+  glpWeth: IUmamiAssetVault;
+  storageViewer: IUmamiAssetVaultStorageViewer;
   whitelist: IUmamiAssetVaultWhitelist;
 }
 
@@ -798,25 +804,29 @@ async function createUmamiEcosystem(
   }
 
   return {
-    umLink: getContract(
+    glpLink: getContract(
       UMAMI_LINK_VAULT_MAP[network] as string,
       address => IUmamiAssetVault__factory.connect(address, signer),
     ),
-    umUni: getContract(
+    glpUni: getContract(
       UMAMI_UNI_VAULT_MAP[network] as string,
       address => IUmamiAssetVault__factory.connect(address, signer),
     ),
-    umUsdc: getContract(
+    glpUsdc: getContract(
       UMAMI_USDC_VAULT_MAP[network] as string,
       address => IUmamiAssetVault__factory.connect(address, signer),
     ),
-    umWbtc: getContract(
+    glpWbtc: getContract(
       UMAMI_WBTC_VAULT_MAP[network] as string,
       address => IUmamiAssetVault__factory.connect(address, signer),
     ),
-    umWeth: getContract(
+    glpWeth: getContract(
       UMAMI_WETH_VAULT_MAP[network] as string,
       address => IUmamiAssetVault__factory.connect(address, signer),
+    ),
+    storageViewer: getContract(
+      UMAMI_STORAGE_VIEWER_MAP[network] as string,
+      address => IUmamiAssetVaultStorageViewer__factory.connect(address, signer),
     ),
     whitelist: getContract(
       UMAMI_WHITELIST_MAP[network] as string,

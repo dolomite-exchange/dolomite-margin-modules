@@ -62,10 +62,10 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 104861700,
+      blockNumber: 107150300,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.umamiEcosystem!.umUsdc.connect(core.hhUser1);
+    underlyingToken = core.umamiEcosystem!.glpUsdc.connect(core.hhUser1);
 
     const userVaultImplementation = await createUmamiAssetVaultIsolationModeTokenVaultV1();
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
@@ -73,7 +73,7 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
     factory = await createUmamiAssetVaultIsolationModeVaultFactory(
       core,
       umamiRegistry,
-      core.umamiEcosystem!.umUsdc,
+      core.umamiEcosystem!.glpUsdc,
       core.usdc,
       userVaultImplementation,
     );
@@ -102,9 +102,9 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.umamiEcosystem!.umUsdc);
-    await core.umamiEcosystem!.umUsdc.connect(core.hhUser1).deposit(usableUsdcAmount, core.hhUser1.address);
-    await core.umamiEcosystem!.umUsdc.connect(core.hhUser1).approve(vault.address, amountWei);
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.umamiEcosystem!.glpUsdc);
+    await core.umamiEcosystem!.glpUsdc.connect(core.hhUser1).deposit(usableUsdcAmount, core.hhUser1.address);
+    await core.umamiEcosystem!.glpUsdc.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);

@@ -35,10 +35,10 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 104861700,
+      blockNumber: 107150300,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.umamiEcosystem!.umUsdc.connect(core.hhUser1);
+    underlyingToken = core.umamiEcosystem!.glpUsdc.connect(core.hhUser1);
     const userVaultImplementation = await createUmamiAssetVaultIsolationModeTokenVaultV1();
     umamiRegistry = await createUmamiAssetVaultRegistry(core);
     factory = await createUmamiAssetVaultIsolationModeVaultFactory(
@@ -87,10 +87,10 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
       const admin = await impersonate(await core.umamiEcosystem!.whitelist.aggregateVault(), true);
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
 
-      await core.umamiEcosystem!.umUsdc.connect(admin).pauseDepositWithdraw();
+      await core.umamiEcosystem!.glpUsdc.connect(admin).pauseDepositWithdraw();
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
 
-      await core.umamiEcosystem!.umUsdc.connect(admin).unpauseDepositWithdraw();
+      await core.umamiEcosystem!.glpUsdc.connect(admin).unpauseDepositWithdraw();
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
     });
   });

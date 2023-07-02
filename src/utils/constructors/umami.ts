@@ -17,6 +17,7 @@ export function getUmamiAssetVaultRegistryConstructorParams(
 
   return [
     core.umamiEcosystem.whitelist.address,
+    core.umamiEcosystem.storageViewer.address,
     core.dolomiteMargin.address,
   ];
 }
