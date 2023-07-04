@@ -20,9 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IBaseRegistry } from "../IBaseRegistry.sol";
 import { IUmamiAssetVaultStorageViewer } from "./IUmamiAssetVaultStorageViewer.sol";
-import { IUmamiAssetVaultWhitelist } from "./IUmamiAssetVaultWhitelist.sol";
+import { IBaseRegistry } from "../IBaseRegistry.sol";
 
 /**
  * @title   IUmamiAssetVaultRegistry

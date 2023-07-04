@@ -117,44 +117,44 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  // describe('Actions.Call and Actions.Sell for non-liquidation', () => {
-  //   it('should work when called with the normal conditions', async () => {
-  //     const solidAccountId = 0;
-  //     const liquidAccountId = 0;
-  //     const actions = await unwrapper.createActionsForUnwrapping(
-  //       solidAccountId,
-  //       liquidAccountId,
-  //       vault.address,
-  //       vault.address,
-  //       core.marketIds.usdc,
-  //       underlyingMarketId,
-  //       ZERO_BI,
-  //       amountWei,
-  //       BYTES_EMPTY,
-  //     );
-  //
-  //     const amountOut = await unwrapper.getExchangeCost(
-  //       factory.address,
-  //       core.tokens.usdc.address,
-  //       amountWei,
-  //       BYTES_EMPTY,
-  //     );
-  //
-  //     await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-  //     await core.dolomiteMargin.connect(core.hhUser5).operate(
-  //       [defaultAccount],
-  //       actions,
-  //     );
-  //
-  //     const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
-  //     expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
-  //     expect(await vault.underlyingBalanceOf()).to.eq(ZERO_BI);
-  //
-  //     const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
-  //     expect(otherBalanceWei.sign).to.eq(true);
-  //     expect(otherBalanceWei.value).to.eq(amountOut);
-  //   });
-  // });
+  describe('Actions.Call and Actions.Sell for non-liquidation', () => {
+    it('should work when called with the normal conditions', async () => {
+      const solidAccountId = 0;
+      const liquidAccountId = 0;
+      const actions = await unwrapper.createActionsForUnwrapping(
+        solidAccountId,
+        liquidAccountId,
+        vault.address,
+        vault.address,
+        core.marketIds.usdc,
+        underlyingMarketId,
+        ZERO_BI,
+        amountWei,
+        BYTES_EMPTY,
+      );
+
+      const amountOut = await unwrapper.getExchangeCost(
+        factory.address,
+        core.tokens.usdc.address,
+        amountWei,
+        BYTES_EMPTY,
+      );
+
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await core.dolomiteMargin.connect(core.hhUser5).operate(
+        [defaultAccount],
+        actions,
+      );
+
+      const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
+      expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
+      expect(await vault.underlyingBalanceOf()).to.eq(ZERO_BI);
+
+      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
+      expect(otherBalanceWei.sign).to.eq(true);
+      expect(otherBalanceWei.value).to.eq(amountOut);
+    });
+  });
 
   describe('#exchange', () => {
     it('should fail if not called by DolomiteMargin', async () => {

@@ -24,10 +24,10 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ICustomTestToken } from "./ICustomTestToken.sol";
 
 /**
- * @title   ICustomTestToken
+ * @title   CustomTestVaultToken
  * @author  Dolomite
  *
- * @notice  Interface contract for accessing test methods on test ERC20s for testing.
+ * @notice  Contract creating ERC20s for testing.
  */
 contract CustomTestVaultToken is ERC20, ICustomTestToken {
 

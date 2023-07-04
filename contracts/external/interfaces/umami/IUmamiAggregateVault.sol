@@ -30,9 +30,26 @@ pragma solidity ^0.8.9;
 interface IUmamiAggregateVault {
 
     /**
-     * @notice Only callable by an Umami configurator, like `0xc7d873647AEa26902b9C2C243C21364468474b34`
+     * @notice Only callable by an Umami configurator, like `0x7A53700c4d2DD1Eb9809a63679A6a5b6c4e31d97`
      *
      * @param  _newCaps The caps for each vault, corresponding with the vault's indices
      */
     function setVaultCaps(uint256[5] calldata _newCaps) external;
+
+    /**
+     * @notice Sets the vault fees
+     *
+     * @param  _performanceFee          The performance fee value to set
+     * @param  _managementFee           The management fee value to set
+     * @param  _withdrawalFee           The withdrawal fee value to set
+     * @param  _depositFee              The deposit fee value to set
+     * @param  _timelockBoostPercent    The timelock boost percent value to set
+     */
+    function setVaultFees(
+        uint256 _performanceFee,
+        uint256 _managementFee,
+        uint256 _withdrawalFee,
+        uint256 _depositFee,
+        uint256 _timelockBoostPercent
+    ) external;
 }

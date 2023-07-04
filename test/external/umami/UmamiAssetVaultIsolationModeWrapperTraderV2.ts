@@ -3,7 +3,6 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import {
-  IGmxRegistryV1, IUmamiAggregateVault__factory,
   IUmamiAssetVault,
   UmamiAssetVaultIsolationModeTokenVaultV1,
   UmamiAssetVaultIsolationModeTokenVaultV1__factory,
@@ -34,6 +33,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import { setupWhitelistAndAggregateVault } from './umami-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -42,6 +42,9 @@ const usdcAmount = amountWei.div(1e12).mul(8);
 const usableUsdcAmount = usdcAmount.div(2);
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
+
+const depositFeeNumerator = BigNumber.from('750000000000000000');
+const depositFeeDenominator = BigNumber.from('100000000000000000000');
 
 const abiCoder = ethers.utils.defaultAbiCoder;
 
@@ -98,12 +101,10 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
+    await setupWhitelistAndAggregateVault(core, umamiRegistry);
+
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.umamiEcosystem!.glpUsdc);
     const glpUsdc = core.umamiEcosystem!.glpUsdc.connect(core.hhUser1);
-    const aggregateVault = await IUmamiAggregateVault__factory.connect(
-      await glpUsdc.aggregateVault(),
-      core.umamiEcosystem!.configurator,
-    );
     await glpUsdc.deposit(usableUsdcAmount, core.hhUser1.address);
     await glpUsdc.approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -134,18 +135,15 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
         BYTES_EMPTY,
       );
 
-      await core.tokens.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      const result = await core.dolomiteMargin.connect(core.hhUser5).operate([defaultAccount], actions);
-
-      // jUSDC's value goes up every second. To get the correct amountOut, we need to use the same block #
       const amountOut = await wrapper.getExchangeCost(
         core.tokens.usdc.address,
         factory.address,
         usableUsdcAmount,
         BYTES_EMPTY,
-        { blockTag: result.blockNumber },
       );
+
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await core.dolomiteMargin.connect(core.hhUser5).operate([defaultAccount], actions);
 
       const expectedTotalBalance = amountWei.add(amountOut);
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);

@@ -45,7 +45,7 @@ contract BaseRegistry is
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "BaseRegistry";
-    bytes32 private constant _DOLOMITE_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRegistry")) - 1);
+    bytes32 private constant _DOLOMITE_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRegistry")) - 1); // solhint-disable-line max-line-length
 
     // ===================== Functions =====================
 

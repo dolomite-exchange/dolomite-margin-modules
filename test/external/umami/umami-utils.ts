@@ -5,7 +5,7 @@ import {
   IUmamiAssetVaultWhitelist__factory,
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
-import { MAX_UINT_256_BI } from '../../../src/utils/no-deps-constants';
+import { MAX_UINT_256_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { CoreProtocol } from '../../utils/setup';
 
 export async function setupWhitelistAndAggregateVault(
@@ -26,6 +26,14 @@ export async function setupWhitelistAndAggregateVault(
   const storageViewer = IUmamiAssetVaultStorageViewer__factory.connect(
     await umamiRegistry.storageViewer(),
     core.hhUser1,
+  );
+  const vaultFees = await storageViewer.getVaultFees();
+  await aggregateVault.connect(core.umamiEcosystem!.configurator).setVaultFees(
+    ZERO_BI,
+    ZERO_BI,
+    vaultFees.withdrawalFee,
+    vaultFees.depositFee,
+    ZERO_BI,
   );
   const whitelist = IUmamiAssetVaultWhitelist__factory.connect(
     await storageViewer.getWhitelist(),

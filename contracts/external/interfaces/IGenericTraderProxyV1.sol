@@ -19,14 +19,14 @@
 
 pragma solidity ^0.8.9;
 
+import { IGenericTraderBase } from "./IGenericTraderBase.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
-import { IGenericTraderBase } from "./IGenericTraderBase.sol";
 
 
 /**
- * @title IGenericTraderProxyV1
- * @author Dolomite
+ * @title   IGenericTraderProxyV1
+ * @author  Dolomite
  *
  * Trader proxy interface for trading assets using any trader from msg.sender
  */
@@ -63,16 +63,16 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
      * @dev     Swaps an exact amount of input (specified in the `_amountWeisPath[0]` parameter) for at least
      *          `_amountWeisPath[_amountWeisPath.length - 1]` of output.
      *
-     * @param _tradeAccountNumber           The account number to use for msg.sender's trade
-     * @param _marketIdsPath                The path of market IDs to use for each trade action. Length should be equal
+     * @param  _tradeAccountNumber          The account number to use for msg.sender's trade
+     * @param  _marketIdsPath               The path of market IDs to use for each trade action. Length should be equal
      *                                      to `_tradersPath.length + 1`.
-     * @param _amountWeisPath               The path of amounts (in wei) to use for each trade action. Length should be
+     * @param  _amountWeisPath              The path of amounts (in wei) to use for each trade action. Length should be
      *                                      equal to `_tradersPath.length + 1`. Setting a value to `uint(-1)` will use
      *                                      the user's full balance for the trade at that part in the path. Caution must
      *                                      be taken when using this parameter for frontends that call this function.
-     * @param _tradersPath                  The path of traders to use for each trade action. Length should be equal to
+     * @param  _tradersPath                 The path of traders to use for each trade action. Length should be equal to
      *                                      `_marketIdsPath.length - 1` and `_amountWeisPath.length - 1`.
-     * @param _makerAccounts                The accounts that will be used for the maker side of the trades involving
+     * @param  _makerAccounts               The accounts that will be used for the maker side of the trades involving
      *                                      `TraderType.InternalLiquidity`.
      */
     function swapExactInputForOutput(
@@ -88,22 +88,22 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
      * @dev     The same function as `swapExactInputForOutput`, but allows the caller transfer collateral and modify
      *          their position's expiration in the same transaction.
      *
-     * @param _tradeAccountNumber           The account number to use for msg.sender's trade
-     * @param _marketIdsPath                The path of market IDs to use for each trade action. Length should be equal
+     * @param  _tradeAccountNumber          The account number to use for msg.sender's trade
+     * @param  _marketIdsPath               The path of market IDs to use for each trade action. Length should be equal
      *                                      to `_tradersPath.length + 1`.
-     * @param _amountWeisPath               The path of amounts (in wei) to use for each trade action. Length should be
+     * @param  _amountWeisPath              The path of amounts (in wei) to use for each trade action. Length should be
      *                                      equal to `_tradersPath.length + 1`. Setting a value to `uint(-1)` will use
      *                                      the user's full balance for the trade at that part in the path. Caution must
      *                                      be taken when using this parameter for frontends that call this function.
-     * @param _tradersPath                  The path of traders to use for each trade action. Length should be equal to
+     * @param  _tradersPath                 The path of traders to use for each trade action. Length should be equal to
      *                                      `_marketIdsPath.length - 1` and `_amountWeisPath.length - 1`.
-     * @param _makerAccounts                The accounts that will be used for the maker side of the trades involving
+     * @param  _makerAccounts               The accounts that will be used for the maker side of the trades involving
                                             `TraderType.InternalLiquidity`.
-     * @param _transferCollateralParams     The parameters for transferring collateral in/out of the
+     * @param  _transferCollateralParams    The parameters for transferring collateral in/out of the
      *                                      `_tradeAccountNumber` once the trades settle. One of
      *                                      `_params.fromAccountNumber` or `_params.toAccountNumber` must be equal to
      *                                      `_tradeAccountNumber`.
-     * @param _expiryParams                 The parameters for modifying the expiration of the debt in the position.
+     * @param  _expiryParams                The parameters for modifying the expiration of the debt in the position.
      */
     function swapExactInputForOutputAndModifyPosition(
         uint256 _tradeAccountNumber,

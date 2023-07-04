@@ -33,14 +33,14 @@ import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
  */
 contract RegistryProxy is ProxyContractHelpers, OnlyDolomiteMarginForUpgradeable {
 
-    // ===================== Events =====================
-
-    event ImplementationSet(address indexed implementation);
-
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "RegistryProxy";
     bytes32 private constant _IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1);
+
+    // ===================== Events =====================
+
+    event ImplementationSet(address indexed implementation);
 
     // ==================== Constructor ====================
 
@@ -61,6 +61,7 @@ contract RegistryProxy is ProxyContractHelpers, OnlyDolomiteMarginForUpgradeable
     // ===================== Functions =====================
 
     fallback() external {
+        // solhint-disable-previous-line payable-fallback
         _callImplementation(implementation());
     }
 

@@ -45,7 +45,7 @@ contract DolomiteRegistryImplementation is
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
-    bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1);
+    bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
