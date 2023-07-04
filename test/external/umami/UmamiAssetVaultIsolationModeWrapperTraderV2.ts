@@ -36,9 +36,9 @@ import {
 import { setupWhitelistAndAggregateVault } from './umami-utils';
 
 const defaultAccountNumber = '0';
-const amountWei = BigNumber.from('200000000000000000000'); // $200
+const amountWei = BigNumber.from('200000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
-const usdcAmount = amountWei.div(1e12).mul(8);
+const usdcAmount = amountWei.mul(8);
 const usableUsdcAmount = usdcAmount.div(2);
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
