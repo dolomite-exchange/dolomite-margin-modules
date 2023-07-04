@@ -3,7 +3,12 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumber, BigNumberish, BytesLike } from 'ethers';
 import { ethers } from 'hardhat';
 import { CoreProtocol } from '../../test/utils/setup';
-import { CustomTestToken, CustomTestToken__factory } from '../types';
+import {
+  CustomTestToken,
+  CustomTestToken__factory,
+  CustomTestVaultToken,
+  CustomTestVaultToken__factory,
+} from '../types';
 
 /**
  * @return  The deployed contract
@@ -32,6 +37,15 @@ export async function createTestToken(): Promise<CustomTestToken> {
     ['Test Token', 'TEST', 18],
   );
 }
+
+export async function createTestVaultToken(asset: { address: string }): Promise<CustomTestVaultToken> {
+  return createContractWithAbi<CustomTestVaultToken>(
+    CustomTestVaultToken__factory.abi,
+    CustomTestVaultToken__factory.bytecode,
+    [asset.address, 'Test Vault Token', 'TEST', 18],
+  );
+}
+
 export async function depositIntoDolomiteMargin(
   core: CoreProtocol,
   accountOwner: SignerWithAddress,
@@ -44,23 +58,23 @@ export async function depositIntoDolomiteMargin(
     .connect(accountOwner)
     .operate(
       [{ owner: accountOwner.address, number: accountNumber }],
-    [
-      {
-        actionType: ActionType.Deposit, // deposit
-        accountId: '0', // accounts[0]
-        amount: {
-          sign: true,
-          denomination: AmountDenomination.Wei,
-          ref: AmountReference.Delta,
-          value: amount,
+      [
+        {
+          actionType: ActionType.Deposit, // deposit
+          accountId: '0', // accounts[0]
+          amount: {
+            sign: true,
+            denomination: AmountDenomination.Wei,
+            ref: AmountReference.Delta,
+            value: amount,
+          },
+          primaryMarketId: tokenId,
+          secondaryMarketId: 0,
+          otherAddress: fromAddress ?? accountOwner.address,
+          otherAccountId: 0,
+          data: '0x',
         },
-        primaryMarketId: tokenId,
-        secondaryMarketId: 0,
-        otherAddress: fromAddress ?? accountOwner.address,
-        otherAccountId: 0,
-        data: '0x',
-      },
-    ],
+      ],
     );
 }
 
@@ -75,23 +89,23 @@ export async function withdrawFromDolomiteMargin(
     .connect(user)
     .operate(
       [{ owner: user.address, number: accountId }],
-    [
-      {
-        actionType: '1', // deposit
-        accountId: '0', // accounts[0]
-        amount: {
-          sign: false, // positive
-          denomination: '0', // wei
-          ref: '0', // value
-          value: amount,
+      [
+        {
+          actionType: '1', // deposit
+          accountId: '0', // accounts[0]
+          amount: {
+            sign: false, // positive
+            denomination: '0', // wei
+            ref: '0', // value
+            value: amount,
+          },
+          primaryMarketId: tokenId,
+          secondaryMarketId: 0,
+          otherAddress: user.address,
+          otherAccountId: 0,
+          data: '0x',
         },
-        primaryMarketId: tokenId,
-        secondaryMarketId: 0,
-        otherAddress: user.address,
-        otherAccountId: 0,
-        data: '0x',
-      },
-    ],
+      ],
     );
 }
 

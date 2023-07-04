@@ -95,6 +95,6 @@ contract TestIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     }
 
     function _getMarketPriceForToken(address _token) private view returns (uint256) {
-        return DOLOMITE_MARGIN.getMarketPrice(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)).value;
+        return DOLOMITE_MARGIN().getMarketPrice(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)).value;
     }
 }

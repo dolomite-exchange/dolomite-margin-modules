@@ -33,7 +33,13 @@ import {
   expectWalletBalance,
 } from '../../../utils/assertions';
 import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../../../utils/setup';
 
 const toAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units
@@ -60,10 +66,7 @@ describe('IsolationModeVaultFactory', () => {
   let solidAccount: SignerWithAddress;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
     userVaultImplementation = await createContractWithAbi(
@@ -747,7 +750,7 @@ describe('IsolationModeVaultFactory', () => {
       await core.dolomiteMargin.ownerSetGlobalOperator(vaultImplementation.address, true);
       await expectThrow(
         executeUnwrapV1(vaultImplementation, core.marketIds.weth, otherMarketId),
-        `IsolationModeUnwrapperTraderV1: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV1: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
       const result = await executeUnwrapV1(vaultImplementation, underlyingMarketId, otherMarketId);
 

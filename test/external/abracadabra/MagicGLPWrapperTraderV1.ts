@@ -14,6 +14,7 @@ import {
 import {
   CoreProtocol,
   disableInterestAccrual,
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -38,10 +39,7 @@ describe('MagicGLPWrapperTraderV1', () => {
   let defaultAccount: Account.InfoStruct;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 81874000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     magicGlp = core.abraEcosystem!.magicGlp;
     magicGlpPriceOracle = await createMagicGLPPriceOracle(core);
 
@@ -56,7 +54,7 @@ describe('MagicGLPWrapperTraderV1', () => {
     await disableInterestAccrual(core, core.marketIds.usdc);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
-    await core.usdc.connect(core.hhUser1).approve(core.gmxEcosystem!.glpManager.address, usdcAmount);
+    await core.tokens.usdc.connect(core.hhUser1).approve(core.gmxEcosystem!.glpManager.address, usdcAmount);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccount.number, core.marketIds.usdc, usableUsdcAmount);
 
     snapshotId = await snapshot();
@@ -82,7 +80,7 @@ describe('MagicGLPWrapperTraderV1', () => {
       );
 
       const amountOut = await wrapper.getExchangeCost(
-        core.usdc.address,
+        core.tokens.usdc.address,
         magicGlp.address,
         usableUsdcAmount,
         BYTES_EMPTY,
@@ -129,7 +127,7 @@ describe('MagicGLPWrapperTraderV1', () => {
           core.hhUser1.address,
           core.dolomiteMargin.address,
           magicGlp.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           usableUsdcAmount,
           BYTES_EMPTY,
         ),
@@ -144,11 +142,11 @@ describe('MagicGLPWrapperTraderV1', () => {
           core.hhUser1.address,
           core.dolomiteMargin.address,
           magicGlp.address,
-          core.dfsGlp!.address,
+          core.tokens.dfsGlp!.address,
           usableUsdcAmount,
           abiCoder.encode(['uint256'], [ZERO_BI]),
         ),
-        `MagicGLPWrapperTraderV1: Invalid input token <${core.dfsGlp!.address.toLowerCase()}>`,
+        `MagicGLPWrapperTraderV1: Invalid input token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
@@ -158,12 +156,12 @@ describe('MagicGLPWrapperTraderV1', () => {
         wrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.weth.address,
-          core.usdc.address,
+          core.tokens.weth.address,
+          core.tokens.usdc.address,
           amountWei,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `MagicGLPWrapperTraderV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
+        `MagicGLPWrapperTraderV1: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -174,7 +172,7 @@ describe('MagicGLPWrapperTraderV1', () => {
           core.hhUser1.address,
           core.dolomiteMargin.address,
           magicGlp.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           ZERO_BI,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
@@ -207,13 +205,13 @@ describe('MagicGLPWrapperTraderV1', () => {
       const glpAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
         .callStatic
         .mintAndStakeGlp(
-          core.usdc.address,
+          core.tokens.usdc.address,
           inputAmount,
           1,
           1,
         );
       const expectedAmount = await magicGlp.convertToShares(glpAmount);
-      expect(await wrapper.getExchangeCost(core.usdc.address, magicGlp.address, inputAmount, BYTES_EMPTY))
+      expect(await wrapper.getExchangeCost(core.tokens.usdc.address, magicGlp.address, inputAmount, BYTES_EMPTY))
         .to
         .eq(expectedAmount);
     });
@@ -226,13 +224,13 @@ describe('MagicGLPWrapperTraderV1', () => {
         const glpAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .mintAndStakeGlp(
-            core.usdc.address,
+            core.tokens.usdc.address,
             weirdAmount,
             1,
             1,
           );
         const expectedAmount = await magicGlp.convertToShares(glpAmount);
-        expect(await wrapper.getExchangeCost(core.usdc.address, magicGlp.address, weirdAmount, BYTES_EMPTY))
+        expect(await wrapper.getExchangeCost(core.tokens.usdc.address, magicGlp.address, weirdAmount, BYTES_EMPTY))
           .to
           .eq(expectedAmount);
       }
@@ -240,21 +238,21 @@ describe('MagicGLPWrapperTraderV1', () => {
 
     it('should fail if the input token is not in GLP', async () => {
       await expectThrow(
-        wrapper.getExchangeCost(core.dfsGlp!.address, magicGlp.address, usableUsdcAmount, BYTES_EMPTY),
-        `MagicGLPWrapperTraderV1: Invalid input token <${core.dfsGlp!.address.toLowerCase()}>`,
+        wrapper.getExchangeCost(core.tokens.dfsGlp!.address, magicGlp.address, usableUsdcAmount, BYTES_EMPTY),
+        `MagicGLPWrapperTraderV1: Invalid input token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if the output token is not dfsGLP', async () => {
       await expectThrow(
-        wrapper.getExchangeCost(core.usdc.address, core.weth.address, usableUsdcAmount, BYTES_EMPTY),
-        `MagicGLPWrapperTraderV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
+        wrapper.getExchangeCost(core.tokens.usdc.address, core.tokens.weth.address, usableUsdcAmount, BYTES_EMPTY),
+        `MagicGLPWrapperTraderV1: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if the input amount is 0', async () => {
       await expectThrow(
-        wrapper.getExchangeCost(core.usdc.address, magicGlp.address, ZERO_BI, BYTES_EMPTY),
+        wrapper.getExchangeCost(core.tokens.usdc.address, magicGlp.address, ZERO_BI, BYTES_EMPTY),
         'MagicGLPWrapperTraderV1: Invalid desired input amount',
       );
     });

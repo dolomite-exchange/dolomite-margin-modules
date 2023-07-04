@@ -22,11 +22,10 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
 import { IUmamiAssetVaultStorageViewer } from "../interfaces/umami/IUmamiAssetVaultStorageViewer.sol";
 import { IUmamiAssetVaultWhitelist } from "../interfaces/umami/IUmamiAssetVaultWhitelist.sol";
-
+import { ValidationLib } from "../lib/ValidationLib.sol";
 
 /**
  * @title   UmamiAssetVaultRegistry
@@ -37,65 +36,61 @@ import { IUmamiAssetVaultWhitelist } from "../interfaces/umami/IUmamiAssetVaultW
  *          without having to deprecate the system and force users to migrate when Dolomite needs to point to new
  *          contracts or functions that Umami introduces.
  */
-contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, OnlyDolomiteMargin, BaseRegistry {
+contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
 
     // ==================== Constants ====================
 
     bytes32 private constant _FILE = "UmamiAssetVaultRegistry";
+    bytes32 private constant _WHITELIST_SLOT = bytes32(uint256(keccak256("eip1967.proxy.whitelist")) - 1);
+    bytes32 private constant _STORAGE_VIEWER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.storageViewer")) - 1);
 
-    // ==================== Storage ====================
+    // ==================== Initializer ====================
 
-    IUmamiAssetVaultWhitelist public override whitelist;
-    IUmamiAssetVaultStorageViewer public override storageViewer;
-
-    // ==================== Constructor ====================
-
-    constructor(
-        address _whitelist,
+    function initialize(
         address _storageViewer,
-        address _dolomiteMargin
-    )
-    OnlyDolomiteMargin(
-        _dolomiteMargin
-    )
-    {
-        whitelist = IUmamiAssetVaultWhitelist(_whitelist);
-        storageViewer = IUmamiAssetVaultStorageViewer(_storageViewer);
+        address _dolomiteRegistry
+    ) external initializer {
+        _ownerSetDolomiteRegistry(_dolomiteRegistry);
+        _ownerSetStorageViewer(_storageViewer);
     }
 
-    function ownerSetWhitelist(
-        address _whitelist
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _whitelist != address(0),
-            _FILE,
-            "Invalid whitelist address"
-        );
-
-        (bytes memory data) = _callAndCheckSuccess(_whitelist, whitelist.aggregateVault.selector, bytes(""));
-        abi.decode(data, (address)); // If this doesn't work, it'll revert
-
-        whitelist = IUmamiAssetVaultWhitelist(_whitelist);
-        emit WhitelistSet(_whitelist);
-    }
+    // ==================== Functions ====================
 
     function ownerSetStorageViewer(
         address _storageViewer
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetStorageViewer(_storageViewer);
+    }
+
+    function whitelist() external view returns (IUmamiAssetVaultWhitelist) {
+        return IUmamiAssetVaultWhitelist(_getAddress(_WHITELIST_SLOT));
+    }
+
+    function storageViewer() external view returns (IUmamiAssetVaultStorageViewer) {
+        return IUmamiAssetVaultStorageViewer(_getAddress(_STORAGE_VIEWER_SLOT));
+    }
+
+    // ============================================================
+    // ==================== Internal Functions ====================
+    // ============================================================
+
+    function _ownerSetStorageViewer(address _storageViewer) internal {
         Require.that(
             _storageViewer != address(0),
             _FILE,
             "Invalid storageViewer address"
         );
 
-        (bytes memory data) = _callAndCheckSuccess(_storageViewer, storageViewer.getVaultFees.selector, bytes(""));
+        (bytes memory data) = ValidationLib.callAndCheckSuccess(
+            _storageViewer,
+            IUmamiAssetVaultStorageViewer(_storageViewer).getVaultFees.selector,
+            bytes("")
+        );
         abi.decode(data, (IUmamiAssetVaultStorageViewer.VaultFees)); // If this doesn't work, it'll revert
 
-        storageViewer = IUmamiAssetVaultStorageViewer(_storageViewer);
+        _setAddress(_STORAGE_VIEWER_SLOT, _storageViewer);
         emit StorageViewerSet(_storageViewer);
     }
 }

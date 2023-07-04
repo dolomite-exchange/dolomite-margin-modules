@@ -146,9 +146,9 @@ abstract contract IsolationModeVaultFactory is
             _FILE,
             "Already initialized"
         );
-        marketId = DOLOMITE_MARGIN.getMarketIdByTokenAddress(address(this));
+        marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(this));
         Require.that(
-            DOLOMITE_MARGIN.getMarketIsClosing(marketId),
+            DOLOMITE_MARGIN().getMarketIsClosing(marketId),
             _FILE,
             "Market cannot allow borrowing"
         );
@@ -259,7 +259,7 @@ abstract contract IsolationModeVaultFactory is
             AccountActionLib.all()
         );
 
-        DOLOMITE_MARGIN.operate(accounts, actions);
+        DOLOMITE_MARGIN().operate(accounts, actions);
     }
 
     function enqueueTransferIntoDolomiteMargin(
@@ -270,7 +270,7 @@ abstract contract IsolationModeVaultFactory is
     override
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        _enqueueTransfer(msg.sender, address(DOLOMITE_MARGIN), _amountWei, _vault);
+        _enqueueTransfer(msg.sender, address(DOLOMITE_MARGIN()), _amountWei, _vault);
     }
 
     function enqueueTransferFromDolomiteMargin(
@@ -281,7 +281,7 @@ abstract contract IsolationModeVaultFactory is
     override
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        _enqueueTransfer(address(DOLOMITE_MARGIN), msg.sender, _amountWei, _vault);
+        _enqueueTransfer(address(DOLOMITE_MARGIN()), msg.sender, _amountWei, _vault);
     }
 
     function depositIntoDolomiteMargin(
@@ -294,12 +294,12 @@ abstract contract IsolationModeVaultFactory is
         address vault = msg.sender;
         _enqueueTransfer(
             vault,
-            address(DOLOMITE_MARGIN),
+            address(DOLOMITE_MARGIN()),
             _amountWei,
             vault
         );
         AccountActionLib.deposit(
-            DOLOMITE_MARGIN,
+            DOLOMITE_MARGIN(),
             /* _accountOwner = */ vault,
             /* _fromAccount = */ vault,
             _toAccountNumber,
@@ -322,13 +322,13 @@ abstract contract IsolationModeVaultFactory is
     requireIsVault(msg.sender) {
         address vault = msg.sender;
         _enqueueTransfer(
-            address(DOLOMITE_MARGIN),
+            address(DOLOMITE_MARGIN()),
             vault,
             _amountWei,
             vault
         );
         AccountActionLib.withdraw(
-            DOLOMITE_MARGIN,
+            DOLOMITE_MARGIN(),
             /* _accountOwner = */ vault,
             _fromAccountNumber,
             /* _toAccount = */ vault,
@@ -432,12 +432,12 @@ abstract contract IsolationModeVaultFactory is
         address _vault
     ) internal {
         QueuedTransfer memory oldTransfer = _cursorToQueuedTransferMap[transferCursor];
-        if (!oldTransfer.isExecuted && oldTransfer.to == address(DOLOMITE_MARGIN)) {
+        if (!oldTransfer.isExecuted && oldTransfer.to == address(DOLOMITE_MARGIN())) {
             // remove the approval if the previous transfer was not executed and was to DolomiteMargin
             _approve(oldTransfer.vault, oldTransfer.to, 0);
         }
 
-        if (_to == address(DOLOMITE_MARGIN)) {
+        if (_to == address(DOLOMITE_MARGIN())) {
             // Approve the queued transfer amount from the vault contract into DolomiteMargin from this contract
             _approve(_vault, _to, _amount);
         }
@@ -475,7 +475,7 @@ abstract contract IsolationModeVaultFactory is
 
         // Since this must be called from DolomiteMargin via Exchange#transferIn/Exchange#transferOut, we can assume
         // that it's non-reentrant
-        address dolomiteMargin = address(DOLOMITE_MARGIN);
+        address dolomiteMargin = address(DOLOMITE_MARGIN());
         Require.that(
             _from == dolomiteMargin || _to == dolomiteMargin,
             _FILE,

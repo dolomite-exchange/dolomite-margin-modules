@@ -15,6 +15,7 @@
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy-atlas-ecosystem.ts",
     "deploy:deprecate-trader-v1": "hardhat --network arbitrum_one run scripts/deploy-deprecate-trader-v1.ts",
+    "deploy:dolomite-registry": "hardhat --network arbitrum_one run scripts/deploy-dolomite-registry.ts",
     "deploy:gmx-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-gmx-ecosystem.ts",
     "deploy:stablecoin-interest-setter": "hardhat --network arbitrum_one run scripts/deploy-stablecoin-interest-setter.ts",
     "deploy:jones-usdc-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-jones-usdc-ecosystem.ts",
@@ -28,7 +29,7 @@
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "test": "hardhat --network hardhat test",
     "sort:contracts": "hardhat --network hardhat run scripts/sort-contract.ts",
-    "test:specific": "hardhat --network hardhat test test/external/umami/UmamiAssetVaultPriceOracle.ts",
+    "test:specific": "hardhat --network hardhat test test/external/umami/UmamiAssetVaultIsolationModeUnwrapperTraderV2.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
   "repository": {
@@ -44,7 +45,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.5",
     "@babel/eslint-parser": "^7.19.1",
-    "@dolomite-exchange/dolomite-margin": "^0.9.26",
+    "@dolomite-exchange/dolomite-margin": "^0.9.27",
     "@dolomite-exchange/zap-sdk": "^0.0.8",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomiclabs/hardhat-ethers": "^2.0.6",

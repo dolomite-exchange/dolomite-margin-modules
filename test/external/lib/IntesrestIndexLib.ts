@@ -10,7 +10,7 @@ import {
 } from '../../../src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 
 const depositAmount = BigNumber.from('5000000000'); // 5,000 USDC
 const withdrawAmount = BigNumber.from('1000000000000000000'); // 1 ETH
@@ -36,10 +36,7 @@ describe('InterestIndexLib', () => {
   let marketIdNegative: BigNumberish;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 90_000_000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     testLib = await createContractWithAbi<TestInterestIndexLib>(
       TestInterestIndexLib__factory.abi,
       TestInterestIndexLib__factory.bytecode,

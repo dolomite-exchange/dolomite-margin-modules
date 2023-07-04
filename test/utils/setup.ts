@@ -5,6 +5,7 @@ import * as DolomiteAmmFactoryJson from '@dolomite-margin/deployed-contracts/Dol
 import * as DolomiteAmmRouterProxyJson from '@dolomite-margin/deployed-contracts/DolomiteAmmRouterProxy.json';
 import * as DolomiteMarginJson from '@dolomite-margin/deployed-contracts/DolomiteMargin.json';
 import * as ExpiryJson from '@dolomite-margin/deployed-contracts/Expiry.json';
+import * as IGenericTraderProxyV1Json from '@dolomite-margin/deployed-contracts/GenericTraderProxyV1.json';
 import * as LiquidatorAssetRegistryJson from '@dolomite-margin/deployed-contracts/LiquidatorAssetRegistry.json';
 import * as LiquidatorProxyV1Json from '@dolomite-margin/deployed-contracts/LiquidatorProxyV1.json';
 import * as LiquidatorProxyV1WithAmmJson from '@dolomite-margin/deployed-contracts/LiquidatorProxyV1WithAmm.json';
@@ -16,9 +17,9 @@ import * as LiquidatorProxyV4WithGenericTraderJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV4WithGenericTrader.json';
 import { address } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { BaseContract, BigNumberish, ContractInterface } from 'ethers';
+import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
-import { Network } from 'src/utils/no-deps-constants';
+import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP } from 'src/utils/no-deps-constants';
 import Deployments from '../../scripts/deployments.json';
 import {
   AlwaysZeroInterestSetter,
@@ -27,6 +28,8 @@ import {
   BorrowPositionProxyV2__factory,
   DolomiteCompatibleWhitelistForPlutusDAO,
   DolomiteCompatibleWhitelistForPlutusDAO__factory,
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
   Expiry,
   Expiry__factory,
   GLPIsolationModeUnwrapperTraderV1,
@@ -47,6 +50,8 @@ import {
   IERC4626__factory,
   IEsGmxDistributor,
   IEsGmxDistributor__factory,
+  IGenericTraderProxyV1,
+  IGenericTraderProxyV1__factory,
   IGLPIsolationModeVaultFactoryOld,
   IGLPIsolationModeVaultFactoryOld__factory,
   IGLPManager,
@@ -85,10 +90,10 @@ import {
   IPlutusVaultGLPRouter__factory,
   ISGMX,
   ISGMX__factory,
-  IUmamiAssetVaultStorageViewer,
-  IUmamiAssetVaultStorageViewer__factory,
   IUmamiAssetVault,
   IUmamiAssetVault__factory,
+  IUmamiAssetVaultStorageViewer,
+  IUmamiAssetVaultStorageViewer__factory,
   IUmamiAssetVaultWhitelist,
   IUmamiAssetVaultWhitelist__factory,
   IWETH,
@@ -139,6 +144,7 @@ import {
   JONES_JUSDC_MAP,
   JONES_JUSDC_RECEIPT_TOKEN_MAP,
   JONES_WHITELIST_CONTROLLER_MAP,
+  LINK_MAP,
   MAGIC_GLP_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
   PARASWAP_TRANSFER_PROXY_MAP,
@@ -153,7 +159,7 @@ import {
   PLV_GLP_ROUTER_MAP,
   S_GLP_MAP,
   S_GMX_MAP,
-  SBF_GMX_MAP,
+  SBF_GMX_MAP, UMAMI_CONFIGURATOR_MAP,
   UMAMI_LINK_VAULT_MAP,
   UMAMI_STORAGE_VIEWER_MAP,
   UMAMI_UNI_VAULT_MAP,
@@ -165,6 +171,7 @@ import {
   USDT_MAP,
   V_GLP_MAP,
   V_GMX_MAP,
+  WBTC_MAP,
   WETH_MAP,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
@@ -263,6 +270,7 @@ interface UmamiEcosystem {
   glpWeth: IUmamiAssetVault;
   storageViewer: IUmamiAssetVaultStorageViewer;
   whitelist: IUmamiAssetVaultWhitelist;
+  configurator: Signer;
 }
 
 export interface CoreProtocol {
@@ -290,7 +298,9 @@ export interface CoreProtocol {
   dolomiteAmmFactory: IDolomiteAmmFactory;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
+  dolomiteRegistry: DolomiteRegistryImplementation;
   expiry: Expiry;
+  genericTraderProxy: IGenericTraderProxyV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
   jonesEcosystem: JonesEcosystem | undefined;
   liquidatorAssetRegistry: LiquidatorAssetRegistry;
@@ -316,18 +326,24 @@ export interface CoreProtocol {
     dai: BigNumberish | undefined;
     dfsGlp: BigNumberish | undefined;
     dplvGlp: BigNumberish | undefined;
+    link: BigNumberish;
     magicGlp: BigNumberish | undefined;
     usdc: BigNumberish;
     usdt: BigNumberish | undefined;
+    wbtc: BigNumberish;
     weth: BigNumberish;
   };
   apiTokens: {
     usdc: ApiToken;
     weth: ApiToken;
   };
-  dfsGlp: IERC20 | undefined;
-  usdc: IERC20;
-  weth: IWETH;
+  tokens: {
+    dfsGlp: IERC20 | undefined;
+    link: IERC20;
+    usdc: IERC20;
+    wbtc: IERC20;
+    weth: IWETH;
+  };
 }
 
 export async function disableInterestAccrual(core: CoreProtocol, marketId: BigNumberish) {
@@ -340,8 +356,8 @@ export async function setupWETHBalance(
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  await core.weth.connect(signer).deposit({ value: amount });
-  await core.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  await core.tokens.weth.connect(signer).deposit({ value: amount });
+  await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupUSDCBalance(
@@ -352,8 +368,8 @@ export async function setupUSDCBalance(
 ) {
   const whaleAddress = '0x805ba50001779CeD4f59CfF63aea527D12B94829'; // Radiant USDC pool
   const whaleSigner = await impersonate(whaleAddress, true);
-  await core.usdc.connect(whaleSigner).transfer(signer.address, amount);
-  await core.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupGMXBalance(
@@ -378,6 +394,13 @@ export function setupUserVaultProxy<T extends BaseContract>(
     factoryInterface.abi,
     signer,
   ) as T;
+}
+
+export function getDefaultCoreProtocolConfig(network: Network): CoreProtocolConfig {
+  return {
+    network,
+    blockNumber: NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[network],
+  };
 }
 
 export async function setupCoreProtocol(
@@ -428,9 +451,19 @@ export async function setupCoreProtocol(
 
   const dolomiteMargin = DOLOMITE_MARGIN.connect(governance);
 
+  const dolomiteRegistry = DolomiteRegistryImplementation__factory.connect(
+    (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
+    governance,
+  );
+
   const expiry = Expiry__factory.connect(
     ExpiryJson.networks[config.network].address,
     governance,
+  );
+
+  const genericTraderProxy = getContractOpt(
+    (IGenericTraderProxyV1Json.networks as any)[config.network]?.address,
+    IGenericTraderProxyV1__factory.connect,
   );
 
   const liquidatorAssetRegistry = LiquidatorAssetRegistry__factory.connect(
@@ -488,7 +521,9 @@ export async function setupCoreProtocol(
     dolomiteAmmFactory,
     dolomiteAmmRouterProxy,
     dolomiteMargin,
+    dolomiteRegistry,
     expiry,
+    genericTraderProxy,
     gmxEcosystem,
     governance,
     jonesEcosystem,
@@ -534,14 +569,20 @@ export async function setupCoreProtocol(
       dai: DAI_MAP[config.network]?.marketId,
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
       dplvGlp: DPLV_GLP_MAP[config.network]?.marketId,
+      link: LINK_MAP[config.network].marketId,
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
       usdt: USDT_MAP[config.network]?.marketId,
+      wbtc: WBTC_MAP[config.network].marketId,
       weth: WETH_MAP[config.network].marketId,
     },
-    dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
-    usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
-    weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
+    tokens: {
+      dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
+      link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
+      usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
+      wbtc: IERC20__factory.connect(WBTC_MAP[config.network].address, hhUser1),
+      weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
+    },
   };
 }
 
@@ -832,6 +873,7 @@ async function createUmamiEcosystem(
       UMAMI_WHITELIST_MAP[network] as string,
       address => IUmamiAssetVaultWhitelist__factory.connect(address, signer),
     ),
+    configurator: await impersonate(UMAMI_CONFIGURATOR_MAP[network] as string),
   };
 }
 

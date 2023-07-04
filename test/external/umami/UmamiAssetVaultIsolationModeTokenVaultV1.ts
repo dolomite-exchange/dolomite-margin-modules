@@ -19,7 +19,13 @@ import {
   createUmamiAssetVaultPriceOracle,
   createUmamiAssetVaultRegistry,
 } from '../../utils/ecosystem-token-utils/umami';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../../utils/setup';
 
 describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -34,10 +40,7 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
   let vault: UmamiAssetVaultIsolationModeTokenVaultV1;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 107150300,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.umamiEcosystem!.glpUsdc.connect(core.hhUser1);
     const userVaultImplementation = await createUmamiAssetVaultIsolationModeTokenVaultV1();
     umamiRegistry = await createUmamiAssetVaultRegistry(core);
@@ -45,7 +48,7 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
       core,
       umamiRegistry,
       underlyingToken,
-      core.usdc,
+      core.tokens.usdc,
       userVaultImplementation,
     );
     unwrapper = await createUmamiAssetVaultIsolationModeUnwrapperTraderV2(core, umamiRegistry, factory);

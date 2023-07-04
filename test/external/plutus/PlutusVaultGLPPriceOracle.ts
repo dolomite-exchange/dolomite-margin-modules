@@ -86,8 +86,8 @@ describe('PlutusVaultGLPPriceOracle', () => {
         `PlutusVaultGLPPriceOracle: invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`,
       );
       await expectThrow(
-        plvGlpPriceOracle.getPrice(core.dfsGlp!.address),
-        `PlutusVaultGLPPriceOracle: invalid token <${(core.dfsGlp!.address).toLowerCase()}>`,
+        plvGlpPriceOracle.getPrice(core.tokens.dfsGlp!.address),
+        `PlutusVaultGLPPriceOracle: invalid token <${(core.tokens.dfsGlp!.address).toLowerCase()}>`,
       );
       await expectThrow(
         plvGlpPriceOracle.getPrice(core.gmxEcosystem!.glp.address),

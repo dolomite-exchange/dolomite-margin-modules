@@ -45,4 +45,14 @@ interface IUmamiAssetVault is IERC4626 {
      * @dev Returns true if withdrawing from the contract is paused, and false otherwise.
      */
     function withdrawalPaused() external view returns (bool);
+
+    /**
+     * @dev Returns the current aggregateVault address.
+     */
+    function aggregateVault() external view returns (address);
+
+    /**
+     * @dev Returns the withdrawal fee for the amount of `_assets` to be withdrawn
+     */
+    function previewWithdrawalFee(uint256 _assets) external view returns (uint256);
 }

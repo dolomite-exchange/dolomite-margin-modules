@@ -2,6 +2,8 @@ import { address } from '@dolomite-exchange/dolomite-margin';
 import {
   IUmamiAssetVaultIsolationModeTokenVaultV1,
   IUmamiAssetVaultRegistry,
+  RegistryProxy,
+  RegistryProxy__factory,
   UmamiAssetVaultIsolationModeTokenVaultV1,
   UmamiAssetVaultIsolationModeTokenVaultV1__factory,
   UmamiAssetVaultIsolationModeUnwrapperTraderV2,
@@ -85,14 +87,21 @@ export function createUmamiAssetVaultIsolationModeUnwrapperTraderV2(
   );
 }
 
-export function createUmamiAssetVaultRegistry(
+export async function createUmamiAssetVaultRegistry(
   core: CoreProtocol,
 ): Promise<UmamiAssetVaultRegistry> {
-  return createContractWithAbi<UmamiAssetVaultRegistry>(
+  const implementation = await createContractWithAbi<UmamiAssetVaultRegistry>(
     UmamiAssetVaultRegistry__factory.abi,
     UmamiAssetVaultRegistry__factory.bytecode,
-    getUmamiAssetVaultRegistryConstructorParams(core),
+    [],
   );
+  const registry = await createContractWithAbi<RegistryProxy>(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getUmamiAssetVaultRegistryConstructorParams(core, implementation),
+  );
+
+  return UmamiAssetVaultRegistry__factory.connect(registry.address, core.hhUser1);
 }
 
 export function createUmamiAssetVaultIsolationModeWrapperTraderV2(

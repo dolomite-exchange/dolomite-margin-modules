@@ -19,7 +19,7 @@ import {
   expectThrowBalanceFlagError,
   expectWalletBalance,
 } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 const amountWei = BigNumber.from('200000000');
 const amountWeiBig = BigNumber.from('500000000');
@@ -43,10 +43,7 @@ describe('AccountActionLib', () => {
   let otherMarketId: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     testLib = await createContractWithAbi<TestAccountActionLib>(
       TestAccountActionLib__factory.abi,
       TestAccountActionLib__factory.bytecode,

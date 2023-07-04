@@ -21,6 +21,7 @@ describe('MagicGLPPriceOracle', () => {
   let core: CoreProtocol;
 
   before(async () => {
+    const network = Network.ArbitrumOne;
     core = await setupCoreProtocol({
       blockNumber: 81874000,
       network: Network.ArbitrumOne,

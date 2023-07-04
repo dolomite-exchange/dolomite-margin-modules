@@ -15,6 +15,7 @@ import { expectEvent, expectThrow } from '../../utils/assertions';
 import { createGLPIsolationModeVaultFactory, createGmxRegistry } from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -32,10 +33,7 @@ describe('GLPIsolationModeVaultFactory', () => {
   let factory: GLPIsolationModeVaultFactory;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     gmxRegistry = await createGmxRegistry(core);
     vaultImplementation = await createContractWithAbi<TestGLPIsolationModeTokenVaultV1>(
       TestGLPIsolationModeTokenVaultV1__factory.abi,
@@ -53,7 +51,7 @@ describe('GLPIsolationModeVaultFactory', () => {
 
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await factory.WETH()).to.equal(core.weth.address);
+      expect(await factory.WETH()).to.equal(core.tokens.weth.address);
       expect(await factory.WETH_MARKET_ID()).to.equal(core.marketIds.weth);
       expect(await factory.gmxRegistry()).to.equal(gmxRegistry.address);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem!.fsGlp.address);
@@ -68,7 +66,7 @@ describe('GLPIsolationModeVaultFactory', () => {
       const usdcAmount = BigNumber.from('100000000'); // 100 USDC
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
       await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1).mintAndStakeGlp(
-        core.usdc.address,
+        core.tokens.usdc.address,
         usdcAmount,
         ONE_BI,
         ONE_BI,

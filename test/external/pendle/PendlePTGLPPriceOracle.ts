@@ -125,8 +125,8 @@ describe('PendlePtGLPPriceOracle', () => {
         `PendlePtGLPPriceOracle: invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`,
       );
       await expectThrow(
-        ptGlpOracle.getPrice(core.dfsGlp!.address),
-        `PendlePtGLPPriceOracle: invalid token <${(core.dfsGlp!.address).toLowerCase()}>`,
+        ptGlpOracle.getPrice(core.tokens.dfsGlp!.address),
+        `PendlePtGLPPriceOracle: invalid token <${(core.tokens.dfsGlp!.address).toLowerCase()}>`,
       );
       await expectThrow(
         ptGlpOracle.getPrice(core.gmxEcosystem!.glp.address),

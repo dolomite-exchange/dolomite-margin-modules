@@ -13,7 +13,7 @@ import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import { createGmxRegistry } from '../../utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const usdcAmount = BigNumber.from('10000000'); // $10
@@ -27,10 +27,7 @@ describe('GLPMathLib', () => {
   let registry: GmxRegistryV1;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     registry = await createGmxRegistry(core);
     lib = await createContractWithAbi(
       TestGLPMathLib__factory.abi,
@@ -41,7 +38,7 @@ describe('GLPMathLib', () => {
     const usdcBigAmount = amountWei.div(1e12).mul(4);
     await setupUSDCBalance(core, core.hhUser1, usdcBigAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-      .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
+      .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, 0, 0);
 
     snapshotId = await snapshot();
   });
@@ -56,11 +53,11 @@ describe('GLPMathLib', () => {
         // generate a random number between 1 and 99
         const random = Math.floor(Math.random() * 99) + 1;
         const weirdAmountUsdc = usdcAmount.mul(random).div(101);
-        const usdgAmount = await lib.GLPMathLibGetUsdgAmountForBuy(core.usdc.address, weirdAmountUsdc);
+        const usdgAmount = await lib.GLPMathLibGetUsdgAmountForBuy(core.tokens.usdc.address, weirdAmountUsdc);
 
         const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
-          .mintAndStakeGlp(core.usdc.address, weirdAmountUsdc, 0, 0);
+          .mintAndStakeGlp(core.tokens.usdc.address, weirdAmountUsdc, 0, 0);
         expect(await lib.GLPMathLibGetGlpMintAmount(usdgAmount)).to.eq(expectedAmount);
       }
     });
@@ -96,7 +93,7 @@ describe('GLPMathLib', () => {
 
     it('should fail when input amount is 0', async () => {
       await expectThrow(
-        lib.GLPMathLibGetUsdgAmountForBuy(core.usdc.address, ZERO_BI),
+        lib.GLPMathLibGetUsdgAmountForBuy(core.tokens.usdc.address, ZERO_BI),
         'GLPMathLib: Input amount must be gt than 0',
       );
     });
@@ -112,8 +109,8 @@ describe('GLPMathLib', () => {
 
         const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
-          .unstakeAndRedeemGlp(core.usdc.address, weirdAmountGlp, 0, core.hhUser1.address);
-        expect(await lib.GLPMathLibGetGlpRedemptionAmount(core.usdc.address, usdgAmount)).to.eq(expectedAmount);
+          .unstakeAndRedeemGlp(core.tokens.usdc.address, weirdAmountGlp, 0, core.hhUser1.address);
+        expect(await lib.GLPMathLibGetGlpRedemptionAmount(core.tokens.usdc.address, usdgAmount)).to.eq(expectedAmount);
       }
     });
   });

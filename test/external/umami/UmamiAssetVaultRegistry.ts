@@ -10,7 +10,7 @@ import {
   createUmamiAssetVaultIsolationModeVaultFactory,
   createUmamiAssetVaultRegistry,
 } from '../../utils/ecosystem-token-utils/umami';
-import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -22,17 +22,14 @@ describe('UmamiAssetVaultRegistry', () => {
   let unwrapper: UmamiAssetVaultIsolationModeUnwrapperTraderV2;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 107150300,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     registry = await createUmamiAssetVaultRegistry(core);
     const userVaultImplementation = await createUmamiAssetVaultIsolationModeTokenVaultV1();
     const factory = await createUmamiAssetVaultIsolationModeVaultFactory(
       core,
       registry,
       core.umamiEcosystem!.glpUsdc,
-      core.usdc,
+      core.tokens.usdc,
       userVaultImplementation,
     );
     unwrapper = await createUmamiAssetVaultIsolationModeUnwrapperTraderV2(core, registry, factory);
@@ -44,10 +41,22 @@ describe('UmamiAssetVaultRegistry', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('#contructor', () => {
+  describe('#initializer', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.whitelist()).to.equal(core.umamiEcosystem!.whitelist.address);
       expect(await registry.storageViewer()).to.equal(core.umamiEcosystem!.storageViewer.address);
+      expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
+    });
+
+    it('should fail if already initialized', async () => {
+      await expectThrow(
+        registry.initialize(
+          core.umamiEcosystem!.whitelist.address,
+          core.umamiEcosystem!.storageViewer.address,
+          core.dolomiteRegistry.address,
+        ),
+        'Initializable: contract is already initialized',
+      );
     });
   });
 
@@ -64,7 +73,7 @@ describe('UmamiAssetVaultRegistry', () => {
     it('should fail if whitelist is invalid', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetWhitelist(OTHER_ADDRESS),
-        `BaseRegistry: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
+        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
       );
     });
 
@@ -97,7 +106,7 @@ describe('UmamiAssetVaultRegistry', () => {
     it('should fail if storageViewer is invalid', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetStorageViewer(OTHER_ADDRESS),
-        `BaseRegistry: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
+        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
       );
     });
 

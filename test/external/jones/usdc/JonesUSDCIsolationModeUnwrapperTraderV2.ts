@@ -143,7 +143,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
       // jUSDC's value goes up every second. To get the correct amountOut, we need to use the same block #
       const amountOut = await unwrapper.getExchangeCost(
         factory.address,
-        core.usdc.address,
+        core.tokens.usdc.address,
         amountWei,
         BYTES_EMPTY,
         { blockTag: result.blockNumber },
@@ -207,7 +207,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           factory.address,
           amountWei,
           BYTES_EMPTY,
@@ -222,12 +222,12 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
-          core.weth.address,
+          core.tokens.usdc.address,
+          core.tokens.weth.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -238,12 +238,12 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.dfsGlp!.address,
+          core.tokens.dfsGlp!.address,
           factory.address,
           amountWei,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
@@ -254,7 +254,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
           abiCoder.encode(['uint256'], [otherAmountWei]),
@@ -298,7 +298,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
       const retentionFee = amountBeforeRetention.mul('97').div('10000');
       const expectedAmount = amountBeforeRetention.sub(retentionFee);
 
-      expect(await unwrapper.getExchangeCost(factory.address, core.usdc.address, amountWei, BYTES_EMPTY))
+      expect(await unwrapper.getExchangeCost(factory.address, core.tokens.usdc.address, amountWei, BYTES_EMPTY))
         .to
         .eq(expectedAmount);
     });
@@ -322,7 +322,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
         const expectedAmount = amountBeforeRetention.sub(amountBeforeRetention.mul('97').div('10000'));
 
-        expect(await unwrapper.getExchangeCost(factory.address, core.usdc.address, weirdAmount, BYTES_EMPTY))
+        expect(await unwrapper.getExchangeCost(factory.address, core.tokens.usdc.address, weirdAmount, BYTES_EMPTY))
           .to
           .eq(expectedAmount);
       }

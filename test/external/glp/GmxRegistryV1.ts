@@ -5,7 +5,7 @@ import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
 import { createGmxRegistry } from '../../utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -16,10 +16,7 @@ describe('GmxRegistryV1', () => {
   let registry: GmxRegistryV1;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     registry = await createGmxRegistry(core);
 
     snapshotId = await snapshot();

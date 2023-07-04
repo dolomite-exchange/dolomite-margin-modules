@@ -1,9 +1,12 @@
 import { CoreProtocol } from '../../../test/utils/setup';
 import {
-  IPendlePtGLP2024Registry, IPendlePtGLP2024IsolationModeVaultFactory,
   IPendlePtGLP2024IsolationModeTokenVaultV1,
-  PendlePtGLP2024Registry, PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtGLP2024IsolationModeTokenVaultV1, IPendlePtToken,
+  IPendlePtGLP2024IsolationModeVaultFactory,
+  IPendlePtGLP2024Registry,
+  IPendlePtToken,
+  PendlePtGLP2024IsolationModeTokenVaultV1,
+  PendlePtGLP2024IsolationModeVaultFactory,
+  PendlePtGLP2024Registry,
 } from '../../types';
 
 export function getPendlePtGLPPriceOracleConstructorParams(

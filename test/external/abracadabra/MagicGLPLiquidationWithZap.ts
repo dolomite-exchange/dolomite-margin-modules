@@ -78,7 +78,7 @@ describe('MagicGLPLiquidationWithZap', () => {
     const usdcAmount = heldAmountWei.div(1e12).mul(4);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-      .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
+      .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, 0, 0);
     await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(magicGlp.address, heldAmountWei.mul(2));
     await magicGlp.connect(core.hhUser1).mint(heldAmountWei, core.hhUser1.address);
 
@@ -128,7 +128,7 @@ describe('MagicGLPLiquidationWithZap', () => {
         BalanceCheckFlag.To,
       );
       await core.testPriceOracle!.setPrice(
-        core.usdc.address,
+        core.tokens.usdc.address,
         usdcPrice.value.mul(liquidationSpreadNumerator).div(liquidationSpreadDenominator),
       );
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.usdc, core.testPriceOracle!.address);
@@ -190,9 +190,9 @@ describe('MagicGLPLiquidationWithZap', () => {
       );
 
       await expectWalletBalance(core.liquidatorProxyV4!.address, magicGlp, ZERO_BI);
-      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.weth, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.fsGlp.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
 
     it('should work when liquid account is borrowing a different output token (WETH)', async () => {
@@ -219,7 +219,7 @@ describe('MagicGLPLiquidationWithZap', () => {
       );
       // set the price of USDC to be 105% of the current price
       await core.testPriceOracle!.setPrice(
-        core.weth.address,
+        core.tokens.weth.address,
         wethPrice.value.mul(liquidationSpreadNumerator).div(liquidationSpreadDenominator),
       );
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testPriceOracle!.address);
@@ -234,9 +234,9 @@ describe('MagicGLPLiquidationWithZap', () => {
       const heldUpdatedWithReward = await newAccountValues[1].value.mul(liquidationSpreadNumerator)
         .div(liquidationSpreadDenominator)
         .div(magicGlpPrice.value);
-      const usdcLiquidatorBalanceBefore = await core.usdc.connect(core.hhUser1)
+      const usdcLiquidatorBalanceBefore = await core.tokens.usdc.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV4!.address);
-      const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
+      const wethLiquidatorBalanceBefore = await core.tokens.weth.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV4!.address);
 
       const zapOutputs = await zap.getSwapExactTokensForTokensParams(
@@ -297,19 +297,19 @@ describe('MagicGLPLiquidationWithZap', () => {
       await expectWalletBalanceOrDustyIfZero(
         core,
         core.liquidatorProxyV4!.address,
-        core.usdc.address,
+        core.tokens.usdc.address,
         ZERO_BI,
         usdcLiquidatorBalanceBefore,
       );
       await expectWalletBalanceOrDustyIfZero(
         core,
         core.liquidatorProxyV4!.address,
-        core.weth.address,
+        core.tokens.weth.address,
         ZERO_BI,
         wethLiquidatorBalanceBefore,
       );
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
   });
 
@@ -405,9 +405,9 @@ describe('MagicGLPLiquidationWithZap', () => {
       );
 
       await expectWalletBalance(core.liquidatorProxyV4!.address, magicGlp, ZERO_BI);
-      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.weth, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
 
     it('should work when expired account is borrowing a different output token (WETH)', async () => {
@@ -453,9 +453,9 @@ describe('MagicGLPLiquidationWithZap', () => {
 
       const heldUpdatedWithReward = wethDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
 
-      const usdcLiquidatorBalanceBefore = await core.usdc.connect(core.hhUser1)
+      const usdcLiquidatorBalanceBefore = await core.tokens.usdc.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV4!.address);
-      const wethLiquidatorBalanceBefore = await core.weth.connect(core.hhUser1)
+      const wethLiquidatorBalanceBefore = await core.tokens.weth.connect(core.hhUser1)
         .balanceOf(core.liquidatorProxyV4!.address);
 
       const zapOutputs = await zap.getSwapExactTokensForTokensParams(
@@ -516,19 +516,19 @@ describe('MagicGLPLiquidationWithZap', () => {
       await expectWalletBalanceOrDustyIfZero(
         core,
         core.liquidatorProxyV4!.address,
-        core.usdc.address,
+        core.tokens.usdc.address,
         ZERO_BI,
         usdcLiquidatorBalanceBefore,
       );
       await expectWalletBalanceOrDustyIfZero(
         core,
         core.liquidatorProxyV4!.address,
-        core.weth.address,
+        core.tokens.weth.address,
         ZERO_BI,
         wethLiquidatorBalanceBefore,
       );
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.gmxEcosystem!.sGlp.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
   });
 });

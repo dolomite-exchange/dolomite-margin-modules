@@ -13,6 +13,20 @@
       "isVerified": true
     }
   },
+  "DolomiteRegistryImplementation": {
+    "42161": {
+      "address": "0x5343C6a56C60e836182bF4B669BC57d9b888199c",
+      "transaction": "0xf662a1368cebe39f49545ba9cb40b17153abe65b1ed9151f274b43440fb7fabe",
+      "isVerified": true
+    }
+  },
+  "DolomiteRegistryProxy": {
+    "42161": {
+      "address": "0xA2F6351341B890F4C075338096E36e9996F35407",
+      "transaction": "0xc774311aa8e93ae3055125a23e8813da370f5793017cee7049cc300a91601a8c",
+      "isVerified": true
+    }
+  },
   "DolomiteWhitelistForGlpDepositorV2": {
     "42161": {
       "address": "0xD873e5D8020cfd47b6268CA5d3732c4F75ccA7EC",

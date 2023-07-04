@@ -193,8 +193,8 @@ abstract contract IsolationModeUnwrapperTraderV1 is
 
         uint256 _outputMarketId = outputMarketId();
         uint256 amountOut = getExchangeCost(
-            DOLOMITE_MARGIN.getMarketTokenAddress(_inputMarket),
-            DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarketId),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarketId),
             _inputAmount,
             /* _orderData = */ bytes("")
         );

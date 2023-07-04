@@ -8,17 +8,22 @@ import {
 } from '../../types';
 import { NONE_MARKET_ID } from '../no-deps-constants';
 
-export function getUmamiAssetVaultRegistryConstructorParams(
+export async function getUmamiAssetVaultRegistryConstructorParams(
   core: CoreProtocol,
-): any[] {
+  implementation: UmamiAssetVaultRegistry,
+): Promise<any[]> {
   if (!core.umamiEcosystem) {
     throw new Error('Umami ecosystem not initialized');
   }
 
-  return [
-    core.umamiEcosystem.whitelist.address,
+  const calldata = await implementation.populateTransaction.initialize(
     core.umamiEcosystem.storageViewer.address,
+    core.dolomiteRegistry.address,
+  );
+  return [
+    implementation.address,
     core.dolomiteMargin.address,
+    calldata.data,
   ];
 }
 

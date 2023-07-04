@@ -4,7 +4,8 @@ import {
   GLPIsolationModeVaultFactory,
   GmxRegistryV1,
   IGLPIsolationModeTokenVaultV1,
-  IGLPIsolationModeVaultFactory, IGLPIsolationModeVaultFactoryOld,
+  IGLPIsolationModeVaultFactory,
+  IGLPIsolationModeVaultFactoryOld,
   IGmxRegistryV1,
   TestGLPIsolationModeTokenVaultV1,
 } from '../../types';
@@ -22,7 +23,7 @@ export function getGLPUnwrapperTraderV1ConstructorParams(
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
   return [
-    core.usdc.address,
+    core.tokens.usdc.address,
     gmxRegistry.address,
     dfsGlp.address,
     core.dolomiteMargin.address,
@@ -52,7 +53,7 @@ export function getGLPIsolationModeVaultFactoryConstructorParams(
   userVaultImplementation: GmxUserVaultImplementation,
 ): any[] {
   return [
-    core.weth.address,
+    core.tokens.weth.address,
     core.marketIds.weth,
     gmxRegistry.address,
     core.gmxEcosystem!.fsGlp.address,
@@ -68,7 +69,7 @@ export function getGLPWrapperTraderV1ConstructorParams(
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
   return [
-    core.usdc.address,
+    core.tokens.usdc.address,
     gmxRegistry.address,
     dfsGlp.address,
     core.dolomiteMargin.address,

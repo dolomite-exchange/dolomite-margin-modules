@@ -53,7 +53,7 @@ export function getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams(
 
   return [
     core.liquidatorAssetRegistry!.address,
-    core.usdc!.address,
+    core.tokens.usdc!.address,
     jonesUSDCRegistry.address,
     djUSDCToken.address,
     core.dolomiteMargin.address,
@@ -91,7 +91,7 @@ export function getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams(
   }
 
   return [
-    core.usdc!.address,
+    core.tokens.usdc!.address,
     jonesUSDCRegistry.address,
     djUSDCToken.address,
     core.dolomiteMargin.address,

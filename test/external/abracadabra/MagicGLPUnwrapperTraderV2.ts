@@ -11,7 +11,13 @@ import {
   createMagicGLPPriceOracle,
   createMagicGLPUnwrapperTraderV2,
 } from '../../utils/ecosystem-token-utils/abracadabra';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUSDCBalance } from '../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance,
+} from '../../utils/setup';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -30,10 +36,7 @@ describe('MagicGLPUnwrapperTraderV2', () => {
   let defaultAccount: Account.InfoStruct;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 81874000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     magicGlp = core.abraEcosystem!.magicGlp;
     priceOracle = await createMagicGLPPriceOracle(core);
 
@@ -47,7 +50,7 @@ describe('MagicGLPUnwrapperTraderV2', () => {
     const usdcAmount = amountWei.div(1e12).mul(4);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-      .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
+      .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, 0, 0);
     await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(magicGlp.address, amountWei.mul(2));
     await magicGlp.connect(core.hhUser1).mint(amountWei, core.hhUser1.address);
 
@@ -73,7 +76,7 @@ describe('MagicGLPUnwrapperTraderV2', () => {
     it('should work when called with the normal conditions', async () => {
       const amountOut = await unwrapper.getExchangeCost(
         magicGlp.address,
-        core.usdc.address,
+        core.tokens.usdc.address,
         amountWei,
         BYTES_EMPTY,
       );
@@ -113,7 +116,7 @@ describe('MagicGLPUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           magicGlp.address,
           amountWei,
           BYTES_EMPTY,
@@ -128,12 +131,12 @@ describe('MagicGLPUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
-          core.weth.address,
+          core.tokens.usdc.address,
+          core.tokens.weth.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `MagicGLPUnwrapperTraderV2: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `MagicGLPUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -144,12 +147,12 @@ describe('MagicGLPUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.dfsGlp!.address,
+          core.tokens.dfsGlp!.address,
           magicGlp.address,
           amountWei,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `MagicGLPUnwrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
+        `MagicGLPUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
@@ -160,7 +163,7 @@ describe('MagicGLPUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           magicGlp.address,
           ZERO_BI,
           abiCoder.encode(['uint256'], [otherAmountWei]),
@@ -188,7 +191,12 @@ describe('MagicGLPUnwrapperTraderV2', () => {
       const TEN_MILLION = BigNumber.from('10000000');
       const amount = ONE_WEI.mul(TEN_MILLION);
       const decimalDelta = BigNumber.from('1000000000000');
-      const outputAmount = await unwrapper.getExchangeCost(magicGlp.address, core.usdc.address, amount, BYTES_EMPTY);
+      const outputAmount = await unwrapper.getExchangeCost(
+        magicGlp.address,
+        core.tokens.usdc.address,
+        amount,
+        BYTES_EMPTY,
+      );
       const oraclePrice = (await priceOracle.getPrice(magicGlp.address)).value.div(decimalDelta);
       // the effective price should be greater than the oracle price and less than the oracle price + 0.75%
       expect(outputAmount.div(TEN_MILLION)).to.be.gt(oraclePrice);
@@ -200,12 +208,12 @@ describe('MagicGLPUnwrapperTraderV2', () => {
       const expectedUsdcAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
         .callStatic
         .unstakeAndRedeemGlp(
-          core.usdc.address,
+          core.tokens.usdc.address,
           glpAmount,
           1,
           core.hhUser1.address,
         );
-      expect(await unwrapper.getExchangeCost(magicGlp.address, core.usdc.address, amountWei, BYTES_EMPTY))
+      expect(await unwrapper.getExchangeCost(magicGlp.address, core.tokens.usdc.address, amountWei, BYTES_EMPTY))
         .to
         .eq(expectedUsdcAmount);
     });
@@ -219,12 +227,12 @@ describe('MagicGLPUnwrapperTraderV2', () => {
         const expectedUsdcAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .unstakeAndRedeemGlp(
-            core.usdc.address,
+            core.tokens.usdc.address,
             glpAmount,
             1,
             core.hhUser1.address,
           );
-        expect(await unwrapper.getExchangeCost(magicGlp.address, core.usdc.address, weirdAmount, BYTES_EMPTY))
+        expect(await unwrapper.getExchangeCost(magicGlp.address, core.tokens.usdc.address, weirdAmount, BYTES_EMPTY))
           .to
           .eq(expectedUsdcAmount);
       }
@@ -232,21 +240,21 @@ describe('MagicGLPUnwrapperTraderV2', () => {
 
     it('should fail if the input token is not dsfGLP', async () => {
       await expectThrow(
-        unwrapper.getExchangeCost(core.weth.address, core.usdc.address, amountWei, BYTES_EMPTY),
-        `MagicGLPUnwrapperTraderV2: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        unwrapper.getExchangeCost(core.tokens.weth.address, core.tokens.usdc.address, amountWei, BYTES_EMPTY),
+        `MagicGLPUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if the output token is not USDC', async () => {
       await expectThrow(
-        unwrapper.getExchangeCost(magicGlp.address, core.dfsGlp!.address, amountWei, BYTES_EMPTY),
-        `MagicGLPUnwrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
+        unwrapper.getExchangeCost(magicGlp.address, core.tokens.dfsGlp!.address, amountWei, BYTES_EMPTY),
+        `MagicGLPUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if the input token is not 0', async () => {
       await expectThrow(
-        unwrapper.getExchangeCost(magicGlp.address, core.usdc.address, ZERO_BI, BYTES_EMPTY),
+        unwrapper.getExchangeCost(magicGlp.address, core.tokens.usdc.address, ZERO_BI, BYTES_EMPTY),
         'MagicGLPUnwrapperTraderV2: Invalid desired input amount',
       );
     });

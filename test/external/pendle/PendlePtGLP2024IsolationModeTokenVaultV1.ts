@@ -23,7 +23,13 @@ import {
   createPendlePtGLP2024Registry,
   createPendlePtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../../utils/setup';
 
 describe('PendlePtGLP2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -41,10 +47,7 @@ describe('PendlePtGLP2024IsolationModeTokenVaultV1', () => {
   let farm: IPlutusVaultGLPFarm;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 96118000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1);
     rewardToken = core.plutusEcosystem!.plsToken.connect(core.hhUser1);
     farm = core.plutusEcosystem!.plvGlpFarm.connect(core.hhUser1);

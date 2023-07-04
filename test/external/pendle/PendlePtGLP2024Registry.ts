@@ -5,7 +5,7 @@ import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
 import { createPendlePtGLP2024Registry } from '../../utils/ecosystem-token-utils/pendle';
-import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -16,10 +16,7 @@ describe('PendlePtGLP2024Registry', () => {
   let registry: PendlePtGLP2024Registry;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 96118000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     registry = await createPendlePtGLP2024Registry(core);
 
     snapshotId = await snapshot();

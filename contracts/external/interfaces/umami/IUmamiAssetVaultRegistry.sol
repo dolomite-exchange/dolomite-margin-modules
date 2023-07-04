@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IBaseRegistry } from "../IBaseRegistry.sol";
 import { IUmamiAssetVaultStorageViewer } from "./IUmamiAssetVaultStorageViewer.sol";
 import { IUmamiAssetVaultWhitelist } from "./IUmamiAssetVaultWhitelist.sol";
 
@@ -29,28 +30,23 @@ import { IUmamiAssetVaultWhitelist } from "./IUmamiAssetVaultWhitelist.sol";
  *
  * @notice  A registry contract for storing all of the addresses that can interact with Umami's Delta Neutral vaults
  */
-interface IUmamiAssetVaultRegistry {
+interface IUmamiAssetVaultRegistry is IBaseRegistry {
 
     // ========================================================
     // ======================== Events ========================
     // ========================================================
 
-    event WhitelistSet(address indexed _whitelist);
     event StorageViewerSet(address indexed _storageViewer);
 
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================
 
-    function ownerSetWhitelist(address _whitelist) external;
-
     function ownerSetStorageViewer(address _storageViewer) external;
 
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
-
-    function whitelist() external view returns (IUmamiAssetVaultWhitelist);
 
     function storageViewer() external view returns (IUmamiAssetVaultStorageViewer);
 }

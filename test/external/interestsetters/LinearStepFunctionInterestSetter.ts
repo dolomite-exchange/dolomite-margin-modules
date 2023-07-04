@@ -6,7 +6,7 @@ import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 const zero = BigNumber.from(0);
 const lowerRate = BigNumber.from('60000000000000000');
@@ -20,10 +20,7 @@ describe('LinearStepFunctionInterestSetter', () => {
   let interestSetter: LinearStepFunctionInterestSetter;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     interestSetter = await createContractWithAbi<LinearStepFunctionInterestSetter>(
       LinearStepFunctionInterestSetter__factory.abi,
       LinearStepFunctionInterestSetter__factory.bytecode,
@@ -46,7 +43,7 @@ describe('LinearStepFunctionInterestSetter', () => {
           LinearStepFunctionInterestSetter__factory.bytecode,
           [upperRate, lowerRate],
         ),
-        'LinearStepFunctionInterestSetter: Lower optimal percent too high'
+        'LinearStepFunctionInterestSetter: Lower optimal percent too high',
       );
     });
   });

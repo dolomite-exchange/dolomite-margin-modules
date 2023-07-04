@@ -1,9 +1,9 @@
+import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { config as hardhatConfig, ethers, network as hardhatNetwork } from 'hardhat';
 import { HttpNetworkConfig } from 'hardhat/src/types/config';
 import { Network, networkToNetworkNameMap } from 'src/utils/no-deps-constants';
-import { time } from '@nomicfoundation/hardhat-network-helpers';
 
 const gasLogger: Record<string, BigNumber> = {};
 const gasLoggerNumberOfCalls: Record<string, number> = {};

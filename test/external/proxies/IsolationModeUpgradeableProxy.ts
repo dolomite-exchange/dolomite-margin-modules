@@ -13,7 +13,13 @@ import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../../utils/setup';
 
 describe('IsolationModeUpgradeableProxy', () => {
   let snapshotId: string;
@@ -25,10 +31,7 @@ describe('IsolationModeUpgradeableProxy', () => {
   let vaultProxy: IsolationModeUpgradeableProxy;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     const underlyingToken = await createTestToken();
     userVaultImplementation = await createContractWithAbi(
       TestIsolationModeTokenVaultV1__factory.abi,
@@ -46,7 +49,7 @@ describe('IsolationModeUpgradeableProxy', () => {
     const tokenUnwrapper = await createContractWithAbi(
       TestIsolationModeUnwrapperTrader__factory.abi,
       TestIsolationModeUnwrapperTrader__factory.bytecode,
-      [core.usdc.address, factory.address, core.dolomiteMargin.address],
+      [core.tokens.usdc.address, factory.address, core.dolomiteMargin.address],
     );
 
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address]);

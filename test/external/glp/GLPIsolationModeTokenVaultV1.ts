@@ -16,6 +16,7 @@ import { expectThrow } from '../../utils/assertions';
 import { createGLPIsolationModeVaultFactory, createGmxRegistry } from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupGMXBalance,
   setupTestMarket,
@@ -41,10 +42,7 @@ describe('GLPIsolationModeTokenVaultV1', () => {
   let account: Account.InfoStruct;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 56545700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     const vaultImplementation = await createContractWithAbi<TestGLPIsolationModeTokenVaultV1>(
       TestGLPIsolationModeTokenVaultV1__factory.abi,
       TestGLPIsolationModeTokenVaultV1__factory.bytecode,
@@ -69,7 +67,7 @@ describe('GLPIsolationModeTokenVaultV1', () => {
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1).mintAndStakeGlp(
-      core.usdc.address,
+      core.tokens.usdc.address,
       usdcAmount,
       ONE_BI,
       ONE_BI,
@@ -125,8 +123,8 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       expect((await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address)).gte(gmxAmount)).to.eq(true);
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
-      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
-      expect(await core.weth.balanceOf(core.hhUser1.address)).to.be.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.be.eq(ZERO_BI);
     }
 
     it('should work when assets are claimed and not staked', async () => {
@@ -150,8 +148,8 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
-      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
-      expect((await core.weth.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
+      expect(await core.tokens.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await core.tokens.weth.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
 
       await vault.vestGlp(esGmxAmount);
       await vault.vestGmx(esGmxAmount);
@@ -191,8 +189,8 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
-      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
-      expect((await core.weth.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
+      expect(await core.tokens.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await core.tokens.weth.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
 
       const glpVestableAmount = await core.gmxEcosystem!.vGlp.getMaxVestableAmount(vault.address);
       const gmxVestableAmount = await core.gmxEcosystem!.vGmx.getMaxVestableAmount(vault.address);
@@ -252,8 +250,8 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
-      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
-      expect(await core.weth.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
       const balance2 = await core.dolomiteMargin.getAccountWei(account, underlyingMarketId);
       expect(balance2.sign).to.eq(true);
       expect(balance2.value.eq(ZERO_BI)).to.eq(false);
@@ -280,8 +278,8 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
-      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
-      expect(await core.weth.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
       const balance2 = await core.dolomiteMargin.getAccountWei(account, core.marketIds.weth);
       expect(balance2.sign).to.eq(false);
       expect(balance2.value).to.eq(ZERO_BI);
@@ -346,8 +344,8 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       expect((await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address)).gte(gmxAmount)).to.eq(true);
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
-      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
-      expect(await core.weth.balanceOf(core.hhUser1.address)).to.be.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.be.eq(ZERO_BI);
     }
 
     it('should work when assets are claimed and not staked', async () => {
@@ -372,8 +370,8 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
-      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
-      expect((await core.weth.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
+      expect(await core.tokens.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await core.tokens.weth.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
 
       await vault.vestGlp(esGmxAmount);
       await vault.vestGmx(esGmxAmount);
@@ -415,8 +413,8 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
-      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
-      expect((await core.weth.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
+      expect(await core.tokens.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await core.tokens.weth.balanceOf(core.hhUser1.address)).gt(ZERO_BI)).to.eq(true);
 
       const glpVestableAmount = await core.gmxEcosystem!.vGlp.getMaxVestableAmount(vault.address);
       const gmxVestableAmount = await core.gmxEcosystem!.vGmx.getMaxVestableAmount(vault.address);
@@ -479,8 +477,8 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
       const account = { owner: core.hhUser1.address, number: accountNumber };
-      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
-      expect(await core.weth.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
       const balance2 = await core.dolomiteMargin.getAccountWei(account, core.marketIds.weth);
       expect(balance2.sign).to.eq(true);
       expect(balance2.value.eq(ZERO_BI)).to.eq(false);
@@ -509,8 +507,8 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
 
       const account = { owner: core.hhUser1.address, number: accountNumber };
-      expect(await core.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
-      expect(await core.weth.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
       const balance2 = await core.dolomiteMargin.getAccountWei(account, core.marketIds.weth);
       expect(balance2.sign).to.eq(false);
       expect(balance2.value).to.eq(ZERO_BI);
@@ -773,7 +771,7 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       const usdcAmount = BigNumber.from('100000000'); // 100 USDC
       await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
       await core.gmxEcosystem!.glpRewardsRouter.mintAndStakeGlp(
-        core.usdc.address,
+        core.tokens.usdc.address,
         usdcAmount,
         ONE_BI,
         ONE_BI,
@@ -813,7 +811,7 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       const usdcAmount = BigNumber.from('100000000'); // 100 USDC
       await setupUSDCBalance(core, core.hhUser2, usdcAmount, core.gmxEcosystem!.glpManager);
       await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser2).mintAndStakeGlp(
-        core.usdc.address,
+        core.tokens.usdc.address,
         usdcAmount,
         ONE_BI,
         ONE_BI,
@@ -843,7 +841,7 @@ describe('GLPIsolationModeTokenVaultV1', () => {
 
       await setupUSDCBalance(core, core.hhUser2, usdcAmount, core.gmxEcosystem!.glpManager);
       await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser2).mintAndStakeGlp(
-        core.usdc.address,
+        core.tokens.usdc.address,
         usdcAmount,
         ONE_BI,
         ONE_BI,

@@ -20,36 +20,65 @@
 
 pragma solidity ^0.8.9;
 
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
+import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IBaseRegistry } from "../interfaces/IBaseRegistry.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { ValidationLib } from "../lib/ValidationLib.sol";
 
 
 /**
  * @title   BaseRegistry
  * @author  Dolomite
  *
- * @notice  Base contract for registry contracts. Contains helpers for validating address changes
+ * @notice  Registry contract for storing ecosystem-related addresses
  */
-abstract contract BaseRegistry {
+contract BaseRegistry is
+    IBaseRegistry,
+    ProxyContractHelpers,
+    OnlyDolomiteMarginForUpgradeable,
+    Initializable
+{
 
-    // ==================== Constants ====================
+    // ===================== Constants =====================
 
     bytes32 private constant _FILE = "BaseRegistry";
+    bytes32 private constant _DOLOMITE_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRegistry")) - 1);
 
-    // ==================== Functions ====================
+    // ===================== Functions =====================
 
-    function _callAndCheckSuccess(
-        address _target,
-        bytes4 _selector,
-        bytes memory _data
-    ) internal view returns (bytes memory) {
-        (bool success, bytes memory returnData) = _target.staticcall(abi.encodePacked(_selector, _data));
-        Require.that(
-            success && returnData.length > 0,
-            _FILE,
-            "Call to target failed",
-            _target
-        );
-        return returnData;
+    function ownerSetDolomiteRegistry(
+        address _dolomiteRegistry
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteRegistry(_dolomiteRegistry);
     }
 
+    function dolomiteRegistry() external view returns (IDolomiteRegistry) {
+        return IDolomiteRegistry(_getAddress(_DOLOMITE_REGISTRY_SLOT));
+    }
+
+    // ===================== Internal Functions =====================
+
+    function _ownerSetDolomiteRegistry(
+        address _dolomiteRegistry
+    ) internal {
+        Require.that(
+            _dolomiteRegistry != address(0),
+            _FILE,
+            "Invalid dolomiteRegistry"
+        );
+        bytes memory returnData = ValidationLib.callAndCheckSuccess(
+            _dolomiteRegistry,
+            IDolomiteRegistry(_dolomiteRegistry).genericTraderProxy.selector,
+            bytes("")
+        );
+        abi.decode(returnData, (address));
+
+        _setAddress(_DOLOMITE_REGISTRY_SLOT, _dolomiteRegistry);
+        emit DolomiteRegistrySet(_dolomiteRegistry);
+    }
 }

@@ -115,7 +115,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-      .mintAndStakeGlp(core.usdc.address, usableUsdcAmount, 0, 0);
+      .mintAndStakeGlp(core.tokens.usdc.address, usableUsdcAmount, 0, 0);
     await core.plutusEcosystem!.sGlp.connect(core.hhUser1)
       .approve(core.plutusEcosystem!.plvGlpRouter.address, glpAmount);
     await core.plutusEcosystem!.plvGlpRouter.connect(core.hhUser1).deposit(glpAmount);
@@ -148,13 +148,13 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
       );
 
       const amountOut = await wrapper.getExchangeCost(
-        core.usdc.address,
+        core.tokens.usdc.address,
         factory.address,
         usableUsdcAmount,
         BYTES_EMPTY,
       );
 
-      await core.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
+      await core.tokens.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await core.dolomiteMargin.connect(core.hhUser5).operate(
         [defaultAccount],
@@ -180,7 +180,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
           core.hhUser1.address,
           core.dolomiteMargin.address,
           factory.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           usableUsdcAmount,
           BYTES_EMPTY,
         ),
@@ -209,12 +209,12 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
         wrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.weth.address,
-          core.usdc.address,
+          core.tokens.weth.address,
+          core.tokens.usdc.address,
           amountWei,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `IsolationModeWrapperTraderV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeWrapperTraderV1: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -225,7 +225,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
           core.hhUser1.address,
           core.dolomiteMargin.address,
           factory.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           ZERO_BI,
           abiCoder.encode(['uint256'], [ZERO_BI]),
         ),
@@ -252,13 +252,13 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
       const glpAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
         .callStatic
         .mintAndStakeGlp(
-          core.usdc.address,
+          core.tokens.usdc.address,
           inputAmount,
           1,
           1,
         );
       const expectedAmount = glpAmount.mul(plvGlpExchangeRateDenominator).div(plvGlpExchangeRateNumerator);
-      expect(await wrapper.getExchangeCost(core.usdc.address, factory.address, inputAmount, BYTES_EMPTY))
+      expect(await wrapper.getExchangeCost(core.tokens.usdc.address, factory.address, inputAmount, BYTES_EMPTY))
         .to
         .eq(expectedAmount);
     });
@@ -271,13 +271,13 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
         const glpAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .mintAndStakeGlp(
-            core.usdc.address,
+            core.tokens.usdc.address,
             weirdAmount,
             1,
             1,
           );
         const expectedAmount = glpAmount.mul(plvGlpExchangeRateDenominator).div(plvGlpExchangeRateNumerator);
-        expect(await wrapper.getExchangeCost(core.usdc.address, factory.address, weirdAmount, BYTES_EMPTY))
+        expect(await wrapper.getExchangeCost(core.tokens.usdc.address, factory.address, weirdAmount, BYTES_EMPTY))
           .to
           .eq(expectedAmount);
       }
@@ -292,7 +292,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
 
     it('should fail if the output token is not dplvGLP', async () => {
       await expectThrow(
-        wrapper.getExchangeCost(core.usdc.address, OTHER_ADDRESS, usableUsdcAmount, BYTES_EMPTY),
+        wrapper.getExchangeCost(core.tokens.usdc.address, OTHER_ADDRESS, usableUsdcAmount, BYTES_EMPTY),
         `PlutusVaultGLPWrapperV1: Invalid output token <${OTHER_ADDRESS.toLowerCase()}>`,
       );
     });
@@ -301,7 +301,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         wrapper.connect(dolomiteMarginImpersonator).getExchangeCost(
-          core.usdc.address,
+          core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
           abiCoder.encode(['uint256'], [ZERO_BI]),

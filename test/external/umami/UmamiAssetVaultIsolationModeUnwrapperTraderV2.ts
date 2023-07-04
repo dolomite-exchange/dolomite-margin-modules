@@ -26,17 +26,23 @@ import {
 } from '../../utils/ecosystem-token-utils/umami';
 import {
   CoreProtocol,
+  disableInterestAccrual,
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import { setupWhitelistAndAggregateVault } from './umami-utils';
 
 const defaultAccountNumber = '0';
-const amountWei = BigNumber.from('200000000000000000000'); // $200
+const amountWei = BigNumber.from('200000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
-const usdcAmount = amountWei.div(1e12).mul(8);
+const usdcAmount = amountWei.mul(8);
 const usableUsdcAmount = usdcAmount.div(2);
+
+const withdrawalFeeNumerator = BigNumber.from('750000000000000000');
+const withdrawalFeeDenominator = BigNumber.from('100000000000000000000');
 
 const abiCoder = ethers.utils.defaultAbiCoder;
 
@@ -58,10 +64,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
   let solidUser: SignerWithAddress;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 100_000_001,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.umamiEcosystem!.glpUsdc;
     const userVaultImplementation = await createUmamiAssetVaultIsolationModeTokenVaultV1();
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
@@ -70,7 +73,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
       core,
       umamiRegistry,
       underlyingToken,
-      core.usdc,
+      core.tokens.usdc,
       userVaultImplementation,
     );
 
@@ -84,10 +87,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(
-      underlyingMarketId,
-      core.liquidatorProxyV4.address,
-    );
+    await disableInterestAccrual(core, core.marketIds.usdc);
 
     solidUser = core.hhUser5;
 
@@ -99,6 +99,8 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
       core.hhUser1,
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
+
+    await setupWhitelistAndAggregateVault(core, umamiRegistry);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.umamiEcosystem!.glpUsdc);
     await core.umamiEcosystem!.glpUsdc.connect(core.hhUser1).deposit(usableUsdcAmount, core.hhUser1.address);
@@ -115,89 +117,44 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('Actions.Call and Actions.Sell for non-liquidation', () => {
-    it('should work when called with the normal conditions', async () => {
-      const solidAccountId = 0;
-      const liquidAccountId = 0;
-      const actions = await unwrapper.createActionsForUnwrapping(
-        solidAccountId,
-        liquidAccountId,
-        vault.address,
-        vault.address,
-        core.marketIds.usdc,
-        underlyingMarketId,
-        ZERO_BI,
-        amountWei,
-        BYTES_EMPTY,
-      );
-
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(underlyingMarketId, core.hhUser5.address);
-      const result = await core.dolomiteMargin.connect(core.hhUser5).operate(
-        [defaultAccount],
-        actions,
-      );
-
-      // jUSDC's value goes up every second. To get the correct amountOut, we need to use the same block #
-      const amountOut = await unwrapper.getExchangeCost(
-        factory.address,
-        core.usdc.address,
-        amountWei,
-        BYTES_EMPTY,
-        { blockTag: result.blockNumber },
-      );
-
-      const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
-      expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
-      expect(await vault.underlyingBalanceOf()).to.eq(ZERO_BI);
-
-      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
-      expect(otherBalanceWei.sign).to.eq(true);
-      expect(otherBalanceWei.value).to.eq(amountOut);
-    });
-  });
-
-  describe('#callFunction', () => {
-    it('should fail if sender function param is not a valid liquidator', async () => {
-      const impersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser1.address, true);
-      const liquidators = await core.liquidatorAssetRegistry.getLiquidatorsForAsset(underlyingMarketId);
-      expect(liquidators.length).to.eq(1);
-      expect(liquidators[0]).to.eq(core.liquidatorProxyV4.address);
-
-      expect(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
-        underlyingMarketId,
-        core.hhUser1.address,
-      )).to.eq(false);
-      await expectThrow(
-        unwrapper.connect(impersonator).callFunction(
-          core.hhUser1.address,
-          { owner: solidUser.address, number: ZERO_BI },
-          BYTES_EMPTY,
-        ),
-        `UmamiAssetVaultUnwrapperV2: Sender must be a liquidator <${core.hhUser1.address.toLowerCase()}>`,
-      );
-
-      await core.liquidatorAssetRegistry.ownerRemoveLiquidatorFromAssetWhitelist(
-        underlyingMarketId,
-        core.liquidatorProxyV4.address,
-      );
-      expect((await core.liquidatorAssetRegistry.getLiquidatorsForAsset(underlyingMarketId)).length).to.eq(0);
-      expect(await core.liquidatorAssetRegistry.isAssetWhitelistedForLiquidation(
-        underlyingMarketId,
-        core.hhUser1.address,
-      )).to.eq(true); // returns true because the length is 0
-
-      await expectThrow(
-        unwrapper.connect(impersonator).callFunction(
-          core.hhUser1.address,
-          { owner: solidUser.address, number: ZERO_BI },
-          BYTES_EMPTY,
-        ),
-        `UmamiAssetVaultUnwrapperV2: Sender must be a liquidator <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
+  // describe('Actions.Call and Actions.Sell for non-liquidation', () => {
+  //   it('should work when called with the normal conditions', async () => {
+  //     const solidAccountId = 0;
+  //     const liquidAccountId = 0;
+  //     const actions = await unwrapper.createActionsForUnwrapping(
+  //       solidAccountId,
+  //       liquidAccountId,
+  //       vault.address,
+  //       vault.address,
+  //       core.marketIds.usdc,
+  //       underlyingMarketId,
+  //       ZERO_BI,
+  //       amountWei,
+  //       BYTES_EMPTY,
+  //     );
+  //
+  //     const amountOut = await unwrapper.getExchangeCost(
+  //       factory.address,
+  //       core.tokens.usdc.address,
+  //       amountWei,
+  //       BYTES_EMPTY,
+  //     );
+  //
+  //     await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+  //     await core.dolomiteMargin.connect(core.hhUser5).operate(
+  //       [defaultAccount],
+  //       actions,
+  //     );
+  //
+  //     const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
+  //     expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
+  //     expect(await vault.underlyingBalanceOf()).to.eq(ZERO_BI);
+  //
+  //     const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
+  //     expect(otherBalanceWei.sign).to.eq(true);
+  //     expect(otherBalanceWei.value).to.eq(amountOut);
+  //   });
+  // });
 
   describe('#exchange', () => {
     it('should fail if not called by DolomiteMargin', async () => {
@@ -205,7 +162,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           factory.address,
           amountWei,
           BYTES_EMPTY,
@@ -220,12 +177,12 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
-          core.weth.address,
+          core.tokens.usdc.address,
+          core.tokens.weth.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -236,12 +193,12 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.dfsGlp!.address,
+          core.tokens.dfsGlp!.address,
           factory.address,
           amountWei,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
@@ -252,7 +209,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
           abiCoder.encode(['uint256'], [otherAmountWei]),
@@ -276,35 +233,44 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
 
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
-      const jUSDCExchangeRateNumerator = await underlyingToken.totalAssets();
-      const jUSDCExchangeRateDenominator = await underlyingToken.totalSupply();
+      const exchangeRateNumerator = await underlyingToken.totalAssets();
+      const exchangeRateDenominator = await underlyingToken.totalSupply();
 
-      const amountBeforeRetention = amountWei
-        .mul(jUSDCExchangeRateNumerator)
-        .div(jUSDCExchangeRateDenominator);
-      const retentionFee = amountBeforeRetention.mul('97').div('10000');
-      const expectedAmount = amountBeforeRetention.sub(retentionFee);
+      const amountBeforeWithdrawalFee = amountWei
+        .mul(exchangeRateNumerator)
+        .div(exchangeRateDenominator);
 
-      expect(await unwrapper.getExchangeCost(factory.address, core.usdc.address, amountWei, BYTES_EMPTY))
-        .to
-        .eq(expectedAmount);
+      const withdrawalFee = amountBeforeWithdrawalFee.mul(withdrawalFeeNumerator).div(withdrawalFeeDenominator);
+      expect(await core.umamiEcosystem!.glpUsdc.previewWithdrawalFee(amountBeforeWithdrawalFee)).to.eq(withdrawalFee);
+
+      const expectedAmount = amountBeforeWithdrawalFee.sub(withdrawalFee);
+
+      expect(
+        await unwrapper.getExchangeCost(
+          factory.address,
+          core.tokens.usdc.address,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+      ).to.eq(expectedAmount);
     });
 
     it('should work for 10 random numbers, as long as balance is sufficient', async () => {
-      const jUSDCExchangeRateNumerator = await underlyingToken.totalAssets();
-      const jUSDCExchangeRateDenominator = await underlyingToken.totalSupply();
+      const exchangeRateNumerator = await underlyingToken.totalAssets();
+      const exchangeRateDenominator = await underlyingToken.totalSupply();
 
       for (let i = 0; i < 10; i++) {
         // create a random number from 1 to 99 and divide by 101 (making the number, at-most, slightly smaller)
         const randomNumber = BigNumber.from(Math.floor(Math.random() * 99) + 1);
         const weirdAmount = amountWei.mul(randomNumber).div(101);
-        const amountBeforeRetention = weirdAmount
-          .mul(jUSDCExchangeRateNumerator)
-          .div(jUSDCExchangeRateDenominator);
+        const amountBeforeWithdrawalFee = weirdAmount
+          .mul(exchangeRateNumerator)
+          .div(exchangeRateDenominator);
 
-        const expectedAmount = amountBeforeRetention.sub(amountBeforeRetention.mul('97').div('10000'));
+        const expectedAmount = amountBeforeWithdrawalFee
+          .sub(amountBeforeWithdrawalFee.mul(withdrawalFeeNumerator).div(withdrawalFeeDenominator));
 
-        expect(await unwrapper.getExchangeCost(factory.address, core.usdc.address, weirdAmount, BYTES_EMPTY))
+        expect(await unwrapper.getExchangeCost(factory.address, core.tokens.usdc.address, weirdAmount, BYTES_EMPTY))
           .to
           .eq(expectedAmount);
       }

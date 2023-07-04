@@ -18,7 +18,13 @@ import { createContractWithAbi, createTestToken } from '../../../../src/utils/do
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../../../utils/setup';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -42,10 +48,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
   let solidUser: SignerWithAddress;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
     const userVaultImplementation = await createContractWithAbi(
@@ -245,11 +248,11 @@ describe('IsolationModeUnwrapperTraderV2', () => {
           core.hhUser1.address,
           core.dolomiteMargin.address,
           factory.address,
-          core.weth.address,
+          core.tokens.weth.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -297,8 +300,8 @@ describe('IsolationModeUnwrapperTraderV2', () => {
   describe('#isValidOutputToken', () => {
     it('should work as expected', async () => {
       expect(await unwrapper.isValidOutputToken(otherToken.address)).to.be.true;
-      expect(await unwrapper.isValidOutputToken(core.weth.address)).to.be.false;
-      expect(await unwrapper.isValidOutputToken(core.usdc.address)).to.be.false;
+      expect(await unwrapper.isValidOutputToken(core.tokens.weth.address)).to.be.false;
+      expect(await unwrapper.isValidOutputToken(core.tokens.usdc.address)).to.be.false;
     });
   });
 
@@ -394,12 +397,12 @@ describe('IsolationModeUnwrapperTraderV2', () => {
     it('should fail when input token is invalid', async () => {
       await expectThrow(
         unwrapper.getExchangeCost(
-          core.dfsGlp!.address,
-          core.usdc.address,
+          core.tokens.dfsGlp!.address,
+          core.tokens.usdc.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.dfsGlp!.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
@@ -407,11 +410,11 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       await expectThrow(
         unwrapper.getExchangeCost(
           factory.address,
-          core.dfsGlp!.address,
+          core.tokens.dfsGlp!.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 

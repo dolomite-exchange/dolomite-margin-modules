@@ -98,7 +98,7 @@ contract MagicGLPUnwrapperTraderV1 is IDolomiteMarginUnwrapperTraderForLiquidato
         );
         Require.that(
             GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
-                && DOLOMITE_MARGIN.getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
+                && DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
             _FILE,
             "Invalid output token",
             _outputToken
@@ -144,7 +144,7 @@ contract MagicGLPUnwrapperTraderV1 is IDolomiteMarginUnwrapperTraderForLiquidato
         );
         Require.that(
             GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
-                && DOLOMITE_MARGIN.getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
+                && DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
             _FILE,
             "Invalid output token",
             _outputToken
@@ -186,8 +186,8 @@ contract MagicGLPUnwrapperTraderV1 is IDolomiteMarginUnwrapperTraderForLiquidato
 
         uint256 _outputMarketId = outputMarketId();
         uint256 amountOut = getExchangeCost(
-            DOLOMITE_MARGIN.getMarketTokenAddress(_inputMarketId),
-            DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarketId),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarketId),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarketId),
             _inputAmount,
             /* _orderData = */ bytes("")
         );

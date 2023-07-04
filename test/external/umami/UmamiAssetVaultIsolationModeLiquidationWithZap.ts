@@ -159,7 +159,7 @@
 //         usdcDebtAmountBefore,
 //         BalanceCheckFlag.To,
 //       );
-//       await core.testInterestSetter!.setInterestRate(core.usdc.address, { value: '33295281582' }); // 100% APR
+//       await core.testInterestSetter!.setInterestRate(core.tokens.usdc.address, { value: '33295281582' }); // 100% APR
 //       await core.dolomiteMargin.ownerSetInterestSetter(core.marketIds.usdc, core.testInterestSetter!.address);
 //       await waitDays(10); // accrue interest to push towards liquidation
 //       // deposit 0 to refresh account index
@@ -198,7 +198,7 @@
 //       )).value;
 //       const usdcOutputAmount = await unwrapper.getExchangeCost(
 //         factory.address,
-//         core.usdc.address,
+//         core.tokens.usdc.address,
 //         heldUpdatedWithReward,
 //         BYTES_EMPTY,
 //         { blockTag: txResult.blockNumber },
@@ -234,9 +234,9 @@
 //       );
 //
 //       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
-//       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.weth.address, ZERO_BI);
+//       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.tokens.weth.address, ZERO_BI);
 //       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.umamiEcosystem!.jUSDC.address, ZERO_BI);
-//       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+//       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
 //     });
 //   });
 //
@@ -297,7 +297,7 @@
 //
 //       const usdcOutputAmount = await unwrapper.getExchangeCost(
 //         factory.address,
-//         core.usdc.address,
+//         core.tokens.usdc.address,
 //         heldUpdatedWithReward,
 //         BYTES_EMPTY,
 //         { blockTag: txResult.blockNumber },
@@ -333,9 +333,9 @@
 //       );
 //
 //       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
-//       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.weth.address, ZERO_BI);
+//       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.tokens.weth.address, ZERO_BI);
 //       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.umamiEcosystem!.jUSDC.address, ZERO_BI);
-//       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+//       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
 //     });
 //   });
 // });

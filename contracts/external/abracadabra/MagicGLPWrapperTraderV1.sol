@@ -172,7 +172,7 @@ contract MagicGLPWrapperTraderV1 is IDolomiteMarginWrapperTraderForLiquidatorV3,
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
         Require.that(
-            DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarket) == address(MAGIC_GLP),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(MAGIC_GLP),
             _FILE,
             "Invalid output market",
             _outputMarket
@@ -180,8 +180,8 @@ contract MagicGLPWrapperTraderV1 is IDolomiteMarginWrapperTraderForLiquidatorV3,
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
 
         uint256 amountOut = getExchangeCost(
-            DOLOMITE_MARGIN.getMarketTokenAddress(_inputMarket),
-            DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarket),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket),
             _inputAmount,
             /* _orderData = */ bytes("")
         );

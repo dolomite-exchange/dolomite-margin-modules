@@ -1,8 +1,10 @@
 import { expect } from 'chai';
 import {
-  TestGLPIsolationModeTokenVaultV1,
-  TestGLPIsolationModeTokenVaultV1__factory,
+  IERC20,
+  IUmamiAssetVault,
+  IWETH,
   UmamiAssetVaultIsolationModeTokenVaultV1,
+  UmamiAssetVaultIsolationModeTokenVaultV1__factory,
   UmamiAssetVaultIsolationModeVaultFactory,
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
@@ -14,7 +16,7 @@ import {
   createUmamiAssetVaultIsolationModeVaultFactory,
   createUmamiAssetVaultRegistry,
 } from '../../utils/ecosystem-token-utils/umami';
-import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -23,26 +25,34 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
 
   let core: CoreProtocol;
   let umamiRegistry: UmamiAssetVaultRegistry;
-  let vaultImplementation: TestGLPIsolationModeTokenVaultV1;
-  let factory: UmamiAssetVaultIsolationModeVaultFactory;
+  let userVaultImplementation: UmamiAssetVaultIsolationModeTokenVaultV1;
+  let factories: UmamiAssetVaultIsolationModeVaultFactory[];
+  let underlyingAssets: (IERC20 | IWETH)[];
+  let umamiAssets: IUmamiAssetVault[];
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 107150300,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     umamiRegistry = await createUmamiAssetVaultRegistry(core);
-    vaultImplementation = await createContractWithAbi<TestGLPIsolationModeTokenVaultV1>(
-      TestGLPIsolationModeTokenVaultV1__factory.abi,
-      TestGLPIsolationModeTokenVaultV1__factory.bytecode,
+    userVaultImplementation = await createContractWithAbi<UmamiAssetVaultIsolationModeTokenVaultV1>(
+      UmamiAssetVaultIsolationModeTokenVaultV1__factory.abi,
+      UmamiAssetVaultIsolationModeTokenVaultV1__factory.bytecode,
       [],
     );
-    factory = await createUmamiAssetVaultIsolationModeVaultFactory(
-      core,
-      umamiRegistry,
-      core.umamiEcosystem!.glpUsdc,
-      core.usdc,
-      (vaultImplementation as any) as UmamiAssetVaultIsolationModeTokenVaultV1,
+
+    const umamiEcosystem = core.umamiEcosystem!;
+    umamiAssets = [umamiEcosystem.glpLink, umamiEcosystem.glpUsdc, umamiEcosystem.glpWbtc, umamiEcosystem.glpWeth];
+    underlyingAssets = [core.tokens.link, core.tokens.usdc, core.tokens.wbtc, core.tokens.weth];
+
+    factories = await Promise.all(
+      umamiAssets.map((asset, i) =>
+        createUmamiAssetVaultIsolationModeVaultFactory(
+          core,
+          umamiRegistry,
+          asset,
+          underlyingAssets[i],
+          userVaultImplementation,
+        ),
+      ),
     );
 
     snapshotId = await snapshot();
@@ -54,44 +64,55 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
 
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await factory.umamiAssetVaultRegistry()).to.equal(umamiRegistry.address);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.umamiEcosystem!.glpUsdc.address);
-      expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
-      expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
-      expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+      for (let i = 0; i < factories.length; i++) {
+        expect(await factories[i].umamiAssetVaultRegistry()).to.equal(umamiRegistry.address);
+        expect(await factories[i].UNDERLYING_TOKEN()).to.equal(umamiAssets[i].address);
+        expect(await factories[i].BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
+        expect(await factories[i].userVaultImplementation()).to.equal(userVaultImplementation.address);
+        expect(await factories[i].DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+      }
     });
   });
 
   describe('#ownerSetUmamiAssetVaultRegistry', () => {
     it('should work normally', async () => {
-      const result = await factory.connect(core.governance).ownerSetUmamiAssetVaultRegistry(OTHER_ADDRESS);
-      await expectEvent(factory, result, 'UmamiAssetVaultRegistrySet', {
-        umamiRegistry: OTHER_ADDRESS,
-      });
-      expect(await factory.umamiAssetVaultRegistry()).to.equal(OTHER_ADDRESS);
+      for (let i = 0; i < factories.length; i++) {
+        const result = await factories[i].connect(core.governance).ownerSetUmamiAssetVaultRegistry(OTHER_ADDRESS);
+        await expectEvent(factories[i], result, 'UmamiAssetVaultRegistrySet', {
+          umamiRegistry: OTHER_ADDRESS,
+        });
+        expect(await factories[i].umamiAssetVaultRegistry()).to.equal(OTHER_ADDRESS);
+      }
     });
 
     it('should fail when not called by owner', async () => {
-      await expectThrow(
-        factory.connect(core.hhUser1).ownerSetUmamiAssetVaultRegistry(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
+      for (let i = 0; i < factories.length; i++) {
+        await expectThrow(
+          factories[i].connect(core.hhUser1).ownerSetUmamiAssetVaultRegistry(OTHER_ADDRESS),
+          `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+        );
+      }
     });
   });
 
   describe('#allowableCollateralMarketIds', () => {
     it('should work normally', async () => {
-      const result = await factory.allowableCollateralMarketIds();
-      expect(result.length).to.eql(1);
-      expect(result[0]).to.eq(NONE_MARKET_ID);
+      for (let i = 0; i < factories.length; i++) {
+        const result = await factories[i].allowableCollateralMarketIds();
+        expect(result.length).to.eql(1);
+        expect(result[0]).to.eq(NONE_MARKET_ID);
+      }
     });
   });
 
   describe('#allowableDebtMarketIds', () => {
     it('should work normally', async () => {
-      const result = await factory.allowableDebtMarketIds();
-      expect(result.length).to.eql(1);
-      expect(result[0].toNumber()).to.eq(core.marketIds.usdc);
+      for (let i = 0; i < factories.length; i++) {
+        const result = await factories[i].allowableDebtMarketIds();
+        expect(result.length).to.eql(1);
+        const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(underlyingAssets[i].address);
+        expect(result[0]).to.eq(marketId);
+      }
     });
   });
 });

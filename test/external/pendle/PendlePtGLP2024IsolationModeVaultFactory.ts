@@ -12,7 +12,7 @@ import {
   createPendlePtGLP2024IsolationModeVaultFactory,
   createPendlePtGLP2024Registry,
 } from '../../utils/ecosystem-token-utils/pendle';
-import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -25,10 +25,7 @@ describe('PendlePtGLP2024IsolationModeVaultFactory', () => {
   let factory: PendlePtGLP2024IsolationModeVaultFactory;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 96118000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     pendleRegistry = await createPendlePtGLP2024Registry(core);
     vaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
     factory = await createPendlePtGLP2024IsolationModeVaultFactory(

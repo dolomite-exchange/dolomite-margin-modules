@@ -108,7 +108,7 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
     const usdcAmount = amountWei.div(1e12).mul(8);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-      .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
+      .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, 0, 0);
     const glpAmount = amountWei.mul(4);
     await core.plutusEcosystem!.sGlp.connect(core.hhUser1)
       .approve(core.plutusEcosystem!.plvGlpRouter.address, glpAmount);
@@ -147,7 +147,7 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
 
       const amountOut = await unwrapper.getExchangeCost(
         factory.address,
-        core.usdc.address,
+        core.tokens.usdc.address,
         amountWei,
         BYTES_EMPTY,
       );
@@ -174,7 +174,7 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
         unwrapper.connect(core.hhUser1).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           factory.address,
           amountWei,
           BYTES_EMPTY,
@@ -189,12 +189,12 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
-          core.weth.address,
+          core.tokens.usdc.address,
+          core.tokens.weth.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV1: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV1: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -205,12 +205,12 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.weth.address,
+          core.tokens.weth.address,
           factory.address,
           amountWei,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `PlutusVaultGLPUnwrapperV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
+        `PlutusVaultGLPUnwrapperV1: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -221,7 +221,7 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
           abiCoder.encode(['uint256'], [otherAmountWei]),
@@ -267,7 +267,12 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
       const TEN_MILLION = BigNumber.from('10000000');
       const amount = ONE_WEI.mul(TEN_MILLION);
       const decimalDelta = BigNumber.from('1000000000000');
-      const outputAmount = await unwrapper.getExchangeCost(factory.address, core.usdc.address, amount, BYTES_EMPTY);
+      const outputAmount = await unwrapper.getExchangeCost(
+        factory.address,
+        core.tokens.usdc.address,
+        amount,
+        BYTES_EMPTY,
+      );
       const oraclePrice = (await priceOracle.getPrice(factory.address)).value.div(decimalDelta);
       console.log('\toutputAmount', outputAmount.toString());
       console.log('\toraclePrice', oraclePrice.toString());
@@ -281,12 +286,12 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
       const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
         .callStatic
         .unstakeAndRedeemGlp(
-          core.usdc.address,
+          core.tokens.usdc.address,
           glpAmount,
           1,
           core.hhUser1.address,
         );
-      expect(await unwrapper.getExchangeCost(factory.address, core.usdc.address, amountWei, BYTES_EMPTY))
+      expect(await unwrapper.getExchangeCost(factory.address, core.tokens.usdc.address, amountWei, BYTES_EMPTY))
         .to
         .eq(expectedAmount);
     });
@@ -300,12 +305,12 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
         const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .unstakeAndRedeemGlp(
-            core.usdc.address,
+            core.tokens.usdc.address,
             glpAmount,
             1,
             core.hhUser1.address,
           );
-        expect(await unwrapper.getExchangeCost(factory.address, core.usdc.address, weirdAmount, BYTES_EMPTY))
+        expect(await unwrapper.getExchangeCost(factory.address, core.tokens.usdc.address, weirdAmount, BYTES_EMPTY))
           .to
           .eq(expectedAmount);
       }
@@ -313,21 +318,21 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
 
     it('should fail if the input token is not dsfGLP', async () => {
       await expectThrow(
-        unwrapper.getExchangeCost(core.weth.address, core.usdc.address, amountWei, BYTES_EMPTY),
-        `PlutusVaultGLPUnwrapperV1: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        unwrapper.getExchangeCost(core.tokens.weth.address, core.tokens.usdc.address, amountWei, BYTES_EMPTY),
+        `PlutusVaultGLPUnwrapperV1: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if the output token is not USDC', async () => {
       await expectThrow(
-        unwrapper.getExchangeCost(factory.address, core.weth.address, amountWei, BYTES_EMPTY),
-        `PlutusVaultGLPUnwrapperV1: Invalid output token <${core.weth.address.toLowerCase()}>`,
+        unwrapper.getExchangeCost(factory.address, core.tokens.weth.address, amountWei, BYTES_EMPTY),
+        `PlutusVaultGLPUnwrapperV1: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if the desired input amount is eq to 0', async () => {
       await expectThrow(
-        unwrapper.getExchangeCost(factory.address, core.usdc.address, ZERO_BI, BYTES_EMPTY),
+        unwrapper.getExchangeCost(factory.address, core.tokens.usdc.address, ZERO_BI, BYTES_EMPTY),
         'PlutusVaultGLPUnwrapperV1: Invalid desired input amount',
       );
     });

@@ -65,7 +65,7 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
       TestPriceOracle__factory.bytecode,
       [],
     );
-    await testPriceOracle!.setPrice(core.usdc.address, USDC_PRICE);
+    await testPriceOracle!.setPrice(core.tokens.usdc.address, USDC_PRICE);
     await dolomiteMargin.connect(owner).ownerSetPriceOracle(core.marketIds.usdc, testPriceOracle!.address);
     snapshotId = await snapshot();
   });
@@ -108,7 +108,7 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
       const { heldAmountWei, owedAmountWei } = await setupUserBalance();
 
       // Increase the user's debt by 10%, therefore lowering the collateralization to ~113% (making it under-water)
-      await testPriceOracle!.setPrice(core.usdc.address, USDC_PRICE.mul(11).div(10));
+      await testPriceOracle!.setPrice(core.tokens.usdc.address, USDC_PRICE.mul(11).div(10));
 
       const owedPriceAdj = (await dolomiteMargin.getMarketPrice(core.marketIds.usdc)).value.mul(105).div(100);
       const heldPrice = (await dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
@@ -118,10 +118,10 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
 
       const { calldata: paraswapCallData, outputAmount } = await getCalldataForParaswap(
         inputAmount,
-        core.weth,
+        core.tokens.weth,
         18,
         owedAmountWei,
-        core.usdc,
+        core.tokens.usdc,
         6,
         solidAccount,
         liquidatorProxy,
@@ -162,8 +162,8 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
         0,
       );
 
-      await expectWalletBalanceOrDustyIfZero(core, liquidatorProxy.address, core.weth.address, 0);
-      await expectWalletBalanceOrDustyIfZero(core, liquidatorProxy.address, core.usdc.address, 0);
+      await expectWalletBalanceOrDustyIfZero(core, liquidatorProxy.address, core.tokens.weth.address, 0);
+      await expectWalletBalanceOrDustyIfZero(core, liquidatorProxy.address, core.tokens.usdc.address, 0);
     });
   });
 });

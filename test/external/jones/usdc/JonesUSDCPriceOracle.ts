@@ -88,8 +88,8 @@ describe('JonesUSDCPriceOracle', () => {
         `JonesUSDCPriceOracle: Invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`,
       );
       await expectThrow(
-        jonesUSDCPriceOracle.getPrice(core.dfsGlp!.address),
-        `JonesUSDCPriceOracle: Invalid token <${(core.dfsGlp!.address).toLowerCase()}>`,
+        jonesUSDCPriceOracle.getPrice(core.tokens.dfsGlp!.address),
+        `JonesUSDCPriceOracle: Invalid token <${(core.tokens.dfsGlp!.address).toLowerCase()}>`,
       );
       await expectThrow(
         jonesUSDCPriceOracle.getPrice(core.gmxEcosystem!.glp.address),

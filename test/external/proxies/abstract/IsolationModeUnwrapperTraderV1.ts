@@ -18,7 +18,13 @@ import { createContractWithAbi, createTestToken } from '../../../../src/utils/do
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../../../utils/setup';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -42,10 +48,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
   let solidUser: SignerWithAddress;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
     const userVaultImplementation = await createContractWithAbi(
@@ -122,7 +125,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
 
       const amountOut = await unwrapper.getExchangeCost(
         factory.address,
-        core.usdc.address,
+        core.tokens.usdc.address,
         amountWei,
         BYTES_EMPTY,
       );
@@ -244,11 +247,11 @@ describe('IsolationModeUnwrapperTraderV1', () => {
           core.hhUser1.address,
           core.dolomiteMargin.address,
           factory.address,
-          core.weth.address,
+          core.tokens.weth.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV1: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV1: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -334,7 +337,7 @@ describe('IsolationModeUnwrapperTraderV1', () => {
       expect(actions[1].otherAccountId).to.eq(ZERO_BI);
       const amountOut = await unwrapper.getExchangeCost(
         factory.address,
-        core.usdc.address,
+        core.tokens.usdc.address,
         amountWei,
         BYTES_EMPTY,
       );

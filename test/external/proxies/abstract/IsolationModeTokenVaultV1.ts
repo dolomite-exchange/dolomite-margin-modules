@@ -20,7 +20,13 @@ import { Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../../utils/assertions';
 import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../../../utils/setup';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -44,10 +50,7 @@ describe('IsolationModeTokenVaultV1', () => {
   let otherMarketId: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     userVaultImplementation = await createContractWithAbi(
       TestIsolationModeTokenVaultV1__factory.abi,
@@ -66,7 +69,7 @@ describe('IsolationModeTokenVaultV1', () => {
     tokenUnwrapper = await createContractWithAbi(
       TestIsolationModeUnwrapperTrader__factory.abi,
       TestIsolationModeUnwrapperTrader__factory.bytecode,
-      [core.usdc.address, factory.address, core.dolomiteMargin.address],
+      [core.tokens.usdc.address, factory.address, core.dolomiteMargin.address],
     );
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);

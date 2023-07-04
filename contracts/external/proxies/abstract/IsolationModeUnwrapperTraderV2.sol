@@ -166,13 +166,13 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
         Require.that(
-            DOLOMITE_MARGIN.getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY),
             _FILE,
             "Invalid input market",
             _inputMarket
         );
         Require.that(
-            isValidOutputToken(DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarket)),
+            isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
             _FILE,
             "Invalid output market",
             _outputMarket

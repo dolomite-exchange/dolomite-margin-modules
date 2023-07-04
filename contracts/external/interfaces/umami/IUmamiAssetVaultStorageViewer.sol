@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IUmamiAssetVaultWhitelist } from "./IUmamiAssetVaultWhitelist.sol";
+
 
 /**
  * @title   IUmamiAssetVaultStorageViewer
@@ -45,5 +47,9 @@ interface IUmamiAssetVaultStorageViewer {
     // =========================== Functions ===========================
     // =================================================================
 
+    function getFeeHelper() external view returns (address);
+
     function getVaultFees() external view returns (VaultFees memory);
+
+    function getWhitelist() external view returns (IUmamiAssetVaultWhitelist);
 }

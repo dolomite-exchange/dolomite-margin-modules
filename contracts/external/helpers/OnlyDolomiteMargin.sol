@@ -23,7 +23,7 @@ pragma solidity ^0.8.9;
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { IOnlyDolomiteMargin } from "../interfaces/IOnlyDolomiteMargin.sol";
+import { OnlyDolomiteMarginForUpgradeable } from "./OnlyDolomiteMarginForUpgradeable.sol";
 
 
 /**
@@ -33,7 +33,7 @@ import { IOnlyDolomiteMargin } from "../interfaces/IOnlyDolomiteMargin.sol";
  * @notice  Inheritable contract that restricts the calling of certain functions to `DolomiteMargin`, the owner of
  *          `DolomiteMargin` or a `DolomiteMargin` global operator
  */
-abstract contract OnlyDolomiteMargin is IOnlyDolomiteMargin {
+abstract contract OnlyDolomiteMargin is OnlyDolomiteMarginForUpgradeable {
 
     // ============ Constants ============
 
@@ -41,44 +41,18 @@ abstract contract OnlyDolomiteMargin is IOnlyDolomiteMargin {
 
     // ============ Storage ============
 
-    IDolomiteMargin public immutable override DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
-
-    // ============ Modifiers ============
-
-    modifier onlyDolomiteMargin(address _from) {
-        Require.that(
-            _from == address(DOLOMITE_MARGIN),
-            _FILE,
-            "Only Dolomite can call function",
-            _from
-        );
-        _;
-    }
-
-    modifier onlyDolomiteMarginOwner(address _from) {
-        Require.that(
-            _from == DOLOMITE_MARGIN.owner(),
-            _FILE,
-            "Caller is not owner of Dolomite",
-            _from
-        );
-        _;
-    }
-
-    modifier onlyDolomiteMarginGlobalOperator(address _from) {
-        Require.that(
-            DOLOMITE_MARGIN.getIsGlobalOperator(_from),
-            _FILE,
-            "Caller is not a global operator",
-            _from
-        );
-        _;
-    }
+    IDolomiteMargin private immutable _DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor (address _dolomiteMargin)
     {
-        DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
+        _DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
+    }
+
+    // ============ Functions ============
+
+    function DOLOMITE_MARGIN() public override view returns (IDolomiteMargin) {
+        return _DOLOMITE_MARGIN;
     }
 }

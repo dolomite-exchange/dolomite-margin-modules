@@ -3,9 +3,12 @@ import { CoreProtocol } from '../../../test/utils/setup';
 import {
   IPlutusVaultGLPIsolationModeTokenVaultV1,
   IPlutusVaultRegistry,
-  PlutusVaultGLPIsolationModeUnwrapperTraderV1, PlutusVaultGLPIsolationModeTokenVaultV1,
+  PlutusVaultGLPIsolationModeTokenVaultV1,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   PlutusVaultGLPIsolationModeWrapperTraderV1,
-  PlutusVaultRegistry, PlutusVaultGLPIsolationModeUnwrapperTraderV2, PlutusVaultGLPIsolationModeWrapperTraderV2,
+  PlutusVaultGLPIsolationModeWrapperTraderV2,
+  PlutusVaultRegistry,
 } from '../../types';
 
 export function getPlutusVaultRegistryConstructorParams(core: CoreProtocol): any[] {
@@ -51,7 +54,7 @@ export function getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams
   }
 
   return [
-    core.usdc.address,
+    core.tokens.usdc.address,
     core.gmxEcosystem!.live.gmxRegistry.address,
     plutusVaultRegistry.address,
     dPlvGlpToken.address,

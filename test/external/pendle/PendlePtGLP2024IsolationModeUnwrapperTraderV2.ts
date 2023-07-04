@@ -28,6 +28,7 @@ import {
 } from '../../utils/ecosystem-token-utils/pendle';
 import {
   CoreProtocol,
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -59,10 +60,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
   let solidUser: SignerWithAddress;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 86413000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.pendleEcosystem!.ptGlpToken;
     const userVaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
@@ -106,7 +104,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
     const usdcAmount = amountWei.div(1e12).mul(8);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-      .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
+      .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, 0, 0);
     const glpAmount = amountWei.mul(4);
     await core.gmxEcosystem!.sGlp.connect(core.hhUser1)
       .approve(core.pendleEcosystem!.pendleRouter.address, glpAmount);
@@ -138,8 +136,8 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
       const { tokenOutput, extraOrderData } = await encodeSwapExactPtForTokens(router, core, amountWei);
       const amountOut = await core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5)
         .getExchangeCost(
-          core.dfsGlp!.address,
-          core.usdc.address,
+          core.tokens.dfsGlp!.address,
+          core.tokens.usdc.address,
           tokenOutput.minTokenOut,
           BYTES_EMPTY,
         );
@@ -178,7 +176,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).exchange(
           vault.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           factory.address,
           amountWei,
           BYTES_EMPTY,
@@ -193,12 +191,12 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
-          core.weth.address,
+          core.tokens.usdc.address,
+          core.tokens.weth.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -209,12 +207,12 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
           core.dolomiteMargin.address,
-          core.dfsGlp!.address,
+          core.tokens.dfsGlp!.address,
           factory.address,
           amountWei,
           ethers.utils.defaultAbiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
@@ -225,7 +223,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
           ethers.utils.defaultAbiCoder.encode(['uint256'], [otherAmountWei]),
@@ -262,7 +260,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
   describe('#getExchangeCost', () => {
     it('should fail because it is not implemented', async () => {
       await expectThrow(
-        unwrapper.getExchangeCost(factory.address, core.usdc.address, amountWei, BYTES_EMPTY),
+        unwrapper.getExchangeCost(factory.address, core.tokens.usdc.address, amountWei, BYTES_EMPTY),
         'PendlePtGLP2024UnwrapperV2: getExchangeCost is not implemented',
       );
     });

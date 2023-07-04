@@ -62,10 +62,10 @@ describe('ParaswapAggregatorTrader', () => {
 
       const { calldata } = await getCalldataForParaswap(
         amountIn,
-        core.weth,
+        core.tokens.weth,
         18,
         minAmountOut,
-        core.usdc,
+        core.tokens.usdc,
         6,
         core.dolomiteMargin,
         trader,
@@ -91,8 +91,8 @@ describe('ParaswapAggregatorTrader', () => {
         ],
       );
 
-      expect(await core.weth.balanceOf(trader.address)).to.eq(ZERO_BI);
-      expect(await core.usdc.balanceOf(trader.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.weth.balanceOf(trader.address)).to.eq(ZERO_BI);
+      expect(await core.tokens.usdc.balanceOf(trader.address)).to.eq(ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
       await expectProtocolBalanceIsGreaterThan(core, defaultAccount, core.marketIds.usdc, minAmountOut, 0);
     });
@@ -102,8 +102,8 @@ describe('ParaswapAggregatorTrader', () => {
         trader.connect(core.hhUser1).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.weth.address,
-          core.usdc.address,
+          core.tokens.weth.address,
+          core.tokens.usdc.address,
           ZERO_BI,
           BYTES_EMPTY,
         ),
@@ -114,10 +114,10 @@ describe('ParaswapAggregatorTrader', () => {
     it('should fail when output is insufficient', async () => {
       const { calldata: tradeData, outputAmount } = await getCalldataForParaswap(
         amountIn,
-        core.weth,
+        core.tokens.weth,
         18,
         minAmountOut,
-        core.usdc,
+        core.tokens.usdc,
         6,
         core.hhUser1,
         trader,
@@ -156,10 +156,10 @@ describe('ParaswapAggregatorTrader', () => {
       const caller = await impersonate(core.dolomiteMargin.address, true);
       const { calldata } = await getCalldataForParaswap(
         amountIn,
-        core.weth,
+        core.tokens.weth,
         18,
         minAmountOut,
-        core.usdc,
+        core.tokens.usdc,
         6,
         core.dolomiteMargin,
         trader,
@@ -170,8 +170,8 @@ describe('ParaswapAggregatorTrader', () => {
         [
           minAmountOut,
           calldata.replace(
-            core.weth.address.toLowerCase().substring(2),
-            core.weth.address.toLowerCase().substring(2).replace('4', '3'),
+            core.tokens.weth.address.toLowerCase().substring(2),
+            core.tokens.weth.address.toLowerCase().substring(2).replace('4', '3'),
           ),
         ],
       );
@@ -180,8 +180,8 @@ describe('ParaswapAggregatorTrader', () => {
           .exchange(
             core.hhUser1.address,
             core.dolomiteMargin.address,
-            core.weth.address,
-            core.usdc.address,
+            core.tokens.weth.address,
+            core.tokens.usdc.address,
             amountIn,
             actualCalldata,
           ),
@@ -193,10 +193,10 @@ describe('ParaswapAggregatorTrader', () => {
       const caller = await impersonate(core.dolomiteMargin.address, true);
       const { calldata } = await getCalldataForParaswap(
         amountIn,
-        core.weth,
+        core.tokens.weth,
         18,
         minAmountOut,
-        core.usdc,
+        core.tokens.usdc,
         6,
         core.dolomiteMargin,
         trader,
@@ -211,8 +211,8 @@ describe('ParaswapAggregatorTrader', () => {
           .exchange(
             core.hhUser1.address,
             core.dolomiteMargin.address,
-            core.weth.address,
-            core.usdc.address,
+            core.tokens.weth.address,
+            core.tokens.usdc.address,
             amountIn,
             actualCalldata,
           ),
@@ -224,7 +224,7 @@ describe('ParaswapAggregatorTrader', () => {
   describe('#getExchangeCost', () => {
     it('should always fail', async () => {
       await expectThrow(
-        trader.getExchangeCost(core.weth.address, core.usdc.address, ZERO_BI, BYTES_EMPTY),
+        trader.getExchangeCost(core.tokens.weth.address, core.tokens.usdc.address, ZERO_BI, BYTES_EMPTY),
         'ParaswapAggregatorTrader: getExchangeCost not implemented',
       );
     });

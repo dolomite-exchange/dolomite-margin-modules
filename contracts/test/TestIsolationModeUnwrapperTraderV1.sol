@@ -49,7 +49,7 @@ contract TestIsolationModeUnwrapperTraderV1 is IsolationModeUnwrapperTraderV1 {
         _dolomiteMargin
     ) {
         OUTPUT_TOKEN = _outputToken;
-        OUTPUT_MARKET_ID = DOLOMITE_MARGIN.getMarketIdByTokenAddress(_outputToken);
+        OUTPUT_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken);
     }
 
     function outputMarketId() public override view returns (uint256) {
@@ -85,11 +85,11 @@ contract TestIsolationModeUnwrapperTraderV1 is IsolationModeUnwrapperTraderV1 {
     override
     returns (uint256) {
         // 1:1 conversion for the sake of testing
-        uint256 outputPrice = DOLOMITE_MARGIN.getMarketPrice(
-            DOLOMITE_MARGIN.getMarketIdByTokenAddress(address(VAULT_FACTORY))
+        uint256 outputPrice = DOLOMITE_MARGIN().getMarketPrice(
+            DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(VAULT_FACTORY))
         ).value;
-        uint256 inputPrice = DOLOMITE_MARGIN.getMarketPrice(
-            DOLOMITE_MARGIN.getMarketIdByTokenAddress(_inputToken)
+        uint256 inputPrice = DOLOMITE_MARGIN().getMarketPrice(
+            DOLOMITE_MARGIN().getMarketIdByTokenAddress(_inputToken)
         ).value;
         uint256 outputAmount = _inputAmount * inputPrice / outputPrice;
         ICustomTestToken(_outputToken).addBalance(address(this), outputAmount);

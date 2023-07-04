@@ -24,12 +24,12 @@ export const NO_EXPIRY = BigNumber.from('0');
 
 export const NONE_MARKET_ID = ethers.constants.MaxUint256;
 
-const BLOCK_NUMBERS: Record<Network, number> = {
-  [Network.ArbitrumOne]: 44452100,
+export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
+  [Network.ArbitrumOne]: 107511000,
   [Network.ArbitrumGoerli]: 14700000,
 };
 
-export const DEFAULT_BLOCK_NUMBER = BLOCK_NUMBERS[NETWORK_ID];
+export const DEFAULT_BLOCK_NUMBER = NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[NETWORK_ID];
 
 export const ONE_WEEK_SECONDS = 604800;
 

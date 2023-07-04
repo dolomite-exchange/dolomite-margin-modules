@@ -136,7 +136,7 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
     const usdcAmount = heldAmountWei.div(1e12).mul(8);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-      .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
+      .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, 0, 0);
     const glpAmount = heldAmountWei.mul(4);
     await core.gmxEcosystem!.sGlp.connect(core.hhUser1)
       .approve(core.pendleEcosystem!.pendleRouter.address, glpAmount);
@@ -179,7 +179,7 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
         usdcDebtAmount,
         BalanceCheckFlag.To,
       );
-      await core.testPriceOracle!.setPrice(core.usdc.address, '1050000000000000000000000000000');
+      await core.testPriceOracle!.setPrice(core.tokens.usdc.address, '1050000000000000000000000000000');
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.usdc, core.testPriceOracle!.address);
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
@@ -246,10 +246,10 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
         underlyingMarketId,
       );
       await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
-      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.weth, ZERO_BI);
       await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
       await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
-      await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.tokens.usdc, ZERO_BI);
     });
 
     it('should work when liquid account is borrowing a different output token (WETH)', async () => {
@@ -270,7 +270,7 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
       );
       // set the price of USDC to be 105% of the current price
       await core.testPriceOracle!.setPrice(
-        core.weth.address,
+        core.tokens.weth.address,
         wethPrice.value.mul('105').div('100'),
       );
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testPriceOracle!.address);
@@ -347,12 +347,12 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
         underlyingMarketId,
       );
       await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
-      await expectWalletBalance(core.liquidatorProxyV4!.address, core.usdc, ZERO_BI);
-      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.usdc, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.weth, ZERO_BI);
       await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
       await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
-      await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
-      await expectWalletBalance(unwrapper, core.weth, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.tokens.usdc, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.tokens.weth, ZERO_BI);
     });
   });
 
@@ -448,12 +448,12 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
         underlyingMarketId,
       );
       await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
-      await expectWalletBalance(core.liquidatorProxyV4!.address, core.usdc, ZERO_BI);
-      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.usdc, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.weth, ZERO_BI);
       await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
       await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
-      await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
-      await expectWalletBalance(unwrapper, core.weth, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.tokens.usdc, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.tokens.weth, ZERO_BI);
     });
 
     it('should work when expired account is borrowing a different output token (WETH)', async () => {
@@ -557,12 +557,12 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
         underlyingMarketId,
       );
       await expectWalletBalance(core.liquidatorProxyV4!.address, factory, ZERO_BI);
-      await expectWalletBalance(core.liquidatorProxyV4!.address, core.usdc, ZERO_BI);
-      await expectWalletBalance(core.liquidatorProxyV4!.address, core.weth, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.usdc, ZERO_BI);
+      await expectWalletBalance(core.liquidatorProxyV4!.address, core.tokens.weth, ZERO_BI);
       await expectWalletBalance(unwrapper, core.pendleEcosystem!.ptGlpToken, ZERO_BI);
       await expectWalletBalance(unwrapper, core.gmxEcosystem!.fsGlp, ZERO_BI);
-      await expectWalletBalance(unwrapper, core.usdc, ZERO_BI);
-      await expectWalletBalance(unwrapper, core.weth, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.tokens.usdc, ZERO_BI);
+      await expectWalletBalance(unwrapper, core.tokens.weth, ZERO_BI);
     });
   });
 });

@@ -18,7 +18,13 @@ import { createContractWithAbi, createTestToken } from '../../../../src/utils/do
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '../../../utils/setup';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -43,10 +49,7 @@ describe('IsolationModeWrapperTraderV2', () => {
   let solidUser: SignerWithAddress;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
     const userVaultImplementation = await createContractWithAbi(
@@ -166,7 +169,7 @@ describe('IsolationModeWrapperTraderV2', () => {
         wrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.weth.address,
+          core.tokens.weth.address,
           otherToken.address,
           amountWei,
           BYTES_EMPTY,
@@ -181,12 +184,12 @@ describe('IsolationModeWrapperTraderV2', () => {
         wrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
           core.dolomiteMargin.address,
-          core.weth.address,
+          core.tokens.weth.address,
           otherToken.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeWrapperTraderV2: Invalid output token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeWrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -221,12 +224,12 @@ describe('IsolationModeWrapperTraderV2', () => {
     it('should fail when input token is invalid', async () => {
       await expectThrow(
         wrapper.getExchangeCost(
-          core.dfsGlp!.address,
+          core.tokens.dfsGlp!.address,
           factory.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeWrapperTraderV2: Invalid input token <${core.dfsGlp!.address.toLowerCase()}>`,
+        `IsolationModeWrapperTraderV2: Invalid input token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
@@ -234,11 +237,11 @@ describe('IsolationModeWrapperTraderV2', () => {
       await expectThrow(
         wrapper.getExchangeCost(
           otherToken.address,
-          core.dfsGlp!.address,
+          core.tokens.dfsGlp!.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeWrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
+        `IsolationModeWrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 

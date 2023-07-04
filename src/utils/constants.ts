@@ -40,6 +40,17 @@ export const DPLV_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const LINK_MAP: Record<Network, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xf97f4df75117a78c1A5a0DBb814Af92458539FB4',
+    marketId: 3,
+  },
+  [Network.ArbitrumGoerli]: {
+    address: '0x2d3B3F17d6694d5AA643Cb89A82Ac9214a41536d',
+    marketId: 3,
+  },
+};
+
 export const MAGIC_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x85667409a723684Fe1e57Dd1ABDe8D88C2f54214',
@@ -65,6 +76,17 @@ export const USDT_MAP: Record<Network, TokenWithMarketId | undefined> = {
     marketId: 5,
   },
   [Network.ArbitrumGoerli]: undefined,
+};
+
+export const WBTC_MAP: Record<Network, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f',
+    marketId: 4,
+  },
+  [Network.ArbitrumGoerli]: {
+    address: '0x6fA07522F1dd8D8cb5b400c957418b4bD2C96F80',
+    marketId: 4,
+  },
 };
 
 export const WETH_MAP: Record<Network, TokenWithMarketId> = {
@@ -238,6 +260,12 @@ export const S_GMX_MAP: Record<Network, string | undefined> = {
 
 export const SBF_GMX_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xd2D1162512F927a7e282Ef43a362659E4F2a728F',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const UMAMI_CONFIGURATOR_MAP: Record<Network, string | undefined> = {
+  // [Network.ArbitrumOne]: '0xc7d873647AEa26902b9C2C243C21364468474b34',
+  [Network.ArbitrumOne]: '0x7A53700c4d2DD1Eb9809a63679A6a5b6c4e31d97',
   [Network.ArbitrumGoerli]: undefined,
 };
 

@@ -37,7 +37,7 @@ import {
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
 import { setExpiry } from '../../../utils/expiry-utils';
-import { liquidateV4WithZap } from '../../../utils/liquidation-utils';
+import { liquidateV4WithIsolationMode } from '../../../utils/liquidation-utils';
 import {
   CoreProtocol,
   setupCoreProtocol,
@@ -153,7 +153,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         usdcDebtAmountBefore,
         BalanceCheckFlag.To,
       );
-      await core.testInterestSetter!.setInterestRate(core.usdc.address, { value: '33295281582' }); // 100% APR
+      await core.testInterestSetter!.setInterestRate(core.tokens.usdc.address, { value: '33295281582' }); // 100% APR
       await core.dolomiteMargin.ownerSetInterestSetter(core.marketIds.usdc, core.testInterestSetter!.address);
       await waitDays(10); // accrue interest to push towards liquidation
       // deposit 0 to refresh account index
@@ -170,7 +170,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         .div(liquidationSpreadDenominator)
         .div(jUSDCPrice.value);
 
-      const txResult = await liquidateV4WithZap(
+      const txResult = await liquidateV4WithIsolationMode(
         core,
         solidAccountStruct,
         liquidAccountStruct,
@@ -187,7 +187,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       )).value;
       const usdcOutputAmount = await unwrapper.getExchangeCost(
         factory.address,
-        core.usdc.address,
+        core.tokens.usdc.address,
         heldUpdatedWithReward,
         BYTES_EMPTY,
         { blockTag: txResult.blockNumber },
@@ -223,9 +223,9 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       );
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.weth.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.tokens.weth.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUSDC.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
   });
 
@@ -267,7 +267,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
 
       const heldUpdatedWithReward = usdcDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
 
-      const txResult = await liquidateV4WithZap(
+      const txResult = await liquidateV4WithIsolationMode(
         core,
         solidAccountStruct,
         liquidAccountStruct,
@@ -283,7 +283,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
 
       const usdcOutputAmount = await unwrapper.getExchangeCost(
         factory.address,
-        core.usdc.address,
+        core.tokens.usdc.address,
         heldUpdatedWithReward,
         BYTES_EMPTY,
         { blockTag: txResult.blockNumber },
@@ -319,9 +319,9 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       );
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.weth.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, core.tokens.weth.address, ZERO_BI);
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.jonesEcosystem!.jUSDC.address, ZERO_BI);
-      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.usdc.address, ZERO_BI);
+      await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
   });
 });

@@ -25,6 +25,7 @@ import {
 } from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -54,10 +55,7 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
   let solidUser: SignerWithAddress;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.gmxEcosystem!.fsGlp;
     const userVaultImplementation = await createGLPIsolationModeTokenVaultV1();
     gmxRegistry = await createGmxRegistry(core);
@@ -87,7 +85,7 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
     const usdcAmount = amountWei.div(1e12).mul(4);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-      .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
+      .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, 0, 0);
     await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
@@ -119,7 +117,7 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
 
       const amountOut = await unwrapper.getExchangeCost(
         factory.address,
-        core.usdc.address,
+        core.tokens.usdc.address,
         amountWei,
         BYTES_EMPTY,
       );
@@ -165,7 +163,7 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           factory.address,
           amountWei,
           BYTES_EMPTY,
@@ -180,12 +178,12 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
-          core.weth.address,
+          core.tokens.usdc.address,
+          core.tokens.weth.address,
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.weth.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -196,12 +194,12 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.dfsGlp!.address,
+          core.tokens.dfsGlp!.address,
           factory.address,
           amountWei,
           abiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.dfsGlp!.address.toLowerCase()}>`,
+        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
@@ -212,7 +210,7 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           core.hhUser1.address,
           core.dolomiteMargin.address,
-          core.usdc.address,
+          core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
           abiCoder.encode(['uint256'], [otherAmountWei]),
@@ -246,7 +244,12 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
       const TEN_MILLION = BigNumber.from('10000000');
       const amount = ONE_WEI.mul(TEN_MILLION);
       const decimalDelta = BigNumber.from('1000000000000');
-      const outputAmount = await unwrapper.getExchangeCost(factory.address, core.usdc.address, amount, BYTES_EMPTY);
+      const outputAmount = await unwrapper.getExchangeCost(
+        factory.address,
+        core.tokens.usdc.address,
+        amount,
+        BYTES_EMPTY,
+      );
       const oraclePrice = (await priceOracle.getPrice(factory.address)).value.div(decimalDelta);
       console.log('\toutputAmount', outputAmount.toString());
       console.log('\toraclePrice', oraclePrice.toString());
@@ -259,12 +262,12 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
       const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
         .callStatic
         .unstakeAndRedeemGlp(
-          core.usdc.address,
+          core.tokens.usdc.address,
           amountWei,
           1,
           core.hhUser1.address,
         );
-      expect(await unwrapper.getExchangeCost(factory.address, core.usdc.address, amountWei, BYTES_EMPTY))
+      expect(await unwrapper.getExchangeCost(factory.address, core.tokens.usdc.address, amountWei, BYTES_EMPTY))
         .to
         .eq(expectedAmount);
     });
@@ -277,12 +280,12 @@ describe('GLPIsolationModeUnwrapperTraderV2', () => {
         const expectedAmount = await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
           .callStatic
           .unstakeAndRedeemGlp(
-            core.usdc.address,
+            core.tokens.usdc.address,
             weirdAmount,
             1,
             core.hhUser1.address,
           );
-        expect(await unwrapper.getExchangeCost(factory.address, core.usdc.address, weirdAmount, BYTES_EMPTY))
+        expect(await unwrapper.getExchangeCost(factory.address, core.tokens.usdc.address, weirdAmount, BYTES_EMPTY))
           .to
           .eq(expectedAmount);
       }

@@ -94,7 +94,7 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
     const usdcAmount = amountWei.div(1e12).mul(8);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
-      .mintAndStakeGlp(core.usdc.address, usdcAmount, 0, 0);
+      .mintAndStakeGlp(core.tokens.usdc.address, usdcAmount, 0, 0);
     const glpAmount = amountWei.mul(4);
     await core.plutusEcosystem!.sGlp.connect(core.hhUser1)
       .approve(core.plutusEcosystem!.plvGlpRouter.address, glpAmount);
