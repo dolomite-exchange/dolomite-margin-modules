@@ -19,3 +19,5 @@ src/types
 # test coverage
 coverage.json
 coverage/
+
+dist/
