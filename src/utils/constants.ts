@@ -298,11 +298,6 @@ export const UMAMI_WETH_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
-export const UMAMI_WHITELIST_MAP: Record<Network, string | undefined> = {
-  [Network.ArbitrumOne]: '0xFEA5Fc6EDDB3Affc2aa41Cd8c2bfB7AB4B867b23',
-  [Network.ArbitrumGoerli]: undefined,
-};
-
 /**
  * Token that holds fsGLP for vesting esGMX into GMX
  */

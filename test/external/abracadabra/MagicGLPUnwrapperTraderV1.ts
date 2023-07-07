@@ -2,7 +2,7 @@ import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import { IERC4626, MagicGLPPriceOracle, MagicGLPUnwrapperTraderV1 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -18,6 +18,7 @@ import {
   setupTestMarket,
   setupUSDCBalance,
 } from '../../utils/setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -33,7 +34,7 @@ describe('MagicGLPUnwrapperTraderV1', () => {
   let marketId: BigNumber;
   let unwrapper: MagicGLPUnwrapperTraderV1;
   let priceOracle: MagicGLPPriceOracle;
-  let defaultAccount: Account.InfoStruct;
+  let defaultAccount: AccountInfoStruct;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));

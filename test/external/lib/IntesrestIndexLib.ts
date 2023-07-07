@@ -1,8 +1,7 @@
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { TestInterestIndexLib, TestInterestIndexLib__factory } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
-import { IDolomiteStructs } from '../../../src/types/TestInterestIndexLib';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import {
   createContractWithAbi,
   depositIntoDolomiteMargin,
@@ -11,6 +10,7 @@ import {
 import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const depositAmount = BigNumber.from('5000000000'); // 5,000 USDC
 const withdrawAmount = BigNumber.from('1000000000000000000'); // 1 ETH
@@ -31,7 +31,7 @@ describe('InterestIndexLib', () => {
 
   let core: CoreProtocol;
   let testLib: TestInterestIndexLib;
-  let defaultAccount: Account.InfoStruct;
+  let defaultAccount: AccountInfoStruct;
   let marketIdPositive: BigNumberish;
   let marketIdNegative: BigNumberish;
 

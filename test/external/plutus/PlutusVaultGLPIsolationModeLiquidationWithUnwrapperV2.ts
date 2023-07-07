@@ -10,7 +10,7 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV2,
   PlutusVaultRegistry,
 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import {
   BYTES_EMPTY,
   LIQUIDATE_ALL,
@@ -37,9 +37,10 @@ import {
   checkForParaswapSuccess,
   getCalldataForParaswap,
   getParaswapTraderParamStruct,
-  liquidateV4WithZap,
+  liquidateV4WithIsolationMode,
 } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -62,9 +63,9 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
   let wrapper: PlutusVaultGLPIsolationModeWrapperTraderV2;
   let factory: IPlutusVaultGLPIsolationModeVaultFactory;
   let vault: PlutusVaultGLPIsolationModeTokenVaultV1;
-  let defaultAccountStruct: Account.InfoStruct;
-  let liquidAccountStruct: Account.InfoStruct;
-  let solidAccountStruct: Account.InfoStruct;
+  let defaultAccountStruct: AccountInfoStruct;
+  let liquidAccountStruct: AccountInfoStruct;
+  let solidAccountStruct: AccountInfoStruct;
 
   before(async () => {
     const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
@@ -165,7 +166,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         BYTES_EMPTY,
       );
 
-      const txResult = await liquidateV4WithZap(
+      const txResult = await liquidateV4WithIsolationMode(
         core,
         solidAccountStruct,
         liquidAccountStruct,
@@ -267,7 +268,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         .balanceOf(core.liquidatorProxyV4!.address);
 
       const isSuccessful = await checkForParaswapSuccess(
-        liquidateV4WithZap(
+        liquidateV4WithIsolationMode(
           core,
           solidAccountStruct,
           liquidAccountStruct,
@@ -380,7 +381,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         BYTES_EMPTY,
       );
 
-      const txResult = await liquidateV4WithZap(
+      const txResult = await liquidateV4WithIsolationMode(
         core,
         solidAccountStruct,
         liquidAccountStruct,
@@ -489,7 +490,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         .balanceOf(core.liquidatorProxyV4!.address);
 
       const isSuccessful = await checkForParaswapSuccess(
-        liquidateV4WithZap(
+        liquidateV4WithIsolationMode(
           core,
           solidAccountStruct,
           liquidAccountStruct,

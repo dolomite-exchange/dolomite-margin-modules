@@ -11,7 +11,7 @@ import {
   PlutusVaultGLPPriceOracle,
   PlutusVaultRegistry,
 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { BYTES_EMPTY, Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
@@ -37,6 +37,7 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -60,9 +61,9 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV1', () => {
   let factory: PlutusVaultGLPIsolationModeVaultFactory;
   let vault: PlutusVaultGLPIsolationModeTokenVaultV1;
   let priceOracle: PlutusVaultGLPPriceOracle;
-  let defaultAccountStruct: Account.InfoStruct;
-  let liquidAccountStruct: Account.InfoStruct;
-  let solidAccountStruct: Account.InfoStruct;
+  let defaultAccountStruct: AccountInfoStruct;
+  let liquidAccountStruct: AccountInfoStruct;
+  let solidAccountStruct: AccountInfoStruct;
 
   before(async () => {
     const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);

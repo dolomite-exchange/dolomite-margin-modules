@@ -12,7 +12,7 @@ import {
   UmamiAssetVaultPriceOracle,
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
@@ -34,6 +34,7 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { setupWhitelistAndAggregateVault } from './umami-utils';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000'); // $200
@@ -59,7 +60,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
   let factory: UmamiAssetVaultIsolationModeVaultFactory;
   let vault: UmamiAssetVaultIsolationModeTokenVaultV1;
   let priceOracle: UmamiAssetVaultPriceOracle;
-  let defaultAccount: Account.InfoStruct;
+  let defaultAccount: AccountInfoStruct;
 
   let solidUser: SignerWithAddress;
 
@@ -73,7 +74,6 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
       core,
       umamiRegistry,
       underlyingToken,
-      core.tokens.usdc,
       userVaultImplementation,
     );
 

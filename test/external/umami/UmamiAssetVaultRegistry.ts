@@ -29,7 +29,6 @@ describe('UmamiAssetVaultRegistry', () => {
       core,
       registry,
       core.umamiEcosystem!.glpUsdc,
-      core.tokens.usdc,
       userVaultImplementation,
     );
     unwrapper = await createUmamiAssetVaultIsolationModeUnwrapperTraderV2(core, registry, factory);
@@ -43,7 +42,6 @@ describe('UmamiAssetVaultRegistry', () => {
 
   describe('#initializer', () => {
     it('should initialize variables properly', async () => {
-      expect(await registry.whitelist()).to.equal(core.umamiEcosystem!.whitelist.address);
       expect(await registry.storageViewer()).to.equal(core.umamiEcosystem!.storageViewer.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
@@ -51,43 +49,10 @@ describe('UmamiAssetVaultRegistry', () => {
     it('should fail if already initialized', async () => {
       await expectThrow(
         registry.initialize(
-          core.umamiEcosystem!.whitelist.address,
           core.umamiEcosystem!.storageViewer.address,
           core.dolomiteRegistry.address,
         ),
         'Initializable: contract is already initialized',
-      );
-    });
-  });
-
-  describe('#ownerSetWhitelist', () => {
-    it('should work normally', async () => {
-      const whitelist = core.umamiEcosystem!.whitelist.address;
-      const result = await registry.connect(core.governance).ownerSetWhitelist(whitelist);
-      await expectEvent(registry, result, 'WhitelistSet', {
-        whitelist,
-      });
-      expect(await registry.whitelist()).to.equal(whitelist);
-    });
-
-    it('should fail if whitelist is invalid', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetWhitelist(OTHER_ADDRESS),
-        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetWhitelist(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetWhitelist(ZERO_ADDRESS),
-        'UmamiAssetVaultRegistry: Invalid whitelist address',
       );
     });
   });

@@ -8,7 +8,7 @@ import {
   TestGLPIsolationModeTokenVaultV1,
   TestGLPIsolationModeTokenVaultV1__factory,
 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
@@ -23,6 +23,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -39,7 +40,7 @@ describe('GLPIsolationModeTokenVaultV1', () => {
   let vault: TestGLPIsolationModeTokenVaultV1;
   let underlyingMarketId: BigNumber;
   let glpAmount: BigNumber;
-  let account: Account.InfoStruct;
+  let account: AccountInfoStruct;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));

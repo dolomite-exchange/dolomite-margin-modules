@@ -19,29 +19,28 @@ import { address } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
+import { TestPriceOracle } from 'src/types/contracts/test/TestPriceOracle';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP } from 'src/utils/no-deps-constants';
 import Deployments from '../../scripts/deployments.json';
 import {
-  AlwaysZeroInterestSetter,
-  AlwaysZeroInterestSetter__factory,
-  BorrowPositionProxyV2,
-  BorrowPositionProxyV2__factory,
   DolomiteCompatibleWhitelistForPlutusDAO,
   DolomiteCompatibleWhitelistForPlutusDAO__factory,
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
-  Expiry,
-  Expiry__factory,
   GLPIsolationModeUnwrapperTraderV1,
   GLPIsolationModeUnwrapperTraderV1__factory,
   GLPIsolationModeWrapperTraderV1,
   GLPIsolationModeWrapperTraderV1__factory,
+  IBorrowPositionProxyV2,
+  IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy,
   IDepositWithdrawalProxy__factory,
   IDolomiteAmmFactory,
   IDolomiteAmmFactory__factory,
   IDolomiteAmmRouterProxy,
   IDolomiteAmmRouterProxy__factory,
+  IDolomiteInterestSetter,
+  IDolomiteInterestSetter__factory,
   IDolomiteMargin,
   IDolomiteMargin__factory,
   IERC20,
@@ -50,6 +49,8 @@ import {
   IERC4626__factory,
   IEsGmxDistributor,
   IEsGmxDistributor__factory,
+  IExpiry,
+  IExpiry__factory,
   IGenericTraderProxyV1,
   IGenericTraderProxyV1__factory,
   IGLPIsolationModeVaultFactoryOld,
@@ -72,6 +73,18 @@ import {
   IJonesGLPVaultRouter__factory,
   IJonesWhitelistController,
   IJonesWhitelistController__factory,
+  ILiquidatorAssetRegistry,
+  ILiquidatorAssetRegistry__factory,
+  ILiquidatorProxyV1,
+  ILiquidatorProxyV1__factory,
+  ILiquidatorProxyV1WithAmm,
+  ILiquidatorProxyV1WithAmm__factory,
+  ILiquidatorProxyV2WithExternalLiquidity,
+  ILiquidatorProxyV2WithExternalLiquidity__factory,
+  ILiquidatorProxyV3WithLiquidityToken,
+  ILiquidatorProxyV3WithLiquidityToken__factory,
+  ILiquidatorProxyV4WithGenericTrader,
+  ILiquidatorProxyV4WithGenericTrader__factory,
   IPendlePtMarket,
   IPendlePtMarket__factory,
   IPendlePtOracle,
@@ -94,22 +107,8 @@ import {
   IUmamiAssetVault__factory,
   IUmamiAssetVaultStorageViewer,
   IUmamiAssetVaultStorageViewer__factory,
-  IUmamiAssetVaultWhitelist,
-  IUmamiAssetVaultWhitelist__factory,
   IWETH,
   IWETH__factory,
-  LiquidatorAssetRegistry,
-  LiquidatorAssetRegistry__factory,
-  LiquidatorProxyV1,
-  LiquidatorProxyV1__factory,
-  LiquidatorProxyV1WithAmm,
-  LiquidatorProxyV1WithAmm__factory,
-  LiquidatorProxyV2WithExternalLiquidity,
-  LiquidatorProxyV2WithExternalLiquidity__factory,
-  LiquidatorProxyV3WithLiquidityToken,
-  LiquidatorProxyV3WithLiquidityToken__factory,
-  LiquidatorProxyV4WithGenericTrader,
-  LiquidatorProxyV4WithGenericTrader__factory,
   ParaswapAggregatorTrader,
   ParaswapAggregatorTrader__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1,
@@ -120,7 +119,6 @@ import {
   PlutusVaultRegistry__factory,
   TestInterestSetter,
   TestInterestSetter__factory,
-  TestPriceOracle,
   TestPriceOracle__factory,
 } from '../../src/types';
 import {
@@ -159,14 +157,14 @@ import {
   PLV_GLP_ROUTER_MAP,
   S_GLP_MAP,
   S_GMX_MAP,
-  SBF_GMX_MAP, UMAMI_CONFIGURATOR_MAP,
+  SBF_GMX_MAP,
+  UMAMI_CONFIGURATOR_MAP,
   UMAMI_LINK_VAULT_MAP,
   UMAMI_STORAGE_VIEWER_MAP,
   UMAMI_UNI_VAULT_MAP,
   UMAMI_USDC_VAULT_MAP,
   UMAMI_WBTC_VAULT_MAP,
   UMAMI_WETH_VAULT_MAP,
-  UMAMI_WHITELIST_MAP,
   USDC_MAP,
   USDT_MAP,
   V_GLP_MAP,
@@ -269,7 +267,6 @@ interface UmamiEcosystem {
   glpWbtc: IUmamiAssetVault;
   glpWeth: IUmamiAssetVault;
   storageViewer: IUmamiAssetVaultStorageViewer;
-  whitelist: IUmamiAssetVaultWhitelist;
   configurator: Signer;
 }
 
@@ -291,24 +288,24 @@ export interface CoreProtocol {
   /// Contracts and Ecosystems
   /// =========================
   abraEcosystem: AbraEcosystem | undefined;
-  alwaysZeroInterestSetter: AlwaysZeroInterestSetter;
+  alwaysZeroInterestSetter: IDolomiteInterestSetter;
   atlasEcosystem: AtlasEcosystem | undefined;
-  borrowPositionProxyV2: BorrowPositionProxyV2;
+  borrowPositionProxyV2: IBorrowPositionProxyV2;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteAmmFactory: IDolomiteAmmFactory;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
   dolomiteRegistry: DolomiteRegistryImplementation;
-  expiry: Expiry;
+  expiry: IExpiry;
   genericTraderProxy: IGenericTraderProxyV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
   jonesEcosystem: JonesEcosystem | undefined;
-  liquidatorAssetRegistry: LiquidatorAssetRegistry;
-  liquidatorProxyV1: LiquidatorProxyV1;
-  liquidatorProxyV1WithAmm: LiquidatorProxyV1WithAmm;
-  liquidatorProxyV2: LiquidatorProxyV2WithExternalLiquidity | undefined;
-  liquidatorProxyV3: LiquidatorProxyV3WithLiquidityToken | undefined;
-  liquidatorProxyV4: LiquidatorProxyV4WithGenericTrader;
+  liquidatorAssetRegistry: ILiquidatorAssetRegistry;
+  liquidatorProxyV1: ILiquidatorProxyV1;
+  liquidatorProxyV1WithAmm: ILiquidatorProxyV1WithAmm;
+  liquidatorProxyV2: ILiquidatorProxyV2WithExternalLiquidity | undefined;
+  liquidatorProxyV3: ILiquidatorProxyV3WithLiquidityToken | undefined;
+  liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
   paraswapEcosystem: ParaswapEcosystem | undefined;
   paraswapTrader: ParaswapAggregatorTrader | undefined;
   pendleEcosystem: PendleEcosystem | undefined;
@@ -424,12 +421,12 @@ export async function setupCoreProtocol(
     hhUser1,
   );
 
-  const alwaysZeroInterestSetter = AlwaysZeroInterestSetter__factory.connect(
+  const alwaysZeroInterestSetter = IDolomiteInterestSetter__factory.connect(
     ALWAYS_ZERO_INTEREST_SETTER_MAP[config.network],
     governance,
   );
 
-  const borrowPositionProxyV2 = BorrowPositionProxyV2__factory.connect(
+  const borrowPositionProxyV2 = IBorrowPositionProxyV2__factory.connect(
     BorrowPositionProxyV2Json.networks[config.network].address,
     governance,
   );
@@ -456,7 +453,7 @@ export async function setupCoreProtocol(
     governance,
   );
 
-  const expiry = Expiry__factory.connect(
+  const expiry = IExpiry__factory.connect(
     ExpiryJson.networks[config.network].address,
     governance,
   );
@@ -466,34 +463,34 @@ export async function setupCoreProtocol(
     IGenericTraderProxyV1__factory.connect,
   );
 
-  const liquidatorAssetRegistry = LiquidatorAssetRegistry__factory.connect(
+  const liquidatorAssetRegistry = ILiquidatorAssetRegistry__factory.connect(
     LiquidatorAssetRegistryJson.networks[config.network].address,
     governance,
   );
 
-  const liquidatorProxyV1 = LiquidatorProxyV1__factory.connect(
+  const liquidatorProxyV1 = ILiquidatorProxyV1__factory.connect(
     LiquidatorProxyV1Json.networks[config.network].address,
     governance,
   );
 
-  const liquidatorProxyV1WithAmm = LiquidatorProxyV1WithAmm__factory.connect(
+  const liquidatorProxyV1WithAmm = ILiquidatorProxyV1WithAmm__factory.connect(
     LiquidatorProxyV1WithAmmJson.networks[config.network].address,
     governance,
   );
 
   const liquidatorProxyV2 = getContractOpt(
     (LiquidatorProxyV2WithExternalLiquidityJson.networks as any)[config.network]?.address,
-    LiquidatorProxyV2WithExternalLiquidity__factory.connect,
+    ILiquidatorProxyV2WithExternalLiquidity__factory.connect,
   );
 
   const liquidatorProxyV3 = getContractOpt(
     (LiquidatorProxyV3WithLiquidityTokenJson.networks as any)[config.network]?.address,
-    LiquidatorProxyV3WithLiquidityToken__factory.connect,
+    ILiquidatorProxyV3WithLiquidityToken__factory.connect,
   );
 
   const liquidatorProxyV4 = getContract(
     (LiquidatorProxyV4WithGenericTraderJson.networks as any)[config.network].address,
-    LiquidatorProxyV4WithGenericTrader__factory.connect,
+    ILiquidatorProxyV4WithGenericTrader__factory.connect,
   );
 
   const paraswapTrader = getContractOpt(
@@ -599,13 +596,15 @@ export async function setupTestMarket(
   token: { address: address },
   isClosing: boolean,
   priceOracle?: { address: address },
+  marginPremium?: BigNumberish,
+  spreadPremium?: BigNumberish,
 ) {
   await core.dolomiteMargin.connect(core.governance).ownerAddMarket(
     token.address,
     (priceOracle ?? core.testPriceOracle)!.address,
     core.testInterestSetter!.address,
-    { value: 0 },
-    { value: 0 },
+    { value: marginPremium ?? 0 },
+    { value: spreadPremium ?? 0 },
     0,
     isClosing,
     false,
@@ -868,10 +867,6 @@ async function createUmamiEcosystem(
     storageViewer: getContract(
       UMAMI_STORAGE_VIEWER_MAP[network] as string,
       address => IUmamiAssetVaultStorageViewer__factory.connect(address, signer),
-    ),
-    whitelist: getContract(
-      UMAMI_WHITELIST_MAP[network] as string,
-      address => IUmamiAssetVaultWhitelist__factory.connect(address, signer),
     ),
     configurator: await impersonate(UMAMI_CONFIGURATOR_MAP[network] as string),
   };

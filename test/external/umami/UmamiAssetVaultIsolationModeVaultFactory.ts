@@ -49,7 +49,6 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
           core,
           umamiRegistry,
           asset,
-          underlyingAssets[i],
           userVaultImplementation,
         ),
       ),

@@ -1,5 +1,6 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
+  IUmamiAssetVault,
   IUmamiAssetVaultIsolationModeTokenVaultV1,
   IUmamiAssetVaultRegistry,
   RegistryProxy,
@@ -30,8 +31,7 @@ import { CoreProtocol } from '../setup';
 export async function createUmamiAssetVaultIsolationModeVaultFactory(
   core: CoreProtocol,
   umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,
-  umamiAssetVaultToken: { address: address },
-  underlyingTokenForUmamiVault: { address: address },
+  umamiAssetVaultToken: IUmamiAssetVault,
   userVaultImplementation: IUmamiAssetVaultIsolationModeTokenVaultV1 | UmamiAssetVaultIsolationModeTokenVaultV1,
 ): Promise<UmamiAssetVaultIsolationModeVaultFactory> {
   return createContractWithAbi<UmamiAssetVaultIsolationModeVaultFactory>(
@@ -41,7 +41,6 @@ export async function createUmamiAssetVaultIsolationModeVaultFactory(
       core,
       umamiAssetVaultRegistry,
       umamiAssetVaultToken,
-      underlyingTokenForUmamiVault,
       userVaultImplementation,
     ),
   );

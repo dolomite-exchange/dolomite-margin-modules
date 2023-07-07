@@ -13,7 +13,7 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCRegistry,
 } from '../../../../src/types';
-import { Account } from '../../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
@@ -34,6 +34,7 @@ import {
   setupUserVaultProxy,
 } from '../../../utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -58,7 +59,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
   let factory: JonesUSDCIsolationModeVaultFactory;
   let vault: JonesUSDCIsolationModeTokenVaultV1;
   let priceOracle: JonesUSDCPriceOracle;
-  let defaultAccount: Account.InfoStruct;
+  let defaultAccount: AccountInfoStruct;
   let solidUser: SignerWithAddress;
 
   before(async () => {

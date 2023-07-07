@@ -49,4 +49,8 @@ interface IERC4626 is IERC20, IERC20Metadata {
     function previewRedeem(uint256 _shares) external view returns (uint256);
 
     function previewWithdraw(uint256 _assets) external view returns (uint256);
+
+    function convertToAssets(uint256 _shares) external view returns (uint256);
+
+    function convertToShares(uint256 _assets) external view returns (uint256);
 }

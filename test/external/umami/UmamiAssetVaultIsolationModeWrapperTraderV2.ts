@@ -12,7 +12,7 @@ import {
   UmamiAssetVaultPriceOracle,
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
@@ -34,6 +34,7 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { setupWhitelistAndAggregateVault } from './umami-utils';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000'); // $200
@@ -60,7 +61,7 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
   let factory: UmamiAssetVaultIsolationModeVaultFactory;
   let vault: UmamiAssetVaultIsolationModeTokenVaultV1;
   let priceOracle: UmamiAssetVaultPriceOracle;
-  let defaultAccount: Account.InfoStruct;
+  let defaultAccount: AccountInfoStruct;
   let solidUser: SignerWithAddress;
 
   before(async () => {
@@ -73,7 +74,6 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
       core,
       umamiRegistry,
       core.umamiEcosystem!.glpUsdc,
-      core.tokens.usdc,
       userVaultImplementation,
     );
 
@@ -86,7 +86,6 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
-
     await factory.connect(core.governance).ownerInitialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
@@ -105,6 +104,7 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.umamiEcosystem!.glpUsdc);
     const glpUsdc = core.umamiEcosystem!.glpUsdc.connect(core.hhUser1);
+    await core.dolomiteMargin.getMarketPrice(underlyingMarketId);
     await glpUsdc.deposit(usableUsdcAmount, core.hhUser1.address);
     await glpUsdc.approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -235,29 +235,33 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
 
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
-      const jUSDCExchangeRateNumerator = await underlyingToken.totalAssets();
-      const jUSDCExchangeRateDenominator = await underlyingToken.totalSupply();
+      const exchangeRateNumerator = await underlyingToken.totalAssets();
+      const exchangeRateDenominator = await underlyingToken.totalSupply();
 
       const inputAmount = usableUsdcAmount;
+      const depositFee = inputAmount.mul(depositFeeNumerator).div(depositFeeDenominator);
       const expectedAmount = inputAmount
-        .mul(jUSDCExchangeRateDenominator)
-        .div(jUSDCExchangeRateNumerator);
+        .sub(depositFee)
+        .mul(exchangeRateDenominator)
+        .div(exchangeRateNumerator);
       expect(await wrapper.getExchangeCost(core.tokens.usdc.address, factory.address, inputAmount, BYTES_EMPTY))
         .to
         .eq(expectedAmount);
     });
 
     it('should work for 10 random numbers, as long as balance is sufficient', async () => {
-      const jUSDCExchangeRateNumerator = await underlyingToken.totalAssets();
-      const jUSDCExchangeRateDenominator = await underlyingToken.totalSupply();
+      const exchangeRateNumerator = await underlyingToken.totalAssets();
+      const exchangeRateDenominator = await underlyingToken.totalSupply();
 
       for (let i = 0; i < 10; i++) {
         // create a random number from 1 to 99 and divide by 101 (making the number, at-most, slightly smaller)
         const randomNumber = BigNumber.from(Math.floor(Math.random() * 99) + 1);
         const weirdAmount = usableUsdcAmount.mul(randomNumber).div(101);
+        const depositFee = weirdAmount.mul(depositFeeNumerator).div(depositFeeDenominator);
         const expectedAmount = weirdAmount
-          .mul(jUSDCExchangeRateDenominator)
-          .div(jUSDCExchangeRateNumerator);
+          .sub(depositFee)
+          .mul(exchangeRateDenominator)
+          .div(exchangeRateNumerator);
         expect(await wrapper.getExchangeCost(core.tokens.usdc.address, factory.address, weirdAmount, BYTES_EMPTY))
           .to
           .eq(expectedAmount);

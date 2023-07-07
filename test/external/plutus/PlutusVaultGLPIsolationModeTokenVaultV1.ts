@@ -13,7 +13,7 @@ import {
   PlutusVaultGLPPriceOracle,
   PlutusVaultRegistry,
 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
@@ -33,6 +33,7 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const amountWei = BigNumber.from('1250000000000000000000'); // 1,250 plvGLP tokens
 const stakedAmountWei = amountWei.mul(2).div(3); // 833.3333 plvGLP tokens
@@ -52,7 +53,7 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
   let factory: PlutusVaultGLPIsolationModeVaultFactory;
   let vault: PlutusVaultGLPIsolationModeTokenVaultV1;
   let underlyingMarketId: BigNumber;
-  let account: Account.InfoStruct;
+  let account: AccountInfoStruct;
   let rewardToken: IERC20;
   let farm: IPlutusVaultGLPFarm;
 

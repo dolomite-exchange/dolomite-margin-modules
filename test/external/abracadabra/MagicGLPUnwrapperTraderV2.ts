@@ -2,7 +2,7 @@ import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margi
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import { IERC4626, MagicGLPPriceOracle, MagicGLPUnwrapperTraderV2 } from '../../../src/types';
-import { Account, Actions } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -18,6 +18,8 @@ import {
   setupTestMarket,
   setupUSDCBalance,
 } from '../../utils/setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
+import ActionArgsStruct = IDolomiteStructs.ActionArgsStruct;
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -33,7 +35,7 @@ describe('MagicGLPUnwrapperTraderV2', () => {
   let marketId: BigNumber;
   let unwrapper: MagicGLPUnwrapperTraderV2;
   let priceOracle: MagicGLPPriceOracle;
-  let defaultAccount: Account.InfoStruct;
+  let defaultAccount: AccountInfoStruct;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -81,7 +83,7 @@ describe('MagicGLPUnwrapperTraderV2', () => {
         BYTES_EMPTY,
       );
 
-      const actions: Actions.ActionArgsStruct[] = [
+      const actions: ActionArgsStruct[] = [
         {
           actionType: ActionType.Sell,
           accountId: 0,

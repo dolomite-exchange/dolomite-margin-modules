@@ -15,7 +15,7 @@ import {
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory,
 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
@@ -32,6 +32,7 @@ import {
   toZapBigNumber,
 } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -54,9 +55,9 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
   let wrapper: PlutusVaultGLPIsolationModeWrapperTraderV2;
   let factory: IPlutusVaultGLPIsolationModeVaultFactory;
   let vault: PlutusVaultGLPIsolationModeTokenVaultV1;
-  let defaultAccountStruct: Account.InfoStruct;
-  let liquidAccountStruct: Account.InfoStruct;
-  let solidAccountStruct: Account.InfoStruct;
+  let defaultAccountStruct: AccountInfoStruct;
+  let liquidAccountStruct: AccountInfoStruct;
+  let solidAccountStruct: AccountInfoStruct;
   let plvGlpApiToken: ApiToken;
   let zap: DolomiteZap;
 

@@ -56,12 +56,11 @@ describe('UmamiAssetVaultPriceOracle', () => {
     underlyingAssets = [core.tokens.link, core.tokens.usdc, core.tokens.wbtc, core.tokens.weth];
 
     factories = await Promise.all(
-      umamiAssets.map((asset, i) =>
+      umamiAssets.map(asset =>
         createUmamiAssetVaultIsolationModeVaultFactory(
           core,
           umamiRegistry,
           asset,
-          underlyingAssets[i],
           userVaultImplementation,
         ),
       ),
@@ -72,7 +71,7 @@ describe('UmamiAssetVaultPriceOracle', () => {
           core,
           umamiRegistry,
           factory,
-        )
+        ),
       ),
     );
 
@@ -106,8 +105,7 @@ describe('UmamiAssetVaultPriceOracle', () => {
         const newFactory = await createUmamiAssetVaultIsolationModeVaultFactory(
           core,
           umamiRegistry,
-          testToken,
-          underlyingAssets[i],
+          (testToken as any) as IUmamiAssetVault,
           userVaultImplementation,
         );
         const umamiAssetVaultPriceOracle = await createUmamiAssetVaultPriceOracle(core, umamiRegistry, newFactory);

@@ -2,7 +2,7 @@ import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { IERC4626, MagicGLPPriceOracle, MagicGLPUnwrapperTraderV1 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
@@ -18,6 +18,7 @@ import {
 import { setExpiry } from '../../utils/expiry-utils';
 import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -37,9 +38,9 @@ describe('MagicGLPLiquidationWithUnwrapperV1', () => {
   let heldMarketId: BigNumber;
   let unwrapper: MagicGLPUnwrapperTraderV1;
   let priceOracle: MagicGLPPriceOracle;
-  let defaultAccountStruct: Account.InfoStruct;
-  let liquidAccountStruct: Account.InfoStruct;
-  let solidAccountStruct: Account.InfoStruct;
+  let defaultAccountStruct: AccountInfoStruct;
+  let liquidAccountStruct: AccountInfoStruct;
+  let solidAccountStruct: AccountInfoStruct;
 
   before(async () => {
     const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);

@@ -3,11 +3,12 @@ import { expect } from 'chai';
 import { BaseContract, BigNumber, BigNumberish, CallOverrides, ContractTransaction } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { ERC20__factory } from '../../src/types';
-import { Account } from '../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { AccountStruct } from '../../src/utils/constants';
 import { valueStructToBigNumber } from '../../src/utils/dolomite-utils';
 import { ZERO_BI } from '../../src/utils/no-deps-constants';
 import { CoreProtocol } from './setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 export async function expectThrowWithMatchingReason(call: Promise<any>, reason: RegExp) {
   if (reason) {
@@ -148,7 +149,7 @@ export async function expectWalletBalance(
 export async function expectVaultBalanceToMatchAccountBalances(
   core: CoreProtocol,
   vault: { underlyingBalanceOf(overrides?: CallOverrides): Promise<BigNumber> },
-  accounts: Account.InfoStruct[],
+  accounts: AccountInfoStruct[],
   marketId: BigNumberish,
 ) {
   let totalBalance = ZERO_BI;

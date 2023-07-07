@@ -93,6 +93,6 @@ contract UmamiAssetVaultIsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
     override
     view
     returns (uint256) {
-        return IERC4626(VAULT_FACTORY.UNDERLYING_TOKEN()).previewRedeem(_desiredInputAmount);
+        return IERC4626(VAULT_FACTORY.UNDERLYING_TOKEN()).previewDeposit(_desiredInputAmount);
     }
 }

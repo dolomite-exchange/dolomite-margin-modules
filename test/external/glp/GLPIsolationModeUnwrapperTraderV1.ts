@@ -11,7 +11,7 @@ import {
   GmxRegistryV1,
   IERC20,
 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
@@ -31,6 +31,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -50,7 +51,7 @@ describe('GLPIsolationModeUnwrapperTraderV1', () => {
   let factory: GLPIsolationModeVaultFactory;
   let vault: GLPIsolationModeTokenVaultV1;
   let priceOracle: GLPPriceOracleV1;
-  let defaultAccount: Account.InfoStruct;
+  let defaultAccount: AccountInfoStruct;
 
   let solidUser: SignerWithAddress;
 

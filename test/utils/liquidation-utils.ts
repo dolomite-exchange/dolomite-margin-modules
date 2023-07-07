@@ -3,19 +3,19 @@ import { BigNumber as ZapBigNumber, ZapOutputParam } from '@dolomite-exchange/za
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
 import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
-import { Account } from '../../src/types/IDolomiteMargin';
-import { IGenericTraderProxyBase } from '../../src/types/LiquidatorProxyV4WithGenericTrader';
+import { IGenericTraderBase } from '../../src/types/contracts/external/interfaces/IGenericTraderProxyV1';
+import { IDolomiteStructs } from '../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { BYTES_EMPTY, NO_EXPIRY, NO_PARASWAP_TRADER_PARAM } from '../../src/utils/no-deps-constants';
 import { expectThrow } from './assertions';
 import { CoreProtocol } from './setup';
-import TraderParamStruct = IGenericTraderProxyBase.TraderParamStruct;
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const API_URL = 'https://apiv5.paraswap.io';
 
 export function getParaswapTraderParamStruct(
   core: CoreProtocol,
   encodedTradeData: string,
-): IGenericTraderProxyBase.TraderParamStruct {
+): IGenericTraderBase.TraderParamStruct {
   return {
     traderType: GenericTraderType.ExternalLiquidity,
     makerAccountIndex: 0,
@@ -34,16 +34,16 @@ export function getLastZapAmountToBigNumber(zapOutput: ZapOutputParam): BigNumbe
 
 export async function liquidateV4WithIsolationMode(
   core: CoreProtocol,
-  solidAccountStruct: Account.InfoStruct,
-  liquidAccountStruct: Account.InfoStruct,
+  solidAccountStruct: AccountInfoStruct,
+  liquidAccountStruct: AccountInfoStruct,
   marketIdsPath: BigNumberish[],
   amountWeisPath: BigNumberish[],
   unwrapper: { address: address },
   unwrapperTradeData: string = BYTES_EMPTY,
-  paraswapTraderParam: IGenericTraderProxyBase.TraderParamStruct | undefined = NO_PARASWAP_TRADER_PARAM,
+  paraswapTraderParam: IGenericTraderBase.TraderParamStruct | undefined = NO_PARASWAP_TRADER_PARAM,
   expiry: BigNumberish = NO_EXPIRY,
 ): Promise<ContractTransaction> {
-  const defaultUnwrapperTraderParam: TraderParamStruct = {
+  const defaultUnwrapperTraderParam: IGenericTraderBase.TraderParamStruct = {
     traderType: GenericTraderType.IsolationModeUnwrapper,
     makerAccountIndex: 0,
     trader: unwrapper.address,
@@ -68,16 +68,16 @@ export async function liquidateV4WithIsolationMode(
 
 export async function liquidateV4WithLiquidityToken(
   core: CoreProtocol,
-  solidAccountStruct: Account.InfoStruct,
-  liquidAccountStruct: Account.InfoStruct,
+  solidAccountStruct: AccountInfoStruct,
+  liquidAccountStruct: AccountInfoStruct,
   marketIdsPath: BigNumberish[],
   amountWeisPath: BigNumberish[],
   unwrapper: { address: address },
   unwrapperTradeData: string = BYTES_EMPTY,
-  paraswapTraderParam: IGenericTraderProxyBase.TraderParamStruct | undefined = NO_PARASWAP_TRADER_PARAM,
+  paraswapTraderParam: IGenericTraderBase.TraderParamStruct | undefined = NO_PARASWAP_TRADER_PARAM,
   expiry: BigNumberish = NO_EXPIRY,
 ): Promise<ContractTransaction> {
-  const defaultUnwrapperTraderParam: TraderParamStruct = {
+  const defaultUnwrapperTraderParam: IGenericTraderBase.TraderParamStruct = {
     traderType: GenericTraderType.ExternalLiquidity,
     makerAccountIndex: 0,
     trader: unwrapper.address,
@@ -102,8 +102,8 @@ export async function liquidateV4WithLiquidityToken(
 
 export async function liquidateV4WithZap(
   core: CoreProtocol,
-  solidAccountStruct: Account.InfoStruct,
-  liquidAccountStruct: Account.InfoStruct,
+  solidAccountStruct: AccountInfoStruct,
+  liquidAccountStruct: AccountInfoStruct,
   zapOutputs: ZapOutputParam[],
   expiry: BigNumberish = NO_EXPIRY,
 ): Promise<ContractTransaction> {

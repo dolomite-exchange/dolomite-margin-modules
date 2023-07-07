@@ -48,7 +48,6 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
       core,
       umamiRegistry,
       underlyingToken,
-      core.tokens.usdc,
       userVaultImplementation,
     );
     unwrapper = await createUmamiAssetVaultIsolationModeUnwrapperTraderV2(core, umamiRegistry, factory);
@@ -87,7 +86,7 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
     });
 
     it('should be paused when aggregateVault pauses vault', async () => {
-      const admin = await impersonate(await core.umamiEcosystem!.whitelist.aggregateVault(), true);
+      const admin = await impersonate(await core.umamiEcosystem!.storageViewer.getWhitelist(), true);
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
 
       await core.umamiEcosystem!.glpUsdc.connect(admin).pauseDepositWithdraw();

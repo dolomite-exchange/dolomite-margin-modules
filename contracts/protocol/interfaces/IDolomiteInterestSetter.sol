@@ -35,7 +35,8 @@ interface IDolomiteInterestSetter {
     enum InterestSetterType {
         None,
         Linear,
-        DoubleExponential
+        DoubleExponential,
+        Other
     }
 
     // ============ Structs ============

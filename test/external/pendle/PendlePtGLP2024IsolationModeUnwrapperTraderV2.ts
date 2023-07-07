@@ -14,7 +14,7 @@ import {
   PendlePtGLP2024Registry,
   PendlePtGLPPriceOracle,
 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
@@ -35,6 +35,7 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { encodeSwapExactPtForTokens, ONE_TENTH_OF_ONE_BIPS_NUMBER } from './pendle-utils';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -54,7 +55,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
   let vault: PendlePtGLP2024IsolationModeTokenVaultV1;
   let vaultSigner: SignerWithAddress;
   let priceOracle: PendlePtGLPPriceOracle;
-  let defaultAccount: Account.InfoStruct;
+  let defaultAccount: AccountInfoStruct;
   let router: BaseRouter;
 
   let solidUser: SignerWithAddress;

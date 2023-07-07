@@ -13,7 +13,7 @@ import {
   TestIsolationModeWrapperTraderV1,
   TestIsolationModeWrapperTraderV1__factory,
 } from '../../../../src/types';
-import { Account } from '../../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { createContractWithAbi, createTestToken } from '../../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
@@ -25,6 +25,7 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from '../../../utils/setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -44,7 +45,7 @@ describe('IsolationModeWrapperTraderV1', () => {
   let wrapper: TestIsolationModeWrapperTraderV1;
   let factory: TestIsolationModeFactory;
   let vault: TestIsolationModeTokenVaultV1;
-  let defaultAccount: Account.InfoStruct;
+  let defaultAccount: AccountInfoStruct;
 
   let solidUser: SignerWithAddress;
 

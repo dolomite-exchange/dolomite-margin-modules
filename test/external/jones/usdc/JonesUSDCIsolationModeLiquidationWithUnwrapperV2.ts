@@ -11,7 +11,7 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCRegistry,
 } from '../../../../src/types';
-import { Account } from '../../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { depositIntoDolomiteMargin } from '../../../../src/utils/dolomite-utils';
 import {
   BYTES_EMPTY,
@@ -46,6 +46,7 @@ import {
   setupUserVaultProxy,
 } from '../../../utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -71,9 +72,9 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
   let factory: JonesUSDCIsolationModeVaultFactory;
   let vault: JonesUSDCIsolationModeTokenVaultV1;
   let priceOracle: JonesUSDCPriceOracle;
-  let defaultAccountStruct: Account.InfoStruct;
-  let liquidAccountStruct: Account.InfoStruct;
-  let solidAccountStruct: Account.InfoStruct;
+  let defaultAccountStruct: AccountInfoStruct;
+  let liquidAccountStruct: AccountInfoStruct;
+  let solidAccountStruct: AccountInfoStruct;
 
   before(async () => {
     const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);

@@ -17,7 +17,7 @@ import {
   PendlePtGLP2024IsolationModeWrapperTraderV2,
   PendlePtGLP2024IsolationModeWrapperTraderV2__factory,
 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
 import {
@@ -41,6 +41,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '420';
@@ -62,9 +63,9 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
   let wrapper: PendlePtGLP2024IsolationModeWrapperTraderV2;
   let factory: PendlePtGLP2024IsolationModeVaultFactory;
   let vault: PendlePtGLP2024IsolationModeTokenVaultV1;
-  let defaultAccountStruct: Account.InfoStruct;
-  let liquidAccountStruct: Account.InfoStruct;
-  let solidAccountStruct: Account.InfoStruct;
+  let defaultAccountStruct: AccountInfoStruct;
+  let liquidAccountStruct: AccountInfoStruct;
+  let solidAccountStruct: AccountInfoStruct;
   let router: BaseRouter;
   let zap: DolomiteZap;
   let ptGlpApiToken: ApiToken;

@@ -69,4 +69,5 @@ interface IExpiry {
     view
     returns (uint32);
 
+    function g_expiryRampTime() external view returns (uint256);
 }

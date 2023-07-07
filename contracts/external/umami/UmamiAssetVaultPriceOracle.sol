@@ -46,6 +46,7 @@ contract UmamiAssetVaultPriceOracle is IDolomitePriceOracle {
     IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
     IUmamiAssetVaultRegistry immutable public UMAMI_ASSET_VAULT_REGISTRY; // solhint-disable-line var-name-mixedcase
     IIsolationModeVaultFactory immutable public ISOLATION_MODE_TOKEN; // solhint-disable-line var-name-mixedcase
+    uint256 immutable public UNDERLYING_MARKET_ID;
 
     // ============================ Constructor ============================
 
@@ -57,6 +58,9 @@ contract UmamiAssetVaultPriceOracle is IDolomitePriceOracle {
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         UMAMI_ASSET_VAULT_REGISTRY = IUmamiAssetVaultRegistry(_umamiAssetVaultRegistry);
         ISOLATION_MODE_TOKEN = IIsolationModeVaultFactory(_isolationModeVaultToken);
+        UNDERLYING_MARKET_ID = DOLOMITE_MARGIN.getMarketIdByTokenAddress(
+            IUmamiAssetVault(ISOLATION_MODE_TOKEN.UNDERLYING_TOKEN()).asset()
+        );
     }
 
     function getPrice(
@@ -86,16 +90,12 @@ contract UmamiAssetVaultPriceOracle is IDolomitePriceOracle {
 
     function _getCurrentPrice() internal view returns (uint256) {
         IUmamiAssetVault vaultToken = IUmamiAssetVault(ISOLATION_MODE_TOKEN.UNDERLYING_TOKEN());
-        uint256 underlyingPrice = DOLOMITE_MARGIN.getMarketPrice(_getUnderlyingMarketId(vaultToken)).value;
+        uint256 underlyingPrice = DOLOMITE_MARGIN.getMarketPrice(UNDERLYING_MARKET_ID).value;
         uint256 totalSupply = vaultToken.totalSupply();
         uint256 price = totalSupply == 0
                 ? underlyingPrice
                 : underlyingPrice * vaultToken.totalAssets() / totalSupply;
         uint256 withdrawalFee = UMAMI_ASSET_VAULT_REGISTRY.storageViewer().getVaultFees().withdrawalFee;
         return price - (price * withdrawalFee / FEE_PRECISION);
-    }
-
-    function _getUnderlyingMarketId(IUmamiAssetVault _vaultToken) internal view returns (uint256) {
-        return DOLOMITE_MARGIN.getMarketIdByTokenAddress(_vaultToken.asset());
     }
 }

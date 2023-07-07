@@ -2,7 +2,7 @@ import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { IERC4626, MagicGLPUnwrapperTraderV2 } from '../../../src/types';
-import { Account } from '../../../src/types/IDolomiteMargin';
+import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import {
   BYTES_EMPTY,
@@ -31,6 +31,7 @@ import {
   liquidateV4WithLiquidityToken,
 } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -49,9 +50,9 @@ describe('MagicGLPLiquidationWithUnwrapperV2', () => {
   let heldMarketId: BigNumber;
   let unwrapper: MagicGLPUnwrapperTraderV2;
   let magicGlp: IERC4626;
-  let defaultAccountStruct: Account.InfoStruct;
-  let liquidAccountStruct: Account.InfoStruct;
-  let solidAccountStruct: Account.InfoStruct;
+  let defaultAccountStruct: AccountInfoStruct;
+  let liquidAccountStruct: AccountInfoStruct;
+  let solidAccountStruct: AccountInfoStruct;
 
   before(async () => {
     const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);

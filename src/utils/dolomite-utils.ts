@@ -9,7 +9,8 @@ import {
   CustomTestVaultToken,
   CustomTestVaultToken__factory,
 } from '../types';
-import { Actions } from '../types/IDolomiteMargin';
+import { IDolomiteStructs } from '../types/contracts/protocol/interfaces/IDolomiteMargin';
+import ActionArgsStruct = IDolomiteStructs.ActionArgsStruct;
 
 /**
  * @return  The deployed contract
@@ -23,11 +24,11 @@ export async function createContract<T extends BaseContract>(
 }
 
 export async function createContractWithAbi<T extends BaseContract>(
-  abi: any[],
+  abi: readonly any[],
   bytecode: BytesLike,
   args: (number | string | BigNumberish | object)[],
 ): Promise<T> {
-  const ContractFactory = await ethers.getContractFactory(abi, bytecode);
+  const ContractFactory = await ethers.getContractFactory(abi as any[], bytecode);
   return await ContractFactory.deploy(...args) as T;
 }
 
@@ -52,7 +53,7 @@ export function createDepositAction(
   tokenId: BigNumberish,
   accountOwner: SignerWithAddress,
   fromAddress?: string,
-): Actions.ActionArgsStruct {
+): ActionArgsStruct {
   return {
     actionType: ActionType.Deposit, // deposit
     accountId: '0', // accounts[0]
@@ -75,7 +76,7 @@ export function createWithdrawAction(
   tokenId: BigNumberish,
   accountOwner: SignerWithAddress,
   toAddress?: string,
-): Actions.ActionArgsStruct {
+): ActionArgsStruct {
   return {
     actionType: ActionType.Withdraw,
     accountId: '0', // accounts[0]
