@@ -46,7 +46,7 @@ contract UmamiAssetVaultPriceOracle is IDolomitePriceOracle {
     IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
     IUmamiAssetVaultRegistry immutable public UMAMI_ASSET_VAULT_REGISTRY; // solhint-disable-line var-name-mixedcase
     IIsolationModeVaultFactory immutable public ISOLATION_MODE_TOKEN; // solhint-disable-line var-name-mixedcase
-    uint256 immutable public UNDERLYING_MARKET_ID;
+    uint256 immutable public UNDERLYING_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
 

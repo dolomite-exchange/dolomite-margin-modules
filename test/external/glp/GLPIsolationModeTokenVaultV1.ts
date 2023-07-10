@@ -8,7 +8,7 @@ import {
   TestGLPIsolationModeTokenVaultV1,
   TestGLPIsolationModeTokenVaultV1__factory,
 } from '../../../src/types';
-import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
+import { AccountInfoStruct } from '../../../src/utils';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
@@ -23,7 +23,6 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC

@@ -11,7 +11,7 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCRegistry,
 } from '../../../../src/types';
-import { IDolomiteStructs } from '../../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
+import { AccountInfoStruct } from '../../../../src/utils';
 import { depositIntoDolomiteMargin } from '../../../../src/utils/dolomite-utils';
 import {
   BYTES_EMPTY,
@@ -46,7 +46,6 @@ import {
   setupUserVaultProxy,
 } from '../../../utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
-import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

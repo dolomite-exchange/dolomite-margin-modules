@@ -2,7 +2,7 @@ import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { IERC4626, MagicGLPUnwrapperTraderV2 } from '../../../src/types';
-import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
+import { AccountInfoStruct } from '../../../src/utils';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import {
   BYTES_EMPTY,
@@ -31,7 +31,6 @@ import {
   liquidateV4WithLiquidityToken,
 } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
-import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

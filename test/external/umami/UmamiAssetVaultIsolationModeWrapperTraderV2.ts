@@ -12,7 +12,7 @@ import {
   UmamiAssetVaultPriceOracle,
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
-import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
+import { AccountInfoStruct } from '../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
@@ -34,7 +34,6 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { setupWhitelistAndAggregateVault } from './umami-utils';
-import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000'); // $200

@@ -18,7 +18,7 @@ import {
   JonesUSDCRegistry,
   JonesUSDCRegistry__factory,
 } from '../../../../src/types';
-import { IDolomiteStructs } from '../../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
+import { AccountInfoStruct } from '../../../../src/utils';
 import { depositIntoDolomiteMargin } from '../../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../../utils';
@@ -31,7 +31,6 @@ import { setExpiry } from '../../../utils/expiry-utils';
 import { liquidateV4WithZap, toZapBigNumber } from '../../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../../utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
-import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

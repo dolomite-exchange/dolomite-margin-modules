@@ -1,6 +1,6 @@
 import { ActionType, AmountDenomination, AmountReference, ExpiryCallFunctionType } from '@dolomite-margin/dist/src';
 import { BigNumberish, ContractTransaction, ethers } from 'ethers';
-import { Actions } from '../../src/types/IDolomiteMargin';
+import { ActionArgsStruct } from '../../src/utils';
 import { AccountStruct } from '../../src/utils/constants';
 import { impersonate } from './index';
 import { CoreProtocol } from './setup';
@@ -13,7 +13,7 @@ export async function setExpiry(
   owedMarketId: BigNumberish,
   timeDelta: number,
 ): Promise<ContractTransaction> {
-  const action: Actions.ActionArgsStruct = {
+  const action: ActionArgsStruct = {
     actionType: ActionType.Call,
     accountId: 0,
     amount: { sign: false, ref: AmountReference.Delta, denomination: AmountDenomination.Actual, value: 0 },

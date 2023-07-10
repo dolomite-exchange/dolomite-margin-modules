@@ -4,11 +4,10 @@ import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTrad
 import axios from 'axios';
 import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
 import { IGenericTraderBase } from '../../src/types/contracts/external/interfaces/IGenericTraderProxyV1';
-import { IDolomiteStructs } from '../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
+import { AccountInfoStruct } from '../../src/utils';
 import { BYTES_EMPTY, NO_EXPIRY, NO_PARASWAP_TRADER_PARAM } from '../../src/utils/no-deps-constants';
 import { expectThrow } from './assertions';
 import { CoreProtocol } from './setup';
-import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const API_URL = 'https://apiv5.paraswap.io';
 

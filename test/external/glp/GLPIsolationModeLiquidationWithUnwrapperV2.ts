@@ -10,7 +10,7 @@ import {
   IGLPIsolationModeVaultFactoryOld,
   IGmxRegistryV1,
 } from '../../../src/types';
-import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
+import { AccountInfoStruct } from '../../../src/utils';
 import {
   BYTES_EMPTY,
   LIQUIDATE_ALL,
@@ -37,7 +37,6 @@ import {
   liquidateV4WithIsolationMode,
 } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
-import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

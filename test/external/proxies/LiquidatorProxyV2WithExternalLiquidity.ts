@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   IDolomiteMargin,
-  LiquidatorProxyV2WithExternalLiquidity,
+  ILiquidatorProxyV2WithExternalLiquidity,
   TestPriceOracle,
   TestPriceOracle__factory,
 } from '../../../src/types';
@@ -38,7 +38,7 @@ describe('LiquidatorProxyV2WithExternalLiquidity', () => {
   let solidAccountStruct: AccountStruct;
   let liquidAccountStruct: AccountStruct;
   let dolomiteMargin: IDolomiteMargin;
-  let liquidatorProxy: LiquidatorProxyV2WithExternalLiquidity;
+  let liquidatorProxy: ILiquidatorProxyV2WithExternalLiquidity;
   let testPriceOracle: TestPriceOracle;
 
   let snapshotId: string;

@@ -13,7 +13,7 @@ import {
   PlutusVaultGLPPriceOracle,
   PlutusVaultRegistry,
 } from '../../../src/types';
-import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
+import { AccountInfoStruct } from '../../../src/utils';
 import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
@@ -33,7 +33,6 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
-import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const amountWei = BigNumber.from('1250000000000000000000'); // 1,250 plvGLP tokens
 const stakedAmountWei = amountWei.mul(2).div(3); // 833.3333 plvGLP tokens

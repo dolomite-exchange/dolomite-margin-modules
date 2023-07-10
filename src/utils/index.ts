@@ -1,6 +1,40 @@
-import { BigNumber, BigNumberish } from 'ethers';
+import { AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
+import { BigNumber, BigNumberish, BytesLike } from 'ethers';
 import { ethers } from 'hardhat';
 import Web3 from 'web3';
+
+export interface AccountInfoStruct {
+  owner: string;
+  number: BigNumberish;
+}
+
+export interface AssetAmountStruct {
+  sign: boolean;
+  denomination: AmountDenomination;
+  ref: AmountReference;
+  value: BigNumberish;
+}
+
+export interface ActionArgsStruct {
+  actionType: BigNumberish;
+  accountId: BigNumberish;
+  amount: AssetAmountStruct;
+  primaryMarketId: BigNumberish;
+  secondaryMarketId: BigNumberish;
+  otherAddress: string;
+  otherAccountId: BigNumberish;
+  data: BytesLike;
+}
+
+export interface ParStruct {
+  sign: boolean;
+  value: BigNumberish;
+}
+
+export interface WeiStruct {
+  sign: boolean;
+  value: BigNumberish;
+}
 
 export function calculateApr(
   newValue: BigNumberish,

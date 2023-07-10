@@ -9,7 +9,7 @@ import {
   CustomTestVaultToken,
   CustomTestVaultToken__factory,
 } from '../types';
-import { IDolomiteStructs } from '../types/contracts/protocol/interfaces/IDolomiteMargin';
+import { IDolomiteStructs } from '../types/contracts/test/TestAccountActionLib';
 import ActionArgsStruct = IDolomiteStructs.ActionArgsStruct;
 
 /**

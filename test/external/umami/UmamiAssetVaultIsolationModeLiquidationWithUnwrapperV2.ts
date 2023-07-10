@@ -11,7 +11,7 @@ import {
   UmamiAssetVaultPriceOracle,
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
-import { IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
+import { AccountInfoStruct } from '../../../src/utils';
 import { getUmamiTokenCollateralization } from '../../../src/utils/constructors/umami';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import {
@@ -47,7 +47,6 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { setupWhitelistAndAggregateVault } from './umami-utils';
-import AccountInfoStruct = IDolomiteStructs.AccountInfoStruct;
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
