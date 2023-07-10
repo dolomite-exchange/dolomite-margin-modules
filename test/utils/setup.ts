@@ -406,7 +406,7 @@ export async function setupCoreProtocol(
   if (network.name === 'hardhat') {
     await resetFork(config.blockNumber, config.network);
   } else {
-    console.log('Skipping forking...');
+    console.log('\tSkipping forking...');
   }
 
   const DOLOMITE_MARGIN = new BaseContract(

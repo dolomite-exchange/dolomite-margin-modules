@@ -8,8 +8,8 @@ import {
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory,
-  TestIsolationModeUnwrapperTrader,
-  TestIsolationModeUnwrapperTrader__factory,
+  TestIsolationModeUnwrapperTraderV2,
+  TestIsolationModeUnwrapperTraderV2__factory,
 } from '../../../../src/types';
 import {
   createContractWithAbi,
@@ -34,13 +34,13 @@ const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const bigOtherAmountWei = BigNumber.from('100000000000'); // $100,000
 
-describe('IsolationModeTokenVaultV1WithPausable', () => {
+describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
-  let tokenUnwrapper: TestIsolationModeUnwrapperTrader;
+  let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let factory: TestIsolationModeFactory;
   let userVaultImplementation: BaseContract;
   let eoaVault: TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa;
@@ -69,8 +69,8 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
     await setupTestMarket(core, factory, true);
 
     tokenUnwrapper = await createContractWithAbi(
-      TestIsolationModeUnwrapperTrader__factory.abi,
-      TestIsolationModeUnwrapperTrader__factory.bytecode,
+      TestIsolationModeUnwrapperTraderV2__factory.abi,
+      TestIsolationModeUnwrapperTraderV2__factory.bytecode,
       [core.tokens.usdc.address, factory.address, core.dolomiteMargin.address],
     );
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address]);

@@ -111,7 +111,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.tokens.usdc.address, usableUsdcAmount, 0, 0);
-    const glpAmount = amountWei.mul(4);
+    const glpAmount = amountWei.mul(2);
     await core.gmxEcosystem!.sGlp.connect(core.hhUser1)
       .approve(core.pendleEcosystem!.pendleRouter.address, glpAmount);
 

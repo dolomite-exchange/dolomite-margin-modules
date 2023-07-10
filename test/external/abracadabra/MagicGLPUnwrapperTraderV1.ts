@@ -11,13 +11,7 @@ import {
   createMagicGLPPriceOracle,
   createMagicGLPUnwrapperTraderV1,
 } from '../../utils/ecosystem-token-utils/abracadabra';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-} from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -40,8 +34,7 @@ describe('MagicGLPUnwrapperTraderV1', () => {
     magicGlp = core.abraEcosystem!.magicGlp;
     priceOracle = await createMagicGLPPriceOracle(core);
 
-    marketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, magicGlp, true, priceOracle);
+    marketId = BigNumber.from(core.marketIds.magicGlp!);
 
     unwrapper = await createMagicGLPUnwrapperTraderV1(core);
 
@@ -95,6 +88,8 @@ describe('MagicGLPUnwrapperTraderV1', () => {
         BYTES_EMPTY,
       );
 
+      const balanceBefore = await magicGlp.balanceOf(core.dolomiteMargin.address);
+
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await core.dolomiteMargin.connect(core.hhUser5).operate(
         [defaultAccount],
@@ -103,7 +98,7 @@ describe('MagicGLPUnwrapperTraderV1', () => {
 
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, marketId);
       expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
-      expect(await magicGlp.balanceOf(core.dolomiteMargin.address)).to.eq(ZERO_BI);
+      expect(balanceBefore.sub(await magicGlp.balanceOf(core.dolomiteMargin.address))).to.eq(amountWei);
 
       const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
       expect(otherBalanceWei.sign).to.eq(true);

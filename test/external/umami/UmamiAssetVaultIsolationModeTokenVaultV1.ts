@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import {
+  IUmamiAggregateVault__factory,
   IUmamiAssetVault,
   UmamiAssetVaultIsolationModeTokenVaultV1,
   UmamiAssetVaultIsolationModeTokenVaultV1__factory,
@@ -86,9 +87,14 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
     });
 
     it('should be paused when aggregateVault pauses vault', async () => {
-      const admin = await impersonate(await core.umamiEcosystem!.storageViewer.getWhitelist(), true);
+      const aggregateVault = IUmamiAggregateVault__factory.connect(
+        await core.umamiEcosystem!.glpUsdc.connect(core.hhUser1).aggregateVault(),
+        core.umamiEcosystem!.configurator,
+      );
+
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
 
+      const admin = await impersonate(aggregateVault.address, true);
       await core.umamiEcosystem!.glpUsdc.connect(admin).pauseDepositWithdraw();
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
 
