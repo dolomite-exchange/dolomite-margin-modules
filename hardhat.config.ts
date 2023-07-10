@@ -75,7 +75,8 @@ export const config: HardhatUserConfig = {
   },
   mocha: {
     timeout: 2000000,
-    parallel: process.env.TEST_SPECIFIC !== 'true',
+    // parallel: process.env.TEST_SPECIFIC !== 'true',
+    // jobs: 2,
     slow: 60000,
     asyncOnly: true,
     retries: 2,
