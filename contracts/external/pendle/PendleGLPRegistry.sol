@@ -21,8 +21,7 @@
 pragma solidity ^0.8.9;
 
 import {Require} from "../../protocol/lib/Require.sol";
-
-import {OnlyDolomiteMargin} from "../helpers/OnlyDolomiteMargin.sol";
+import {BaseRegistry} from "../general/BaseRegistry.sol";
 
 import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
 import {IPendlePtMarket} from "../interfaces/pendle/IPendlePtMarket.sol";
@@ -41,108 +40,169 @@ import {IPendleSyToken} from "../interfaces/pendle/IPendleSyToken.sol";
  *          without having to deprecate the system and force users to migrate when Dolomite needs to point to new
  *          contracts or functions that Pendle introduces.
  */
-contract PendleGLPRegistry is IPendleGLPRegistry, OnlyDolomiteMargin {
+contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
     // ==================== Constants ====================
 
     bytes32 private constant _FILE = "PendleGLPRegistry";
 
-    // ==================== Storage ====================
+    bytes32 private constant _PENDLE_ROUTER_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.pendleRouter")) - 1);
+    bytes32 private constant _PENDLE_PT_GLP_MARKET_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpMarket")) - 1);
+    bytes32 private constant _PENDLE_PT_GLP_TOKEN_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpToken")) - 1);
+    bytes32 private constant _PENDLE_PT_ORACLE_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.pendlePtOracle")) - 1);
+    bytes32 private constant _PENDLE_SY_GLP_TOKEN_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.pendleSyGlpToken")) - 1);
+    bytes32 private constant _PENDLE_YT_GLP_TOKEN_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.pendleYtGlpToken")) - 1);
 
-    IPendleRouter public override pendleRouter;
-    IPendlePtMarket public override ptGlpMarket;
-    IPendlePtToken public override ptGlpToken;
-    IPendlePtOracle public override ptOracle;
-    IPendleSyToken public override syGlpToken;
-    IPendleYtToken public override ytGlpToken;
+    // ==================== Initializer ====================
 
-    // ==================== Constructor ====================
-
-    constructor(
+    function initialize(
         address _pendleRouter,
         address _ptGlpMarket,
         address _ptGlpToken,
         address _ptOracle,
         address _syGlpToken,
         address _ytGlpToken,
-        address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
-        pendleRouter = IPendleRouter(_pendleRouter);
-        ptGlpMarket = IPendlePtMarket(_ptGlpMarket);
-        ptGlpToken = IPendlePtToken(_ptGlpToken);
-        ptOracle = IPendlePtOracle(_ptOracle);
-        syGlpToken = IPendleSyToken(_syGlpToken);
-        ytGlpToken = IPendleYtToken(_ytGlpToken);
+        address _dolomiteRegistry
+    ) external initializer {
+        _ownerSetDolomiteRegistry(_dolomiteRegistry);
+        _ownerSetPendleRouter(_pendleRouter);
+        _ownerSetPtGlpMarket(_ptGlpMarket);
+        _ownerSetPtGlpToken(_ptGlpToken);
+        _ownerSetPtOracle(_ptOracle);
+        _ownerSetSyGlpToken(_syGlpToken);
+        _ownerSetYtGlpToken(_ytGlpToken);
     }
+
+    // ==================== Functions ====================
 
     function ownerSetPendleRouter(
         address _pendleRouter
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _pendleRouter != address(0),
-            _FILE,
-            "Invalid pendleRouter address"
-        );
-        pendleRouter = IPendleRouter(_pendleRouter);
-        emit PendleRouterSet(_pendleRouter);
+        _ownerSetPendleRouter(_pendleRouter);
     }
 
     function ownerSetPtGlpMarket(
         address _ptGlpMarket
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _ptGlpMarket != address(0),
-            _FILE,
-            "Invalid ptGlpMarket address"
-        );
-        ptGlpMarket = IPendlePtMarket(_ptGlpMarket);
-        emit PtGlpMarketSet(_ptGlpMarket);
+        _ownerSetPtGlpMarket(_ptGlpMarket);
     }
 
     function ownerSetPtGlpToken(
         address _ptGlpToken
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _ptGlpToken != address(0),
-            _FILE,
-            "Invalid ptGlpToken address"
-        );
-        ptGlpToken = IPendlePtToken(_ptGlpToken);
-        emit PtGlpTokenSet(_ptGlpToken);
+        _ownerSetPtGlpToken(_ptGlpToken);
     }
 
     function ownerSetPtOracle(
         address _ptOracle
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _ptOracle != address(0),
-            _FILE,
-            "Invalid ptOracle address"
-        );
-        ptOracle = IPendlePtOracle(_ptOracle);
-        emit PtOracleSet(_ptOracle);
+        _ownerSetPtOracle(_ptOracle);
     }
 
     function ownerSetSyGlpToken(
         address _syGlpToken
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _syGlpToken != address(0),
-            _FILE,
-            "Invalid syGlpToken address"
-        );
-        syGlpToken = IPendleSyToken(_syGlpToken);
-        emit SyGlpTokenSet(_syGlpToken);
+        _ownerSetSyGlpToken(_syGlpToken);
     }
 
     function ownerSetYtGlpToken(
         address _ytGlpToken
     ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetYtGlpToken(_ytGlpToken);
+    }
+
+    // ==================== Views ====================
+
+    function pendleRouter() external view returns (IPendleRouter) {
+        return IPendleRouter(_getAddress(_PENDLE_ROUTER_SLOT));
+    }
+
+    function ptGlpMarket() external view returns (IPendlePtMarket) {
+        return IPendlePtMarket(_getAddress(_PENDLE_PT_GLP_MARKET_SLOT));
+    }
+
+    function ptGlpToken() external view returns (IPendlePtToken) {
+        return IPendlePtToken(_getAddress(_PENDLE_PT_GLP_TOKEN_SLOT));
+    }
+
+    function ptOracle() external view returns (IPendlePtOracle) {
+        return IPendlePtOracle(_getAddress(_PENDLE_PT_ORACLE_SLOT));
+    }
+
+    function syGlpToken() external view returns (IPendleSyToken) {
+        return IPendleSyToken(_getAddress(_PENDLE_SY_GLP_TOKEN_SLOT));
+    }
+
+    function ytGlpToken() external view returns (IPendleYtToken) {
+        return IPendleYtToken(_getAddress(_PENDLE_YT_GLP_TOKEN_SLOT));
+    }
+
+    // ============================================================
+    // ==================== Internal Functions ====================
+    // ============================================================
+
+    function _ownerSetPendleRouter(address _pendleRouter) internal {
+        Require.that(
+            _pendleRouter != address(0),
+            _FILE,
+            "Invalid pendleRouter address"
+        );
+        _setAddress(_PENDLE_ROUTER_SLOT, _pendleRouter);
+        emit PendleRouterSet(_pendleRouter);
+    }
+
+    function _ownerSetPtGlpMarket(address _ptGlpMarket) internal {
+        Require.that(
+            _ptGlpMarket != address(0),
+            _FILE,
+            "Invalid ptGlpMarket address"
+        );
+        _setAddress(_PENDLE_PT_GLP_MARKET_SLOT, _ptGlpMarket);
+        emit PtGlpMarketSet(_ptGlpMarket);
+    }
+
+    function _ownerSetPtGlpToken(address _ptGlpToken) internal {
+        Require.that(
+            _ptGlpToken != address(0),
+            _FILE,
+            "Invalid ptGlpToken address"
+        );
+        _setAddress(_PENDLE_PT_GLP_TOKEN_SLOT, _ptGlpToken);
+        emit PtGlpTokenSet(_ptGlpToken);
+    }
+
+    function _ownerSetPtOracle(address _ptOracle) internal {
+        Require.that(
+            _ptOracle != address(0),
+            _FILE,
+            "Invalid ptOracle address"
+        );
+        _setAddress(_PENDLE_PT_ORACLE_SLOT, _ptOracle);
+        emit PtOracleSet(_ptOracle);
+    }
+
+    function _ownerSetSyGlpToken(address _syGlpToken) internal {
+        Require.that(
+            _syGlpToken != address(0),
+            _FILE,
+            "Invalid syGlpToken address"
+        );
+        _setAddress(_PENDLE_SY_GLP_TOKEN_SLOT, _syGlpToken);
+        emit SyGlpTokenSet(_syGlpToken);
+    }
+
+    function _ownerSetYtGlpToken(address _ytGlpToken) internal {
         Require.that(
             _ytGlpToken != address(0),
             _FILE,
             "Invalid ytGlpToken address"
         );
-        ytGlpToken = IPendleYtToken(_ytGlpToken);
+        _setAddress(_PENDLE_YT_GLP_TOKEN_SLOT, _ytGlpToken);
         emit YtGlpTokenSet(_ytGlpToken);
     }
 }

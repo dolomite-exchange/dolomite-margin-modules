@@ -24,12 +24,12 @@ import {IPendleGLPRegistry} from "./IPendleGLPRegistry.sol";
 import {IIsolationModeVaultFactory} from "../IIsolationModeVaultFactory.sol";
 
 /**
- * @title   IPendlePtGLP2024IsolationModeVaultFactory
+ * @title   IPendleYtGLP2024IsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ptGLP tokens.
+ * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ytGLP tokens.
  */
-interface IPendlePtGLP2024IsolationModeVaultFactory is
+interface IPendleYtGLP2024IsolationModeVaultFactory is
     IIsolationModeVaultFactory
 {
     // ================================================

@@ -20,26 +20,26 @@
 
 pragma solidity ^0.8.9;
 
-import {IPendlePtGLP2024IsolationModeTokenVaultV1} from "../interfaces/pendle/IPendlePtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import {IPendlePtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendlePtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import {IPendleYtGLP2024IsolationModeTokenVaultV1} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import {IPendleYtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import {IsolationModeTokenVaultV1WithPausable} from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
 /**
- * @title   PendlePtGLP2024IsolationModeTokenVaultV1
+ * @title   PendleYtGLP2024IsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the ptGLP (March 2024 expiration)
+ * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the ytGLP (March 2024 expiration)
  *          token that can be used to credit a user's Dolomite balance.
  */
-contract PendlePtGLP2024IsolationModeTokenVaultV1 is
-    IPendlePtGLP2024IsolationModeTokenVaultV1,
+contract PendleYtGLP2024IsolationModeTokenVaultV1 is
+    IPendleYtGLP2024IsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithPausable
 {
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
 
-    bytes32 private constant _FILE = "PendlePtGLP2024UserVaultV1";
+    bytes32 private constant _FILE = "PendleYtGLP2024UserVaultV1";
 
     // ==================================================================
     // ======================== Public Functions ========================
@@ -47,7 +47,7 @@ contract PendlePtGLP2024IsolationModeTokenVaultV1 is
 
     function isExternalRedemptionPaused() public view override returns (bool) {
         return
-            IPendlePtGLP2024IsolationModeVaultFactory(VAULT_FACTORY())
+            IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY())
                 .pendleGLPRegistry()
                 .syGlpToken()
                 .paused();

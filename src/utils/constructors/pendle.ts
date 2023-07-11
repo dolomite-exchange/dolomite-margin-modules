@@ -26,21 +26,28 @@ export function getPendlePtGLPPriceOracleConstructorParams(
   ];
 }
 
-export function getPendleGLPRegistryConstructorParams(
+export async function getPendleGLPRegistryConstructorParams(
   core: CoreProtocol,
-): any[] {
+  implementation: PendleGLPRegistry,
+): Promise<any[]> {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
   }
 
-  return [
+  const calldata = await implementation.populateTransaction.initialize(
     core.pendleEcosystem!.pendleRouter.address,
     core.pendleEcosystem!.ptGlpMarket.address,
     core.pendleEcosystem!.ptGlpToken.address,
     core.pendleEcosystem!.ptOracle.address,
     core.pendleEcosystem!.syGlpToken.address,
     core.pendleEcosystem!.ytGlpToken.address,
+    core.dolomiteRegistry.address
+  )
+
+  return [
+    implementation.address,
     core.dolomiteMargin.address,
+    calldata.data
   ];
 }
 

@@ -1,4 +1,6 @@
 import {
+  RegistryProxy,
+  RegistryProxy__factory,
   IPendlePtGLP2024IsolationModeTokenVaultV1,
   IPendlePtGLP2024IsolationModeVaultFactory,
   IPendleGLPRegistry,
@@ -26,12 +28,19 @@ import {
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
 
-export function createPendleGLPRegistry(core: CoreProtocol): Promise<PendleGLPRegistry> {
-  return createContractWithAbi(
+export async function createPendleGLPRegistry(core: CoreProtocol): Promise<PendleGLPRegistry> {
+  const implementation = await createContractWithAbi<PendleGLPRegistry>(
     PendleGLPRegistry__factory.abi,
     PendleGLPRegistry__factory.bytecode,
-    getPendleGLPRegistryConstructorParams(core),
+    []
   );
+  const registry = await createContractWithAbi<RegistryProxy>(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getPendleGLPRegistryConstructorParams(core, implementation),
+  );
+
+  return PendleGLPRegistry__factory.connect(registry.address, core.hhUser1);
 }
 
 export function createPendlePtGLP2024IsolationModeTokenVaultV1(): Promise<PendlePtGLP2024IsolationModeTokenVaultV1> {

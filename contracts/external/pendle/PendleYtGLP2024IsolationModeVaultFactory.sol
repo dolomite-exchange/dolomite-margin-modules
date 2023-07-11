@@ -20,24 +20,24 @@
 
 pragma solidity ^0.8.9;
 
-import {IPendlePtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendlePtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import {IPendleYtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
 import {IsolationModeVaultFactory} from "../proxies/abstract/IsolationModeVaultFactory.sol";
 
 /**
- * @title   PendlePtGLP2024IsolationModeVaultFactory
+ * @title   PendleYtGLP2024IsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  The wrapper around the ptGLP token that is used to create user vaults and manage the entry points that a
+ * @notice  The wrapper around the ytGLP token that is used to create user vaults and manage the entry points that a
  *          user can use to interact with DolomiteMargin from the vault.
  */
-contract PendlePtGLP2024IsolationModeVaultFactory is
-    IPendlePtGLP2024IsolationModeVaultFactory,
+contract PendleYtGLP2024IsolationModeVaultFactory is
+    IPendleYtGLP2024IsolationModeVaultFactory,
     IsolationModeVaultFactory
 {
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "PendlePtGLP2024VaultFactory"; // needed to be shortened to fit into 32 bytes
+    bytes32 private constant _FILE = "PendleYtGLP2024VaultFactory"; // needed to be shortened to fit into 32 bytes
 
     // ============ Field Variables ============
 
@@ -47,13 +47,13 @@ contract PendlePtGLP2024IsolationModeVaultFactory is
 
     constructor(
         address _pendleGLPRegistry,
-        address _ptGlp, // this serves as the underlying token
+        address _ytGlp, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
         address _dolomiteMargin
     )
         IsolationModeVaultFactory(
-            _ptGlp,
+            _ytGlp,
             _borrowPositionProxy,
             _userVaultImplementation,
             _dolomiteMargin

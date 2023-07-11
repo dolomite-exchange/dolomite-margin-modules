@@ -29,12 +29,12 @@ import {Require} from "../../protocol/lib/Require.sol";
 import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
 
 /**
- * @title   PendlePtGLPPriceOracle
+ * @title   PendleYtGLPPriceOracle
  * @author  Dolomite
  *
- * @notice  An implementation of the IDolomitePriceOracle interface that gets Pendle's ptGLP price in USD terms.
+ * @notice  An implementation of the IDolomitePriceOracle interface that gets Pendle's ytGLP price in USD terms.
  */
-contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
+contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "PendlePtGLPPriceOracle";
@@ -43,21 +43,25 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
 
     // ============================ Public State Variables ============================
 
-    address public immutable DPT_GLP; // solhint-disable-line var-name-mixedcase
+    address public immutable DYT_GLP; // solhint-disable-line var-name-mixedcase
     IPendleGLPRegistry public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteMargin public immutable DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
+    IDolomitePriceOracle public immutable PENDLE_PT_GLP_PRICE_ORACLE;
     uint256 public immutable DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
-
     constructor(
-        address _dptGlp,
-        address _pendlePtGLP2024Registry,
+        address _dytGlp,
+        address _pendleGLPRegistry,
+        address _pendlePtGlpPriceOracle,
         address _dolomiteMargin,
         uint256 _dfsGlpMarketId
     ) {
-        DPT_GLP = _dptGlp;
-        REGISTRY = IPendleGLPRegistry(_pendlePtGLP2024Registry);
+        DYT_GLP = _dytGlp;
+        REGISTRY = IPendleGLPRegistry(_pendleGLPRegistry);
+        PENDLE_PT_GLP_PRICE_ORACLE = IDolomitePriceOracle(
+            _pendlePtGlpPriceOracle
+        );
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
 
@@ -77,21 +81,23 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
         );
     }
 
+    // @follow-up Need to use ptOracle so what to put in here
     function getPrice(
         address _token
     ) public view returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
-            _token == address(DPT_GLP),
+            _token == address(DYT_GLP),
             _FILE,
             "invalid token",
             _token
         );
+        // @follow-up Understand this require statement
         Require.that(
             DOLOMITE_MARGIN.getMarketIsClosing(
                 DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)
             ),
             _FILE,
-            "ptGLP cannot be borrowable"
+            "ytGLP cannot be borrowable"
         );
 
         return IDolomiteStructs.MonetaryPrice({value: _getCurrentPrice()});
@@ -99,14 +105,12 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
 
     // ============================ Internal Functions ============================
 
+    // @follow-up Code is weird
     function _getCurrentPrice() internal view returns (uint256) {
-        uint256 glpPrice = DOLOMITE_MARGIN
-            .getMarketPrice(DFS_GLP_MARKET_ID)
+        uint256 ptGlpPrice = PENDLE_PT_GLP_PRICE_ORACLE
+            .getPrice(address(REGISTRY.ptGlpToken()))
             .value;
-        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(
-            address(REGISTRY.ptGlpMarket()),
-            TWAP_DURATION
-        );
-        return (glpPrice * ptExchangeRate) / PT_ASSET_SCALE;
+
+        return (1 - ptGlpPrice);
     }
 }
