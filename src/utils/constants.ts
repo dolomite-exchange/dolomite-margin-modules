@@ -225,6 +225,11 @@ export const PENDLE_SY_GLP_2024_TOKEN_MAP: Record<Network, string | undefined> =
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const PENDLE_YT_GLP_2024_TOKEN_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x56051f8e46b67b4d286454995dBC6F5f3C433E34',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const PLS_TOKEN_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x51318B7D00db7ACc4026C88c3952B66278B6A67F',
   [Network.ArbitrumGoerli]: undefined,

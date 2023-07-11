@@ -95,6 +95,8 @@ import {
   IPendleRouter__factory,
   IPendleSyToken,
   IPendleSyToken__factory,
+  IPendleYtToken,
+  IPendleYtToken__factory,
   IPlutusVaultGLPFarm,
   IPlutusVaultGLPFarm__factory,
   IPlutusVaultGLPIsolationModeVaultFactory,
@@ -151,6 +153,7 @@ import {
   PENDLE_PT_ORACLE_MAP,
   PENDLE_ROUTER_MAP,
   PENDLE_SY_GLP_2024_TOKEN_MAP,
+  PENDLE_YT_GLP_2024_TOKEN_MAP,
   PLS_TOKEN_MAP,
   PLV_GLP_FARM_MAP,
   PLV_GLP_MAP,
@@ -242,6 +245,7 @@ interface PendleEcosystem {
   ptGlpToken: IPendlePtToken;
   ptOracle: IPendlePtOracle;
   syGlpToken: IPendleSyToken;
+  ytGlpToken: IPendleYtToken
 }
 
 interface PlutusEcosystem {
@@ -782,6 +786,10 @@ async function createPendleEcosystem(
       PENDLE_SY_GLP_2024_TOKEN_MAP[network] as string,
       address => IPendleSyToken__factory.connect(address, signer),
     ),
+    ytGlpToken: getContract(
+      PENDLE_YT_GLP_2024_TOKEN_MAP[network] as string,
+      address => IPendleYtToken__factory.connect(address, signer),
+    )
   };
 }
 

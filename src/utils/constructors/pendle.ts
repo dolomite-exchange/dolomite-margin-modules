@@ -2,17 +2,17 @@ import { CoreProtocol } from '../../../test/utils/setup';
 import {
   IPendlePtGLP2024IsolationModeTokenVaultV1,
   IPendlePtGLP2024IsolationModeVaultFactory,
-  IPendlePtGLP2024Registry,
+  IPendleGLPRegistry,
   IPendlePtToken,
   PendlePtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtGLP2024Registry,
+  PendleGLPRegistry,
 } from '../../types';
 
 export function getPendlePtGLPPriceOracleConstructorParams(
   core: CoreProtocol,
   dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
-  pendleRegistry: IPendlePtGLP2024Registry | PendlePtGLP2024Registry,
+  pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
@@ -26,7 +26,7 @@ export function getPendlePtGLPPriceOracleConstructorParams(
   ];
 }
 
-export function getPendlePtGLP2024RegistryConstructorParams(
+export function getPendleGLPRegistryConstructorParams(
   core: CoreProtocol,
 ): any[] {
   if (!core.pendleEcosystem) {
@@ -39,6 +39,7 @@ export function getPendlePtGLP2024RegistryConstructorParams(
     core.pendleEcosystem!.ptGlpToken.address,
     core.pendleEcosystem!.ptOracle.address,
     core.pendleEcosystem!.syGlpToken.address,
+    core.pendleEcosystem!.ytGlpToken.address,
     core.dolomiteMargin.address,
   ];
 }
@@ -46,7 +47,7 @@ export function getPendlePtGLP2024RegistryConstructorParams(
 export function getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
   core: CoreProtocol,
   dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
-  pendleRegistry: IPendlePtGLP2024Registry | PendlePtGLP2024Registry,
+  pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
@@ -62,7 +63,7 @@ export function getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParam
 
 export function getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams(
   core: CoreProtocol,
-  pendleRegistry: IPendlePtGLP2024Registry | PendlePtGLP2024Registry,
+  pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
   ptGlpToken: IPendlePtToken,
   userVaultImplementation: IPendlePtGLP2024IsolationModeTokenVaultV1 | PendlePtGLP2024IsolationModeTokenVaultV1,
 ): any[] {
@@ -82,7 +83,7 @@ export function getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams(
 export function getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
   core: CoreProtocol,
   dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
-  pendleRegistry: IPendlePtGLP2024Registry | PendlePtGLP2024Registry,
+  pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
