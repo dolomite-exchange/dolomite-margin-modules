@@ -1,13 +1,8 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { IPendleSyToken__factory } from 'src/types/factories/IPendleSyToken__factory';
-import { PendleYtGLP2024IsolationModeTokenVaultV1__factory } from 'src/types/factories/PendleYtGLP2024IsolationModeTokenVaultV1__factory';
-import { PendleYtGLP2024IsolationModeTokenVaultV1 } from 'src/types/PendleYtGLP2024IsolationModeTokenVaultV1';
-import { PendleYtGLP2024IsolationModeVaultFactory } from 'src/types/PendleYtGLP2024IsolationModeVaultFactory';
-import { PendleYtGLPPriceOracle } from 'src/types/PendleYtGLPPriceOracle';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { createPendleGLPRegistry, createPendlePtGLP2024IsolationModeTokenVaultV1, createPendleYtGLP2024IsolationModeUnwrapperTraderV2, createPendleYtGLP2024IsolationModeVaultFactory, createPendleYtGLP2024IsolationModeWrapperTraderV2, createPendleYtGLPPriceOracle } from 'test/utils/ecosystem-token-utils/pendle';
-import { IERC20, IPendleYtToken, IPlutusVaultGLPFarm, PendleGLPRegistry, PendleYtGLP2024IsolationModeUnwrapperTraderV2 } from '../../../src/types';
+import { PendleYtGLP2024IsolationModeVaultFactory, PendleYtGLP2024IsolationModeTokenVaultV1, IPendleSyToken__factory, PendleYtGLP2024IsolationModeTokenVaultV1__factory, PendleYtGLPPriceOracle, IERC20, IPendleYtToken, IPlutusVaultGLPFarm, PendleGLPRegistry, PendleYtGLP2024IsolationModeUnwrapperTraderV2, PendleYtGLP2024IsolationModeWrapperTraderV2 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
 
@@ -18,7 +13,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     let underlyingToken: IPendleYtToken;
     let pendleRegistry: PendleGLPRegistry;
     let unwrapper: PendleYtGLP2024IsolationModeUnwrapperTraderV2;
-    let wrapper: PendleYtGLP2024IsolationModeUnwrapperTraderV2;
+    let wrapper: PendleYtGLP2024IsolationModeWrapperTraderV2;
     let priceOracle: PendleYtGLPPriceOracle;
     let factory: PendleYtGLP2024IsolationModeVaultFactory;
     let vault: PendleYtGLP2024IsolationModeTokenVaultV1;

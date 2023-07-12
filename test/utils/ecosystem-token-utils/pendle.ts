@@ -1,9 +1,3 @@
-import { PendleYtGLP2024IsolationModeTokenVaultV1__factory } from 'src/types/factories/PendleYtGLP2024IsolationModeTokenVaultV1__factory';
-import { PendleYtGLP2024IsolationModeVaultFactory__factory } from 'src/types/factories/PendleYtGLP2024IsolationModeVaultFactory__factory';
-import { IPendleYtGLP2024IsolationModeTokenVaultV1 } from 'src/types/IPendleYtGLP2024IsolationModeTokenVaultV1';
-import { IPendleYtToken } from 'src/types/IPendleYtToken';
-import { PendleYtGLP2024IsolationModeVaultFactory } from 'src/types/PendleYtGLP2024IsolationModeVaultFactory';
-import { PendleYtGLPPriceOracle } from 'src/types/PendleYtGLPPriceOracle';
 import {
   RegistryProxy,
   RegistryProxy__factory,
@@ -11,6 +5,7 @@ import {
   IPendlePtGLP2024IsolationModeVaultFactory,
   IPendleGLPRegistry,
   IPendlePtToken,
+  IPendleYtToken,
   PendlePtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeTokenVaultV1__factory,
   PendlePtGLP2024IsolationModeUnwrapperTraderV2,
@@ -23,8 +18,13 @@ import {
   PendleGLPRegistry__factory,
   PendlePtGLPPriceOracle,
   PendlePtGLPPriceOracle__factory,
+  PendleYtGLPPriceOracle,
   PendleYtGLP2024IsolationModeTokenVaultV1,
+  IPendleYtGLP2024IsolationModeTokenVaultV1,
+  PendleYtGLP2024IsolationModeTokenVaultV1__factory,
   IPendleYtGLP2024IsolationModeVaultFactory__factory,
+  PendleYtGLP2024IsolationModeVaultFactory,
+  PendleYtGLP2024IsolationModeVaultFactory__factory,
   IPendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeUnwrapperTraderV2,
   PendleYtGLP2024IsolationModeUnwrapperTraderV2__factory,
