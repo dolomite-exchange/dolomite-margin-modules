@@ -1,37 +1,37 @@
 import { expect } from 'chai';
 import {
-  PendlePtGLP2024IsolationModeTokenVaultV1,
-  PendlePtGLP2024IsolationModeVaultFactory,
+  PendleYtGLP2024IsolationModeTokenVaultV1,
+  PendleYtGLP2024IsolationModeVaultFactory,
   PendleGLPRegistry,
 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
 import {
-  createPendlePtGLP2024IsolationModeTokenVaultV1,
-  createPendlePtGLP2024IsolationModeVaultFactory,
+  createPendleYtGLP2024IsolationModeTokenVaultV1,
+  createPendleYtGLP2024IsolationModeVaultFactory,
   createPendleGLPRegistry,
 } from '../../utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendlePtGLP2024IsolationModeVaultFactory', () => {
+describe('PendleYtGLP2024IsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
   let pendleRegistry: PendleGLPRegistry;
-  let vaultImplementation: PendlePtGLP2024IsolationModeTokenVaultV1;
-  let factory: PendlePtGLP2024IsolationModeVaultFactory;
+  let vaultImplementation: PendleYtGLP2024IsolationModeTokenVaultV1;
+  let factory: PendleYtGLP2024IsolationModeVaultFactory;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     pendleRegistry = await createPendleGLPRegistry(core);
-    vaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
-    factory = await createPendlePtGLP2024IsolationModeVaultFactory(
+    vaultImplementation = await createPendleYtGLP2024IsolationModeTokenVaultV1();
+    factory = await createPendleYtGLP2024IsolationModeVaultFactory(
       core,
       pendleRegistry,
-      core.pendleEcosystem!.ptGlpToken,
+      core.pendleEcosystem!.ytGlpToken,
       vaultImplementation,
     );
 
@@ -45,7 +45,7 @@ describe('PendlePtGLP2024IsolationModeVaultFactory', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.pendleGLPRegistry()).to.equal(pendleRegistry.address);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.pendleEcosystem!.ptGlpToken.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.pendleEcosystem!.ytGlpToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);

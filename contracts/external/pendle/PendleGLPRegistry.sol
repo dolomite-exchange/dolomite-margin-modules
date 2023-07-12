@@ -75,7 +75,7 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
         _ownerSetPtGlpToken(_ptGlpToken);
         _ownerSetPtOracle(_ptOracle);
         _ownerSetSyGlpToken(_syGlpToken);
-        _ownerSetYtGlpToken(_ytGlpToken);
+        // _ownerSetYtGlpToken(_ytGlpToken);
     }
 
     // ==================== Functions ====================

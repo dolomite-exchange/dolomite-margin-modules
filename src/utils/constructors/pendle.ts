@@ -7,6 +7,8 @@ import {
   PendlePtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeVaultFactory,
   PendleGLPRegistry,
+  IPendleYtGLP2024IsolationModeVaultFactory,
+  PendleYtGLP2024IsolationModeVaultFactory,
 } from '../../types';
 
 export function getPendlePtGLPPriceOracleConstructorParams(
@@ -101,5 +103,56 @@ export function getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
     core.gmxEcosystem!.live.gmxRegistry.address,
     dptGlp.address,
     core.dolomiteMargin.address,
+  ];
+}
+
+export function getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
+  core: CoreProtocol,
+  dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
+  pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    pendleRegistry.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
+    dytGlp.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
+  core: CoreProtocol,
+  dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
+  pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    pendleRegistry.address,
+    core.gmxEcosystem!.live.gmxRegistry.address,
+    dytGlp.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getPendleYtGLPPriceOracleConstructorParams(
+  core: CoreProtocol,
+  dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
+  pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    dytGlp.address,
+    pendleRegistry.address,
+    core.dolomiteMargin.address,
+    core.marketIds.dfsGlp!,
   ];
 }

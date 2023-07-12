@@ -52,12 +52,12 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
 
     constructor(
         address _dptGlp,
-        address _pendlePtGLP2024Registry,
+        address _pendleGLPRegistry,
         address _dolomiteMargin,
         uint256 _dfsGlpMarketId
     ) {
         DPT_GLP = _dptGlp;
-        REGISTRY = IPendleGLPRegistry(_pendlePtGLP2024Registry);
+        REGISTRY = IPendleGLPRegistry(_pendleGLPRegistry);
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
 

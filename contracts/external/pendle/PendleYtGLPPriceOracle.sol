@@ -28,6 +28,8 @@ import {Require} from "../../protocol/lib/Require.sol";
 
 import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title   PendleYtGLPPriceOracle
  * @author  Dolomite
@@ -37,7 +39,7 @@ import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
 contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "PendlePtGLPPriceOracle";
+    bytes32 private constant _FILE = "PendleYtGLPPriceOracle";
     uint32 public constant TWAP_DURATION = 900; // 15 minutes
     uint256 public constant PT_ASSET_SCALE = 1e18; // 18 decimals
 
@@ -46,22 +48,17 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
     address public immutable DYT_GLP; // solhint-disable-line var-name-mixedcase
     IPendleGLPRegistry public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteMargin public immutable DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
-    IDolomitePriceOracle public immutable PENDLE_PT_GLP_PRICE_ORACLE;
     uint256 public immutable DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
     constructor(
         address _dytGlp,
         address _pendleGLPRegistry,
-        address _pendlePtGlpPriceOracle,
         address _dolomiteMargin,
         uint256 _dfsGlpMarketId
     ) {
         DYT_GLP = _dytGlp;
         REGISTRY = IPendleGLPRegistry(_pendleGLPRegistry);
-        PENDLE_PT_GLP_PRICE_ORACLE = IDolomitePriceOracle(
-            _pendlePtGlpPriceOracle
-        );
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
 
@@ -105,12 +102,15 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
 
     // ============================ Internal Functions ============================
 
-    // @follow-up Code is weird
     function _getCurrentPrice() internal view returns (uint256) {
-        uint256 ptGlpPrice = PENDLE_PT_GLP_PRICE_ORACLE
-            .getPrice(address(REGISTRY.ptGlpToken()))
+        uint256 glpPrice = DOLOMITE_MARGIN
+            .getMarketPrice(DFS_GLP_MARKET_ID)
             .value;
-
-        return (1 - ptGlpPrice);
+        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(
+            address(REGISTRY.ptGlpMarket()),
+            TWAP_DURATION
+        );
+        // @follow-up Confirm correct
+        return PT_ASSET_SCALE - ((glpPrice * ptExchangeRate) / PT_ASSET_SCALE);
     }
 }
