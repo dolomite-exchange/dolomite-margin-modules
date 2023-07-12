@@ -37,6 +37,7 @@ interface IPendleYtGLP2024IsolationModeVaultFactory is
     // ================================================
 
     event PendleGLPRegistrySet(address _pendleGLPRegistry);
+    event YtMaturityDateSet(uint256 _ytMaturityDate);
 
     // ===================================================
     // ==================== Functions ====================
@@ -44,5 +45,9 @@ interface IPendleYtGLP2024IsolationModeVaultFactory is
 
     function ownerSetPendleGLPRegistry(address _pendleGLPRegistry) external;
 
+    function ownerSetYtMaturityDate(uint256 _ytMaturityDate) external;
+
     function pendleGLPRegistry() external view returns (IPendleGLPRegistry);
+
+    function ytMaturityDate() external view returns (uint256);
 }

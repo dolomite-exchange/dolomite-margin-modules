@@ -1,3 +1,4 @@
+import { BigNumberish } from 'ethers';
 import {
   RegistryProxy,
   RegistryProxy__factory,
@@ -33,11 +34,12 @@ import {
   PendleYtGLP2024IsolationModeWrapperTraderV2__factory,
 } from '../../../src/types';
 import {
+  getPendleGLPRegistryConstructorParams,
   getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams,
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
-  getPendleGLPRegistryConstructorParams,
   getPendlePtGLPPriceOracleConstructorParams,
+  getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams,
   getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendleYtGLPPriceOracleConstructorParams,
   getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
@@ -140,7 +142,7 @@ export function createPendleYtGLP2024IsolationModeVaultFactory(
   return createContractWithAbi<PendleYtGLP2024IsolationModeVaultFactory>(
     PendleYtGLP2024IsolationModeVaultFactory__factory.abi,
     PendleYtGLP2024IsolationModeVaultFactory__factory.bytecode,
-    getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams(
+    getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams(
       core,
       registry,
       ytGlpToken,

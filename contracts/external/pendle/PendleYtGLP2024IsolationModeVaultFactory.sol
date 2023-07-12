@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import {IPendleYtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
 import {IsolationModeVaultFactory} from "../proxies/abstract/IsolationModeVaultFactory.sol";
+import {IPendleYtToken} from "../interfaces/pendle/IPendleYtToken.sol";
 
 /**
  * @title   PendleYtGLP2024IsolationModeVaultFactory
@@ -43,6 +44,7 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
     // ============ Field Variables ============
 
     IPendleGLPRegistry public override pendleGLPRegistry;
+    uint256 public override ytMaturityDate;
 
     // ============ Constructor ============
 
@@ -61,6 +63,7 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
         )
     {
         pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
+        ytMaturityDate = IPendleYtToken(UNDERLYING_TOKEN).expiry();
     }
 
     // ============ External Functions ============
@@ -70,6 +73,13 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
     ) external override onlyDolomiteMarginOwner(msg.sender) {
         pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
         emit PendleGLPRegistrySet(_pendleGLPRegistry);
+    }
+
+    function ownerSetYtMaturityDate(
+        uint256 _ytMaturityDate
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        ytMaturityDate = _ytMaturityDate;
+        emit YtMaturityDateSet(_ytMaturityDate);
     }
 
     function allowableDebtMarketIds() external pure returns (uint256[] memory) {

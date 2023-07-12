@@ -1,10 +1,14 @@
+import { BigNumberish } from 'ethers';
 import { CoreProtocol } from '../../../test/utils/setup';
 import {
   IPendlePtGLP2024IsolationModeTokenVaultV1,
+  IPendleYtGLP2024IsolationModeTokenVaultV1,
   IPendlePtGLP2024IsolationModeVaultFactory,
   IPendleGLPRegistry,
   IPendlePtToken,
+  IPendleYtToken,
   PendlePtGLP2024IsolationModeTokenVaultV1,
+  PendleYtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeVaultFactory,
   PendleGLPRegistry,
   IPendleYtGLP2024IsolationModeVaultFactory,
@@ -83,6 +87,25 @@ export function getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams(
   return [
     pendleRegistry.address,
     ptGlpToken.address,
+    core.borrowPositionProxyV2.address,
+    userVaultImplementation.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams(
+  core: CoreProtocol,
+  pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
+  ytGlpToken: IPendleYtToken,
+  userVaultImplementation: IPendleYtGLP2024IsolationModeTokenVaultV1 | PendleYtGLP2024IsolationModeTokenVaultV1,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    pendleRegistry.address,
+    ytGlpToken.address,
     core.borrowPositionProxyV2.address,
     userVaultImplementation.address,
     core.dolomiteMargin.address,
