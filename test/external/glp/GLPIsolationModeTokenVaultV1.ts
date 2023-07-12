@@ -16,13 +16,13 @@ import { expectThrow } from '../../utils/assertions';
 import { createGLPIsolationModeVaultFactory, createGmxRegistry } from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupGMXBalance,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -42,7 +42,10 @@ describe('GLPIsolationModeTokenVaultV1', () => {
   let account: AccountInfoStruct;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      blockNumber: DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING,
+      network: Network.ArbitrumOne,
+    });
     const vaultImplementation = await createContractWithAbi<TestGLPIsolationModeTokenVaultV1>(
       TestGLPIsolationModeTokenVaultV1__factory.abi,
       TestGLPIsolationModeTokenVaultV1__factory.bytecode,

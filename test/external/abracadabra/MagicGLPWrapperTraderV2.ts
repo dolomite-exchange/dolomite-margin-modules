@@ -6,7 +6,7 @@ import { AccountInfoStruct, ActionArgsStruct } from '../../../src/utils';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { expectProtocolBalanceDustyOrZero, expectThrow } from '../../utils/assertions';
 import {
   createMagicGLPPriceOracle,
   createMagicGLPWrapperTraderV2,
@@ -16,7 +16,6 @@ import {
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
-  setupTestMarket,
   setupUSDCBalance,
 } from '../../utils/setup';
 
@@ -43,8 +42,7 @@ describe('MagicGLPWrapperTraderV2', () => {
     magicGlp = core.abraEcosystem!.magicGlp;
     magicGlpPriceOracle = await createMagicGLPPriceOracle(core);
 
-    marketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, magicGlp, true, magicGlpPriceOracle);
+    marketId = BigNumber.from(core.marketIds.magicGlp!);
 
     wrapper = await createMagicGLPWrapperTraderV2(core);
 
@@ -90,6 +88,8 @@ describe('MagicGLPWrapperTraderV2', () => {
         },
       ];
 
+      const balanceBefore = await magicGlp.balanceOf(core.dolomiteMargin.address);
+
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await core.dolomiteMargin.connect(core.hhUser5).operate(
         [defaultAccount],
@@ -99,10 +99,9 @@ describe('MagicGLPWrapperTraderV2', () => {
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, marketId);
       expect(underlyingBalanceWei.value).to.eq(amountOut);
       expect(underlyingBalanceWei.sign).to.eq(true);
-      expect(await magicGlp.balanceOf(core.dolomiteMargin.address)).to.eq(amountOut);
+      expect((await magicGlp.balanceOf(core.dolomiteMargin.address)).sub(balanceBefore)).to.eq(amountOut);
 
-      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
-      expect(otherBalanceWei.value).to.eq(ZERO_BI);
+      await expectProtocolBalanceDustyOrZero(core, core.hhUser1, defaultAccount.number, core.marketIds.usdc);
     });
   });
 

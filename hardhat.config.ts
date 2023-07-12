@@ -36,6 +36,7 @@ export const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
+      allowUnlimitedContractSize: true,
       forking: {
         url: arbitrumOneWeb3Url,
         blockNumber: DEFAULT_BLOCK_NUMBER,
@@ -74,15 +75,19 @@ export const config: HardhatUserConfig = {
   },
   mocha: {
     timeout: 2000000,
+    // parallel: process.env.TEST_SPECIFIC !== 'true',
+    // jobs: 2,
+    slow: 60000,
+    asyncOnly: true,
+    retries: 2,
+  },
+  gasReporter: {
+    enabled: process.env.REPORT_GAS === 'true',
   },
   typechain: {
     outDir: 'src/types',
     target: 'ethers-v5',
     alwaysGenerateOverloads: false,
-    // externalArtifacts: [
-    //   'node_modules/@dolomite-exchange/dolomite-margin/build/contracts/*!(Multicall).json',
-    //   'node_modules/@openzeppelin/contracts/build/contracts/*!(Multicall).json',
-    // ],
   },
   etherscan: {
     apiKey: {

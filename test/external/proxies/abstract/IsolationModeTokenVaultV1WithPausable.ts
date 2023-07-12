@@ -7,8 +7,8 @@ import {
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1WithPausable,
   TestIsolationModeTokenVaultV1WithPausable__factory,
-  TestIsolationModeUnwrapperTrader,
-  TestIsolationModeUnwrapperTrader__factory,
+  TestIsolationModeUnwrapperTraderV2,
+  TestIsolationModeUnwrapperTraderV2__factory,
 } from '../../../../src/types';
 import {
   createContractWithAbi,
@@ -39,7 +39,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
   let core: CoreProtocol;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
-  let tokenUnwrapper: TestIsolationModeUnwrapperTrader;
+  let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let factory: TestIsolationModeFactory;
   let userVaultImplementation: BaseContract;
   let userVault: TestIsolationModeTokenVaultV1WithPausable;
@@ -66,8 +66,8 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
     await setupTestMarket(core, factory, true);
 
     tokenUnwrapper = await createContractWithAbi(
-      TestIsolationModeUnwrapperTrader__factory.abi,
-      TestIsolationModeUnwrapperTrader__factory.bytecode,
+      TestIsolationModeUnwrapperTraderV2__factory.abi,
+      TestIsolationModeUnwrapperTraderV2__factory.bytecode,
       [core.tokens.usdc.address, factory.address, core.dolomiteMargin.address],
     );
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address]);

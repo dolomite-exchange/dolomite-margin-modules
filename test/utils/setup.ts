@@ -410,7 +410,7 @@ export async function setupCoreProtocol(
   if (network.name === 'hardhat') {
     await resetFork(config.blockNumber, config.network);
   } else {
-    console.log('Skipping forking...');
+    console.log('\tSkipping forking...');
   }
 
   const DOLOMITE_MARGIN = new BaseContract(
@@ -876,7 +876,7 @@ async function createUmamiEcosystem(
       UMAMI_STORAGE_VIEWER_MAP[network] as string,
       address => IUmamiAssetVaultStorageViewer__factory.connect(address, signer),
     ),
-    configurator: await impersonate(UMAMI_CONFIGURATOR_MAP[network] as string),
+    configurator: await impersonateOrFallback(UMAMI_CONFIGURATOR_MAP[network] as string, false, signer),
   };
 }
 

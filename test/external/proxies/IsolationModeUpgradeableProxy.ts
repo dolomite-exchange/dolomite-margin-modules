@@ -6,7 +6,7 @@ import {
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
-  TestIsolationModeUnwrapperTrader__factory,
+  TestIsolationModeUnwrapperTraderV2__factory,
 } from '../../../src/types';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
@@ -47,8 +47,8 @@ describe('IsolationModeUpgradeableProxy', () => {
     await setupTestMarket(core, factory, true);
 
     const tokenUnwrapper = await createContractWithAbi(
-      TestIsolationModeUnwrapperTrader__factory.abi,
-      TestIsolationModeUnwrapperTrader__factory.bytecode,
+      TestIsolationModeUnwrapperTraderV2__factory.abi,
+      TestIsolationModeUnwrapperTraderV2__factory.bytecode,
       [core.tokens.usdc.address, factory.address, core.dolomiteMargin.address],
     );
 

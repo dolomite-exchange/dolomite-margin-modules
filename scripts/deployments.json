@@ -279,10 +279,17 @@
       "isVerified": true
     }
   },
-  "StablecoinLinearStepFunctionInterestSetter": {
+  "Stablecoin6L94ULinearStepFunctionInterestSetter": {
     "42161": {
       "address": "0xD3D3803177bd12cC8735cB360Ec1C06208d4a94a",
       "transaction": "0xcb917ae8109a407089912e7710e1eccc05aa34a399b2ebc312591281c0f31c60",
+      "isVerified": true
+    }
+  },
+  "Stablecoin8L92ULinearStepFunctionInterestSetter": {
+    "42161": {
+      "address": "0xad9F52c7E9c8b3cF0ae85cCf71b51b47cAB3D48b",
+      "transaction": "0xd37eb92f872dfbd311ce27d16cf649f62a298a2cc28d7bbb603deae2b64a62a2",
       "isVerified": true
     }
   },

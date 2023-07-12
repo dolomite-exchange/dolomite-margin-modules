@@ -24,7 +24,6 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
 import { IUmamiAssetVaultStorageViewer } from "../interfaces/umami/IUmamiAssetVaultStorageViewer.sol";
-import { IUmamiAssetVaultWhitelist } from "../interfaces/umami/IUmamiAssetVaultWhitelist.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 
 /**
@@ -41,7 +40,6 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
     // ==================== Constants ====================
 
     bytes32 private constant _FILE = "UmamiAssetVaultRegistry";
-    bytes32 private constant _WHITELIST_SLOT = bytes32(uint256(keccak256("eip1967.proxy.whitelist")) - 1);
     bytes32 private constant _STORAGE_VIEWER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.storageViewer")) - 1);
 
     // ==================== Initializer ====================
@@ -62,10 +60,6 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetStorageViewer(_storageViewer);
-    }
-
-    function whitelist() external view returns (IUmamiAssetVaultWhitelist) {
-        return IUmamiAssetVaultWhitelist(_getAddress(_WHITELIST_SLOT));
     }
 
     function storageViewer() external view returns (IUmamiAssetVaultStorageViewer) {
