@@ -8,13 +8,15 @@ async function main() {
   const chainId = (await ethers.provider.getNetwork()).chainId;
   const core = await setupCoreProtocol({ network: chainId.toString() as Network, blockNumber: 0 });
 
-  const lowerOptimal = BigNumber.from('60000000000000000');
-  const upperOptimal = BigNumber.from('940000000000000000');
+  const lowerOptimal = BigNumber.from('80000000000000000');
+  const upperOptimal = BigNumber.from('920000000000000000');
+  const lower = lowerOptimal.toString().match(/^([1-9]+)/)![0];
+  const upper = upperOptimal.toString().match(/^([1-9]+)/)![0];
   const stablecoinLinearInterestSetter = await deployContractAndSave(
     chainId,
     'LinearStepFunctionInterestSetter',
     [lowerOptimal, upperOptimal],
-    'StablecoinLinearStepFunctionInterestSetter'
+    `Stablecoin${lower}L${upper}ULinearStepFunctionInterestSetter`
   );
 
   await prettyPrintEncodedData(

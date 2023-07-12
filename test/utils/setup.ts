@@ -868,7 +868,7 @@ async function createUmamiEcosystem(
       UMAMI_STORAGE_VIEWER_MAP[network] as string,
       address => IUmamiAssetVaultStorageViewer__factory.connect(address, signer),
     ),
-    configurator: await impersonate(UMAMI_CONFIGURATOR_MAP[network] as string),
+    configurator: await impersonateOrFallback(UMAMI_CONFIGURATOR_MAP[network] as string, false, signer),
   };
 }
 
