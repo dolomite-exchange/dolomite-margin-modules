@@ -19,7 +19,7 @@ describe('DolomiteRegistryImplementation', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     implementation = await createDolomiteRegistryImplementation();
-    const calldata = await implementation.populateTransaction.initialize(core.genericTraderProxy!.address);
+    const calldata = await implementation.populateTransaction.initialize(core.genericTraderProxy!.address, core.expiry!.address);
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
     registry = DolomiteRegistryImplementation__factory.connect(registryProxy.address, core.governance);
 
@@ -33,11 +33,12 @@ describe('DolomiteRegistryImplementation', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.genericTraderProxy()).to.equal(core.genericTraderProxy!.address);
+      expect(await registry.expiry()).to.equal(core.expiry!.address);
     });
 
     it('should fail to initialize if already initialized', async () => {
       await expectThrow(
-        registry.initialize(core.genericTraderProxy!.address),
+        registry.initialize(core.genericTraderProxy!.address, core.expiry!.address),
         'Initializable: contract is already initialized',
       );
     });
@@ -71,6 +72,31 @@ describe('DolomiteRegistryImplementation', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGenericTraderProxy(ZERO_ADDRESS),
         'DolomiteRegistryImplementation: Invalid genericTraderProxy',
+      );
+    });
+  });
+
+  describe('#ownerSetExpiry', () => {
+    it('should work normally', async () => {
+      const expiry = core.expiry!.address;
+      const result = await registry.connect(core.governance).ownerSetExpiry(expiry);
+      await expectEvent(registry, result, 'ExpirySet', {
+        expiry,
+      });
+      expect(await registry.expiry()).to.equal(expiry);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetExpiry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetExpiry(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid expiry',
       );
     });
   });

@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
-
+import {IGenericTraderProxyV1} from "./IGenericTraderProxyV1.sol";
+import {IExpiry} from "./IExpiry.sol";
 
 /**
  * @title   IDolomiteRegistry
@@ -30,12 +30,12 @@ import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
  * @notice  A registry contract for storing all of the addresses that can interact with Umami's Delta Neutral vaults
  */
 interface IDolomiteRegistry {
-
     // ========================================================
     // ======================== Events ========================
     // ========================================================
 
     event GenericTraderProxySet(address indexed _genericTraderProxy);
+    event ExpirySet(address indexed _expiry);
 
     // ========================================================
     // =================== Admin Functions ====================
@@ -43,9 +43,13 @@ interface IDolomiteRegistry {
 
     function ownerSetGenericTraderProxy(address _genericTraderProxy) external;
 
+    function ownerSetExpiry(address _expiry) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
 
     function genericTraderProxy() external view returns (IGenericTraderProxyV1);
+
+    function expiry() external view returns (IExpiry);
 }

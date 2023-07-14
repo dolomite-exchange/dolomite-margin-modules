@@ -20,14 +20,14 @@
 
 pragma solidity ^0.8.9;
 
-import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
-import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
-import { ValidationLib } from "../lib/ValidationLib.sol";
-
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {Require} from "../../protocol/lib/Require.sol";
+import {OnlyDolomiteMarginForUpgradeable} from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
+import {ProxyContractHelpers} from "../helpers/ProxyContractHelpers.sol";
+import {IDolomiteRegistry} from "../interfaces/IDolomiteRegistry.sol";
+import {IExpiry} from "../interfaces/IExpiry.sol";
+import {IGenericTraderProxyV1} from "../interfaces/IGenericTraderProxyV1.sol";
+import {ValidationLib} from "../lib/ValidationLib.sol";
 
 /**
  * @title   DolomiteRegistryImplementation
@@ -41,39 +41,53 @@ contract DolomiteRegistryImplementation is
     OnlyDolomiteMarginForUpgradeable,
     Initializable
 {
-
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
-    bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _GENERIC_TRADER_PROXY_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _EXPIRY_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
     function initialize(
-        address _genericTraderProxy
+        address _genericTraderProxy,
+        address _expiry
     ) external initializer {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
+        _ownerSetExpiry(_expiry);
     }
 
     // ===================== Functions =====================
 
     function ownerSetGenericTraderProxy(
         address _genericTraderProxy
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
+    ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
     }
 
-    function genericTraderProxy() external view returns (IGenericTraderProxyV1) {
+    function ownerSetExpiry(
+        address _expiry
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetExpiry(_expiry);
+    }
+
+    function genericTraderProxy()
+        external
+        view
+        returns (IGenericTraderProxyV1)
+    {
         return IGenericTraderProxyV1(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
+    }
+
+    function expiry() external view returns (IExpiry) {
+        return IExpiry(_getAddress(_EXPIRY_SLOT));
     }
 
     // ===================== Internal Functions =====================
 
-    function _ownerSetGenericTraderProxy(
-        address _genericTraderProxy
-    ) internal {
+    function _ownerSetGenericTraderProxy(address _genericTraderProxy) internal {
         Require.that(
             _genericTraderProxy != address(0),
             _FILE,
@@ -81,12 +95,21 @@ contract DolomiteRegistryImplementation is
         );
         bytes memory returnData = ValidationLib.callAndCheckSuccess(
             _genericTraderProxy,
-            IGenericTraderProxyV1(_genericTraderProxy).MARGIN_POSITION_REGISTRY.selector,
+            IGenericTraderProxyV1(_genericTraderProxy)
+                .MARGIN_POSITION_REGISTRY
+                .selector,
             bytes("")
         );
         abi.decode(returnData, (address));
 
         _setAddress(_GENERIC_TRADER_PROXY_SLOT, _genericTraderProxy);
         emit GenericTraderProxySet(_genericTraderProxy);
+    }
+
+    function _ownerSetExpiry(address _expiry) internal {
+        Require.that(_expiry != address(0), _FILE, "Invalid expiry");
+
+        _setAddress(_EXPIRY_SLOT, _expiry);
+        emit ExpirySet(_expiry);
     }
 }
