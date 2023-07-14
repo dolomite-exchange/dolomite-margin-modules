@@ -22,7 +22,10 @@ pragma solidity ^0.8.9;
 
 import {IPendleYtGLP2024IsolationModeTokenVaultV1} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import {IPendleYtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import {IIsolationModeTokenVaultV1} from "../interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import {IPendleYtToken} from "../interfaces/pendle/IPendleYtToken.sol";
 import {IsolationModeTokenVaultV1WithPausable} from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
+import {AccountBalanceLib} from "../lib/AccountBalanceLib.sol";
 
 /**
  * @title   PendleYtGLP2024IsolationModeTokenVaultV1
@@ -40,10 +43,20 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     // ==================================================================
 
     bytes32 private constant _FILE = "PendleYtGLP2024UserVaultV1";
+    uint256 public constant MAX_EXPIRATION = 7 * 24 * 3600;
 
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
+
+    function redeemDueInterestAndRewards(
+        bool _redeemInterest,
+        bool _redeemRewards
+    ) external override nonReentrant onlyVaultOwner(msg.sender) {
+        _redeemDueInterestAndRewards(_redeemInterest, _redeemRewards);
+    }
+
+    // @todo Which function do I override to set expiry? How do I listen for when debt is accumulated
 
     function isExternalRedemptionPaused() public view override returns (bool) {
         return
@@ -51,5 +64,21 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
                 .pendleGLPRegistry()
                 .syGlpToken()
                 .paused();
+    }
+
+    // ==================================================================
+    // ======================== Internal Functions ========================
+    // ==================================================================
+
+    // @follow-up Make sure these are supposed to go to the user and not back to the vault
+    function _redeemDueInterestAndRewards(
+        bool _redeemInterest,
+        bool _redeemRewards
+    ) internal {
+        IPendleYtToken(UNDERLYING_TOKEN()).redeemDueInterestAndRewards(
+            msg.sender,
+            _redeemInterest,
+            _redeemRewards
+        );
     }
 }

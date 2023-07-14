@@ -20,12 +20,11 @@
 
 pragma solidity ^0.8.9;
 
-import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
-import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
-import { Require } from "../../../protocol/lib/Require.sol";
-import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
-import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
-
+import {IsolationModeTokenVaultV1} from "./IsolationModeTokenVaultV1.sol";
+import {IDolomiteMargin} from "../../../protocol/interfaces/IDolomiteMargin.sol";
+import {Require} from "../../../protocol/lib/Require.sol";
+import {TypesLib} from "../../../protocol/lib/TypesLib.sol";
+import {AccountBalanceLib} from "../../lib/AccountBalanceLib.sol";
 
 /**
  * @title   IsolationModeTokenVaultV1WithPausable
@@ -34,7 +33,9 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  * @notice  An abstract implementation of IsolationModeTokenVaultV1 that disallows borrows if the ecosystem integration
  *          is paused.
  */
-abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVaultV1 {
+abstract contract IsolationModeTokenVaultV1WithPausable is
+    IsolationModeTokenVaultV1
+{
     using TypesLib for IDolomiteMargin.Par;
 
     // ===================================================
@@ -65,12 +66,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         uint256 _fromAccountNumber,
         uint256 _toAccountNumber,
         uint256 _amountWei
-    )
-        external
-        override
-        requireNotPaused
-        onlyVaultOwner(msg.sender)
-    {
+    ) external override requireNotPaused onlyVaultOwner(msg.sender) {
         _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
 
@@ -79,13 +75,12 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber,
         uint256[] calldata _collateralMarketIds
-    )
-        external
-        override
-        requireNotPaused
-        onlyVaultOwner(msg.sender)
-    {
-        _closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+    ) external override requireNotPaused onlyVaultOwner(msg.sender) {
+        _closeBorrowPositionWithOtherTokens(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _collateralMarketIds
+        );
     }
 
     /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
@@ -93,13 +88,12 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,
         uint256 _amountWei
-    )
-        external
-        override
-        requireNotPaused
-        onlyVaultOwner(msg.sender)
-    {
-        _transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
+    ) external override requireNotPaused onlyVaultOwner(msg.sender) {
+        _transferIntoPositionWithUnderlyingToken(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _amountWei
+        );
     }
 
     function transferFromPositionWithOtherToken(
@@ -108,12 +102,9 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    )
-        external
-        override
-        onlyVaultOwner(msg.sender)
-    {
-        IDolomiteMargin.TotalPar memory valueBefore = DOLOMITE_MARGIN().getMarketTotalPar(_marketId);
+    ) external override onlyVaultOwner(msg.sender) {
+        IDolomiteMargin.TotalPar memory valueBefore = DOLOMITE_MARGIN()
+            .getMarketTotalPar(_marketId);
 
         _transferFromPositionWithOtherToken(
             _borrowAccountNumber,
@@ -123,7 +114,8 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
             _balanceCheckFlag
         );
 
-        IDolomiteMargin.TotalPar memory valueAfter = DOLOMITE_MARGIN().getMarketTotalPar(_marketId);
+        IDolomiteMargin.TotalPar memory valueAfter = DOLOMITE_MARGIN()
+            .getMarketTotalPar(_marketId);
 
         if (isExternalRedemptionPaused()) {
             // If redemptions are paused (preventing liquidations), the borrowed value should not increase
@@ -136,5 +128,5 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         }
     }
 
-    function isExternalRedemptionPaused() public virtual view returns (bool);
+    function isExternalRedemptionPaused() public view virtual returns (bool);
 }

@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-
 /**
  * @title   IPendleRouter
  * @author  Dolomite
@@ -28,7 +27,6 @@ pragma solidity ^0.8.9;
  * @notice  Router contract for selling ptTokens for underlying assets
  */
 interface IPendleRouter {
-
     struct ApproxParams {
         uint256 guessMin;
         uint256 guessMax;
@@ -126,4 +124,11 @@ interface IPendleRouter {
         uint256 exactPtIn,
         TokenOutput calldata output
     ) external returns (uint256 netTokenOut, uint256 netSyFee);
+
+    function mintPyFromSy(
+        address receiver,
+        address YT,
+        uint256 netSyIn,
+        uint256 minPyOut
+    ) external returns (uint256 netPyOut);
 }

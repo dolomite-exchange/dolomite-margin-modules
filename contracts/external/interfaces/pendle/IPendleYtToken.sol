@@ -30,6 +30,12 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 interface IPendleYtToken is IERC20 {
     // @follow-up May need the other functions
+    function redeemDueInterestAndRewards(
+        address user,
+        bool redeemInterest,
+        bool redeemRewards
+    ) external returns (uint256 interestOut, uint256[] memory rewardsOut);
+
     function expiry() external view returns (uint256);
 
     function isExpired() external view returns (bool);
