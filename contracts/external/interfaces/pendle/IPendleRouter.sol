@@ -125,6 +125,21 @@ interface IPendleRouter {
         TokenOutput calldata output
     ) external returns (uint256 netTokenOut, uint256 netSyFee);
 
+    function swapExactYtForToken(
+        address receiver,
+        address market,
+        uint256 netYtIn,
+        TokenOutput calldata output
+    ) external returns (uint256 netTokenOut, uint256 netSyFee);
+
+    function swapExactTokenForYt(
+        address receiver,
+        address market,
+        uint256 minYtOut,
+        ApproxParams calldata guessYtOut,
+        TokenInput calldata input
+    ) external payable returns (uint256 netYtOut, uint256 netSyFee);
+
     function mintPyFromSy(
         address receiver,
         address YT,

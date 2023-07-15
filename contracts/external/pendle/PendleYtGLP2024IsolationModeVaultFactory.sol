@@ -36,7 +36,9 @@ import {IPendleYtToken} from "../interfaces/pendle/IPendleYtToken.sol";
 contract PendleYtGLP2024IsolationModeVaultFactory is
     IPendleYtGLP2024IsolationModeVaultFactory,
     IsolationModeVaultFactory
+    // @note extend from simpleIsolationModeVaultFactory
 {
+    // @follow-up Require statement for collateral market
     // ============ Constants ============
 
     bytes32 private constant _FILE = "PendleYtGLP2024VaultFactory"; // needed to be shortened to fit into 32 bytes

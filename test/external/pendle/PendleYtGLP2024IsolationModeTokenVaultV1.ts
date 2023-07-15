@@ -68,8 +68,10 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         let syGLPBal = (await syGlp.balanceOf(core.hhUser1.address));
         await syGlp.connect(core.hhUser1).approve(router.address, ethers.constants.MaxUint256);
         await router.mintPyFromSy( underlyingToken.address as any, syGLPBal, 5);
+        await underlyingToken.connect(core.hhUser1).approve(vault.address, ethers.constants.MaxUint256);
+        let ytBal = await underlyingToken.balanceOf(core.hhUser1.address);
 
-
+        await vault.depositIntoVaultForDolomiteMargin(accountNumber, ytBal);
         snapshotId = await snapshot();
     });
 
@@ -93,12 +95,10 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
     describe('#redeemDueInterestAndRewards', () => {
         it('should work normally', async () => {
-            console.log(await rewardToken.balanceOf(core.hhUser1.address));
+            console.log(await rewardToken.balanceOf(vault.address));
             await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
-            await underlyingToken.connect(core.hhUser1).redeemDueInterestAndRewards(core.hhUser1.address, true, true);
-            // await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true);
-            console.log(await rewardToken.balanceOf(core.hhUser1.address));
-            console.log(await rewardToken.balanceOf(underlyingToken.address));
+            await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true);
+            console.log((await rewardToken.balanceOf(vault.address)).toString());
         });
 
         it('should fail when not called by vault owner', async () => {

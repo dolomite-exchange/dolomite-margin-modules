@@ -105,7 +105,7 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is
         );
         tokenInput.netTokenIn = glpAmount;
 
-        uint256 ptGlpAmount;
+        uint256 ytGlpAmount;
         {
             // Create a new scope to avoid stack too deep errors
             // approve GLP and swap for ptGLP
@@ -114,7 +114,7 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is
                 address(pendleRouter),
                 glpAmount
             );
-            (ptGlpAmount, ) = pendleRouter.swapExactTokenForPt(
+            (ytGlpAmount, ) = pendleRouter.swapExactTokenForYt(
                 /* _receiver = */ address(this),
                 address(PENDLE_REGISTRY.ptGlpMarket()),
                 _minOutputAmount,
@@ -123,7 +123,7 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is
             );
         }
 
-        return ptGlpAmount;
+        return ytGlpAmount;
     }
 
     function _getExchangeCost(

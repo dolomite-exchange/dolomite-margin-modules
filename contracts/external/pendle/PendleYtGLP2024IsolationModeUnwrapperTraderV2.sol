@@ -91,13 +91,13 @@ contract PendleYtGLP2024IsolationModeUnwrapperTraderV2 is
             (IPendleRouter.TokenOutput)
         );
 
-        // redeem ptGLP for GLP
+        // redeem ytGLP for GLP
         IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
         PENDLE_REGISTRY.ytGlpToken().safeApprove(
             address(pendleRouter),
             _inputAmount
         );
-        (uint256 glpAmount, ) = pendleRouter.swapExactPtForToken(
+        (uint256 glpAmount, ) = pendleRouter.swapExactYtForToken(
             /* _receiver */ address(this),
             address(PENDLE_REGISTRY.ptGlpMarket()),
             _inputAmount,

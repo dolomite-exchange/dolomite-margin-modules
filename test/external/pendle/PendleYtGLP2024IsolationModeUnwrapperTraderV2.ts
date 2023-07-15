@@ -109,13 +109,14 @@ describe('PendleYtGLP2024IsolationModeUnwrapperTraderV2', () => {
     await core.gmxEcosystem!.sGlp.connect(core.hhUser1)
       .approve(core.pendleEcosystem!.pendleRouter.address, glpAmount);
 
-    await router.swapExactTokenForPt(
+    await router.swapExactTokenForYt(
       core.pendleEcosystem!.ptGlpMarket.address as any,
       core.gmxEcosystem!.sGlp.address as any,
       glpAmount,
       ONE_TENTH_OF_ONE_BIPS_NUMBER,
     );
-    await core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1).approve(vault.address, amountWei);
+    console.log(await underlyingToken.balanceOf(core.hhUser1.address));
+    await core.pendleEcosystem!.ytGlpToken.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);

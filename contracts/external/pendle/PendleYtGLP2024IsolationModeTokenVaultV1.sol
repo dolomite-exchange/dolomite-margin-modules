@@ -56,6 +56,22 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         _redeemDueInterestAndRewards(_redeemInterest, _redeemRewards);
     }
 
+    // function transferIntoPositionWithOtherToken(
+    //     uint256 _fromAccountNumber,
+    //     uint256 _borrowAccountNumber,
+    //     uint256 _marketId,
+    //     uint256 _amountWei,
+    //     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    // ) external override onlyVaultOwner(msg.sender) {
+    //     _transferIntoPositionWithOtherToken(
+    //         _fromAccountNumber,
+    //         _borrowAccountNumber,
+    //         _marketId,
+    //         _amountWei,
+    //         _balanceCheckFlag
+    //     );
+    // }
+
     // @todo Which function do I override to set expiry? How do I listen for when debt is accumulated
 
     function isExternalRedemptionPaused() public view override returns (bool) {
@@ -76,7 +92,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         bool _redeemRewards
     ) internal {
         IPendleYtToken(UNDERLYING_TOKEN()).redeemDueInterestAndRewards(
-            msg.sender,
+            address(this),
             _redeemInterest,
             _redeemRewards
         );
