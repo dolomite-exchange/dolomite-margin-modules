@@ -74,6 +74,7 @@ describe('PendleYtGLPPriceOracle', () => {
             );
             await pendleRegistry.connect(core.governance).ownerSetPtOracle(testPtOracle.address);
 
+            // @follow-up Understand these oracle states
             await testPtOracle.setOracleState(true, 0, false);
             await expectThrow(
                 createPendleYtGLPPriceOracle(core, factory, pendleRegistry),

@@ -28,8 +28,6 @@ import {Require} from "../../protocol/lib/Require.sol";
 
 import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title   PendleYtGLPPriceOracle
  * @author  Dolomite
@@ -78,7 +76,6 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
         );
     }
 
-    // @follow-up Need to use ptOracle so what to put in here
     function getPrice(
         address _token
     ) public view returns (IDolomiteStructs.MonetaryPrice memory) {
@@ -110,7 +107,6 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
             address(REGISTRY.ptGlpMarket()),
             TWAP_DURATION
         );
-        // @follow-up Confirm correct
         return PT_ASSET_SCALE - ((glpPrice * ptExchangeRate) / PT_ASSET_SCALE);
     }
 }
