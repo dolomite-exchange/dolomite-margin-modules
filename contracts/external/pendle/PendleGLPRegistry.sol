@@ -49,12 +49,12 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
         bytes32(uint256(keccak256("eip1967.proxy.pendleRouter")) - 1);
     bytes32 private constant _PENDLE_PT_GLP_MARKET_SLOT =
         bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpMarket")) - 1);
-    bytes32 private constant _PENDLE_PT_GLP_TOKEN_SLOT =
-        bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpToken")) - 1);
     bytes32 private constant _PENDLE_PT_ORACLE_SLOT =
         bytes32(uint256(keccak256("eip1967.proxy.pendlePtOracle")) - 1);
     bytes32 private constant _PENDLE_SY_GLP_TOKEN_SLOT =
         bytes32(uint256(keccak256("eip1967.proxy.pendleSyGlpToken")) - 1);
+    bytes32 private constant _PENDLE_PT_GLP_TOKEN_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpToken")) - 1);
     bytes32 private constant _PENDLE_YT_GLP_TOKEN_SLOT =
         bytes32(uint256(keccak256("eip1967.proxy.pendleYtGlpToken")) - 1);
 
@@ -69,13 +69,13 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
         address _ytGlpToken,
         address _dolomiteRegistry
     ) external initializer {
-        _ownerSetDolomiteRegistry(_dolomiteRegistry);
         _ownerSetPendleRouter(_pendleRouter);
         _ownerSetPtGlpMarket(_ptGlpMarket);
-        _ownerSetPtGlpToken(_ptGlpToken);
         _ownerSetPtOracle(_ptOracle);
         _ownerSetSyGlpToken(_syGlpToken);
+        _ownerSetPtGlpToken(_ptGlpToken);
         _ownerSetYtGlpToken(_ytGlpToken);
+        _ownerSetDolomiteRegistry(_dolomiteRegistry);
     }
 
     // ==================== Functions ====================
@@ -92,12 +92,6 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
         _ownerSetPtGlpMarket(_ptGlpMarket);
     }
 
-    function ownerSetPtGlpToken(
-        address _ptGlpToken
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetPtGlpToken(_ptGlpToken);
-    }
-
     function ownerSetPtOracle(
         address _ptOracle
     ) external onlyDolomiteMarginOwner(msg.sender) {
@@ -108,6 +102,12 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
         address _syGlpToken
     ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetSyGlpToken(_syGlpToken);
+    }
+
+    function ownerSetPtGlpToken(
+        address _ptGlpToken
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPtGlpToken(_ptGlpToken);
     }
 
     function ownerSetYtGlpToken(
@@ -126,16 +126,16 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
         return IPendlePtMarket(_getAddress(_PENDLE_PT_GLP_MARKET_SLOT));
     }
 
-    function ptGlpToken() external view returns (IPendlePtToken) {
-        return IPendlePtToken(_getAddress(_PENDLE_PT_GLP_TOKEN_SLOT));
-    }
-
     function ptOracle() external view returns (IPendlePtOracle) {
         return IPendlePtOracle(_getAddress(_PENDLE_PT_ORACLE_SLOT));
     }
 
     function syGlpToken() external view returns (IPendleSyToken) {
         return IPendleSyToken(_getAddress(_PENDLE_SY_GLP_TOKEN_SLOT));
+    }
+
+    function ptGlpToken() external view returns (IPendlePtToken) {
+        return IPendlePtToken(_getAddress(_PENDLE_PT_GLP_TOKEN_SLOT));
     }
 
     function ytGlpToken() external view returns (IPendleYtToken) {
@@ -166,16 +166,6 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
         emit PtGlpMarketSet(_ptGlpMarket);
     }
 
-    function _ownerSetPtGlpToken(address _ptGlpToken) internal {
-        Require.that(
-            _ptGlpToken != address(0),
-            _FILE,
-            "Invalid ptGlpToken address"
-        );
-        _setAddress(_PENDLE_PT_GLP_TOKEN_SLOT, _ptGlpToken);
-        emit PtGlpTokenSet(_ptGlpToken);
-    }
-
     function _ownerSetPtOracle(address _ptOracle) internal {
         Require.that(
             _ptOracle != address(0),
@@ -194,6 +184,16 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
         );
         _setAddress(_PENDLE_SY_GLP_TOKEN_SLOT, _syGlpToken);
         emit SyGlpTokenSet(_syGlpToken);
+    }
+
+    function _ownerSetPtGlpToken(address _ptGlpToken) internal {
+        Require.that(
+            _ptGlpToken != address(0),
+            _FILE,
+            "Invalid ptGlpToken address"
+        );
+        _setAddress(_PENDLE_PT_GLP_TOKEN_SLOT, _ptGlpToken);
+        emit PtGlpTokenSet(_ptGlpToken);
     }
 
     function _ownerSetYtGlpToken(address _ytGlpToken) internal {
