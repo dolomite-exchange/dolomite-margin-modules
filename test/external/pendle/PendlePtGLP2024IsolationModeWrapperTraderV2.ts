@@ -38,7 +38,7 @@ import {
 import { encodeSwapExactTokensForPt } from './pendle-utils';
 
 const defaultAccountNumber = '0';
-const amountWei = BigNumber.from('200000000000000000000'); // $200
+const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const usdcAmount = amountWei.div(1e12).mul(8);
 const usableUsdcAmount = usdcAmount.div(2);

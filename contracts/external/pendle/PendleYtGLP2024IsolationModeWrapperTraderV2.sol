@@ -85,7 +85,7 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is
         bytes memory _extraOrderData
     ) internal override returns (uint256) {
         (
-            IPendleRouter.ApproxParams memory guessPtOut,
+            IPendleRouter.ApproxParams memory guessYtOut,
             IPendleRouter.TokenInput memory tokenInput
         ) = abi.decode(
                 _extraOrderData,
@@ -118,7 +118,7 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is
                 /* _receiver = */ address(this),
                 address(PENDLE_REGISTRY.ptGlpMarket()),
                 _minOutputAmount,
-                guessPtOut,
+                guessYtOut,
                 tokenInput
             );
         }

@@ -144,7 +144,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         bool _redeemInterest,
         bool _redeemRewards
     ) internal {
-        IPendleYtToken(UNDERLYING_TOKEN()).redeemDueInterestAndRewards(
+        (uint256 interestOut, uint256[] memory rewardsOut) = IPendleYtToken(UNDERLYING_TOKEN()).redeemDueInterestAndRewards(
             address(this),
             _redeemInterest,
             _redeemRewards
