@@ -20,12 +20,19 @@
 
 pragma solidity ^0.8.9;
 
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+
+import {Require} from "../../protocol/lib/Require.sol";
+
 import {IPendleYtGLP2024IsolationModeTokenVaultV1} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import {IPendleYtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import {IIsolationModeTokenVaultV1} from "../interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import {IPendleYtToken} from "../interfaces/pendle/IPendleYtToken.sol";
 import {IsolationModeTokenVaultV1WithPausable} from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
+import {IsolationModeTokenVaultV1} from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import {AccountBalanceLib} from "../lib/AccountBalanceLib.sol";
+import {IDolomiteStructs} from "../../protocol/interfaces/IDolomiteStructs.sol";
+import {AccountActionLib} from "../lib/AccountActionLib.sol";
 
 /**
  * @title   PendleYtGLP2024IsolationModeTokenVaultV1
@@ -43,7 +50,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     // ==================================================================
 
     bytes32 private constant _FILE = "PendleYtGLP2024UserVaultV1";
-    uint256 public constant MAX_EXPIRATION = 7 * 24 * 3600;
+    uint256 public constant ONE_WEEK = 7 * 24 * 3600;
 
     // ==================================================================
     // ======================== Public Functions ========================
@@ -56,23 +63,69 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         _redeemDueInterestAndRewards(_redeemInterest, _redeemRewards);
     }
 
-    // function transferIntoPositionWithOtherToken(
-    //     uint256 _fromAccountNumber,
-    //     uint256 _borrowAccountNumber,
-    //     uint256 _marketId,
-    //     uint256 _amountWei,
-    //     AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    // ) external override onlyVaultOwner(msg.sender) {
-    //     _transferIntoPositionWithOtherToken(
-    //         _fromAccountNumber,
-    //         _borrowAccountNumber,
-    //         _marketId,
-    //         _amountWei,
-    //         _balanceCheckFlag
-    //     );
-    // }
+    function transferIntoPositionWithOtherToken(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256 _marketId,
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    )
+        external
+        override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
+        onlyVaultOwner(msg.sender)
+    {
+        // check if within 1 week of expiry, if yes, disallow
+        uint256 ytMaturityDate = IPendleYtGLP2024IsolationModeVaultFactory(
+            VAULT_FACTORY()
+        ).ytMaturityDate();
+        Require.that(
+            block.timestamp + ONE_WEEK < ytMaturityDate,
+            _FILE,
+            "too close to expiry"
+        );
 
-    // @todo Which function do I override to set expiry? How do I listen for when debt is accumulated
+        // check other borrowable market positions
+        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs
+            .AccountInfo(address(this), _borrowAccountNumber);
+        uint256 expiry = _checkExistingBorrowPositions(accountInfo);
+
+        // if expiry doesn't exist, use min formula
+        if (expiry == 0) {
+            expiry = Math.min(4 * ONE_WEEK, ytMaturityDate - ONE_WEEK);
+        }
+
+        _transferIntoPositionWithOtherToken(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _marketId,
+            _amountWei,
+            _balanceCheckFlag
+        );
+
+        // set expiry
+        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
+                VAULT_FACTORY()
+            );
+        address expiryAddress = address(
+            vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry()
+        );
+
+        IDolomiteStructs.AccountInfo[]
+            memory accounts = new IDolomiteStructs.AccountInfo[](1);
+        accounts[0] = accountInfo;
+
+        IDolomiteStructs.ActionArgs[]
+            memory actions = new IDolomiteStructs.ActionArgs[](1);
+        actions[0] = AccountActionLib.encodeExpirationAction(
+            accountInfo,
+            0,
+            _marketId,
+            expiryAddress,
+            expiry - block.timestamp
+        );
+
+        vaultFactory.DOLOMITE_MARGIN().operate(accounts, actions);
+    }
 
     function isExternalRedemptionPaused() public view override returns (bool) {
         return
@@ -96,5 +149,28 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
             _redeemInterest,
             _redeemRewards
         );
+    }
+
+    function _checkExistingBorrowPositions(
+        IDolomiteStructs.AccountInfo memory info
+    ) internal view returns (uint256) {
+        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
+                VAULT_FACTORY()
+            );
+        uint256[] memory allowableDebtMarketIds = vaultFactory
+            .allowableDebtMarketIds();
+
+        uint256 expiry;
+        if (allowableDebtMarketIds.length != 0) {
+            for (uint256 i = 0; i < allowableDebtMarketIds.length; ++i) {
+                expiry = vaultFactory
+                    .pendleGLPRegistry()
+                    .dolomiteRegistry()
+                    .expiry()
+                    .getExpiry(info, allowableDebtMarketIds[i]);
+                if (expiry != 0) return expiry;
+            }
+        }
+        return 0;
     }
 }

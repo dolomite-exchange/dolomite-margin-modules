@@ -27,6 +27,8 @@ import {IPendleRouter} from "./IPendleRouter.sol";
 import {IPendleSyToken} from "./IPendleSyToken.sol";
 import {IPendleYtToken} from "./IPendleYtToken.sol";
 
+import {IBaseRegistry} from "../IBaseRegistry.sol";
+
 /**
  * @title   IPendleGLPRegistry
  * @author  Dolomite
@@ -34,7 +36,7 @@ import {IPendleYtToken} from "./IPendleYtToken.sol";
  * @notice  A registry contract for storing all of the addresses that can interact with the Pendle ecosystem for GLP
  *          (March 2024).
  */
-interface IPendleGLPRegistry {
+interface IPendleGLPRegistry is IBaseRegistry {
     // ========================================================
     // ======================== Events ========================
     // ========================================================
