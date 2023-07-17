@@ -35,7 +35,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { encodeSwapExactTokensForPt } from './pendle-utils';
+import { encodeSwapExactTokensForYt } from './pendle-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -45,6 +45,8 @@ const usableUsdcAmount = usdcAmount.div(2);
 const FIVE_BIPS = 0.0005;
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
+const initialAllowableDebtMarketIds = [0, 1];
+const initialAllowableCollateralMarketIds = [2, 3];
 
 describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
@@ -72,9 +74,11 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     pendleRegistry = await createPendleGLPRegistry(core);
     factory = await createPendleYtGLP2024IsolationModeVaultFactory(
-      core,
       pendleRegistry,
-      underlyingToken,
+      initialAllowableDebtMarketIds,
+      initialAllowableCollateralMarketIds,
+      core,
+      core.pendleEcosystem!.ytGlpToken,
       userVaultImplementation,
     );
 
@@ -111,17 +115,17 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.tokens.usdc.address, usableUsdcAmount, 0, 0);
-    const glpAmount = amountWei.mul(4);
+    const glpAmount = amountWei.mul(2);
     await core.gmxEcosystem!.sGlp.connect(core.hhUser1)
       .approve(core.pendleEcosystem!.pendleRouter.address, glpAmount);
 
-    await router.swapExactTokenForPt(
+    await router.swapExactTokenForYt(
       core.pendleEcosystem!.ptGlpMarket.address as any,
       core.gmxEcosystem!.sGlp.address as any,
       glpAmount,
       FIVE_BIPS,
     );
-    await core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1).approve(vault.address, amountWei);
+    await core.pendleEcosystem!.ytGlpToken.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
@@ -134,7 +138,8 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('Call and Exchange for non-liquidation sale', () => {
+  describe.only('Call and Exchange for non-liquidation sale', () => {
+    //@follow-up Understand this test
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
@@ -147,7 +152,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
           BYTES_EMPTY,
         );
 
-      const { extraOrderData, approxParams } = await encodeSwapExactTokensForPt(router, core, glpAmount);
+      const { extraOrderData, approxParams } = await encodeSwapExactTokensForYt(router, core, glpAmount);
 
       const actions = await wrapper.createActionsForWrapping(
         solidAccountId,
@@ -163,10 +168,12 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
 
       await core.tokens.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      console.log('here1')
       await core.dolomiteMargin.connect(core.hhUser5).operate(
         [defaultAccount],
         actions,
       );
+      console.log('here2')
 
       const expectedTotalBalance = amountWei.add(approxParams.guessOffchain);
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
@@ -276,7 +283,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     it('should fail because it is not implemented', async () => {
       await expectThrow(
         wrapper.getExchangeCost(core.tokens.usdc.address, factory.address, amountWei, BYTES_EMPTY),
-        'PendlePtGLP2024WrapperV2: getExchangeCost is not implemented',
+        'PendleYtGLP2024WrapperV2: getExchangeCost is not implemented',
       );
     });
   });

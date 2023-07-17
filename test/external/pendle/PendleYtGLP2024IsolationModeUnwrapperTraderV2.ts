@@ -34,11 +34,14 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { encodeSwapExactPtForTokens, ONE_TENTH_OF_ONE_BIPS_NUMBER } from './pendle-utils';
+import { encodeSwapExactYtForTokens, ONE_TENTH_OF_ONE_BIPS_NUMBER } from './pendle-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
+
+const initialAllowableDebtMarketIds = [0, 1];
+const initialAllowableCollateralMarketIds = [2, 3];
 
 describe('PendleYtGLP2024IsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
@@ -66,9 +69,11 @@ describe('PendleYtGLP2024IsolationModeUnwrapperTraderV2', () => {
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     pendleRegistry = await createPendleGLPRegistry(core);
     factory = await createPendleYtGLP2024IsolationModeVaultFactory(
-      core,
       pendleRegistry,
-      underlyingToken,
+      initialAllowableDebtMarketIds,
+      initialAllowableCollateralMarketIds,
+      core,
+      core.pendleEcosystem!.ytGlpToken,
       userVaultImplementation,
     );
 
@@ -115,7 +120,6 @@ describe('PendleYtGLP2024IsolationModeUnwrapperTraderV2', () => {
       glpAmount,
       ONE_TENTH_OF_ONE_BIPS_NUMBER,
     );
-    console.log(await underlyingToken.balanceOf(core.hhUser1.address));
     await core.pendleEcosystem!.ytGlpToken.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
@@ -130,11 +134,12 @@ describe('PendleYtGLP2024IsolationModeUnwrapperTraderV2', () => {
   });
 
   describe('Actions.Call and Actions.Sell for non-liquidation', () => {
+    //@follow-up Understand this test
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
 
-      const { tokenOutput, extraOrderData } = await encodeSwapExactPtForTokens(router, core, amountWei);
+      const { tokenOutput, extraOrderData } = await encodeSwapExactYtForTokens(router, core, amountWei);
       const amountOut = await core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5)
         .getExchangeCost(
           core.tokens.dfsGlp!.address,
@@ -203,7 +208,7 @@ describe('PendleYtGLP2024IsolationModeUnwrapperTraderV2', () => {
 
     it('should fail if output token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await underlyingToken.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
@@ -219,7 +224,7 @@ describe('PendleYtGLP2024IsolationModeUnwrapperTraderV2', () => {
 
     it('should fail if input amount is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
+      await underlyingToken.connect(core.hhUser1).transfer(unwrapper.address, amountWei);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,

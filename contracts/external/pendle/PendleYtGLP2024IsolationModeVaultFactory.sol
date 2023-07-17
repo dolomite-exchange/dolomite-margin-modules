@@ -34,11 +34,9 @@ import {Require} from "../../protocol/lib/Require.sol";
  * @notice  The wrapper around the ytGLP token that is used to create user vaults and manage the entry points that a
  *          user can use to interact with DolomiteMargin from the vault.
  */
-// @follow-up Vault YT maturity date
 contract PendleYtGLP2024IsolationModeVaultFactory is
     IPendleYtGLP2024IsolationModeVaultFactory,
     SimpleIsolationModeVaultFactory
-    // @note extend from simpleIsolationModeVaultFactory
 {
     // @follow-up Require statement for collateral market
     // ============ Constants ============

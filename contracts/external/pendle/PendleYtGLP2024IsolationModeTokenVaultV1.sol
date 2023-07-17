@@ -86,7 +86,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     // ======================== Internal Functions ========================
     // ==================================================================
 
-    // @follow-up Make sure these are supposed to go to the user and not back to the vault
+    // @follow-up Add flag to send to user or vault
     function _redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards

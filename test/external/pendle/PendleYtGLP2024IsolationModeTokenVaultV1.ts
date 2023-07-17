@@ -12,6 +12,8 @@ import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTes
 import { expectThrow } from 'test/utils/assertions';
 
 const accountNumber = ZERO_BI;
+const initialAllowableDebtMarketIds = [0, 1];
+const initialAllowableCollateralMarketIds = [2, 3];
 
 describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     let snapshotId: string;
@@ -35,9 +37,11 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         const userVaultImplementation = await createPendleYtGLP2024IsolationModeTokenVaultV1();
         pendleRegistry = await createPendleGLPRegistry(core);
         factory = await createPendleYtGLP2024IsolationModeVaultFactory(
-            core,
             pendleRegistry,
-            underlyingToken,
+            initialAllowableDebtMarketIds,
+            initialAllowableCollateralMarketIds,
+            core,
+            core.pendleEcosystem!.ytGlpToken,
             userVaultImplementation,
         );
         unwrapper = await createPendleYtGLP2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
@@ -95,10 +99,16 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
     describe('#redeemDueInterestAndRewards', () => {
         it('should work normally', async () => {
+            await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true);
+            const syGlp = IPendleSyToken__factory.connect(await pendleRegistry.syGlpToken(), core.hhUser1);
             console.log(await rewardToken.balanceOf(vault.address));
+            console.log(await underlyingToken.balanceOf(vault.address));
+            console.log(await syGlp.balanceOf(vault.address));
             await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
             await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true);
-            console.log((await rewardToken.balanceOf(vault.address)).toString());
+            console.log(await rewardToken.balanceOf(vault.address));
+            console.log(await underlyingToken.balanceOf(vault.address));
+            console.log(await syGlp.balanceOf(vault.address));
         });
 
         it('should fail when not called by vault owner', async () => {
