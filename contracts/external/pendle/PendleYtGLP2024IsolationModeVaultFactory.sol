@@ -22,8 +22,10 @@ pragma solidity ^0.8.9;
 
 import {IPendleYtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
-import {IsolationModeVaultFactory} from "../proxies/abstract/IsolationModeVaultFactory.sol";
+import {SimpleIsolationModeVaultFactory} from "../proxies/SimpleIsolationModeVaultFactory.sol";
 import {IPendleYtToken} from "../interfaces/pendle/IPendleYtToken.sol";
+
+import {Require} from "../../protocol/lib/Require.sol";
 
 /**
  * @title   PendleYtGLP2024IsolationModeVaultFactory
@@ -35,7 +37,7 @@ import {IPendleYtToken} from "../interfaces/pendle/IPendleYtToken.sol";
 // @follow-up Vault YT maturity date
 contract PendleYtGLP2024IsolationModeVaultFactory is
     IPendleYtGLP2024IsolationModeVaultFactory,
-    IsolationModeVaultFactory
+    SimpleIsolationModeVaultFactory
     // @note extend from simpleIsolationModeVaultFactory
 {
     // @follow-up Require statement for collateral market
@@ -52,14 +54,19 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
 
     constructor(
         address _pendleGLPRegistry,
+        uint256[] memory _initialAllowableDebtMarketIds,
+        uint256[] memory _initialAllowableCollateralMarketIds,
         address _ytGlp, // this serves as the underlying token
-        address _borrowPositionProxy,
+        // @follow-up V1 and V2 difference
+        address _borrowPositionProxyV2,
         address _userVaultImplementation,
         address _dolomiteMargin
     )
-        IsolationModeVaultFactory(
+        SimpleIsolationModeVaultFactory(
+            _initialAllowableDebtMarketIds,
+            _initialAllowableCollateralMarketIds,
             _ytGlp,
-            _borrowPositionProxy,
+            _borrowPositionProxyV2,
             _userVaultImplementation,
             _dolomiteMargin
         )
@@ -68,7 +75,9 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
         ytMaturityDate = IPendleYtToken(UNDERLYING_TOKEN).expiry();
     }
 
+    // ================================================
     // ============ External Functions ============
+    // ================================================
 
     function ownerSetPendleGLPRegistry(
         address _pendleGLPRegistry
@@ -84,17 +93,14 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
         emit YtMaturityDateSet(_ytMaturityDate);
     }
 
-    function allowableDebtMarketIds() external pure returns (uint256[] memory) {
-        // allow all markets
-        return new uint256[](0);
-    }
-
-    function allowableCollateralMarketIds()
-        external
-        pure
-        returns (uint256[] memory)
-    {
-        // allow all markets
-        return new uint256[](0);
+    function ownerSetAllowableDebtMarketIds(
+        uint256[] memory _newAllowableDebtMarketIds
+    ) external override onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _newAllowableDebtMarketIds.length > 0,
+            _FILE,
+            "invalid allowableDebtMarketIds"
+        );
+        _ownerSetAllowableDebtMarketIds(_newAllowableDebtMarketIds);
     }
 }

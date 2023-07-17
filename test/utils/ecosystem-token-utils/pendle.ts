@@ -134,8 +134,10 @@ export function createPendleYtGLP2024IsolationModeTokenVaultV1(): Promise<Pendle
 }
 
 export function createPendleYtGLP2024IsolationModeVaultFactory(
+  pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
+  debtMarketIds: Array<Number>,
+  collateralMarketIds: Array<Number>,
   core: CoreProtocol,
-  registry: IPendleGLPRegistry | PendleGLPRegistry,
   ytGlpToken: IPendleYtToken,
   userVaultImplementation: IPendleYtGLP2024IsolationModeTokenVaultV1 | PendleYtGLP2024IsolationModeTokenVaultV1,
 ): Promise<PendleYtGLP2024IsolationModeVaultFactory> {
@@ -143,8 +145,10 @@ export function createPendleYtGLP2024IsolationModeVaultFactory(
     PendleYtGLP2024IsolationModeVaultFactory__factory.abi,
     PendleYtGLP2024IsolationModeVaultFactory__factory.bytecode,
     getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams(
+      pendleRegistry,
+      debtMarketIds,
+      collateralMarketIds,
       core,
-      registry,
       ytGlpToken,
       userVaultImplementation,
     ),

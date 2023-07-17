@@ -17,6 +17,8 @@ import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/se
  */
 const PT_GLP_PRICE = BigNumber.from('913166972248447467'); // $0.913166972248447467
 const YT_GLP_PRICE = BigNumber.from('86833027751552533'); // $0.86833027751552533
+const initialAllowableDebtMarketIds = [0, 1];
+const initialAllowableCollateralMarketIds = [2, 3];
 
 describe('PendleYtGLPPriceOracle', () => {
     let snapshotId: string;
@@ -37,8 +39,10 @@ describe('PendleYtGLPPriceOracle', () => {
         pendleRegistry = await createPendleGLPRegistry(core);
         const userVaultImplementation = await createPendleYtGLP2024IsolationModeTokenVaultV1();
         factory = await createPendleYtGLP2024IsolationModeVaultFactory(
-            core,
             pendleRegistry,
+            initialAllowableDebtMarketIds,
+            initialAllowableCollateralMarketIds,
+            core,
             core.pendleEcosystem!.ytGlpToken,
             userVaultImplementation,
         );
