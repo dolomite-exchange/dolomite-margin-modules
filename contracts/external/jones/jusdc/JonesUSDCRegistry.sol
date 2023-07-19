@@ -43,15 +43,13 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
     // ==================== Constants ====================
 
     bytes32 private constant _FILE = "JonesUSDCRegistry";
-
-    // ==================== Storage ====================
-
-    IJonesGLPAdapter public override glpAdapter;
-    IJonesGLPVaultRouter public override glpVaultRouter;
-    IJonesWhitelistController public override whitelistController;
-    IERC4626 public override usdcReceiptToken;
-    IERC4626 public override jUSDC;
-    address public override unwrapperTrader;
+    bytes32 private constant _GLP_ADAPTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glpAdapter")) - 1);
+    bytes32 private constant _GLP_VAULT_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glpVaultRouter")) - 1);
+    bytes32 private constant _WHITELIST_CONTROLLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.whitelistController")) - 1);
+    bytes32 private constant _USDC_RECEIPT_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.usdcReceiptToken")) - 1);
+    bytes32 private constant _JUSDC_SLOT = bytes32(uint256(keccak256("eip1967.proxy.jUSDC")) - 1);
+    bytes32 private constant _UNWRAPPER_TRADER_FOR_LIQUIDATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperTraderForLiquidation")) - 1);
+    bytes32 private constant _UNWRAPPER_TRADER_FOR_ZAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperTraderForZap")) - 1);
 
     // ==================== Constructor ====================
 
@@ -74,15 +72,17 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
         jUSDC = IERC4626(_jUSDC);
     }
 
-    function initializeUnwrapperTrader(
-        address _unwrapperTrader
+    function initializeUnwrapperTraders(
+        address _unwrapperTraderForLiquidation,
+        address _unwrapperTraderForZap
     ) external {
         Require.that(
-            unwrapperTrader == address(0),
+            unwrapperTraderForLiquidation == address(0) && unwrapperTraderForZap == address(0),
             _FILE,
             "Already initialized"
         );
-        _setUnwrapperTrader(_unwrapperTrader);
+        _setUnwrapperTraderForLiquidation(_unwrapperTraderForLiquidation);
+        _setUnwrapperTraderForZap(_unwrapperTraderForZap);
     }
 
     function ownerGlpAdapter(
@@ -155,23 +155,69 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
         emit JUSDCSet(_jUSDC);
     }
 
-    function ownerSetUnwrapperTrader(
-        address _unwrapperTrader
+    function ownerSetUnwrapperTraderForLiquidation(
+        address _unwrapperTraderForLiquidation
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        _setUnwrapperTrader(_unwrapperTrader);
+        _setUnwrapperTraderForLiquidation(_unwrapperTraderForLiquidation);
+    }
+
+    function ownerSetUnwrapperTraderForZap(
+        address _unwrapperTraderForZap
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _setUnwrapperTraderForZap(_unwrapperTraderForZap);
+    }
+
+    function glpAdapter() public view returns (IJonesGLPAdapter) {
+        return IJonesGLPAdapter(_getAddress(_GLP_ADAPTER_SLOT));
+    }
+
+    function glpVaultRouter() public view returns (IJonesGLPVaultRouter) {
+        return IJonesGLPVaultRouter(_getAddress(_GLP_VAULT_ROUTER_SLOT));
+    }
+
+    function whitelistController() public view returns (IJonesWhitelistController) {
+        return IJonesWhitelistController(_getAddress(_WHITELIST_CONTROLLER_SLOT));
+    }
+
+    function usdcReceiptToken() public view returns (IERC4626) {
+        return IERC4626(_getAddress(_USDC_RECEIPT_TOKEN_SLOT));
+    }
+
+    function jUSDC() public view returns (IERC4626) {
+        return IERC4626(_getAddress(_JUSDC_SLOT));
+    }
+
+    function unwrapperTraderForLiquidation() public view returns (address) {
+        return _getAddress(_UNWRAPPER_TRADER_FOR_LIQUIDATION_SLOT);
+    }
+
+    function unwrapperTraderForZap() public view returns (address) {
+        return _getAddress(_UNWRAPPER_TRADER_FOR_ZAP_SLOT);
     }
 
     // ==================== Private Functions ====================
 
-    function _setUnwrapperTrader(address _unwrapperTrader) internal {
+    function _setUnwrapperTraderForLiquidation(address _unwrapperTraderForLiquidation) internal {
         Require.that(
-            _unwrapperTrader != address(0),
+            _unwrapperTraderForLiquidation != address(0),
             _FILE,
             "Invalid unwrapperTrader address"
         );
-        unwrapperTrader = _unwrapperTrader;
-        emit UnwrapperTraderSet(_unwrapperTrader);
+        unwrapperTraderForLiquidation = _unwrapperTraderForLiquidation;
+        emit UnwrapperTraderForLiquidationSet(_unwrapperTraderForLiquidation);
+    }
+
+    function _setUnwrapperTraderForZap(address _unwrapperTraderForZap) internal {
+        Require.that(
+            _unwrapperTraderForZap != address(0),
+            _FILE,
+            "Invalid unwrapperTrader address"
+        );
+        unwrapperTraderForZap = _unwrapperTraderForZap;
+        emit UnwrapperTraderForZapSet(_unwrapperTraderForZap);
     }
 }

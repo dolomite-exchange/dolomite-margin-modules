@@ -56,7 +56,7 @@ contract JonesUSDCIsolationModeTokenVaultV1 is
 
     function isExternalRedemptionPaused() public override view returns (bool) {
         IJonesWhitelistController whitelistController = registry().whitelistController();
-        address unwrapperTrader = registry().unwrapperTrader();
+        address unwrapperTrader = registry().unwrapperTraderForLiquidation();
         bytes32 unwrapperRole = whitelistController.getUserRole(unwrapperTrader);
         IJonesWhitelistController.RoleInfo memory unwrapperRoleInfo = whitelistController.getRoleInfo(unwrapperRole);
 

@@ -172,6 +172,6 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
             "Invalid unwrapperTrader address"
         );
         unwrapperTrader = _unwrapperTrader;
-        emit UnwrapperTraderSet(_unwrapperTrader);
+        emit UnwrapperTraderForLiquidationSet(_unwrapperTrader);
     }
 }
