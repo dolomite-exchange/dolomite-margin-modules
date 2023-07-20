@@ -296,10 +296,10 @@
   resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin-modules/-/dolomite-margin-modules-0.0.2.tgz#cad59cadfc033991ae0a1c1988337f905c7c573a"
   integrity sha512-/0ex9EW8pgQ266fIEY2HK9o7gHusPjHXt3klJ2M/AaCNe9t+ykTdCi0ZaPNDUgfQ5CqI1rENvEwQRFqSJPArCA==
 
-"@dolomite-exchange/dolomite-margin@^0.9.27":
-  version "0.9.27"
-  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin/-/dolomite-margin-0.9.27.tgz#35b3df2e7a10bcc0e60930b91bbceb9c31f9e0f6"
-  integrity sha512-4jU/bWUHsxQ21naB3r1ZEDanDgvvG1fPdu7OQ9KP2sQoIbLtvCk+8lVPNhd3UudVXAw6GmSAyhBQ6FykLP5TNg==
+"@dolomite-exchange/dolomite-margin@^0.9.29":
+  version "0.9.29"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin/-/dolomite-margin-0.9.29.tgz#05c4de3a6fc02766baf07624bdccc27450508344"
+  integrity sha512-ORSg/BaQ4RRCqg4/t4TRLFpHpZgh78yprVeYodSovCZKZ5lpCUWGDCDagv85vcwRRlKxp/kcPr5ry6rk9I1lAw==
   dependencies:
     "@openzeppelin/contracts" "^2.5.1"
     "@types/web3" "1.0.18"

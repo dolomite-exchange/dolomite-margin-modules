@@ -45,7 +45,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.5",
     "@babel/eslint-parser": "^7.19.1",
-    "@dolomite-exchange/dolomite-margin": "^0.9.27",
+    "@dolomite-exchange/dolomite-margin": "^0.9.29",
     "@dolomite-exchange/zap-sdk": "^0.0.8",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
