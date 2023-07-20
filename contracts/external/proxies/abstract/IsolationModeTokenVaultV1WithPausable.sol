@@ -102,7 +102,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    ) external override onlyVaultOwner(msg.sender) {
+    ) external virtual override onlyVaultOwner(msg.sender) {
         IDolomiteMargin.TotalPar memory valueBefore = DOLOMITE_MARGIN()
             .getMarketTotalPar(_marketId);
 

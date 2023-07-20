@@ -20,8 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-
+import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 /**
  * @title   IExpiry
@@ -30,7 +29,6 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
  * @notice  Interface for getting, setting, and executing the expiry of a position.
  */
 interface IExpiry {
-
     // ============ Enums ============
 
     enum CallFunctionType {
@@ -57,17 +55,17 @@ interface IExpiry {
         uint256 owedMarketId,
         uint32 expiry
     )
-    external
-    view
-    returns (IDolomiteMargin.MonetaryPrice memory heldPrice, IDolomiteMargin.MonetaryPrice memory owedPriceAdj);
+        external
+        view
+        returns (
+            IDolomiteMargin.MonetaryPrice memory heldPrice,
+            IDolomiteMargin.MonetaryPrice memory owedPriceAdj
+        );
 
     function getExpiry(
-        IDolomiteMargin.AccountInfo calldata account,
+        IDolomiteMargin.AccountInfo memory account,
         uint256 marketId
-    )
-    external
-    view
-    returns (uint32);
+    ) external view returns (uint32);
 
     function g_expiryRampTime() external view returns (uint256);
 }

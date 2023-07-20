@@ -78,12 +78,11 @@ describe('DolomiteRegistryImplementation', () => {
 
   describe('#ownerSetExpiry', () => {
     it('should work normally', async () => {
-      const expiry = core.expiry!.address;
-      const result = await registry.connect(core.governance).ownerSetExpiry(expiry);
+      const result = await registry.connect(core.governance).ownerSetExpiry(OTHER_ADDRESS);
       await expectEvent(registry, result, 'ExpirySet', {
-        expiry,
+        OTHER_ADDRESS,
       });
-      expect(await registry.expiry()).to.equal(expiry);
+      expect(await registry.expiry()).to.equal(OTHER_ADDRESS);
     });
 
     it('should fail when not called by owner', async () => {

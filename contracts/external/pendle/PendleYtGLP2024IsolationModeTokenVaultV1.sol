@@ -26,13 +26,13 @@ import {Require} from "../../protocol/lib/Require.sol";
 
 import {IPendleYtGLP2024IsolationModeTokenVaultV1} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import {IPendleYtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import {IIsolationModeTokenVaultV1} from "../interfaces/IIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import {IPendleYtToken} from "../interfaces/pendle/IPendleYtToken.sol";
 import {IsolationModeTokenVaultV1WithPausable} from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
-import {IsolationModeTokenVaultV1} from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
+import {IIsolationModeTokenVaultV1} from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import {AccountBalanceLib} from "../lib/AccountBalanceLib.sol";
 import {IDolomiteStructs} from "../../protocol/interfaces/IDolomiteStructs.sol";
 import {AccountActionLib} from "../lib/AccountActionLib.sol";
+import {IDolomiteRegistry} from "../interfaces/IDolomiteRegistry.sol";
 
 /**
  * @title   PendleYtGLP2024IsolationModeTokenVaultV1
@@ -59,19 +59,22 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     function redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards
-    ) external override nonReentrant onlyVaultOwner(msg.sender) {
+    ) external nonReentrant onlyVaultOwner(msg.sender) {
         _redeemDueInterestAndRewards(_redeemInterest, _redeemRewards);
     }
 
-    function transferIntoPositionWithOtherToken(
-        uint256 _fromAccountNumber,
+    function transferFromPositionWithOtherToken(
         uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
         external
-        override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
+        override(
+            IsolationModeTokenVaultV1WithPausable,
+            IIsolationModeTokenVaultV1
+        )
         onlyVaultOwner(msg.sender)
     {
         // check if within 1 week of expiry, if yes, disallow
@@ -91,12 +94,14 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
 
         // if expiry doesn't exist, use min formula
         if (expiry == 0) {
-            expiry = Math.min(4 * ONE_WEEK, ytMaturityDate - ONE_WEEK);
+            expiry = Math.min(
+                4 * ONE_WEEK,
+                ytMaturityDate - ONE_WEEK - block.timestamp
+            );
         }
-
-        _transferIntoPositionWithOtherToken(
-            _fromAccountNumber,
+        _transferFromPositionWithOtherToken(
             _borrowAccountNumber,
+            _toAccountNumber,
             _marketId,
             _amountWei,
             _balanceCheckFlag
@@ -117,11 +122,11 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         IDolomiteStructs.ActionArgs[]
             memory actions = new IDolomiteStructs.ActionArgs[](1);
         actions[0] = AccountActionLib.encodeExpirationAction(
-            accountInfo,
+            accounts[0],
             0,
             _marketId,
             expiryAddress,
-            expiry - block.timestamp
+            expiry
         );
 
         vaultFactory.DOLOMITE_MARGIN().operate(accounts, actions);
@@ -139,16 +144,18 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     // ======================== Internal Functions ========================
     // ==================================================================
 
-    // @follow-up Add flag to send to user or vault
+    // @follow-up Add flag to send to user or vault. Have to check balance pre?
     function _redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards
     ) internal {
-        (uint256 interestOut, uint256[] memory rewardsOut) = IPendleYtToken(UNDERLYING_TOKEN()).redeemDueInterestAndRewards(
-            address(this),
-            _redeemInterest,
-            _redeemRewards
-        );
+        (uint256 interestOut, uint256[] memory rewardsOut) = IPendleYtToken(
+            UNDERLYING_TOKEN()
+        ).redeemDueInterestAndRewards(
+                address(this),
+                _redeemInterest,
+                _redeemRewards
+            );
     }
 
     function _checkExistingBorrowPositions(
