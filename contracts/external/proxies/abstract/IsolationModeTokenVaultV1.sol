@@ -200,11 +200,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     external
     virtual
     onlyVaultOwner(msg.sender) {
-        _transferIntoPositionWithUnderlyingToken(
-            _fromAccountNumber,
-            _borrowAccountNumber,
-            _amountWei
-        );
+        _transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
     }
 
     function transferIntoPositionWithOtherToken(
@@ -316,7 +312,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         return IIsolationModeVaultFactory(VAULT_FACTORY()).marketId();
     }
 
-    function underlyingBalanceOf() public view virtual override returns (uint256) {
+    function underlyingBalanceOf() public override virtual view returns (uint256) {
         return IERC20(UNDERLYING_TOKEN()).balanceOf(address(this));
     }
 
@@ -438,7 +434,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    ) 
+    )
     internal {
         Require.that(
             _marketId != marketId(),
