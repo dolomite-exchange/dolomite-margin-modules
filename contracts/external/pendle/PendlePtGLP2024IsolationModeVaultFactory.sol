@@ -24,6 +24,7 @@ import { IPendlePtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/
 import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
 import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
 
+
 /**
  * @title   PendlePtGLP2024IsolationModeVaultFactory
  * @author  Dolomite
@@ -57,7 +58,7 @@ contract PendlePtGLP2024IsolationModeVaultFactory is
         _borrowPositionProxy,
         _userVaultImplementation,
         _dolomiteMargin
-    )  {
+    ) {
         pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
     }
 

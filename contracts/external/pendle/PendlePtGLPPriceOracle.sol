@@ -45,7 +45,7 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
     // ============================ Public State Variables ============================
 
     address immutable public DPT_GLP; // solhint-disable-line var-name-mixedcase
-    IPendleGLPRegistry immutable public  REGISTRY; // solhint-disable-line var-name-mixedcase
+    IPendleGLPRegistry immutable public REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
     uint256 immutable public DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
 

@@ -54,7 +54,7 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
         address _gmxRegistry,
         address _dptGlp,
         address _dolomiteMargin
-    ) 
+    )
     IsolationModeWrapperTraderV2(
         _dptGlp,
         _dolomiteMargin
@@ -67,7 +67,7 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
     // ============= Public Functions =============
     // ============================================
 
-    function isValidInputToken(address _inputToken) public view override returns (bool) {
+    function isValidInputToken(address _inputToken) public override view returns (bool) {
         return GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken);
     }
 
@@ -83,7 +83,7 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
         address _inputToken,
         uint256 _inputAmount,
         bytes memory _extraOrderData
-    ) 
+    )
         internal
         override 
         returns (uint256)
@@ -91,7 +91,7 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
         (
             IPendleRouter.ApproxParams memory guessPtOut,
             IPendleRouter.TokenInput memory tokenInput
-        ) = abi.decode(_extraOrderData,(IPendleRouter.ApproxParams, IPendleRouter.TokenInput));
+        ) = abi.decode(_extraOrderData, (IPendleRouter.ApproxParams, IPendleRouter.TokenInput));
 
         // approve input token and mint GLP
         IERC20(_inputToken).safeApprove(address(GMX_REGISTRY.glpManager()), _inputAmount);
@@ -126,12 +126,12 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
         address,
         uint256,
         bytes memory
-    ) 
+    )
     internal
-    pure
     override 
+    pure
     returns (uint256)
     {
-        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE),": getExchangeCost is not implemented")));
+        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
 }

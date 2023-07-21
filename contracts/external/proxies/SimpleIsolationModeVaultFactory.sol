@@ -20,7 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import {IsolationModeVaultFactory} from "./abstract/IsolationModeVaultFactory.sol";
+import { IsolationModeVaultFactory } from "./abstract/IsolationModeVaultFactory.sol";
+
 
 /**
  * @title   SimpleIsolationModeVaultFactory
@@ -29,6 +30,7 @@ import {IsolationModeVaultFactory} from "./abstract/IsolationModeVaultFactory.so
  * @notice  Contract for wrapping tokens via a per-user vault that credits a user's balance within DolomiteMargin
  */
 contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
+
     // ===================================================
     // ==================== Constants ====================
     // ===================================================
@@ -47,9 +49,7 @@ contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
     // ===================================================
 
     event AllowableDebtMarketIdsSet(uint256[] allowableDebtMarketIds);
-    event AllowableCollateralMarketIdsSet(
-        uint256[] allowableCollateralMarketIds
-    );
+    event AllowableCollateralMarketIdsSet(uint256[] allowableCollateralMarketIds);
 
     // ================================================
     // ================== Constructor =================
@@ -62,29 +62,31 @@ contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
         address _borrowPositionProxyV2,
         address _userVaultImplementation,
         address _dolomiteMargin
-    )
-        IsolationModeVaultFactory(
-            _underlyingToken,
-            _borrowPositionProxyV2,
-            _userVaultImplementation,
-            _dolomiteMargin
-        )
-    {
+    ) IsolationModeVaultFactory(
+        _underlyingToken,
+        _borrowPositionProxyV2,
+        _userVaultImplementation,
+        _dolomiteMargin
+    ) {
         _ownerSetAllowableDebtMarketIds(_initialAllowableDebtMarketIds);
-        _ownerSetAllowableCollateralMarketIds(
-            _initialAllowableCollateralMarketIds
-        );
+        _ownerSetAllowableCollateralMarketIds(_initialAllowableCollateralMarketIds);
     }
 
     function ownerSetAllowableDebtMarketIds(
         uint256[] calldata _newAllowableDebtMarketIds
-    ) external virtual onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external
+    virtual
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetAllowableDebtMarketIds(_newAllowableDebtMarketIds);
     }
 
     function ownerSetAllowableCollateralMarketIds(
         uint256[] calldata _newAllowableCollateralMarketIds
-    ) external virtual onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external
+    virtual
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetAllowableCollateralMarketIds(_newAllowableCollateralMarketIds);
     }
 
@@ -92,11 +94,7 @@ contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
         return _allowableDebtMarketIds;
     }
 
-    function allowableCollateralMarketIds()
-        external
-        view
-        returns (uint256[] memory)
-    {
+    function allowableCollateralMarketIds() external view returns (uint256[] memory) {
         return _allowableCollateralMarketIds;
     }
 

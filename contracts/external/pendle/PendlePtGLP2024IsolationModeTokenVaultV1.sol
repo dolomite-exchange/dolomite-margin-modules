@@ -47,7 +47,7 @@ contract PendlePtGLP2024IsolationModeTokenVaultV1 is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function isExternalRedemptionPaused() public view override returns (bool) {
+    function isExternalRedemptionPaused() public override view returns (bool) {
         return IPendlePtGLP2024IsolationModeVaultFactory(VAULT_FACTORY())
             .pendleGLPRegistry()
             .syGlpToken()
