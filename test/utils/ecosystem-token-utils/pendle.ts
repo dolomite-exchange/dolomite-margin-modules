@@ -14,7 +14,7 @@ import {
   PendlePtGLP2024Registry,
   PendlePtGLP2024Registry__factory,
   PendlePtGLPPriceOracle,
-  PendlePtGLPPriceOracle__factory,
+  PendlePtGLPPriceOracle__factory, RegistryProxy, RegistryProxy__factory,
 } from '../../../src/types';
 import {
   getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
@@ -26,12 +26,18 @@ import {
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
 
-export function createPendlePtGLP2024Registry(core: CoreProtocol): Promise<PendlePtGLP2024Registry> {
-  return createContractWithAbi(
+export async function createPendlePtGLP2024Registry(core: CoreProtocol): Promise<PendlePtGLP2024Registry> {
+  const implementation = await createContractWithAbi<PendlePtGLP2024Registry>(
     PendlePtGLP2024Registry__factory.abi,
     PendlePtGLP2024Registry__factory.bytecode,
-    getPendlePtGLP2024RegistryConstructorParams(core),
+    [],
   );
+  const proxy = await createContractWithAbi<RegistryProxy>(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getPendlePtGLP2024RegistryConstructorParams(implementation, core),
+  );
+  return PendlePtGLP2024Registry__factory.connect(proxy.address, core.hhUser1);
 }
 
 export function createPendlePtGLP2024IsolationModeTokenVaultV1(): Promise<PendlePtGLP2024IsolationModeTokenVaultV1> {

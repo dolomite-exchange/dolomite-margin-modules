@@ -27,6 +27,7 @@ import { IGLPRewardsRouterV2 } from "./IGLPRewardsRouterV2.sol";
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./IGmxRewardRouterV2.sol";
 import { IGmxVault } from "./IGmxVault.sol";
+import { IBaseRegistry } from "../IBaseRegistry.sol";
 
 
 /**
@@ -35,7 +36,7 @@ import { IGmxVault } from "./IGmxVault.sol";
  *
  * @notice  A registry contract for storing all of the different addresses that can interact with the GMX ecosystem
  */
-interface IGmxRegistryV1 {
+interface IGmxRegistryV1 is IBaseRegistry {
 
     // ================================================
     // ==================== Events ====================

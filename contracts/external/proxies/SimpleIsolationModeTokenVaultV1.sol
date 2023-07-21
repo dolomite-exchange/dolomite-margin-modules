@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { SimpleIsolationModeVaultFactory } from "./SimpleIsolationModeVaultFactory.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "./abstract/IsolationModeTokenVaultV1.sol";
 
 
@@ -31,5 +33,8 @@ import { IsolationModeTokenVaultV1 } from "./abstract/IsolationModeTokenVaultV1.
  *          with DolomiteMargin. There are no functions to implement, so the implementation is empty.
  */
 contract SimpleIsolationModeTokenVaultV1 is IsolationModeTokenVaultV1 {
-    // solhint-disable-previous-line no-empty-blocks
+
+    function dolomiteRegistry() public override(IsolationModeTokenVaultV1) view returns (IDolomiteRegistry) {
+        return SimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
+    }
 }

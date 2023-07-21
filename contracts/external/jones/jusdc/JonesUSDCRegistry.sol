@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { Require } from "../../../protocol/lib/Require.sol";
-import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
+import { BaseRegistry } from "../../general/BaseRegistry.sol";
 import { IERC4626 } from "../../interfaces/IERC4626.sol";
 import { IJonesGLPAdapter } from "../../interfaces/jones/IJonesGLPAdapter.sol";
 import { IJonesGLPVaultRouter } from "../../interfaces/jones/IJonesGLPVaultRouter.sol";
@@ -38,10 +38,11 @@ import { IJonesWhitelistController } from "../../interfaces/jones/IJonesWhitelis
  *          without having to deprecate the system and force users to migrate when Dolomite needs to point to new
  *          contracts or functions that JonesDAO introduces.
  */
-contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
+contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     // ==================== Constants ====================
 
+    // solhint-disable max-line-length
     bytes32 private constant _FILE = "JonesUSDCRegistry";
     bytes32 private constant _GLP_ADAPTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glpAdapter")) - 1);
     bytes32 private constant _GLP_VAULT_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glpVaultRouter")) - 1);
@@ -50,26 +51,24 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
     bytes32 private constant _JUSDC_SLOT = bytes32(uint256(keccak256("eip1967.proxy.jUSDC")) - 1);
     bytes32 private constant _UNWRAPPER_TRADER_FOR_LIQUIDATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperTraderForLiquidation")) - 1);
     bytes32 private constant _UNWRAPPER_TRADER_FOR_ZAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperTraderForZap")) - 1);
+    // solhint-enable max-line-length
 
-    // ==================== Constructor ====================
+    // ==================== Initializers ====================
 
-    constructor(
+    function initialize(
         address _glpAdapter,
         address _glpVaultRouter,
         address _whitelistController,
         address _usdcReceiptToken,
         address _jUSDC,
-        address _dolomiteMargin
-    )
-    OnlyDolomiteMargin(
-        _dolomiteMargin
-    )
-    {
-        glpAdapter = IJonesGLPAdapter(_glpAdapter);
-        glpVaultRouter = IJonesGLPVaultRouter(_glpVaultRouter);
-        whitelistController = IJonesWhitelistController(_whitelistController);
-        usdcReceiptToken = IERC4626(_usdcReceiptToken);
-        jUSDC = IERC4626(_jUSDC);
+        address _dolomiteRegistry
+    ) external initializer {
+        _ownerSetGlpAdapter(_glpAdapter);
+        _ownerSetGlpVaultRouter(_glpVaultRouter);
+        _ownerSetWhitelistController(_whitelistController);
+        _ownerSetUsdcReceiptToken(_usdcReceiptToken);
+        _ownerSetJUSDC(_jUSDC);
+        _ownerSetDolomiteRegistry(_dolomiteRegistry);
     }
 
     function initializeUnwrapperTraders(
@@ -77,7 +76,7 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
         address _unwrapperTraderForZap
     ) external {
         Require.that(
-            unwrapperTraderForLiquidation == address(0) && unwrapperTraderForZap == address(0),
+            unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0),
             _FILE,
             "Already initialized"
         );
@@ -85,18 +84,14 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
         _setUnwrapperTraderForZap(_unwrapperTraderForZap);
     }
 
-    function ownerGlpAdapter(
+    // ==================== Admin Methods ====================
+
+    function ownerSetGlpAdapter(
         address _glpAdapter
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _glpAdapter != address(0),
-            _FILE,
-            "Invalid glpAdapter address"
-        );
-        glpAdapter = IJonesGLPAdapter(_glpAdapter);
-        emit GlpAdapterSet(_glpAdapter);
+        _ownerSetGlpAdapter(_glpAdapter);
     }
 
     function ownerSetGlpVaultRouter(
@@ -104,13 +99,7 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _glpVaultRouter != address(0),
-            _FILE,
-            "Invalid glpVaultRouter address"
-        );
-        glpVaultRouter = IJonesGLPVaultRouter(_glpVaultRouter);
-        emit GlpVaultRouterSet(_glpVaultRouter);
+        _ownerSetGlpVaultRouter(_glpVaultRouter);
     }
 
     function ownerSetWhitelistController(
@@ -118,13 +107,7 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _whitelistController != address(0),
-            _FILE,
-            "Invalid whitelist address"
-        );
-        whitelistController = IJonesWhitelistController(_whitelistController);
-        emit WhitelistControllerSet(_whitelistController);
+        _ownerSetWhitelistController(_whitelistController);
     }
 
     function ownerSetUsdcReceiptToken(
@@ -132,13 +115,7 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _usdcReceiptToken != address(0),
-            _FILE,
-            "Invalid usdcReceiptToken address"
-        );
-        usdcReceiptToken = IERC4626(_usdcReceiptToken);
-        emit UsdcReceiptTokenSet(_usdcReceiptToken);
+        _ownerSetUsdcReceiptToken(_usdcReceiptToken);
     }
 
     function ownerSetJUSDC(
@@ -146,13 +123,7 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        Require.that(
-            _jUSDC != address(0),
-            _FILE,
-            "Invalid jUSDC address"
-        );
-        jUSDC = IERC4626(_jUSDC);
-        emit JUSDCSet(_jUSDC);
+        _ownerSetJUSDC(_jUSDC);
     }
 
     function ownerSetUnwrapperTraderForLiquidation(
@@ -170,6 +141,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
     onlyDolomiteMarginOwner(msg.sender) {
         _setUnwrapperTraderForZap(_unwrapperTraderForZap);
     }
+
+    // ==================== Public Methods ====================
 
     function glpAdapter() public view returns (IJonesGLPAdapter) {
         return IJonesGLPAdapter(_getAddress(_GLP_ADAPTER_SLOT));
@@ -201,13 +174,63 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
 
     // ==================== Private Functions ====================
 
+    function _ownerSetGlpAdapter(address _glpAdapter) internal {
+        Require.that(
+            _glpAdapter != address(0),
+            _FILE,
+            "Invalid glpAdapter address"
+        );
+        _setAddress(_GLP_ADAPTER_SLOT, _glpAdapter);
+        emit GlpAdapterSet(_glpAdapter);
+    }
+
+    function _ownerSetGlpVaultRouter(address _glpVaultRouter) internal {
+        Require.that(
+            _glpVaultRouter != address(0),
+            _FILE,
+            "Invalid glpVaultRouter address"
+        );
+        _setAddress(_GLP_VAULT_ROUTER_SLOT, _glpVaultRouter);
+        emit GlpVaultRouterSet(_glpVaultRouter);
+    }
+
+    function _ownerSetWhitelistController(address _whitelistController) internal {
+        Require.that(
+            _whitelistController != address(0),
+            _FILE,
+            "Invalid whitelist address"
+        );
+        _setAddress(_WHITELIST_CONTROLLER_SLOT, _whitelistController);
+        emit WhitelistControllerSet(_whitelistController);
+    }
+
+    function _ownerSetUsdcReceiptToken(address _usdcReceiptToken) internal {
+        Require.that(
+            _usdcReceiptToken != address(0),
+            _FILE,
+            "Invalid usdcReceiptToken address"
+        );
+        _setAddress(_USDC_RECEIPT_TOKEN_SLOT, _usdcReceiptToken);
+        emit UsdcReceiptTokenSet(_usdcReceiptToken);
+    }
+
+    function _ownerSetJUSDC(address _jUSDC) internal {
+        Require.that(
+            _jUSDC != address(0),
+            _FILE,
+            "Invalid jUSDC address"
+        );
+        _setAddress(_JUSDC_SLOT, _jUSDC);
+        emit JUSDCSet(_jUSDC);
+    }
+
     function _setUnwrapperTraderForLiquidation(address _unwrapperTraderForLiquidation) internal {
         Require.that(
             _unwrapperTraderForLiquidation != address(0),
             _FILE,
             "Invalid unwrapperTrader address"
         );
-        unwrapperTraderForLiquidation = _unwrapperTraderForLiquidation;
+        _setAddress(_UNWRAPPER_TRADER_FOR_LIQUIDATION_SLOT, _unwrapperTraderForLiquidation);
         emit UnwrapperTraderForLiquidationSet(_unwrapperTraderForLiquidation);
     }
 
@@ -217,7 +240,7 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, OnlyDolomiteMargin {
             _FILE,
             "Invalid unwrapperTrader address"
         );
-        unwrapperTraderForZap = _unwrapperTraderForZap;
+        _setAddress(_UNWRAPPER_TRADER_FOR_ZAP_SLOT, _unwrapperTraderForZap);
         emit UnwrapperTraderForZapSet(_unwrapperTraderForZap);
     }
 }

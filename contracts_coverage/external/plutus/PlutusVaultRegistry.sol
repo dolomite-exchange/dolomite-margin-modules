@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { BaseRegistry } from "../general/BaseRegistry.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IPlutusVaultGLPFarm } from "../interfaces/plutus/IPlutusVaultGLPFarm.sol";
 import { IPlutusVaultGLPRouter } from "../interfaces/plutus/IPlutusVaultGLPRouter.sol";
@@ -38,50 +38,41 @@ import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.
  *          without having to deprecate the system and force users to migrate when Dolomite needs to point to new
  *          contracts or functions that PlutusDAO introduces.
  */
-contract PlutusVaultRegistry is IPlutusVaultRegistry, OnlyDolomiteMargin {
+contract PlutusVaultRegistry is IPlutusVaultRegistry, BaseRegistry {
 
     // ==================== Constants ====================
 
+    // solhint-disable max-line-length
     bytes32 private constant _FILE = "PlutusVaultRegistry";
+    bytes32 private constant _PLUTUS_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.plutusToken")) - 1);
+    bytes32 private constant _PLV_GLP_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.plvGlpToken")) - 1);
+    bytes32 private constant _PLV_GLP_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.plvGlpRouter")) - 1);
+    bytes32 private constant _PLV_GLP_FARM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.plvGlpFarm")) - 1);
 
-    // ==================== Storage ====================
+    // ==================== Initializer ====================
 
-    IERC20 public override plutusToken;
-    IERC4626 public override plvGlpToken;
-    IPlutusVaultGLPRouter public override plvGlpRouter;
-    IPlutusVaultGLPFarm public override plvGlpFarm;
-
-    // ==================== Constructor ====================
-
-    constructor(
+    function initialize(
         address _plutusToken,
         address _plvGlpToken,
         address _plvGlpRouter,
         address _plvGlpFarm,
-        address _dolomiteMargin
-    )
-    OnlyDolomiteMargin(
-        _dolomiteMargin
-    )
-    {
-        plutusToken = IERC20(_plutusToken);
-        plvGlpToken = IERC4626(_plvGlpToken);
-        plvGlpRouter = IPlutusVaultGLPRouter(_plvGlpRouter);
-        plvGlpFarm = IPlutusVaultGLPFarm(_plvGlpFarm);
+        address _dolomiteRegistry
+    ) external initializer {
+        _ownerSetPlutusToken(_plutusToken);
+        _ownerSetPlvGlpToken(_plvGlpToken);
+        _ownerSetPlvGlpRouter(_plvGlpRouter);
+        _ownerSetPlvGlpFarm(_plvGlpFarm);
+        _ownerSetDolomiteRegistry(_dolomiteRegistry);
     }
+
+    // ==================== Admin Functions ====================
 
     function ownerSetPlutusToken(
         address _plutusToken
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        if (_plutusToken != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_plutusToken != address(0),
-            _FILE,
-            "Invalid plutusToken address"
-        );
-        plutusToken = IERC20(_plutusToken);
-        emit PlutusTokenSet(_plutusToken);
+        _ownerSetPlutusToken(_plutusToken);
     }
 
     function ownerSetPlvGlpToken(
@@ -89,13 +80,7 @@ contract PlutusVaultRegistry is IPlutusVaultRegistry, OnlyDolomiteMargin {
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        if (_plvGlpToken != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_plvGlpToken != address(0),
-            _FILE,
-            "Invalid plvGlpToken address"
-        );
-        plvGlpToken = IERC4626(_plvGlpToken);
-        emit PlvGlpTokenSet(_plvGlpToken);
+        _ownerSetPlvGlpToken(_plvGlpToken);
     }
 
     function ownerSetPlvGlpRouter(
@@ -103,13 +88,7 @@ contract PlutusVaultRegistry is IPlutusVaultRegistry, OnlyDolomiteMargin {
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        if (_plvGlpRouter != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_plvGlpRouter != address(0),
-            _FILE,
-            "Invalid plvGlpRouter address"
-        );
-        plvGlpRouter = IPlutusVaultGLPRouter(_plvGlpRouter);
-        emit PlvGlpRouterSet(_plvGlpRouter);
+        _ownerSetPlvGlpRouter(_plvGlpRouter);
     }
 
     function ownerSetPlvGlpFarm(
@@ -117,12 +96,66 @@ contract PlutusVaultRegistry is IPlutusVaultRegistry, OnlyDolomiteMargin {
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetPlvGlpFarm(_plvGlpFarm);
+    }
+
+    // ===================== Public Functions =====================
+
+    function plutusToken() public view returns (IERC20) {
+        return IERC20(_getAddress(_PLUTUS_TOKEN_SLOT));
+    }
+
+    function plvGlpToken() public view returns (IERC4626) {
+        return IERC4626(_getAddress(_PLV_GLP_TOKEN_SLOT));
+    }
+
+    function plvGlpRouter() public view returns (IPlutusVaultGLPRouter) {
+        return IPlutusVaultGLPRouter(_getAddress(_PLV_GLP_ROUTER_SLOT));
+    }
+
+    function plvGlpFarm() public view returns (IPlutusVaultGLPFarm) {
+        return IPlutusVaultGLPFarm(_getAddress(_PLV_GLP_FARM_SLOT));
+    }
+
+    // ==================== Internal Functions ====================
+
+    function _ownerSetPlutusToken(address _plutusToken) internal {
+        if (_plutusToken != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_plutusToken != address(0),
+            _FILE,
+            "Invalid plutusToken address"
+        );
+        _setAddress(_PLUTUS_TOKEN_SLOT, _plutusToken);
+        emit PlutusTokenSet(_plutusToken);
+    }
+
+    function _ownerSetPlvGlpToken(address _plvGlpToken) internal {
+        if (_plvGlpToken != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_plvGlpToken != address(0),
+            _FILE,
+            "Invalid plvGlpToken address"
+        );
+        _setAddress(_PLV_GLP_TOKEN_SLOT, _plvGlpToken);
+        emit PlvGlpTokenSet(_plvGlpToken);
+    }
+
+    function _ownerSetPlvGlpRouter(address _plvGlpRouter) internal {
+        if (_plvGlpRouter != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_plvGlpRouter != address(0),
+            _FILE,
+            "Invalid plvGlpRouter address"
+        );
+        _setAddress(_PLV_GLP_ROUTER_SLOT, _plvGlpRouter);
+        emit PlvGlpRouterSet(_plvGlpRouter);
+    }
+
+    function _ownerSetPlvGlpFarm(address _plvGlpFarm) internal {
         if (_plvGlpFarm != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(_plvGlpFarm != address(0),
             _FILE,
             "Invalid plvGlpFarm address"
         );
-        plvGlpFarm = IPlutusVaultGLPFarm(_plvGlpFarm);
+        _setAddress(_PLV_GLP_FARM_SLOT, _plvGlpFarm);
         emit PlvGlpFarmSet(_plvGlpFarm);
     }
 }

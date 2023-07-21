@@ -49,7 +49,7 @@ contract RegistryProxy is ProxyContractHelpers, OnlyDolomiteMarginForUpgradeable
         address _dolomiteMargin,
         bytes memory _initializationCalldata
     ) {
-        _setAddress(_IMPLEMENTATION_SLOT, _implementation);
+        _setImplementation(_implementation);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
         Address.functionDelegateCall(
             implementation(),

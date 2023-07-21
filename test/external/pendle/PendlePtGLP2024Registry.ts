@@ -26,13 +26,28 @@ describe('PendlePtGLP2024Registry', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('#contructor', () => {
+  describe('#initialize', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.pendleRouter()).to.equal(core.pendleEcosystem!.pendleRouter.address);
       expect(await registry.ptGlpMarket()).to.equal(core.pendleEcosystem!.ptGlpMarket.address);
       expect(await registry.ptGlpToken()).to.equal(core.pendleEcosystem!.ptGlpToken.address);
       expect(await registry.ptOracle()).to.equal(core.pendleEcosystem!.ptOracle.address);
       expect(await registry.syGlpToken()).to.equal(core.pendleEcosystem!.syGlpToken.address);
+      expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
+    });
+
+    it('should fail if already initialized', async () => {
+      await expectThrow(
+        registry.initialize(
+          core.pendleEcosystem!.pendleRouter.address,
+          core.pendleEcosystem!.ptGlpMarket.address,
+          core.pendleEcosystem!.ptGlpToken.address,
+          core.pendleEcosystem!.ptOracle.address,
+          core.pendleEcosystem!.syGlpToken.address,
+          core.dolomiteRegistry.address,
+        ),
+        'Initializable: contract is already initialized',
+      );
     });
   });
 
@@ -152,6 +167,30 @@ describe('PendlePtGLP2024Registry', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetSyGlpToken(ZERO_ADDRESS),
         'PendlePtGLP2024Registry: Invalid syGlpToken address',
+      );
+    });
+  });
+
+  describe('#ownerSetDolomiteRegistry', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetDolomiteRegistry(core.dolomiteRegistry.address);
+      await expectEvent(registry, result, 'DolomiteRegistrySet', {
+        glpManager: core.dolomiteRegistry.address,
+      });
+      expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDolomiteRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDolomiteRegistry(ZERO_ADDRESS),
+        'BaseRegistry: Invalid dolomiteRegistry',
       );
     });
   });

@@ -24,9 +24,11 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IGLPIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV1.sol";
 import { IGLPIsolationModeVaultFactory } from "../interfaces/gmx/IGLPIsolationModeVaultFactory.sol";
+import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "../interfaces/gmx/IGmxRewardRouterV2.sol";
 import { IGmxVester } from "../interfaces/gmx/IGmxVester.sol";
 import { ISGMX } from "../interfaces/gmx/ISGMX.sol";
@@ -225,11 +227,11 @@ contract GLPIsolationModeTokenVaultV1 is
     }
 
     function esGmx() public view returns (IERC20) {
-        return IERC20(IGLPIsolationModeVaultFactory(VAULT_FACTORY()).gmxRegistry().esGmx());
+        return IERC20(registry().esGmx());
     }
 
     function gmxRewardsRouter() public view returns (IGmxRewardRouterV2) {
-        return IGLPIsolationModeVaultFactory(VAULT_FACTORY()).gmxRegistry().gmxRewardsRouter();
+        return registry().gmxRewardsRouter();
     }
 
     function underlyingBalanceOf() public view override returns (uint256) {
@@ -265,23 +267,23 @@ contract GLPIsolationModeTokenVaultV1 is
     }
 
     function gmx() public view returns (IERC20) {
-        return IERC20(IGLPIsolationModeVaultFactory(VAULT_FACTORY()).gmxRegistry().gmx());
+        return IERC20(registry().gmx());
     }
 
     function sGlp() public view returns (IERC20) {
-        return IERC20(IGLPIsolationModeVaultFactory(VAULT_FACTORY()).gmxRegistry().sGlp());
+        return IERC20(registry().sGlp());
     }
 
     function sGmx() public view returns (ISGMX) {
-        return ISGMX(IGLPIsolationModeVaultFactory(VAULT_FACTORY()).gmxRegistry().sGmx());
+        return ISGMX(registry().sGmx());
     }
 
     function vGlp() public view returns (IGmxVester) {
-        return IGmxVester(IGLPIsolationModeVaultFactory(VAULT_FACTORY()).gmxRegistry().vGlp());
+        return IGmxVester(registry().vGlp());
     }
 
     function vGmx() public view returns (IGmxVester) {
-        return IGmxVester(IGLPIsolationModeVaultFactory(VAULT_FACTORY()).gmxRegistry().vGmx());
+        return IGmxVester(registry().vGmx());
     }
 
     function isAcceptingFullAccountTransfer() public view returns (bool) {
@@ -290,6 +292,19 @@ contract GLPIsolationModeTokenVaultV1 is
 
     function hasAcceptedFullAccountTransfer() public view returns (bool) {
         return _getUint256(_HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT) == 1;
+    }
+
+    function registry() public view returns (IGmxRegistryV1) {
+        return IGLPIsolationModeVaultFactory(VAULT_FACTORY()).gmxRegistry();
+    }
+
+    function dolomiteRegistry()
+        public
+        override(IsolationModeTokenVaultV1)
+        view
+        returns (IDolomiteRegistry)
+    {
+        return registry().dolomiteRegistry();
     }
 
     // ==================================================================

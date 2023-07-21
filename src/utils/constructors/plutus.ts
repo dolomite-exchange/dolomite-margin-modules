@@ -11,17 +11,26 @@ import {
   PlutusVaultRegistry,
 } from '../../types';
 
-export function getPlutusVaultRegistryConstructorParams(core: CoreProtocol): any[] {
+export async function getPlutusVaultRegistryConstructorParams(
+  implementation: PlutusVaultRegistry,
+  core: CoreProtocol,
+): Promise<any[]> {
   if (!core.plutusEcosystem) {
     throw new Error('Plutus ecosystem not initialized');
   }
 
-  return [
+  const calldata = await implementation.populateTransaction.initialize(
     core.plutusEcosystem.plsToken.address,
     core.plutusEcosystem.plvGlp.address,
     core.plutusEcosystem.plvGlpRouter.address,
     core.plutusEcosystem.plvGlpFarm.address,
+    core.dolomiteRegistry.address,
+  );
+
+  return [
+    implementation.address,
     core.dolomiteMargin.address,
+    calldata!.data,
   ];
 }
 

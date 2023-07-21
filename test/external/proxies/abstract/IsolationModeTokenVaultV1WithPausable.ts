@@ -386,7 +386,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
           otherAmountWei,
           BalanceCheckFlag.To,
         ),
-        `IsolationModeVaultV1Pausable: Borrow cannot go up when paused <${otherMarketId.toString()}>`,
+        `IsolationModeVaultV1Pausable: Cannot lever up when paused <${otherMarketId.toString()}>`,
       );
 
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId, ZERO_BI);

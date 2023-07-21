@@ -8,20 +8,27 @@ import {
 } from '../../types';
 import { NONE_MARKET_ID } from '../no-deps-constants';
 
-export function getJonesUSDCRegistryConstructorParams(
+export async function getJonesUSDCRegistryConstructorParams(
+  implementation: JonesUSDCRegistry,
   core: CoreProtocol,
-): any[] {
+): Promise<any[]> {
   if (!core.jonesEcosystem) {
     throw new Error('Jones ecosystem not initialized');
   }
 
-  return [
+  const calldata = await implementation.populateTransaction.initialize(
     core.jonesEcosystem.glpAdapter.address,
     core.jonesEcosystem.glpVaultRouter.address,
     core.jonesEcosystem.whitelistController.address,
     core.jonesEcosystem.usdcReceiptToken.address,
     core.jonesEcosystem.jUSDC.address,
+    core.dolomiteRegistry.address,
+  );
+
+  return [
+    implementation.address,
     core.dolomiteMargin.address,
+    calldata.data!,
   ];
 }
 

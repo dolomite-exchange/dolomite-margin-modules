@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
 import { IJonesUSDCIsolationModeVaultFactory } from "../../interfaces/jones/IJonesUSDCIsolationModeVaultFactory.sol";
 import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
 import { SimpleIsolationModeVaultFactory } from "../../proxies/SimpleIsolationModeVaultFactory.sol";
@@ -76,5 +77,9 @@ contract JonesUSDCIsolationModeVaultFactory is
     onlyDolomiteMarginOwner(msg.sender) {
         jonesUSDCRegistry = IJonesUSDCRegistry(_jonesUSDCRegistry);
         emit JonesUSDCRegistrySet(_jonesUSDCRegistry);
+    }
+
+    function dolomiteRegistry() external override view returns (IDolomiteRegistry) {
+        return jonesUSDCRegistry.dolomiteRegistry();
     }
 }

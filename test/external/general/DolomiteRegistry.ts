@@ -30,7 +30,7 @@ describe('DolomiteRegistryImplementation', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('#contructor', () => {
+  describe('#initialize', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.genericTraderProxy()).to.equal(core.genericTraderProxy!.address);
     });

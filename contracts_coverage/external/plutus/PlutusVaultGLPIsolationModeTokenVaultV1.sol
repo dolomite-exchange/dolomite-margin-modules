@@ -24,10 +24,13 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { DolomiteMarginMath } from "../../protocol/lib/DolomiteMarginMath.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IPlutusVaultGLP } from "../interfaces/plutus/IPlutusVaultGLP.sol";
 import { IPlutusVaultGLPFarm } from "../interfaces/plutus/IPlutusVaultGLPFarm.sol";
 import { IPlutusVaultGLPIsolationModeTokenVaultV1 } from "../interfaces/plutus/IPlutusVaultGLPIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IPlutusVaultGLPIsolationModeVaultFactory } from "../interfaces/plutus/IPlutusVaultGLPIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
+import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
 
@@ -104,7 +107,7 @@ contract PlutusVaultGLPIsolationModeTokenVaultV1 is
     }
 
     function plvGlpFarm() public view override returns (IPlutusVaultGLPFarm) {
-        return IPlutusVaultGLPIsolationModeVaultFactory(VAULT_FACTORY()).plutusVaultRegistry().plvGlpFarm();
+        return registry().plvGlpFarm();
     }
 
     function underlyingBalanceOf() public view override returns (uint256) {
@@ -113,7 +116,20 @@ contract PlutusVaultGLPIsolationModeTokenVaultV1 is
     }
 
     function pls() public view override returns (IERC20) {
-        return IPlutusVaultGLPIsolationModeVaultFactory(VAULT_FACTORY()).plutusVaultRegistry().plutusToken();
+        return registry().plutusToken();
+    }
+
+    function registry() public view returns (IPlutusVaultRegistry) {
+        return IPlutusVaultGLPIsolationModeVaultFactory(VAULT_FACTORY()).plutusVaultRegistry();
+    }
+
+    function dolomiteRegistry()
+        public
+        override(IsolationModeTokenVaultV1)
+        view
+        returns (IDolomiteRegistry)
+    {
+        return registry().dolomiteRegistry();
     }
 
     function isExternalRedemptionPaused() public override view returns (bool) {

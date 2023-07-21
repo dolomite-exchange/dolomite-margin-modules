@@ -88,27 +88,33 @@ export function getGLPWrapperTraderV2ConstructorParams(
   ];
 }
 
-export function getGmxRegistryConstructorParams(core: CoreProtocol): any[] {
+export async function getGmxRegistryConstructorParams(
+  core: CoreProtocol,
+  implementation: GmxRegistryV1,
+): Promise<any[]> {
   if (!core.gmxEcosystem) {
     throw new Error('GMX ecosystem not initialized');
   }
 
+  const initializer = {
+    esGmx: core.gmxEcosystem.esGmx.address,
+    fsGlp: core.gmxEcosystem.fsGlp.address,
+    glp: core.gmxEcosystem.glp.address,
+    glpManager: core.gmxEcosystem.glpManager.address,
+    glpRewardsRouter: core.gmxEcosystem.glpRewardsRouter.address,
+    gmx: core.gmxEcosystem.gmx.address,
+    gmxRewardsRouter: core.gmxEcosystem.gmxRewardsRouter.address,
+    gmxVault: core.gmxEcosystem.gmxVault.address,
+    sGlp: core.gmxEcosystem.sGlp.address,
+    sGmx: core.gmxEcosystem.sGmx.address,
+    sbfGmx: core.gmxEcosystem.sbfGmx.address,
+    vGlp: core.gmxEcosystem.vGlp.address,
+    vGmx: core.gmxEcosystem.vGmx.address,
+  };
+
   return [
-    {
-      esGmx: core.gmxEcosystem.esGmx.address,
-      fsGlp: core.gmxEcosystem.fsGlp.address,
-      glp: core.gmxEcosystem.glp.address,
-      glpManager: core.gmxEcosystem.glpManager.address,
-      glpRewardsRouter: core.gmxEcosystem.glpRewardsRouter.address,
-      gmx: core.gmxEcosystem.gmx.address,
-      gmxRewardsRouter: core.gmxEcosystem.gmxRewardsRouter.address,
-      gmxVault: core.gmxEcosystem.gmxVault.address,
-      sGlp: core.gmxEcosystem.sGlp.address,
-      sGmx: core.gmxEcosystem.sGmx.address,
-      sbfGmx: core.gmxEcosystem.sbfGmx.address,
-      vGlp: core.gmxEcosystem.vGlp.address,
-      vGmx: core.gmxEcosystem.vGmx.address,
-    },
+    implementation.address,
     core.dolomiteMargin.address,
+    (await implementation.populateTransaction.initialize(initializer, core.dolomiteRegistry.address)).data!,
   ];
 }

@@ -12,6 +12,7 @@ export async function createTestIsolationModeFactory(
     TestIsolationModeFactory__factory.abi,
     TestIsolationModeFactory__factory.bytecode,
     [
+      core.dolomiteRegistry.address,
       underlyingToken.address,
       core.borrowPositionProxyV2.address,
       userVaultImplementation.address,

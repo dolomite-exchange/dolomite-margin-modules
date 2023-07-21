@@ -6,6 +6,8 @@ import {
   JonesUSDCIsolationModeTokenVaultV1__factory,
   JonesUSDCIsolationModeUnwrapperTraderV2,
   JonesUSDCIsolationModeUnwrapperTraderV2__factory,
+  JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
+  JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation__factory,
   JonesUSDCIsolationModeVaultFactory,
   JonesUSDCIsolationModeVaultFactory__factory,
   JonesUSDCIsolationModeWrapperTraderV2,
@@ -13,7 +15,7 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCPriceOracle__factory,
   JonesUSDCRegistry,
-  JonesUSDCRegistry__factory,
+  JonesUSDCRegistry__factory, RegistryProxy, RegistryProxy__factory,
 } from '../../../src/types';
 import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams,
@@ -67,7 +69,19 @@ export function createJonesUSDCPriceOracle(
   );
 }
 
-export function createJonesUSDCIsolationModeUnwrapperTraderV2(
+export function createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation(
+  core: CoreProtocol,
+  jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
+  djUSDCToken: { address: address },
+): Promise<JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation> {
+  return createContractWithAbi<JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation>(
+    JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation__factory.abi,
+    JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation__factory.bytecode,
+    getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams(core, jonesUSDCRegistry, djUSDCToken),
+  );
+}
+
+export function createJonesUSDCIsolationModeUnwrapperTraderV2ForZap(
   core: CoreProtocol,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
@@ -79,14 +93,20 @@ export function createJonesUSDCIsolationModeUnwrapperTraderV2(
   );
 }
 
-export function createJonesUSDCRegistry(
+export async function createJonesUSDCRegistry(
   core: CoreProtocol,
 ): Promise<JonesUSDCRegistry> {
-  return createContractWithAbi<JonesUSDCRegistry>(
+  const implementation = await createContractWithAbi<JonesUSDCRegistry>(
     JonesUSDCRegistry__factory.abi,
     JonesUSDCRegistry__factory.bytecode,
-    getJonesUSDCRegistryConstructorParams(core),
+    [],
   );
+  const proxy = await createContractWithAbi<RegistryProxy>(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getJonesUSDCRegistryConstructorParams(implementation, core),
+  );
+  return JonesUSDCRegistry__factory.connect(proxy.address, core.hhUser1);
 }
 
 export function createJonesUSDCIsolationModeWrapperTraderV2(

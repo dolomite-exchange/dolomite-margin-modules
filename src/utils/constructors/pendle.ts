@@ -26,21 +26,24 @@ export function getPendlePtGLPPriceOracleConstructorParams(
   ];
 }
 
-export function getPendlePtGLP2024RegistryConstructorParams(
+export async function getPendlePtGLP2024RegistryConstructorParams(
+  implementation: PendlePtGLP2024Registry,
   core: CoreProtocol,
-): any[] {
+): Promise<any[]> {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
   }
 
-  return [
+  const calldata = await implementation.populateTransaction.initialize(
     core.pendleEcosystem!.pendleRouter.address,
     core.pendleEcosystem!.ptGlpMarket.address,
     core.pendleEcosystem!.ptGlpToken.address,
     core.pendleEcosystem!.ptOracle.address,
     core.pendleEcosystem!.syGlpToken.address,
-    core.dolomiteMargin.address,
-  ];
+    core.dolomiteRegistry.address,
+  );
+
+  return [implementation.address, core.dolomiteMargin.address, calldata.data!];
 }
 
 export function getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(

@@ -22,13 +22,12 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { BaseRegistry } from "../general/BaseRegistry.sol";
 import { IGLPManager } from "../interfaces/gmx/IGLPManager.sol";
 import { IGLPRewardsRouterV2 } from "../interfaces/gmx/IGLPRewardsRouterV2.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "../interfaces/gmx/IGmxRewardRouterV2.sol";
 import { IGmxVault } from "../interfaces/gmx/IGmxVault.sol";
-import { BaseRegistry } from "../general/BaseRegistry.sol";
 
 
 /**

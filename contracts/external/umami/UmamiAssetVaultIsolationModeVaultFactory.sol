@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
 import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
@@ -76,5 +77,9 @@ contract UmamiAssetVaultIsolationModeVaultFactory is
     onlyDolomiteMarginOwner(msg.sender) {
         umamiAssetVaultRegistry = IUmamiAssetVaultRegistry(_umamiAssetVaultRegistry);
         emit UmamiAssetVaultRegistrySet(_umamiAssetVaultRegistry);
+    }
+
+    function dolomiteRegistry() external override view returns (IDolomiteRegistry) {
+        return umamiAssetVaultRegistry.dolomiteRegistry();
     }
 }

@@ -323,6 +323,13 @@ describe('IsolationModeTokenVaultV1', () => {
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail when borrowAccountNumber != 0', async () => {
+      await expectThrow(
+        userVault.closeBorrowPositionWithOtherTokens(defaultAccountNumber, borrowAccountNumber, [otherMarketId]),
+        `IsolationModeTokenVaultV1: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
+      );
+    });
   });
 
   describe('#transferIntoPositionWithUnderlyingToken', () => {
@@ -444,6 +451,19 @@ describe('IsolationModeTokenVaultV1', () => {
           BalanceCheckFlag.Both,
         ),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when borrow account number is 0', async () => {
+      await expectThrow(
+        userVault.transferIntoPositionWithOtherToken(
+          defaultAccountNumber,
+          defaultAccountNumber,
+          underlyingMarketId,
+          amountWei,
+          BalanceCheckFlag.Both,
+        ),
+        `IsolationModeTokenVaultV1: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
       );
     });
 
@@ -583,6 +603,19 @@ describe('IsolationModeTokenVaultV1', () => {
       );
     });
 
+    it('should fail when borrowAccountNumber is 0', async () => {
+      await expectThrow(
+        userVault.transferFromPositionWithOtherToken(
+          defaultAccountNumber,
+          defaultAccountNumber,
+          otherMarketId,
+          amountWei,
+          BalanceCheckFlag.Both,
+        ),
+        'IsolationModeTokenVaultV1: Invalid borrowAccountNumber <0>',
+      );
+    });
+
     it('should fail when not underlying market is used', async () => {
       await expectThrow(
         userVault.transferFromPositionWithOtherToken(
@@ -654,6 +687,18 @@ describe('IsolationModeTokenVaultV1', () => {
       );
     });
 
+    it('should fail when borrowAccountNumber is not 0', async () => {
+      await expectThrow(
+        userVault.repayAllForBorrowPosition(
+          defaultAccountNumber,
+          defaultAccountNumber,
+          underlyingMarketId,
+          BalanceCheckFlag.Both,
+        ),
+        'IsolationModeTokenVaultV1: Invalid borrowAccountNumber <0>',
+      );
+    });
+
     it('should fail when underlying market is repaid', async () => {
       await expectThrow(
         userVault.repayAllForBorrowPosition(
@@ -664,6 +709,51 @@ describe('IsolationModeTokenVaultV1', () => {
         ),
         `IsolationModeTokenVaultV1: Invalid marketId <${underlyingMarketId.toString()}>`,
       );
+    });
+  });
+
+  describe('#addCollateralAndSwapExactInputForOutput', () => {
+    it('should work normally', async () => {
+    });
+
+    it('should fail when not called by vault owner', async () => {
+    });
+
+    it('should fail if transferred asset (from input) is negative', async () => {
+    });
+  });
+
+  describe('#swapExactInputForOutputAndRemoveCollateral', () => {
+    it('should work normally', async () => {
+    });
+
+    it('should fail when not called by vault owner', async () => {
+    });
+
+    it('should fail if transferred asset (from output) is negative', async () => {
+    });
+  });
+
+  describe('#swapExactInputForOutput', () => {
+    it('should work normally', async () => {
+    });
+
+    it('should fail when not called by vault owner', async () => {
+    });
+
+    it('should fail if tradeAccountNumber is 0', async () => {
+    });
+
+    it('should fail if inputMarketId is not allowed collateral', async () => {
+    });
+
+    it('should fail if inputMarketId is not allowed debt', async () => {
+    });
+
+    it('should fail if outputMarketId is not allowed collateral', async () => {
+    });
+
+    it('should fail if outputMarketId is not allowed debt', async () => {
     });
   });
 

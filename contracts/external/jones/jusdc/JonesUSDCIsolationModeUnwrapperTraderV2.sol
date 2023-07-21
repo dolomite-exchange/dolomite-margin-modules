@@ -22,8 +22,6 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { JonesUSDCMathLib } from "./JonesUSDCMathLib.sol";
-import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../../protocol/lib/Require.sol";
 import { ILiquidatorAssetRegistry } from "../../interfaces/ILiquidatorAssetRegistry.sol";
 import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
@@ -105,7 +103,7 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTrader
     override
     view
     returns (uint256) {
-        (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee();
+        (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee(address(this));
         uint256 receiptTokenAmount = JONES_USDC_REGISTRY.jUSDC().previewRedeem(_desiredInputAmount);
         uint256 usdcAmount = JONES_USDC_REGISTRY.usdcReceiptToken().previewRedeem(receiptTokenAmount);
         return usdcAmount - (usdcAmount * retentionFee / retentionFeeBase);

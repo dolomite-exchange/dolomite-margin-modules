@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IJonesGLPAdapter } from "./IJonesGLPAdapter.sol";
 import { IJonesGLPVaultRouter } from "./IJonesGLPVaultRouter.sol";
 import { IJonesWhitelistController } from "./IJonesWhitelistController.sol";
+import { IBaseRegistry } from "../IBaseRegistry.sol";
 import { IERC4626 } from "../IERC4626.sol";
 
 
@@ -32,7 +33,7 @@ import { IERC4626 } from "../IERC4626.sol";
  *
  * @notice  A registry contract for storing all of the addresses that can interact with Jones DAO's jUSDC token
  */
-interface IJonesUSDCRegistry {
+interface IJonesUSDCRegistry is IBaseRegistry {
 
     // ========================================================
     // ======================== Events ========================
@@ -55,7 +56,7 @@ interface IJonesUSDCRegistry {
         address _unwrapperTraderForZap
     ) external;
 
-    function ownerGlpAdapter(address _glpAdapter) external;
+    function ownerSetGlpAdapter(address _glpAdapter) external;
 
     function ownerSetGlpVaultRouter(address _glpVaultRouter) external;
 

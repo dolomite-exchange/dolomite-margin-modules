@@ -22,8 +22,10 @@ pragma solidity ^0.8.9;
 
 import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
+import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
 
@@ -36,6 +38,7 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  */
 abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVaultV1 {
     using TypesLib for IDolomiteMargin.Par;
+    using TypesLib for IDolomiteMargin.Wei;
 
     // ===================================================
     // ==================== Constants ====================
@@ -60,62 +63,74 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
     // ==================== Functions ====================
     // ===================================================
 
+    /**
+     * @return  true if redemptions (conversion) from this isolated token to its underlying are paused or are in a
+     *          distressed state. Resolving this function to true actives the Pause Sentinel, which prevents further
+     *          contamination of this market across Dolomite.
+     */
+    function isExternalRedemptionPaused() public virtual view returns (bool);
+
     /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
-    function openBorrowPosition(
+    function _openBorrowPosition(
         uint256 _fromAccountNumber,
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
-        external
+        internal
         override
         requireNotPaused
-        onlyVaultOwner(msg.sender)
     {
-        _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+        super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
 
-    /// @dev   Cannot reduce collateralization of a position by withdrawing good tokens when underlying is paused
-    function closeBorrowPositionWithOtherTokens(
+    /// @dev   Cannot reduce collateralization of a position when underlying is paused
+    function _closeBorrowPositionWithOtherTokens(
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber,
         uint256[] calldata _collateralMarketIds
     )
-        external
+        internal
         override
-        requireNotPaused
-        onlyVaultOwner(msg.sender)
     {
-        _closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+        super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+        if (isExternalRedemptionPaused()) {
+            _requireNumberOfMarketsWithDebtIsZero(_borrowAccountNumber);
+        }
     }
 
     /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
-    function transferIntoPositionWithUnderlyingToken(
+    function _transferIntoPositionWithUnderlyingToken(
         uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,
         uint256 _amountWei
     )
-        external
+        internal
         override
         requireNotPaused
-        onlyVaultOwner(msg.sender)
     {
-        _transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
+        super._transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
     }
 
-    function transferFromPositionWithOtherToken(
+    /// @dev   Cannot reduce collateralization by withdrawing other tokens, when underlying is paused
+    function _transferFromPositionWithOtherToken(
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
-        external
+        internal
         override
-        onlyVaultOwner(msg.sender)
     {
-        IDolomiteMargin.TotalPar memory valueBefore = DOLOMITE_MARGIN().getMarketTotalPar(_marketId);
+        IDolomiteMargin.Par memory valueBefore = DOLOMITE_MARGIN().getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: address(this),
+                number: _borrowAccountNumber
+            }),
+            _marketId
+        );
 
-        _transferFromPositionWithOtherToken(
+        super._transferFromPositionWithOtherToken(
             _borrowAccountNumber,
             _toAccountNumber,
             _marketId,
@@ -123,18 +138,98 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
             _balanceCheckFlag
         );
 
-        IDolomiteMargin.TotalPar memory valueAfter = DOLOMITE_MARGIN().getMarketTotalPar(_marketId);
+        IDolomiteMargin.Par memory valueAfter = DOLOMITE_MARGIN().getAccountPar(
+            IDolomiteStructs.AccountInfo({
+                owner: address(this),
+                number: _borrowAccountNumber
+            }),
+            _marketId
+        );
 
         if (isExternalRedemptionPaused()) {
-            // If redemptions are paused (preventing liquidations), the borrowed value should not increase
-            if (valueAfter.borrow <= valueBefore.borrow) { /* FOR COVERAGE TESTING */ }
-            Require.that(valueAfter.borrow <= valueBefore.borrow,
+            if (valueBefore.isPositive()) {
+                // If redemptions are paused (preventing liquidations), the user cannot decrease collateralization
+                _requireNumberOfMarketsWithDebtIsZero(_borrowAccountNumber);
+            } else {
+                // If redemptions are paused (preventing liquidations), the borrowed value should not increase
+                if (valueAfter.value <= valueBefore.value) { /* FOR COVERAGE TESTING */ }
+                Require.that(valueAfter.value <= valueBefore.value,
+                    _FILE,
+                    "Cannot lever up when paused",
+                    _marketId
+                );
+            }
+        }
+    }
+
+    function _swapExactInputForOutput(
+        uint256 _tradeAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    )
+        internal
+        override
+    {
+        bool isPaused = isExternalRedemptionPaused();
+        if (isPaused) {
+            uint256 outputMarket = _marketIdsPath[_marketIdsPath.length - 1];
+            // If the ecosystem is paused, we cannot swap into more of the irredeemable asset
+            if (outputMarket != marketId()) { /* FOR COVERAGE TESTING */ }
+            Require.that(outputMarket != marketId(),
                 _FILE,
-                "Borrow cannot go up when paused",
-                _marketId
+                "Cannot zap to market when paused",
+                outputMarket
+            );
+        }
+
+        super._swapExactInputForOutput(
+            _tradeAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+
+        if (isPaused) {
+            uint256 inputMarket = _marketIdsPath[0];
+            IDolomiteMargin.Par memory inputValueAfter = DOLOMITE_MARGIN().getAccountPar(
+                IDolomiteStructs.AccountInfo({
+                    owner: address(this),
+                    number: _tradeAccountNumber
+                }),
+                inputMarket
+            );
+            if (inputValueAfter.isPositive() || inputValueAfter.value == 0) { /* FOR COVERAGE TESTING */ }
+            Require.that(inputValueAfter.isPositive() || inputValueAfter.value == 0,
+                _FILE,
+                "Cannot lever up when paused",
+                inputMarket
             );
         }
     }
 
-    function isExternalRedemptionPaused() public virtual view returns (bool);
+    // ===================================================
+    // =============== Private Functions =================
+    // ===================================================
+
+    function _requireNumberOfMarketsWithDebtIsZero(uint256 _borrowAccountNumber) private view {
+        uint256 numberOfMarketsWithDebt = DOLOMITE_MARGIN().getAccountNumberOfMarketsWithDebt(
+            IDolomiteStructs.AccountInfo({
+                owner: address(this),
+                number: _borrowAccountNumber
+            })
+        );
+        // If the user has debt, withdrawing collateral decreases their collateralization
+        if (numberOfMarketsWithDebt == 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(numberOfMarketsWithDebt == 0,
+            _FILE,
+            "Cannot lever up when paused"
+        );
+    }
 }

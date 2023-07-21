@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IPendlePtGLP2024Registry } from "./IPendlePtGLP2024Registry.sol";
 import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
 
 
@@ -31,5 +32,6 @@ import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
  *          vault for ptGLP tokens.
  */
 interface IPendlePtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
-    // solhint-disable-previous-line no-empty-blocks
+
+    function registry() external view returns (IPendlePtGLP2024Registry);
 }
