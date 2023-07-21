@@ -28,6 +28,7 @@ import { IBaseRegistry } from "../interfaces/IBaseRegistry.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 
+
 /**
  * @title   BaseRegistry
  * @author  Dolomite
@@ -40,6 +41,7 @@ contract BaseRegistry is
     OnlyDolomiteMarginForUpgradeable,
     Initializable
 {
+
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "BaseRegistry";
@@ -49,7 +51,8 @@ contract BaseRegistry is
 
     function ownerSetDolomiteRegistry(
         address _dolomiteRegistry
-    ) external
+    )
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
     }
