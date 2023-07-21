@@ -20,14 +20,13 @@
 
 pragma solidity ^0.8.9;
 
-import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
-import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
-import { IBaseRegistry } from "../interfaces/IBaseRegistry.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { ValidationLib } from "../lib/ValidationLib.sol";
-
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {Require} from "../../protocol/lib/Require.sol";
+import {OnlyDolomiteMarginForUpgradeable} from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
+import {ProxyContractHelpers} from "../helpers/ProxyContractHelpers.sol";
+import {IBaseRegistry} from "../interfaces/IBaseRegistry.sol";
+import {IDolomiteRegistry} from "../interfaces/IDolomiteRegistry.sol";
+import {ValidationLib} from "../lib/ValidationLib.sol";
 
 /**
  * @title   BaseRegistry
@@ -41,19 +40,17 @@ contract BaseRegistry is
     OnlyDolomiteMarginForUpgradeable,
     Initializable
 {
-
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "BaseRegistry";
-    bytes32 private constant _DOLOMITE_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRegistry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _DOLOMITE_REGISTRY_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.dolomiteRegistry")) - 1); // solhint-disable-line max-line-length
 
     // ===================== Functions =====================
 
     function ownerSetDolomiteRegistry(
         address _dolomiteRegistry
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
+    ) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
     }
 
@@ -63,9 +60,7 @@ contract BaseRegistry is
 
     // ===================== Internal Functions =====================
 
-    function _ownerSetDolomiteRegistry(
-        address _dolomiteRegistry
-    ) internal {
+    function _ownerSetDolomiteRegistry(address _dolomiteRegistry) internal {
         Require.that(
             _dolomiteRegistry != address(0),
             _FILE,

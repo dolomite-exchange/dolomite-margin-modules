@@ -485,7 +485,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    ) internal {
+    ) internal virtual {
         Require.that(
             _marketId != marketId(),
             _FILE,

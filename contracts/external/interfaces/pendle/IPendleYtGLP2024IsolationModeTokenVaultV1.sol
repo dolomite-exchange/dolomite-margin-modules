@@ -35,6 +35,7 @@ interface IPendleYtGLP2024IsolationModeTokenVaultV1 is
     // solhint-disable-previous-line no-empty-blocks
     function redeemDueInterestAndRewards(
         bool _redeemInterest,
-        bool _redeemRewards
+        bool _redeemRewards,
+        bool _sendToUser
     ) external;
 }

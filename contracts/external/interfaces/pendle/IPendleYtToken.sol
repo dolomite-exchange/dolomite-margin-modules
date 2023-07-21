@@ -29,12 +29,13 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @notice  Interface for interacting with Pendle's yield tokens (YTs).
  */
 interface IPendleYtToken is IERC20 {
-    // @follow-up May need the other functions
     function redeemDueInterestAndRewards(
         address user,
         bool redeemInterest,
         bool redeemRewards
     ) external returns (uint256 interestOut, uint256[] memory rewardsOut);
+
+    function getRewardTokens() external view returns (address[] memory);
 
     function expiry() external view returns (uint256);
 

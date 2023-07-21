@@ -21,6 +21,8 @@
 pragma solidity ^0.8.9;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {Require} from "../../protocol/lib/Require.sol";
 
@@ -45,6 +47,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     IPendleYtGLP2024IsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithPausable
 {
+    using SafeERC20 for IERC20;
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
@@ -58,25 +61,23 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
 
     function redeemDueInterestAndRewards(
         bool _redeemInterest,
-        bool _redeemRewards
+        bool _redeemRewards,
+        bool _sendToUser
     ) external nonReentrant onlyVaultOwner(msg.sender) {
-        _redeemDueInterestAndRewards(_redeemInterest, _redeemRewards);
+        _redeemDueInterestAndRewards(
+            _redeemInterest,
+            _redeemRewards,
+            _sendToUser
+        );
     }
 
-    function transferFromPositionWithOtherToken(
+    function _transferFromPositionWithOtherToken(
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    )
-        external
-        override(
-            IsolationModeTokenVaultV1WithPausable,
-            IIsolationModeTokenVaultV1
-        )
-        onlyVaultOwner(msg.sender)
-    {
+    ) internal override {
         // check if within 1 week of expiry, if yes, disallow
         uint256 ytMaturityDate = IPendleYtGLP2024IsolationModeVaultFactory(
             VAULT_FACTORY()
@@ -87,7 +88,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
             "too close to expiry"
         );
 
-        // check other borrowable market positions
+        // check if another borrow position exists
         IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs
             .AccountInfo(address(this), _borrowAccountNumber);
         uint256 expiry = _checkExistingBorrowPositions(accountInfo);
@@ -99,7 +100,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
                 ytMaturityDate - ONE_WEEK - block.timestamp
             );
         }
-        _transferFromPositionWithOtherToken(
+
+        super._transferFromPositionWithOtherToken(
             _borrowAccountNumber,
             _toAccountNumber,
             _marketId,
@@ -111,9 +113,6 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
                 VAULT_FACTORY()
             );
-        address expiryAddress = address(
-            vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry()
-        );
 
         IDolomiteStructs.AccountInfo[]
             memory accounts = new IDolomiteStructs.AccountInfo[](1);
@@ -125,7 +124,9 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
             accounts[0],
             0,
             _marketId,
-            expiryAddress,
+            address(
+                vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry()
+            ),
             expiry
         );
 
@@ -144,18 +145,25 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     // ======================== Internal Functions ========================
     // ==================================================================
 
-    // @follow-up Add flag to send to user or vault. Have to check balance pre?
     function _redeemDueInterestAndRewards(
         bool _redeemInterest,
-        bool _redeemRewards
+        bool _redeemRewards,
+        bool _sendToUser
     ) internal {
-        (uint256 interestOut, uint256[] memory rewardsOut) = IPendleYtToken(
-            UNDERLYING_TOKEN()
-        ).redeemDueInterestAndRewards(
+        (, uint256[] memory rewardsOut) = IPendleYtToken(UNDERLYING_TOKEN())
+            .redeemDueInterestAndRewards(
                 address(this),
                 _redeemInterest,
                 _redeemRewards
             );
+
+        if (_sendToUser) {
+            address[] memory rewardTokens = IPendleYtToken(UNDERLYING_TOKEN())
+                .getRewardTokens();
+            for (uint i; i < rewardTokens.length; ++i) {
+                IERC20(rewardTokens[i]).safeTransfer(msg.sender, rewardsOut[i]);
+            }
+        }
     }
 
     function _checkExistingBorrowPositions(
