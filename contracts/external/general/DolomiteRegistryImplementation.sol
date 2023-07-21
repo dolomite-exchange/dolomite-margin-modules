@@ -105,8 +105,14 @@ contract DolomiteRegistryImplementation is
         emit GenericTraderProxySet(_genericTraderProxy);
     }
 
-    function _ownerSetExpiry(address _expiry) internal {
-        Require.that(_expiry != address(0), _FILE, "Invalid expiry");
+    function _ownerSetExpiry(
+        address _expiry
+    ) internal {
+        Require.that(
+            _expiry != address(0),
+            _FILE,
+            "Invalid expiry"
+        );
 
         _setAddress(_EXPIRY_SLOT, _expiry);
         emit ExpirySet(_expiry);

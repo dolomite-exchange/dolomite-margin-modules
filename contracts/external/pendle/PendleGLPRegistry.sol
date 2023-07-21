@@ -20,16 +20,16 @@
 
 pragma solidity ^0.8.9;
 
-import {Require} from "../../protocol/lib/Require.sol";
-import {BaseRegistry} from "../general/BaseRegistry.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { BaseRegistry } from "../general/BaseRegistry.sol";
 
-import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
-import {IPendlePtMarket} from "../interfaces/pendle/IPendlePtMarket.sol";
-import {IPendlePtOracle} from "../interfaces/pendle/IPendlePtOracle.sol";
-import {IPendlePtToken} from "../interfaces/pendle/IPendlePtToken.sol";
-import {IPendleYtToken} from "../interfaces/pendle/IPendleYtToken.sol";
-import {IPendleRouter} from "../interfaces/pendle/IPendleRouter.sol";
-import {IPendleSyToken} from "../interfaces/pendle/IPendleSyToken.sol";
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
+import { IPendlePtMarket } from "../interfaces/pendle/IPendlePtMarket.sol";
+import { IPendlePtOracle } from "../interfaces/pendle/IPendlePtOracle.sol";
+import { IPendlePtToken } from "../interfaces/pendle/IPendlePtToken.sol";
+import { IPendleYtToken } from "../interfaces/pendle/IPendleYtToken.sol";
+import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
+import { IPendleSyToken } from "../interfaces/pendle/IPendleSyToken.sol";
 
 /**
  * @title   PendleGLPRegistry
@@ -45,18 +45,12 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
 
     bytes32 private constant _FILE = "PendleGLPRegistry";
 
-    bytes32 private constant _PENDLE_ROUTER_SLOT =
-        bytes32(uint256(keccak256("eip1967.proxy.pendleRouter")) - 1);
-    bytes32 private constant _PENDLE_PT_GLP_MARKET_SLOT =
-        bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpMarket")) - 1);
-    bytes32 private constant _PENDLE_PT_ORACLE_SLOT =
-        bytes32(uint256(keccak256("eip1967.proxy.pendlePtOracle")) - 1);
-    bytes32 private constant _PENDLE_SY_GLP_TOKEN_SLOT =
-        bytes32(uint256(keccak256("eip1967.proxy.pendleSyGlpToken")) - 1);
-    bytes32 private constant _PENDLE_PT_GLP_TOKEN_SLOT =
-        bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpToken")) - 1);
-    bytes32 private constant _PENDLE_YT_GLP_TOKEN_SLOT =
-        bytes32(uint256(keccak256("eip1967.proxy.pendleYtGlpToken")) - 1);
+    bytes32 private constant _PENDLE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendleRouter")) - 1);
+    bytes32 private constant _PENDLE_PT_GLP_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpMarket")) - 1);
+    bytes32 private constant _PENDLE_PT_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendlePtOracle")) - 1);
+    bytes32 private constant _PENDLE_SY_GLP_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendleSyGlpToken")) - 1);
+    bytes32 private constant _PENDLE_PT_GLP_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpToken")) - 1);
+    bytes32 private constant _PENDLE_YT_GLP_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendleYtGlpToken")) - 1);
 
     // ==================== Initializer ====================
 
@@ -82,37 +76,49 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
 
     function ownerSetPendleRouter(
         address _pendleRouter
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetPendleRouter(_pendleRouter);
     }
 
     function ownerSetPtGlpMarket(
         address _ptGlpMarket
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetPtGlpMarket(_ptGlpMarket);
     }
 
     function ownerSetPtOracle(
         address _ptOracle
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetPtOracle(_ptOracle);
     }
 
     function ownerSetSyGlpToken(
         address _syGlpToken
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetSyGlpToken(_syGlpToken);
     }
 
     function ownerSetPtGlpToken(
         address _ptGlpToken
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetPtGlpToken(_ptGlpToken);
     }
 
     function ownerSetYtGlpToken(
         address _ytGlpToken
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetYtGlpToken(_ytGlpToken);
     }
 

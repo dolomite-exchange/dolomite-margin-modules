@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import {IIsolationModeTokenVaultV1} from "../IIsolationModeTokenVaultV1.sol";
+import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
 
 /**
  * @title   IPendleYtGLP2024IsolationModeTokenVaultV1
@@ -29,9 +29,7 @@ import {IIsolationModeTokenVaultV1} from "../IIsolationModeTokenVaultV1.sol";
  * @notice  Interface for a subclass of IsolationModeTokenVaultV1 that serves as the implementation for the user's proxy
  *          vault for ytGLP tokens.
  */
-interface IPendleYtGLP2024IsolationModeTokenVaultV1 is
-    IIsolationModeTokenVaultV1
-{
+interface IPendleYtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     // solhint-disable-previous-line no-empty-blocks
     function redeemDueInterestAndRewards(
         bool _redeemInterest,

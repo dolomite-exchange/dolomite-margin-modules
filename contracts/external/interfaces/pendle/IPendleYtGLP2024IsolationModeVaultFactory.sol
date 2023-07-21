@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import {IPendleGLPRegistry} from "./IPendleGLPRegistry.sol";
-import {IIsolationModeVaultFactory} from "../IIsolationModeVaultFactory.sol";
+import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
+import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
 
 /**
  * @title   IPendleYtGLP2024IsolationModeVaultFactory
@@ -29,9 +29,7 @@ import {IIsolationModeVaultFactory} from "../IIsolationModeVaultFactory.sol";
  *
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ytGLP tokens.
  */
-interface IPendleYtGLP2024IsolationModeVaultFactory is
-    IIsolationModeVaultFactory
-{
+interface IPendleYtGLP2024IsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ================================================
     // ==================== Events ====================
     // ================================================
