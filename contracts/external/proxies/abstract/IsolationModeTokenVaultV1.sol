@@ -32,8 +32,6 @@ import {IIsolationModeUpgradeableProxy} from "../../interfaces/IIsolationModeUpg
 import {IIsolationModeVaultFactory} from "../../interfaces/IIsolationModeVaultFactory.sol";
 import {AccountBalanceLib} from "../../lib/AccountBalanceLib.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title   IsolationModeTokenVaultV1
  * @author  Dolomite
@@ -193,7 +191,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) external virtual onlyVaultOwner(msg.sender) {
-        console.log("here z");
         _transferIntoPositionWithOtherToken(
             _fromAccountNumber,
             _borrowAccountNumber,

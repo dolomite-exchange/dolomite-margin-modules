@@ -142,7 +142,7 @@ interface IPendleRouter {
 
     function mintPyFromSy(
         address receiver,
-        address YT,
+        address YT, // solhint-disable-line var-name-mixedcase
         uint256 netSyIn,
         uint256 minPyOut
     ) external returns (uint256 netPyOut);

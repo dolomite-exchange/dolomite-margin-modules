@@ -71,6 +71,39 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         );
     }
 
+    function isExternalRedemptionPaused() public view override returns (bool) {
+        return
+            IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY())
+                .pendleGLPRegistry()
+                .syGlpToken()
+                .paused();
+    }
+
+    // ==================================================================
+    // ======================== Internal Functions ========================
+    // ==================================================================
+
+    function _redeemDueInterestAndRewards(
+        bool _redeemInterest,
+        bool _redeemRewards,
+        bool _sendToUser
+    ) internal {
+        (, uint256[] memory rewardsOut) = IPendleYtToken(UNDERLYING_TOKEN())
+            .redeemDueInterestAndRewards(
+                address(this),
+                _redeemInterest,
+                _redeemRewards
+            );
+
+        if (_sendToUser) {
+            address[] memory rewardTokens = IPendleYtToken(UNDERLYING_TOKEN())
+                .getRewardTokens();
+            for (uint i; i < rewardTokens.length; ++i) {
+                IERC20(rewardTokens[i]).safeTransfer(msg.sender, rewardsOut[i]);
+            }
+        }
+    }
+
     function _transferFromPositionWithOtherToken(
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber,
@@ -131,39 +164,6 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         );
 
         vaultFactory.DOLOMITE_MARGIN().operate(accounts, actions);
-    }
-
-    function isExternalRedemptionPaused() public view override returns (bool) {
-        return
-            IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY())
-                .pendleGLPRegistry()
-                .syGlpToken()
-                .paused();
-    }
-
-    // ==================================================================
-    // ======================== Internal Functions ========================
-    // ==================================================================
-
-    function _redeemDueInterestAndRewards(
-        bool _redeemInterest,
-        bool _redeemRewards,
-        bool _sendToUser
-    ) internal {
-        (, uint256[] memory rewardsOut) = IPendleYtToken(UNDERLYING_TOKEN())
-            .redeemDueInterestAndRewards(
-                address(this),
-                _redeemInterest,
-                _redeemRewards
-            );
-
-        if (_sendToUser) {
-            address[] memory rewardTokens = IPendleYtToken(UNDERLYING_TOKEN())
-                .getRewardTokens();
-            for (uint i; i < rewardTokens.length; ++i) {
-                IERC20(rewardTokens[i]).safeTransfer(msg.sender, rewardsOut[i]);
-            }
-        }
     }
 
     function _checkExistingBorrowPositions(
