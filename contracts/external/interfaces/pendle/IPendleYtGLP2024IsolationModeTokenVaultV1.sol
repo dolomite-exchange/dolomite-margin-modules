@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
 
+
 /**
  * @title   IPendleYtGLP2024IsolationModeTokenVaultV1
  * @author  Dolomite
@@ -30,7 +31,7 @@ import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
  *          vault for ytGLP tokens.
  */
 interface IPendleYtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
-    // solhint-disable-previous-line no-empty-blocks
+
     function redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards,

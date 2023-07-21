@@ -101,7 +101,7 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
 
     function _getCurrentPrice() internal view returns (uint256) {
         uint256 glpPrice = DOLOMITE_MARGIN.getMarketPrice(DFS_GLP_MARKET_ID).value;
-        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptGlpMarket()),TWAP_DURATION);
-        return (glpPrice * ptExchangeRate) / PT_ASSET_SCALE;
+        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptGlpMarket()), TWAP_DURATION);
+        return glpPrice * ptExchangeRate / PT_ASSET_SCALE;
     }
 }

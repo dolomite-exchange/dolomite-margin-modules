@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+
 /**
  * @title   IPendleSyToken
  * @author  Dolomite
@@ -29,6 +30,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @notice  Interface for interacting with Pendle's standard yield tokens (SYs).
  */
 interface IPendleSyToken is IERC20 {
+
     function pause() external;
 
     function transferOwnership(

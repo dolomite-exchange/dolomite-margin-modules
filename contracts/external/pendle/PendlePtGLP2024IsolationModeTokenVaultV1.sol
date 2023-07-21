@@ -20,9 +20,10 @@
 
 pragma solidity ^0.8.9;
 
-import {IPendlePtGLP2024IsolationModeTokenVaultV1} from "../interfaces/pendle/IPendlePtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import {IPendlePtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendlePtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import {IsolationModeTokenVaultV1WithPausable} from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
+import { IPendlePtGLP2024IsolationModeTokenVaultV1 } from "../interfaces/pendle/IPendlePtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IPendlePtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
+
 
 /**
  * @title   PendlePtGLP2024IsolationModeTokenVaultV1
@@ -35,6 +36,7 @@ contract PendlePtGLP2024IsolationModeTokenVaultV1 is
     IPendlePtGLP2024IsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithPausable
 {
+
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
@@ -46,10 +48,9 @@ contract PendlePtGLP2024IsolationModeTokenVaultV1 is
     // ==================================================================
 
     function isExternalRedemptionPaused() public view override returns (bool) {
-        return
-            IPendlePtGLP2024IsolationModeVaultFactory(VAULT_FACTORY())
-                .pendleGLPRegistry()
-                .syGlpToken()
-                .paused();
+        return IPendlePtGLP2024IsolationModeVaultFactory(VAULT_FACTORY())
+            .pendleGLPRegistry()
+            .syGlpToken()
+            .paused();
     }
 }

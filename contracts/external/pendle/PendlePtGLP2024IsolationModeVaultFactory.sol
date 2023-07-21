@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import {IPendlePtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendlePtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
-import {IsolationModeVaultFactory} from "../proxies/abstract/IsolationModeVaultFactory.sol";
+import { IPendlePtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
+import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
 
 /**
  * @title   PendlePtGLP2024IsolationModeVaultFactory
@@ -52,13 +52,12 @@ contract PendlePtGLP2024IsolationModeVaultFactory is
         address _userVaultImplementation,
         address _dolomiteMargin
     )
-        IsolationModeVaultFactory(
-            _ptGlp,
-            _borrowPositionProxy,
-            _userVaultImplementation,
-            _dolomiteMargin
-        )
-    {
+    IsolationModeVaultFactory(
+        _ptGlp,
+        _borrowPositionProxy,
+        _userVaultImplementation,
+        _dolomiteMargin
+    )  {
         pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
     }
 
@@ -66,7 +65,10 @@ contract PendlePtGLP2024IsolationModeVaultFactory is
 
     function ownerSetPendleGLPRegistry(
         address _pendleGLPRegistry
-    ) external override onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external
+    override
+    onlyDolomiteMarginOwner(msg.sender) {
         pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
         emit PendleGLPRegistrySet(_pendleGLPRegistry);
     }
@@ -76,11 +78,7 @@ contract PendlePtGLP2024IsolationModeVaultFactory is
         return new uint256[](0);
     }
 
-    function allowableCollateralMarketIds()
-        external
-        pure
-        returns (uint256[] memory)
-    {
+    function allowableCollateralMarketIds() external pure returns (uint256[] memory) {
         // allow all markets
         return new uint256[](0);
     }

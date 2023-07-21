@@ -20,14 +20,14 @@
 
 pragma solidity ^0.8.9;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Require} from "../../protocol/lib/Require.sol";
-import {IGmxRegistryV1} from "../interfaces/gmx/IGmxRegistryV1.sol";
-import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
-import {IPendlePtToken} from "../interfaces/pendle/IPendlePtToken.sol";
-import {IPendleRouter} from "../interfaces/pendle/IPendleRouter.sol";
-import {IsolationModeUnwrapperTraderV2} from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
+import { IPendlePtToken } from "../interfaces/pendle/IPendlePtToken.sol";
+import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
+import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
 
 /**
  * @title   PendlePtGLP2024IsolationModeUnwrapperTraderV2
@@ -36,9 +36,7 @@ import {IsolationModeUnwrapperTraderV2} from "../proxies/abstract/IsolationModeU
  * @notice  Used for unwrapping ptGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
  *          USDC).
  */
-contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is
-    IsolationModeUnwrapperTraderV2
-{
+contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IPendlePtToken;
 
@@ -58,7 +56,11 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is
         address _gmxRegistry,
         address _dptGlp,
         address _dolomiteMargin
-    ) IsolationModeUnwrapperTraderV2(_dptGlp, _dolomiteMargin) {
+    )
+    IsolationModeUnwrapperTraderV2(
+        _dptGlp,
+        _dolomiteMargin
+    ) {
         PENDLE_REGISTRY = IPendleGLPRegistry(_pendleRegistry);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
@@ -67,9 +69,7 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is
     // ============= Public Functions =============
     // ============================================
 
-    function isValidOutputToken(
-        address _outputToken
-    ) public view override returns (bool) {
+    function isValidOutputToken(address _outputToken) public view override returns (bool) {
         return GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken);
     }
 
@@ -85,7 +85,11 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is
         address,
         uint256 _inputAmount,
         bytes memory _extraOrderData
-    ) internal override returns (uint256) {
+    )
+        internal
+        override
+        returns (uint256)
+    {
         IPendleRouter.TokenOutput memory tokenOutput = abi.decode(
             _extraOrderData,
             (IPendleRouter.TokenOutput)
@@ -93,10 +97,7 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is
 
         // redeem ptGLP for GLP
         IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
-        PENDLE_REGISTRY.ptGlpToken().safeApprove(
-            address(pendleRouter),
-            _inputAmount
-        );
+        PENDLE_REGISTRY.ptGlpToken().safeApprove(address(pendleRouter), _inputAmount);
         (uint256 glpAmount, ) = pendleRouter.swapExactPtForToken(
             /* _receiver */ address(this),
             address(PENDLE_REGISTRY.ptGlpMarket()),
@@ -121,14 +122,11 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is
         address,
         uint256,
         bytes memory
-    ) internal pure override returns (uint256) {
-        revert(
-            string(
-                abi.encodePacked(
-                    Require.stringifyTruncated(_FILE),
-                    ": getExchangeCost is not implemented"
-                )
-            )
-        );
+    )
+    internal
+    pure
+    override
+    returns (uint256) {
+        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE),": getExchangeCost is not implemented")));
     }
 }

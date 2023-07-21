@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
+
 /**
  * @title   IExpiry
  * @author  Dolomite
@@ -29,6 +30,7 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
  * @notice  Interface for getting, setting, and executing the expiry of a position.
  */
 interface IExpiry {
+
     // ============ Enums ============
 
     enum CallFunctionType {
