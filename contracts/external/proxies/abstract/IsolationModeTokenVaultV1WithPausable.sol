@@ -65,11 +65,11 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         uint256 _fromAccountNumber,
         uint256 _toAccountNumber,
         uint256 _amountWei
-    ) 
-        external 
-        override 
-        requireNotPaused 
-        onlyVaultOwner(msg.sender) 
+    )
+        external
+        override
+        requireNotPaused
+        onlyVaultOwner(msg.sender)
     {
         _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
@@ -79,17 +79,13 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber,
         uint256[] calldata _collateralMarketIds
-    ) 
-        external 
-        override 
-        requireNotPaused 
-        onlyVaultOwner(msg.sender) 
+    )
+        external
+        override
+        requireNotPaused
+        onlyVaultOwner(msg.sender)
     {
-        _closeBorrowPositionWithOtherTokens(
-            _borrowAccountNumber,
-            _toAccountNumber,
-            _collateralMarketIds
-        );
+        _closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
     }
 
     /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
@@ -97,17 +93,13 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,
         uint256 _amountWei
-    ) 
-        external 
-        override 
-        requireNotPaused 
-        onlyVaultOwner(msg.sender) 
+    )
+        external
+        override
+        requireNotPaused
+        onlyVaultOwner(msg.sender)
     {
-        _transferIntoPositionWithUnderlyingToken(
-            _fromAccountNumber,
-            _borrowAccountNumber,
-            _amountWei
-        );
+        _transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
     }
 
     function transferFromPositionWithOtherToken(

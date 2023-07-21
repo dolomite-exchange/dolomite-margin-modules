@@ -92,7 +92,7 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
         returns (uint256)
     {
         (
-            IPendleRouter.TokenOutput memory tokenOutput 
+            IPendleRouter.TokenOutput memory tokenOutput
         ) = abi.decode(_extraOrderData, (IPendleRouter.TokenOutput));
 
         // redeem ptGLP for GLP

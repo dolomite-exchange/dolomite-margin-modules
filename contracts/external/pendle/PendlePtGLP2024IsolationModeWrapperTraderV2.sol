@@ -85,7 +85,7 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
         bytes memory _extraOrderData
     )
         internal
-        override 
+        override
         returns (uint256)
     {
         (
@@ -128,7 +128,7 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
         bytes memory
     )
     internal
-    override 
+    override
     pure
     returns (uint256)
     {

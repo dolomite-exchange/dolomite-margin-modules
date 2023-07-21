@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IsolationModeVaultFactory } from "./abstract/IsolationModeVaultFactory.sol";
 
 
+
 /**
  * @title   SimpleIsolationModeVaultFactory
  * @author  Dolomite
