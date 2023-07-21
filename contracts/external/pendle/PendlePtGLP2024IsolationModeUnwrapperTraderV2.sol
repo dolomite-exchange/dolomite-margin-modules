@@ -29,6 +29,7 @@ import { IPendlePtToken } from "../interfaces/pendle/IPendlePtToken.sol";
 import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
 
+
 /**
  * @title   PendlePtGLP2024IsolationModeUnwrapperTraderV2
  * @author  Dolomite
@@ -69,7 +70,7 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
     // ============= Public Functions =============
     // ============================================
 
-    function isValidOutputToken(address _outputToken) public view override returns (bool) {
+    function isValidOutputToken(address _outputToken) public override view returns (bool) {
         return GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken);
     }
 
@@ -86,19 +87,18 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
         uint256 _inputAmount,
         bytes memory _extraOrderData
     )
-        internal
         override
+        internal
         returns (uint256)
     {
-        IPendleRouter.TokenOutput memory tokenOutput = abi.decode(
-            _extraOrderData,
-            (IPendleRouter.TokenOutput)
-        );
+        (
+        IPendleRouter.TokenOutput memory tokenOutput 
+        ) = abi.decode(_extraOrderData, (IPendleRouter.TokenOutput));
 
         // redeem ptGLP for GLP
         IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
         PENDLE_REGISTRY.ptGlpToken().safeApprove(address(pendleRouter), _inputAmount);
-        (uint256 glpAmount, ) = pendleRouter.swapExactPtForToken(
+        (uint256 glpAmount,) = pendleRouter.swapExactPtForToken(
             /* _receiver */ address(this),
             address(PENDLE_REGISTRY.ptGlpMarket()),
             _inputAmount,
@@ -124,9 +124,9 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
         bytes memory
     )
     internal
-    pure
     override
+    pure
     returns (uint256) {
-        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE),": getExchangeCost is not implemented")));
+        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
 }

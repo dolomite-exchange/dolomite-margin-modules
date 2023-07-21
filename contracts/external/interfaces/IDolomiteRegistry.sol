@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { IExpiry } from "./IExpiry.sol";
 
+
 /**
  * @title   IDolomiteRegistry
  * @author  Dolomite
@@ -30,6 +31,7 @@ import { IExpiry } from "./IExpiry.sol";
  * @notice  A registry contract for storing all of the addresses that can interact with Umami's Delta Neutral vaults
  */
 interface IDolomiteRegistry {
+
     // ========================================================
     // ======================== Events ========================
     // ========================================================
