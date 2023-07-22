@@ -20,13 +20,13 @@
 
 pragma solidity ^0.8.9;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Require} from "../../protocol/lib/Require.sol";
-import {IGmxRegistryV1} from "../interfaces/gmx/IGmxRegistryV1.sol";
-import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
-import {IPendleRouter} from "../interfaces/pendle/IPendleRouter.sol";
-import {IsolationModeWrapperTraderV2} from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
+import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
+import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 
 /**
  * @title   PendleYtGLP2024IsolationModeWrapperTraderV2
@@ -35,9 +35,7 @@ import {IsolationModeWrapperTraderV2} from "../proxies/abstract/IsolationModeWra
  * @notice  Used for wrapping ytGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
  *          USDC).
  */
-contract PendleYtGLP2024IsolationModeWrapperTraderV2 is
-    IsolationModeWrapperTraderV2
-{
+contract PendleYtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
@@ -56,7 +54,11 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is
         address _gmxRegistry,
         address _dytGlp,
         address _dolomiteMargin
-    ) IsolationModeWrapperTraderV2(_dytGlp, _dolomiteMargin) {
+    )
+    IsolationModeWrapperTraderV2(
+        _dytGlp,
+        _dolomiteMargin
+    ) {
         PENDLE_REGISTRY = IPendleGLPRegistry(_pendleRegistry);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
@@ -65,9 +67,7 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is
     // ============= Public Functions =============
     // ============================================
 
-    function isValidInputToken(
-        address _inputToken
-    ) public view override returns (bool) {
+    function isValidInputToken(address _inputToken) public view override returns (bool) {
         return GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken);
     }
 
@@ -83,20 +83,18 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is
         address _inputToken,
         uint256 _inputAmount,
         bytes memory _extraOrderData
-    ) internal override returns (uint256) {
+    ) 
+        internal 
+        override 
+        returns (uint256) 
+    {
         (
             IPendleRouter.ApproxParams memory guessYtOut,
             IPendleRouter.TokenInput memory tokenInput
-        ) = abi.decode(
-                _extraOrderData,
-                (IPendleRouter.ApproxParams, IPendleRouter.TokenInput)
-            );
+        ) = abi.decode(_extraOrderData, (IPendleRouter.ApproxParams, IPendleRouter.TokenInput));
 
         // approve input token and mint GLP
-        IERC20(_inputToken).safeApprove(
-            address(GMX_REGISTRY.glpManager()),
-            _inputAmount
-        );
+        IERC20(_inputToken).safeApprove(address(GMX_REGISTRY.glpManager()), _inputAmount);
         uint256 glpAmount = GMX_REGISTRY.glpRewardsRouter().mintAndStakeGlp(
             _inputToken,
             _inputAmount,
@@ -110,10 +108,7 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is
             // Create a new scope to avoid stack too deep errors
             // approve GLP and swap for ptGLP
             IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
-            IERC20(GMX_REGISTRY.sGlp()).safeApprove(
-                address(pendleRouter),
-                glpAmount
-            );
+            IERC20(GMX_REGISTRY.sGlp()).safeApprove(address(pendleRouter), glpAmount);
             (ytGlpAmount, ) = pendleRouter.swapExactTokenForYt(
                 /* _receiver = */ address(this),
                 address(PENDLE_REGISTRY.ptGlpMarket()),
@@ -131,14 +126,12 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is
         address,
         uint256,
         bytes memory
-    ) internal pure override returns (uint256) {
-        revert(
-            string(
-                abi.encodePacked(
-                    Require.stringifyTruncated(_FILE),
-                    ": getExchangeCost is not implemented"
-                )
-            )
-        );
+    ) 
+    internal 
+    override 
+    pure 
+    returns (uint256) 
+    {
+        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
 }

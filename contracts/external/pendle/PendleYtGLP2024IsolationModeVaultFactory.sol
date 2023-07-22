@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import {IPendleYtGLP2024IsolationModeVaultFactory} from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
-import {SimpleIsolationModeVaultFactory} from "../proxies/SimpleIsolationModeVaultFactory.sol";
-import {IPendleYtToken} from "../interfaces/pendle/IPendleYtToken.sol";
+import { IPendleYtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
+import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
+import { IPendleYtToken } from "../interfaces/pendle/IPendleYtToken.sol";
 
-import {Require} from "../../protocol/lib/Require.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 
 /**
  * @title   PendleYtGLP2024IsolationModeVaultFactory
@@ -38,7 +38,6 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
     IPendleYtGLP2024IsolationModeVaultFactory,
     SimpleIsolationModeVaultFactory
 {
-    // @follow-up Require statement for collateral market
     // ============ Constants ============
 
     bytes32 private constant _FILE = "PendleYtGLP2024VaultFactory"; // needed to be shortened to fit into 32 bytes
@@ -55,20 +54,18 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
         address _ytGlp, // this serves as the underlying token
-        // @follow-up V1 and V2 difference
         address _borrowPositionProxyV2,
         address _userVaultImplementation,
         address _dolomiteMargin
     )
-        SimpleIsolationModeVaultFactory(
-            _initialAllowableDebtMarketIds,
-            _initialAllowableCollateralMarketIds,
-            _ytGlp,
-            _borrowPositionProxyV2,
-            _userVaultImplementation,
-            _dolomiteMargin
-        )
-    {
+    SimpleIsolationModeVaultFactory(
+        _initialAllowableDebtMarketIds,
+        _initialAllowableCollateralMarketIds,
+        _ytGlp,
+        _borrowPositionProxyV2,
+        _userVaultImplementation,
+        _dolomiteMargin
+    ) {
         pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
         ytMaturityDate = IPendleYtToken(UNDERLYING_TOKEN).expiry();
     }
@@ -79,21 +76,30 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
 
     function ownerSetPendleGLPRegistry(
         address _pendleGLPRegistry
-    ) external override onlyDolomiteMarginOwner(msg.sender) {
+    ) 
+    external 
+    override 
+    onlyDolomiteMarginOwner(msg.sender) {
         pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
         emit PendleGLPRegistrySet(_pendleGLPRegistry);
     }
 
     function ownerSetYtMaturityDate(
         uint256 _ytMaturityDate
-    ) external override onlyDolomiteMarginOwner(msg.sender) {
+    ) 
+    external 
+    override 
+    onlyDolomiteMarginOwner(msg.sender) {
         ytMaturityDate = _ytMaturityDate;
         emit YtMaturityDateSet(_ytMaturityDate);
     }
 
     function ownerSetAllowableDebtMarketIds(
         uint256[] memory _newAllowableDebtMarketIds
-    ) external override onlyDolomiteMarginOwner(msg.sender) {
+    ) 
+    external 
+    override 
+    onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _newAllowableDebtMarketIds.length > 0,
             _FILE,

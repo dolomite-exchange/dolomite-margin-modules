@@ -20,13 +20,13 @@
 
 pragma solidity ^0.8.9;
 
-import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
-import {IDolomitePriceOracle} from "../../protocol/interfaces/IDolomitePriceOracle.sol";
-import {IDolomiteStructs} from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
-import {Require} from "../../protocol/lib/Require.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 
-import {IPendleGLPRegistry} from "../interfaces/pendle/IPendleGLPRegistry.sol";
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
 
 /**
  * @title   PendleYtGLPPriceOracle
@@ -61,13 +61,9 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
 
         (
-            bool increaseCardinalityRequired,
-            ,
+            bool increaseCardinalityRequired,,
             bool oldestObservationSatisfied
-        ) = REGISTRY.ptOracle().getOracleState(
-                address(REGISTRY.ptGlpMarket()),
-                TWAP_DURATION
-            );
+        ) = REGISTRY.ptOracle().getOracleState(address(REGISTRY.ptGlpMarket()),TWAP_DURATION);
 
         Require.that(
             !increaseCardinalityRequired && oldestObservationSatisfied,
@@ -78,35 +74,32 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
 
     function getPrice(
         address _token
-    ) public view returns (IDolomiteStructs.MonetaryPrice memory) {
+    ) 
+    public 
+    view 
+    returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
             _token == address(DYT_GLP),
             _FILE,
             "invalid token",
             _token
         );
-        // @follow-up Understand this require statement
         Require.that(
-            DOLOMITE_MARGIN.getMarketIsClosing(
-                DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)
-            ),
+            DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
             _FILE,
             "ytGLP cannot be borrowable"
         );
 
-        return IDolomiteStructs.MonetaryPrice({value: _getCurrentPrice()});
+        return IDolomiteStructs.MonetaryPrice({
+            value: _getCurrentPrice()
+        });
     }
 
     // ============================ Internal Functions ============================
 
     function _getCurrentPrice() internal view returns (uint256) {
-        uint256 glpPrice = DOLOMITE_MARGIN
-            .getMarketPrice(DFS_GLP_MARKET_ID)
-            .value;
-        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(
-            address(REGISTRY.ptGlpMarket()),
-            TWAP_DURATION
-        );
+        uint256 glpPrice = DOLOMITE_MARGIN.getMarketPrice(DFS_GLP_MARKET_ID).value;
+        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptGlpMarket()),TWAP_DURATION);
         return PT_ASSET_SCALE - ((glpPrice * ptExchangeRate) / PT_ASSET_SCALE);
     }
 }
