@@ -111,7 +111,6 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
       signer: core.hhUser1,
     });
 
-    // @todo - impersonate vault and deposit usdc into it
     // deposit utility function
     const usdcAmount = amountWei.div(1e12).mul(8);
     const usableUsdcAmount = usdcAmount.div(2);

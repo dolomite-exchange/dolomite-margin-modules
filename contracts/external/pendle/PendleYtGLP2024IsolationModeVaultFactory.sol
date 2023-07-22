@@ -20,12 +20,13 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendleYtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
-import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
-import { IPendleYtToken } from "../interfaces/pendle/IPendleYtToken.sol";
-
 import { Require } from "../../protocol/lib/Require.sol";
+
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
+import { IPendleYtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPendleYtToken } from "../interfaces/pendle/IPendleYtToken.sol";
+import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
+
 
 /**
  * @title   PendleYtGLP2024IsolationModeVaultFactory

@@ -23,11 +23,11 @@ import {
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 /**
- * This is the expected price at the following timestamp: 1688402000
+ * This is the expected price at the following timestamp: 1689700000
  *
  * Keep in mind that Pendle's prices tick upward each second.
  */
-const PT_GLP_PRICE = BigNumber.from('913166972248447467'); // $0.913166972248447467
+const PT_GLP_PRICE = BigNumber.from('870767188326032931'); // $0.870767188326032931
 
 describe('PendlePtGLPPriceOracle', () => {
   let snapshotId: string;
@@ -41,7 +41,7 @@ describe('PendlePtGLPPriceOracle', () => {
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 107511008,
+      blockNumber: 112489707,
       network: Network.ArbitrumOne,
     });
 
@@ -110,7 +110,7 @@ describe('PendlePtGLPPriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for dptGLP', async () => {
-      await increaseToTimestamp(1_688_402_000);
+      await increaseToTimestamp(1_689_700_000);
       const price = await ptGlpOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_GLP_PRICE);
     });

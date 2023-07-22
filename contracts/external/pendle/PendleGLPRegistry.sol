@@ -27,9 +27,10 @@ import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol"
 import { IPendlePtMarket } from "../interfaces/pendle/IPendlePtMarket.sol";
 import { IPendlePtOracle } from "../interfaces/pendle/IPendlePtOracle.sol";
 import { IPendlePtToken } from "../interfaces/pendle/IPendlePtToken.sol";
-import { IPendleYtToken } from "../interfaces/pendle/IPendleYtToken.sol";
 import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IPendleSyToken } from "../interfaces/pendle/IPendleSyToken.sol";
+import { IPendleYtToken } from "../interfaces/pendle/IPendleYtToken.sol";
+
 
 /**
  * @title   PendleGLPRegistry
@@ -45,12 +46,18 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
 
     bytes32 private constant _FILE = "PendleGLPRegistry";
 
-    bytes32 private constant _PENDLE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendleRouter")) - 1);
-    bytes32 private constant _PENDLE_PT_GLP_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpMarket")) - 1);
-    bytes32 private constant _PENDLE_PT_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendlePtOracle")) - 1);
-    bytes32 private constant _PENDLE_SY_GLP_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendleSyGlpToken")) - 1);
-    bytes32 private constant _PENDLE_PT_GLP_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpToken")) - 1);
-    bytes32 private constant _PENDLE_YT_GLP_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendleYtGlpToken")) - 1);
+    bytes32 private constant _PENDLE_ROUTER_SLOT = 
+        bytes32(uint256(keccak256("eip1967.proxy.pendleRouter")) - 1);
+    bytes32 private constant _PENDLE_PT_GLP_MARKET_SLOT = 
+        bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpMarket")) - 1);
+    bytes32 private constant _PENDLE_PT_ORACLE_SLOT = 
+        bytes32(uint256(keccak256("eip1967.proxy.pendlePtOracle")) - 1);
+    bytes32 private constant _PENDLE_SY_GLP_TOKEN_SLOT = 
+        bytes32(uint256(keccak256("eip1967.proxy.pendleSyGlpToken")) - 1);
+    bytes32 private constant _PENDLE_PT_GLP_TOKEN_SLOT = 
+        bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpToken")) - 1);
+    bytes32 private constant _PENDLE_YT_GLP_TOKEN_SLOT = 
+        bytes32(uint256(keccak256("eip1967.proxy.pendleYtGlpToken")) - 1);
 
     // ==================== Initializer ====================
 

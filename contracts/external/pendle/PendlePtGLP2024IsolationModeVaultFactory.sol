@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendlePtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
+import { IPendlePtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
 
 

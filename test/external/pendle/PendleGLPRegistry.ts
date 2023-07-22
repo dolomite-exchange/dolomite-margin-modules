@@ -28,7 +28,6 @@ describe('PendleGLPRegistry', () => {
 
   describe('#initializer', () => {
     it('should initialize variables properly', async () => {
-      // @follow-up what is this exclamation point for?
       expect(await registry.pendleRouter()).to.equal(core.pendleEcosystem!.pendleRouter.address);
       expect(await registry.ptGlpMarket()).to.equal(core.pendleEcosystem!.ptGlpMarket.address);
       expect(await registry.ptGlpToken()).to.equal(core.pendleEcosystem!.ptGlpToken.address);
@@ -37,7 +36,6 @@ describe('PendleGLPRegistry', () => {
       expect(await registry.ytGlpToken()).to.equal(core.pendleEcosystem!.ytGlpToken.address);
     });
 
-    // @todo Linting and formatting
     it('should fail if already initialized', async () => {
       await expectThrow(
         registry.initialize(

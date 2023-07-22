@@ -9,14 +9,13 @@ import { expectThrow } from 'test/utils/assertions';
 import { createPendleGLPRegistry, createPendleYtGLP2024IsolationModeTokenVaultV1, createPendleYtGLP2024IsolationModeUnwrapperTraderV2, createPendleYtGLP2024IsolationModeVaultFactory, createPendleYtGLPPriceOracle } from 'test/utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
-// @follow-up Check if this block number & timestamp is ok
 /**
- * This is the expected price at the following timestamp: 1688402000
+ * This is the expected price at the following timestamp: 1689700000
  *
  * Keep in mind that Pendle's PT prices tick upward each second so YT prices tick downward
  */
-const PT_GLP_PRICE = BigNumber.from('913166972248447467'); // $0.913166972248447467
-const YT_GLP_PRICE = BigNumber.from('86833027751552533'); // $0.86833027751552533
+const PT_GLP_PRICE = BigNumber.from('870767188326032931'); // $0.870767188326032931
+const YT_GLP_PRICE = BigNumber.from('129232811673967069'); // $0.129232811673967069
 const initialAllowableDebtMarketIds = [0, 1];
 const initialAllowableCollateralMarketIds = [2, 3];
 
@@ -32,7 +31,7 @@ describe('PendleYtGLPPriceOracle', () => {
 
     before(async () => {
         core = await setupCoreProtocol({
-            blockNumber: 107511008,
+            blockNumber: 112489707,
             network: Network.ArbitrumOne
         });
 
@@ -78,7 +77,6 @@ describe('PendleYtGLPPriceOracle', () => {
             );
             await pendleRegistry.connect(core.governance).ownerSetPtOracle(testPtOracle.address);
 
-            // @follow-up Understand these oracle states
             await testPtOracle.setOracleState(true, 0, false);
             await expectThrow(
                 createPendleYtGLPPriceOracle(core, factory, pendleRegistry),
@@ -103,7 +101,7 @@ describe('PendleYtGLPPriceOracle', () => {
 
     describe('#getPrice', () => {
         it('returns the correct value under normal conditions for dytGLP', async () => {
-            await increaseToTimestamp(1_688_402_000);
+            await increaseToTimestamp(1_689_700_000);
             const price = await ytGlpOracle.getPrice(factory.address);
             expect(price.value).to.eq(YT_GLP_PRICE);
         });
@@ -127,7 +125,6 @@ describe('PendleYtGLPPriceOracle', () => {
             );
         });
 
-        // @follow-up Don't understand this test
         it('fails when ytGLP is borrowable', async () => {
             await core.dolomiteMargin.ownerSetIsClosing(marketId, false);
             await expectThrow(

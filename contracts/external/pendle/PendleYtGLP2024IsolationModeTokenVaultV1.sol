@@ -20,21 +20,19 @@
 
 pragma solidity ^0.8.9;
 
-import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 
 import { IPendleYtGLP2024IsolationModeTokenVaultV1 } from "../interfaces/pendle/IPendleYtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IPendleYtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleYtToken } from "../interfaces/pendle/IPendleYtToken.sol";
-import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
-import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
 
 /**
@@ -121,7 +119,10 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         );
 
         // check if another borrow position exists
-        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo(address(this), _borrowAccountNumber);
+        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo(
+            address(this),
+            _borrowAccountNumber
+        );
         uint256 expiry = _checkExistingBorrowPositions(accountInfo);
 
         // if expiry doesn't exist, use min formula
@@ -138,7 +139,9 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         );
 
         // set expiry
-        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY());
+        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
+            VAULT_FACTORY()
+        );
 
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
         accounts[0] = accountInfo;
@@ -158,13 +161,18 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     function _checkExistingBorrowPositions(
         IDolomiteStructs.AccountInfo memory info
     ) internal view returns (uint256) {
-        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY());
+        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
+            VAULT_FACTORY()
+        );
         uint256[] memory allowableDebtMarketIds = vaultFactory.allowableDebtMarketIds();
 
         uint256 expiry;
         if (allowableDebtMarketIds.length != 0) {
             for (uint256 i = 0; i < allowableDebtMarketIds.length; ++i) {
-                expiry = vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry().getExpiry(info, allowableDebtMarketIds[i]);
+                expiry = vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry().getExpiry(
+                    info,
+                    allowableDebtMarketIds[i]
+                );
                 if (expiry != 0) return expiry;
             }
         }
