@@ -111,7 +111,6 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
       signer: core.hhUser1,
     });
 
-    // deposit utility function
     const usdcAmount = amountWei.div(1e12).mul(8);
     const usableUsdcAmount = usdcAmount.div(2);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
@@ -121,6 +120,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     await setupUSDCBalance(core, vaultImpersonater, usableUsdcAmount, core.gmxEcosystem!.glpManager);
     await core.tokens.usdc.connect(vaultImpersonater).approve(core.dolomiteMargin.address, ethers.constants.MaxUint256);
     await depositIntoDolomiteMargin(core, vaultImpersonater, 0, core.marketIds.usdc, usableUsdcAmount);
+
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.tokens.usdc.address, usableUsdcAmount, 0, 0);
     const glpAmount = amountWei.mul(2);
@@ -147,7 +147,6 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
   });
 
   describe('Call and Exchange for non-liquidation sale', () => {
-    //@follow-up Understand this test
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;

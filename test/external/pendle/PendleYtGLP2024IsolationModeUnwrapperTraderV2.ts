@@ -134,7 +134,6 @@ describe('PendleYtGLP2024IsolationModeUnwrapperTraderV2', () => {
   });
 
   describe('Actions.Call and Actions.Sell for non-liquidation', () => {
-    //@follow-up Understand this test
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;

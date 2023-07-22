@@ -1,10 +1,9 @@
 import { expect } from 'chai';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   PendleYtGLP2024IsolationModeTokenVaultV1,
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleGLPRegistry,
-  PendleYtGLPPriceOracle
 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -13,7 +12,6 @@ import {
   createPendleYtGLP2024IsolationModeTokenVaultV1,
   createPendleYtGLP2024IsolationModeVaultFactory,
   createPendleGLPRegistry,
-  createPendleYtGLPPriceOracle
 } from '../../utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
