@@ -199,6 +199,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
 
         if (isPaused) {
             uint256 inputMarket = _marketIdsPath[0];
+            uint256 outputMarket = _marketIdsPath[_marketIdsPath.length - 1];
             IDolomiteMargin.Par memory inputValueAfter = DOLOMITE_MARGIN().getAccountPar(
                 IDolomiteStructs.AccountInfo({
                     owner: address(this),
