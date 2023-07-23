@@ -15,7 +15,7 @@ export async function encodeSwapExactPtForTokens(
     core.pendleEcosystem!.ptGlpMarket.address as any,
     ptAmountIn,
     tokenOut as any,
-    ONE_TENTH_OF_ONE_BIPS_NUMBER,
+    slippageTolerance,
     { method: 'extractParams' },
   );
 

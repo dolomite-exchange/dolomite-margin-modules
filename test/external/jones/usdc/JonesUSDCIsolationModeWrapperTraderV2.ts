@@ -19,7 +19,8 @@ import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../util
 import { expectThrow } from '../../../utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
-  createJonesUSDCIsolationModeUnwrapperTraderV2,
+  createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
+  createJonesUSDCIsolationModeUnwrapperTraderV2ForZap,
   createJonesUSDCIsolationModeVaultFactory,
   createJonesUSDCIsolationModeWrapperTraderV2,
   createJonesUSDCPriceOracle,
@@ -27,7 +28,7 @@ import {
 } from '../../../utils/ecosystem-token-utils/jones';
 import {
   CoreProtocol,
-  disableInterestAccrual,
+  disableInterestAccrual, getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -53,7 +54,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
   let underlyingMarketId: BigNumber;
   let gmxRegistry: IGmxRegistryV1;
   let jonesUSDCRegistry: JonesUSDCRegistry;
-  let unwrapper: JonesUSDCIsolationModeUnwrapperTraderV2;
+  let unwrapperTraderForLiquidation: JonesUSDCIsolationModeUnwrapperTraderV2;
   let wrapper: JonesUSDCIsolationModeWrapperTraderV2;
   let factory: JonesUSDCIsolationModeVaultFactory;
   let vault: JonesUSDCIsolationModeTokenVaultV1;
@@ -62,10 +63,7 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
   let solidUser: SignerWithAddress;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 86413000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
 
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
@@ -78,10 +76,22 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
       userVaultImplementation,
     );
 
-    unwrapper = await createJonesUSDCIsolationModeUnwrapperTraderV2(core, jonesUSDCRegistry, factory);
-    await jonesUSDCRegistry.initializeUnwrapperTrader(unwrapper.address);
+    unwrapperTraderForLiquidation = await createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation(
+      core,
+      jonesUSDCRegistry,
+      factory,
+    );
+    const unwrapperTraderForZap = await createJonesUSDCIsolationModeUnwrapperTraderV2ForZap(
+      core,
+      jonesUSDCRegistry,
+      factory,
+    );
+    await jonesUSDCRegistry.initializeUnwrapperTraders(
+      unwrapperTraderForLiquidation.address,
+      unwrapperTraderForZap.address,
+    );
     wrapper = await createJonesUSDCIsolationModeWrapperTraderV2(core, jonesUSDCRegistry, factory);
-    await createRoleAndWhitelistTrader(core, unwrapper, wrapper);
+    await createRoleAndWhitelistTrader(core, unwrapperTraderForLiquidation, wrapper);
     priceOracle = await createJonesUSDCPriceOracle(core, jonesUSDCRegistry, factory);
 
     await disableInterestAccrual(core, core.marketIds.usdc);

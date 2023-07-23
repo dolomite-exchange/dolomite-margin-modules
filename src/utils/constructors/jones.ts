@@ -49,7 +49,7 @@ export function getJonesUSDCPriceOracleConstructorParams(
   ];
 }
 
-export function getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams(
+export function getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams(
   core: CoreProtocol,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
@@ -60,6 +60,23 @@ export function getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams(
 
   return [
     core.liquidatorAssetRegistry!.address,
+    core.tokens.usdc!.address,
+    jonesUSDCRegistry.address,
+    djUSDCToken.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams(
+  core: CoreProtocol,
+  jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
+  djUSDCToken: { address: address },
+): any[] {
+  if (!core.jonesEcosystem) {
+    throw new Error('Jones ecosystem not initialized');
+  }
+
+  return [
     core.tokens.usdc!.address,
     jonesUSDCRegistry.address,
     djUSDCToken.address,

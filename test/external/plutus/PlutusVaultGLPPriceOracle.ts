@@ -18,10 +18,10 @@ import {
   createPlutusVaultGLPPriceOracle,
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
-const GLP_PRICE = BigNumber.from('951856689348643550'); // $0.95185668
-const PLV_GLP_PRICE = BigNumber.from('1122820703434687401'); // $1.12282070
+const GLP_PRICE = BigNumber.from('984588746906888510'); // $0.984588746906888510
+const PLV_GLP_PRICE = BigNumber.from('1200312871654299982'); // $1.200312871654299982
 
 describe('PlutusVaultGLPPriceOracle', () => {
   let snapshotId: string;
@@ -34,10 +34,7 @@ describe('PlutusVaultGLPPriceOracle', () => {
   let marketId: BigNumberish;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 86413000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
     const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1();
     factory = await createPlutusVaultGLPIsolationModeVaultFactory(

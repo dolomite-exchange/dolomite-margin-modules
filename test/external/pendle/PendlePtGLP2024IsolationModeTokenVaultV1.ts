@@ -84,6 +84,12 @@ describe('PendlePtGLP2024IsolationModeTokenVaultV1', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
+  describe('#dolomiteRegistry', () => {
+    it('should work', async () => {
+      expect(await vault.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
+    });
+  });
+
   describe('#isExternalRedemptionPaused', () => {
     it('should work normally', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;

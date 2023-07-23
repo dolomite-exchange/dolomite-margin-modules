@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 
 /**
  * @title   ICustomTestToken
@@ -27,7 +29,7 @@ pragma solidity ^0.8.9;
  *
  * @notice  Interface contract for accessing test methods on test ERC20s for testing.
  */
-interface ICustomTestToken {
+interface ICustomTestToken is IERC20 {
 
     function addBalance(address _receiver, uint256 _amount) external;
 }

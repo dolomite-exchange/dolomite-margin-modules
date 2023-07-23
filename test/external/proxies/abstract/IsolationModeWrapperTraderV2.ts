@@ -7,7 +7,6 @@ import { defaultAbiCoder } from 'ethers/lib/utils';
 import {
   CustomTestToken,
   TestIsolationModeFactory,
-  TestIsolationModeFactory__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeWrapperTraderV2,
@@ -18,6 +17,7 @@ import { createContractWithAbi, createTestToken } from '../../../../src/utils/do
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
+import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
@@ -52,27 +52,18 @@ describe('IsolationModeWrapperTraderV2', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
-    const userVaultImplementation = await createContractWithAbi(
+    const userVaultImplementation = await createContractWithAbi<TestIsolationModeTokenVaultV1>(
       TestIsolationModeTokenVaultV1__factory.abi,
       TestIsolationModeTokenVaultV1__factory.bytecode,
       [],
     );
-    factory = await createContractWithAbi<TestIsolationModeFactory>(
-      TestIsolationModeFactory__factory.abi,
-      TestIsolationModeFactory__factory.bytecode,
-      [
-        underlyingToken.address,
-        core.borrowPositionProxyV2.address,
-        userVaultImplementation.address,
-        core.dolomiteMargin.address,
-      ],
-    );
+    factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
 
-    await core.testPriceOracle!.setPrice(factory.address, '1000000000000000000'); // $1.00
+    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '1000000000000000000'); // $1.00
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true);
 
-    await core.testPriceOracle!.setPrice(otherToken.address, '1000000000000000000000000000000'); // $1.00
+    await core.testEcosystem!.testPriceOracle.setPrice(otherToken.address, '1000000000000000000000000000000'); // $1.00
     otherMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken, false);
 

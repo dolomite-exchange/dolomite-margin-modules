@@ -1,14 +1,16 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { expect } from 'chai';
 import { BaseContract, BigNumber, ContractTransaction } from 'ethers';
 import {
   CustomTestToken,
   SimpleIsolationModeVaultFactory,
-  SimpleIsolationModeVaultFactory__factory,
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeUnwrapperTraderV1,
   TestIsolationModeUnwrapperTraderV1__factory,
   TestIsolationModeWrapperTraderV1,
   TestIsolationModeWrapperTraderV1__factory,
+  TestSimpleIsolationModeVaultFactory,
+  TestSimpleIsolationModeVaultFactory__factory,
 } from '../../../src/types';
 import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
@@ -45,10 +47,11 @@ describe('SimpleIsolationModeVaultFactory', () => {
     );
     const initialAllowableDebtMarketIds = [0, 1];
     const initialAllowableCollateralMarketIds = [2, 3];
-    factory = await createContractWithAbi<SimpleIsolationModeVaultFactory>(
-      SimpleIsolationModeVaultFactory__factory.abi,
-      SimpleIsolationModeVaultFactory__factory.bytecode,
+    factory = await createContractWithAbi<TestSimpleIsolationModeVaultFactory>(
+      TestSimpleIsolationModeVaultFactory__factory.abi,
+      TestSimpleIsolationModeVaultFactory__factory.bytecode,
       [
+        core.dolomiteRegistry.address,
         initialAllowableDebtMarketIds,
         initialAllowableCollateralMarketIds,
         underlyingToken.address,
@@ -57,11 +60,11 @@ describe('SimpleIsolationModeVaultFactory', () => {
         core.dolomiteMargin.address,
       ],
     );
-    await core.testPriceOracle!.setPrice(
+    await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
     );
-    await core.testPriceOracle!.setPrice(
+    await core.testEcosystem!.testPriceOracle.setPrice(
       otherToken.address,
       '1000000000000000000', // $1.00
     );
@@ -73,7 +76,7 @@ describe('SimpleIsolationModeVaultFactory', () => {
     await setupTestMarket(core, otherToken, false);
 
     rewardToken = await createTestToken();
-    await core.testPriceOracle!.setPrice(
+    await core.testEcosystem!.testPriceOracle.setPrice(
       rewardToken.address,
       '1000000000000000000', // $1.00
     );
@@ -106,6 +109,18 @@ describe('SimpleIsolationModeVaultFactory', () => {
 
   beforeEach(async () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
+  });
+
+  describe('#dolomiteRegistry', () => {
+    it('should work normally', async () => {
+      expect(await factory.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
+      await factory.createVault(core.hhUser1.address);
+      const userVault = TestIsolationModeTokenVaultV1__factory.connect(
+        await factory.getVaultByAccount(core.hhUser1.address),
+        core.hhUser1,
+      );
+      expect(await userVault.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
+    });
   });
 
   describe('#ownerSetAllowableDebtMarketIds', () => {

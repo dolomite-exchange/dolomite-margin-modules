@@ -26,7 +26,7 @@ import {
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
 import {
-  CoreProtocol,
+  CoreProtocol, getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -57,10 +57,7 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
   let farm: IPlutusVaultGLPFarm;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 86413000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
     rewardToken = core.plutusEcosystem!.plsToken.connect(core.hhUser1);
     farm = core.plutusEcosystem!.plvGlpFarm.connect(core.hhUser1);

@@ -18,7 +18,8 @@ import {
   JonesUSDCRegistry__factory, RegistryProxy, RegistryProxy__factory,
 } from '../../../src/types';
 import {
-  getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams,
+  getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
+  getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,
   getJonesUSDCIsolationModeVaultFactoryConstructorParams,
   getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
   getJonesUSDCPriceOracleConstructorParams,
@@ -77,7 +78,7 @@ export function createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation(
   return createContractWithAbi<JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation>(
     JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation__factory.abi,
     JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation__factory.bytecode,
-    getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams(core, jonesUSDCRegistry, djUSDCToken),
+    getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams(core, jonesUSDCRegistry, djUSDCToken),
   );
 }
 
@@ -89,7 +90,7 @@ export function createJonesUSDCIsolationModeUnwrapperTraderV2ForZap(
   return createContractWithAbi<JonesUSDCIsolationModeUnwrapperTraderV2>(
     JonesUSDCIsolationModeUnwrapperTraderV2__factory.abi,
     JonesUSDCIsolationModeUnwrapperTraderV2__factory.bytecode,
-    getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams(core, jonesUSDCRegistry, djUSDCToken),
+    getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams(core, jonesUSDCRegistry, djUSDCToken),
   );
 }
 

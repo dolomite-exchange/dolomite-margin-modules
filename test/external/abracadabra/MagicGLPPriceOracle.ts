@@ -7,9 +7,9 @@ import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import { createMagicGLPPriceOracle } from '../../utils/ecosystem-token-utils/abracadabra';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
-const GLP_PRICE = BigNumber.from('1000974796933941049'); // $1.000974796933941049
+const GLP_PRICE = BigNumber.from('1004682394802947459'); // $1.004682394802947459
 
 describe('MagicGLPPriceOracle', () => {
   let snapshotId: string;
@@ -21,11 +21,7 @@ describe('MagicGLPPriceOracle', () => {
   let core: CoreProtocol;
 
   before(async () => {
-    const network = Network.ArbitrumOne;
-    core = await setupCoreProtocol({
-      blockNumber: 81874000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     magicGlp = core.abraEcosystem!.magicGlp;
     magicGlpWithNoTotalSupply = await createTestToken();
@@ -37,7 +33,6 @@ describe('MagicGLPPriceOracle', () => {
       [core.dolomiteMargin.address, magicGlpWithNoTotalSupply.address, core.marketIds.dfsGlp!],
     );
 
-    await setupTestMarket(core, magicGlp, true, magicGlpPriceOracle);
     await setupTestMarket(core, magicGlpWithNoTotalSupply, true, magicGlpPriceOracleWithNoTotalSupply);
 
     snapshotId = await snapshot();

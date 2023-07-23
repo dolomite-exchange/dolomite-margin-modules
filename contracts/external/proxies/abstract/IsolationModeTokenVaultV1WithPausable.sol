@@ -138,28 +138,17 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
             _balanceCheckFlag
         );
 
-        IDolomiteMargin.Par memory valueAfter = DOLOMITE_MARGIN().getAccountPar(
-            IDolomiteStructs.AccountInfo({
-                owner: address(this),
-                number: _borrowAccountNumber
-            }),
-            _marketId
-        );
-
         if (isExternalRedemptionPaused()) {
-            if (valueBefore.isPositive()) {
-                // If redemptions are paused (preventing liquidations), the user cannot decrease collateralization.
-                // If there is no debt markets, the user can can withdraw without affecting collateralization (it's ∞)
-                _requireNumberOfMarketsWithDebtIsZero(_borrowAccountNumber);
-            } else {
-                // If redemptions are paused (preventing liquidations), the borrowed value should not increase
-                Require.that(
-                    valueAfter.value <= valueBefore.value,
-                    _FILE,
-                    "Cannot lever up when paused",
-                    _marketId
-                );
-            }
+            Require.that(
+                valueBefore.isPositive(),
+                _FILE,
+                "Cannot lever up when paused",
+                _marketId
+            );
+
+            // If redemptions are paused (preventing liquidations), the user cannot decrease collateralization.
+            // If there is no debt markets, the user can can withdraw without affecting collateralization (it's ∞)
+            _requireNumberOfMarketsWithDebtIsZero(_borrowAccountNumber);
         }
     }
 
@@ -176,6 +165,12 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         override
     {
         bool isPaused = isExternalRedemptionPaused();
+
+        IDolomiteStructs.AccountInfo memory tradeAccount = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _tradeAccountNumber
+        });
+        IDolomiteMargin.Wei memory outputBalanceBefore;
         if (isPaused) {
             uint256 outputMarket = _marketIdsPath[_marketIdsPath.length - 1];
             // If the ecosystem is paused, we cannot swap into more of the irredeemable asset
@@ -184,6 +179,12 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
                 _FILE,
                 "Cannot zap to market when paused",
                 outputMarket
+            );
+            outputBalanceBefore = DOLOMITE_MARGIN().getAccountWei(tradeAccount, outputMarket);
+            Require.that(
+                outputBalanceBefore.isNegative(),
+                _FILE,
+                "Zaps can only repay when paused"
             );
         }
 
@@ -198,20 +199,33 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         );
 
         if (isPaused) {
+            IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
             uint256 inputMarket = _marketIdsPath[0];
             uint256 outputMarket = _marketIdsPath[_marketIdsPath.length - 1];
-            IDolomiteMargin.Par memory inputValueAfter = DOLOMITE_MARGIN().getAccountPar(
-                IDolomiteStructs.AccountInfo({
-                    owner: address(this),
-                    number: _tradeAccountNumber
-                }),
+            // we don't need Wei here, and using Par saves gas costs
+            IDolomiteMargin.Par memory inputBalanceAfter = dolomiteMargin.getAccountPar(
+                tradeAccount,
                 inputMarket
             );
             Require.that(
-                inputValueAfter.isPositive() || inputValueAfter.value == 0,
+                inputBalanceAfter.isPositive() || inputBalanceAfter.value == 0,
                 _FILE,
                 "Cannot lever up when paused",
                 inputMarket
+            );
+
+            IDolomiteMargin.Wei memory outputBalanceAfter = dolomiteMargin.getAccountWei(tradeAccount, outputMarket);
+            IDolomiteMargin.Wei memory outputDelta = outputBalanceAfter.sub(outputBalanceBefore);
+
+            uint256 inputValue = _inputAmountWei * dolomiteMargin.getMarketPrice(inputMarket).value;
+            uint256 outputDeltaValue = outputDelta.value * dolomiteMargin.getMarketPrice(outputMarket).value;
+            uint256 slippageNumerator = dolomiteRegistry().slippageToleranceForPauseSentinel();
+            uint256 slippageDenominator = dolomiteRegistry().slippageToleranceForPauseSentinelBase();
+            // Confirm the user is doing a fair trade and there is not more than the acceptable slippage while paused
+            Require.that(
+                outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenominator),
+                _FILE,
+                "Unacceptable trade when paused"
             );
         }
     }

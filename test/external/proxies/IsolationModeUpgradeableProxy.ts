@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { BaseContract } from 'ethers';
 import {
   IsolationModeUpgradeableProxy,
   IsolationModeUpgradeableProxy__factory,
@@ -26,20 +25,20 @@ describe('IsolationModeUpgradeableProxy', () => {
 
   let core: CoreProtocol;
   let factory: TestIsolationModeFactory;
-  let userVaultImplementation: BaseContract;
+  let userVaultImplementation: TestIsolationModeTokenVaultV1;
 
   let vaultProxy: IsolationModeUpgradeableProxy;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     const underlyingToken = await createTestToken();
-    userVaultImplementation = await createContractWithAbi(
+    userVaultImplementation = await createContractWithAbi<TestIsolationModeTokenVaultV1>(
       TestIsolationModeTokenVaultV1__factory.abi,
       TestIsolationModeTokenVaultV1__factory.bytecode,
       [],
     );
     factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
-    await core.testPriceOracle!.setPrice(
+    await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
     );

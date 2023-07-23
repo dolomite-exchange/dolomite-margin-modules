@@ -36,16 +36,41 @@ interface IDolomiteRegistry {
     // ========================================================
 
     event GenericTraderProxySet(address indexed _genericTraderProxy);
+    event SlippageToleranceForPauseSentinelSet(uint256 slippageTolerance);
 
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================
 
+    /**
+     *
+     * @param  _genericTraderProxy  The new address of the generic trader proxy
+     */
     function ownerSetGenericTraderProxy(address _genericTraderProxy) external;
+
+    /**
+     *
+     * @param  _slippageToleranceForPauseSentinel   The slippage tolerance (using 1e18 as the base) for zaps when pauses
+     *                                              are enabled
+     */
+    function ownerSetSlippageToleranceForPauseSentinel(uint256 _slippageToleranceForPauseSentinel) external;
 
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
 
+    /**
+     * @return  The address of the generic trader proxy for making zaps
+     */
     function genericTraderProxy() external view returns (IGenericTraderProxyV1);
+
+    /**
+     * @return  The slippage tolerance (using 1e18 as the base) for zaps when pauses are enabled
+     */
+    function slippageToleranceForPauseSentinel() external view returns (uint256);
+
+    /**
+     * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
+     */
+    function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
 }

@@ -675,7 +675,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
             Require.that(
                 inputMarketBalance.isPositive() || inputMarketBalance.value == 0,
                 _FILE,
-                "Input balance must be >= 0"
+                "Input balance must be >= 0",
+                _marketIdsPath[0]
             );
             _transferIntoPositionWithOtherToken(
                 _fromAccountNumber,
@@ -685,6 +686,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
                 _userConfig.balanceCheckFlag
             );
         }
+
         _swapExactInputForOutput(
             _borrowAccountNumber,
             _marketIdsPath,
@@ -710,6 +712,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         virtual
     {
         uint256 outputMarketId = _marketIdsPath[_marketIdsPath.length - 1];
+        // Validate the output balance before executing the swap
         IDolomiteStructs.Wei memory balanceBefore = DOLOMITE_MARGIN().getAccountWei(
             IDolomiteStructs.AccountInfo({
                 owner: address(this),

@@ -20,14 +20,14 @@ import {
   createPendlePtGLP2024Registry,
   createPendlePtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 /**
  * This is the expected price at the following timestamp: 1683002000
  *
  * Keep in mind that Pendle's prices tick upward each second.
  */
-const PT_GLP_PRICE = BigNumber.from('811223271259012781'); // $0.811223271259012781
+const PT_GLP_PRICE = BigNumber.from('958512888340113899'); // $0.958512888340113899
 
 describe('PendlePtGLPPriceOracle', () => {
   let snapshotId: string;
@@ -40,10 +40,7 @@ describe('PendlePtGLPPriceOracle', () => {
   let marketId: BigNumberish;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 86413000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     pendleRegistry = await createPendlePtGLP2024Registry(core);
     const userVaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
@@ -110,7 +107,7 @@ describe('PendlePtGLPPriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for dptGLP', async () => {
-      await increaseToTimestamp(1_683_002_000);
+      await increaseToTimestamp(1_983_002_000);
       const price = await ptGlpOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_GLP_PRICE);
     });

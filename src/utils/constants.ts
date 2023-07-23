@@ -264,7 +264,7 @@ export const SBF_GMX_MAP: Record<Network, string | undefined> = {
 };
 
 export const UMAMI_CONFIGURATOR_MAP: Record<Network, string | undefined> = {
-  [Network.ArbitrumOne]: '0x7A53700c4d2DD1Eb9809a63679A6a5b6c4e31d97',
+  [Network.ArbitrumOne]: '0x4e5645bee4eD80C6FEe04DCC15D14A3AC956748A',
   [Network.ArbitrumGoerli]: undefined,
 };
 

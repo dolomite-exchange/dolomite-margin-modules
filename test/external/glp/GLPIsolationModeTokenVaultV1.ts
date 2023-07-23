@@ -55,7 +55,7 @@ describe('GLPIsolationModeTokenVaultV1', () => {
     factory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, vaultImplementation);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await core.testPriceOracle!.setPrice(factory.address, '1000000000000000000');
+    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '1000000000000000000');
     await setupTestMarket(core, factory, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize([]);
@@ -110,6 +110,12 @@ describe('GLPIsolationModeTokenVaultV1', () => {
       accountNumber,
     );
   }
+
+  describe('#dolomiteRegistry', () => {
+    it('should work', async () => {
+      expect(await vault.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
+    });
+  });
 
   describe('#handleRewards', () => {
     async function setupGmxStakingAndEsGmxVesting() {

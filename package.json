@@ -12,7 +12,7 @@
     "build": "hardhat compile",
     "clean": "hardhat clean",
     "coverage": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/**/!(*Liquidation*|*LiquidatorProxyV2*)*.ts\" --network hardhat",
-    "coverage:specific": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/external/jones/usdc/JonesUSDCRegistry.ts\" --network hardhat",
+    "coverage:specific": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/external/general/DolomiteRegistry.ts\" --network hardhat",
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy-atlas-ecosystem.ts",
     "deploy:deprecate-trader-v1": "hardhat --network arbitrum_one run scripts/deploy-deprecate-trader-v1.ts",
@@ -30,7 +30,7 @@
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "sort:contracts": "hardhat --network hardhat run scripts/sort-contract.ts",
     "test": "hardhat --network hardhat test",
-    "test:specific": "TEST_SPECIFIC=true hardhat --network hardhat test test/external/proxies/abstract/IsolationModeTokenVaultV1WithPausable.ts",
+    "test:specific": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/umami/UmamiAssetVaultIsolationModeUnwrapperTraderV2.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
   "repository": {

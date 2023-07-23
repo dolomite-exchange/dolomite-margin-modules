@@ -24,6 +24,7 @@ import { JonesUSDCIsolationModeUnwrapperTraderV2 } from "./JonesUSDCIsolationMod
 import { JonesUSDCMathLib } from "./JonesUSDCMathLib.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
+import { ILiquidatorAssetRegistry } from "../../interfaces/ILiquidatorAssetRegistry.sol";
 import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
 
 
@@ -41,6 +42,10 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation is JonesUSDCIsola
 
     bytes32 private constant _FILE = "JonesUSDCUnwrapperV2Liquidation";
 
+    // ============ Immutable State Variables ============
+
+    ILiquidatorAssetRegistry public immutable LIQUIDATOR_ASSET_REGISTRY; // solhint-disable-line var-name-mixedcase
+
     // ============ Constructor ============
 
     constructor(
@@ -51,13 +56,12 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation is JonesUSDCIsola
         address _dolomiteMargin
     )
     JonesUSDCIsolationModeUnwrapperTraderV2(
-        _liquidatorAssetRegistry,
         _usdc,
         _jonesUSDCRegistry,
         _djUSDC,
         _dolomiteMargin
     ) {
-        // solhint-disable-previous-line no-empty-blocks
+        LIQUIDATOR_ASSET_REGISTRY = ILiquidatorAssetRegistry(_liquidatorAssetRegistry);
     }
 
     // ============================================

@@ -14,7 +14,7 @@ import {
   createPlutusVaultGLPIsolationModeVaultFactory,
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
-import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -27,10 +27,7 @@ describe('PlutusVaultGLPIsolationModeVaultFactory', () => {
   let factory: PlutusVaultGLPIsolationModeVaultFactory;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 86413000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
     vaultImplementation = await createContractWithAbi<TestGLPIsolationModeTokenVaultV1>(
       TestGLPIsolationModeTokenVaultV1__factory.abi,

@@ -65,15 +65,20 @@ contract TestIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         uint256,
         address _inputToken,
         uint256 _inputAmount,
-        bytes memory
+        bytes memory _orderData
     )
     internal
     override
     returns (uint256) {
-        // 1:1 conversion for the sake of testing
-        uint256 outputPrice = _getMarketPriceForToken(address(VAULT_FACTORY));
-        uint256 inputPrice = _getMarketPriceForToken(_inputToken);
-        uint256 outputAmount = _inputAmount * inputPrice / outputPrice;
+        uint256 outputAmount;
+        if (_orderData.length > 0) {
+            outputAmount = abi.decode(_orderData, (uint256));
+        } else {
+            // 1:1 conversion for the sake of
+            uint256 outputPrice = _getMarketPriceForToken(address(VAULT_FACTORY));
+            uint256 inputPrice = _getMarketPriceForToken(_inputToken);
+            outputAmount = _inputAmount * inputPrice / outputPrice;
+        }
 
         ICustomTestToken(_outputTokenUnderlying).addBalance(address(this), outputAmount);
 

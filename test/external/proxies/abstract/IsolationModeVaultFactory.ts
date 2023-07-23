@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BaseContract, BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
+import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
 import {
   CustomTestToken,
   IsolationModeTokenVaultV1,
@@ -9,7 +9,6 @@ import {
   IsolationModeUpgradeableProxy,
   IsolationModeUpgradeableProxy__factory,
   TestIsolationModeFactory,
-  TestIsolationModeFactory__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeUnwrapperTraderV1,
@@ -60,7 +59,7 @@ describe('IsolationModeVaultFactory', () => {
   let tokenUnwrapperV2: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapperV2: TestIsolationModeWrapperTraderV2;
   let factory: TestIsolationModeFactory;
-  let userVaultImplementation: BaseContract;
+  let userVaultImplementation: TestIsolationModeTokenVaultV1;
   let initializeResult: ContractTransaction;
 
   let solidAccount: SignerWithAddress;
@@ -69,17 +68,17 @@ describe('IsolationModeVaultFactory', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
-    userVaultImplementation = await createContractWithAbi(
+    userVaultImplementation = await createContractWithAbi<TestIsolationModeTokenVaultV1>(
       TestIsolationModeTokenVaultV1__factory.abi,
       TestIsolationModeTokenVaultV1__factory.bytecode,
       [],
     );
     factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
-    await core.testPriceOracle!.setPrice(
+    await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
     );
-    await core.testPriceOracle!.setPrice(
+    await core.testEcosystem!.testPriceOracle.setPrice(
       otherToken.address,
       '1000000000000000000', // $1.00
     );
@@ -91,7 +90,7 @@ describe('IsolationModeVaultFactory', () => {
     await setupTestMarket(core, otherToken, false);
 
     rewardToken = await createTestToken();
-    await core.testPriceOracle!.setPrice(
+    await core.testEcosystem!.testPriceOracle.setPrice(
       rewardToken.address,
       '1000000000000000000', // $1.00
     );
@@ -137,16 +136,7 @@ describe('IsolationModeVaultFactory', () => {
   });
 
   async function createUninitializedFactory() {
-    return createContractWithAbi<TestIsolationModeFactory>(
-      TestIsolationModeFactory__factory.abi,
-      TestIsolationModeFactory__factory.bytecode,
-      [
-        underlyingToken.address,
-        core.borrowPositionProxyV2.address,
-        userVaultImplementation.address,
-        core.dolomiteMargin.address,
-      ],
-    );
+    return createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
   }
 
   async function checkVaultCreationResults(result: ContractTransaction) {
@@ -191,24 +181,15 @@ describe('IsolationModeVaultFactory', () => {
     });
 
     it('should fail when not called by DolomiteMargin owner', async () => {
-      const badFactory = await createContractWithAbi<TestIsolationModeFactory>(
-        TestIsolationModeFactory__factory.abi,
-        TestIsolationModeFactory__factory.bytecode,
-        [
-          underlyingToken.address,
-          core.borrowPositionProxyV2.address,
-          userVaultImplementation.address,
-          core.dolomiteMargin.address,
-        ],
-      );
-      await core.testPriceOracle!.setPrice(
+      const badFactory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+      await core.testEcosystem!.testPriceOracle.setPrice(
         badFactory.address,
         '1000000000000000000', // $1.00
       );
       await core.dolomiteMargin.connect(core.governance).ownerAddMarket(
         badFactory.address,
-        core.testPriceOracle!.address,
-        core.testInterestSetter!.address,
+        core.testEcosystem!.testPriceOracle.address,
+        core.testEcosystem!.testInterestSetter.address,
         { value: 0 },
         { value: 0 },
         0,
@@ -223,24 +204,15 @@ describe('IsolationModeVaultFactory', () => {
     });
 
     it('should fail when market allows borrowing', async () => {
-      const badFactory = await createContractWithAbi<TestIsolationModeFactory>(
-        TestIsolationModeFactory__factory.abi,
-        TestIsolationModeFactory__factory.bytecode,
-        [
-          underlyingToken.address,
-          core.borrowPositionProxyV2.address,
-          userVaultImplementation.address,
-          core.dolomiteMargin.address,
-        ],
-      );
-      await core.testPriceOracle!.setPrice(
+      const badFactory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+      await core.testEcosystem!.testPriceOracle.setPrice(
         badFactory.address,
         '1000000000000000000', // $1.00
       );
       await core.dolomiteMargin.connect(core.governance).ownerAddMarket(
         badFactory.address,
-        core.testPriceOracle!.address,
-        core.testInterestSetter!.address,
+        core.testEcosystem!.testPriceOracle.address,
+        core.testEcosystem!.testInterestSetter.address,
         { value: 0 },
         { value: 0 },
         0,

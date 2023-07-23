@@ -43,6 +43,12 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#slippageToleranceForPauseSentinelBase', () => {
+    it('should return 1e18', async () => {
+      expect(await registry.slippageToleranceForPauseSentinelBase()).to.equal('1000000000000000000');
+    });
+  });
+
   describe('#ownerSetGenericTraderProxy', () => {
     it('should work normally', async () => {
       const genericTraderProxy = core.genericTraderProxy!.address;
@@ -71,6 +77,36 @@ describe('DolomiteRegistryImplementation', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGenericTraderProxy(ZERO_ADDRESS),
         'DolomiteRegistryImplementation: Invalid genericTraderProxy',
+      );
+    });
+  });
+
+  describe('#ownerSetSlippageToleranceForPauseSentinel', () => {
+    it('should work normally', async () => {
+      const slippageTolerance = '123';
+      const result = await registry.connect(core.governance)
+        .ownerSetSlippageToleranceForPauseSentinel(slippageTolerance);
+      await expectEvent(registry, result, 'SlippageToleranceForPauseSentinelSet', {
+        slippageTolerance,
+      });
+      expect(await registry.slippageToleranceForPauseSentinel()).to.equal(slippageTolerance);
+    });
+
+    it('should fail if slippageToleranceForPauseSentinel is invalid', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetSlippageToleranceForPauseSentinel(0),
+        'DolomiteRegistryImplementation: Invalid slippageTolerance',
+      );
+      await expectThrow(
+        registry.connect(core.governance).ownerSetSlippageToleranceForPauseSentinel('1000000000000000000'),
+        'DolomiteRegistryImplementation: Invalid slippageTolerance',
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetSlippageToleranceForPauseSentinel(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
