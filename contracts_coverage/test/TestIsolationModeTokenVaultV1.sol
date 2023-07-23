@@ -22,10 +22,12 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { TestIsolationModeFactory } from "./TestIsolationModeFactory.sol";
+import { TestSimpleIsolationModeVaultFactory } from "./TestSimpleIsolationModeVaultFactory.sol";
 import { IDolomiteRegistry } from "../external/interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeVaultFactory } from "../external/interfaces/IIsolationModeVaultFactory.sol";
 import { SimpleIsolationModeTokenVaultV1 } from "../external/proxies/SimpleIsolationModeTokenVaultV1.sol";
+import { IsolationModeTokenVaultV1 } from "../external/proxies/abstract/IsolationModeTokenVaultV1.sol";
+
 
 /**
  * @title   TestIsolationModeTokenVaultV1
@@ -54,5 +56,9 @@ contract TestIsolationModeTokenVaultV1 is SimpleIsolationModeTokenVaultV1 {
         if (_shouldReenter) {
             testReentrancy(false);
         }
+    }
+
+    function dolomiteRegistry() public override(IsolationModeTokenVaultV1) view returns (IDolomiteRegistry) {
+        return TestSimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
     }
 }

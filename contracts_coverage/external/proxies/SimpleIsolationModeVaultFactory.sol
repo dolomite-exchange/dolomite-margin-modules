@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IsolationModeVaultFactory } from "./abstract/IsolationModeVaultFactory.sol";
 
 
@@ -89,8 +88,6 @@ abstract contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetAllowableCollateralMarketIds(_newAllowableCollateralMarketIds);
     }
-
-    function dolomiteRegistry() external virtual view returns (IDolomiteRegistry);
 
     function allowableDebtMarketIds() external view returns (uint256[] memory) {
         return _allowableDebtMarketIds;

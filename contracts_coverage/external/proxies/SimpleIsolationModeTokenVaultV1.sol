@@ -20,8 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { SimpleIsolationModeVaultFactory } from "./SimpleIsolationModeVaultFactory.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "./abstract/IsolationModeTokenVaultV1.sol";
 
 
@@ -32,9 +30,6 @@ import { IsolationModeTokenVaultV1 } from "./abstract/IsolationModeTokenVaultV1.
  * @notice  A simple implementation (for an upgradeable proxy) for wrapping tokens via a per-user vault that can be used
  *          with DolomiteMargin. There are no functions to implement, so the implementation is empty.
  */
-contract SimpleIsolationModeTokenVaultV1 is IsolationModeTokenVaultV1 {
-
-    function dolomiteRegistry() public override(IsolationModeTokenVaultV1) view returns (IDolomiteRegistry) {
-        return SimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
-    }
+abstract contract SimpleIsolationModeTokenVaultV1 is IsolationModeTokenVaultV1 {
+    // solhint-disable-previous-line no-empty-blocks
 }

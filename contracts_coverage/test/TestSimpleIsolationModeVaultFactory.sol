@@ -37,7 +37,7 @@ contract TestSimpleIsolationModeVaultFactory is SimpleIsolationModeVaultFactory 
     // ==================== Fields ====================
     // ================================================
 
-    IDolomiteRegistry public override dolomiteRegistry;
+    IDolomiteRegistry public dolomiteRegistry;
 
     // ================================================
     // ================== Constructor =================
