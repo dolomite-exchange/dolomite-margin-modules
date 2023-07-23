@@ -111,18 +111,6 @@ describe('SimpleIsolationModeVaultFactory', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('#dolomiteRegistry', () => {
-    it('should work normally', async () => {
-      expect(await factory.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
-      await factory.createVault(core.hhUser1.address);
-      const userVault = TestIsolationModeTokenVaultV1__factory.connect(
-        await factory.getVaultByAccount(core.hhUser1.address),
-        core.hhUser1,
-      );
-      expect(await userVault.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
-    });
-  });
-
   describe('#ownerSetAllowableDebtMarketIds', () => {
     it('should work normally', async () => {
       const newAllowableDebtMarketIds = [BigNumber.from(4), BigNumber.from(5)];

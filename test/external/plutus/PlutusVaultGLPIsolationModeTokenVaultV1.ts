@@ -116,6 +116,12 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
+  describe('#dolomiteRegistry', () => {
+    it('should work', async () => {
+      expect(await vault.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
+    });
+  });
+
   describe('#stakePlvGlp', () => {
     it('should work normally', async () => {
       await vault.stakePlvGlp(stakedAmountWei);

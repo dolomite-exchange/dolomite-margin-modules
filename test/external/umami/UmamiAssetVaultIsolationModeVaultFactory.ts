@@ -64,7 +64,6 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       for (let i = 0; i < factories.length; i++) {
-        expect(await factories[i].dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
         expect(await factories[i].umamiAssetVaultRegistry()).to.equal(umamiRegistry.address);
         expect(await factories[i].UNDERLYING_TOKEN()).to.equal(umamiAssets[i].address);
         expect(await factories[i].BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);

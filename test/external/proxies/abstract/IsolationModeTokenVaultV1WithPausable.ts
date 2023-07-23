@@ -890,12 +890,11 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       expect(await userVault.isExternalRedemptionPaused()).to.be.true;
 
       const inputAmount = otherAmountWei.div(2);
-      const outputAmount = inputAmount;
       const zapParams = await getSimpleZapParams(
         otherMarketId1,
         inputAmount,
         otherMarketId2,
-        outputAmount,
+        inputAmount,
         core,
       );
       await expectThrow(
