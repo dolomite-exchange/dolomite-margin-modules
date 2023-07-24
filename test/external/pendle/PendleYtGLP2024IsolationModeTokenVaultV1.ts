@@ -32,7 +32,6 @@ import {
     PendleYtGLPPriceOracle,
     IERC20,
     IPendleYtToken,
-    IPlutusVaultGLPFarm,
     PendleGLPRegistry,
     PendleYtGLP2024IsolationModeUnwrapperTraderV2,
     PendleYtGLP2024IsolationModeWrapperTraderV2,

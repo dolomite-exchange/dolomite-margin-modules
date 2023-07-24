@@ -3,7 +3,8 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber} from 'ethers';
+import { ethers } from 'hardhat';
 import {
   IGmxRegistryV1,
   IPendleYtToken,
@@ -18,7 +19,7 @@ import {
 import { AccountInfoStruct } from '../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot, setEtherBalance } from '../../utils';
-import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
+import { createDepositAction, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { expectThrow, expectWalletBalance } from '../../utils/assertions';
 import {
   createPendleYtGLP2024IsolationModeTokenVaultV1,
@@ -115,12 +116,6 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     const usableUsdcAmount = usdcAmount.div(2);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
 
-    let vaultImpersonater = await impersonate(vault.address);
-    await setEtherBalance(vault.address, ethers.utils.parseEther("1"));
-    await setupUSDCBalance(core, vaultImpersonater, usableUsdcAmount, core.gmxEcosystem!.glpManager);
-    await core.tokens.usdc.connect(vaultImpersonater).approve(core.dolomiteMargin.address, ethers.constants.MaxUint256);
-    await depositIntoDolomiteMargin(core, vaultImpersonater, 0, core.marketIds.usdc, usableUsdcAmount);
-
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.tokens.usdc.address, usableUsdcAmount, 0, 0);
     const glpAmount = amountWei.mul(2);
@@ -146,8 +141,8 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('Call and Exchange for non-liquidation sale', () => {
-    it('should work when called with the normal conditions', async () => {
+  describe.only('Call and Exchange for non-liquidation sale', () => {
+    it.only('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
 
@@ -160,6 +155,11 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
         );
 
       const { extraOrderData, approxParams } = await encodeSwapExactTokensForYt(router, core, glpAmount, 0);
+
+      let vaultImpersonater = await impersonate(vault.address);
+      await setEtherBalance(vault.address, ethers.utils.parseEther("1"));
+      await setupUSDCBalance(core, vaultImpersonater, usableUsdcAmount, core.gmxEcosystem!.glpManager);
+      await core.tokens.usdc.connect(vaultImpersonater).approve(core.dolomiteMargin.address, ethers.constants.MaxUint256);
 
       const actions = await wrapper.createActionsForWrapping(
         solidAccountId,
@@ -175,10 +175,18 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
 
       await core.tokens.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+
+      // Set automine to false so interest doesn't accrue on USDC deposit 
+      await ethers.provider.send("evm_setAutomine", [false]);
+
+      await depositIntoDolomiteMargin(core, vaultImpersonater, 0, core.marketIds.usdc, usableUsdcAmount);
       await core.dolomiteMargin.connect(core.hhUser5).operate(
         [defaultAccount],
         actions,
       );
+
+      await ethers.provider.send("evm_mine", []);
+      await ethers.provider.send("evm_setAutomine", [true]);
 
       const expectedTotalBalance = amountWei.add(approxParams.guessOffchain);
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
@@ -187,10 +195,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
       expect(await vault.underlyingBalanceOf()).to.eq(expectedTotalBalance);
 
       const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
-      // console log guess min guess max guess offChain
-      expect(otherBalanceWei.sign).to.eq(true);
-      // @follow-up Number is off by 63
-      // expect(otherBalanceWei.value).to.eq(0);
+      expect(otherBalanceWei.value).to.eq(0);
 
       await expectWalletBalance(wrapper.address, core.tokens.usdc, ZERO_BI);
       await expectWalletBalance(wrapper.address, core.gmxEcosystem!.fsGlp, ZERO_BI);
