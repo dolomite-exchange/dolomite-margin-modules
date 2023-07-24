@@ -159,7 +159,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
           BYTES_EMPTY,
         );
 
-      const { extraOrderData, approxParams } = await encodeSwapExactTokensForYt(router, core, glpAmount);
+      const { extraOrderData, approxParams } = await encodeSwapExactTokensForYt(router, core, glpAmount, 0);
 
       const actions = await wrapper.createActionsForWrapping(
         solidAccountId,
@@ -187,6 +187,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
       expect(await vault.underlyingBalanceOf()).to.eq(expectedTotalBalance);
 
       const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
+      // console log guess min guess max guess offChain
       expect(otherBalanceWei.sign).to.eq(true);
       // @follow-up Number is off by 63
       // expect(otherBalanceWei.value).to.eq(0);

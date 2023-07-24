@@ -27,6 +27,7 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 
+import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IPendleYtGLP2024IsolationModeTokenVaultV1 } from "../interfaces/pendle/IPendleYtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IPendleYtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleYtToken } from "../interfaces/pendle/IPendleYtToken.sol";
@@ -71,7 +72,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         _redeemDueInterestAndRewards(
             _redeemInterest,
             _redeemRewards,
-            _sendToUser
+            _sendToUser,
+            /* _depositAccountNumberForWeth = */ 0
         );
     }
 
@@ -86,19 +88,28 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     function _redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards,
-        bool _sendToUser
+        bool _shouldDepositIntoDolomite,
+        uint256 _depositAccountNumberForWeth
     ) internal {
-        (, uint256[] memory rewardsOut) = IPendleYtToken(UNDERLYING_TOKEN()).redeemDueInterestAndRewards(
+        IPendleYtToken(UNDERLYING_TOKEN()).redeemDueInterestAndRewards(
                 address(this),
                 _redeemInterest,
                 _redeemRewards
             );
 
-        if (_sendToUser) {
-            address[] memory rewardTokens = IPendleYtToken(UNDERLYING_TOKEN()).getRewardTokens();
-            for (uint i; i < rewardTokens.length; ++i) {
-                IERC20(rewardTokens[i]).safeTransfer(msg.sender, rewardsOut[i]);
-            }
+        address factory = VAULT_FACTORY();
+        address weth = IPendleYtGLP2024IsolationModeVaultFactory(factory).WETH();
+        uint256 wethAmountWei = IERC20(weth).balanceOf(address(this));
+        if (_shouldDepositIntoDolomite) {
+            IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), wethAmountWei);
+            IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
+                _depositAccountNumberForWeth,
+                IPendleYtGLP2024IsolationModeVaultFactory(factory).WETH_MARKET_ID(),
+                wethAmountWei
+            );
+        }
+        else {
+            IERC20(weth).safeTransfer(msg.sender, wethAmountWei);
         }
     }
 

@@ -45,6 +45,10 @@ interface IPendleYtGLP2024IsolationModeVaultFactory is IIsolationModeVaultFactor
 
     function ownerSetYtMaturityDate(uint256 _ytMaturityDate) external;
 
+    function WETH() external view returns (address);
+
+    function WETH_MARKET_ID() external view returns (uint256);
+
     function pendleGLPRegistry() external view returns (IPendleGLPRegistry);
 
     function ytMaturityDate() external view returns (uint256);

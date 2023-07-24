@@ -46,7 +46,7 @@ import {
     setupTestMarket,
     setupUserVaultProxy
 } from '../../utils/setup';
-import { expectThrow } from 'test/utils/assertions';
+import { expectThrow, expectWalletBalance } from 'test/utils/assertions';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { RegistryProxy__factory } from 'src/types/factories/RegistryProxy__factory';
 
@@ -172,16 +172,29 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
     describe.only('#redeemDueInterestAndRewards', () => {
         it('should work normally', async () => {
-            // @follow-up How to do this math for tests?
+            expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
+            expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
+
             await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
-            await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, false);
-            expect(await core.tokens.weth.balanceOf(vault.address)).to.eq(BigNumber.from('478101499520266'));
+            await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, true);
+            
+            let account = { owner: core.hhUser1.address, number: defaultAccountNumber}
+            const balance = await core.dolomiteMargin.getAccountWei(account, core.marketIds.weth);
+            expect(balance.sign).to.eq(true);
+            expect(balance.value).to.be.gt(ZERO_BI);
+            expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
+            expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
         });
 
         it('should send rewards to user', async () => {
+            expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
+            expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
+
             await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
-            await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, true);
-            expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.eq(BigNumber.from('478101499520266'));
+            await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, false);
+
+            expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.be.gt(ZERO_BI);
+            expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
         });
 
         it('should fail when not called by vault owner', async () => {

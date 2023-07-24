@@ -45,12 +45,16 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
 
     // ============ Field Variables ============
 
+    address public immutable override WETH; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable override WETH_MARKET_ID; // solhint-disable-line var-name-mixedcase
     IPendleGLPRegistry public override pendleGLPRegistry;
     uint256 public override ytMaturityDate;
 
     // ============ Constructor ============
 
     constructor(
+        address _weth,
+        uint256 _wethMarketId,
         address _pendleGLPRegistry,
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
@@ -67,6 +71,8 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
         _userVaultImplementation,
         _dolomiteMargin
     ) {
+        WETH = _weth;
+        WETH_MARKET_ID = _wethMarketId;
         pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
         ytMaturityDate = IPendleYtToken(UNDERLYING_TOKEN).expiry();
     }
