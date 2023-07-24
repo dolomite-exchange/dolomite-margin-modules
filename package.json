@@ -15,6 +15,7 @@
     "coverage:specific": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/external/general/DolomiteRegistry.ts\" --network hardhat",
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy-atlas-ecosystem.ts",
+    "deploy:zap-part-2": "hardhat --network arbitrum_one run scripts/deploy-zap-part-2.ts",
     "deploy:deprecate-trader-v1": "hardhat --network arbitrum_one run scripts/deploy-deprecate-trader-v1.ts",
     "deploy:dolomite-registry": "hardhat --network arbitrum_one run scripts/deploy-dolomite-registry.ts",
     "deploy:gmx-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-gmx-ecosystem.ts",

@@ -71,7 +71,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
     });
     underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
     jonesUSDCRegistry = await JonesUSDCRegistry__factory.connect(
-      deployments.JonesUSDCRegistry[network].address,
+      deployments.JonesUSDCRegistryProxy[network].address,
       core.hhUser1,
     );
     factory = JonesUSDCIsolationModeVaultFactory__factory.connect(
@@ -79,7 +79,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
       core.hhUser1,
     );
     unwrapper = JonesUSDCIsolationModeUnwrapperTraderV2__factory.connect(
-      deployments.JonesUSDCIsolationModeUnwrapperTraderV2[network].address,
+      deployments.JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation[network].address,
       core.hhUser1,
     );
     wrapper = JonesUSDCIsolationModeWrapperTraderV2__factory.connect(

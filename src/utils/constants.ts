@@ -32,10 +32,26 @@ export const DFS_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const DJ_USDC: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x2aDba3f917bb0Af2530F8F295aD2a6fF1111Fc05',
+    marketId: 10,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const DPLV_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x5c80aC681B6b0E7EF6E0751211012601e6cFB043',
     marketId: 9,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const DPT_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x7b07E78561a3C2C1Eade652A2a92Da150743F4D7',
+    marketId: 11,
   },
   [Network.ArbitrumGoerli]: undefined,
 };

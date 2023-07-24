@@ -11,7 +11,7 @@ import {
 } from '../../types';
 
 export function getGLPPriceOracleV1ConstructorParams(
-  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
+  dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
   return [gmxRegistry.address, dfsGlp.address];

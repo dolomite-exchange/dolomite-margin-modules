@@ -2,10 +2,10 @@ import { address } from '@dolomite-exchange/dolomite-margin';
 import { BigNumber as ZapBigNumber, ZapOutputParam } from '@dolomite-exchange/zap-sdk/dist';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
-import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
+import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { IGenericTraderBase } from '../../src/types/contracts/external/interfaces/IGenericTraderProxyV1';
 import { AccountInfoStruct } from '../../src/utils';
-import { BYTES_EMPTY, NO_EXPIRY, NO_PARASWAP_TRADER_PARAM } from '../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, MAX_UINT_256_BI, NO_EXPIRY, NO_PARASWAP_TRADER_PARAM } from '../../src/utils/no-deps-constants';
 import { expectThrow } from './assertions';
 import { CoreProtocol } from './setup';
 
@@ -58,7 +58,8 @@ export async function liquidateV4WithIsolationMode(
     solidAccountStruct,
     liquidAccountStruct,
     marketIdsPath,
-    amountWeisPath,
+    MAX_UINT_256_BI,
+    MAX_UINT_256_BI,
     tradersPath,
     [],
     expiry,
@@ -92,7 +93,8 @@ export async function liquidateV4WithLiquidityToken(
     solidAccountStruct,
     liquidAccountStruct,
     marketIdsPath,
-    amountWeisPath,
+    MAX_UINT_256_BI,
+    MAX_UINT_256_BI,
     tradersPath,
     [],
     expiry,
@@ -109,21 +111,13 @@ export async function liquidateV4WithZap(
   let latestError = new Error('No zap output found');
   for (let i = 0; i < zapOutputs.length; i++) {
     const zapOutput = zapOutputs[i];
-    const amountWeisPath = zapOutput.amountWeisPath.map((amount, i) => {
-      if (i === zapOutput.amountWeisPath.length - 1) {
-        return ethers.constants.MaxUint256.toString();
-      }
-      if (i === 0) {
-        return ethers.constants.MaxUint256.toString();
-      }
-      return amount.toString();
-    });
     try {
       return await core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
         solidAccountStruct,
         liquidAccountStruct,
         zapOutput.marketIdsPath,
-        amountWeisPath,
+        MAX_UINT_256_BI,
+        MAX_UINT_256_BI,
         zapOutput.traderParams,
         zapOutput.makerAccounts,
         expiry,
