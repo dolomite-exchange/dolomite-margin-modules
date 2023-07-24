@@ -11,11 +11,7 @@ import {
 } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { Network } from 'src/utils/no-deps-constants';
-import {
-  revertToSnapshotAndCapture,
-  snapshot,
-  increaseToTimestamp,
-} from 'test/utils';
+import { revertToSnapshotAndCapture, snapshot, increaseToTimestamp } from 'test/utils';
 import { expectThrow } from 'test/utils/assertions';
 import {
   createPendleGLPRegistry,
@@ -24,11 +20,7 @@ import {
   createPendleYtGLP2024IsolationModeVaultFactory,
   createPendleYtGLPPriceOracle,
 } from 'test/utils/ecosystem-token-utils/pendle';
-import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupTestMarket,
-} from '../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 /**
  * This is the expected price at the following timestamp: 1689700000
@@ -57,8 +49,7 @@ describe('PendleYtGLPPriceOracle', () => {
     });
 
     pendleRegistry = await createPendleGLPRegistry(core);
-    const userVaultImplementation =
-      await createPendleYtGLP2024IsolationModeTokenVaultV1();
+    const userVaultImplementation = await createPendleYtGLP2024IsolationModeTokenVaultV1();
     factory = await createPendleYtGLP2024IsolationModeVaultFactory(
       pendleRegistry,
       initialAllowableDebtMarketIds,
@@ -67,11 +58,7 @@ describe('PendleYtGLPPriceOracle', () => {
       core.pendleEcosystem!.ytGlpToken,
       userVaultImplementation
     );
-    unwrapperTrader = await createPendleYtGLP2024IsolationModeUnwrapperTraderV2(
-      core,
-      factory,
-      pendleRegistry
-    );
+    unwrapperTrader = await createPendleYtGLP2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
     ytGlpOracle = await createPendleYtGLPPriceOracle(
       core,
       factory,
@@ -91,12 +78,8 @@ describe('PendleYtGLPPriceOracle', () => {
     it('should work normally', async () => {
       expect(await ytGlpOracle.DYT_GLP()).to.eq(factory.address);
       expect(await ytGlpOracle.REGISTRY()).to.eq(pendleRegistry.address);
-      expect(await ytGlpOracle.DOLOMITE_MARGIN()).to.eq(
-        core.dolomiteMargin.address
-      );
-      expect(await ytGlpOracle.DFS_GLP_MARKET_ID()).to.eq(
-        core.marketIds.dfsGlp
-      );
+      expect(await ytGlpOracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
+      expect(await ytGlpOracle.DFS_GLP_MARKET_ID()).to.eq(core.marketIds.dfsGlp);
     });
 
     it('should fail when oracle is not ready yet', async () => {
@@ -105,9 +88,7 @@ describe('PendleYtGLPPriceOracle', () => {
         TestPendlePtOracle__factory.bytecode,
         []
       );
-      await pendleRegistry
-        .connect(core.governance)
-        .ownerSetPtOracle(testPtOracle.address);
+      await pendleRegistry.connect(core.governance).ownerSetPtOracle(testPtOracle.address);
 
       await testPtOracle.setOracleState(true, 0, false);
       await expectThrow(
