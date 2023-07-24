@@ -19,7 +19,7 @@ import {
 import { AccountInfoStruct } from '../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot, setEtherBalance } from '../../utils';
-import { createDepositAction, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
+import { createDepositAction } from 'src/utils/dolomite-utils';
 import { expectThrow, expectWalletBalance } from '../../utils/assertions';
 import {
   createPendleYtGLP2024IsolationModeTokenVaultV1,
@@ -141,8 +141,8 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe.only('Call and Exchange for non-liquidation sale', () => {
-    it.only('should work when called with the normal conditions', async () => {
+  describe('Call and Exchange for non-liquidation sale', () => {
+    it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
 
@@ -161,7 +161,8 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
       await setupUSDCBalance(core, vaultImpersonater, usableUsdcAmount, core.gmxEcosystem!.glpManager);
       await core.tokens.usdc.connect(vaultImpersonater).approve(core.dolomiteMargin.address, ethers.constants.MaxUint256);
 
-      const actions = await wrapper.createActionsForWrapping(
+      // Insert deposit action so there is enough collateral
+      const actions = [createDepositAction(usableUsdcAmount, core.marketIds.usdc, vaultImpersonater, vaultImpersonater.address), (await wrapper.createActionsForWrapping(
         solidAccountId,
         liquidAccountId,
         ZERO_ADDRESS,
@@ -171,22 +172,14 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
         ZERO_BI,
         usableUsdcAmount,
         extraOrderData,
-      );
+      ))[0]];
 
       await core.tokens.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-
-      // Set automine to false so interest doesn't accrue on USDC deposit 
-      await ethers.provider.send("evm_setAutomine", [false]);
-
-      await depositIntoDolomiteMargin(core, vaultImpersonater, 0, core.marketIds.usdc, usableUsdcAmount);
       await core.dolomiteMargin.connect(core.hhUser5).operate(
         [defaultAccount],
         actions,
       );
-
-      await ethers.provider.send("evm_mine", []);
-      await ethers.provider.send("evm_setAutomine", [true]);
 
       const expectedTotalBalance = amountWei.add(approxParams.guessOffchain);
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
