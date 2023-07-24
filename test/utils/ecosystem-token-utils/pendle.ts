@@ -70,7 +70,6 @@ export function createPendlePtGLP2024IsolationModeTokenVaultV1(): Promise<Pendle
   );
 }
 
-
 export function createPendlePtGLPPriceOracle(
   core: CoreProtocol,
   dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,

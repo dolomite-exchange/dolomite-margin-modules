@@ -245,7 +245,7 @@ interface PendleEcosystem {
   ptGlpToken: IPendlePtToken;
   ptOracle: IPendlePtOracle;
   syGlpToken: IPendleSyToken;
-  ytGlpToken: IPendleYtToken
+  ytGlpToken: IPendleYtToken;
 }
 
 interface PlutusEcosystem {

@@ -117,7 +117,7 @@ describe('PendleYtGLP2024IsolationModeVaultFactory', () => {
     it('should fail when passed an empty array', async () => {
       await expectThrow(
         factory.connect(core.governance).ownerSetAllowableDebtMarketIds([]),
-        `PendleYtGLP2024VaultFactory: invalid allowableDebtMarketIds`,
+        'PendleYtGLP2024VaultFactory: invalid allowableDebtMarketIds',
       );
     });
   });

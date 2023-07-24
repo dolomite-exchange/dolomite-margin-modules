@@ -48,7 +48,7 @@ export async function getPendleGLPRegistryConstructorParams(
     core.pendleEcosystem!.syGlpToken.address,
     core.pendleEcosystem!.ytGlpToken.address,
     core.dolomiteRegistry.address
-  )
+  );
 
   return [
     implementation.address,
