@@ -1,3 +1,4 @@
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { ethers } from 'hardhat';
 import { Network } from 'src/utils/no-deps-constants';
 import {
@@ -42,7 +43,7 @@ import {
   getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../src/utils/constructors/plutus';
-import { CoreProtocol, setupCoreProtocol } from '../test/utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
 
 const oldLiquidatorAddress = '0xac66E962A1C52B8a3B32AF432a60fFDBc99ebD0b';
@@ -152,11 +153,14 @@ async function deployJonesUSDCContracts(network: Network, core: CoreProtocol) {
       core.jonesEcosystem!.live.jUSDCIsolationModeFactory,
     ),
   );
-  console.log('Calling #initializeUnwrapperTraders on JonesUSDCRegistry...');
-  await jonesUsdcRegistry.initializeUnwrapperTraders(
-    jUSDCUnwrapperV2ForLiquidationAddress,
-    jUSDCUnwrapperV2ForZapAddress,
-  );
+  const isInitialized = await jonesUsdcRegistry.unwrapperTraderForLiquidation() !== ZERO_ADDRESS;
+  if (!isInitialized) {
+    console.log('Calling #initializeUnwrapperTraders on JonesUSDCRegistry...');
+    await jonesUsdcRegistry.initializeUnwrapperTraders(
+      jUSDCUnwrapperV2ForLiquidationAddress,
+      jUSDCUnwrapperV2ForZapAddress,
+    );
+  }
   const jUSDCPriceOracleAddress = await deployContractAndSave(
     Number(network),
     'JonesUSDCPriceOracle',
@@ -601,7 +605,7 @@ async function encodePlvGLPTransactions(
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
-  const core = await setupCoreProtocol({ network, blockNumber: 0 });
+  const core = await setupCoreProtocol(getDefaultCoreProtocolConfig(network));
 
   const {
     gmxRegistry,
@@ -636,12 +640,13 @@ async function main() {
     plvGlpPriceOracleAddress,
   } = await deployPlutusVaultGLPContracts(network, core);
 
+  // stopped at 33
   const dolomiteRegistryProxy = RegistryProxy__factory.connect(core.dolomiteRegistry.address, core.hhUser1);
   const dolomiteRegistryImplementationAddress = await deployContractAndSave(
     Number(network),
     'DolomiteRegistryImplementation',
     [],
-    'DolomiteRegistryImplementationV1',
+    'DolomiteRegistryImplementationV2',
   );
 
   await prettyPrintEncodedData(

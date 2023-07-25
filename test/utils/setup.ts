@@ -19,7 +19,7 @@ import { address } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
-import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP } from 'src/utils/no-deps-constants';
+import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkName } from 'src/utils/no-deps-constants';
 import Deployments from '../../scripts/deployments.json';
 import {
   DolomiteCompatibleWhitelistForPlutusDAO,
@@ -134,8 +134,10 @@ import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
   ATLAS_SI_TOKEN_MAP,
   DAI_MAP,
-  DFS_GLP_MAP, DJ_USDC,
-  DPLV_GLP_MAP, DPT_GLP_MAP,
+  DFS_GLP_MAP,
+  DJ_USDC,
+  DPLV_GLP_MAP,
+  DPT_GLP_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
   ES_GMX_MAP,
   FS_GLP_MAP,
@@ -472,13 +474,18 @@ export async function setupCoreProtocol(
   const dolomiteMargin = DOLOMITE_MARGIN.connect(governance);
 
   let dolomiteRegistry: IDolomiteRegistry;
-  if (config.blockNumber >= NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[config.network]) {
+  if (
+    config.blockNumber >= NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[config.network]
+    || network.name === NetworkName.ArbitrumOne
+  ) {
     dolomiteRegistry = IDolomiteRegistry__factory.connect(
       (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
       governance,
     );
   } else {
-    dolomiteRegistry = await createDolomiteRegistryImplementation();
+    // Use a "dummy" implementation
+    const implementation = await createDolomiteRegistryImplementation();
+    dolomiteRegistry = IDolomiteRegistry__factory.connect(implementation.address, hhUser1);
   }
 
   const expiry = IExpiry__factory.connect(
@@ -737,8 +744,8 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
       jUSDCIsolationModeFactory: getContract(
         (Deployments.JonesUSDCIsolationModeVaultFactory as any)[network]?.address,
         IJonesUSDCIsolationModeVaultFactory__factory.connect,
-      )
-    }
+      ),
+    },
   };
 }
 
@@ -842,7 +849,7 @@ async function createPendleEcosystem(
         (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,
         IPendlePtGLP2024IsolationModeVaultFactory__factory.connect,
       ),
-    }
+    },
   };
 }
 
