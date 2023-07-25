@@ -24,6 +24,7 @@ import {
 } from 'test/utils/ecosystem-token-utils/pendle';
 import {
   DolomiteRegistryImplementation__factory,
+  RegistryProxy__factory,
   CustomTestToken,
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeTokenVaultV1,
@@ -46,7 +47,6 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { expectThrow, expectWalletBalance } from 'test/utils/assertions';
-import { RegistryProxy__factory } from 'src/types/factories/RegistryProxy__factory';
 
 const ONE_WEEK = 7 * 24 * 3600;
 
@@ -171,7 +171,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     });
   });
 
-  describe.only('#redeemDueInterestAndRewards', () => {
+  describe('#redeemDueInterestAndRewards', () => {
     it('should work normally', async () => {
       expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
       expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
