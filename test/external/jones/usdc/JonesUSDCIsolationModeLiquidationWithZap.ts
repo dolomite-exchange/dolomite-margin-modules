@@ -71,7 +71,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
     });
     underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
     jonesUSDCRegistry = await JonesUSDCRegistry__factory.connect(
-      deployments.JonesUSDCRegistry[network].address,
+      deployments.JonesUSDCRegistryProxy[network].address,
       core.hhUser1,
     );
     factory = JonesUSDCIsolationModeVaultFactory__factory.connect(
@@ -79,7 +79,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
       core.hhUser1,
     );
     unwrapper = JonesUSDCIsolationModeUnwrapperTraderV2__factory.connect(
-      deployments.JonesUSDCIsolationModeUnwrapperTraderV2[network].address,
+      deployments.JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation[network].address,
       core.hhUser1,
     );
     wrapper = JonesUSDCIsolationModeWrapperTraderV2__factory.connect(
@@ -160,8 +160,14 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
         usdcDebtAmountBefore,
         BalanceCheckFlag.To,
       );
-      await core.testInterestSetter!.setInterestRate(core.tokens.usdc.address, { value: '33295281582' }); // 100% APR
-      await core.dolomiteMargin.ownerSetInterestSetter(core.marketIds.usdc, core.testInterestSetter!.address);
+      await core.testEcosystem!.testInterestSetter.setInterestRate(
+        core.tokens.usdc.address,
+        { value: '33295281582' }, // 100% APR
+      );
+      await core.dolomiteMargin.ownerSetInterestSetter(
+        core.marketIds.usdc,
+        core.testEcosystem!.testInterestSetter.address,
+      );
       await waitDays(10); // accrue interest to push towards liquidation
       // deposit 0 to refresh account index
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);

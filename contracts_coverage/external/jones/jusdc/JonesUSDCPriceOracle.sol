@@ -97,7 +97,9 @@ contract JonesUSDCPriceOracle is IDolomitePriceOracle {
         uint256 price = totalSupply == 0
                 ? usdcPrice
                 : usdcPrice * jUSDC.totalAssets() / totalSupply;
-        (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee();
+        (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee(
+            JONES_USDC_REGISTRY.unwrapperTraderForLiquidation()
+        );
         return price - (price * retentionFee / retentionFeeBase);
     }
 }

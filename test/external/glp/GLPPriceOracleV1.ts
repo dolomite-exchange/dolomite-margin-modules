@@ -11,9 +11,9 @@ import {
   createGLPPriceOracleV1,
   createGmxRegistry,
 } from '../../utils/ecosystem-token-utils/gmx';
-import { setupCoreProtocol } from '../../utils/setup';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
-const GLP_PRICE = BigNumber.from('913711474561791281'); // $0.913711
+const GLP_PRICE = BigNumber.from('1004682394802947459'); // $1.004682394802947459
 
 describe('GLPPriceOracleV1', () => {
   let snapshotId: string;
@@ -22,10 +22,7 @@ describe('GLPPriceOracleV1', () => {
   let gmxRegistry: GmxRegistryV1;
 
   before(async () => {
-    const core = await setupCoreProtocol({
-      blockNumber: 53107700,
-      network: Network.ArbitrumOne,
-    });
+    const core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     gmxRegistry = await createGmxRegistry(core);
     const userVaultImplementation = await createGLPIsolationModeTokenVaultV1();
     const factory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, userVaultImplementation);

@@ -26,7 +26,7 @@ describe('GmxRegistryV1', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('#contructor', () => {
+  describe('#initialize', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.esGmx()).to.equal(core.gmxEcosystem!.esGmx.address);
       expect(await registry.fsGlp()).to.equal(core.gmxEcosystem!.fsGlp.address);
@@ -41,6 +41,30 @@ describe('GmxRegistryV1', () => {
       expect(await registry.sbfGmx()).to.equal(core.gmxEcosystem!.sbfGmx.address);
       expect(await registry.vGlp()).to.equal(core.gmxEcosystem!.vGlp.address);
       expect(await registry.vGmx()).to.equal(core.gmxEcosystem!.vGmx.address);
+      expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
+    });
+
+    it('should fail if already initialized', async () => {
+      const initializer = {
+        esGmx: core.gmxEcosystem!.esGmx.address,
+        fsGlp: core.gmxEcosystem!.fsGlp.address,
+        glp: core.gmxEcosystem!.glp.address,
+        glpManager: core.gmxEcosystem!.glpManager.address,
+        glpRewardsRouter: core.gmxEcosystem!.glpRewardsRouter.address,
+        gmx: core.gmxEcosystem!.gmx.address,
+        gmxRewardsRouter: core.gmxEcosystem!.gmxRewardsRouter.address,
+        gmxVault: core.gmxEcosystem!.gmxVault.address,
+        sGlp: core.gmxEcosystem!.sGlp.address,
+        sGmx: core.gmxEcosystem!.sGmx.address,
+        sbfGmx: core.gmxEcosystem!.sbfGmx.address,
+        vGlp: core.gmxEcosystem!.vGlp.address,
+        vGmx: core.gmxEcosystem!.vGmx.address,
+      };
+
+      await expectThrow(
+        registry.initialize(initializer, core.dolomiteRegistry.address),
+        'Initializable: contract is already initialized',
+      );
     });
   });
 
@@ -352,6 +376,30 @@ describe('GmxRegistryV1', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetVGmx(ZERO_ADDRESS),
         'GmxRegistryV1: Invalid vGmx address',
+      );
+    });
+  });
+
+  describe('#ownerSetDolomiteRegistry', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetDolomiteRegistry(core.dolomiteRegistry.address);
+      await expectEvent(registry, result, 'DolomiteRegistrySet', {
+        glpManager: core.dolomiteRegistry.address,
+      });
+      expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDolomiteRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDolomiteRegistry(ZERO_ADDRESS),
+        'BaseRegistry: Invalid dolomiteRegistry',
       );
     });
   });

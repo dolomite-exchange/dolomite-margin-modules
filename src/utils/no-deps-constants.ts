@@ -25,7 +25,7 @@ export const NO_EXPIRY = BigNumber.from('0');
 export const NONE_MARKET_ID = ethers.constants.MaxUint256;
 
 export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
-  [Network.ArbitrumOne]: 112489707,
+  [Network.ArbitrumOne]: 113516200,
   [Network.ArbitrumGoerli]: 14700000,
 };
 

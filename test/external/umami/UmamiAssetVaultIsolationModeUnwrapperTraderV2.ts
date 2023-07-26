@@ -251,7 +251,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-      ).to.eq(expectedAmount);
+      ).to.eq(expectedAmount.add(1)); // rounding issue with going from shares to assets
     });
 
     it('should work for 10 random numbers, as long as balance is sufficient', async () => {

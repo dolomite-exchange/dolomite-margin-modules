@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/dolomite-margin-modules",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Repository uses the DolomiteMargin instance on Arbitrum One for testing new modules and features against the live deployment.",
   "directories": {
     "test": "test"
@@ -12,8 +12,10 @@
     "build": "hardhat compile",
     "clean": "hardhat clean",
     "coverage": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/**/!(*Liquidation*|*LiquidatorProxyV2*)*.ts\" --network hardhat",
+    "coverage:specific": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/external/general/DolomiteRegistry.ts\" --network hardhat",
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy-atlas-ecosystem.ts",
+    "deploy:zap-part-2": "hardhat --network arbitrum_one run scripts/deploy-zap-part-2.ts",
     "deploy:deprecate-trader-v1": "hardhat --network arbitrum_one run scripts/deploy-deprecate-trader-v1.ts",
     "deploy:dolomite-registry": "hardhat --network arbitrum_one run scripts/deploy-dolomite-registry.ts",
     "deploy:gmx-ecosystem": "hardhat --network arbitrum_one run scripts/deploy-gmx-ecosystem.ts",
@@ -29,7 +31,7 @@
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "sort:contracts": "hardhat --network hardhat run scripts/sort-contract.ts",
     "test": "hardhat --network hardhat test",
-    "test:specific": "TEST_SPECIFIC=true hardhat --network hardhat test test/external/pendle/PendlePtGLP2024IsolationModeWrapperTraderV2.ts",
+    "test:specific": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/plutus/PlutusVaultGLPIsolationModeTokenVaultV1.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
   "repository": {

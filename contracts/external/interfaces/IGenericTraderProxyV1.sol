@@ -21,6 +21,7 @@ pragma solidity ^0.8.9;
 
 import { IGenericTraderBase } from "./IGenericTraderBase.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
 
@@ -57,46 +58,60 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
         uint32 expiryTimeDelta;
     }
 
+    struct UserConfig {
+        /// @dev The timestamp at which the zap request fails
+        uint256 deadline;
+        /// @dev    Setting this to `BalanceCheckFlag.Both` or `BalanceCheckFlag.From` will check the
+        ///         `_tradeAccountNumber` is not negative after the trade for the input market (_marketIdsPath[0]).
+        ///         Setting this to `BalanceCheckFlag.Both` or `BalanceCheckFlag.To` will check the
+        ///         `_transferAccountNumber` is not negative after the trade for any of the transfers in
+        ///         `TransferCollateralParam.transferAmounts`.
+        AccountBalanceLib.BalanceCheckFlag balanceCheckFlag;
+    }
+
     // ============ Functions ============
 
     /**
-     * @dev     Swaps an exact amount of input (specified in the `_amountWeisPath[0]` parameter) for at least
-     *          `_amountWeisPath[_amountWeisPath.length - 1]` of output.
+     * @dev     Swaps an exact amount of input for a minimum amount of output.
      *
      * @param  _tradeAccountNumber          The account number to use for msg.sender's trade
      * @param  _marketIdsPath               The path of market IDs to use for each trade action. Length should be equal
      *                                      to `_tradersPath.length + 1`.
-     * @param  _amountWeisPath              The path of amounts (in wei) to use for each trade action. Length should be
-     *                                      equal to `_tradersPath.length + 1`. Setting a value to `uint(-1)` will use
-     *                                      the user's full balance for the trade at that part in the path. Caution must
-     *                                      be taken when using this parameter for frontends that call this function.
+     * @param  _inputAmountWei              The input amount (in wei) to use for the initial trade action. Setting this
+     *                                      value to `uint(-1)` will use the user's full balance.
+     * @param  _minOutputAmountWei          The minimum output amount expected to be received by the user.
      * @param  _tradersPath                 The path of traders to use for each trade action. Length should be equal to
-     *                                      `_marketIdsPath.length - 1` and `_amountWeisPath.length - 1`.
+     *                                      `_marketIdsPath.length - 1`.
      * @param  _makerAccounts               The accounts that will be used for the maker side of the trades involving
      *                                      `TraderType.InternalLiquidity`.
+     * @param  _userConfig                  The user configuration for the trade. Setting the `balanceCheckFlag` to
+     *                                      `BalanceCheckFlag.From` will check that the user's `_tradeAccountNumber`
+     *                                      is non-negative after the trade. Setting the `balanceCheckFlag` to
+     *                                      `BalanceCheckFlag.To` has no effect.
      */
     function swapExactInputForOutput(
         uint256 _tradeAccountNumber,
         uint256[] calldata _marketIdsPath,
-        uint256[] calldata _amountWeisPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
         IGenericTraderBase.TraderParam[] calldata _tradersPath,
-        IDolomiteMargin.AccountInfo[] calldata _makerAccounts
+        IDolomiteMargin.AccountInfo[] calldata _makerAccounts,
+        UserConfig calldata _userConfig
     )
     external;
 
     /**
-     * @dev     The same function as `swapExactInputForOutput`, but allows the caller transfer collateral and modify
-     *          their position's expiration in the same transaction.
+     * @dev     The same function as `swapExactInputForOutput`, but allows the caller to transfer collateral and modify
+     *          the position's expiration in the same transaction.
      *
      * @param  _tradeAccountNumber          The account number to use for msg.sender's trade
      * @param  _marketIdsPath               The path of market IDs to use for each trade action. Length should be equal
      *                                      to `_tradersPath.length + 1`.
-     * @param  _amountWeisPath              The path of amounts (in wei) to use for each trade action. Length should be
-     *                                      equal to `_tradersPath.length + 1`. Setting a value to `uint(-1)` will use
-     *                                      the user's full balance for the trade at that part in the path. Caution must
-     *                                      be taken when using this parameter for frontends that call this function.
+     * @param  _inputAmountWei              The input amount (in wei) to use for the initial trade action. Setting this
+     *                                      value to `uint(-1)` will use the user's full balance.
+     * @param  _minOutputAmountWei          The minimum output amount expected to be received by the user.
      * @param  _tradersPath                 The path of traders to use for each trade action. Length should be equal to
-     *                                      `_marketIdsPath.length - 1` and `_amountWeisPath.length - 1`.
+     *                                      `_marketIdsPath.length - 1`.
      * @param  _makerAccounts               The accounts that will be used for the maker side of the trades involving
                                             `TraderType.InternalLiquidity`.
      * @param  _transferCollateralParams    The parameters for transferring collateral in/out of the
@@ -104,15 +119,23 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
      *                                      `_params.fromAccountNumber` or `_params.toAccountNumber` must be equal to
      *                                      `_tradeAccountNumber`.
      * @param  _expiryParams                The parameters for modifying the expiration of the debt in the position.
+     * @param  _userConfig                  The user configuration for the trade. Setting the `balanceCheckFlag` to
+     *                                      `BalanceCheckFlag.From` will check that the user's balance for inputMarket
+     *                                      for `_tradeAccountNumber` is non-negative after the trade. Setting the
+     *                                      `balanceCheckFlag` to `BalanceCheckFlag.To` will check that the user's
+     *                                      balance for each `transferMarket` for `transferAccountNumber` is
+     *                                      non-negative after.
      */
     function swapExactInputForOutputAndModifyPosition(
         uint256 _tradeAccountNumber,
         uint256[] calldata _marketIdsPath,
-        uint256[] calldata _amountWeisPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
         IGenericTraderBase.TraderParam[] calldata _tradersPath,
         IDolomiteMargin.AccountInfo[] calldata _makerAccounts,
         TransferCollateralParam calldata _transferCollateralParams,
-        ExpiryParam calldata _expiryParams
+        ExpiryParam calldata _expiryParams,
+        UserConfig calldata _userConfig
     )
     external;
 

@@ -13,15 +13,16 @@ import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
-  createJonesUSDCIsolationModeUnwrapperTraderV2,
+  createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
+  createJonesUSDCIsolationModeUnwrapperTraderV2ForZap,
   createJonesUSDCIsolationModeVaultFactory,
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../utils/setup';
 
-const USDC_PRICE = BigNumber.from('999904540000000000000000000000'); // $0.99990454
-const JONES_USDC_PRICE = BigNumber.from('1021871542224830000'); // $1.02187...
+const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.99998605
+const JONES_USDC_PRICE = BigNumber.from('1040340673281844411'); // $1.02187...
 
 describe('JonesUSDCPriceOracle', () => {
   let snapshotId: string;
@@ -30,14 +31,11 @@ describe('JonesUSDCPriceOracle', () => {
   let jonesUSDCPriceOracle: JonesUSDCPriceOracle;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let factory: JonesUSDCIsolationModeVaultFactory;
-  let unwrapperTrader: JonesUSDCIsolationModeUnwrapperTraderV2;
+  let unwrapperTraderForLiquidation: JonesUSDCIsolationModeUnwrapperTraderV2;
   let marketId: BigNumberish;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 86413000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     factory = await createJonesUSDCIsolationModeVaultFactory(
@@ -46,8 +44,20 @@ describe('JonesUSDCPriceOracle', () => {
       core.jonesEcosystem!.jUSDC,
       userVaultImplementation,
     );
-    unwrapperTrader = await createJonesUSDCIsolationModeUnwrapperTraderV2(core, jonesUSDCRegistry, factory);
-    await jonesUSDCRegistry.initializeUnwrapperTrader(unwrapperTrader.address);
+    unwrapperTraderForLiquidation = await createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation(
+      core,
+      jonesUSDCRegistry,
+      factory,
+    );
+    const unwrapperTraderForZap = await createJonesUSDCIsolationModeUnwrapperTraderV2ForZap(
+      core,
+      jonesUSDCRegistry,
+      factory,
+    );
+    await jonesUSDCRegistry.initializeUnwrapperTraders(
+      unwrapperTraderForLiquidation.address,
+      unwrapperTraderForZap.address,
+    );
     jonesUSDCPriceOracle = await createJonesUSDCPriceOracle(
       core,
       jonesUSDCRegistry,

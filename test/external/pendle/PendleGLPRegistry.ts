@@ -26,7 +26,7 @@ describe('PendleGLPRegistry', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('#initializer', () => {
+  describe('#initialize', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.pendleRouter()).to.equal(core.pendleEcosystem!.pendleRouter.address);
       expect(await registry.ptGlpMarket()).to.equal(core.pendleEcosystem!.ptGlpMarket.address);
@@ -34,6 +34,7 @@ describe('PendleGLPRegistry', () => {
       expect(await registry.ptOracle()).to.equal(core.pendleEcosystem!.ptOracle.address);
       expect(await registry.syGlpToken()).to.equal(core.pendleEcosystem!.syGlpToken.address);
       expect(await registry.ytGlpToken()).to.equal(core.pendleEcosystem!.ytGlpToken.address);
+      expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
 
     it('should fail if already initialized', async () => {
@@ -192,6 +193,30 @@ describe('PendleGLPRegistry', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetYtGlpToken(ZERO_ADDRESS),
         'PendleGLPRegistry: Invalid ytGlpToken address',
+      );
+    });
+  });
+
+  describe('#ownerSetDolomiteRegistry', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetDolomiteRegistry(core.dolomiteRegistry.address);
+      await expectEvent(registry, result, 'DolomiteRegistrySet', {
+        glpManager: core.dolomiteRegistry.address,
+      });
+      expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetDolomiteRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetDolomiteRegistry(ZERO_ADDRESS),
+        'BaseRegistry: Invalid dolomiteRegistry',
       );
     });
   });

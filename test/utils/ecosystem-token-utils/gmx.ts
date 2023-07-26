@@ -17,7 +17,7 @@ import {
   GmxRegistryV1__factory,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
-  IGmxRegistryV1,
+  IGmxRegistryV1, RegistryProxy, RegistryProxy__factory,
 } from '../../../src/types';
 import {
   getGLPIsolationModeVaultFactoryConstructorParams,
@@ -111,10 +111,16 @@ export async function createGLPWrapperTraderV2(
   );
 }
 
-export function createGmxRegistry(core: CoreProtocol): Promise<GmxRegistryV1> {
-  return createContractWithAbi<GmxRegistryV1>(
+export async function createGmxRegistry(core: CoreProtocol): Promise<GmxRegistryV1> {
+  const implementation = await createContractWithAbi<GmxRegistryV1>(
     GmxRegistryV1__factory.abi,
     GmxRegistryV1__factory.bytecode,
-    getGmxRegistryConstructorParams(core),
+    [],
   );
+  const proxy = await createContractWithAbi<RegistryProxy>(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getGmxRegistryConstructorParams(core, implementation),
+  );
+  return GmxRegistryV1__factory.connect(proxy.address, core.hhUser1);
 }

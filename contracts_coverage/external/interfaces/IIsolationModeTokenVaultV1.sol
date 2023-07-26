@@ -20,6 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteRegistry } from "./IDolomiteRegistry.sol";
+import { IGenericTraderBase } from "./IGenericTraderBase.sol";
+import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
@@ -49,7 +53,8 @@ interface IIsolationModeTokenVaultV1 {
 
     /**
      * @notice  End-user function for opening a borrow position involving the vault factory's underlying token. Should
-     *          only be executable by the vault owner.
+     *          only be executable by the vault owner. Reverts if `_fromAccountNumber` is not 0 or if `_toAccountNumber`
+     *          is 0.
      */
     function openBorrowPosition(
         uint256 _fromAccountNumber,
@@ -59,7 +64,8 @@ interface IIsolationModeTokenVaultV1 {
 
     /**
      * @notice  End-user function for closing a borrow position involving the vault factory's underlying token. Should
-     *          only be executable by the vault owner.
+     *          only be executable by the vault owner. Reverts if `_borrowAccountNumber` is 0 or if `_toAccountNumber`
+     *          is not 0.
      */
     function closeBorrowPositionWithUnderlyingVaultToken(
         uint256 _borrowAccountNumber,
@@ -69,7 +75,7 @@ interface IIsolationModeTokenVaultV1 {
     /**
      * @notice  End-user function for closing a borrow position involving anything BUT the vault factory's underlying
      *          token. Should only be executable by the vault owner. Throws if any of the `collateralMarketIds` is set
-     *          to the vault factory's underlying token.
+     *          to the vault factory's underlying token. Reverts if `_borrowAccountNumber` is 0.
      */
     function closeBorrowPositionWithOtherTokens(
         uint256 _borrowAccountNumber,
@@ -79,7 +85,8 @@ interface IIsolationModeTokenVaultV1 {
 
     /**
      * @notice  End-user function for transferring collateral into a position using the vault factory's underlying
-     *          token. Should only be executable by the vault owner.
+     *          token. Should only be executable by the vault owner. Reverts if `_fromAccountNumber` is not 0 or if
+     *          `_borrowAccountNumber` is 0.
      */
     function transferIntoPositionWithUnderlyingToken(
         uint256 _fromAccountNumber,
@@ -90,7 +97,7 @@ interface IIsolationModeTokenVaultV1 {
     /**
      * @notice  End-user function for transferring collateral into a position using anything BUT the vault factory's
      *          underlying token. Should only be executable by the vault owner. Throws if the `_marketId` is set to the
-     *          vault factory's underlying token.
+     *          vault factory's underlying token. Reverts if `_borrowAccountNumber` is 0.
      */
     function transferIntoPositionWithOtherToken(
         uint256 _fromAccountNumber,
@@ -102,7 +109,8 @@ interface IIsolationModeTokenVaultV1 {
 
     /**
      * @notice  End-user function for transferring collateral from a position using the vault factory's underlying
-     *          token. Should only be executable by the vault owner.
+     *          token. Should only be executable by the vault owner. Reverts if `_borrowAccountNumber` is 0 or if
+     *          `_toAccountNumber` is not 0.
      */
     function transferFromPositionWithUnderlyingToken(
         uint256 _borrowAccountNumber,
@@ -113,7 +121,7 @@ interface IIsolationModeTokenVaultV1 {
     /**
      * @notice  End-user function for transferring collateral from a position using anything BUT the vault factory's
      *          underlying token. Should only be executable by the vault owner. Throws if the `_marketId` is set to the
-     *          vault factory's underlying token.
+     *          vault factory's underlying token. Reverts if `_borrowAccountNumber` is 0.
      */
     function transferFromPositionWithOtherToken(
         uint256 _borrowAccountNumber,
@@ -126,7 +134,7 @@ interface IIsolationModeTokenVaultV1 {
     /**
      * @notice  End-user function for transferring collateral involving anything BUT the vault factory's underlying
      *          token. Should only be executable by the vault owner. Throws if the `_marketId` is set to the vault
-     *          factory's underlying token.
+     *          factory's underlying token. Reverts if `_borrowAccountNumber` is 0.
      */
     function repayAllForBorrowPosition(
         uint256 _fromAccountNumber,
@@ -136,8 +144,108 @@ interface IIsolationModeTokenVaultV1 {
     ) external;
 
     /**
-     * @notice  Attempts to deposit assets into this vault from the vault's owner. Should revert if the caller is not
-     *          the Vault Factory.
+     * @dev     End-user function for adding collateral from the vault (in the case where `_marketIdsPath[0]` is the
+     *          underlying marketId) or the vault owner (in the case where `_marketIdsPath[0]` is not the underlying
+     *          marketId), then trading an exact amount of input for a minimum amount of output. Reverts if
+     *          `_borrowAccountNumber` is 0 or if `_fromAccountNumber` is not 0 (and the `_marketIdsPath[0]` is the
+     *          underlying). Reverts if the user has a negative balance for `_marketIdsPath[0]`.
+     *
+     * @param  _fromAccountNumber           The account number to use for the source of the transfer.
+     * @param  _borrowAccountNumber         The account number to use for the vault's trade. Cannot be 0.
+     * @param  _marketIdsPath               The path of market IDs to use for each trade action. Length should be equal
+     *                                      to `_tradersPath.length + 1`.
+     * @param  _inputAmountWei              The input amount (in wei) to use for the initial trade action. Setting this
+     *                                      value to `uint(-1)` will use the user's full balance.
+     * @param  _minOutputAmountWei          The minimum output amount expected to be received by the user.
+     * @param  _tradersPath                 The path of traders to use for each trade action. Length should be equal to
+     *                                      `_marketIdsPath.length - 1`.
+     * @param  _makerAccounts               The accounts that will be used for the maker side of the trades involving
+     *                                      `TraderType.InternalLiquidity`.
+     * @param  _userConfig                  The user configuration for the trade. Setting the `balanceCheckFlag` to
+     *                                      `BalanceCheckFlag.From` will check that the user's `_borrowAccountNumber`
+     *                                      and `_fromAccountNumber` is non-negative after the trade.
+     */
+    function addCollateralAndSwapExactInputForOutput(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderBase.TraderParam[] calldata _tradersPath,
+        IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
+        IGenericTraderProxyV1.UserConfig calldata _userConfig
+    )
+    external;
+
+    /**
+     * @dev     End-user function for removing collateral from the vault (in the case where `_marketIdsPath[last]` is
+     *          the underlying marketId) or the vault owner (in the case where `_marketIdsPath[last]` is not the
+     *          underlying marketId). Reverts if `_borrowAccountNumber` is 0 or if `_toAccountNumber` is not 0 (and
+     *          the `_marketIdsPath[0]` is the underlying). Reverts if the user has a negative balance before the swap
+     *          for `_marketIdsPath[last]`.
+     *
+     * @param  _toAccountNumber             The account number to receive the collateral transfer after the trade.
+     * @param  _borrowAccountNumber         The account number to use for the vault's trade. Cannot be 0.
+     * @param  _marketIdsPath               The path of market IDs to use for each trade action. Length should be equal
+     *                                      to `_tradersPath.length + 1`.
+     * @param  _inputAmountWei              The input amount (in wei) to use for the initial trade action. Setting this
+     *                                      value to `uint(-1)` will use the user's full balance.
+     * @param  _minOutputAmountWei          The minimum output amount expected to be received by the user.
+     * @param  _tradersPath                 The path of traders to use for each trade action. Length should be equal to
+     *                                      `_marketIdsPath.length - 1`.
+     * @param  _makerAccounts               The accounts that will be used for the maker side of the trades involving
+     *                                      `TraderType.InternalLiquidity`.
+     * @param  _userConfig                  The user configuration for the trade. Setting the `balanceCheckFlag` to
+     *                                      `BalanceCheckFlag.From` will check that the user's `_tradeAccountNumber`
+     *                                      is non-negative after the trade. Setting the `balanceCheckFlag` to
+     *                                      `BalanceCheckFlag.To` has no effect.
+     */
+    function swapExactInputForOutputAndRemoveCollateral(
+        uint256 _toAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderBase.TraderParam[] calldata _tradersPath,
+        IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
+        IGenericTraderProxyV1.UserConfig calldata _userConfig
+    )
+    external;
+
+    /**
+     * @dev     End-user function for swapping an exact amount of input for a minimum amount of output. Reverts if
+     *          `_tradeAccountNumber` is 0.
+     *
+     * @param  _tradeAccountNumber          The account number to use for the vault's trade. Cannot be 0.
+     * @param  _marketIdsPath               The path of market IDs to use for each trade action. Length should be equal
+     *                                      to `_tradersPath.length + 1`.
+     * @param  _inputAmountWei              The input amount (in wei) to use for the initial trade action. Setting this
+     *                                      value to `uint(-1)` will use the user's full balance.
+     * @param  _minOutputAmountWei          The minimum output amount expected to be received by the user.
+     * @param  _tradersPath                 The path of traders to use for each trade action. Length should be equal to
+     *                                      `_marketIdsPath.length - 1`.
+     * @param  _makerAccounts               The accounts that will be used for the maker side of the trades involving
+     *                                      `TraderType.InternalLiquidity`.
+     * @param  _userConfig                  The user configuration for the trade. Setting the `balanceCheckFlag` to
+     *                                      `BalanceCheckFlag.From` will check that the user's `_tradeAccountNumber`
+     *                                      is non-negative after the trade. Setting the `balanceCheckFlag` to
+     *                                      `BalanceCheckFlag.To` has no effect.
+     */
+    function swapExactInputForOutput(
+        uint256 _tradeAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderBase.TraderParam[] calldata _tradersPath,
+        IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
+        IGenericTraderProxyV1.UserConfig calldata _userConfig
+    )
+    external;
+
+
+    /**
+     * @notice  Attempts to deposit assets into this vault from the vault's owner. Reverts if the caller is not the
+     *          Vault Factory.
      *
      * @param  _from    The sender of the tokens into this vault.
      * @param  _amount  The amount of the vault's underlying token to transfer.
@@ -145,7 +253,7 @@ interface IIsolationModeTokenVaultV1 {
     function executeDepositIntoVault(address _from, uint256 _amount) external;
 
     /**
-     * @notice  Attempts to withdraw assets from this vault to the recipient. Should revert if the caller is not the
+     * @notice  Attempts to withdraw assets from this vault to the recipient. Reverts if the caller is not the
      *          Vault Factory.
      *
      * @param  _recipient   The address to receive the withdrawal.
@@ -157,4 +265,9 @@ interface IIsolationModeTokenVaultV1 {
      * @return The amount of `UNDERLYING_TOKEN` that are currently in this vault.
      */
     function underlyingBalanceOf() external view returns (uint256);
+
+    /**
+     * @return The registry used to discover important addresses for Dolomite
+     */
+    function dolomiteRegistry() external view returns (IDolomiteRegistry);
 }

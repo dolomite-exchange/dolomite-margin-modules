@@ -39,10 +39,11 @@ library JonesUSDCMathLib {
     // ============================ Constructor ============================
 
     function getRetentionFee(
-        IJonesUSDCRegistry _registry
+        IJonesUSDCRegistry _registry,
+        address _unwrapper
     ) internal view returns (uint256 retentionFee, uint256 retentionFeeBase) {
         IJonesWhitelistController controller = _registry.whitelistController();
-        bytes32 role = controller.getUserRole(_registry.unwrapperTrader());
+        bytes32 role = controller.getUserRole(_unwrapper);
 
         retentionFee = controller.getRoleInfo(role).jUSDC_RETENTION;
         retentionFeeBase = controller.BASIS_POINTS();

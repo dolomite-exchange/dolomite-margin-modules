@@ -44,7 +44,7 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
     underlyingAssets = [core.tokens.link, core.tokens.usdc, core.tokens.wbtc, core.tokens.weth];
 
     factories = await Promise.all(
-      umamiAssets.map((asset, i) =>
+      umamiAssets.map((asset) =>
         createUmamiAssetVaultIsolationModeVaultFactory(
           core,
           umamiRegistry,

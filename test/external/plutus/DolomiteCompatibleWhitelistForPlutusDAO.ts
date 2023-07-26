@@ -19,7 +19,7 @@ import {
   createPlutusVaultGLPIsolationModeWrapperTraderV1,
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -34,10 +34,7 @@ describe('DolomiteCompatibleWhitelistForPlutusDAO', () => {
   let factory: PlutusVaultGLPIsolationModeVaultFactory;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 86413000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     const plutusVaultRegistry = await createPlutusVaultRegistry(core);
     const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1();
     factory = await createPlutusVaultGLPIsolationModeVaultFactory(
@@ -52,8 +49,8 @@ describe('DolomiteCompatibleWhitelistForPlutusDAO', () => {
       await core.plutusEcosystem!.plvGlpFarm.whitelist(),
       core.hhUser1,
     );
-    expect(plutusWhitelist.address).to.eql('0x16240aC2fBD41F4087421E1525f74338Bc95Cf64');
-    await core.testPriceOracle!.setPrice(factory.address, '1');
+    expect(plutusWhitelist.address).to.eql('0x4F8B6EF682Ee0e3a66eb5507dfb0DaA647362C20');
+    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '1');
     await setupTestMarket(core, factory, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await factory.connect(core.governance).ownerInitialize([unwrapperTrader.address, wrapperTrader.address]);

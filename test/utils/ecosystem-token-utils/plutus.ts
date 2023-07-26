@@ -19,7 +19,7 @@ import {
   PlutusVaultGLPPriceOracle,
   PlutusVaultGLPPriceOracle__factory,
   PlutusVaultRegistry,
-  PlutusVaultRegistry__factory,
+  PlutusVaultRegistry__factory, RegistryProxy, RegistryProxy__factory,
 } from '../../../src/types';
 import {
   getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
@@ -122,12 +122,18 @@ export function createPlutusVaultGLPIsolationModeUnwrapperTraderV2(
   );
 }
 
-export function createPlutusVaultRegistry(core: CoreProtocol): Promise<PlutusVaultRegistry> {
-  return createContractWithAbi<PlutusVaultRegistry>(
+export async function createPlutusVaultRegistry(core: CoreProtocol): Promise<PlutusVaultRegistry> {
+  const implementation = await createContractWithAbi<PlutusVaultRegistry>(
     PlutusVaultRegistry__factory.abi,
     PlutusVaultRegistry__factory.bytecode,
-    getPlutusVaultRegistryConstructorParams(core),
+    [],
   );
+  const proxy = await createContractWithAbi<RegistryProxy>(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getPlutusVaultRegistryConstructorParams(implementation, core),
+  );
+  return PlutusVaultRegistry__factory.connect(proxy.address, core.hhUser1);
 }
 
 export function createPlutusVaultGLPIsolationModeWrapperTraderV1(

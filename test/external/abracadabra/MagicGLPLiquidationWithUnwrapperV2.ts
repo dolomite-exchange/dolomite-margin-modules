@@ -121,11 +121,11 @@ describe('MagicGLPLiquidationWithUnwrapperV2', () => {
         usdcDebtAmount,
         BalanceCheckFlag.To,
       );
-      await core.testPriceOracle!.setPrice(
+      await core.testEcosystem!.testPriceOracle.setPrice(
         core.tokens.usdc.address,
         usdcPrice.value.mul(liquidationSpreadNumerator).div(liquidationSpreadDenominator),
       );
-      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.usdc, core.testPriceOracle!.address);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.usdc, core.testEcosystem!.testPriceOracle.address);
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       // check that the position is indeed under collateralized
@@ -213,11 +213,11 @@ describe('MagicGLPLiquidationWithUnwrapperV2', () => {
         BalanceCheckFlag.To,
       );
       // set the price of USDC to be 105% of the current price
-      await core.testPriceOracle!.setPrice(
+      await core.testEcosystem!.testPriceOracle.setPrice(
         core.tokens.weth.address,
         wethPrice.value.mul(liquidationSpreadNumerator).div(liquidationSpreadDenominator),
       );
-      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testPriceOracle!.address);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
       const newAccountValues = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
       // check that the position is indeed under collateralized

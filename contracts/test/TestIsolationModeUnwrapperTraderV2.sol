@@ -69,19 +69,24 @@ contract TestIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         uint256,
         address _inputToken,
         uint256 _inputAmount,
-        bytes memory
+        bytes memory _orderData
     )
     internal
     override
     returns (uint256) {
-        // 1:1 conversion for the sake of testing
-        uint256 outputPrice = DOLOMITE_MARGIN().getMarketPrice(
-            DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(VAULT_FACTORY))
-        ).value;
-        uint256 inputPrice = DOLOMITE_MARGIN().getMarketPrice(
-            DOLOMITE_MARGIN().getMarketIdByTokenAddress(_inputToken)
-        ).value;
-        uint256 outputAmount = _inputAmount * inputPrice / outputPrice;
+        uint256 outputAmount;
+        if (_orderData.length > 0) {
+            outputAmount = abi.decode(_orderData, (uint256));
+        } else {
+            // 1:1 conversion for the sake of testing
+            uint256 outputPrice = DOLOMITE_MARGIN().getMarketPrice(
+                DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(VAULT_FACTORY))
+            ).value;
+            uint256 inputPrice = DOLOMITE_MARGIN().getMarketPrice(
+                DOLOMITE_MARGIN().getMarketIdByTokenAddress(_inputToken)
+            ).value;
+            outputAmount = _inputAmount * inputPrice / outputPrice;
+        }
         ICustomTestToken(_outputToken).addBalance(address(this), outputAmount);
         return outputAmount;
     }

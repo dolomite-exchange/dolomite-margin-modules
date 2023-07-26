@@ -36,7 +36,8 @@ interface ILiquidatorProxyV4WithGenericTrader {
         IDolomiteStructs.AccountInfo calldata _solidAccount,
         IDolomiteStructs.AccountInfo calldata _liquidAccount,
         uint256[] calldata _marketIdsPath,
-        uint256[] calldata _amountWeisPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
         IGenericTraderBase.TraderParam[] calldata _tradersPath,
         IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
         uint256 _expiry

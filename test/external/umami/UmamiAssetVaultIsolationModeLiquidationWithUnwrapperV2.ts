@@ -164,8 +164,14 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
         usdcDebtAmountBefore,
         BalanceCheckFlag.To,
       );
-      await core.testInterestSetter!.setInterestRate(core.tokens.usdc.address, { value: '33295281582' }); // 100% APR
-      await core.dolomiteMargin.ownerSetInterestSetter(core.marketIds.usdc, core.testInterestSetter!.address);
+      await core.testEcosystem!.testInterestSetter.setInterestRate(
+        core.tokens.usdc.address,
+        { value: '33295281582' }, // 100% APR
+      );
+      await core.dolomiteMargin.ownerSetInterestSetter(
+        core.marketIds.usdc,
+        core.testEcosystem!.testInterestSetter.address,
+      );
       await waitDays(10); // accrue interest to push towards liquidation
       // deposit 0 to refresh account index
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);

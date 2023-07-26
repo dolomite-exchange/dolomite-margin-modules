@@ -1,11 +1,12 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { BaseContract, BigNumber } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   CustomTestToken,
   TestDoAnything,
   TestDoAnything__factory,
   TestIsolationModeFactory,
+  TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory,
   TestIsolationModeUnwrapperTraderV2,
@@ -42,7 +43,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let factory: TestIsolationModeFactory;
-  let userVaultImplementation: BaseContract;
+  let userVaultImplementation: TestIsolationModeTokenVaultV1;
   let eoaVault: TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa;
   let contractVault: TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa;
   let doAnything: TestDoAnything;
@@ -54,13 +55,13 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
-    userVaultImplementation = await createContractWithAbi(
+    userVaultImplementation = await createContractWithAbi<TestIsolationModeTokenVaultV1>(
       TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory.abi,
       TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory.bytecode,
       [],
     );
     factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
-    await core.testPriceOracle!.setPrice(
+    await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
     );
@@ -104,7 +105,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
     await contractVault.connect(core.hhUser1).initialize();
 
     otherToken = await createTestToken();
-    await core.testPriceOracle!.setPrice(
+    await core.testEcosystem!.testPriceOracle.setPrice(
       otherToken.address,
       '1000000000000000000000000000000', // $1.00 in USDC
     );

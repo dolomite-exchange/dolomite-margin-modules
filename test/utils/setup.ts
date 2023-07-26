@@ -19,8 +19,7 @@ import { address } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
-import { TestPriceOracle } from 'src/types/contracts/test/TestPriceOracle';
-import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP } from 'src/utils/no-deps-constants';
+import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkName } from 'src/utils/no-deps-constants';
 import Deployments from '../../scripts/deployments.json';
 import {
   DolomiteCompatibleWhitelistForPlutusDAO,
@@ -43,6 +42,8 @@ import {
   IDolomiteInterestSetter__factory,
   IDolomiteMargin,
   IDolomiteMargin__factory,
+  IDolomiteRegistry,
+  IDolomiteRegistry__factory,
   IERC20,
   IERC20__factory,
   IERC4626,
@@ -71,6 +72,8 @@ import {
   IJonesGLPAdapter__factory,
   IJonesGLPVaultRouter,
   IJonesGLPVaultRouter__factory,
+  IJonesUSDCIsolationModeVaultFactory,
+  IJonesUSDCIsolationModeVaultFactory__factory,
   IJonesWhitelistController,
   IJonesWhitelistController__factory,
   ILiquidatorAssetRegistry,
@@ -85,6 +88,8 @@ import {
   ILiquidatorProxyV3WithLiquidityToken__factory,
   ILiquidatorProxyV4WithGenericTrader,
   ILiquidatorProxyV4WithGenericTrader__factory,
+  IPendlePtGLP2024IsolationModeVaultFactory,
+  IPendlePtGLP2024IsolationModeVaultFactory__factory,
   IPendlePtMarket,
   IPendlePtMarket__factory,
   IPendlePtOracle,
@@ -119,8 +124,12 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV1__factory,
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory,
+  RegistryProxy__factory,
+  TestDolomiteMarginExchangeWrapper,
+  TestDolomiteMarginExchangeWrapper__factory,
   TestInterestSetter,
   TestInterestSetter__factory,
+  TestPriceOracle,
   TestPriceOracle__factory,
 } from '../../src/types';
 import {
@@ -128,7 +137,9 @@ import {
   ATLAS_SI_TOKEN_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
+  DJ_USDC,
   DPLV_GLP_MAP,
+  DPT_GLP_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
   ES_GMX_MAP,
   FS_GLP_MAP,
@@ -176,6 +187,7 @@ import {
   WETH_MAP,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
+import { createDolomiteRegistryImplementation } from './dolomite';
 import { impersonate, impersonateOrFallback, resetFork } from './index';
 
 /**
@@ -232,6 +244,9 @@ interface JonesEcosystem {
   usdcReceiptToken: IERC4626;
   jUSDC: IERC4626;
   admin: SignerWithAddress;
+  live: {
+    jUSDCIsolationModeFactory: IJonesUSDCIsolationModeVaultFactory;
+  };
 }
 
 interface ParaswapEcosystem {
@@ -246,6 +261,9 @@ interface PendleEcosystem {
   ptOracle: IPendlePtOracle;
   syGlpToken: IPendleSyToken;
   ytGlpToken: IPendleYtToken;
+  live: {
+    ptGlpIsolationModeFactory: IPendlePtGLP2024IsolationModeVaultFactory;
+  };
 }
 
 interface PlutusEcosystem {
@@ -262,6 +280,12 @@ interface PlutusEcosystem {
     plvGlpIsolationModeUnwrapperTraderV1: PlutusVaultGLPIsolationModeUnwrapperTraderV1;
     plvGlpIsolationModeWrapperTraderV1: PlutusVaultGLPIsolationModeWrapperTraderV1;
   };
+}
+
+interface TestEcosystem {
+  testExchangeWrapper: TestDolomiteMarginExchangeWrapper;
+  testInterestSetter: TestInterestSetter;
+  testPriceOracle: TestPriceOracle;
 }
 
 interface UmamiEcosystem {
@@ -299,7 +323,7 @@ export interface CoreProtocol {
   dolomiteAmmFactory: IDolomiteAmmFactory;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
-  dolomiteRegistry: DolomiteRegistryImplementation;
+  dolomiteRegistry: IDolomiteRegistry;
   expiry: IExpiry;
   genericTraderProxy: IGenericTraderProxyV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
@@ -314,8 +338,7 @@ export interface CoreProtocol {
   paraswapTrader: ParaswapAggregatorTrader | undefined;
   pendleEcosystem: PendleEcosystem | undefined;
   plutusEcosystem: PlutusEcosystem | undefined;
-  testInterestSetter: TestInterestSetter | undefined;
-  testPriceOracle: TestPriceOracle | undefined;
+  testEcosystem: TestEcosystem | undefined;
   umamiEcosystem: UmamiEcosystem | undefined;
   /// =========================
   /// Markets and Tokens
@@ -326,7 +349,9 @@ export interface CoreProtocol {
   marketIds: {
     dai: BigNumberish | undefined;
     dfsGlp: BigNumberish | undefined;
+    djUSDC: BigNumberish | undefined;
     dplvGlp: BigNumberish | undefined;
+    dPtGlp: BigNumberish | undefined;
     link: BigNumberish;
     magicGlp: BigNumberish | undefined;
     usdc: BigNumberish;
@@ -452,10 +477,20 @@ export async function setupCoreProtocol(
 
   const dolomiteMargin = DOLOMITE_MARGIN.connect(governance);
 
-  const dolomiteRegistry = DolomiteRegistryImplementation__factory.connect(
-    (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
-    governance,
-  );
+  let dolomiteRegistry: IDolomiteRegistry;
+  if (
+    config.blockNumber >= NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[config.network]
+    || network.name === NetworkName.ArbitrumOne
+  ) {
+    dolomiteRegistry = IDolomiteRegistry__factory.connect(
+      (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
+      governance,
+    );
+  } else {
+    // Use a "dummy" implementation
+    const implementation = await createDolomiteRegistryImplementation();
+    dolomiteRegistry = IDolomiteRegistry__factory.connect(implementation.address, hhUser1);
+  }
 
   const expiry = IExpiry__factory.connect(
     ExpiryJson.networks[config.network].address,
@@ -502,8 +537,6 @@ export async function setupCoreProtocol(
     ParaswapAggregatorTrader__factory.connect,
   );
 
-  const { testInterestSetter, testPriceOracle } = await getTestContracts();
-
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
@@ -511,6 +544,7 @@ export async function setupCoreProtocol(
   const paraswapEcosystem = await createParaswapEcosystem(config.network);
   const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
+  const testEcosystem = await createTestEcosystem(dolomiteMargin, dolomiteRegistry, governance, hhUser1, config);
   const umamiEcosystem = await createUmamiEcosystem(config.network, hhUser1);
 
   return {
@@ -543,8 +577,7 @@ export async function setupCoreProtocol(
     paraswapTrader,
     pendleEcosystem,
     plutusEcosystem,
-    testInterestSetter,
-    testPriceOracle,
+    testEcosystem,
     umamiEcosystem,
     config: {
       blockNumber: config.blockNumber,
@@ -569,7 +602,9 @@ export async function setupCoreProtocol(
     marketIds: {
       dai: DAI_MAP[config.network]?.marketId,
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
+      djUSDC: DJ_USDC[config.network]?.marketId,
       dplvGlp: DPLV_GLP_MAP[config.network]?.marketId,
+      dPtGlp: DPT_GLP_MAP[config.network]?.marketId,
       link: LINK_MAP[config.network].marketId,
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
@@ -605,8 +640,8 @@ export async function setupTestMarket(
 ) {
   await core.dolomiteMargin.connect(core.governance).ownerAddMarket(
     token.address,
-    (priceOracle ?? core.testPriceOracle)!.address,
-    core.testInterestSetter!.address,
+    (priceOracle ?? core.testEcosystem!.testPriceOracle).address,
+    core.testEcosystem!.testInterestSetter.address,
     { value: marginPremium ?? 0 },
     { value: spreadPremium ?? 0 },
     0,
@@ -615,29 +650,50 @@ export async function setupTestMarket(
   );
 }
 
-async function getTestContracts(): Promise<{
-  testPriceOracle?: TestPriceOracle;
-  testInterestSetter?: TestInterestSetter
-}> {
-  let testInterestSetter: TestInterestSetter;
-  let testPriceOracle: TestPriceOracle;
-  if (network.name === 'hardhat') {
-    testInterestSetter = await createContractWithAbi<TestInterestSetter>(
-      TestInterestSetter__factory.abi,
-      TestInterestSetter__factory.bytecode,
-      [],
-    );
-    testPriceOracle = await createContractWithAbi<TestPriceOracle>(
-      TestPriceOracle__factory.abi,
-      TestPriceOracle__factory.bytecode,
-      [],
-    );
-  } else {
-    testInterestSetter = null as any;
-    testPriceOracle = null as any;
+async function createTestEcosystem(
+  dolomiteMargin: IDolomiteMargin,
+  dolomiteRegistry: IDolomiteRegistry,
+  governor: SignerWithAddress,
+  signer: SignerWithAddress,
+  config: CoreProtocolSetupConfig,
+): Promise<TestEcosystem | undefined> {
+  if (network.name !== 'hardhat') {
+    return undefined;
   }
 
-  return { testInterestSetter, testPriceOracle };
+  if (config.blockNumber >= NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[config.network]) {
+    const genericTrader = await dolomiteRegistry.genericTraderProxy();
+    await dolomiteMargin.ownerSetGlobalOperator(genericTrader, true);
+    const registryProxy = RegistryProxy__factory.connect(dolomiteRegistry.address, governor);
+    const newRegistry = await createContractWithAbi<DolomiteRegistryImplementation>(
+      DolomiteRegistryImplementation__factory.abi,
+      DolomiteRegistryImplementation__factory.bytecode,
+      [],
+    );
+    await registryProxy.upgradeTo(newRegistry.address);
+    await dolomiteRegistry.ownerSetSlippageToleranceForPauseSentinel('70000000000000000'); // 7%
+  }
+
+  const testExchangeWrapper = await createContractWithAbi<TestDolomiteMarginExchangeWrapper>(
+    TestDolomiteMarginExchangeWrapper__factory.abi,
+    TestDolomiteMarginExchangeWrapper__factory.bytecode,
+    [dolomiteMargin.address],
+  );
+  const testInterestSetter = await createContractWithAbi<TestInterestSetter>(
+    TestInterestSetter__factory.abi,
+    TestInterestSetter__factory.bytecode,
+    [],
+  );
+  const testPriceOracle = await createContractWithAbi<TestPriceOracle>(
+    TestPriceOracle__factory.abi,
+    TestPriceOracle__factory.bytecode,
+    [],
+  );
+  return {
+    testExchangeWrapper: testExchangeWrapper.connect(signer),
+    testInterestSetter: testInterestSetter.connect(signer),
+    testPriceOracle: testPriceOracle.connect(signer),
+  };
 }
 
 async function createAbraEcosystem(network: Network, signer: SignerWithAddress): Promise<AbraEcosystem | undefined> {
@@ -688,6 +744,12 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
     ),
     jUSDC: getContract(JONES_JUSDC_MAP[network] as string, address => IERC4626__factory.connect(address, signer)),
     whitelistController: whitelist,
+    live: {
+      jUSDCIsolationModeFactory: getContract(
+        (Deployments.JonesUSDCIsolationModeVaultFactory as any)[network]?.address,
+        IJonesUSDCIsolationModeVaultFactory__factory.connect,
+      ),
+    },
   };
 }
 
@@ -737,7 +799,7 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
         GLPIsolationModeWrapperTraderV1__factory.connect,
       ),
       gmxRegistry: getContract(
-        (Deployments.GmxRegistryV1 as any)[network]?.address,
+        (Deployments.GmxRegistryProxy as any)[network]?.address,
         IGmxRegistryV1__factory.connect,
       ),
     },
@@ -789,7 +851,13 @@ async function createPendleEcosystem(
     ytGlpToken: getContract(
       PENDLE_YT_GLP_2024_TOKEN_MAP[network] as string,
       address => IPendleYtToken__factory.connect(address, signer),
-    )
+    ),
+    live: {
+      ptGlpIsolationModeFactory: getContract(
+        (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,
+        IPendlePtGLP2024IsolationModeVaultFactory__factory.connect,
+      ),
+    },
   };
 }
 
@@ -824,7 +892,8 @@ async function createPlutusEcosystem(
         address => DolomiteCompatibleWhitelistForPlutusDAO__factory.connect(address, signer),
       ),
       plutusVaultRegistry: getContract(
-        (Deployments.PlutusVaultRegistry as any)[network]?.address,
+        // (Deployments.PlutusVaultRegistry as any)[network]?.address,
+        '0x1111111111111111111111111111111111111111',
         PlutusVaultRegistry__factory.connect,
       ),
       plvGlpIsolationModeFactory: getContract(
@@ -876,7 +945,7 @@ async function createUmamiEcosystem(
       UMAMI_STORAGE_VIEWER_MAP[network] as string,
       address => IUmamiAssetVaultStorageViewer__factory.connect(address, signer),
     ),
-    configurator: await impersonateOrFallback(UMAMI_CONFIGURATOR_MAP[network] as string, false, signer),
+    configurator: await impersonateOrFallback(UMAMI_CONFIGURATOR_MAP[network] as string, true, signer),
   };
 }
 

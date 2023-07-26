@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
+
 
 /**
  * @title   IGLPIsolationModeTokenVaultV1
@@ -149,4 +151,9 @@ interface IGLPIsolationModeTokenVaultV1 {
      *                          owner.
      */
     function unvestGmx(bool _shouldStakeGmx) external;
+
+    /**
+     * @return The registry used to get addresses from the GMX ecosystem
+     */
+    function registry() external view returns (IGmxRegistryV1);
 }

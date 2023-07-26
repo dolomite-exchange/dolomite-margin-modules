@@ -9,8 +9,7 @@ import {
   CustomTestVaultToken,
   CustomTestVaultToken__factory,
 } from '../types';
-import { IDolomiteStructs } from '../types/contracts/test/TestAccountActionLib';
-import ActionArgsStruct = IDolomiteStructs.ActionArgsStruct;
+import { ActionArgsStruct } from './index';
 
 /**
  * @return  The deployed contract

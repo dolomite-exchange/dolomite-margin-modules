@@ -46,6 +46,7 @@ contract DolomiteRegistryImplementation is
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
     bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
@@ -65,8 +66,24 @@ contract DolomiteRegistryImplementation is
         _ownerSetGenericTraderProxy(_genericTraderProxy);
     }
 
+    function ownerSetSlippageToleranceForPauseSentinel(
+        uint256 _slippageToleranceForPauseSentinel
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
+    }
+
     function genericTraderProxy() external view returns (IGenericTraderProxyV1) {
         return IGenericTraderProxyV1(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
+    }
+
+    function slippageToleranceForPauseSentinel() external view returns (uint256) {
+        return _getUint256(_SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT);
+    }
+
+    function slippageToleranceForPauseSentinelBase() external pure returns (uint256) {
+        return 1e18;
     }
 
     // ===================== Internal Functions =====================
@@ -88,5 +105,18 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_GENERIC_TRADER_PROXY_SLOT, _genericTraderProxy);
         emit GenericTraderProxySet(_genericTraderProxy);
+    }
+
+    function _ownerSetSlippageToleranceForPauseSentinel(
+        uint256 _slippageToleranceForPauseSentinel
+    ) internal {
+        if (_slippageToleranceForPauseSentinel > 0 && _slippageToleranceForPauseSentinel < 1e18) { /* FOR COVERAGE TESTING */ }
+        Require.that(_slippageToleranceForPauseSentinel > 0 && _slippageToleranceForPauseSentinel < 1e18,
+            _FILE,
+            "Invalid slippageTolerance"
+        );
+
+        _setUint256(_SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT, _slippageToleranceForPauseSentinel);
+        emit SlippageToleranceForPauseSentinelSet(_slippageToleranceForPauseSentinel);
     }
 }

@@ -22,9 +22,6 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { JonesUSDCMathLib } from "./JonesUSDCMathLib.sol";
-import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../../protocol/lib/Require.sol";
-import { ILiquidatorAssetRegistry } from "../../interfaces/ILiquidatorAssetRegistry.sol";
 import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
 
@@ -45,14 +42,12 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTrader
 
     // ============ Immutable State Variables ============
 
-    ILiquidatorAssetRegistry public immutable LIQUIDATOR_ASSET_REGISTRY; // solhint-disable-line var-name-mixedcase
     IERC20 public immutable USDC; // solhint-disable-line var-name-mixedcase
     IJonesUSDCRegistry public immutable JONES_USDC_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor(
-        address _liquidatorAssetRegistry,
         address _usdc,
         address _jonesUSDCRegistry,
         address _djUSDC,
@@ -62,7 +57,6 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTrader
         _djUSDC,
         _dolomiteMargin
     ) {
-        LIQUIDATOR_ASSET_REGISTRY = ILiquidatorAssetRegistry(_liquidatorAssetRegistry);
         USDC = IERC20(_usdc);
         JONES_USDC_REGISTRY = IJonesUSDCRegistry(_jonesUSDCRegistry);
     }
@@ -79,24 +73,6 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTrader
     // ============ Internal Functions ============
     // ============================================
 
-
-    function _callFunction(
-        address _sender,
-        IDolomiteStructs.AccountInfo calldata _accountInfo,
-        bytes calldata _data
-    )
-    internal
-    override {
-        uint256 marketId = VAULT_FACTORY.marketId();
-        Require.that(
-            LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(marketId, _sender)
-                && LIQUIDATOR_ASSET_REGISTRY.getLiquidatorsForAsset(marketId).length > 0,
-            _FILE,
-            "Sender must be a liquidator",
-            _sender
-        );
-        super._callFunction(_sender, _accountInfo, _data);
-    }
 
     function _exchangeUnderlyingTokenToOutputToken(
         address,
@@ -123,7 +99,7 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTrader
     override
     view
     returns (uint256) {
-        (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee();
+        (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee(address(this));
         uint256 receiptTokenAmount = JONES_USDC_REGISTRY.jUSDC().previewRedeem(_desiredInputAmount);
         uint256 usdcAmount = JONES_USDC_REGISTRY.usdcReceiptToken().previewRedeem(receiptTokenAmount);
         return usdcAmount - (usdcAmount * retentionFee / retentionFeeBase);

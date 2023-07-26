@@ -25,7 +25,7 @@ import {
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
 import {
-  CoreProtocol,
+  CoreProtocol, getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -60,10 +60,7 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
   let solidUser: SignerWithAddress;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 86413000,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.plutusEcosystem!.plvGlp;
     const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1();
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;

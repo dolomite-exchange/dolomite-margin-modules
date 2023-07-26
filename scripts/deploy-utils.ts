@@ -12,7 +12,6 @@ export async function verifyContract(address: string, constructorArguments: any[
     await run('verify:verify', {
       address,
       constructorArguments,
-      network: 'arbitrumTestnet',
     });
   } catch (e: any) {
     if (e?.message.toLowerCase().includes('already verified')) {

@@ -25,6 +25,7 @@ import { IPendlePtOracle } from "./IPendlePtOracle.sol";
 import { IPendlePtToken } from "./IPendlePtToken.sol";
 import { IPendleRouter } from "./IPendleRouter.sol";
 import { IPendleSyToken } from "./IPendleSyToken.sol";
+import { IBaseRegistry } from "../IBaseRegistry.sol";
 
 
 /**
@@ -34,7 +35,7 @@ import { IPendleSyToken } from "./IPendleSyToken.sol";
  * @notice  A registry contract for storing all of the addresses that can interact with the Pendle ecosystem for GLP
  *          (March 2024).
  */
-interface IPendlePtGLP2024Registry {
+interface IPendlePtGLP2024Registry is IBaseRegistry {
 
     // ========================================================
     // ======================== Events ========================

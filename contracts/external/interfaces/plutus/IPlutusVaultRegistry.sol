@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IPlutusVaultGLPFarm } from "./IPlutusVaultGLPFarm.sol";
 import { IPlutusVaultGLPRouter } from "./IPlutusVaultGLPRouter.sol";
+import { IBaseRegistry } from "../IBaseRegistry.sol";
 import { IERC4626 } from "../IERC4626.sol";
 
 
@@ -32,7 +33,7 @@ import { IERC4626 } from "../IERC4626.sol";
  *
  * @notice  A registry contract for storing all of the addresses that can interact with the PlutusDAO ecosystem.
  */
-interface IPlutusVaultRegistry {
+interface IPlutusVaultRegistry is IBaseRegistry {
 
     // ========================================================
     // ======================== Events ========================

@@ -22,16 +22,16 @@ import {
 } from '../../utils/ecosystem-token-utils/umami';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
-const LINK_PRICE = BigNumber.from('6615143750000000000'); // $6.61514375
-const USDC_PRICE = BigNumber.from('1000000000000000000000000000000'); // $1.00
-const WBTC_PRICE = BigNumber.from('310005100000000000000000000000000'); // $31,000.51
-const WETH_PRICE = BigNumber.from('1964129009030000000000'); // $1964.12900903
+const LINK_PRICE = BigNumber.from('8140249870000000000'); // $8.140249870000000000
+const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.9999...
+const WBTC_PRICE = BigNumber.from('298632600000000000000000000000000'); // $29,863.26
+const WETH_PRICE = BigNumber.from('1891555900000000000000'); // $1,891.5559
 const prices = [LINK_PRICE, USDC_PRICE, WBTC_PRICE, WETH_PRICE];
 
-const UMAMI_LINK_PRICE = BigNumber.from('6627676807866578059');
-const UMAMI_USDC_PRICE = BigNumber.from('1013685904999300592616624183877'); // $1.0131...
-const UMAMI_WBTC_PRICE = BigNumber.from('315162914422051769717547981804418');
-const UMAMI_WETH_PRICE = BigNumber.from('1990936356560813328593');
+const UMAMI_LINK_PRICE = BigNumber.from('8173539276449097345'); // $8.173539276449097345
+const UMAMI_USDC_PRICE = BigNumber.from('1019077836165714576507084542662'); // $1.01907...
+const UMAMI_WBTC_PRICE = BigNumber.from('305781709614847562007396028517977'); // $30,578.17...
+const UMAMI_WETH_PRICE = BigNumber.from('1932469018898141979714'); // $1,932.4690...
 const umamiPrices = [UMAMI_LINK_PRICE, UMAMI_USDC_PRICE, UMAMI_WBTC_PRICE, UMAMI_WETH_PRICE];
 
 describe('UmamiAssetVaultPriceOracle', () => {
@@ -100,8 +100,8 @@ describe('UmamiAssetVaultPriceOracle', () => {
     it('returns the correct value when total supply is 0', async () => {
       for (let i = 0; i < underlyingAssets.length; i++) {
         const testToken = await createTestVaultToken(underlyingAssets[i]);
-        await core.testPriceOracle!.setPrice(testToken.address, prices[i]);
-        await setupTestMarket(core, testToken, false, core.testPriceOracle);
+        await core.testEcosystem!.testPriceOracle.setPrice(testToken.address, prices[i]);
+        await setupTestMarket(core, testToken, false, core.testEcosystem!.testPriceOracle);
         const newFactory = await createUmamiAssetVaultIsolationModeVaultFactory(
           core,
           umamiRegistry,

@@ -75,6 +75,12 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
+  describe('#dolomiteRegistry', () => {
+    it('should work', async () => {
+      expect(await vault.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
+    });
+  });
+
   describe('#registry', () => {
     it('should work normally', async () => {
       expect(await vault.registry()).to.equal(umamiRegistry.address);

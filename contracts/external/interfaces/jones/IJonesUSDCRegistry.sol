@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IJonesGLPAdapter } from "./IJonesGLPAdapter.sol";
 import { IJonesGLPVaultRouter } from "./IJonesGLPVaultRouter.sol";
 import { IJonesWhitelistController } from "./IJonesWhitelistController.sol";
+import { IBaseRegistry } from "../IBaseRegistry.sol";
 import { IERC4626 } from "../IERC4626.sol";
 
 
@@ -32,7 +33,7 @@ import { IERC4626 } from "../IERC4626.sol";
  *
  * @notice  A registry contract for storing all of the addresses that can interact with Jones DAO's jUSDC token
  */
-interface IJonesUSDCRegistry {
+interface IJonesUSDCRegistry is IBaseRegistry {
 
     // ========================================================
     // ======================== Events ========================
@@ -43,15 +44,19 @@ interface IJonesUSDCRegistry {
     event WhitelistControllerSet(address indexed _whitelistController);
     event UsdcReceiptTokenSet(address indexed _usdcReceiptToken);
     event JUSDCSet(address indexed _jUSDC);
-    event UnwrapperTraderSet(address indexed _unwrapperTrader);
+    event UnwrapperTraderForLiquidationSet(address indexed _unwrapperTraderForLiquidation);
+    event UnwrapperTraderForZapSet(address indexed _unwrapperTraderForZap);
 
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================
 
-    function initializeUnwrapperTrader(address _unwrapperTrader) external;
+    function initializeUnwrapperTraders(
+        address _unwrapperTraderForLiquidation,
+        address _unwrapperTraderForZap
+    ) external;
 
-    function ownerGlpAdapter(address _glpAdapter) external;
+    function ownerSetGlpAdapter(address _glpAdapter) external;
 
     function ownerSetGlpVaultRouter(address _glpVaultRouter) external;
 
@@ -61,7 +66,9 @@ interface IJonesUSDCRegistry {
 
     function ownerSetJUSDC(address _jUSDC) external;
 
-    function ownerSetUnwrapperTrader(address _unwrapperTrader) external;
+    function ownerSetUnwrapperTraderForLiquidation(address _unwrapperTraderForLiquidation) external;
+
+    function ownerSetUnwrapperTraderForZap(address _unwrapperTraderForZap) external;
 
     // ========================================================
     // =================== Getter Functions ===================
@@ -77,5 +84,7 @@ interface IJonesUSDCRegistry {
 
     function jUSDC() external view returns (IERC4626);
 
-    function unwrapperTrader() external view returns (address);
+    function unwrapperTraderForLiquidation() external view returns (address);
+
+    function unwrapperTraderForZap() external view returns (address);
 }

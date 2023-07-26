@@ -20,10 +20,13 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
+import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IJonesUSDCIsolationModeTokenVaultV1 } from "../../interfaces/jones/IJonesUSDCIsolationModeTokenVaultV1.sol";
 import { IJonesUSDCIsolationModeVaultFactory } from "../../interfaces/jones/IJonesUSDCIsolationModeVaultFactory.sol";
 import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
 import { IJonesWhitelistController } from "../../interfaces/jones/IJonesWhitelistController.sol";
+import { IsolationModeTokenVaultV1 } from "../../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithPausableAndOnlyEoa } from "../../proxies/abstract/IsolationModeTokenVaultV1WithPausableAndOnlyEoa.sol"; // solhint-disable-line max-line-length
 
 
@@ -54,9 +57,18 @@ contract JonesUSDCIsolationModeTokenVaultV1 is
         return IJonesUSDCIsolationModeVaultFactory(VAULT_FACTORY()).jonesUSDCRegistry();
     }
 
+    function dolomiteRegistry()
+        public
+        override(IsolationModeTokenVaultV1, IIsolationModeTokenVaultV1)
+        view
+        returns (IDolomiteRegistry)
+    {
+        return registry().dolomiteRegistry();
+    }
+
     function isExternalRedemptionPaused() public override view returns (bool) {
         IJonesWhitelistController whitelistController = registry().whitelistController();
-        address unwrapperTrader = registry().unwrapperTrader();
+        address unwrapperTrader = registry().unwrapperTraderForLiquidation();
         bytes32 unwrapperRole = whitelistController.getUserRole(unwrapperTrader);
         IJonesWhitelistController.RoleInfo memory unwrapperRoleInfo = whitelistController.getRoleInfo(unwrapperRole);
 

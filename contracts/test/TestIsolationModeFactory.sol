@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
+import { IDolomiteRegistry } from "../external/interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeUpgradeableProxy } from "../external/interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IsolationModeUpgradeableProxy } from "../external/proxies/IsolationModeUpgradeableProxy.sol";
 import { IsolationModeVaultFactory } from "../external/proxies/abstract/IsolationModeVaultFactory.sol";
@@ -38,7 +39,10 @@ contract TestIsolationModeFactory is IsolationModeVaultFactory {
     uint256[] private _allowableCollateralMarketIds;
     bool private _shouldSpendAllowance;
 
+    IDolomiteRegistry public dolomiteRegistry;
+
     constructor(
+        address _dolomiteRegistry,
         address _underlyingToken,
         address _borrowPositionProxy,
         address _userVaultImplementation,
@@ -49,6 +53,7 @@ contract TestIsolationModeFactory is IsolationModeVaultFactory {
         _userVaultImplementation,
         _dolomiteMargin
     ) {
+        dolomiteRegistry = IDolomiteRegistry(_dolomiteRegistry);
         _shouldSpendAllowance = true;
     }
 

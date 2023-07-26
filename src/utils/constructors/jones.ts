@@ -8,20 +8,27 @@ import {
 } from '../../types';
 import { NONE_MARKET_ID } from '../no-deps-constants';
 
-export function getJonesUSDCRegistryConstructorParams(
+export async function getJonesUSDCRegistryConstructorParams(
+  implementation: JonesUSDCRegistry,
   core: CoreProtocol,
-): any[] {
+): Promise<any[]> {
   if (!core.jonesEcosystem) {
     throw new Error('Jones ecosystem not initialized');
   }
 
-  return [
+  const calldata = await implementation.populateTransaction.initialize(
     core.jonesEcosystem.glpAdapter.address,
     core.jonesEcosystem.glpVaultRouter.address,
     core.jonesEcosystem.whitelistController.address,
     core.jonesEcosystem.usdcReceiptToken.address,
     core.jonesEcosystem.jUSDC.address,
+    core.dolomiteRegistry.address,
+  );
+
+  return [
+    implementation.address,
     core.dolomiteMargin.address,
+    calldata.data!,
   ];
 }
 
@@ -42,7 +49,7 @@ export function getJonesUSDCPriceOracleConstructorParams(
   ];
 }
 
-export function getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams(
+export function getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams(
   core: CoreProtocol,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
@@ -53,6 +60,23 @@ export function getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams(
 
   return [
     core.liquidatorAssetRegistry!.address,
+    core.tokens.usdc!.address,
+    jonesUSDCRegistry.address,
+    djUSDCToken.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams(
+  core: CoreProtocol,
+  jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
+  djUSDCToken: { address: address },
+): any[] {
+  if (!core.jonesEcosystem) {
+    throw new Error('Jones ecosystem not initialized');
+  }
+
+  return [
     core.tokens.usdc!.address,
     jonesUSDCRegistry.address,
     djUSDCToken.address,

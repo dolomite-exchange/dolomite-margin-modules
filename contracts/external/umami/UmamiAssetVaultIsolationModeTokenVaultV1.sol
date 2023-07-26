@@ -20,10 +20,13 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IUmamiAssetVault } from "../interfaces/umami/IUmamiAssetVault.sol";
 import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
+import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
 
@@ -52,6 +55,15 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
 
     function registry() public view returns (IUmamiAssetVaultRegistry) {
         return IUmamiAssetVaultIsolationModeVaultFactory(VAULT_FACTORY()).umamiAssetVaultRegistry();
+    }
+
+    function dolomiteRegistry()
+        public
+        override(IsolationModeTokenVaultV1, IIsolationModeTokenVaultV1)
+        view
+        returns (IDolomiteRegistry)
+    {
+        return registry().dolomiteRegistry();
     }
 
     function isExternalRedemptionPaused() public override view returns (bool) {
