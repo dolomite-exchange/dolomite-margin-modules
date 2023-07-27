@@ -23,11 +23,11 @@ import {
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 /**
- * This is the expected price at the following timestamp: 1689700000
+ * This is the expected price at the following timestamp: 1983002000
  *
  * Keep in mind that Pendle's prices tick upward each second.
  */
-const PT_GLP_PRICE = BigNumber.from('958512888340113899'); // $0.958512888340113899
+const PT_GLP_PRICE = BigNumber.from('956623370688401980'); // $0.956623370688401980
 
 describe('PendlePtGLPPriceOracle', () => {
   let snapshotId: string;

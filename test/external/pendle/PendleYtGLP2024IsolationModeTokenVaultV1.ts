@@ -125,12 +125,12 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     );
 
     otherToken = await createTestToken();
-    await core.testPriceOracle!.setPrice(otherToken.address, '1000000000000000000000000000000'); // $1.00 in USDC
+    await core.testEcosystem!.testPriceOracle!.setPrice(otherToken.address, '1000000000000000000000000000000'); // $1.00 in USDC
     otherMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken, false);
 
     anotherToken = await createTestToken();
-    await core.testPriceOracle!.setPrice(anotherToken.address, '1000000000000000000000000000000'); // $1.00 in USDC
+    await core.testEcosystem!.testPriceOracle!.setPrice(anotherToken.address, '1000000000000000000000000000000'); // $1.00 in USDC
     anotherMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, anotherToken, false);
 
@@ -211,8 +211,8 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId]);
       await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
-        defaultAccountNumber,
         borrowAccountNumber,
+        defaultAccountNumber,
         otherMarketId,
         otherAmountWei,
         BalanceCheckFlag.To
@@ -226,21 +226,21 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
       await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
-        defaultAccountNumber,
         borrowAccountNumber,
+        defaultAccountNumber,
         otherMarketId,
         otherAmountWei,
         BalanceCheckFlag.To
       );
       timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
-      const accountInfo = { owner: vault.address, number: defaultAccountNumber };
+      const accountInfo = { owner: vault.address, number: borrowAccountNumber };
       expect(await core.expiry.getExpiry(accountInfo, otherMarketId)).to.eq(timestamp + 4 * ONE_WEEK);
       await increaseToTimestamp(timestamp + 2 * ONE_WEEK);
 
       await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
-        defaultAccountNumber,
         borrowAccountNumber,
+        defaultAccountNumber,
         anotherMarketId,
         otherAmountWei,
         BalanceCheckFlag.To
@@ -255,15 +255,15 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
       await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
-        defaultAccountNumber,
         borrowAccountNumber,
+        defaultAccountNumber,
         otherMarketId,
         otherAmountWei,
         BalanceCheckFlag.To
       );
       timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
-      const accountInfo = { owner: vault.address, number: defaultAccountNumber };
+      const accountInfo = { owner: vault.address, number: borrowAccountNumber };
       expect(await core.expiry.getExpiry(accountInfo, otherMarketId)).to.eq(timestamp + 4 * ONE_WEEK);
     });
 
@@ -274,14 +274,14 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
       await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
-        defaultAccountNumber,
         borrowAccountNumber,
+        defaultAccountNumber,
         otherMarketId,
         otherAmountWei,
         BalanceCheckFlag.To
       );
 
-      const accountInfo = { owner: vault.address, number: defaultAccountNumber };
+      const accountInfo = { owner: vault.address, number: borrowAccountNumber };
       expect(await core.expiry.getExpiry(accountInfo, otherMarketId)).to.eq(timestamp + 2 * ONE_WEEK);
     });
 
@@ -292,7 +292,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       await expectThrow(
         vault.connect(core.hhUser2).transferFromPositionWithOtherToken(
           borrowAccountNumber,
-          borrowAccountNumber,
+          defaultAccountNumber,
           otherMarketId,
           otherAmountWei,
           BalanceCheckFlag.To
@@ -310,8 +310,8 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
       await expectThrow(
         vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
-          defaultAccountNumber,
           borrowAccountNumber,
+          defaultAccountNumber,
           otherMarketId,
           otherAmountWei,
           BalanceCheckFlag.To
