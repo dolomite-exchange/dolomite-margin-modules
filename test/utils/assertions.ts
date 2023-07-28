@@ -63,7 +63,6 @@ export async function expectProtocolBalanceIsGreaterThan(
     .gte(expectedBalanceWithMarginOfError);
 }
 
-// const TEN_CENTS = BigNumber.from('100000000000000000000000000000000000'); // $1 eq 1e36. Take off 1 decimal
 const ONE_CENT: BigNumber = BigNumber.from('10000000000000000000000000000000000'); // $1 eq 1e36. Take off 2 decimals
 
 export async function expectWalletBalanceOrDustyIfZero(

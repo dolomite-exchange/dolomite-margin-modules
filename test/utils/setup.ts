@@ -19,6 +19,7 @@ import { address } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
+import { IParaswapFeeClaimer } from 'src/types/contracts/external/interfaces/traders/IParaswapFeeClaimer';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkName } from 'src/utils/no-deps-constants';
 import Deployments from '../../scripts/deployments.json';
 import {
@@ -88,6 +89,9 @@ import {
   ILiquidatorProxyV3WithLiquidityToken__factory,
   ILiquidatorProxyV4WithGenericTrader,
   ILiquidatorProxyV4WithGenericTrader__factory,
+  IParaswapAugustusRouter,
+  IParaswapAugustusRouter__factory,
+  IParaswapFeeClaimer__factory,
   IPendlePtGLP2024IsolationModeVaultFactory,
   IPendlePtGLP2024IsolationModeVaultFactory__factory,
   IPendlePtMarket,
@@ -156,6 +160,7 @@ import {
   LINK_MAP,
   MAGIC_GLP_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
+  PARASWAP_FEE_CLAIMER_MAP,
   PARASWAP_TRANSFER_PROXY_MAP,
   PENDLE_PT_GLP_2024_MARKET_MAP,
   PENDLE_PT_GLP_2024_TOKEN_MAP,
@@ -247,7 +252,8 @@ interface JonesEcosystem {
 }
 
 interface ParaswapEcosystem {
-  augustusRouter: address;
+  augustusRouter: IParaswapAugustusRouter;
+  feeClaimer: IParaswapFeeClaimer;
   transferProxy: address;
 }
 
@@ -537,7 +543,7 @@ export async function setupCoreProtocol(
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
   const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
-  const paraswapEcosystem = await createParaswapEcosystem(config.network);
+  const paraswapEcosystem = await createParaswapEcosystem(config.network, hhUser1);
   const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
   const testEcosystem = await createTestEcosystem(dolomiteMargin, dolomiteRegistry, governance, hhUser1, config);
@@ -804,13 +810,15 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
 
 async function createParaswapEcosystem(
   network: Network,
+  signer: SignerWithAddress,
 ): Promise<ParaswapEcosystem | undefined> {
   if (!PARASWAP_AUGUSTUS_ROUTER_MAP[network]) {
     return undefined;
   }
 
   return {
-    augustusRouter: PARASWAP_AUGUSTUS_ROUTER_MAP[network]!,
+    augustusRouter: IParaswapAugustusRouter__factory.connect(PARASWAP_AUGUSTUS_ROUTER_MAP[network]!, signer),
+    feeClaimer: IParaswapFeeClaimer__factory.connect(PARASWAP_FEE_CLAIMER_MAP[network]!, signer),
     transferProxy: PARASWAP_TRANSFER_PROXY_MAP[network]!,
   };
 }

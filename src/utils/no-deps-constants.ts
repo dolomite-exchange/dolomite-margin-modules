@@ -1,4 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
+import { GenericTraderParamStruct } from './index';
 
 // ************************* General Constants *************************
 
@@ -47,4 +48,4 @@ export const LIQUIDATE_ALL = MAX_UINT_256_BI;
 
 export const SELL_ALL = MAX_UINT_256_BI;
 
-export const NO_PARASWAP_TRADER_PARAM = undefined;
+export const NO_PARASWAP_TRADER_PARAM: GenericTraderParamStruct | undefined = undefined;
