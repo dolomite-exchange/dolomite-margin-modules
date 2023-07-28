@@ -17,7 +17,7 @@ import {
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow, expectWalletBalance } from '../../utils/assertions';
 import {
   createPendlePtGLP2024IsolationModeTokenVaultV1,
@@ -208,7 +208,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
           factory.address,
           OTHER_ADDRESS,
           usableUsdcAmount,
-          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
+          encodeExternalSellActionDataWithNoData(ZERO_BI),
         ),
         `IsolationModeWrapperTraderV2: Invalid trade originator <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -223,7 +223,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
           factory.address,
           OTHER_ADDRESS,
           usableUsdcAmount,
-          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
+          encodeExternalSellActionDataWithNoData(ZERO_BI),
         ),
         `IsolationModeWrapperTraderV2: Invalid input token <${OTHER_ADDRESS.toLowerCase()}>`,
       );
@@ -238,7 +238,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
           core.tokens.weth.address,
           core.tokens.usdc.address,
           amountWei,
-          ethers.utils.defaultAbiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         `IsolationModeWrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
@@ -253,7 +253,7 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
           factory.address,
           core.tokens.usdc.address,
           ZERO_BI,
-          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
+          encodeExternalSellActionDataWithNoData(ZERO_BI),
         ),
         'IsolationModeWrapperTraderV2: Invalid input amount',
       );

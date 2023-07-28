@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   IUmamiAssetVault,
   UmamiAssetVaultIsolationModeTokenVaultV1,
@@ -14,7 +14,7 @@ import {
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
   createUmamiAssetVaultIsolationModeTokenVaultV1,
@@ -45,8 +45,6 @@ const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 const depositFeeNumerator = BigNumber.from('750000000000000000');
 const depositFeeDenominator = BigNumber.from('100000000000000000000');
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
@@ -195,7 +193,7 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
           factory.address,
           OTHER_ADDRESS,
           usableUsdcAmount,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
+          encodeExternalSellActionDataWithNoData(ZERO_BI),
         ),
         `IsolationModeWrapperTraderV2: Invalid input token <${OTHER_ADDRESS.toLowerCase()}>`,
       );
@@ -210,7 +208,7 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
           core.tokens.weth.address,
           core.tokens.usdc.address,
           amountWei,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         `IsolationModeWrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
@@ -225,7 +223,7 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
           factory.address,
           core.tokens.usdc.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
+          encodeExternalSellActionDataWithNoData(ZERO_BI),
         ),
         'IsolationModeWrapperTraderV2: Invalid input amount',
       );

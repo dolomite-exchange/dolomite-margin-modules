@@ -1,6 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   IERC4626,
   IGmxRegistryV1,
@@ -14,7 +14,12 @@ import {
 } from '../../../../src/types';
 import { AccountInfoStruct } from '../../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
@@ -40,8 +45,6 @@ const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const usdcAmount = amountWei.div(1e12).mul(8);
 const usableUsdcAmount = usdcAmount.div(2);
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
@@ -252,7 +255,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
           core.tokens.dfsGlp!.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
@@ -268,7 +271,7 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
           core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         'IsolationModeUnwrapperTraderV2: Invalid input amount',
       );

@@ -15,7 +15,12 @@ import {
 import { AccountInfoStruct } from '../../../../src/utils';
 import { createContractWithAbi, createTestToken } from '../../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
 import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
 import {
@@ -30,8 +35,6 @@ const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const TEN = BigNumber.from('10000000000000000000');
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
@@ -283,7 +286,7 @@ describe('IsolationModeWrapperTraderV2', () => {
       expect(actions[0].secondaryMarketId).to.eq(underlyingMarketId);
       expect(actions[0].otherAddress).to.eq(wrapper.address);
       expect(actions[0].otherAccountId).to.eq(ZERO_BI);
-      expect(actions[0].data).to.eq(abiCoder.encode(['uint', 'bytes'], [otherAmountWei, BYTES_EMPTY]));
+      expect(actions[0].data).to.eq(encodeExternalSellActionDataWithNoData(otherAmountWei));
     });
 
     it('should fail when input market is invalid', async () => {

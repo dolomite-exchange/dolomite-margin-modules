@@ -13,7 +13,7 @@ import {
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
   createGLPIsolationModeTokenVaultV1,
@@ -36,8 +36,6 @@ const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const usdcAmount = amountWei.div(1e12).mul(5);
 const usableUsdcAmount = usdcAmount.div(2);
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('GLPIsolationModeWrapperTraderV1', () => {
   let snapshotId: string;
@@ -162,7 +160,7 @@ describe('GLPIsolationModeWrapperTraderV1', () => {
           factory.address,
           core.tokens.weth.address,
           usableUsdcAmount,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
+          encodeExternalSellActionDataWithNoData(ZERO_BI),
         ),
         `GLPIsolationModeWrapperV1: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
@@ -177,7 +175,7 @@ describe('GLPIsolationModeWrapperTraderV1', () => {
           core.tokens.weth.address,
           core.tokens.usdc.address,
           amountWei,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         `IsolationModeWrapperTraderV1: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
@@ -192,7 +190,7 @@ describe('GLPIsolationModeWrapperTraderV1', () => {
           factory.address,
           core.tokens.usdc.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
+          encodeExternalSellActionDataWithNoData(ZERO_BI),
         ),
         'IsolationModeWrapperTraderV1: Invalid input amount',
       );
@@ -267,7 +265,7 @@ describe('GLPIsolationModeWrapperTraderV1', () => {
           core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
+          encodeExternalSellActionDataWithNoData(ZERO_BI),
         ),
         'GLPIsolationModeWrapperV1: Invalid desired input amount',
       );

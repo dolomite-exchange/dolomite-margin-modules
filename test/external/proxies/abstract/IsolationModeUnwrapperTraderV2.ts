@@ -15,7 +15,12 @@ import {
 import { AccountInfoStruct } from '../../../../src/utils';
 import { createContractWithAbi, createTestToken } from '../../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
 import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
 import {
@@ -29,8 +34,6 @@ import {
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('IsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
@@ -256,7 +259,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
           otherToken.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256', 'bytes'], [amountWei, BYTES_EMPTY]), // minOutputAmount
+          encodeExternalSellActionDataWithNoData(amountWei), // minOutputAmount
         ),
         `IsolationModeUnwrapperTraderV2: Insufficient input token <0, ${amountWei.toString()}>`,
       );
@@ -274,7 +277,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
           otherToken.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256', 'bytes'], [amountWei.mul(2), BYTES_EMPTY]), // minOutputAmount
+          encodeExternalSellActionDataWithNoData(amountWei.mul(2)), // minOutputAmount
         ),
         `IsolationModeUnwrapperTraderV2: Insufficient output amount <${amountWei.toString()}, ${amountWei.mul(2)
           .toString()}>`,
@@ -317,7 +320,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       expect(actions[0].actionType).to.eq(ActionType.Call);
       expect(actions[0].accountId).to.eq(liquidAccountId);
       expect(actions[0].otherAddress).to.eq(unwrapper.address);
-      expect(actions[0].data).to.eq(abiCoder.encode(['uint256'], [amountWei]));
+      expect(actions[0].data).to.eq(ethers.utils.defaultAbiCoder.encode(['uint256'], [amountWei]));
 
       // Inspect the sell action
       expect(actions[1].actionType).to.eq(ActionType.Sell);
@@ -330,7 +333,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       expect(actions[1].secondaryMarketId).to.eq(otherMarketId);
       expect(actions[1].otherAddress).to.eq(unwrapper.address);
       expect(actions[1].otherAccountId).to.eq(ZERO_BI);
-      expect(actions[1].data).to.eq(abiCoder.encode(['uint', 'bytes'], [otherAmountWei, BYTES_EMPTY]));
+      expect(actions[1].data).to.eq(encodeExternalSellActionDataWithNoData(otherAmountWei));
     });
 
     it('should fail if invalid input token is passed', async () => {

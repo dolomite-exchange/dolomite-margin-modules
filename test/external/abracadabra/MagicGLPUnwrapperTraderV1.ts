@@ -5,7 +5,7 @@ import { IERC4626, MagicGLPPriceOracle, MagicGLPUnwrapperTraderV1 } from '../../
 import { AccountInfoStruct } from '../../../src/utils';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
   createMagicGLPPriceOracle,
@@ -16,8 +16,6 @@ import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSD
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('MagicGLPUnwrapperTraderV1', () => {
   let snapshotId: string;
@@ -146,7 +144,7 @@ describe('MagicGLPUnwrapperTraderV1', () => {
           core.tokens.weth.address,
           magicGlp.address,
           amountWei,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         `MagicGLPUnwrapperTraderV1: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
@@ -162,7 +160,7 @@ describe('MagicGLPUnwrapperTraderV1', () => {
           core.tokens.usdc.address,
           magicGlp.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         'MagicGLPUnwrapperTraderV1: Invalid input amount',
       );

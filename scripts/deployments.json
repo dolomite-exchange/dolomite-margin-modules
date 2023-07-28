@@ -211,6 +211,13 @@
       "isVerified": true
     }
   },
+  "ParaswapAggregatorTraderV2": {
+    "42161": {
+      "address": "0xd991d9E0a22a51391c25B258eeF8C1c4a392383a",
+      "transaction": "0xaf6cecf15044ebb61a0eebfc533424fc5358227a4e98618399b2ca4478c8fe85",
+      "isVerified": true
+    }
+  },
   "PendlePtGLP2024IsolationModeTokenVaultV1": {
     "42161": {
       "address": "0x93f687d250eBC48071412C51102020fEE163FD19",

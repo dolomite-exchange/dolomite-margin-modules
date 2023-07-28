@@ -1,11 +1,17 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { ParaswapAggregatorTrader } from '../../../src/types';
 import { AccountStruct } from '../../../src/utils/constants';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import {
+  encodeExternalSellActionData,
+  getRealLatestBlockNumber,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '../../utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
@@ -51,7 +57,7 @@ describe('ParaswapAggregatorTrader', () => {
 
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await trader.PARASWAP_AUGUSTUS_ROUTER()).to.equal(core.paraswapEcosystem!.augustusRouter);
+      expect(await trader.PARASWAP_AUGUSTUS_ROUTER()).to.equal(core.paraswapEcosystem!.augustusRouter.address);
       expect(await trader.PARASWAP_TRANSFER_PROXY()).to.equal(core.paraswapEcosystem!.transferProxy);
     });
   });
@@ -71,10 +77,7 @@ describe('ParaswapAggregatorTrader', () => {
         trader,
         core,
       );
-      const actualCalldata = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'bytes'],
-        [minAmountOut, calldata],
-      );
+      const actualCalldata = encodeExternalSellActionData(minAmountOut, ['bytes'], [calldata]);
       await core.dolomiteMargin.connect(core.hhUser1).operate(
         [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
         [
@@ -123,9 +126,10 @@ describe('ParaswapAggregatorTrader', () => {
         trader,
         core,
       );
-      const actualOrderData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'bytes'],
-        [outputAmount.mul(10), tradeData],
+      const actualOrderData = encodeExternalSellActionData(
+        outputAmount.mul(10),
+        ['bytes'],
+        [tradeData],
       );
       await expectThrowWithMatchingReason(
         core.dolomiteMargin.connect(core.hhUser1).operate(
@@ -165,10 +169,10 @@ describe('ParaswapAggregatorTrader', () => {
         trader,
         core,
       );
-      const actualCalldata = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'bytes'],
+      const actualCalldata = encodeExternalSellActionData(
+        minAmountOut,
+        ['bytes'],
         [
-          minAmountOut,
           calldata.replace(
             core.tokens.weth.address.toLowerCase().substring(2),
             core.tokens.weth.address.toLowerCase().substring(2).replace('4', '3'),
@@ -202,10 +206,7 @@ describe('ParaswapAggregatorTrader', () => {
         trader,
         core,
       );
-      const actualCalldata = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'bytes'],
-        [minAmountOut, calldata.substring(0, 32)],
-      );
+      const actualCalldata = encodeExternalSellActionData(minAmountOut, ['bytes'], [calldata.substring(0, 32)]);
       await expectThrow(
         trader.connect(caller)
           .exchange(

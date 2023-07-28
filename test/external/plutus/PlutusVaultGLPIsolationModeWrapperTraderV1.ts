@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   IERC4626,
   IGmxRegistryV1,
@@ -15,7 +15,7 @@ import {
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
   createPlutusVaultGLPIsolationModeTokenVaultV1,
@@ -26,7 +26,8 @@ import {
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
 import {
-  CoreProtocol, getDefaultCoreProtocolConfig,
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -42,8 +43,6 @@ const usableUsdcAmount = usdcAmount.div(2);
 const glpAmount = amountWei.mul(3);
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
   let snapshotId: string;
@@ -194,7 +193,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
           factory.address,
           OTHER_ADDRESS,
           usableUsdcAmount,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
+          encodeExternalSellActionDataWithNoData(ZERO_BI),
         ),
         `PlutusVaultGLPWrapperV1: Invalid input token <${OTHER_ADDRESS.toLowerCase()}>`,
       );
@@ -209,7 +208,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
           core.tokens.weth.address,
           core.tokens.usdc.address,
           amountWei,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         `IsolationModeWrapperTraderV1: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
@@ -224,7 +223,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
           factory.address,
           core.tokens.usdc.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
+          encodeExternalSellActionDataWithNoData(ZERO_BI),
         ),
         'IsolationModeWrapperTraderV1: Invalid input amount',
       );
@@ -301,7 +300,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
           core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [ZERO_BI]),
+          encodeExternalSellActionDataWithNoData((ZERO_BI)),
         ),
         'PlutusVaultGLPWrapperV1: Invalid desired input amount',
       );

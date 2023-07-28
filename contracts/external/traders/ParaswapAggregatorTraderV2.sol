@@ -76,7 +76,7 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
         address _outputToken,
         address _inputToken,
         uint256 _inputAmount,
-        bytes calldata _orderData
+        bytes calldata _minAmountOutAndOrderData
     )
     external
     onlyDolomiteMargin(msg.sender)
@@ -85,9 +85,12 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
 
         (
             uint256 minAmountOutWei,
+            bytes memory orderData
+        ) = abi.decode(_minAmountOutAndOrderData, (uint256, bytes));
+        (
             bytes4 paraswapFunctionSelector,
             bytes memory paraswapCallData
-        ) = abi.decode(_orderData, (uint256, bytes4, bytes));
+        ) = abi.decode(orderData, (bytes4, bytes));
 
         _overwriteInputAmountAndCall(_inputAmount, paraswapFunctionSelector, paraswapCallData);
         uint256 outputAmount = IERC20(_outputToken).balanceOf(address(this));
