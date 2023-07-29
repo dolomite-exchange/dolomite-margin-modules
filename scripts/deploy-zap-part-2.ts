@@ -255,7 +255,7 @@ async function deployPlutusVaultGLPContracts(network: Network, core: CoreProtoco
     Number(network),
     'RegistryProxy',
     await getPlutusVaultRegistryConstructorParams(pendleRegistryImplementation, core),
-    'PlutusVaultGLPRegistryProxy',
+    'PlutusVaultRegistryProxy',
   );
   const plutusVaultRegistry = IPlutusVaultRegistry__factory.connect(plutusVaultRegistryAddress, core.hhUser1);
   const plvGlpTokenVaultAddress = await deployContractAndSave(
@@ -453,17 +453,17 @@ async function encodePendlePtGLP2024Transactions(
 ) {
   await prettyPrintEncodedData(
     core.liquidatorAssetRegistry.populateTransaction.ownerRemoveLiquidatorFromAssetWhitelist(
-      core.marketIds.dplvGlp!,
+      core.marketIds.dPtGlp!,
       oldLiquidatorAddress,
     ),
-    'liquidatorAssetRegistry.ownerRemoveLiquidatorFromAssetWhitelist(dplvGlp, oldLiquidator)',
+    'liquidatorAssetRegistry.ownerRemoveLiquidatorFromAssetWhitelist(dPtGlp, oldLiquidator)',
   );
   await prettyPrintEncodedData(
     core.liquidatorAssetRegistry.populateTransaction.ownerAddLiquidatorToAssetWhitelist(
-      core.marketIds.dplvGlp!,
+      core.marketIds.dPtGlp!,
       core.liquidatorProxyV4.address,
     ),
-    'liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(dplvGlp, newLiquidator)',
+    'liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(dPtGlp, newLiquidator)',
   );
   await prettyPrintEncodedData(
     core.pendleEcosystem!.live.ptGlpIsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(

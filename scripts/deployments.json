@@ -104,7 +104,6 @@
       "isVerified": true
     }
   },
-  "GmxRegistryV1": {},
   "GmxRegistryV1Implementation": {
     "42161": {
       "address": "0x39f39051c115d909d25021F5A18137B18AbcE7Ad",
@@ -154,7 +153,6 @@
       "isVerified": true
     }
   },
-  "JonesUSDCRegistry": {},
   "JonesUSDCRegistryProxy": {
     "42161": {
       "address": "0x6856d57bf5aa7772f293029Aac9002F65985823b",
@@ -246,7 +244,6 @@
       "isVerified": true
     }
   },
-  "PendlePtGLP2024Registry": {},
   "PendlePtGLP2024RegistryProxy": {
     "42161": {
       "address": "0xA2faf5D1bf7Ea66f9dAe29Ab24CE1613B455f6b0",
@@ -317,14 +314,13 @@
       "isVerified": true
     }
   },
-  "PlutusVaultGLPRegistryProxy": {
+  "PlutusVaultRegistryProxy": {
     "42161": {
       "address": "0x6FCEB6c2930d274b703b02a94eEBaaC7ECC6D1bb",
       "transaction": "0xe69792ee0fc7f6599a084a42d5e56b04e11c4175e0d2fc15ab66f5b4300105c6",
       "isVerified": true
     }
   },
-  "PlutusVaultRegistry": {},
   "PlutusVaultRegistryV1Implementation": {
     "42161": {
       "address": "0x704ed087825D8Be4Dd842eA778d90D7a072Ed8F3",
