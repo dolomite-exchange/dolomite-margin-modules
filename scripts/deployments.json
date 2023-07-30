@@ -309,8 +309,8 @@
   },
   "PlutusVaultGLPPriceOracle": {
     "42161": {
-      "address": "0x72Dfd3fEFc08905f90bA962F2Bc02F57E6db19ef",
-      "transaction": "0x76d079c09d0cefdbb6988701b888f4ec290c52dd53cf7ac805014f1a99f1cf66",
+      "address": "0x11E4e70B4ac087624f55D1dccaB306440250a3A0",
+      "transaction": "0x683aa713de6d40e1f5c55c6342265521d3730fd0c4eb43c2654ad1291b738683",
       "isVerified": true
     }
   },

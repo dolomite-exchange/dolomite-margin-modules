@@ -287,7 +287,7 @@ async function deployPlutusVaultGLPContracts(network: Network, core: CoreProtoco
     getPlutusVaultGLPPriceOracleConstructorParams(
       core,
       plutusVaultRegistry,
-      core.pendleEcosystem!.live.ptGlpIsolationModeFactory,
+      core.plutusEcosystem!.live.plvGlpIsolationModeFactory,
       PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.connect(plvGlpUnwrapperV2Address, core.hhUser1),
     ),
   );
