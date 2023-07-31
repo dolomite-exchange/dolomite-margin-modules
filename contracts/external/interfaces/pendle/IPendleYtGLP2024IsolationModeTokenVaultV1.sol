@@ -32,9 +32,14 @@ import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
  */
 interface IPendleYtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
+    struct RewardDeposit {
+        uint256 marketId;
+        bool depositIntoDolomite;
+    }
+
     function redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards,
-        bool _shouldDepositIntoDolomite
+        RewardDeposit[] memory _rewardDeposits
     ) external;
 }

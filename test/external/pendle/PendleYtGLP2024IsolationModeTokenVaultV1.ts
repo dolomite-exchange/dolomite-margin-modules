@@ -177,7 +177,8 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
       await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
-      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, true);
+      const rewardDeposit = [{ marketId: core.marketIds.weth, depositIntoDolomite: true}];
+      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, rewardDeposit);
 
       const account = { owner: core.hhUser1.address, number: defaultAccountNumber };
       const balance = await core.dolomiteMargin.getAccountWei(account, core.marketIds.weth);
@@ -192,15 +193,17 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
       await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
-      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, false);
+      const rewardDeposit = [{ marketId: core.marketIds.weth, depositIntoDolomite: false}];
+      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, rewardDeposit);
 
       expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.be.gt(ZERO_BI);
       expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
     });
 
     it('should fail when not called by vault owner', async () => {
+      const rewardDeposit = [{ marketId: core.marketIds.weth, depositIntoDolomite: false}];
       await expectThrow(
-        vault.connect(core.hhUser2).redeemDueInterestAndRewards(true, true, false),
+        vault.connect(core.hhUser2).redeemDueInterestAndRewards(true, true, rewardDeposit),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
       );
     });

@@ -67,7 +67,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     function redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards,
-        bool _sendToUser
+        RewardDeposit[] memory _rewardDeposits
     ) 
     external 
     nonReentrant 
@@ -76,8 +76,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         _redeemDueInterestAndRewards(
             _redeemInterest,
             _redeemRewards,
-            _sendToUser,
-            /* _depositAccountNumberForWeth = */ 0
+            _rewardDeposits
         );
     }
 
@@ -105,8 +104,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     function _redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards,
-        bool _shouldDepositIntoDolomite,
-        uint256 _depositAccountNumberForWeth
+        RewardDeposit[] memory _rewardDeposits
     ) internal {
         IPendleYtToken(UNDERLYING_TOKEN()).redeemDueInterestAndRewards(
                 address(this),
@@ -115,18 +113,24 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
             );
 
         address factory = VAULT_FACTORY();
-        address weth = IPendleYtGLP2024IsolationModeVaultFactory(factory).WETH();
-        uint256 wethAmountWei = IERC20(weth).balanceOf(address(this));
-        if (_shouldDepositIntoDolomite) {
-            IERC20(weth).safeApprove(address(DOLOMITE_MARGIN()), wethAmountWei);
-            IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                _depositAccountNumberForWeth,
-                IPendleYtGLP2024IsolationModeVaultFactory(factory).WETH_MARKET_ID(),
-                wethAmountWei
-            );
-        }
-        else {
-            IERC20(weth).safeTransfer(msg.sender, wethAmountWei);
+        uint256 amount;
+        address token;
+
+        for (uint i; i < _rewardDeposits.length; i++) {
+            token = DOLOMITE_MARGIN().getMarketTokenAddress(_rewardDeposits[i].marketId);
+            amount = IERC20(token).balanceOf(address(this));
+
+            if (_rewardDeposits[i].depositIntoDolomite) {
+                IERC20(token).safeApprove(address(DOLOMITE_MARGIN()), amount);
+                IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
+                    0,
+                    _rewardDeposits[i].marketId,
+                    amount
+                );
+            }
+            else {
+                IERC20(token).transfer(msg.sender, amount);
+            }
         }
     }
 
