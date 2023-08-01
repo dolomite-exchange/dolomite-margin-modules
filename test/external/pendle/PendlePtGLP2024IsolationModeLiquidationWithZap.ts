@@ -1,4 +1,4 @@
-import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk/dist';
+import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
@@ -85,6 +85,7 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
       process.env.SUBGRAPH_URL as string,
       core.hhUser1.provider!,
       cacheDurationSeconds,
+      true,
       defaultSlippage,
     );
     underlyingToken = core.pendleEcosystem!.ptGlpToken.connect(core.hhUser1);

@@ -6,7 +6,6 @@ import {
   JonesUSDCIsolationModeTokenVaultV1,
   JonesUSDCRegistry,
 } from '../../types';
-import { NONE_MARKET_ID } from '../no-deps-constants';
 
 export async function getJonesUSDCRegistryConstructorParams(
   implementation: JonesUSDCRegistry,
@@ -97,7 +96,7 @@ export function getJonesUSDCIsolationModeVaultFactoryConstructorParams(
   return [
     jonesUSDCRegistry.address,
     [core.marketIds.usdc],
-    [NONE_MARKET_ID],
+    [],
     jUSDCToken.address,
     core.borrowPositionProxyV2.address,
     userVaultImplementation.address,

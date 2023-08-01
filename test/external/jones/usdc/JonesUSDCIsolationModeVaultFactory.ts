@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { BigNumber } from 'ethers';
 import {
   JonesUSDCIsolationModeTokenVaultV1,
   JonesUSDCIsolationModeVaultFactory,
@@ -7,14 +8,19 @@ import {
   TestGLPIsolationModeTokenVaultV1__factory,
 } from '../../../../src/types';
 import { createContractWithAbi } from '../../../../src/utils/dolomite-utils';
-import { Network, NONE_MARKET_ID } from '../../../../src/utils/no-deps-constants';
+import { Network } from '../../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectEvent, expectThrow } from '../../../utils/assertions';
 import {
+  createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
+  createJonesUSDCIsolationModeUnwrapperTraderV2ForZap,
   createJonesUSDCIsolationModeVaultFactory,
+  createJonesUSDCIsolationModeWrapperTraderV2,
+  createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../utils/setup';
+import { createRoleAndWhitelistTrader } from './jones-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -25,6 +31,7 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let vaultImplementation: TestGLPIsolationModeTokenVaultV1;
   let factory: JonesUSDCIsolationModeVaultFactory;
+  let underlyingMarketId: BigNumber;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -40,6 +47,31 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
       core.jonesEcosystem!.jUSDC,
       (vaultImplementation as any) as JonesUSDCIsolationModeTokenVaultV1,
     );
+
+    const unwrapperTraderForLiquidation = await createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation(
+      core,
+      jonesUSDCRegistry,
+      factory,
+    );
+    const unwrapperTraderForZap = await createJonesUSDCIsolationModeUnwrapperTraderV2ForZap(
+      core,
+      jonesUSDCRegistry,
+      factory,
+    );
+    await jonesUSDCRegistry.initializeUnwrapperTraders(
+      unwrapperTraderForLiquidation.address,
+      unwrapperTraderForZap.address,
+    );
+    const wrapper = await createJonesUSDCIsolationModeWrapperTraderV2(core, jonesUSDCRegistry, factory);
+    await createRoleAndWhitelistTrader(core, unwrapperTraderForLiquidation, wrapper);
+    const priceOracle = await createJonesUSDCPriceOracle(core, jonesUSDCRegistry, factory);
+
+    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
+    await setupTestMarket(core, factory, true, priceOracle);
+    await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
+
+    await factory.connect(core.governance).ownerInitialize([unwrapperTraderForLiquidation.address, wrapper.address]);
+    await factory.connect(core.governance).ownerSetAllowableCollateralMarketIds([underlyingMarketId]);
 
     snapshotId = await snapshot();
   });
@@ -79,7 +111,7 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
     it('should work normally', async () => {
       const result = await factory.allowableCollateralMarketIds();
       expect(result.length).to.eql(1);
-      expect(result[0]).to.eq(NONE_MARKET_ID);
+      expect(result[0]).to.eq(underlyingMarketId);
     });
   });
 

@@ -59,11 +59,6 @@ abstract contract IsolationModeVaultFactory is
     // ================ Immutable Fields ================
     // ==================================================
 
-    /**
-     * @dev The market ID used to indicate that no other markets can be used in this category for
-     *      #allowableDebtMarketIds or #allowableCollateralMarketIds
-     */
-    uint256 public constant override NONE = type(uint256).max;
     address public immutable override UNDERLYING_TOKEN; // solhint-disable-line var-name-mixedcase
     IBorrowPositionProxyV2 public immutable override BORROW_POSITION_PROXY; // solhint-disable-line var-name-mixedcase
 
@@ -159,6 +154,8 @@ abstract contract IsolationModeVaultFactory is
 
         isInitialized = true;
         emit Initialized();
+
+        _afterInitialize();
     }
 
     function createVault(
@@ -390,6 +387,10 @@ abstract contract IsolationModeVaultFactory is
     // ====================================================
     // ================ Internal Functions ================
     // ====================================================
+
+    function _afterInitialize() internal virtual {
+        // solhint-disable-previous-line no-empty-blocks
+    }
 
     function _ownerSetIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) internal {
         Require.that(

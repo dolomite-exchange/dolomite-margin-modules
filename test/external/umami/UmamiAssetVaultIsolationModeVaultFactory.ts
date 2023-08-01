@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { BigNumber } from 'ethers';
 import {
   IERC20,
   IUmamiAssetVault,
@@ -9,15 +10,19 @@ import {
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { Network, NONE_MARKET_ID } from '../../../src/utils/no-deps-constants';
+import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
 import {
+  createUmamiAssetVaultIsolationModeUnwrapperTraderV2,
   createUmamiAssetVaultIsolationModeVaultFactory,
+  createUmamiAssetVaultIsolationModeWrapperTraderV2,
+  createUmamiAssetVaultPriceOracle,
   createUmamiAssetVaultRegistry,
 } from '../../utils/ecosystem-token-utils/umami';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
+const underlyingMarketIds: BigNumber[] = [];
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
@@ -53,6 +58,17 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
         ),
       ),
     );
+    for (let i = 0; i < factories.length; i++) {
+      const factory = factories[i];
+      const unwrapper = await createUmamiAssetVaultIsolationModeUnwrapperTraderV2(core, umamiRegistry, factory);
+      const wrapper = await createUmamiAssetVaultIsolationModeWrapperTraderV2(core, umamiRegistry, factory);
+      const priceOracle = await createUmamiAssetVaultPriceOracle(core, umamiRegistry, factory);
+
+      underlyingMarketIds.push(await core.dolomiteMargin.getNumMarkets());
+      await setupTestMarket(core, factory, true, priceOracle);
+
+      await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
+    }
 
     snapshotId = await snapshot();
   });
@@ -99,7 +115,7 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
       for (let i = 0; i < factories.length; i++) {
         const result = await factories[i].allowableCollateralMarketIds();
         expect(result.length).to.eql(1);
-        expect(result[0]).to.eq(NONE_MARKET_ID);
+        expect(result[0]).to.eq(underlyingMarketIds[i]);
       }
     });
   });
