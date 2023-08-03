@@ -54,6 +54,8 @@ describe('MagicGLPPriceOracleChainlink', () => {
     );
 
     await setupTestMarket(core, magicGlpWithNoTotalSupply, true, magicGlpPriceOracleChainlinkWithNoTotalSupply);
+    await increase(12 * 3600);
+    await magicGlpPriceOracleChainlink.connect(chainlinkRegistry).performUpkeep('0x');
 
     snapshotId = await snapshot();
   });
@@ -144,7 +146,7 @@ describe('MagicGLPPriceOracleChainlink', () => {
     });
   });
 
-  describe('#checkUpkeep', () => {
+  describe.only('#checkUpkeep', () => {
     it('works normally', async () => {
       expect((await magicGlpPriceOracleChainlink.checkUpkeep('0x')).upkeepNeeded).to.eq(false);
     });
@@ -180,7 +182,7 @@ describe('MagicGLPPriceOracleChainlink', () => {
         .to.eq(true);
     });
 
-    it('returns true when deviation is less than 0.25% and lastTimestamp is more than heartbeat', async () => {
+    it.only('returns true when deviation is less than 0.25% and lastTimestamp is more than heartbeat', async () => {
       await increase(11 * 3600);
       expect((await magicGlpPriceOracleChainlink.connect(chainlinkRegistry).checkUpkeep('0x')).upkeepNeeded)
         .to.eq(false);

@@ -126,7 +126,7 @@ contract MagicGLPPriceOracleChainlink is IDolomitePriceOracle, AutomationCompati
         uint256 _exchangeRate = exchangeRate;
         uint256 upperEdge = _exchangeRate * 10025 / 10000;
         uint256 lowerEdge = _exchangeRate * 9975 / 10000;
-        return (currentPrice >= upperEdge || currentPrice <= lowerEdge || block.timestamp > latestTimestamp + HEARTBEAT);
+        return (currentPrice >= upperEdge || currentPrice <= lowerEdge || block.timestamp >= latestTimestamp + HEARTBEAT);
     }
 
     function _getCurrentPrice() internal view returns (uint256) {
