@@ -37,6 +37,9 @@ describe('MagicGLPPriceOracleChainlink', () => {
     magicGlpWithNoTotalSupply = await createTestToken();
     chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_ADDRESS, true);
 
+    await core.testEcosystem!.testPriceOracle!.setPrice(core.tokens.dfsGlp!.address, GLP_PRICE);
+    await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.dfsGlp!, core.testEcosystem!.testPriceOracle!.address);
+
     magicGlpPriceOracleChainlink = await createMagicGLPPriceOracleChainlink(core, chainlinkRegistry);
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
     magicGlpPriceOracleChainlinkWithNoTotalSupply = await createContractWithAbi<MagicGLPPriceOracleChainlink>(
@@ -50,8 +53,6 @@ describe('MagicGLPPriceOracleChainlink', () => {
       ],
     );
 
-    await core.testEcosystem!.testPriceOracle!.setPrice(core.tokens.dfsGlp!.address, GLP_PRICE);
-    await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.dfsGlp!, core.testEcosystem!.testPriceOracle!.address);
     await setupTestMarket(core, magicGlpWithNoTotalSupply, true, magicGlpPriceOracleChainlinkWithNoTotalSupply);
 
     snapshotId = await snapshot();
@@ -184,6 +185,7 @@ describe('MagicGLPPriceOracleChainlink', () => {
       expect((await magicGlpPriceOracleChainlink.connect(chainlinkRegistry).checkUpkeep('0x')).upkeepNeeded)
         .to.eq(false);
 
+      // CHECK THIS
       await increase(3600);
       expect((await magicGlpPriceOracleChainlink.connect(chainlinkRegistry).checkUpkeep('0x')).upkeepNeeded)
         .to.eq(true);

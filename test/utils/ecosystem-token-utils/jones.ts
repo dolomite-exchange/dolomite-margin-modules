@@ -13,7 +13,7 @@ import {
   JonesUSDCIsolationModeWrapperTraderV2,
   JonesUSDCIsolationModeWrapperTraderV2__factory,
   JonesUSDCPriceOracle,
-  JonesUSDCPriceOracle__factory,
+  JonesUSDCPriceOracle__factory, JonesUSDCPriceOracleChainlink, JonesUSDCPriceOracleChainlink__factory,
   JonesUSDCRegistry,
   JonesUSDCRegistry__factory, RegistryProxy, RegistryProxy__factory,
 } from '../../../src/types';
@@ -21,12 +21,13 @@ import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
   getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,
   getJonesUSDCIsolationModeVaultFactoryConstructorParams,
-  getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
+  getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams, getJonesUSDCPriceOracleChainlinkConstructorParams,
   getJonesUSDCPriceOracleConstructorParams,
   getJonesUSDCRegistryConstructorParams,
 } from '../../../src/utils/constructors/jones';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export function createJonesUSDCIsolationModeVaultFactory(
   core: CoreProtocol,
@@ -66,6 +67,24 @@ export function createJonesUSDCPriceOracle(
       core,
       jonesUSDCRegistry,
       djUSDCToken,
+    ),
+  );
+}
+
+export async function createJonesUSDCPriceOracleChainlink(
+  core: CoreProtocol,
+  jonesUSDCRegistry: JonesUSDCRegistry,
+  djUSDCToken: { address: address },
+  chainlinkRegistry: SignerWithAddress
+): Promise<JonesUSDCPriceOracleChainlink> {
+  return createContractWithAbi(
+    JonesUSDCPriceOracleChainlink__factory.abi,
+    JonesUSDCPriceOracleChainlink__factory.bytecode,
+    getJonesUSDCPriceOracleChainlinkConstructorParams(
+      core,
+      jonesUSDCRegistry,
+      djUSDCToken,
+      chainlinkRegistry
     ),
   );
 }
