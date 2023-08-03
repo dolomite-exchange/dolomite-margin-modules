@@ -1,6 +1,8 @@
 import {
   MagicGLPPriceOracle,
   MagicGLPPriceOracle__factory,
+  MagicGLPPriceOracleChainlink,
+  MagicGLPPriceOracleChainlink__factory,
   MagicGLPUnwrapperTraderV1,
   MagicGLPUnwrapperTraderV1__factory,
   MagicGLPUnwrapperTraderV2,
@@ -12,6 +14,7 @@ import {
 } from '../../../src/types';
 import {
   getMagicGLPPriceOracleConstructorParams,
+  getMagicGLPPriceOracleChainlinkConstructorParams,
   getMagicGLPUnwrapperTraderV1ConstructorParams,
   getMagicGLPUnwrapperTraderV2ConstructorParams,
   getMagicGLPWrapperTraderV1ConstructorParams,
@@ -19,6 +22,7 @@ import {
 } from '../../../src/utils/constructors/abracadabra';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export async function createMagicGLPPriceOracle(core: CoreProtocol): Promise<MagicGLPPriceOracle> {
   return createContractWithAbi(
@@ -28,6 +32,16 @@ export async function createMagicGLPPriceOracle(core: CoreProtocol): Promise<Mag
   );
 }
 
+export async function createMagicGLPPriceOracleChainlink(
+  core: CoreProtocol,
+  chainlinkRegistry: SignerWithAddress
+): Promise<MagicGLPPriceOracleChainlink> {
+  return createContractWithAbi(
+    MagicGLPPriceOracleChainlink__factory.abi,
+    MagicGLPPriceOracleChainlink__factory.bytecode,
+    getMagicGLPPriceOracleChainlinkConstructorParams(core, chainlinkRegistry),
+  );
+}
 export async function createMagicGLPUnwrapperTraderV1(core: CoreProtocol): Promise<MagicGLPUnwrapperTraderV1> {
   return createContractWithAbi(
     MagicGLPUnwrapperTraderV1__factory.abi,
