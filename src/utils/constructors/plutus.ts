@@ -10,6 +10,7 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV2,
   PlutusVaultRegistry,
 } from '../../types';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export async function getPlutusVaultRegistryConstructorParams(
   implementation: PlutusVaultRegistry,
@@ -50,6 +51,27 @@ export function getPlutusVaultGLPPriceOracleConstructorParams(
     dplvGlpToken.address,
     plutusVaultRegistry.address,
     unwrapper.address,
+  ];
+}
+
+export function getPlutusVaultGLPPriceOracleChainlinkConstructorParams(
+  core: CoreProtocol,
+  plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
+  dplvGlpToken: { address: address },
+  unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
+  chainlinkRegistry: SignerWithAddress,
+): any[] {
+  if (!core.plutusEcosystem) {
+    throw new Error('Plutus ecosystem not initialized');
+  }
+
+  return [
+    core.dolomiteMargin.address,
+    core.marketIds.dfsGlp!,
+    dplvGlpToken.address,
+    plutusVaultRegistry.address,
+    unwrapper.address,
+    chainlinkRegistry.address,
   ];
 }
 

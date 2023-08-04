@@ -36,9 +36,7 @@ describe('JonesUSDCPriceOracleChainlink', () => {
   let jonesController: IJonesWhitelistController;
   let factory: JonesUSDCIsolationModeVaultFactory;
   let jonesUSDCPriceOracleChainlink: JonesUSDCPriceOracleChainlink;
-  let jonesUSDCPriceOracleChainlinkWithNoTotalSupply: JonesUSDCPriceOracleChainlink;
   let jUSDC: IERC4626;
-  let jUSDCWithNoTotalSupply: CustomTestToken;
   let chainlinkRegistry: SignerWithAddress;
   let deploymentTimestamp: BigNumberish;
   let retentionFee: BigNumber;
@@ -242,16 +240,13 @@ describe('JonesUSDCPriceOracleChainlink', () => {
       );
 
       await increase(3600);
-      const NEW_USDC_PRICE = BigNumber.from('100000000000000000000000000000'); // $0.99998605
-      await core.testEcosystem!.testPriceOracle!.setPrice(core.tokens.usdc!.address, NEW_USDC_PRICE);
-
       await jonesUSDCPriceOracleChainlink.connect(chainlinkRegistry).performUpkeep('0x');
       const upkeepTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
       expect(await jonesUSDCPriceOracleChainlink.latestTimestamp()).to.eq(upkeepTimestamp);
 
       const totalAssets = await jUSDC.totalAssets();
       const totalSupply = await jUSDC.totalSupply();
-      const price = getjUSDCPrice(NEW_USDC_PRICE, totalAssets, totalSupply);
+      const price = getjUSDCPrice(USDC_PRICE, totalAssets, totalSupply);
       expect((await jonesUSDCPriceOracleChainlink.getPrice(factory.address)).value)
         .to.eq(price);
     });

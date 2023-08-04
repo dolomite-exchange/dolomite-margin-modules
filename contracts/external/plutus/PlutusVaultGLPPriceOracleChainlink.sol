@@ -22,54 +22,55 @@ pragma solidity ^0.8.9;
 
 import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
 
-import { JonesUSDCMathLib } from "./JonesUSDCMathLib.sol";
-import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomitePriceOracle } from "../../../protocol/interfaces/IDolomitePriceOracle.sol";
-import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../../protocol/lib/Require.sol";
-import { IERC4626 } from "../../interfaces/IERC4626.sol";
-import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IERC4626 } from "../interfaces/IERC4626.sol";
+import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
 
 /**
- * @title   JonesUSDCPriceOracleChainlink
+ * @title   PlutusVaultGLPPriceOracleChainlink
  * @author  Dolomite
  *
- * @notice  An implementation of the IDolomitePriceOracle interface that gets Jones DAO's jUSDC price in USD terms
+ * @notice  An implementation of the IDolomitePriceOracle interface that gets Plutus' plvGLP price in USD terms.
  * @notice  Uses Chainlink automation
  */
-contract JonesUSDCPriceOracleChainlink is IDolomitePriceOracle, AutomationCompatibleInterface {
-    using JonesUSDCMathLib for IJonesUSDCRegistry;
+contract PlutusVaultGLPPriceOracleChainlink is IDolomitePriceOracle, AutomationCompatibleInterface {
 
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "JonesUSDCPriceOracleChainlink";
-    uint256 private constant _USDC_DECIMALS_DIFF = 12;
-    uint256 private constant _USDC_SCALE_DIFF = 10 ** _USDC_DECIMALS_DIFF;
+    bytes32 private constant _FILE = "plvGlpPriceOracleChainlink";
+    uint256 private constant _FEE_PRECISION = 10_000;
     uint256 public constant HEARTBEAT = 12 * 3600;
 
     // ============================ Public State Variables ============================
 
     IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
-    IJonesUSDCRegistry immutable public JONES_USDC_REGISTRY; // solhint-disable-line var-name-mixedcase
-    uint256 immutable public USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
-    address immutable public DJUSDC; // solhint-disable-line var-name-mixedcase
+    uint256 immutable public DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    address immutable public DPLV_GLP; // solhint-disable-line var-name-mixedcase
+    IPlutusVaultRegistry immutable public PLUTUS_VAULT_REGISTRY; // solhint-disable-line var-name-mixedcase
+    address immutable public PLUTUS_VAULT_GLP_UNWRAPPER_TRADER; // solhint-disable-line var-name-mixedcase
     address immutable public CHAINLINK_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     uint256 private exchangeRate;
     uint256 public latestTimestamp;
 
     // ============================ Constructor ============================
+
     constructor(
         address _dolomiteMargin,
-        address _jonesUSDCRegistry,
-        uint256 _usdcMarketId,
-        address _djUSDC,
+        uint256 _dfsGlpMarketId,
+        address _dplvGlp,
+        address _plutusVaultRegistry,
+        address _plutusVaultGLPUnwrapperTrader,
         address _chainlinkRegistry
     ) {
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
-        JONES_USDC_REGISTRY = IJonesUSDCRegistry(_jonesUSDCRegistry);
-        USDC_MARKET_ID = _usdcMarketId;
-        DJUSDC = _djUSDC;
+        DFS_GLP_MARKET_ID = _dfsGlpMarketId;
+        DPLV_GLP = _dplvGlp;
+        PLUTUS_VAULT_REGISTRY = IPlutusVaultRegistry(_plutusVaultRegistry);
+        PLUTUS_VAULT_GLP_UNWRAPPER_TRADER = _plutusVaultGLPUnwrapperTrader;
         CHAINLINK_REGISTRY = _chainlinkRegistry;
 
         exchangeRate = _getCurrentPrice();
@@ -108,16 +109,17 @@ contract JonesUSDCPriceOracleChainlink is IDolomitePriceOracle, AutomationCompat
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
-            _token == DJUSDC,
+            _token == DPLV_GLP,
             _FILE,
-            "Invalid token",
+            "invalid token",
             _token
         );
         Require.that(
             DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
             _FILE,
-            "jUSDC cannot be borrowable"
+            "plvGLP cannot be borrowable"
         );
+
         Require.that(
             latestTimestamp + HEARTBEAT > block.timestamp,
             _FILE,
@@ -140,15 +142,19 @@ contract JonesUSDCPriceOracleChainlink is IDolomitePriceOracle, AutomationCompat
     }
 
     function _getCurrentPrice() internal view returns (uint256) {
-        uint256 usdcPrice = DOLOMITE_MARGIN.getMarketPrice(USDC_MARKET_ID).value / _USDC_SCALE_DIFF;
-        IERC4626 jUSDC = JONES_USDC_REGISTRY.jUSDC();
-        uint256 totalSupply = jUSDC.totalSupply();
-        uint256 price = totalSupply == 0
-            ? usdcPrice
-            : usdcPrice * jUSDC.totalAssets() / totalSupply;
-        (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee(
-            JONES_USDC_REGISTRY.unwrapperTraderForLiquidation()
-        );
-        return price - (price * retentionFee / retentionFeeBase);
+        uint256 glpPrice = DOLOMITE_MARGIN.getMarketPrice(DFS_GLP_MARKET_ID).value;
+        IERC4626 plvGlp = PLUTUS_VAULT_REGISTRY.plvGlpToken();
+        uint256 totalSupply = plvGlp.totalSupply();
+        uint256 glpPriceWithExchangeRate;
+        if (totalSupply == 0) {
+            // exchange rate is 1 if the total supply is 0
+            glpPriceWithExchangeRate = glpPrice;
+        } else {
+            glpPriceWithExchangeRate = glpPrice * plvGlp.totalAssets() / totalSupply;
+        }
+        (uint256 exitFeeBp,) = PLUTUS_VAULT_REGISTRY.plvGlpRouter().getFeeBp(PLUTUS_VAULT_GLP_UNWRAPPER_TRADER);
+        uint256 exitFee = glpPriceWithExchangeRate * exitFeeBp / _FEE_PRECISION;
+
+        return glpPriceWithExchangeRate - exitFee;
     }
 }

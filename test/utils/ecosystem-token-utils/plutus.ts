@@ -17,7 +17,7 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV2,
   PlutusVaultGLPIsolationModeWrapperTraderV2__factory,
   PlutusVaultGLPPriceOracle,
-  PlutusVaultGLPPriceOracle__factory,
+  PlutusVaultGLPPriceOracle__factory, PlutusVaultGLPPriceOracleChainlink, PlutusVaultGLPPriceOracleChainlink__factory,
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory, RegistryProxy, RegistryProxy__factory,
 } from '../../../src/types';
@@ -29,10 +29,12 @@ import {
   getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
   getPlutusVaultGLPPriceOracleConstructorParams,
+  getPlutusVaultGLPPriceOracleChainlinkConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../../../src/utils/constructors/plutus';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export function createDolomiteCompatibleWhitelistForPlutusDAO(
   core: CoreProtocol,
@@ -98,6 +100,25 @@ export function createPlutusVaultGLPPriceOracle(
   );
 }
 
+export function createPlutusVaultGLPPriceOracleChainlink(
+  core: CoreProtocol,
+  plutusVaultRegistry: PlutusVaultRegistry,
+  dplvGlpToken: { address: address },
+  unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
+  chainlinkRegistry: SignerWithAddress,
+): Promise<PlutusVaultGLPPriceOracleChainlink> {
+  return createContractWithAbi<PlutusVaultGLPPriceOracleChainlink>(
+  PlutusVaultGLPPriceOracleChainlink__factory.abi,
+    PlutusVaultGLPPriceOracleChainlink__factory.bytecode,
+    getPlutusVaultGLPPriceOracleChainlinkConstructorParams(
+      core,
+      plutusVaultRegistry,
+      dplvGlpToken,
+      unwrapper,
+      chainlinkRegistry,
+    ),
+  );
+}
 export function createPlutusVaultGLPIsolationModeUnwrapperTraderV1(
   core: CoreProtocol,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
