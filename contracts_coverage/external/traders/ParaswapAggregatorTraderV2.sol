@@ -31,7 +31,6 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IParaswapAugustusRouter } from "../interfaces/traders/IParaswapAugustusRouter.sol";
 
 import { ERC20Lib } from "../lib/ERC20Lib.sol";
-import { console } from "hardhat/console.sol";
 
 
 /**
@@ -77,7 +76,7 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
         address _outputToken,
         address _inputToken,
         uint256 _inputAmount,
-        bytes calldata _orderData
+        bytes calldata _minAmountOutAndOrderData
     )
     external
     onlyDolomiteMargin(msg.sender)
@@ -86,9 +85,12 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
 
         (
             uint256 minAmountOutWei,
+            bytes memory orderData
+        ) = abi.decode(_minAmountOutAndOrderData, (uint256, bytes));
+        (
             bytes4 paraswapFunctionSelector,
             bytes memory paraswapCallData
-        ) = abi.decode(_orderData, (uint256, bytes4, bytes));
+        ) = abi.decode(orderData, (bytes4, bytes));
 
         _overwriteInputAmountAndCall(_inputAmount, paraswapFunctionSelector, paraswapCallData);
         uint256 outputAmount = IERC20(_outputToken).balanceOf(address(this));
@@ -130,7 +132,7 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
                 _paraswapCallData,
                 (IParaswapAugustusRouter.MegaSwapSellData)
             );
-            data.expectedAmount = _getScaledOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
+            data.expectedAmount = _getScaledExpectedOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
             data.fromAmount = _inputAmount;
             PARASWAP_AUGUSTUS_ROUTER.megaSwap(data);
         } else if (_paraswapFunctionSelector == MULTI_SWAP_SELECTOR) {
@@ -138,7 +140,7 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
                 _paraswapCallData,
                 (IParaswapAugustusRouter.MultiSwapSellData)
             );
-            data.expectedAmount = _getScaledOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
+            data.expectedAmount = _getScaledExpectedOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
             data.fromAmount = _inputAmount;
             PARASWAP_AUGUSTUS_ROUTER.multiSwap(data);
         } else if (_paraswapFunctionSelector == SIMPLE_SWAP_SELECTOR) {
@@ -146,7 +148,7 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
                 _paraswapCallData,
                 (IParaswapAugustusRouter.SimpleSwapSellData)
             );
-            data.expectedAmount = _getScaledOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
+            data.expectedAmount = _getScaledExpectedOutputAmount(data.fromAmount, _inputAmount, data.expectedAmount);
             data.fromAmount = _inputAmount;
             PARASWAP_AUGUSTUS_ROUTER.simpleSwap(data);
         } else {
@@ -159,16 +161,18 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
         }
     }
 
-    function _getScaledOutputAmount(
+    function _getScaledExpectedOutputAmount(
         uint256 _originalInputAmount,
         uint256 _actualInputAmount,
-        uint256 _outputAmount
+        uint256 _expectedOutputAmount
     ) private pure returns (uint256) {
         if (_originalInputAmount >= _actualInputAmount) {
-            return _outputAmount;
+            return _expectedOutputAmount;
         } else {
+            // The amount inputted to the Paraswap API was less than what we're actually trading. Scale up the expected
+            // amount out, so the user doesn't pay unnecessary positive slippage
             uint256 percentageUp = _actualInputAmount * _SCALE_AMOUNT / _originalInputAmount;
-            return _outputAmount * percentageUp / _SCALE_AMOUNT;
+            return _expectedOutputAmount * percentageUp / _SCALE_AMOUNT;
         }
     }
 }

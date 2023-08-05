@@ -19,7 +19,9 @@ import {
   PlutusVaultGLPPriceOracle,
   PlutusVaultGLPPriceOracle__factory,
   PlutusVaultRegistry,
-  PlutusVaultRegistry__factory, RegistryProxy, RegistryProxy__factory,
+  PlutusVaultRegistry__factory,
+  RegistryProxy,
+  RegistryProxy__factory,
 } from '../../../src/types';
 import {
   getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,

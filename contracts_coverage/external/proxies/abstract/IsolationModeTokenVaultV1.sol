@@ -665,25 +665,13 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
                 _inputAmountWei
             );
         } else {
-            IDolomiteStructs.Par memory inputMarketBalance = DOLOMITE_MARGIN().getAccountPar(
-                IDolomiteStructs.AccountInfo({
-                    owner: address(this),
-                    number: _borrowAccountNumber
-                }),
-                _marketIdsPath[0]
-            );
-            if (inputMarketBalance.isPositive() || inputMarketBalance.value == 0) { /* FOR COVERAGE TESTING */ }
-            Require.that(inputMarketBalance.isPositive() || inputMarketBalance.value == 0,
-                _FILE,
-                "Input balance must be >= 0",
-                _marketIdsPath[0]
-            );
+            // we always swap the exact amount out; no need to check `To`
             _transferIntoPositionWithOtherToken(
                 _fromAccountNumber,
                 _borrowAccountNumber,
                 _marketIdsPath[0],
                 _inputAmountWei,
-                _userConfig.balanceCheckFlag
+                AccountBalanceLib.BalanceCheckFlag.From
             );
         }
 
@@ -711,20 +699,14 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        IDolomiteStructs.AccountInfo memory borrowAccount = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _borrowAccountNumber
+        });
         uint256 outputMarketId = _marketIdsPath[_marketIdsPath.length - 1];
         // Validate the output balance before executing the swap
-        IDolomiteStructs.Wei memory balanceBefore = DOLOMITE_MARGIN().getAccountWei(
-            IDolomiteStructs.AccountInfo({
-                owner: address(this),
-                number: _borrowAccountNumber
-            }),
-            outputMarketId
-        );
-        if (balanceBefore.isPositive() || balanceBefore.value == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(balanceBefore.isPositive() || balanceBefore.value == 0,
-            _FILE,
-            "Output balance must be >= 0"
-        );
+        IDolomiteStructs.Wei memory balanceBefore = dolomiteMargin.getAccountWei(borrowAccount, outputMarketId);
 
         _swapExactInputForOutput(
             _borrowAccountNumber,
@@ -736,31 +718,26 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
             _userConfig
         );
 
-        IDolomiteStructs.Wei memory balanceAfter = DOLOMITE_MARGIN().getAccountWei(
-            IDolomiteStructs.AccountInfo({
-                owner: address(this),
-                number: _borrowAccountNumber
-            }),
-            outputMarketId
-        );
+        IDolomiteStructs.Wei memory balanceDelta = dolomiteMargin
+            .getAccountWei(borrowAccount, outputMarketId)
+            .sub(balanceBefore);
 
-        // Panic if the user's balance after is not >= the balance before + the min output amount. Panic if the balance
-        // after is somehow negative.
-        /*assert(balanceAfter.value >= balanceBefore.value + _minOutputAmountWei && balanceAfter.isPositive());*/
+        // Panic if the balance delta is not positive
+        /*assert(balanceDelta.isPositive());*/
 
         if (outputMarketId == marketId()) {
             _transferFromPositionWithUnderlyingToken(
                 _borrowAccountNumber,
                 _toAccountNumber,
-                balanceAfter.value - balanceBefore.value
+                balanceDelta.value
             );
         } else {
             _transferFromPositionWithOtherToken(
                 _borrowAccountNumber,
                 _toAccountNumber,
                 outputMarketId,
-                balanceAfter.value - balanceBefore.value,
-                _userConfig.balanceCheckFlag
+                balanceDelta.value,
+                AccountBalanceLib.BalanceCheckFlag.None // we always transfer the exact amount out; no need to check
             );
         }
     }

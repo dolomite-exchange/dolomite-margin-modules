@@ -162,12 +162,6 @@ interface IIsolationModeVaultFactoryOld is IOnlyDolomiteMargin {
     // ============================================
 
     /**
-     * @return  The market ID of the single element array returned by #allowableCollateralMarketIds() if no other
-     *          collateral assets are allowed
-     */
-    function NONE() external view returns (uint256);
-
-    /**
      * @return The address of the token that this vault wraps around
      */
     function UNDERLYING_TOKEN() external view returns (address);
@@ -208,7 +202,7 @@ interface IIsolationModeVaultFactoryOld is IOnlyDolomiteMargin {
     /**
      * @return  The market IDs of the assets that can be used as collateral in a position with this wrapped asset. An
      *          empty array indicates that any non-isolation mode asset can be borrowed against it. To indicate that no
-     *          assets can be used as collateral, return an array with a single element containing #NONE.
+     *          assets can be used as collateral, return an array with a single element containing #marketId().
      */
     function allowableCollateralMarketIds() external view returns (uint256[] memory);
 

@@ -17,7 +17,9 @@ import {
   GmxRegistryV1__factory,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
-  IGmxRegistryV1, RegistryProxy, RegistryProxy__factory,
+  IGmxRegistryV1,
+  RegistryProxy,
+  RegistryProxy__factory,
 } from '../../../src/types';
 import {
   getGLPIsolationModeVaultFactoryConstructorParams,

@@ -13,7 +13,7 @@ import {
 } from '../../utils/ecosystem-token-utils/gmx';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
-const GLP_PRICE = BigNumber.from('1004682394802947459'); // $1.004682394802947459
+const GLP_PRICE = BigNumber.from('1004371801993868870'); // $1.004371801993868870
 
 describe('GLPPriceOracleV1', () => {
   let snapshotId: string;
