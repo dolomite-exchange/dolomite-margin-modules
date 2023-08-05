@@ -19,6 +19,7 @@ import { address } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
+import { IParaswapFeeClaimer } from 'src/types/contracts/external/interfaces/traders/IParaswapFeeClaimer';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkName } from 'src/utils/no-deps-constants';
 import Deployments from '../../scripts/deployments.json';
 import {
@@ -74,6 +75,8 @@ import {
   IJonesGLPVaultRouter__factory,
   IJonesUSDCIsolationModeVaultFactory,
   IJonesUSDCIsolationModeVaultFactory__factory,
+  IJonesUSDCRegistry,
+  IJonesUSDCRegistry__factory,
   IJonesWhitelistController,
   IJonesWhitelistController__factory,
   ILiquidatorAssetRegistry,
@@ -88,8 +91,13 @@ import {
   ILiquidatorProxyV3WithLiquidityToken__factory,
   ILiquidatorProxyV4WithGenericTrader,
   ILiquidatorProxyV4WithGenericTrader__factory,
+  IParaswapAugustusRouter,
+  IParaswapAugustusRouter__factory,
+  IParaswapFeeClaimer__factory,
   IPendlePtGLP2024IsolationModeVaultFactory,
   IPendlePtGLP2024IsolationModeVaultFactory__factory,
+  IPendlePtGLP2024Registry,
+  IPendlePtGLP2024Registry__factory,
   IPendlePtMarket,
   IPendlePtMarket__factory,
   IPendlePtOracle,
@@ -108,6 +116,8 @@ import {
   IPlutusVaultGLPIsolationModeVaultFactory__factory,
   IPlutusVaultGLPRouter,
   IPlutusVaultGLPRouter__factory,
+  IPlutusVaultRegistry,
+  IPlutusVaultRegistry__factory,
   ISGMX,
   ISGMX__factory,
   IUmamiAssetVault,
@@ -122,8 +132,6 @@ import {
   PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory,
   PlutusVaultGLPIsolationModeWrapperTraderV1,
   PlutusVaultGLPIsolationModeWrapperTraderV1__factory,
-  PlutusVaultRegistry,
-  PlutusVaultRegistry__factory,
   RegistryProxy__factory,
   TestDolomiteMarginExchangeWrapper,
   TestDolomiteMarginExchangeWrapper__factory,
@@ -158,6 +166,7 @@ import {
   LINK_MAP,
   MAGIC_GLP_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
+  PARASWAP_FEE_CLAIMER_MAP,
   PARASWAP_TRANSFER_PROXY_MAP,
   PENDLE_PT_GLP_2024_MARKET_MAP,
   PENDLE_PT_GLP_2024_TOKEN_MAP,
@@ -206,15 +215,15 @@ export interface CoreProtocolConfig {
   network: Network;
 }
 
-interface AbraEcosystem {
+export interface AbraEcosystem {
   magicGlp: IERC4626;
 }
 
-interface AtlasEcosystem {
+export interface AtlasEcosystem {
   siToken: IERC20;
 }
 
-interface GmxEcosystem {
+export interface GmxEcosystem {
   esGmx: IERC20;
   esGmxDistributor: IEsGmxDistributor;
   fsGlp: IERC20;
@@ -237,7 +246,7 @@ interface GmxEcosystem {
   };
 }
 
-interface JonesEcosystem {
+export interface JonesEcosystem {
   glpAdapter: IJonesGLPAdapter;
   glpVaultRouter: IJonesGLPVaultRouter;
   whitelistController: IJonesWhitelistController;
@@ -246,15 +255,17 @@ interface JonesEcosystem {
   admin: SignerWithAddress;
   live: {
     jUSDCIsolationModeFactory: IJonesUSDCIsolationModeVaultFactory;
+    jonesUSDCRegistry: IJonesUSDCRegistry;
   };
 }
 
-interface ParaswapEcosystem {
-  augustusRouter: address;
+export interface ParaswapEcosystem {
+  augustusRouter: IParaswapAugustusRouter;
+  feeClaimer: IParaswapFeeClaimer;
   transferProxy: address;
 }
 
-interface PendleEcosystem {
+export interface PendleEcosystem {
   pendleRouter: IPendleRouter;
   ptGlpMarket: IPendlePtMarket;
   ptGlpToken: IPendlePtToken;
@@ -263,10 +274,11 @@ interface PendleEcosystem {
   ytGlpToken: IPendleYtToken;
   live: {
     ptGlpIsolationModeFactory: IPendlePtGLP2024IsolationModeVaultFactory;
+    pendlePtGLP2024Registry: IPendlePtGLP2024Registry
   };
 }
 
-interface PlutusEcosystem {
+export interface PlutusEcosystem {
   plvGlp: IERC4626;
   plsToken: IERC20;
   plvGlpFarm: IPlutusVaultGLPFarm;
@@ -275,20 +287,20 @@ interface PlutusEcosystem {
   live: {
     dolomiteWhitelistForGlpDepositor: DolomiteCompatibleWhitelistForPlutusDAO;
     dolomiteWhitelistForPlutusChef: DolomiteCompatibleWhitelistForPlutusDAO;
-    plutusVaultRegistry: PlutusVaultRegistry;
+    plutusVaultRegistry: IPlutusVaultRegistry;
     plvGlpIsolationModeFactory: IPlutusVaultGLPIsolationModeVaultFactory;
     plvGlpIsolationModeUnwrapperTraderV1: PlutusVaultGLPIsolationModeUnwrapperTraderV1;
     plvGlpIsolationModeWrapperTraderV1: PlutusVaultGLPIsolationModeWrapperTraderV1;
   };
 }
 
-interface TestEcosystem {
+export interface TestEcosystem {
   testExchangeWrapper: TestDolomiteMarginExchangeWrapper;
   testInterestSetter: TestInterestSetter;
   testPriceOracle: TestPriceOracle;
 }
 
-interface UmamiEcosystem {
+export interface UmamiEcosystem {
   glpLink: IUmamiAssetVault;
   glpUni: IUmamiAssetVault;
   glpUsdc: IUmamiAssetVault;
@@ -541,7 +553,7 @@ export async function setupCoreProtocol(
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
   const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
-  const paraswapEcosystem = await createParaswapEcosystem(config.network);
+  const paraswapEcosystem = await createParaswapEcosystem(config.network, hhUser1);
   const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
   const testEcosystem = await createTestEcosystem(dolomiteMargin, dolomiteRegistry, governance, hhUser1, config);
@@ -749,6 +761,10 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
         (Deployments.JonesUSDCIsolationModeVaultFactory as any)[network]?.address,
         IJonesUSDCIsolationModeVaultFactory__factory.connect,
       ),
+      jonesUSDCRegistry: getContract(
+        (Deployments.JonesUSDCRegistryProxy as any)[network]?.address,
+        IJonesUSDCRegistry__factory.connect,
+      ),
     },
   };
 }
@@ -808,13 +824,15 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
 
 async function createParaswapEcosystem(
   network: Network,
+  signer: SignerWithAddress,
 ): Promise<ParaswapEcosystem | undefined> {
   if (!PARASWAP_AUGUSTUS_ROUTER_MAP[network]) {
     return undefined;
   }
 
   return {
-    augustusRouter: PARASWAP_AUGUSTUS_ROUTER_MAP[network]!,
+    augustusRouter: IParaswapAugustusRouter__factory.connect(PARASWAP_AUGUSTUS_ROUTER_MAP[network]!, signer),
+    feeClaimer: IParaswapFeeClaimer__factory.connect(PARASWAP_FEE_CLAIMER_MAP[network]!, signer),
     transferProxy: PARASWAP_TRANSFER_PROXY_MAP[network]!,
   };
 }
@@ -853,6 +871,10 @@ async function createPendleEcosystem(
       address => IPendleYtToken__factory.connect(address, signer),
     ),
     live: {
+      pendlePtGLP2024Registry: getContract(
+        (Deployments.PendlePtGLP2024RegistryProxy as any)[network]?.address,
+        IPendlePtGLP2024Registry__factory.connect,
+      ),
       ptGlpIsolationModeFactory: getContract(
         (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,
         IPendlePtGLP2024IsolationModeVaultFactory__factory.connect,
@@ -892,9 +914,8 @@ async function createPlutusEcosystem(
         address => DolomiteCompatibleWhitelistForPlutusDAO__factory.connect(address, signer),
       ),
       plutusVaultRegistry: getContract(
-        // (Deployments.PlutusVaultRegistry as any)[network]?.address,
-        '0x1111111111111111111111111111111111111111',
-        PlutusVaultRegistry__factory.connect,
+        (Deployments.PlutusVaultRegistryProxy as any)[network]?.address,
+        IPlutusVaultRegistry__factory.connect,
       ),
       plvGlpIsolationModeFactory: getContract(
         (Deployments.PlutusVaultGLPIsolationModeVaultFactory as any)[network]?.address,

@@ -289,6 +289,39 @@ library Require {
         return new bytes(0);
     }
 
+    function stringifyFunctionSelector(
+        bytes4 input
+    )
+    internal
+    pure
+    returns (bytes memory)
+    {
+        uint256 z = uint256(bytes32(input) >> 224);
+
+        // bytes4 are "0x" followed by 4 bytes of data which take up 2 characters each
+        bytes memory result = new bytes(10);
+
+        // populate the result with "0x"
+        result[0] = bytes1(uint8(_ASCII_ZERO));
+        result[1] = bytes1(uint8(_ASCII_LOWER_EX));
+
+        // for each byte (starting from the lowest byte), populate the result with two characters
+        for (uint256 i = 0; i < 4; i++) {
+            // each byte takes two characters
+            uint256 shift = i * 2;
+
+            // populate the least-significant character
+            result[9 - shift] = _char(z & _FOUR_BIT_MASK);
+            z = z >> 4;
+
+            // populate the most-significant character
+            result[8 - shift] = _char(z & _FOUR_BIT_MASK);
+            z = z >> 4;
+        }
+
+        return result;
+    }
+
     function _stringify(
         uint256 input
     )

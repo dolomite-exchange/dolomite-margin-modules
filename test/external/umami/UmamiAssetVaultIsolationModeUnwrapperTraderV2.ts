@@ -1,6 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   IGmxRegistryV1,
   IUmamiAssetVault,
@@ -14,7 +14,7 @@ import {
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
   createUmamiAssetVaultIsolationModeTokenVaultV1,
@@ -43,8 +43,6 @@ const usableUsdcAmount = usdcAmount.div(2);
 
 const withdrawalFeeNumerator = BigNumber.from('750000000000000000');
 const withdrawalFeeDenominator = BigNumber.from('100000000000000000000');
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
@@ -195,7 +193,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
           core.tokens.dfsGlp!.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
@@ -211,7 +209,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
           core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         'IsolationModeUnwrapperTraderV2: Invalid input amount',
       );

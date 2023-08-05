@@ -77,4 +77,12 @@ contract UmamiAssetVaultIsolationModeVaultFactory is
         umamiAssetVaultRegistry = IUmamiAssetVaultRegistry(_umamiAssetVaultRegistry);
         emit UmamiAssetVaultRegistrySet(_umamiAssetVaultRegistry);
     }
+
+    // ============ Internal Functions ============
+
+    function _afterInitialize() internal override {
+        uint256[] memory allowableMarkets = new uint256[](1);
+        allowableMarkets[0] = marketId;
+        _ownerSetAllowableCollateralMarketIds(allowableMarkets);
+    }
 }

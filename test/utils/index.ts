@@ -185,3 +185,28 @@ export async function sendEther(from: string, to: string, value: BigNumberish): 
     value,
   });
 }
+
+export function encodeExternalSellActionDataWithNoData(
+  minAmountOut: BigNumberish,
+): string {
+  return encodeExternalSellActionData(minAmountOut, [], []);
+}
+
+export function encodeExternalSellActionData(
+  minAmountOut: BigNumberish,
+  innerTypes: string[],
+  innerValues: any[],
+): string {
+  if (innerTypes.length !== innerValues.length) {
+    throw new Error('Inner types and values must be the same length');
+  } else if (innerTypes.length === 0) {
+    return ethers.utils.defaultAbiCoder.encode(['uint256', 'bytes'], [minAmountOut, []]);
+  }
+  return ethers.utils.defaultAbiCoder.encode(
+    ['uint256', 'bytes'],
+    [
+      minAmountOut,
+      ethers.utils.defaultAbiCoder.encode(innerTypes, innerValues),
+    ],
+  );
+}

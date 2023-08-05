@@ -1,11 +1,11 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { IERC4626, MagicGLPPriceOracle, MagicGLPUnwrapperTraderV2 } from '../../../src/types';
 import { AccountInfoStruct, ActionArgsStruct } from '../../../src/utils';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
   createMagicGLPPriceOracle,
@@ -16,8 +16,6 @@ import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSD
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('MagicGLPUnwrapperTraderV2', () => {
   let snapshotId: string;
@@ -83,7 +81,7 @@ describe('MagicGLPUnwrapperTraderV2', () => {
           secondaryMarketId: core.marketIds.usdc,
           otherAddress: unwrapper.address,
           otherAccountId: 0,
-          data: ethers.utils.defaultAbiCoder.encode(['uint256', 'bytes'], [amountOut, []]),
+          data: encodeExternalSellActionDataWithNoData(amountOut),
         },
       ];
 
@@ -145,7 +143,7 @@ describe('MagicGLPUnwrapperTraderV2', () => {
           core.tokens.dfsGlp!.address,
           magicGlp.address,
           amountWei,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         `MagicGLPUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
@@ -161,7 +159,7 @@ describe('MagicGLPUnwrapperTraderV2', () => {
           core.tokens.usdc.address,
           magicGlp.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         'MagicGLPUnwrapperTraderV2: Invalid input amount',
       );

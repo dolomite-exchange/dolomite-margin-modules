@@ -1,4 +1,4 @@
-import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk/dist';
+import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
@@ -69,7 +69,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
     });
     underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
     plutusVaultRegistry = PlutusVaultRegistry__factory.connect(
-      deployments.PlutusVaultRegistry[network].address,
+      deployments.PlutusVaultRegistryProxy[network].address,
       core.hhUser1,
     );
     factory = core.plutusEcosystem!.live.plvGlpIsolationModeFactory.connect(core.hhUser1);
@@ -94,11 +94,9 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
       ZapNetwork.ARBITRUM_ONE,
       process.env.SUBGRAPH_URL as string,
       core.hhUser1.provider!,
+      60,
+      true,
     );
-
-    await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(unwrapper.address, true);
-    await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(wrapper.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -127,15 +125,6 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
     expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, heldMarketId)).value)
       .to
       .eq(heldAmountWei);
-
-    await core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.connect(core.governance)
-      .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
-    await core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.connect(core.governance)
-      .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
-    await core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.connect(core.governance)
-      .ownerSetPlvGlpWrapperTrader(wrapper.address);
-    await core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.connect(core.governance)
-      .ownerSetPlvGlpWrapperTrader(wrapper.address);
 
     snapshotId = await snapshot();
   });

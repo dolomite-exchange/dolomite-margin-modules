@@ -26,6 +26,13 @@ export interface ActionArgsStruct {
   data: BytesLike;
 }
 
+export interface GenericTraderParamStruct {
+  traderType: BigNumberish;
+  makerAccountIndex: BigNumberish;
+  trader: string;
+  tradeData: BytesLike;
+}
+
 export interface ParStruct {
   sign: boolean;
   value: BigNumberish;

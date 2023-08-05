@@ -6,9 +6,9 @@ import {
   PlutusVaultGLPIsolationModeTokenVaultV1__factory,
   PlutusVaultGLPIsolationModeWrapperTraderV1__factory,
   PlutusVaultRegistry__factory,
-} from 'src/types';
-import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../test/utils/setup';
+} from '../../src/types';
+import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../test/utils/setup';
 import {
   getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
   getPlutusVaultGLPPriceOracleConstructorParams,
@@ -16,8 +16,8 @@ import {
   getPlutusVaultGLPIsolationModeVaultFactoryConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
   getPlutusVaultRegistryConstructorParams,
-} from '../src/utils/constructors/plutus';
-import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
+} from '../../src/utils/constructors/plutus';
+import { deployContractAndSave, prettyPrintEncodedData } from '../deploy-utils';
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;

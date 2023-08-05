@@ -1,4 +1,5 @@
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
+import { GenericTraderParamStruct } from './index';
 
 // ************************* General Constants *************************
 
@@ -22,10 +23,8 @@ export const NETWORK_ID: Network = Network[typedNetworkIdString as keyof typeof 
 
 export const NO_EXPIRY = BigNumber.from('0');
 
-export const NONE_MARKET_ID = ethers.constants.MaxUint256;
-
 export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
-  [Network.ArbitrumOne]: 114192818,
+  [Network.ArbitrumOne]: 114200000,
   [Network.ArbitrumGoerli]: 14700000,
 };
 
@@ -47,4 +46,4 @@ export const LIQUIDATE_ALL = MAX_UINT_256_BI;
 
 export const SELL_ALL = MAX_UINT_256_BI;
 
-export const NO_PARASWAP_TRADER_PARAM = undefined;
+export const NO_PARASWAP_TRADER_PARAM: GenericTraderParamStruct | undefined = undefined;

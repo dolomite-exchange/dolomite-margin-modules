@@ -1,6 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   IERC4626,
   IGmxRegistryV1,
@@ -14,7 +14,7 @@ import {
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
   createPlutusVaultGLPIsolationModeTokenVaultV1,
@@ -25,7 +25,8 @@ import {
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
 import {
-  CoreProtocol, getDefaultCoreProtocolConfig,
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -36,8 +37,6 @@ import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
   let snapshotId: string;
@@ -205,7 +204,7 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
           core.tokens.weth.address,
           factory.address,
           amountWei,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         `PlutusVaultGLPUnwrapperV1: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
@@ -221,7 +220,7 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV1', () => {
           core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
-          abiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         'IsolationModeUnwrapperTraderV1: Invalid input amount',
       );

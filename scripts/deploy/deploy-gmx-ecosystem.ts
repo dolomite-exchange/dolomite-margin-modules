@@ -1,20 +1,20 @@
 import { ethers } from 'hardhat';
-import { Network } from 'src/utils/no-deps-constants';
+import { Network } from '../../src/utils/no-deps-constants';
 import {
   GLPPriceOracleV1,
   GLPIsolationModeTokenVaultV1__factory,
   IGLPIsolationModeVaultFactory__factory,
   IGmxRegistryV1__factory,
-} from '../src/types';
+} from '../../src/types';
 import {
   getGLPPriceOracleV1ConstructorParams,
   getGLPUnwrapperTraderV1ConstructorParams,
   getGLPIsolationModeVaultFactoryConstructorParams,
   getGLPWrapperTraderV1ConstructorParams,
   getGmxRegistryConstructorParams,
-} from '../src/utils/constructors/gmx';
-import { setupCoreProtocol } from '../test/utils/setup';
-import { deployContractAndSave } from './deploy-utils';
+} from '../../src/utils/constructors/gmx';
+import { setupCoreProtocol } from '../../test/utils/setup';
+import { deployContractAndSave } from '../deploy-utils';
 
 async function main() {
   const chainId = (await ethers.provider.getNetwork()).chainId;

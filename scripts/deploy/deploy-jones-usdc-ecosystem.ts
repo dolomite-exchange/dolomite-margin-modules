@@ -7,17 +7,17 @@ import {
   JonesUSDCIsolationModeVaultFactory__factory,
   JonesUSDCIsolationModeWrapperTraderV2__factory,
   JonesUSDCRegistry__factory,
-} from 'src/types';
-import { Network, TEN_BI, ZERO_BI } from 'src/utils/no-deps-constants';
+} from '../../src/types';
+import { Network, TEN_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams,
   getJonesUSDCIsolationModeVaultFactoryConstructorParams,
   getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
   getJonesUSDCPriceOracleConstructorParams,
   getJonesUSDCRegistryConstructorParams,
-} from '../src/utils/constructors/jones';
-import { setupCoreProtocol } from '../test/utils/setup';
-import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
+} from '../../src/utils/constructors/jones';
+import { setupCoreProtocol } from '../../test/utils/setup';
+import { deployContractAndSave, prettyPrintEncodedData } from '../deploy-utils';
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;

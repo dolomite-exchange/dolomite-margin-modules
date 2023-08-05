@@ -291,10 +291,10 @@
     enabled "2.0.x"
     kuler "^2.0.0"
 
-"@dolomite-exchange/dolomite-margin-modules@0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin-modules/-/dolomite-margin-modules-0.0.2.tgz#cad59cadfc033991ae0a1c1988337f905c7c573a"
-  integrity sha512-/0ex9EW8pgQ266fIEY2HK9o7gHusPjHXt3klJ2M/AaCNe9t+ykTdCi0ZaPNDUgfQ5CqI1rENvEwQRFqSJPArCA==
+"@dolomite-exchange/dolomite-margin-modules@0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin-modules/-/dolomite-margin-modules-0.0.5.tgz#813920807c920d979b2296edb327f2bb2c376876"
+  integrity sha512-SR8Py4aumBSk1JsSSv1TwsKrVziulsSS5vUzuz+HgIPOvTSxgv63VhnW2S2dblpwtFA9doPyjLPbKht2zJ6xNQ==
 
 "@dolomite-exchange/dolomite-margin@^0.9.29":
   version "0.9.29"
@@ -313,12 +313,12 @@
     query-string "^6.9.0"
     web3 "1.2.1"
 
-"@dolomite-exchange/zap-sdk@^0.0.8":
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/@dolomite-exchange/zap-sdk/-/zap-sdk-0.0.8.tgz#5e7b25a8f6381a2248ae3a9e5d68bdd97ba2b86d"
-  integrity sha512-hOMhvCyuICvmfKg3dncG4w4tITAu5e0DMyMv+q7II1CmQ/2zbWH6SdKZwVa/iy9HKxJHGhYvV6PI8z6fCqBGDg==
+"@dolomite-exchange/zap-sdk@^0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/zap-sdk/-/zap-sdk-0.1.5.tgz#fa1aaf34d28692bc5c1a1ecb8133773f82481c0d"
+  integrity sha512-qdBB4xLkbRUA2/F9tqPAtCxM6a/8B4JVLOUVliMRtyZIND6T+zPR1kmKqAeSC5FIzj+SVKvszQjRzkEpM2ZuoQ==
   dependencies:
-    "@dolomite-exchange/dolomite-margin-modules" "0.0.2"
+    "@dolomite-exchange/dolomite-margin-modules" "0.0.5"
     "@pendle/sdk-v2" "^2.3.4"
     axios "^1.1.3"
     bignumber.js "^9.1.1"

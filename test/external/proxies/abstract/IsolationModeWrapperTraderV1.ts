@@ -2,8 +2,7 @@ import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margi
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
-import { defaultAbiCoder } from 'ethers/lib/utils';
+import { BigNumber } from 'ethers';
 import {
   CustomTestToken,
   TestIsolationModeFactory,
@@ -15,7 +14,12 @@ import {
 import { AccountInfoStruct } from '../../../../src/utils';
 import { createContractWithAbi, createTestToken } from '../../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
 import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
 import {
@@ -30,8 +34,6 @@ const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const TEN = BigNumber.from('10000000000000000000');
-
-const abiCoder = ethers.utils.defaultAbiCoder;
 
 describe('IsolationModeWrapperTraderV1', () => {
   let snapshotId: string;
@@ -169,7 +171,7 @@ describe('IsolationModeWrapperTraderV1', () => {
           factory.address,
           otherToken.address,
           amountWei.div(1e12), // normalize the amount to match the # of decimals otherToken has
-          defaultAbiCoder.encode(['uint256'], [amountWei.mul(2)]), // minOutputAmount is too large
+          encodeExternalSellActionDataWithNoData(amountWei.mul(2)), // minOutputAmount is too large
         ),
         `IsolationModeWrapperTraderV1: Insufficient output amount <${amountWei.toString()}, ${amountWei.mul(2)
           .toString()}>`,
@@ -216,7 +218,7 @@ describe('IsolationModeWrapperTraderV1', () => {
         amountWei,
         BYTES_EMPTY,
       );
-      expect(actions[0].data).to.eq(abiCoder.encode(['uint', 'bytes'], [amountOut, BYTES_EMPTY]));
+      expect(actions[0].data).to.eq(encodeExternalSellActionDataWithNoData(amountOut));
     });
 
     it('should fail when output market is invalid', async () => {

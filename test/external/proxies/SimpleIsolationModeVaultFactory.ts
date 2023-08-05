@@ -1,5 +1,4 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { expect } from 'chai';
 import { BaseContract, BigNumber, ContractTransaction } from 'ethers';
 import {
   CustomTestToken,

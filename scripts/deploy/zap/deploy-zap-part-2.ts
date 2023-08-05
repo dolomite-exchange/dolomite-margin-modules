@@ -1,6 +1,6 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { ethers } from 'hardhat';
-import { Network } from 'src/utils/no-deps-constants';
+import { Network } from '../../../src/utils/no-deps-constants';
 import {
   DolomiteRegistryImplementation,
   GmxRegistryV1__factory,
@@ -17,34 +17,34 @@ import {
   PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory,
   PlutusVaultRegistry__factory,
   RegistryProxy__factory,
-} from '../src/types';
+} from '../../../src/types';
 import {
   getGLPPriceOracleV1ConstructorParams,
   getGLPUnwrapperTraderV2ConstructorParams,
   getGLPWrapperTraderV2ConstructorParams,
   getGmxRegistryConstructorParams,
-} from '../src/utils/constructors/gmx';
+} from '../../../src/utils/constructors/gmx';
 import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
   getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,
   getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
   getJonesUSDCPriceOracleConstructorParams,
   getJonesUSDCRegistryConstructorParams,
-} from '../src/utils/constructors/jones';
+} from '../../../src/utils/constructors/jones';
 import {
   getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendlePtGLP2024RegistryConstructorParams,
   getPendlePtGLPPriceOracleConstructorParams,
-} from '../src/utils/constructors/pendle';
+} from '../../../src/utils/constructors/pendle';
 import {
   getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
   getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
-} from '../src/utils/constructors/plutus';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../test/utils/setup';
-import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
+} from '../../../src/utils/constructors/plutus';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../test/utils/setup';
+import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';
 
 const oldLiquidatorAddress = '0xac66E962A1C52B8a3B32AF432a60fFDBc99ebD0b';
 
@@ -255,7 +255,7 @@ async function deployPlutusVaultGLPContracts(network: Network, core: CoreProtoco
     Number(network),
     'RegistryProxy',
     await getPlutusVaultRegistryConstructorParams(pendleRegistryImplementation, core),
-    'PlutusVaultGLPRegistryProxy',
+    'PlutusVaultRegistryProxy',
   );
   const plutusVaultRegistry = IPlutusVaultRegistry__factory.connect(plutusVaultRegistryAddress, core.hhUser1);
   const plvGlpTokenVaultAddress = await deployContractAndSave(
@@ -287,7 +287,7 @@ async function deployPlutusVaultGLPContracts(network: Network, core: CoreProtoco
     getPlutusVaultGLPPriceOracleConstructorParams(
       core,
       plutusVaultRegistry,
-      core.pendleEcosystem!.live.ptGlpIsolationModeFactory,
+      core.plutusEcosystem!.live.plvGlpIsolationModeFactory,
       PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.connect(plvGlpUnwrapperV2Address, core.hhUser1),
     ),
   );
@@ -453,17 +453,17 @@ async function encodePendlePtGLP2024Transactions(
 ) {
   await prettyPrintEncodedData(
     core.liquidatorAssetRegistry.populateTransaction.ownerRemoveLiquidatorFromAssetWhitelist(
-      core.marketIds.dplvGlp!,
+      core.marketIds.dPtGlp!,
       oldLiquidatorAddress,
     ),
-    'liquidatorAssetRegistry.ownerRemoveLiquidatorFromAssetWhitelist(dplvGlp, oldLiquidator)',
+    'liquidatorAssetRegistry.ownerRemoveLiquidatorFromAssetWhitelist(dPtGlp, oldLiquidator)',
   );
   await prettyPrintEncodedData(
     core.liquidatorAssetRegistry.populateTransaction.ownerAddLiquidatorToAssetWhitelist(
-      core.marketIds.dplvGlp!,
+      core.marketIds.dPtGlp!,
       core.liquidatorProxyV4.address,
     ),
-    'liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(dplvGlp, newLiquidator)',
+    'liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(dPtGlp, newLiquidator)',
   );
   await prettyPrintEncodedData(
     core.pendleEcosystem!.live.ptGlpIsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(

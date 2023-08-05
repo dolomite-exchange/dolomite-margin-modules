@@ -8,7 +8,6 @@ import {
   UmamiAssetVaultIsolationModeTokenVaultV1,
   UmamiAssetVaultRegistry,
 } from '../../types';
-import { NONE_MARKET_ID } from '../no-deps-constants';
 
 const ONE_SCALED = BigNumber.from('1000000000000000000');
 const GLOBAL_COLLATERALIZATION = BigNumber.from('1150000000000000000');
@@ -100,7 +99,7 @@ export async function getUmamiAssetVaultIsolationModeVaultFactoryConstructorPara
   return [
     umamiAssetVaultRegistry.address,
     [await core.dolomiteMargin.getMarketIdByTokenAddress(await umamiVaultToken.asset())],
-    [NONE_MARKET_ID],
+    [],
     umamiVaultToken.address,
     core.borrowPositionProxyV2.address,
     userVaultImplementation.address,

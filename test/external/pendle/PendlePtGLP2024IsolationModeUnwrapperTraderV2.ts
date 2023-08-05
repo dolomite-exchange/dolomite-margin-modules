@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   IGmxRegistryV1,
   IPendlePtToken,
@@ -16,7 +16,7 @@ import {
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
   createPendlePtGLP2024IsolationModeTokenVaultV1,
@@ -210,7 +210,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
           core.tokens.dfsGlp!.address,
           factory.address,
           amountWei,
-          ethers.utils.defaultAbiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
@@ -226,7 +226,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
           core.tokens.usdc.address,
           factory.address,
           ZERO_BI,
-          ethers.utils.defaultAbiCoder.encode(['uint256'], [otherAmountWei]),
+          encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
         'IsolationModeUnwrapperTraderV2: Invalid input amount',
       );

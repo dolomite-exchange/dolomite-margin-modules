@@ -1,8 +1,8 @@
 import { ethers } from 'hardhat';
-import { Network, NONE_MARKET_ID } from 'src/utils/no-deps-constants';
-import { ATLAS_SI_TOKEN_MAP } from '../src/utils/constants';
-import { setupCoreProtocol } from '../test/utils/setup';
-import { deployContractAndSave } from './deploy-utils';
+import { Network } from '../../src/utils/no-deps-constants';
+import { ATLAS_SI_TOKEN_MAP } from '../../src/utils/constants';
+import { setupCoreProtocol } from '../../test/utils/setup';
+import { deployContractAndSave } from '../deploy-utils';
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
@@ -15,7 +15,7 @@ async function main() {
   );
   await deployContractAndSave(Number(network), 'SimpleIsolationModeTokenFactory', [
     [core.marketIds.usdc],
-    [NONE_MARKET_ID],
+    [],
     ATLAS_SI_TOKEN_MAP[network]!,
     core.borrowPositionProxyV2.address,
     userVaultImplementation,

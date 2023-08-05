@@ -211,6 +211,11 @@ export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<Network, string | undefined> =
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const PARASWAP_FEE_CLAIMER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xA7465CCD97899edcf11C56D2d26B49125674e45F',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const PARASWAP_TRANSFER_PROXY_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x216B4B4Ba9F3e719726886d34a177484278Bfcae',
   [Network.ArbitrumGoerli]: undefined,
