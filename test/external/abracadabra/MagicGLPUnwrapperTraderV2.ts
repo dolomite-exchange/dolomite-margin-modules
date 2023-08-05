@@ -1,6 +1,6 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { IERC4626, MagicGLPPriceOracle, MagicGLPUnwrapperTraderV2 } from '../../../src/types';
 import { AccountInfoStruct, ActionArgsStruct } from '../../../src/utils';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';

@@ -14,7 +14,9 @@ import {
   PendlePtGLP2024Registry,
   PendlePtGLP2024Registry__factory,
   PendlePtGLPPriceOracle,
-  PendlePtGLPPriceOracle__factory, RegistryProxy, RegistryProxy__factory,
+  PendlePtGLPPriceOracle__factory,
+  RegistryProxy,
+  RegistryProxy__factory,
 } from '../../../src/types';
 import {
   getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,

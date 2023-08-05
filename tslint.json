@@ -31,6 +31,7 @@
     ],
     "prefer-array-literal": false,
     "align": false,
-    "no-increment-decrement": false
+    "no-increment-decrement": false,
+    "ter-func-call-spacing": false
   }
 }

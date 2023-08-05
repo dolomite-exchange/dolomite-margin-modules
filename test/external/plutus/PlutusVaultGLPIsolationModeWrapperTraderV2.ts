@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   IERC4626,
   IGmxRegistryV1,
@@ -26,7 +26,8 @@ import {
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
 import {
-  CoreProtocol, getDefaultCoreProtocolConfig,
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,

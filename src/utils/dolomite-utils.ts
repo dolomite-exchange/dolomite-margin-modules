@@ -10,6 +10,7 @@ import {
   CustomTestVaultToken__factory,
 } from '../types';
 import { ActionArgsStruct } from './index';
+import { MAX_UINT_256_BI } from './no-deps-constants';
 
 /**
  * @return  The deployed contract
@@ -82,8 +83,8 @@ export function createWithdrawAction(
     amount: {
       sign: false,
       denomination: AmountDenomination.Wei,
-      ref: AmountReference.Delta,
-      value: amount,
+      ref: BigNumber.from(amount).eq(MAX_UINT_256_BI) ? AmountReference.Target : AmountReference.Delta,
+      value: BigNumber.from(amount).eq(MAX_UINT_256_BI) ? '0' : amount,
     },
     primaryMarketId: tokenId,
     secondaryMarketId: 0,

@@ -1,9 +1,9 @@
 import { ethers } from 'hardhat';
-import { Network } from 'src/utils/no-deps-constants';
-import { DolomiteRegistryImplementation__factory } from '../src/types';
-import { getRegistryProxyConstructorParams } from '../src/utils/constructors/dolomite';
-import { setupCoreProtocol } from '../test/utils/setup';
-import { deployContractAndSave } from './deploy-utils';
+import { Network } from '../../src/utils/no-deps-constants';
+import { DolomiteRegistryImplementation__factory } from '../../src/types';
+import { getRegistryProxyConstructorParams } from '../../src/utils/constructors/dolomite';
+import { setupCoreProtocol } from '../../test/utils/setup';
+import { deployContractAndSave } from '../deploy-utils';
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;

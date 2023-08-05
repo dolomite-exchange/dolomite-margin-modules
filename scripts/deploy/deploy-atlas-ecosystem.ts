@@ -1,8 +1,8 @@
 import { ethers } from 'hardhat';
-import { Network } from 'src/utils/no-deps-constants';
-import { ATLAS_SI_TOKEN_MAP } from '../src/utils/constants';
-import { setupCoreProtocol } from '../test/utils/setup';
-import { deployContractAndSave } from './deploy-utils';
+import { Network } from '../../src/utils/no-deps-constants';
+import { ATLAS_SI_TOKEN_MAP } from '../../src/utils/constants';
+import { setupCoreProtocol } from '../../test/utils/setup';
+import { deployContractAndSave } from '../deploy-utils';
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;

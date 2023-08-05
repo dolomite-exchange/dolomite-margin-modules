@@ -21,8 +21,8 @@ import {
 } from '../../../utils/ecosystem-token-utils/jones';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../utils/setup';
 
-const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.99998605
-const JONES_USDC_PRICE = BigNumber.from('1040340673281844411'); // $1.02187...
+const USDC_PRICE = BigNumber.from('999937000000000000000000000000'); // $0.999937
+const JONES_USDC_PRICE = BigNumber.from('1040697717999611268'); // $1.040697717999611268
 
 describe('JonesUSDCPriceOracle', () => {
   let snapshotId: string;

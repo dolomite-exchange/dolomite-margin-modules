@@ -9,7 +9,8 @@ import { Network } from '../../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectEvent, expectThrow } from '../../../utils/assertions';
 import {
-  createJonesUSDCIsolationModeTokenVaultV1, createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
+  createJonesUSDCIsolationModeTokenVaultV1,
+  createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForZap,
   createJonesUSDCIsolationModeVaultFactory,
   createJonesUSDCRegistry,

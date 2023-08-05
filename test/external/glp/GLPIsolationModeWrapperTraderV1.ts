@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV1__factory,

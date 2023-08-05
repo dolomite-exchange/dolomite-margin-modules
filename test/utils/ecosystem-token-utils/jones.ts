@@ -15,7 +15,9 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCPriceOracle__factory, JonesUSDCPriceOracleChainlink, JonesUSDCPriceOracleChainlink__factory,
   JonesUSDCRegistry,
-  JonesUSDCRegistry__factory, RegistryProxy, RegistryProxy__factory,
+  JonesUSDCRegistry__factory,
+  RegistryProxy,
+  RegistryProxy__factory,
 } from '../../../src/types';
 import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
