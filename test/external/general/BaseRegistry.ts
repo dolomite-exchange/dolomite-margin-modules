@@ -21,7 +21,7 @@ describe('BaseRegistry', () => {
     const implementation = await createContractWithAbi<TestBaseRegistry>(
       TestBaseRegistry__factory.abi,
       TestBaseRegistry__factory.bytecode,
-      []
+      [],
     );
     const registryProxy = await createRegistryProxy(
       implementation.address,

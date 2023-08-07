@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
-import { Network } from 'src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../test/utils/setup';
-import { prettyPrintEncodedData } from './deploy-utils';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../test/utils/setup';
+import { prettyPrintEncodedData } from '../../deploy-utils';
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;

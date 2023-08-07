@@ -2,7 +2,7 @@ import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margi
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { defaultAbiCoder } from 'ethers/lib/utils';
 import {
   CustomTestToken,

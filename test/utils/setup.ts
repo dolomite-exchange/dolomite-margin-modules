@@ -212,15 +212,15 @@ export interface CoreProtocolConfig {
   network: Network;
 }
 
-interface AbraEcosystem {
+export interface AbraEcosystem {
   magicGlp: IERC4626;
 }
 
-interface AtlasEcosystem {
+export interface AtlasEcosystem {
   siToken: IERC20;
 }
 
-interface GmxEcosystem {
+export interface GmxEcosystem {
   esGmx: IERC20;
   esGmxDistributor: IEsGmxDistributor;
   fsGlp: IERC20;
@@ -243,7 +243,7 @@ interface GmxEcosystem {
   };
 }
 
-interface JonesEcosystem {
+export interface JonesEcosystem {
   glpAdapter: IJonesGLPAdapter;
   glpVaultRouter: IJonesGLPVaultRouter;
   whitelistController: IJonesWhitelistController;
@@ -256,13 +256,13 @@ interface JonesEcosystem {
   };
 }
 
-interface ParaswapEcosystem {
+export interface ParaswapEcosystem {
   augustusRouter: IParaswapAugustusRouter;
   feeClaimer: IParaswapFeeClaimer;
   transferProxy: address;
 }
 
-interface PendleEcosystem {
+export interface PendleEcosystem {
   pendleRouter: IPendleRouter;
   ptGlpMarket: IPendlePtMarket;
   ptGlpToken: IPendlePtToken;
@@ -274,7 +274,7 @@ interface PendleEcosystem {
   };
 }
 
-interface PlutusEcosystem {
+export interface PlutusEcosystem {
   plvGlp: IERC4626;
   plsToken: IERC20;
   plvGlpFarm: IPlutusVaultGLPFarm;
@@ -290,13 +290,13 @@ interface PlutusEcosystem {
   };
 }
 
-interface TestEcosystem {
+export interface TestEcosystem {
   testExchangeWrapper: TestDolomiteMarginExchangeWrapper;
   testInterestSetter: TestInterestSetter;
   testPriceOracle: TestPriceOracle;
 }
 
-interface UmamiEcosystem {
+export interface UmamiEcosystem {
   glpLink: IUmamiAssetVault;
   glpUni: IUmamiAssetVault;
   glpUsdc: IUmamiAssetVault;

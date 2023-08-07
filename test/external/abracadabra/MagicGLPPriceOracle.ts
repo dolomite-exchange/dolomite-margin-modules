@@ -9,7 +9,7 @@ import { expectThrow } from '../../utils/assertions';
 import { createMagicGLPPriceOracle } from '../../utils/ecosystem-token-utils/abracadabra';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
-const GLP_PRICE = BigNumber.from('1004682394802947459'); // $1.004682394802947459
+const GLP_PRICE = BigNumber.from('1004371801993868870'); // $1.004371801993868870
 
 describe('MagicGLPPriceOracle', () => {
   let snapshotId: string;

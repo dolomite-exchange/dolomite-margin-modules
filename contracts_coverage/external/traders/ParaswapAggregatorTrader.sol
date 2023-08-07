@@ -70,14 +70,15 @@ contract ParaswapAggregatorTrader is OnlyDolomiteMargin, IDolomiteMarginExchange
         address _outputToken,
         address _inputToken,
         uint256 _inputAmount,
-        bytes calldata _orderData
+        bytes calldata _minAmountOutAndOrderData
     )
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         ERC20Lib.resetAllowanceIfNeededAndApprove(IERC20(_inputToken), PARASWAP_TRANSFER_PROXY, _inputAmount);
 
-        (uint256 minAmountOutWei, bytes memory paraswapCallData) = abi.decode(_orderData, (uint256, bytes));
+        (uint256 minAmountOutWei, bytes memory orderData) = abi.decode(_minAmountOutAndOrderData, (uint256, bytes));
+        (bytes memory paraswapCallData) = abi.decode(orderData, (bytes));
 
         _callAndCheckSuccess(paraswapCallData);
 

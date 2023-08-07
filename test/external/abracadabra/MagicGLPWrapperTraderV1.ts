@@ -1,6 +1,6 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { IERC4626, MagicGLPPriceOracle, MagicGLPWrapperTraderV1 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';

@@ -1,13 +1,13 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
+import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import {
   getMagicGLPPriceOracleConstructorParams,
   getMagicGLPUnwrapperTraderV1ConstructorParams,
   getMagicGLPWrapperTraderV1ConstructorParams,
-} from '../src/utils/constructors/abracadabra';
-import { setupCoreProtocol } from '../test/utils/setup';
-import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
+} from '../../src/utils/constructors/abracadabra';
+import { setupCoreProtocol } from '../../test/utils/setup';
+import { deployContractAndSave, prettyPrintEncodedData } from '../deploy-utils';
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;

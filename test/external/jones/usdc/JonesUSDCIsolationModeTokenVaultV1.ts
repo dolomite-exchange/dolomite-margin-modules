@@ -112,7 +112,7 @@ describe('JonesUSDCIsolationModeTokenVaultV1', () => {
         .to
         .eq(TRADER_ROLE);
       expect(
-        await core.jonesEcosystem!.whitelistController.isWhitelistedContract(unwrapperForLiquidation.address)
+        await core.jonesEcosystem!.whitelistController.isWhitelistedContract(unwrapperForLiquidation.address),
       ).to.be.true;
     });
 
@@ -129,7 +129,7 @@ describe('JonesUSDCIsolationModeTokenVaultV1', () => {
         .to
         .eq(BYTES_ZERO);
       expect(
-        await core.jonesEcosystem!.whitelistController.isWhitelistedContract(unwrapperForLiquidation.address)
+        await core.jonesEcosystem!.whitelistController.isWhitelistedContract(unwrapperForLiquidation.address),
       ).to.be.true;
     });
 
@@ -146,7 +146,7 @@ describe('JonesUSDCIsolationModeTokenVaultV1', () => {
         .to
         .eq(TRADER_ROLE);
       expect(
-        await core.jonesEcosystem!.whitelistController.isWhitelistedContract(unwrapperForLiquidation.address)
+        await core.jonesEcosystem!.whitelistController.isWhitelistedContract(unwrapperForLiquidation.address),
       ).to.be.false;
     });
 
@@ -168,7 +168,7 @@ describe('JonesUSDCIsolationModeTokenVaultV1', () => {
           .to
           .eq(BYTES_ZERO);
         expect(
-          await core.jonesEcosystem!.whitelistController.isWhitelistedContract(unwrapperForLiquidation.address)
+          await core.jonesEcosystem!.whitelistController.isWhitelistedContract(unwrapperForLiquidation.address),
         ).to.be.false;
       },
     );

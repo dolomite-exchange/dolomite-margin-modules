@@ -1,6 +1,6 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { IERC4626, MagicGLPPriceOracle, MagicGLPUnwrapperTraderV1 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';

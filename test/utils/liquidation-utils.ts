@@ -197,16 +197,16 @@ export async function getCalldataForParaswap(
     return Promise.reject(new Error('swapTypes is empty'));
   }
   const priceRouteResponse = await axios.get(`${API_URL}/prices`, {
-      params: {
-        network: core.config.network,
-        srcToken: inputToken.address,
-        srcDecimals: inputDecimals,
-        destToken: outputToken.address,
-        destDecimals: outputDecimals,
-        amount: inputAmount.toString(),
-        includeContractMethods: swapTypes.join(','),
-      },
-    })
+    params: {
+      network: core.config.network,
+      srcToken: inputToken.address,
+      srcDecimals: inputDecimals,
+      destToken: outputToken.address,
+      destDecimals: outputDecimals,
+      amount: inputAmount.toString(),
+      includeContractMethods: swapTypes.join(','),
+    },
+  })
     .then(response => response.data)
     .catch((error) => {
       console.error('Found error in prices', error);
@@ -219,21 +219,21 @@ export async function getCalldataForParaswap(
     onlyParams: 'false',
   }).toString();
   const result = await axios.post(`${API_URL}/transactions/${core.config.network}?${queryParams}`, {
-      priceRoute: priceRouteResponse?.priceRoute,
-      txOrigin: txOrigin.address,
-      srcToken: inputToken.address,
-      srcDecimals: inputDecimals,
-      destToken: outputToken.address,
-      destDecimals: outputDecimals,
-      srcAmount: inputAmount.toString(),
-      destAmount: minOutputAmount.toString(),
-      userAddress: receiver.address,
-      receiver: receiver.address,
-      deadline: 9999999999,
-      partnerAddress: core.governance.address,
-      partnerFeeBps: '0',
-      positiveSlippageToUser: false,
-    })
+    priceRoute: priceRouteResponse?.priceRoute,
+    txOrigin: txOrigin.address,
+    srcToken: inputToken.address,
+    srcDecimals: inputDecimals,
+    destToken: outputToken.address,
+    destDecimals: outputDecimals,
+    srcAmount: inputAmount.toString(),
+    destAmount: minOutputAmount.toString(),
+    userAddress: receiver.address,
+    receiver: receiver.address,
+    deadline: 9999999999,
+    partnerAddress: core.governance.address,
+    partnerFeeBps: '0',
+    positiveSlippageToUser: false,
+  })
     .then(response => response.data)
     .catch((error) => {
       console.error('Found error in transactions', error);

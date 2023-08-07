@@ -27,7 +27,7 @@ import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTes
  *
  * Keep in mind that Pendle's prices tick upward each second.
  */
-const PT_GLP_PRICE = BigNumber.from('958512888340113899'); // $0.958512888340113899
+const PT_GLP_PRICE = BigNumber.from('956920341643951030'); // $0.956920341643951030
 
 describe('PendlePtGLPPriceOracle', () => {
   let snapshotId: string;

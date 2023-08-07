@@ -1,19 +1,19 @@
 import { ethers } from 'hardhat';
-import { Network } from 'src/utils/no-deps-constants';
+import { Network } from '../../../src/utils/no-deps-constants';
 import {
   getMagicGLPUnwrapperTraderV2ConstructorParams,
   getMagicGLPWrapperTraderV2ConstructorParams,
-} from '../src/utils/constructors/abracadabra';
+} from '../../../src/utils/constructors/abracadabra';
 import {
   getGLPUnwrapperTraderV2ConstructorParams,
   getGLPWrapperTraderV2ConstructorParams,
-} from '../src/utils/constructors/gmx';
+} from '../../../src/utils/constructors/gmx';
 import {
   getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
-} from '../src/utils/constructors/plutus';
-import { setupCoreProtocol } from '../test/utils/setup';
-import { deployContractAndSave, prettyPrintEncodedData } from './deploy-utils';
+} from '../../../src/utils/constructors/plutus';
+import { setupCoreProtocol } from '../../../test/utils/setup';
+import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;

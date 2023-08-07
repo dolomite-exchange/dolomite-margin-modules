@@ -1,6 +1,6 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { sleep } from '@openzeppelin/upgrades';
-import { BigNumberish, PopulatedTransaction } from 'ethers';
+import { BaseContract, BigNumberish, PopulatedTransaction } from 'ethers';
 import fs from 'fs';
 import { network, run } from 'hardhat';
 import { createContract } from '../src/utils/dolomite-utils';
@@ -12,6 +12,7 @@ export async function verifyContract(address: string, constructorArguments: any[
     await run('verify:verify', {
       address,
       constructorArguments,
+      noCompile: true,
     });
   } catch (e: any) {
     if (e?.message.toLowerCase().includes('already verified')) {
@@ -113,7 +114,29 @@ export async function prettyPrintEncodedData(
   console.log(`=================================== ${counter++} - ${methodName} ===================================`);
   console.log('To: ', transaction.to);
   console.log('Data: ', transaction.data);
-  console.log('='.repeat(76 + methodName.length));
+  console.log('='.repeat(75 + (counter - 1).toString().length + methodName.length));
+  console.log(''); // add a new line
+}
+
+export async function prettyPrintEncodedDataWithTypeSafety<
+  T extends V[K],
+  U extends keyof T['populateTransaction'],
+  V extends Record<K, BaseContract>,
+  K extends keyof V,
+>(
+  liveMap: V,
+  key: K,
+  methodName: U,
+  args: Parameters<T['populateTransaction'][U]>,
+): Promise<void> {
+  const contract = liveMap[key];
+  const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
+  console.log(''); // add a new line
+  console.log(`=================================== ${counter++} - ${key}.${methodName} ===================================`);
+  console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${(args as any).join(',\n\t\t\t')}\n\t\t)`);
+  console.log('To:\t\t', transaction.to);
+  console.log('Data:\t\t', transaction.data);
+  console.log('='.repeat(76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length));
   console.log(''); // add a new line
 }
 

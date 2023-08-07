@@ -20,8 +20,8 @@ import {
 } from '../../utils/ecosystem-token-utils/plutus';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
-const GLP_PRICE = BigNumber.from('984588746906888510'); // $0.984588746906888510
-const PLV_GLP_PRICE = BigNumber.from('1200312871654299982'); // $1.200312871654299982
+const GLP_PRICE = BigNumber.from('1004371801993868870'); // $1.004371801993868870
+const PLV_GLP_PRICE = BigNumber.from('1200844314982579522'); // $1.200844314982579522
 
 describe('PlutusVaultGLPPriceOracle', () => {
   let snapshotId: string;
@@ -70,7 +70,7 @@ describe('PlutusVaultGLPPriceOracle', () => {
       const testToken = await createTestToken();
       await plutusVaultRegistry.connect(core.governance).ownerSetPlvGlpToken(testToken.address);
       const price = await plvGlpPriceOracle.getPrice(factory.address);
-      expect(price.value).to.eq(GLP_PRICE);
+      expect(price.value).to.eq(GLP_PRICE.sub(GLP_PRICE.mul(2).div(100)));
     });
 
     it('fails when token sent is not dplvGLP', async () => {
