@@ -82,14 +82,14 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         _ownerSetChainlinkRegistry(_chainlinkRegistry);
     }
 
-    function checkUpkeep(bytes calldata checkData) external view returns (bool upkeepNeeded, bytes memory /* performData */) {
+    function checkUpkeep(bytes calldata checkData) external returns (bool upkeepNeeded, bytes memory /* performData */) {
         Require.that(
             tx.origin == address(0),
             _FILE,
             "static rpc calls only"
         );
 
-        upkeepNeeded = _checkUpkeepConditions();
+        return (_checkUpkeepConditions(), '0x');
     }
 
     function performUpkeep(bytes calldata performData) external {

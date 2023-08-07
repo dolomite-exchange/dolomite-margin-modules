@@ -162,31 +162,37 @@ describe('ChainlinkAutomationPriceOracle', () => {
     });
   });
 
+  // Adjust cause view
   describe('#checkUpkeep', () => {
     it('should work', async () => {
-      expect((await chainlinkAutomationPriceOracle.connect(zeroAddress).checkUpkeep('0x')).upkeepNeeded).to.eq(false);
+      expect((await chainlinkAutomationPriceOracle.connect(zeroAddress)
+        .callStatic.checkUpkeep('0x')).upkeepNeeded).to.eq(false);
     });
 
     it('fails when called by address other than zero address', async () => {
       await expectThrow(
-        chainlinkAutomationPriceOracle.connect(core.governance).checkUpkeep('0x'),
+        chainlinkAutomationPriceOracle.connect(core.governance)
+          .callStatic.checkUpkeep('0x'),
         'ChainlinkAutomationPriceOracle: static rpc calls only',
       );
     });
 
     it('returns false when deviation is less than 0.25% and lastTimestamp is less than heartbeat', async () => {
       await token.addBalance(core.hhUser1.address, parseEther('24'));
-      expect((await chainlinkAutomationPriceOracle.connect(zeroAddress).checkUpkeep('0x')).upkeepNeeded).to.eq(false);
+      expect((await chainlinkAutomationPriceOracle.connect(zeroAddress)
+        .callStatic.checkUpkeep('0x')).upkeepNeeded).to.eq(false);
     });
 
     it('returns true when deviation is greater than .25% and lastTimestamp is less than heartbeat', async () => {
       await token.addBalance(core.hhUser1.address, parseEther('25'));
-      expect((await chainlinkAutomationPriceOracle.connect(zeroAddress).checkUpkeep('0x')).upkeepNeeded).to.eq(true);
+      expect((await chainlinkAutomationPriceOracle.connect(zeroAddress)
+        .callStatic.checkUpkeep('0x')).upkeepNeeded).to.eq(true);
     });
 
     it('returns true when deviation is less than 0.25% and lastTimestamp is more than heartbeat', async () => {
       await increase(12 * 3600);
-      expect((await chainlinkAutomationPriceOracle.connect(zeroAddress).checkUpkeep('0x')).upkeepNeeded).to.eq(true);
+      expect((await chainlinkAutomationPriceOracle.connect(zeroAddress)
+        .callStatic.checkUpkeep('0x')).upkeepNeeded).to.eq(true);
     });
   });
 
