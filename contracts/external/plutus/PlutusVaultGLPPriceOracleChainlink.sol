@@ -22,12 +22,12 @@ pragma solidity ^0.8.9;
 
 import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
 
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-import { IERC4626 } from "../interfaces/IERC4626.sol";
-import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
+import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
+import {IDolomitePriceOracle} from "../../protocol/interfaces/IDolomitePriceOracle.sol";
+import {IDolomiteStructs} from "../../protocol/interfaces/IDolomiteStructs.sol";
+import {Require} from "../../protocol/lib/Require.sol";
+import {IERC4626} from "../interfaces/IERC4626.sol";
+import {IPlutusVaultRegistry} from "../interfaces/plutus/IPlutusVaultRegistry.sol";
 
 /**
  * @title   PlutusVaultGLPPriceOracleChainlink
@@ -77,12 +77,12 @@ contract PlutusVaultGLPPriceOracleChainlink is IDolomitePriceOracle, AutomationC
         latestTimestamp = block.timestamp;
     }
 
-    function checkUpkeep(bytes calldata checkData) external view returns (bool upkeepNeeded, bytes memory /* performData */) {
-//        Require.that(
-//           msg.sender == address(0),
-//            _FILE,
-//            "static rpc calls only"
-//        );
+    function checkUpkeep(bytes calldata checkData) external returns (bool upkeepNeeded, bytes memory /* performData */) {
+        Require.that(
+            tx.origin == address(0),
+            _FILE,
+            "static rpc calls only"
+        );
 
         upkeepNeeded = _checkUpkeepConditions();
     }
@@ -120,6 +120,7 @@ contract PlutusVaultGLPPriceOracleChainlink is IDolomitePriceOracle, AutomationC
             "plvGLP cannot be borrowable"
         );
 
+        // add second value for expiration value
         Require.that(
             latestTimestamp + HEARTBEAT > block.timestamp,
             _FILE,
@@ -128,6 +129,7 @@ contract PlutusVaultGLPPriceOracleChainlink is IDolomitePriceOracle, AutomationC
 
         return IDolomiteStructs.MonetaryPrice({
             value: exchangeRate
+        // _getCurrentPrice
         });
     }
 
@@ -136,6 +138,7 @@ contract PlutusVaultGLPPriceOracleChainlink is IDolomitePriceOracle, AutomationC
     function _checkUpkeepConditions() internal view returns (bool) {
         uint256 currentPrice = _getCurrentPrice();
         uint256 _exchangeRate = exchangeRate;
+
         uint256 upperEdge = _exchangeRate * 10025 / 10000;
         uint256 lowerEdge = _exchangeRate * 9975 / 10000;
         return (currentPrice >= upperEdge || currentPrice <= lowerEdge || block.timestamp >= latestTimestamp + HEARTBEAT);
@@ -150,7 +153,7 @@ contract PlutusVaultGLPPriceOracleChainlink is IDolomitePriceOracle, AutomationC
             // exchange rate is 1 if the total supply is 0
             glpPriceWithExchangeRate = glpPrice;
         } else {
-            glpPriceWithExchangeRate = glpPrice * plvGlp.totalAssets() / totalSupply;
+            glpPriceWithExchangeRate = glpPrice * plvGlp.totalAssets() / totalSupply; // read cached exchangeRate
         }
         (uint256 exitFeeBp,) = PLUTUS_VAULT_REGISTRY.plvGlpRouter().getFeeBp(PLUTUS_VAULT_GLP_UNWRAPPER_TRADER);
         uint256 exitFee = glpPriceWithExchangeRate * exitFeeBp / _FEE_PRECISION;

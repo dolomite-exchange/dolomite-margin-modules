@@ -152,7 +152,8 @@ describe('PlutusVaultGLPPriceOracleChainlink', () => {
       expect(price).to.eq(calculatePrice(GLP_PRICE, totalAssets, totalSupply, exitFeeBp));
     });
 
-    it('returns the correct value when plvGLP has a total supply of 0', async () => {});
+    it('returns the correct value when plvGLP has a total supply of 0', async () => {
+    });
 
     it('fails when token sent is not dplvGLP', async () => {
       await expectThrow(
@@ -336,6 +337,7 @@ describe('PlutusVaultGLPPriceOracleChainlink', () => {
       );
     });
   });
+
   function calculatePrice(
     glpPrice: BigNumber,
     totalAssets: BigNumber,
@@ -360,6 +362,8 @@ describe('PlutusVaultGLPPriceOracleChainlink', () => {
 
     let upperEdge = upperExchangeRate.mul(FEE_PRECISION).div(FEE_PRECISION.sub(exitFeeBp));
     upperEdge = upperEdge.mul(totalSupply).div(totalAssets);
+    const testIt = 'string';
+    const newOne = 5;
 
     return [lowerEdge, upperEdge];
   }

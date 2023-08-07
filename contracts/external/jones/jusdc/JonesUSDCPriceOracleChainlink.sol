@@ -134,6 +134,7 @@ contract JonesUSDCPriceOracleChainlink is IDolomitePriceOracle, AutomationCompat
     function _checkUpkeepConditions() internal view returns (bool) {
         uint256 currentPrice = _getCurrentPrice();
         uint256 _exchangeRate = exchangeRate;
+
         uint256 upperEdge = _exchangeRate * 10025 / 10000;
         uint256 lowerEdge = _exchangeRate * 9975 / 10000;
         return (currentPrice >= upperEdge || currentPrice <= lowerEdge || block.timestamp >= latestTimestamp + HEARTBEAT);
