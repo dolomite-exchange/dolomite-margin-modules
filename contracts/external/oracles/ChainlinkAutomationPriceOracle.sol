@@ -20,36 +20,38 @@
 
 pragma solidity ^0.8.9;
 
-import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
-
-import {IDolomitePriceOracleChainlink} from "../interfaces/IDolomitePriceOracleChainlink.sol";
+import {IChainlinkAutomationPriceOracle} from "../interfaces/IChainlinkAutomationPriceOracle.sol";
 import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
 import {IDolomiteStructs} from "../../protocol/interfaces/IDolomiteStructs.sol";
 import {OnlyDolomiteMargin} from "../helpers/OnlyDolomiteMargin.sol";
 
 import {Require} from "../../protocol/lib/Require.sol";
 
-import {IERC4626} from "../interfaces/IERC4626.sol";
+import "hardhat/console.sol";
 
 /**
- * @title   DolomitePriceOracleChainlink
+ * @title   ChainlinkAutomationPriceOracle.sol
  * @author  Dolomite
  *
  * @notice  An abstract contract that implements the IDolomitePriceOracle interface
  * @notice  Contains variables and functions for Chainlink Automation
  */
-abstract contract DolomitePriceOracleChainlink is IDolomitePriceOracleChainlink, OnlyDolomiteMargin, AutomationCompatibleInterface {
+abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOracle, OnlyDolomiteMargin {
 
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "DolomitePriceOracleChainlink";
+    bytes32 private constant _FILE = "ChainlinkAutomationPriceOracle";
 
     // ============================ Public State Variables ============================
 
     uint256 public HEARTBEAT = 12 * 3600;
+    uint256 public GRACE_PERIOD = 3600;
     uint256 public UPPER_EDGE = 10025;
     uint256 public LOWER_EDGE = 9975;
     address public CHAINLINK_REGISTRY; // solhint-disable-line var-name-mixedcase
+
+    uint256 public exchangeRate;
+    uint256 public latestTimestamp;
 
     // ============================ Constructor ============================
 
@@ -64,6 +66,10 @@ abstract contract DolomitePriceOracleChainlink is IDolomitePriceOracleChainlink,
         _ownerSetHeartbeat(_heartbeat);
     }
 
+    function ownerSetGracePeriod(uint256 _gracePeriod) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetGracePeriod(_gracePeriod);
+    }
+
     function ownerSetUpperEdge(uint256 _upperEdge) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetUpperEdge(_upperEdge);
     }
@@ -76,15 +82,42 @@ abstract contract DolomitePriceOracleChainlink is IDolomitePriceOracleChainlink,
         _ownerSetChainlinkRegistry(_chainlinkRegistry);
     }
 
-    function checkUpkeep(bytes calldata checkData) external virtual returns (bool upkeepNeeded, bytes memory /* performData */);
+    function checkUpkeep(bytes calldata checkData) external view returns (bool upkeepNeeded, bytes memory /* performData */) {
+        Require.that(
+            tx.origin == address(0),
+            _FILE,
+            "static rpc calls only"
+        );
 
-    function performUpkeep(bytes calldata performData) external virtual;
+        upkeepNeeded = _checkUpkeepConditions();
+    }
+
+    function performUpkeep(bytes calldata performData) external {
+        Require.that(
+            msg.sender == CHAINLINK_REGISTRY,
+            _FILE,
+            "caller is not Chainlink"
+        );
+        Require.that(
+            _checkUpkeepConditions(),
+            _FILE,
+            "checkUpkeep conditions not met"
+        );
+
+        exchangeRate = _getExchangeRate();
+        latestTimestamp = block.timestamp;
+    }
 
     // ============================ Internal Functions ============================
 
     function _ownerSetHeartbeat(uint256 _heartbeat) internal {
         emit HeartbeatSet(_heartbeat);
         HEARTBEAT = _heartbeat;
+    }
+
+    function _ownerSetGracePeriod(uint256 _gracePeriod) internal {
+        emit GracePeriodSet(_gracePeriod);
+        GRACE_PERIOD = _gracePeriod;
     }
 
     function _ownerSetUpperEdge(uint256 _upperEdge) internal {
@@ -117,7 +150,18 @@ abstract contract DolomitePriceOracleChainlink is IDolomitePriceOracleChainlink,
         CHAINLINK_REGISTRY = _chainlinkRegistry;
     }
 
-    function _checkUpkeepConditions() internal virtual view returns (bool);
+    function _checkUpkeepConditions() internal view returns (bool) {
+        uint256 _cachedExchangeRate = exchangeRate;
+        uint256 _currentExchangeRate = _getExchangeRate();
+
+        uint256 upperEdge = _cachedExchangeRate * UPPER_EDGE / 10000;
+        uint256 lowerEdge = _cachedExchangeRate * LOWER_EDGE / 10000;
+        return (_currentExchangeRate >= upperEdge || _currentExchangeRate <= lowerEdge || block.timestamp >= latestTimestamp + HEARTBEAT);
+    }
+
+    // ============================ Virtual Functions ============================
+
+    function _getExchangeRate() internal virtual view returns (uint256);
 
     function _getCurrentPrice() internal virtual view returns (uint256);
 }

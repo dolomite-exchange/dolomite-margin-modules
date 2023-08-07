@@ -20,23 +20,27 @@
 
 pragma solidity ^0.8.9;
 
+import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
+
 import {IOnlyDolomiteMargin} from "./IOnlyDolomiteMargin.sol";
 import {IDolomitePriceOracle} from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 
 /**
- * @title   IDolomitePriceOracleChainlink
+ * @title   IChainlinkAutomationPriceOracle.sol
  * @author  Dolomite
  *
  * @notice  An abstract contract that implements the IDolomitePriceOracle interface
  * @notice  Contains variables and functions for Chainlink Automation
  */
-interface IDolomitePriceOracleChainlink is IDolomitePriceOracle, IOnlyDolomiteMargin {
+interface IChainlinkAutomationPriceOracle is IDolomitePriceOracle, AutomationCompatibleInterface, IOnlyDolomiteMargin {
 
     // ================================================
     // ==================== Events ====================
     // ================================================
 
     event HeartbeatSet(uint256 _heartbeat);
+
+    event GracePeriodSet(uint256 _heartbeat);
 
     event UpperEdgeSet(uint256 _upperEdge);
 
@@ -50,6 +54,8 @@ interface IDolomitePriceOracleChainlink is IDolomitePriceOracle, IOnlyDolomiteMa
 
     function ownerSetHeartbeat(uint256 _heartbeat) external;
 
+    function ownerSetGracePeriod(uint256 _gracePeriod) external;
+
     function ownerSetUpperEdge(uint256 _upperEdge) external;
 
     function ownerSetLowerEdge(uint256 _lowerEdge) external;
@@ -62,9 +68,15 @@ interface IDolomitePriceOracleChainlink is IDolomitePriceOracle, IOnlyDolomiteMa
 
     function HEARTBEAT() external view returns (uint256);
 
+    function GRACE_PERIOD() external view returns (uint256);
+
     function UPPER_EDGE() external view returns (uint256);
 
     function LOWER_EDGE() external view returns (uint256);
 
     function CHAINLINK_REGISTRY() external view returns (address);
+
+    function exchangeRate() external view returns (uint256);
+
+    function latestTimestamp() external view returns (uint256);
 }

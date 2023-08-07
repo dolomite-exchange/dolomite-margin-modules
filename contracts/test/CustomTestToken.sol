@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { ICustomTestToken } from "./ICustomTestToken.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ICustomTestToken} from "./ICustomTestToken.sol";
 
 /**
  * @title   CustomTestToken
@@ -43,5 +43,9 @@ contract CustomTestToken is ERC20, ICustomTestToken {
 
     function addBalance(address _receiver, uint256 _amount) external {
         _mint(_receiver, _amount);
+    }
+
+    function burn(uint256 _amount) external {
+        _burn(msg.sender, _amount);
     }
 }
