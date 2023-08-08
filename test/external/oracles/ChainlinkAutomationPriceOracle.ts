@@ -227,6 +227,14 @@ describe('ChainlinkAutomationPriceOracle', () => {
       expect(await chainlinkAutomationPriceOracle.latestTimestamp()).to.eq(updateTimestamp);
     });
 
+    it('works when totalSupply is zero', async () => {
+      await token.connect(core.hhUser1).burn(parseEther('10000'));
+      await chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
+
+      expect(await chainlinkAutomationPriceOracle.exchangeRateNumerator()).to.eq(100e6);
+      expect(await chainlinkAutomationPriceOracle.exchangeRateDenominator()).to.eq(0);
+    });
+
     it('works if greater than deviation upperEdge', async () => {
       await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 25e4);
       await chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');

@@ -13,11 +13,13 @@ import {
   JonesUSDCIsolationModeWrapperTraderV2,
   JonesUSDCIsolationModeWrapperTraderV2__factory,
   JonesUSDCPriceOracle,
-  JonesUSDCPriceOracle__factory, JonesUSDCWithChainlinkAutomationPriceOracle, JonesUSDCPriceOracleChainlink__factory,
+  JonesUSDCPriceOracle__factory,
+  JonesUSDCWithChainlinkAutomationPriceOracle,
+  JonesUSDCWithChainlinkAutomationPriceOracle__factory,
   JonesUSDCRegistry,
   JonesUSDCRegistry__factory,
   RegistryProxy,
-  RegistryProxy__factory, JonesUSDCWithChainlinkAutomationPriceOracle__factory,
+  RegistryProxy__factory,
 } from '../../../src/types';
 import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,

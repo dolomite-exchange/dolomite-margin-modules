@@ -2,7 +2,7 @@ import {
   MagicGLPPriceOracle,
   MagicGLPPriceOracle__factory,
   MagicGLPWithChainlinkAutomationPriceOracle,
-  MagicGLPPriceOracleChainlink__factory,
+  MagicGLPWithChainlinkAutomationPriceOracle__factory,
   MagicGLPUnwrapperTraderV1,
   MagicGLPUnwrapperTraderV1__factory,
   MagicGLPUnwrapperTraderV2,
@@ -10,7 +10,7 @@ import {
   MagicGLPWrapperTraderV1,
   MagicGLPWrapperTraderV1__factory,
   MagicGLPWrapperTraderV2,
-  MagicGLPWrapperTraderV2__factory, MagicGLPWithChainlinkAutomationPriceOracle__factory,
+  MagicGLPWrapperTraderV2__factory,
 } from '../../../src/types';
 import {
   getMagicGLPPriceOracleConstructorParams,

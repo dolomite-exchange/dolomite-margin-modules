@@ -28,6 +28,7 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.99998605
 const CHAINLINK_REGISTRY_ADDRESS = '0x75c0530885F385721fddA23C539AF3701d6183D4';
 const USDC_SCALE_DIFF = BigNumber.from('10').pow(12);
+
 describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
 
