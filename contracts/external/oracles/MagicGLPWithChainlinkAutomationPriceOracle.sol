@@ -93,8 +93,7 @@ contract MagicGLPWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceO
 
     function _getCurrentPrice() internal view override returns (uint256) {
         uint256 glpPrice = DOLOMITE_MARGIN().getMarketPrice(DFS_GLP_MARKET_ID).value;
-        uint256 totalSupply = MAGIC_GLP.totalSupply();
-        if (totalSupply == 0) {
+        if (exchangeRateDenominator == 0) {
             // exchange rate is 1 if the total supply is 0
             return glpPrice;
         }
