@@ -74,7 +74,6 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
       deployments.JonesUSDCRegistryProxy[network].address,
       core.hhUser1,
     );
-    console.log(await jonesUSDCRegistry.jUSDC());
     factory = JonesUSDCIsolationModeVaultFactory__factory.connect(
       deployments.JonesUSDCIsolationModeVaultFactory[network].address,
       core.hhUser1,

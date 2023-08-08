@@ -19,11 +19,11 @@ import {
   PlutusVaultGLPPriceOracle,
   PlutusVaultGLPPriceOracle__factory,
   PlutusVaultWithChainlinkAutomationPriceOracle,
-  PlutusVaultGLPPriceOracleChainlink__factory,
+  PlutusVaultWithChainlinkAutomationPriceOracle__factory,
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory,
   RegistryProxy,
-  RegistryProxy__factory, PlutusVaultWithChainlinkAutomationPriceOracle__factory,
+  RegistryProxy__factory,
 } from '../../../src/types';
 import {
   getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
