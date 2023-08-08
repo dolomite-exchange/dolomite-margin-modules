@@ -20,14 +20,13 @@
 
 pragma solidity ^0.8.9;
 
-import {JonesUSDCMathLib} from "../jones/jusdc/JonesUSDCMathLib.sol";
-import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
-import {IDolomitePriceOracle} from "../../protocol/interfaces/IDolomitePriceOracle.sol";
-import {IDolomiteStructs} from "../../protocol/interfaces/IDolomiteStructs.sol";
-import {Require} from "../../protocol/lib/Require.sol";
-import {IERC4626} from "../interfaces/IERC4626.sol";
-import {IJonesUSDCRegistry} from "../interfaces/jones/IJonesUSDCRegistry.sol";
-import "./ChainlinkAutomationPriceOracle.sol";
+import { ChainlinkAutomationPriceOracle } from "./ChainlinkAutomationPriceOracle.sol";
+import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IERC4626 } from "../interfaces/IERC4626.sol";
+import { IJonesUSDCRegistry } from "../interfaces/jones/IJonesUSDCRegistry.sol";
+import { JonesUSDCMathLib } from "../jones/jusdc/JonesUSDCMathLib.sol";
 
 /**
  * @title   JonesUSDCWithChainlinkAutomationPriceOracle

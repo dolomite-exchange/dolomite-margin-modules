@@ -20,17 +20,13 @@
 
 pragma solidity ^0.8.9;
 
-import {IChainlinkAutomationPriceOracle} from "../interfaces/IChainlinkAutomationPriceOracle.sol";
-import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
-import {IDolomiteStructs} from "../../protocol/interfaces/IDolomiteStructs.sol";
-import {OnlyDolomiteMargin} from "../helpers/OnlyDolomiteMargin.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { IChainlinkAutomationPriceOracle } from "../interfaces/IChainlinkAutomationPriceOracle.sol";
 
-import {Require} from "../../protocol/lib/Require.sol";
-
-import "hardhat/console.sol";
 
 /**
- * @title   ChainlinkAutomationPriceOracle.sol
+ * @title   ChainlinkAutomationPriceOracle
  * @author  Dolomite
  *
  * @notice  An abstract contract that implements the IDolomitePriceOracle interface
@@ -41,14 +37,14 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "ChainlinkAutomationPriceOracle";
-    uint256 private constant ONE_UNIT = 10 ** 18;
+    uint256 private constant _ONE_UNIT = 10 ** 18;
 
     // ============================ Public State Variables ============================
 
-    uint256 public HEARTBEAT = 12 * 3600;
-    uint256 public GRACE_PERIOD = 3600;
-    uint256 public UPPER_EDGE = 10025;
-    uint256 public LOWER_EDGE = 9975;
+    uint256 public HEARTBEAT = 12 * 3600; // solhint-disable-line var-name-mixedcase
+    uint256 public GRACE_PERIOD = 3600; // solhint-disable-line var-name-mixedcase
+    uint256 public UPPER_EDGE = 10025; // solhint-disable-line var-name-mixedcase
+    uint256 public LOWER_EDGE = 9975; // solhint-disable-line var-name-mixedcase
     address public CHAINLINK_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     uint256 public exchangeRateNumerator;
@@ -84,17 +80,19 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         _ownerSetChainlinkRegistry(_chainlinkRegistry);
     }
 
-    function checkUpkeep(bytes calldata checkData) external returns (bool upkeepNeeded, bytes memory /* performData */) {
+    function checkUpkeep(bytes calldata /* checkData */)
+    external
+    returns (bool upkeepNeeded, bytes memory /* performData */) {
         Require.that(
             tx.origin == address(0),
             _FILE,
             "static rpc calls only"
         );
 
-        return (_checkUpkeepConditions(), '0x');
+        return (_checkUpkeepConditions(), "0x");
     }
 
-    function performUpkeep(bytes calldata performData) external {
+    function performUpkeep(bytes calldata /* performData */) external {
         Require.that(
             msg.sender == CHAINLINK_REGISTRY,
             _FILE,
@@ -151,25 +149,29 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         CHAINLINK_REGISTRY = _chainlinkRegistry;
     }
 
+    function _updateExchangeRateAndTimestamp() internal {
+        (exchangeRateNumerator, exchangeRateDenominator) = _getExchangeRate();
+        latestTimestamp = block.timestamp;
+    }
+
     function _checkUpkeepConditions() internal view returns (bool) {
-        uint256 _cachedExchangeRate = exchangeRateNumerator * ONE_UNIT / exchangeRateDenominator;
+        uint256 _cachedExchangeRate = exchangeRateNumerator * _ONE_UNIT / exchangeRateDenominator;
         (uint256 _currentNumerator, uint256 _currentDenominator) = _getExchangeRate();
         uint256 _currentExchangeRate;
         if (_currentDenominator == 0) {
             // Should we just return false instead?
-            _currentExchangeRate = _currentNumerator * ONE_UNIT;
+            _currentExchangeRate = _currentNumerator * _ONE_UNIT;
         } else {
-            _currentExchangeRate = _currentNumerator * ONE_UNIT / _currentDenominator;
+            _currentExchangeRate = _currentNumerator * _ONE_UNIT / _currentDenominator;
         }
 
         uint256 upperEdge = _cachedExchangeRate * UPPER_EDGE / 10000;
         uint256 lowerEdge = _cachedExchangeRate * LOWER_EDGE / 10000;
-        return (_currentExchangeRate >= upperEdge || _currentExchangeRate <= lowerEdge || block.timestamp >= latestTimestamp + HEARTBEAT);
-    }
-
-    function _updateExchangeRateAndTimestamp() internal {
-        (exchangeRateNumerator, exchangeRateDenominator) = _getExchangeRate();
-        latestTimestamp = block.timestamp;
+        return (
+            _currentExchangeRate >= upperEdge ||
+            _currentExchangeRate <= lowerEdge ||
+            block.timestamp >= latestTimestamp + HEARTBEAT
+        );
     }
 
     // ============================ Virtual Functions ============================

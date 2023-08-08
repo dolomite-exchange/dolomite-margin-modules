@@ -20,12 +20,10 @@
 
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/interfaces/IERC20.sol";
-import "./ICustomTestVaultToken.sol";
+import { ICustomTestVaultToken } from "./ICustomTestVaultToken.sol";
+import { ChainlinkAutomationPriceOracle } from "../external/oracles/ChainlinkAutomationPriceOracle.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
-import "../external/oracles/ChainlinkAutomationPriceOracle.sol";
-
-import "hardhat/console.sol";
 
 /**
  * @title   TestChainlinkAutomationPriceOracle
@@ -35,18 +33,22 @@ import "hardhat/console.sol";
  */
 contract TestChainlinkAutomationPriceOracle is ChainlinkAutomationPriceOracle {
 
-    ICustomTestVaultToken public TOKEN;
-    uint256 public MARKET_ID;
+    ICustomTestVaultToken public TOKEN; // solhint-disable-line var-name-mixedcase
+    uint256 public MARKET_ID; // solhint-disable-line var-name-mixedcase
 
-    constructor(address _dolomiteMargin, address _chainlinkRegistry, address _token, uint256 _marketId) ChainlinkAutomationPriceOracle(_dolomiteMargin, _chainlinkRegistry) {
+    constructor(
+        address _dolomiteMargin,
+        address _chainlinkRegistry,
+        address _token,
+        uint256 _marketId
+    ) ChainlinkAutomationPriceOracle(_dolomiteMargin, _chainlinkRegistry) {
         TOKEN = ICustomTestVaultToken(_token);
         MARKET_ID = _marketId;
 
         _updateExchangeRateAndTimestamp();
     }
 
-    function getPrice(address _token) external view returns (IDolomiteStructs.MonetaryPrice memory) {
-
+    function getPrice(address /* _token */) external view returns (IDolomiteStructs.MonetaryPrice memory) {
         return IDolomiteStructs.MonetaryPrice({
             value: _getCurrentPrice()
         });

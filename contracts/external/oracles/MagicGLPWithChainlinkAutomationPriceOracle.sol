@@ -20,21 +20,18 @@
 
 pragma solidity ^0.8.9;
 
-import "./ChainlinkAutomationPriceOracle.sol";
-import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
-import {IDolomiteStructs} from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { ChainlinkAutomationPriceOracle } from "./ChainlinkAutomationPriceOracle.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IERC4626 } from "../interfaces/IERC4626.sol";
 
-import {Require} from "../../protocol/lib/Require.sol";
-
-import {IERC4626} from "../interfaces/IERC4626.sol";
-
-import "hardhat/console.sol";
 
 /**
  * @title   MagicGLPWithChainlinkAutomationPriceOracle
  * @author  Dolomite
  *
- * @notice  An implementation of the IDolomitePriceOracle interface that gets Abra's MagicGLP price in USD terms using Chainlink Automation
+ * @notice  An implementation of the ChainlinkAutomationPriceOracle that gets Abra's MagicGLP price in USD terms
+ * @notice  Uses Chainlink Automation
  */
 contract MagicGLPWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceOracle {
 
@@ -79,7 +76,6 @@ contract MagicGLPWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceO
             "price expired"
         );
 
-        // Maybe fail if wide margin between cached price and real one
         return IDolomiteStructs.MonetaryPrice({
             value: _getCurrentPrice()
         });

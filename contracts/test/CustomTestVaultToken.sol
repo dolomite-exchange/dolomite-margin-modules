@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ICustomTestVaultToken} from "./ICustomTestVaultToken.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ICustomTestVaultToken } from "./ICustomTestVaultToken.sol";
 
 /**
  * @title   CustomTestVaultToken
@@ -49,11 +49,12 @@ contract CustomTestVaultToken is ERC20, ICustomTestVaultToken {
         _mint(_receiver, _amount);
     }
 
+    function burn(uint256 _amount) external {
+        _burn(msg.sender, _amount);
+    }
+
     function totalAssets() external view returns (uint256) {
         return IERC20(asset).balanceOf(address(this));
     }
 
-    function burn(uint256 _amount) external {
-        _burn(msg.sender, _amount);
-    }
 }

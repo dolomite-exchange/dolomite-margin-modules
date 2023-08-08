@@ -20,10 +20,10 @@
 
 pragma solidity ^0.8.9;
 
-import {ICustomTestToken} from "./ICustomTestToken.sol";
+import { ICustomTestToken } from "./ICustomTestToken.sol";
 
 /**
- * @title   ICustomTestToken
+ * @title   ICustomTestVaultToken
  * @author  Dolomite
  *
  * @notice  Interface contract for accessing test methods on test ERC4626 for testing.

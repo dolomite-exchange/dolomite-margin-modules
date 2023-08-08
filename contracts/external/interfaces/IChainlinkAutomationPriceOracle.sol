@@ -20,13 +20,13 @@
 
 pragma solidity ^0.8.9;
 
-import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
+import { AutomationCompatibleInterface } from "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
 
-import {IOnlyDolomiteMargin} from "./IOnlyDolomiteMargin.sol";
-import {IDolomitePriceOracle} from "../../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
+import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 
 /**
- * @title   IChainlinkAutomationPriceOracle.sol
+ * @title   IChainlinkAutomationPriceOracle
  * @author  Dolomite
  *
  * @notice  An abstract contract that implements the IDolomitePriceOracle interface
