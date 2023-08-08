@@ -12,7 +12,7 @@
     "build": "hardhat compile",
     "clean": "hardhat clean",
     "coverage": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/**/!(*Liquidation*|*LiquidatorProxyV2*)*.ts\" --network hardhat",
-    "coverage:specific": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/external/proxies/abstract/IsolationModeTokenVaultV1.ts\" --network hardhat",
+    "coverage:specific": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \\\"test/external/proxies/abstract/IsolationModeTokenVaultV1.ts\\\" --network hardhat",
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy/deploy-atlas-ecosystem.ts",
     "deploy:coveralls": "coveralls < coverage/lcov.info",

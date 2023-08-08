@@ -93,20 +93,20 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        if (_inputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputToken == address(VAULT_FACTORY),
+        Require.that(
+            _inputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid input token",
             _inputToken
         );
-        if (isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
-        Require.that(isValidOutputToken(_outputToken),
+        Require.that(
+            isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token",
             _outputToken
         );
-        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputAmount > 0,
+        Require.that(
+            _inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -115,8 +115,8 @@ abstract contract IsolationModeUnwrapperTraderV2 is
 
         {
             uint256 balance = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
-            if (balance >= _inputAmount) { /* FOR COVERAGE TESTING */ }
-            Require.that(balance >= _inputAmount,
+            Require.that(
+                balance >= _inputAmount,
                 _FILE,
                 "Insufficient input token",
                 balance,
@@ -133,8 +133,8 @@ abstract contract IsolationModeUnwrapperTraderV2 is
             _inputAmount,
             extraOrderData
         );
-        if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
-        Require.that(outputAmount >= minOutputAmount,
+        Require.that(
+            outputAmount >= minOutputAmount,
             _FILE,
             "Insufficient output amount",
             outputAmount,
@@ -165,14 +165,14 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     override
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
-        if (DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
-        Require.that(DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY),
+        Require.that(
+            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY),
             _FILE,
             "Invalid input market",
             _inputMarket
         );
-        if (isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket))) { /* FOR COVERAGE TESTING */ }
-        Require.that(isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
+        Require.that(
+            isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
             _FILE,
             "Invalid output market",
             _outputMarket
@@ -217,20 +217,20 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     override
     view
     returns (uint256) {
-        if (_inputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputToken == address(VAULT_FACTORY),
+        Require.that(
+            _inputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid input token",
             _inputToken
         );
-        if (isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
-        Require.that(isValidOutputToken(_outputToken),
+        Require.that(
+            isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token",
             _outputToken
         );
-        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_desiredInputAmount > 0,
+        Require.that(
+            _desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );
@@ -252,8 +252,8 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     )
     internal
     virtual {
-        if (VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0),
+        Require.that(
+            VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0),
             _FILE,
             "Account owner is not a vault",
             _accountInfo.owner
@@ -262,15 +262,15 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
         // designated recipient
         (uint256 transferAmount) = abi.decode(_data, (uint256));
-        if (transferAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(transferAmount > 0,
+        Require.that(
+            transferAmount > 0,
             _FILE,
             "Invalid transfer amount"
         );
 
         uint256 underlyingBalanceOf = IIsolationModeTokenVaultV1(_accountInfo.owner).underlyingBalanceOf();
-        if (underlyingBalanceOf >= transferAmount) { /* FOR COVERAGE TESTING */ }
-        Require.that(underlyingBalanceOf >= transferAmount,
+        Require.that(
+            underlyingBalanceOf >= transferAmount,
             _FILE,
             "Insufficient balance",
             underlyingBalanceOf,

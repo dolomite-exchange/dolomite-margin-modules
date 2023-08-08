@@ -81,8 +81,8 @@ abstract contract IsolationModeVaultFactory is
     // ===================================================
 
     modifier requireIsInitialized {
-        if (isInitialized) { /* FOR COVERAGE TESTING */ }
-        Require.that(isInitialized,
+        Require.that(
+            isInitialized,
             _FILE,
             "Not initialized"
         );
@@ -90,8 +90,8 @@ abstract contract IsolationModeVaultFactory is
     }
 
     modifier requireIsVault(address _vault) {
-        if (address(_vaultToUserMap[_vault]) != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(address(_vaultToUserMap[_vault]) != address(0),
+        Require.that(
+            address(_vaultToUserMap[_vault]) != address(0),
             _FILE,
             "Invalid vault",
             _vault
@@ -100,8 +100,8 @@ abstract contract IsolationModeVaultFactory is
     }
 
     modifier requireIsTokenConverter(address _tokenConverter) {
-        if (_tokenConverterToIsTrustedMap[_tokenConverter]) { /* FOR COVERAGE TESTING */ }
-        Require.that(_tokenConverterToIsTrustedMap[_tokenConverter],
+        Require.that(
+            _tokenConverterToIsTrustedMap[_tokenConverter],
             _FILE,
             "Caller is not a token converter",
             _tokenConverter
@@ -136,14 +136,14 @@ abstract contract IsolationModeVaultFactory is
     external
     override
     onlyDolomiteMarginOwner(msg.sender) {
-        if (!isInitialized) { /* FOR COVERAGE TESTING */ }
-        Require.that(!isInitialized,
+        Require.that(
+            !isInitialized,
             _FILE,
             "Already initialized"
         );
         marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(this));
-        if (DOLOMITE_MARGIN().getMarketIsClosing(marketId)) { /* FOR COVERAGE TESTING */ }
-        Require.that(DOLOMITE_MARGIN().getMarketIsClosing(marketId),
+        Require.that(
+            DOLOMITE_MARGIN().getMarketIsClosing(marketId),
             _FILE,
             "Market cannot allow borrowing"
         );
@@ -188,8 +188,8 @@ abstract contract IsolationModeVaultFactory is
     override
     requireIsInitialized
     onlyDolomiteMarginOwner(msg.sender) {
-        if (_userVaultImplementation != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_userVaultImplementation != address(0),
+        Require.that(
+            _userVaultImplementation != address(0),
             _FILE,
             "Invalid user implementation"
         );
@@ -217,8 +217,8 @@ abstract contract IsolationModeVaultFactory is
     external
     override
     requireIsVault(msg.sender) {
-        if (_otherMarketId != marketId) { /* FOR COVERAGE TESTING */ }
-        Require.that(_otherMarketId != marketId,
+        Require.that(
+            _otherMarketId != marketId,
             _FILE,
             "Invalid market",
             _otherMarketId
@@ -345,8 +345,8 @@ abstract contract IsolationModeVaultFactory is
     // ================================================
 
     function getQueuedTransferByCursor(uint256 _transferCursor) external view returns (QueuedTransfer memory) {
-        if (_transferCursor <= transferCursor) { /* FOR COVERAGE TESTING */ }
-        Require.that(_transferCursor <= transferCursor,
+        Require.that(
+            _transferCursor <= transferCursor,
             _FILE,
             "Invalid transfer cursor"
         );
@@ -393,8 +393,8 @@ abstract contract IsolationModeVaultFactory is
     }
 
     function _ownerSetIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) internal {
-        if (_tokenConverter != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_tokenConverter != address(0),
+        Require.that(
+            _tokenConverter != address(0),
             _FILE,
             "Invalid token converter"
         );
@@ -403,13 +403,13 @@ abstract contract IsolationModeVaultFactory is
     }
 
     function _createVault(address _account) internal returns (address) {
-        if (_account != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_account != address(0),
+        Require.that(
+            _account != address(0),
             _FILE,
             "Invalid account"
         );
-        if (_userToVaultMap[_account] == address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_userToVaultMap[_account] == address(0),
+        Require.that(
+            _userToVaultMap[_account] == address(0),
             _FILE,
             "Vault already exists"
         );
@@ -463,13 +463,13 @@ abstract contract IsolationModeVaultFactory is
     internal
     override
     onlyDolomiteMargin(msg.sender) {
-        if (_from != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_from != address(0),
+        Require.that(
+            _from != address(0),
             _FILE,
             "Transfer from the zero address"
         );
-        if (_to != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_to != address(0),
+        Require.that(
+            _to != address(0),
             _FILE,
             "Transfer to the zero address"
         );
@@ -477,24 +477,24 @@ abstract contract IsolationModeVaultFactory is
         // Since this must be called from DolomiteMargin via Exchange#transferIn/Exchange#transferOut, we can assume
         // that it's non-reentrant
         address dolomiteMargin = address(DOLOMITE_MARGIN());
-        if (_from == dolomiteMargin || _to == dolomiteMargin) { /* FOR COVERAGE TESTING */ }
-        Require.that(_from == dolomiteMargin || _to == dolomiteMargin,
+        Require.that(
+            _from == dolomiteMargin || _to == dolomiteMargin,
             _FILE,
             "from/to must eq DolomiteMargin"
         );
 
         uint _transferCursor = transferCursor;
         QueuedTransfer memory queuedTransfer = _cursorToQueuedTransferMap[_transferCursor];
-        if (queuedTransfer.from == _from&& queuedTransfer.to == _to&& queuedTransfer.amount == _amount&& _vaultToUserMap[queuedTransfer.vault] != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(queuedTransfer.from == _from
+        Require.that(
+            queuedTransfer.from == _from
                 && queuedTransfer.to == _to
                 && queuedTransfer.amount == _amount
                 && _vaultToUserMap[queuedTransfer.vault] != address(0),
             _FILE,
             "Invalid queued transfer"
         );
-        if (!queuedTransfer.isExecuted) { /* FOR COVERAGE TESTING */ }
-        Require.that(!queuedTransfer.isExecuted,
+        Require.that(
+            !queuedTransfer.isExecuted,
             _FILE,
             "Transfer already executed",
             _transferCursor
@@ -504,8 +504,8 @@ abstract contract IsolationModeVaultFactory is
         if (_to == dolomiteMargin) {
             // transfers TO DolomiteMargin must be made FROM a vault or a tokenConverter
             address vaultOwner = _vaultToUserMap[_from];
-            if ((vaultOwner != address(0) && _from == queuedTransfer.vault) || _tokenConverterToIsTrustedMap[_from]) { /* FOR COVERAGE TESTING */ }
-            Require.that((vaultOwner != address(0) && _from == queuedTransfer.vault) || _tokenConverterToIsTrustedMap[_from],
+            Require.that(
+                (vaultOwner != address(0) && _from == queuedTransfer.vault) || _tokenConverterToIsTrustedMap[_from],
                 _FILE,
                 "Invalid from"
             );
@@ -515,12 +515,12 @@ abstract contract IsolationModeVaultFactory is
             );
             _mint(_to, _amount);
         } else {
-            /*assert(_from == dolomiteMargin);*/
+            assert(_from == dolomiteMargin);
 
             // transfers FROM DolomiteMargin must be made TO a vault OR to a tokenConverter
             address vaultOwner = _vaultToUserMap[_to];
-            if (vaultOwner != address(0) || _tokenConverterToIsTrustedMap[_to]) { /* FOR COVERAGE TESTING */ }
-            Require.that(vaultOwner != address(0) || _tokenConverterToIsTrustedMap[_to],
+            Require.that(
+                vaultOwner != address(0) || _tokenConverterToIsTrustedMap[_to],
                 _FILE,
                 "Invalid to"
             );

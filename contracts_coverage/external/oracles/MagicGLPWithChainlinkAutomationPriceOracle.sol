@@ -20,30 +20,27 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
+import { ChainlinkAutomationPriceOracle } from "./ChainlinkAutomationPriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-
 import { Require } from "../../protocol/lib/Require.sol";
-
 import { IERC4626 } from "../interfaces/IERC4626.sol";
 
 
 /**
- * @title   MagicGLPPriceOracle
+ * @title   MagicGLPWithChainlinkAutomationPriceOracle
  * @author  Dolomite
  *
- * @notice  An implementation of the IDolomitePriceOracle interface that gets Abra's MagicGLP price in USD terms.
+ * @notice  An implementation of the ChainlinkAutomationPriceOracle that gets Abra's MagicGLP price in USD terms
+ * @notice  Uses Chainlink Automation
  */
-contract MagicGLPPriceOracle is IDolomitePriceOracle {
+contract MagicGLPWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceOracle {
 
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "MagicGLPPriceOracle";
+    bytes32 private constant _FILE = "MagicGLPWithChainlinkPriceOracle";
 
     // ============================ Public State Variables ============================
 
-    IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
     IERC4626 immutable public MAGIC_GLP; // solhint-disable-line var-name-mixedcase
     uint256 immutable public DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
@@ -51,20 +48,17 @@ contract MagicGLPPriceOracle is IDolomitePriceOracle {
 
     constructor(
         address _dolomiteMargin,
+        address _chainlinkRegistry,
         address _magicGlp,
         uint256 _dfsGlpMarketId
-    ) {
-        DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
+    ) ChainlinkAutomationPriceOracle(_dolomiteMargin, _chainlinkRegistry){
         MAGIC_GLP = IERC4626(_magicGlp);
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
+
+        _updateExchangeRateAndTimestamp();
     }
 
-    function getPrice(
-        address _token
-    )
-    public
-    view
-    returns (IDolomiteStructs.MonetaryPrice memory) {
+    function getPrice(address _token) public view returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
             _token == address(MAGIC_GLP),
             _FILE,
@@ -72,9 +66,14 @@ contract MagicGLPPriceOracle is IDolomitePriceOracle {
             _token
         );
         Require.that(
-            DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
+            DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
             _FILE,
             "magicGLP cannot be borrowable"
+        );
+        Require.that(
+            latestTimestamp + HEARTBEAT + GRACE_PERIOD > block.timestamp,
+            _FILE,
+            "price expired"
         );
 
         return IDolomiteStructs.MonetaryPrice({
@@ -84,13 +83,16 @@ contract MagicGLPPriceOracle is IDolomitePriceOracle {
 
     // ============================ Internal Functions ============================
 
-    function _getCurrentPrice() internal view returns (uint256) {
-        uint256 glpPrice = DOLOMITE_MARGIN.getMarketPrice(DFS_GLP_MARKET_ID).value;
-        uint256 totalSupply = MAGIC_GLP.totalSupply();
-        if (totalSupply == 0) {
+    function _getExchangeRate() internal view override returns (uint256, uint256) {
+        return (MAGIC_GLP.totalAssets(), MAGIC_GLP.totalSupply());
+    }
+
+    function _getCurrentPrice() internal view override returns (uint256) {
+        uint256 glpPrice = DOLOMITE_MARGIN().getMarketPrice(DFS_GLP_MARKET_ID).value;
+        if (exchangeRateDenominator == 0) {
             // exchange rate is 1 if the total supply is 0
             return glpPrice;
         }
-        return glpPrice * MAGIC_GLP.totalAssets() / totalSupply;
+        return glpPrice * exchangeRateNumerator / exchangeRateDenominator;
     }
 }

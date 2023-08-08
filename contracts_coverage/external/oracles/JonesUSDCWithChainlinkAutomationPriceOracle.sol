@@ -20,49 +20,49 @@
 
 pragma solidity ^0.8.9;
 
-import { JonesUSDCMathLib } from "./JonesUSDCMathLib.sol";
-import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomitePriceOracle } from "../../../protocol/interfaces/IDolomitePriceOracle.sol";
-import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../../protocol/lib/Require.sol";
-import { IERC4626 } from "../../interfaces/IERC4626.sol";
-import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
-
+import { ChainlinkAutomationPriceOracle } from "./ChainlinkAutomationPriceOracle.sol";
+import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IERC4626 } from "../interfaces/IERC4626.sol";
+import { IJonesUSDCRegistry } from "../interfaces/jones/IJonesUSDCRegistry.sol";
+import { JonesUSDCMathLib } from "../jones/jusdc/JonesUSDCMathLib.sol";
 
 /**
- * @title   JonesUSDCPriceOracle
+ * @title   JonesUSDCWithChainlinkAutomationPriceOracle
  * @author  Dolomite
  *
- * @notice  An implementation of the IDolomitePriceOracle interface that gets Jones DAO's jUSDC price in USD terms.
+ * @notice  An implementation of the IDolomitePriceOracle interface that gets Jones DAO's jUSDC price in USD terms
+ * @notice  Uses Chainlink automation
  */
-contract JonesUSDCPriceOracle is IDolomitePriceOracle {
+contract JonesUSDCWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceOracle {
     using JonesUSDCMathLib for IJonesUSDCRegistry;
 
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "JonesUSDCPriceOracle";
+    bytes32 private constant _FILE = "jUSDCWithChainlinkPriceOracle";
     uint256 private constant _USDC_DECIMALS_DIFF = 12;
     uint256 private constant _USDC_SCALE_DIFF = 10 ** _USDC_DECIMALS_DIFF;
 
     // ============================ Public State Variables ============================
 
-    IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
     IJonesUSDCRegistry immutable public JONES_USDC_REGISTRY; // solhint-disable-line var-name-mixedcase
     uint256 immutable public USDC_MARKET_ID; // solhint-disable-line var-name-mixedcase
     address immutable public DJUSDC; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
-
     constructor(
         address _dolomiteMargin,
+        address _chainlinkRegistry,
         address _jonesUSDCRegistry,
         uint256 _usdcMarketId,
-        address djUSDC
-    ) {
-        DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
+        address _djUSDC
+    ) ChainlinkAutomationPriceOracle(_dolomiteMargin, _chainlinkRegistry) {
         JONES_USDC_REGISTRY = IJonesUSDCRegistry(_jonesUSDCRegistry);
         USDC_MARKET_ID = _usdcMarketId;
-        DJUSDC = djUSDC;
+        DJUSDC = _djUSDC;
+
+        _updateExchangeRateAndTimestamp();
     }
 
     function getPrice(
@@ -78,9 +78,14 @@ contract JonesUSDCPriceOracle is IDolomitePriceOracle {
             _token
         );
         Require.that(
-            DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
+            DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
             _FILE,
             "jUSDC cannot be borrowable"
+        );
+        Require.that(
+            latestTimestamp + HEARTBEAT > block.timestamp,
+            _FILE,
+            "price expired"
         );
 
         return IDolomiteStructs.MonetaryPrice({
@@ -90,13 +95,16 @@ contract JonesUSDCPriceOracle is IDolomitePriceOracle {
 
     // ============================ Internal Functions ============================
 
-    function _getCurrentPrice() internal view returns (uint256) {
-        uint256 usdcPrice = DOLOMITE_MARGIN.getMarketPrice(USDC_MARKET_ID).value / _USDC_SCALE_DIFF;
+    function _getExchangeRate() internal view override returns (uint256, uint256) {
         IERC4626 jUSDC = JONES_USDC_REGISTRY.jUSDC();
-        uint256 totalSupply = jUSDC.totalSupply();
-        uint256 price = totalSupply == 0
-                ? usdcPrice
-                : usdcPrice * jUSDC.totalAssets() / totalSupply;
+        return (jUSDC.totalAssets(), jUSDC.totalSupply());
+    }
+
+    function _getCurrentPrice() internal view override returns (uint256) {
+        uint256 usdcPrice = DOLOMITE_MARGIN().getMarketPrice(USDC_MARKET_ID).value / _USDC_SCALE_DIFF;
+        uint256 price = exchangeRateDenominator == 0
+            ? usdcPrice
+            : usdcPrice * exchangeRateNumerator / exchangeRateDenominator;
         (uint256 retentionFee, uint256 retentionFeeBase) = JONES_USDC_REGISTRY.getRetentionFee(
             JONES_USDC_REGISTRY.unwrapperTraderForLiquidation()
         );

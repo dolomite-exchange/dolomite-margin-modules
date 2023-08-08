@@ -144,13 +144,13 @@ contract GLPIsolationModeTokenVaultV1 is
     override
     nonReentrant
     onlyVaultOwnerOrVaultFactory(msg.sender) {
-        if (_sender != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_sender != address(0),
+        Require.that(
+            _sender != address(0),
             _FILE,
             "Invalid sender"
         );
-        if (!hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(!hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0,
+        Require.that(
+            !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0,
             _FILE,
             "Cannot transfer more than once"
         );
@@ -201,7 +201,7 @@ contract GLPIsolationModeTokenVaultV1 is
     onlyVaultFactory(msg.sender) {
         if (isAcceptingFullAccountTransfer()) {
             // The fsGLP is already in this vault, so don't materialize a transfer from the vault owner
-            /*assert(_amount == underlyingBalanceOf());*/
+            assert(_amount == underlyingBalanceOf());
         } else {
             sGlp().safeTransferFrom(_from, address(this), _amount);
         }
@@ -220,7 +220,7 @@ contract GLPIsolationModeTokenVaultV1 is
             _withdrawAllGmx(_proxySelf().owner());
         }
 
-        /*assert(_recipient != address(this));*/
+        assert(_recipient != address(this));
         // we can't use the fsGLP because it's not transferable. sGLP contains the authorization and logic for
         // transferring fsGLP tokens.
         sGlp().safeTransfer(_recipient, _amount);
@@ -321,8 +321,8 @@ contract GLPIsolationModeTokenVaultV1 is
         bool _shouldDepositWethIntoDolomite,
         uint256 _depositAccountNumberForWeth
     ) internal {
-        if ((!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth) { /* FOR COVERAGE TESTING */ }
-        Require.that((!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
+        Require.that(
+            (!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
             _FILE,
             "Can only deposit ETH if claiming"
         );

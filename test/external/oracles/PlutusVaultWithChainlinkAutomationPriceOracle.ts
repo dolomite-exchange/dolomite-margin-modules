@@ -31,6 +31,7 @@ import { ADDRESSES } from '@dolomite-margin/dist/src';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { parseEther } from 'ethers/lib/utils';
+import { createTestVaultToken } from '../../../src/utils/dolomite-utils';
 
 const GLP_PRICE = BigNumber.from('984588746906888510'); // $0.984588746906888510
 const CHAINLINK_REGISTRY_ADDRESS = '0x75c0530885F385721fddA23C539AF3701d6183D4';
@@ -40,7 +41,7 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let plvGlpPriceOracleChainlink: PlutusVaultWithChainlinkAutomationPriceOracle;
+  let plvWithChainlinkAutomationPriceOracle: PlutusVaultWithChainlinkAutomationPriceOracle;
   let plvGlpToken: IPlutusVaultGLP;
   let plvGlpRouter: IPlutusVaultGLPRouter;
   let plutusVaultRegistry: PlutusVaultRegistry;
@@ -82,7 +83,7 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
       core.hhUser1,
     );
 
-    plvGlpPriceOracleChainlink = await createPlutusVaultWithChainlinkAutomationPriceOracle(
+    plvWithChainlinkAutomationPriceOracle = await createPlutusVaultWithChainlinkAutomationPriceOracle(
       core,
       plutusVaultRegistry,
       factory,
@@ -101,44 +102,44 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
 
   describe('#DFS_GLP_MARKET_ID', () => {
     it('returns the correct value', async () => {
-      expect(await plvGlpPriceOracleChainlink.DFS_GLP_MARKET_ID()).to.eq(core.marketIds.dfsGlp);
+      expect(await plvWithChainlinkAutomationPriceOracle.DFS_GLP_MARKET_ID()).to.eq(core.marketIds.dfsGlp);
     });
   });
 
   describe('#DPLV_GLP', () => {
     it('returns the correct value', async () => {
-      expect(await plvGlpPriceOracleChainlink.DPLV_GLP()).to.eq(factory.address);
+      expect(await plvWithChainlinkAutomationPriceOracle.DPLV_GLP()).to.eq(factory.address);
     });
   });
 
   describe('#PLUTUS_VAULT_REGISTRY', () => {
     it('returns the correct value', async () => {
-      expect(await plvGlpPriceOracleChainlink.PLUTUS_VAULT_REGISTRY()).to.eq(plutusVaultRegistry.address);
+      expect(await plvWithChainlinkAutomationPriceOracle.PLUTUS_VAULT_REGISTRY()).to.eq(plutusVaultRegistry.address);
     });
   });
 
   describe('#PLUTUS_VAULT_GLP_UNWRAPPER_TRADER', () => {
     it('returns the correct value', async () => {
-      expect(await plvGlpPriceOracleChainlink.PLUTUS_VAULT_GLP_UNWRAPPER_TRADER()).to.eq(unwrapperTrader.address);
+      expect(await plvWithChainlinkAutomationPriceOracle.PLUTUS_VAULT_GLP_UNWRAPPER_TRADER()).to.eq(unwrapperTrader.address);
     });
   });
 
   describe('#latestTimestamp', () => {
     it('returns the correct value', async () => {
-      expect(await plvGlpPriceOracleChainlink.latestTimestamp()).to.eq(deploymentTimestamp);
+      expect(await plvWithChainlinkAutomationPriceOracle.latestTimestamp()).to.eq(deploymentTimestamp);
     });
   });
 
   describe('#exchangeRateNumerator', () => {
     it('returns the correct value', async () => {
-      expect(await plvGlpPriceOracleChainlink.exchangeRateNumerator())
+      expect(await plvWithChainlinkAutomationPriceOracle.exchangeRateNumerator())
         .to.eq(await plvGlpToken.totalAssets());
     });
   });
 
   describe('#exchangeRateDenominator', () => {
     it('returns the correct value', async () => {
-      expect(await plvGlpPriceOracleChainlink.exchangeRateDenominator())
+      expect(await plvWithChainlinkAutomationPriceOracle.exchangeRateDenominator())
         .to.eq(await plvGlpToken.totalSupply());
     });
   });
@@ -148,28 +149,34 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
       const totalAssets = await plvGlpToken.totalAssets();
       const totalSupply = await plvGlpToken.totalSupply();
 
-      const price = (await plvGlpPriceOracleChainlink.getPrice(factory.address)).value;
+      const price = (await plvWithChainlinkAutomationPriceOracle.getPrice(factory.address)).value;
       expect(price).to.eq(calculatePrice(GLP_PRICE, totalAssets, totalSupply, exitFeeBp));
     });
 
     it('returns the correct value when plvGLP has a total supply of 0', async () => {
+      const testToken = await createTestVaultToken(core.tokens.usdc!);
+      await plutusVaultRegistry.connect(core.governance).ownerSetPlvGlpToken(testToken.address);
+      await plvWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
+
+      const price = (await plvWithChainlinkAutomationPriceOracle.getPrice(factory.address)).value;
+      expect(price).to.eq(calculatePrice(GLP_PRICE, BigNumber.from('0'), BigNumber.from('0'), exitFeeBp));
     });
 
     it('fails when token sent is not dplvGLP', async () => {
       await expectThrow(
-        plvGlpPriceOracleChainlink.getPrice(ADDRESSES.ZERO),
+        plvWithChainlinkAutomationPriceOracle.getPrice(ADDRESSES.ZERO),
         `plvWithChainlinkPriceOracle: invalid token <${ADDRESSES.ZERO}>`,
       );
       await expectThrow(
-        plvGlpPriceOracleChainlink.getPrice(core.gmxEcosystem!.fsGlp.address),
+        plvWithChainlinkAutomationPriceOracle.getPrice(core.gmxEcosystem!.fsGlp.address),
         `plvWithChainlinkPriceOracle: invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`,
       );
       await expectThrow(
-        plvGlpPriceOracleChainlink.getPrice(core.tokens.dfsGlp!.address),
+        plvWithChainlinkAutomationPriceOracle.getPrice(core.tokens.dfsGlp!.address),
         `plvWithChainlinkPriceOracle: invalid token <${(core.tokens.dfsGlp!.address).toLowerCase()}>`,
       );
       await expectThrow(
-        plvGlpPriceOracleChainlink.getPrice(core.gmxEcosystem!.glp.address),
+        plvWithChainlinkAutomationPriceOracle.getPrice(core.gmxEcosystem!.glp.address),
         `plvWithChainlinkPriceOracle: invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`,
       );
     });
@@ -177,18 +184,18 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
     it('fails when plvGLP is borrowable', async () => {
       await core.dolomiteMargin.ownerSetIsClosing(core.marketIds.dplvGlp!, false);
       await expectThrow(
-        plvGlpPriceOracleChainlink.getPrice(factory.address),
+        plvWithChainlinkAutomationPriceOracle.getPrice(factory.address),
         'plvWithChainlinkPriceOracle: plvGLP cannot be borrowable',
       );
     });
 
     it('fails when price has expired', async () => {
       await increase(12 * 3600);
-      await plvGlpPriceOracleChainlink.getPrice(factory.address);
+      await plvWithChainlinkAutomationPriceOracle.getPrice(factory.address);
 
       await increase(3600);
       await expectThrow(
-        plvGlpPriceOracleChainlink.getPrice(factory.address),
+        plvWithChainlinkAutomationPriceOracle.getPrice(factory.address),
         'plvWithChainlinkPriceOracle: price expired',
       );
     });
@@ -196,7 +203,7 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
 
   describe('#checkUpkeep', () => {
     it('works normally', async () => {
-      expect((await plvGlpPriceOracleChainlink.connect(zeroAddress).callStatic
+      expect((await plvWithChainlinkAutomationPriceOracle.connect(zeroAddress).callStatic
         .checkUpkeep('0x')).upkeepNeeded).to.eq(false);
     });
   });
@@ -205,21 +212,21 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
     it('works normally', async () => {
       await increase(11 * 3600);
       await expectThrow(
-        plvGlpPriceOracleChainlink.connect(chainlinkRegistry).performUpkeep('0x'),
+        plvWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
         'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met'
       );
 
       await increase(3600);
       await core.testEcosystem!.testPriceOracle!.setPrice(core.tokens.dfsGlp!.address, parseEther('1'));
 
-      await plvGlpPriceOracleChainlink.connect(chainlinkRegistry).performUpkeep('0x');
+      await plvWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
       const upkeepTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
-      expect(await plvGlpPriceOracleChainlink.latestTimestamp()).to.eq(upkeepTimestamp);
+      expect(await plvWithChainlinkAutomationPriceOracle.latestTimestamp()).to.eq(upkeepTimestamp);
 
       const totalAssets = await plvGlpToken.totalAssets();
       const totalSupply = await plvGlpToken.totalSupply();
       const price = calculatePrice(parseEther('1'), totalAssets, totalSupply, exitFeeBp);
-      expect((await plvGlpPriceOracleChainlink.getPrice(factory.address)).value)
+      expect((await plvWithChainlinkAutomationPriceOracle.getPrice(factory.address)).value)
         .to.eq(price);
     });
   });
@@ -230,6 +237,9 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
     totalSupply: BigNumber,
     exitFeeBp: BigNumber
   ): BigNumber {
+    if (totalSupply.eq(0)) {
+      return glpPrice.sub(glpPrice.mul(exitFeeBp).div(FEE_PRECISION));
+    }
     const price = glpPrice.mul(totalAssets).div(totalSupply);
     return price.sub(price.mul(exitFeeBp).div(FEE_PRECISION));
   }

@@ -98,8 +98,8 @@ library DolomiteMarginMath {
     returns (uint128)
     {
         uint128 result = uint128(number);
-        if (result == number) { /* FOR COVERAGE TESTING */ }
-        Require.that(result == number,
+        Require.that(
+            result == number,
             _FILE,
             "Unsafe cast to uint128",
             number
@@ -115,8 +115,8 @@ library DolomiteMarginMath {
     returns (uint96)
     {
         uint96 result = uint96(number);
-        if (result == number) { /* FOR COVERAGE TESTING */ }
-        Require.that(result == number,
+        Require.that(
+            result == number,
             _FILE,
             "Unsafe cast to uint96",
             number
@@ -132,8 +132,8 @@ library DolomiteMarginMath {
     returns (uint32)
     {
         uint32 result = uint32(number);
-        if (result == number) { /* FOR COVERAGE TESTING */ }
-        Require.that(result == number,
+        Require.that(
+            result == number,
             _FILE,
             "Unsafe cast to uint32",
             number
