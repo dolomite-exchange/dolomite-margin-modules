@@ -120,7 +120,8 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
 
   describe('#PLUTUS_VAULT_GLP_UNWRAPPER_TRADER', () => {
     it('returns the correct value', async () => {
-      expect(await plvWithChainlinkAutomationPriceOracle.PLUTUS_VAULT_GLP_UNWRAPPER_TRADER()).to.eq(unwrapperTrader.address);
+      expect(await plvWithChainlinkAutomationPriceOracle.PLUTUS_VAULT_GLP_UNWRAPPER_TRADER())
+        .to.eq(unwrapperTrader.address);
     });
   });
 
