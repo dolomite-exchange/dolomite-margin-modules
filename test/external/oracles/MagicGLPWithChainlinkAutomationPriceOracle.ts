@@ -44,7 +44,10 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
     await core.testEcosystem!.testPriceOracle!.setPrice(core.tokens.dfsGlp!.address, GLP_PRICE);
     await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.dfsGlp!, core.testEcosystem!.testPriceOracle!.address);
 
-    magicGLPWithChainlinkAutomationPriceOracle = await createMagicGLPWithChainlinkAutomationPriceOracle(core, chainlinkRegistry);
+    magicGLPWithChainlinkAutomationPriceOracle = await createMagicGLPWithChainlinkAutomationPriceOracle(
+      core,
+      chainlinkRegistry
+    );
     magicGLPWithChainlinkAutomationPriceOracleNoSupply =
       await createContractWithAbi<MagicGLPWithChainlinkAutomationPriceOracle>(
         MagicGLPWithChainlinkAutomationPriceOracle__factory.abi,

@@ -154,7 +154,13 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     function _checkUpkeepConditions() internal view returns (bool) {
         uint256 _cachedExchangeRate = exchangeRateNumerator * ONE_UNIT / exchangeRateDenominator;
         (uint256 _currentNumerator, uint256 _currentDenominator) = _getExchangeRate();
-        uint256 _currentExchangeRate = _currentNumerator * ONE_UNIT / _currentDenominator;
+        uint256 _currentExchangeRate;
+        if (_currentDenominator == 0) {
+            // Should we just return false instead?
+            _currentExchangeRate = _currentNumerator * ONE_UNIT;
+        } else {
+            _currentExchangeRate = _currentNumerator * ONE_UNIT / _currentDenominator;
+        }
 
         uint256 upperEdge = _cachedExchangeRate * UPPER_EDGE / 10000;
         uint256 lowerEdge = _cachedExchangeRate * LOWER_EDGE / 10000;

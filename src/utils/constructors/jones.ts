@@ -49,7 +49,7 @@ export function getJonesUSDCPriceOracleConstructorParams(
   ];
 }
 
-export function getJonesUSDCPriceOracleChainlinkConstructorParams(
+export function getJonesUSDCWithChainlinkAutomationPriceOracleCosntructorParams(
   core: CoreProtocol,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
@@ -61,10 +61,10 @@ export function getJonesUSDCPriceOracleChainlinkConstructorParams(
 
   return [
     core.dolomiteMargin.address,
+    chainlinkRegistry.address,
     jonesUSDCRegistry.address,
     core.marketIds.usdc,
     djUSDCToken.address,
-    chainlinkRegistry.address
   ];
 }
 

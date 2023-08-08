@@ -59,7 +59,7 @@ contract PlutusVaultWithChainlinkAutomationPriceOracle is ChainlinkAutomationPri
         address _dplvGlp,
         address _plutusVaultRegistry,
         address _plutusVaultGLPUnwrapperTrader
-    ) ChainlinkAutomationPriceOracle(_dolomiteMargin, _chainlinkRegistry){
+    ) ChainlinkAutomationPriceOracle(_dolomiteMargin, _chainlinkRegistry) {
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
         DPLV_GLP = _dplvGlp;
         PLUTUS_VAULT_REGISTRY = IPlutusVaultRegistry(_plutusVaultRegistry);

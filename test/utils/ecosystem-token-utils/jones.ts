@@ -13,17 +13,18 @@ import {
   JonesUSDCIsolationModeWrapperTraderV2,
   JonesUSDCIsolationModeWrapperTraderV2__factory,
   JonesUSDCPriceOracle,
-  JonesUSDCPriceOracle__factory, JonesUSDCPriceOracleChainlink, JonesUSDCPriceOracleChainlink__factory,
+  JonesUSDCPriceOracle__factory, JonesUSDCWithChainlinkAutomationPriceOracle, JonesUSDCPriceOracleChainlink__factory,
   JonesUSDCRegistry,
   JonesUSDCRegistry__factory,
   RegistryProxy,
-  RegistryProxy__factory,
+  RegistryProxy__factory, JonesUSDCWithChainlinkAutomationPriceOracle__factory,
 } from '../../../src/types';
 import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
   getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,
   getJonesUSDCIsolationModeVaultFactoryConstructorParams,
-  getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams, getJonesUSDCPriceOracleChainlinkConstructorParams,
+  getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
+  getJonesUSDCWithChainlinkAutomationPriceOracleCosntructorParams,
   getJonesUSDCPriceOracleConstructorParams,
   getJonesUSDCRegistryConstructorParams,
 } from '../../../src/utils/constructors/jones';
@@ -73,16 +74,16 @@ export function createJonesUSDCPriceOracle(
   );
 }
 
-export async function createJonesUSDCPriceOracleChainlink(
+export async function createJonesUSDCWithChainlinkAutomationPriceOracle(
   core: CoreProtocol,
   jonesUSDCRegistry: JonesUSDCRegistry,
   djUSDCToken: { address: address },
   chainlinkRegistry: SignerWithAddress
-): Promise<JonesUSDCPriceOracleChainlink> {
+): Promise<JonesUSDCWithChainlinkAutomationPriceOracle> {
   return createContractWithAbi(
-    JonesUSDCPriceOracleChainlink__factory.abi,
-    JonesUSDCPriceOracleChainlink__factory.bytecode,
-    getJonesUSDCPriceOracleChainlinkConstructorParams(
+    JonesUSDCWithChainlinkAutomationPriceOracle__factory.abi,
+    JonesUSDCWithChainlinkAutomationPriceOracle__factory.bytecode,
+    getJonesUSDCWithChainlinkAutomationPriceOracleCosntructorParams(
       core,
       jonesUSDCRegistry,
       djUSDCToken,
