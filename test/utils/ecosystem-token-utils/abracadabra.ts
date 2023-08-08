@@ -1,7 +1,7 @@
 import {
   MagicGLPPriceOracle,
   MagicGLPPriceOracle__factory,
-  MagicGLPPriceOracleChainlink,
+  MagicGLPWithChainlinkAutomationPriceOracle,
   MagicGLPPriceOracleChainlink__factory,
   MagicGLPUnwrapperTraderV1,
   MagicGLPUnwrapperTraderV1__factory,
@@ -10,11 +10,11 @@ import {
   MagicGLPWrapperTraderV1,
   MagicGLPWrapperTraderV1__factory,
   MagicGLPWrapperTraderV2,
-  MagicGLPWrapperTraderV2__factory,
+  MagicGLPWrapperTraderV2__factory, MagicGLPWithChainlinkAutomationPriceOracle__factory,
 } from '../../../src/types';
 import {
   getMagicGLPPriceOracleConstructorParams,
-  getMagicGLPPriceOracleChainlinkConstructorParams,
+  getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams,
   getMagicGLPUnwrapperTraderV1ConstructorParams,
   getMagicGLPUnwrapperTraderV2ConstructorParams,
   getMagicGLPWrapperTraderV1ConstructorParams,
@@ -32,16 +32,17 @@ export async function createMagicGLPPriceOracle(core: CoreProtocol): Promise<Mag
   );
 }
 
-export async function createMagicGLPPriceOracleChainlink(
+export async function createMagicGLPWithChainlinkAutomationPriceOracle(
   core: CoreProtocol,
   chainlinkRegistry: SignerWithAddress
-): Promise<MagicGLPPriceOracleChainlink> {
+): Promise<MagicGLPWithChainlinkAutomationPriceOracle> {
   return createContractWithAbi(
-    MagicGLPPriceOracleChainlink__factory.abi,
-    MagicGLPPriceOracleChainlink__factory.bytecode,
-    getMagicGLPPriceOracleChainlinkConstructorParams(core, chainlinkRegistry),
+    MagicGLPWithChainlinkAutomationPriceOracle__factory.abi,
+    MagicGLPWithChainlinkAutomationPriceOracle__factory.bytecode,
+    getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams(core, chainlinkRegistry),
   );
 }
+
 export async function createMagicGLPUnwrapperTraderV1(core: CoreProtocol): Promise<MagicGLPUnwrapperTraderV1> {
   return createContractWithAbi(
     MagicGLPUnwrapperTraderV1__factory.abi,

@@ -6,9 +6,9 @@ import {
   PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory,
   PlutusVaultGLPIsolationModeVaultFactory,
   PlutusVaultGLPIsolationModeVaultFactory__factory,
-  PlutusVaultGLPPriceOracleChainlink,
+  PlutusVaultWithChainlinkAutomationPriceOracle,
   PlutusVaultRegistry,
-  PlutusVaultRegistry__factory
+  PlutusVaultRegistry__factory, WithNoTotalSupplyPlutusVaultGLPPriceOracleChainlink
 } from '../../../src/types';
 import { BigNumber, BigNumberish } from 'ethers';
 import { Network } from '../../../src/utils/no-deps-constants';
@@ -34,11 +34,11 @@ const GLP_PRICE = BigNumber.from('984588746906888510'); // $0.984588746906888510
 const CHAINLINK_REGISTRY_ADDRESS = '0x75c0530885F385721fddA23C539AF3701d6183D4';
 const FEE_PRECISION = BigNumber.from('10000');
 
-describe('PlutusVaultGLPPriceOracleChainlink', () => {
+describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let plvGlpPriceOracleChainlink: PlutusVaultGLPPriceOracleChainlink;
+  let plvGlpPriceOracleChainlink: PlutusVaultWithChainlinkAutomationPriceOracle;
   let plvGlpToken: IPlutusVaultGLP;
   let plvGlpRouter: IPlutusVaultGLPRouter;
   let plutusVaultRegistry: PlutusVaultRegistry;
@@ -199,7 +199,7 @@ describe('PlutusVaultGLPPriceOracleChainlink', () => {
     xit('fails when called by address other than zero address', async () => {
       await expectThrow(
         plvGlpPriceOracleChainlink.connect(chainlinkRegistry).checkUpkeep('0x'),
-        'MagicGLPPriceOracleChainlink: static rpc calls only'
+        'MagicGLPWithChainlinkAutomationPriceOracle.sol: static rpc calls only'
       );
     });
 

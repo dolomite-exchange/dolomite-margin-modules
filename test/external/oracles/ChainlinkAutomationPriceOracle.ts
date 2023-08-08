@@ -1,13 +1,19 @@
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance
+} from '../../utils/setup';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
-  CustomTestToken,
+  CustomTestVaultToken,
   TestChainlinkAutomationPriceOracle,
   TestChainlinkAutomationPriceOracle__factory
 } from '../../../src/types';
-import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createTestToken, createTestVaultToken } from '../../../src/utils/dolomite-utils';
 import { expect } from 'chai';
 import { expectThrow } from '../../utils/assertions';
 import { ethers } from 'hardhat';
@@ -22,7 +28,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let token: CustomTestToken;
+  let token: CustomTestVaultToken;
   let marketId: BigNumber;
   let chainlinkRegistry: SignerWithAddress;
   let deploymentTimestamp: BigNumberish;
@@ -35,7 +41,9 @@ describe('ChainlinkAutomationPriceOracle', () => {
     chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_ADDRESS, true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
-    token = await createTestToken();
+    token = await createTestVaultToken(core.tokens.usdc!);
+    await setupUSDCBalance(core, core.hhUser1, 1000e6, core.dolomiteMargin);
+    await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 100e6);
     await token.addBalance(core.hhUser1.address, parseEther('10000'));
     await core.testEcosystem!.testPriceOracle.setPrice(
       token.address,
@@ -66,7 +74,8 @@ describe('ChainlinkAutomationPriceOracle', () => {
       expect(await chainlinkAutomationPriceOracle.LOWER_EDGE()).to.eq(9975);
       expect(await chainlinkAutomationPriceOracle.CHAINLINK_REGISTRY()).to.eq(chainlinkRegistry.address);
 
-      expect(await chainlinkAutomationPriceOracle.exchangeRate()).to.eq(parseEther('10000'));
+      expect(await chainlinkAutomationPriceOracle.exchangeRateNumerator()).to.eq(100e6);
+      expect(await chainlinkAutomationPriceOracle.exchangeRateDenominator()).to.eq(parseEther('10000'));
       expect(await chainlinkAutomationPriceOracle.latestTimestamp()).to.eq(deploymentTimestamp);
     });
   });
@@ -167,6 +176,10 @@ describe('ChainlinkAutomationPriceOracle', () => {
     it('should work', async () => {
       expect((await chainlinkAutomationPriceOracle.connect(zeroAddress)
         .callStatic.checkUpkeep('0x')).upkeepNeeded).to.eq(false);
+
+      await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 100e6);
+      expect((await chainlinkAutomationPriceOracle.connect(zeroAddress)
+        .callStatic.checkUpkeep('0x')).upkeepNeeded).to.eq(true);
     });
 
     it('fails when called by address other than zero address', async () => {
@@ -178,13 +191,13 @@ describe('ChainlinkAutomationPriceOracle', () => {
     });
 
     it('returns false when deviation is less than 0.25% and lastTimestamp is less than heartbeat', async () => {
-      await token.addBalance(core.hhUser1.address, parseEther('24'));
+      await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 24e4);
       expect((await chainlinkAutomationPriceOracle.connect(zeroAddress)
         .callStatic.checkUpkeep('0x')).upkeepNeeded).to.eq(false);
     });
 
-    it('returns true when deviation is greater than .25% and lastTimestamp is less than heartbeat', async () => {
-      await token.addBalance(core.hhUser1.address, parseEther('25'));
+    it('returns true when deviation is equal to .25% and lastTimestamp is less than heartbeat', async () => {
+      await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 25e4);
       expect((await chainlinkAutomationPriceOracle.connect(zeroAddress)
         .callStatic.checkUpkeep('0x')).upkeepNeeded).to.eq(true);
     });
@@ -205,28 +218,33 @@ describe('ChainlinkAutomationPriceOracle', () => {
       );
 
       await increase(3600);
+      await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 100e6);
       await chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
       const updateTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
-      expect(await chainlinkAutomationPriceOracle.exchangeRate()).to.eq(parseEther('10000'));
+      expect(await chainlinkAutomationPriceOracle.exchangeRateNumerator()).to.eq(200e6);
+      expect(await chainlinkAutomationPriceOracle.exchangeRateDenominator()).to.eq(parseEther('10000'));
       expect(await chainlinkAutomationPriceOracle.latestTimestamp()).to.eq(updateTimestamp);
     });
 
     it('works if greater than deviation upperEdge', async () => {
-      await token.addBalance(core.hhUser1.address, parseEther('25'));
+      await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 25e4);
       await chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
       const updateTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
-      expect(await chainlinkAutomationPriceOracle.exchangeRate()).to.eq(parseEther('10025'));
+      expect(await chainlinkAutomationPriceOracle.exchangeRateNumerator()).to.eq(10025e4);
+      expect(await chainlinkAutomationPriceOracle.exchangeRateDenominator()).to.eq(parseEther('10000'));
       expect(await chainlinkAutomationPriceOracle.latestTimestamp()).to.eq(updateTimestamp);
     });
 
     it('works if less than deviation lowerEdge', async () => {
-      await token.connect(core.hhUser1).burn(parseEther('25'));
+      const impersonatedToken = await impersonate(token.address, true);
+      await core.tokens.usdc!.connect(impersonatedToken).transfer(core.hhUser1.address, 25e4);
       await chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
       const updateTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
-      expect(await chainlinkAutomationPriceOracle.exchangeRate()).to.eq(parseEther('9975'));
+      expect(await chainlinkAutomationPriceOracle.exchangeRateNumerator()).to.eq(9975e4);
+      expect(await chainlinkAutomationPriceOracle.exchangeRateDenominator()).to.eq(parseEther('10000'));
       expect(await chainlinkAutomationPriceOracle.latestTimestamp()).to.eq(updateTimestamp);
     });
 
@@ -238,23 +256,23 @@ describe('ChainlinkAutomationPriceOracle', () => {
     });
 
     it('fails when before heartbeat and within deviation range', async () => {
-      await token.connect(core.hhUser1).burn(parseEther('24'));
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
         'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met'
       );
 
-      await token.addBalance(core.hhUser1.address, parseEther('48'));
+      await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 24e4);
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
         'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met'
       );
 
-      await token.addBalance(core.hhUser1.address, parseEther('1'));
+      await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 1e4);
       await chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
       const updateTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
-      expect(await chainlinkAutomationPriceOracle.exchangeRate()).to.eq(parseEther('10025'));
+      expect(await chainlinkAutomationPriceOracle.exchangeRateNumerator()).to.eq(10025e4);
+      expect(await chainlinkAutomationPriceOracle.exchangeRateDenominator()).to.eq(parseEther('10000'));
       expect(await chainlinkAutomationPriceOracle.latestTimestamp()).to.eq(updateTimestamp);
     });
   });

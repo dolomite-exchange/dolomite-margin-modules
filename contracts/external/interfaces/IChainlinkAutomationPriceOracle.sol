@@ -76,7 +76,9 @@ interface IChainlinkAutomationPriceOracle is IDolomitePriceOracle, AutomationCom
 
     function CHAINLINK_REGISTRY() external view returns (address);
 
-    function exchangeRate() external view returns (uint256);
+    function exchangeRateNumerator() external view returns (uint256);
+
+    function exchangeRateDenominator() external view returns (uint256);
 
     function latestTimestamp() external view returns (uint256);
 }

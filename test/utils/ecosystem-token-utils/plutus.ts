@@ -17,7 +17,9 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV2,
   PlutusVaultGLPIsolationModeWrapperTraderV2__factory,
   PlutusVaultGLPPriceOracle,
-  PlutusVaultGLPPriceOracle__factory, PlutusVaultGLPPriceOracleChainlink, PlutusVaultGLPPriceOracleChainlink__factory,
+  PlutusVaultGLPPriceOracle__factory,
+  PlutusVaultWithChainlinkAutomationPriceOracle,
+  PlutusVaultGLPPriceOracleChainlink__factory,
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory,
   RegistryProxy,
@@ -108,9 +110,9 @@ export function createPlutusVaultGLPPriceOracleChainlink(
   dplvGlpToken: { address: address },
   unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   chainlinkRegistry: SignerWithAddress,
-): Promise<PlutusVaultGLPPriceOracleChainlink> {
-  return createContractWithAbi<PlutusVaultGLPPriceOracleChainlink>(
-  PlutusVaultGLPPriceOracleChainlink__factory.abi,
+): Promise<PlutusVaultWithChainlinkAutomationPriceOracle> {
+  return createContractWithAbi<PlutusVaultWithChainlinkAutomationPriceOracle>(
+    PlutusVaultGLPPriceOracleChainlink__factory.abi,
     PlutusVaultGLPPriceOracleChainlink__factory.bytecode,
     getPlutusVaultGLPPriceOracleChainlinkConstructorParams(
       core,
@@ -121,6 +123,7 @@ export function createPlutusVaultGLPPriceOracleChainlink(
     ),
   );
 }
+
 export function createPlutusVaultGLPIsolationModeUnwrapperTraderV1(
   core: CoreProtocol,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,

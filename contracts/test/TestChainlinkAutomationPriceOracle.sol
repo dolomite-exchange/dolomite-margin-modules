@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "./ICustomTestVaultToken.sol";
 
 import "../external/oracles/ChainlinkAutomationPriceOracle.sol";
 
@@ -34,15 +35,14 @@ import "hardhat/console.sol";
  */
 contract TestChainlinkAutomationPriceOracle is ChainlinkAutomationPriceOracle {
 
-    IERC20 public TOKEN;
+    ICustomTestVaultToken public TOKEN;
     uint256 public MARKET_ID;
 
     constructor(address _dolomiteMargin, address _chainlinkRegistry, address _token, uint256 _marketId) ChainlinkAutomationPriceOracle(_dolomiteMargin, _chainlinkRegistry) {
-        TOKEN = IERC20(_token);
+        TOKEN = ICustomTestVaultToken(_token);
         MARKET_ID = _marketId;
 
-        exchangeRate = _getExchangeRate();
-        latestTimestamp = block.timestamp;
+        _updateExchangeRateAndTimestamp();
     }
 
     function getPrice(address _token) external view returns (IDolomiteStructs.MonetaryPrice memory) {
@@ -52,8 +52,8 @@ contract TestChainlinkAutomationPriceOracle is ChainlinkAutomationPriceOracle {
         });
     }
 
-    function _getExchangeRate() internal override view returns (uint256) {
-        return TOKEN.totalSupply();
+    function _getExchangeRate() internal override view returns (uint256, uint256) {
+        return (TOKEN.totalAssets(), TOKEN.totalSupply());
     }
 
     function _getCurrentPrice() internal override view returns (uint256) {

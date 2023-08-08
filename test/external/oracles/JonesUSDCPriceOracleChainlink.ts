@@ -1,28 +1,28 @@
 import { BigNumber, BigNumberish } from 'ethers';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 import {
   CustomTestToken,
   IERC4626, IJonesWhitelistController, IJonesWhitelistController__factory,
   JonesUSDCIsolationModeVaultFactory, JonesUSDCIsolationModeVaultFactory__factory,
   JonesUSDCPriceOracleChainlink, JonesUSDCPriceOracleChainlink__factory,
   JonesUSDCRegistry, JonesUSDCRegistry__factory
-} from '../../../../src/types';
-import deployments from '../../../../scripts/deployments.json';
-import { Network } from '../../../../src/utils/no-deps-constants';
+} from '../../../src/types';
+import deployments from '../../../scripts/deployments.json';
+import { Network } from '../../../src/utils/no-deps-constants';
 import {
   getBlockTimestamp,
   getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot
-} from '../../../utils';
+} from '../../utils';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { createContractWithAbi, createTestToken } from '../../../../src/utils/dolomite-utils';
-import { createJonesUSDCPriceOracleChainlink } from '../../../utils/ecosystem-token-utils/jones';
+import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
+import { createJonesUSDCPriceOracleChainlink } from '../../utils/ecosystem-token-utils/jones';
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { expectThrow } from '../../../utils/assertions';
+import { expectThrow } from '../../utils/assertions';
 import { ADDRESSES } from '@dolomite-margin/dist/src';
 
 const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.99998605
@@ -189,7 +189,7 @@ describe('JonesUSDCPriceOracleChainlink', () => {
     xit('fails when called by address other than zero address', async () => {
       await expectThrow(
         jonesUSDCPriceOracleChainlink.connect(chainlinkRegistry).checkUpkeep('0x'),
-        'MagicGLPPriceOracleChainlink: static rpc calls only'
+        'MagicGLPWithChainlinkAutomationPriceOracle.sol: static rpc calls only'
       );
     });
 

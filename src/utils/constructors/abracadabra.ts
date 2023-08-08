@@ -9,15 +9,15 @@ export function getMagicGLPPriceOracleConstructorParams(core: CoreProtocol): any
   ];
 }
 
-export function getMagicGLPPriceOracleChainlinkConstructorParams(
+export function getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams(
   core: CoreProtocol,
   chainlinkRegistry: SignerWithAddress
 ): any[] {
   return [
     core.dolomiteMargin.address,
+    chainlinkRegistry.address,
     core.abraEcosystem!.magicGlp.address,
     core.marketIds.dfsGlp!,
-    chainlinkRegistry.address
   ];
 }
 

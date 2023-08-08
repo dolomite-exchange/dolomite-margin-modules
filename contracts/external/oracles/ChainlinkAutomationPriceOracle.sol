@@ -41,6 +41,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "ChainlinkAutomationPriceOracle";
+    uint256 private constant ONE_UNIT = 10 ** 18;
 
     // ============================ Public State Variables ============================
 
@@ -50,7 +51,8 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     uint256 public LOWER_EDGE = 9975;
     address public CHAINLINK_REGISTRY; // solhint-disable-line var-name-mixedcase
 
-    uint256 public exchangeRate;
+    uint256 public exchangeRateNumerator;
+    uint256 public exchangeRateDenominator;
     uint256 public latestTimestamp;
 
     // ============================ Constructor ============================
@@ -104,8 +106,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
             "checkUpkeep conditions not met"
         );
 
-        exchangeRate = _getExchangeRate();
-        latestTimestamp = block.timestamp;
+        _updateExchangeRateAndTimestamp();
     }
 
     // ============================ Internal Functions ============================
@@ -151,17 +152,23 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function _checkUpkeepConditions() internal view returns (bool) {
-        uint256 _cachedExchangeRate = exchangeRate;
-        uint256 _currentExchangeRate = _getExchangeRate();
+        uint256 _cachedExchangeRate = exchangeRateNumerator * ONE_UNIT / exchangeRateDenominator;
+        (uint256 _currentNumerator, uint256 _currentDenominator) = _getExchangeRate();
+        uint256 _currentExchangeRate = _currentNumerator * ONE_UNIT / _currentDenominator;
 
         uint256 upperEdge = _cachedExchangeRate * UPPER_EDGE / 10000;
         uint256 lowerEdge = _cachedExchangeRate * LOWER_EDGE / 10000;
         return (_currentExchangeRate >= upperEdge || _currentExchangeRate <= lowerEdge || block.timestamp >= latestTimestamp + HEARTBEAT);
     }
 
+    function _updateExchangeRateAndTimestamp() internal {
+        (exchangeRateNumerator, exchangeRateDenominator) = _getExchangeRate();
+        latestTimestamp = block.timestamp;
+    }
+
     // ============================ Virtual Functions ============================
 
-    function _getExchangeRate() internal virtual view returns (uint256);
+    function _getExchangeRate() internal virtual view returns (uint256, uint256);
 
     function _getCurrentPrice() internal virtual view returns (uint256);
 }
