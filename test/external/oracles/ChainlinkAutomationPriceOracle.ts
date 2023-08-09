@@ -171,7 +171,6 @@ describe('ChainlinkAutomationPriceOracle', () => {
     });
   });
 
-  // Adjust cause view
   describe('#checkUpkeep', () => {
     it('should work', async () => {
       expect((await chainlinkAutomationPriceOracle.connect(zeroAddress)
@@ -188,6 +187,12 @@ describe('ChainlinkAutomationPriceOracle', () => {
           .callStatic.checkUpkeep('0x'),
         'ChainlinkAutomationPriceOracle: static rpc calls only',
       );
+    });
+
+    it('returns false when exchangeRateDenominator is 0', async () => {
+      await token.connect(core.hhUser1).burn(parseEther('10000'));
+      expect((await chainlinkAutomationPriceOracle.connect(zeroAddress)
+        .callStatic.checkUpkeep('0x')).upkeepNeeded).to.eq(false);
     });
 
     it('returns false when deviation is less than 0.25% and lastTimestamp is less than heartbeat', async () => {
@@ -227,14 +232,6 @@ describe('ChainlinkAutomationPriceOracle', () => {
       expect(await chainlinkAutomationPriceOracle.latestTimestamp()).to.eq(updateTimestamp);
     });
 
-    it('works when totalSupply is zero', async () => {
-      await token.connect(core.hhUser1).burn(parseEther('10000'));
-      await chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
-
-      expect(await chainlinkAutomationPriceOracle.exchangeRateNumerator()).to.eq(100e6);
-      expect(await chainlinkAutomationPriceOracle.exchangeRateDenominator()).to.eq(0);
-    });
-
     it('works if greater than deviation upperEdge', async () => {
       await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 25e4);
       await chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
@@ -254,6 +251,14 @@ describe('ChainlinkAutomationPriceOracle', () => {
       expect(await chainlinkAutomationPriceOracle.exchangeRateNumerator()).to.eq(9975e4);
       expect(await chainlinkAutomationPriceOracle.exchangeRateDenominator()).to.eq(parseEther('10000'));
       expect(await chainlinkAutomationPriceOracle.latestTimestamp()).to.eq(updateTimestamp);
+    });
+
+    it('fails when new denominator is zero', async () => {
+      await token.connect(core.hhUser1).burn(parseEther('10000'));
+      await expectThrow(
+        chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
+        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met'
+      );
     });
 
     it('fails when not called by Chainlink', async () => {

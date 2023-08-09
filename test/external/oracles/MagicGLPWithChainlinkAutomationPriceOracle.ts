@@ -59,7 +59,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
           core.marketIds.dfsGlp!,
         ],
       );
-    //
+
     await setupTestMarket(core, magicGlpWithNoTotalSupply, true, magicGLPWithChainlinkAutomationPriceOracleNoSupply);
     await increase(12 * 3600);
     await magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');

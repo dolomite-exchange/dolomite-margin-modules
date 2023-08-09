@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { AutomationCompatibleInterface } from "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
+import { IChainlinkAutomation } from "./IChainlinkAutomation.sol";
 
 import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
@@ -29,10 +29,9 @@ import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOr
  * @title   IChainlinkAutomationPriceOracle
  * @author  Dolomite
  *
- * @notice  An abstract contract that implements the IDolomitePriceOracle interface
- * @notice  Contains variables and functions for Chainlink Automation
+ * @notice  A contract that implements the IDolomitePriceOracle interface using Chainlink Automation
  */
-interface IChainlinkAutomationPriceOracle is IDolomitePriceOracle, AutomationCompatibleInterface, IOnlyDolomiteMargin {
+interface IChainlinkAutomationPriceOracle is IDolomitePriceOracle, IChainlinkAutomation, IOnlyDolomiteMargin {
 
     // ================================================
     // ==================== Events ====================
@@ -52,14 +51,34 @@ interface IChainlinkAutomationPriceOracle is IDolomitePriceOracle, AutomationCom
     // =================== Admin Functions ====================
     // ========================================================
 
+    /**
+     *
+     * @param  _heartbeat   The new heartbeat for Chainlink automation
+     */
     function ownerSetHeartbeat(uint256 _heartbeat) external;
 
+    /**
+     *
+     * @param  _gracePeriod   The new grace period for the getPrice function
+     */
     function ownerSetGracePeriod(uint256 _gracePeriod) external;
 
+    /**
+     *
+     * @param  _upperEdge   The new deviation upper edge for Chainlink automation
+     */
     function ownerSetUpperEdge(uint256 _upperEdge) external;
 
+    /**
+     *
+     * @param  _lowerEdge   The new deviation lower edge for Chainlink automation
+     */
     function ownerSetLowerEdge(uint256 _lowerEdge) external;
 
+    /**
+     *
+     * @param  _chainlinkRegistry   The new address of the chainlink registry
+     */
     function ownerSetChainlinkRegistry(address _chainlinkRegistry) external;
 
     // ========================================================

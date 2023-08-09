@@ -1,4 +1,10 @@
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance
+} from '../../utils/setup';
 import {
   IPlutusVaultGLP, IPlutusVaultGLP__factory, IPlutusVaultGLPRouter, IPlutusVaultGLPRouter__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1,
@@ -8,7 +14,7 @@ import {
   PlutusVaultGLPIsolationModeVaultFactory__factory,
   PlutusVaultWithChainlinkAutomationPriceOracle,
   PlutusVaultRegistry,
-  PlutusVaultRegistry__factory,
+  PlutusVaultRegistry__factory, CustomTestVaultToken, PlutusVaultWithChainlinkAutomationPriceOracle__factory,
 } from '../../../src/types';
 import { BigNumber, BigNumberish } from 'ethers';
 import { Network } from '../../../src/utils/no-deps-constants';
@@ -31,7 +37,7 @@ import { ADDRESSES } from '@dolomite-margin/dist/src';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { parseEther } from 'ethers/lib/utils';
-import { createTestVaultToken } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
 
 const GLP_PRICE = BigNumber.from('984588746906888510'); // $0.984588746906888510
 const CHAINLINK_REGISTRY_ADDRESS = '0x75c0530885F385721fddA23C539AF3701d6183D4';
@@ -43,6 +49,7 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
   let core: CoreProtocol;
   let plvWithChainlinkAutomationPriceOracle: PlutusVaultWithChainlinkAutomationPriceOracle;
   let plvGlpToken: IPlutusVaultGLP;
+  let plvGlpTokenNoSupply: CustomTestVaultToken;
   let plvGlpRouter: IPlutusVaultGLPRouter;
   let plutusVaultRegistry: PlutusVaultRegistry;
   let factory: PlutusVaultGLPIsolationModeVaultFactory;
@@ -74,10 +81,15 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
       deployments.PlutusVaultGLPIsolationModeUnwrapperTraderV2[network].address,
       core.hhUser1,
     );
+
     plvGlpToken = IPlutusVaultGLP__factory.connect(
       await plutusVaultRegistry.plvGlpToken(),
       core.hhUser1,
     );
+    plvGlpTokenNoSupply = await createTestVaultToken(core.tokens.usdc!);
+    await setupUSDCBalance(core, core.hhUser1, 1000e6, core.dolomiteMargin);
+    await core.tokens.usdc!.connect(core.hhUser1).transfer(plvGlpTokenNoSupply.address, 100e6);
+
     plvGlpRouter = IPlutusVaultGLPRouter__factory.connect(
       await plutusVaultRegistry.plvGlpRouter(),
       core.hhUser1,
@@ -155,11 +167,24 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
     });
 
     it('returns the correct value when plvGLP has a total supply of 0', async () => {
-      const testToken = await createTestVaultToken(core.tokens.usdc!);
-      await plutusVaultRegistry.connect(core.governance).ownerSetPlvGlpToken(testToken.address);
-      await plvWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
+      await plutusVaultRegistry.connect(core.governance).ownerSetPlvGlpToken(plvGlpTokenNoSupply.address);
+      expect(await plvGlpTokenNoSupply.totalSupply()).to.eq(0);
 
-      const price = (await plvWithChainlinkAutomationPriceOracle.getPrice(factory.address)).value;
+      const plvWithChainlinkAutomationPriceOracleNoSupply =
+        await createContractWithAbi<PlutusVaultWithChainlinkAutomationPriceOracle>(
+          PlutusVaultWithChainlinkAutomationPriceOracle__factory.abi,
+          PlutusVaultWithChainlinkAutomationPriceOracle__factory.bytecode,
+          [
+            core.dolomiteMargin.address,
+            chainlinkRegistry.address,
+            core.marketIds.dfsGlp!,
+            factory.address,
+            plutusVaultRegistry.address,
+            unwrapperTrader.address
+          ],
+        );
+
+      const price = (await plvWithChainlinkAutomationPriceOracleNoSupply.getPrice(factory.address)).value;
       expect(price).to.eq(calculatePrice(GLP_PRICE, BigNumber.from('0'), BigNumber.from('0'), exitFeeBp));
     });
 

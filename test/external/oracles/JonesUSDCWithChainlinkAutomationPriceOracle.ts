@@ -1,10 +1,22 @@
 import { BigNumber, BigNumberish } from 'ethers';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 import {
-  IERC4626, IJonesWhitelistController, IJonesWhitelistController__factory,
-  JonesUSDCIsolationModeVaultFactory, JonesUSDCIsolationModeVaultFactory__factory,
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance
+} from '../../utils/setup';
+import {
+  IERC4626,
+  IJonesWhitelistController,
+  IJonesWhitelistController__factory,
+  JonesUSDCIsolationModeVaultFactory,
+  JonesUSDCIsolationModeVaultFactory__factory,
   JonesUSDCWithChainlinkAutomationPriceOracle,
-  JonesUSDCRegistry, JonesUSDCRegistry__factory
+  JonesUSDCRegistry,
+  JonesUSDCRegistry__factory,
+  JonesUSDCWithChainlinkAutomationPriceOracle__factory,
+  CustomTestVaultToken
 } from '../../../src/types';
 import deployments from '../../../scripts/deployments.json';
 import { Network } from '../../../src/utils/no-deps-constants';
@@ -38,6 +50,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
   let factory: JonesUSDCIsolationModeVaultFactory;
   let jonesUSDCWithChainlinkAutomationPriceOracle: JonesUSDCWithChainlinkAutomationPriceOracle;
   let jUSDC: IERC4626;
+  let jUSDCNoSupply: CustomTestVaultToken;
   let chainlinkRegistry: SignerWithAddress;
   let deploymentTimestamp: BigNumberish;
   let retentionFee: BigNumber;
@@ -48,6 +61,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     const network = Network.ArbitrumOne;
     const blockNumber = await getRealLatestBlockNumber(true, network);
     core = await setupCoreProtocol({ blockNumber, network });
+    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_ADDRESS, true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
     jonesUSDCRegistry = JonesUSDCRegistry__factory.connect(
@@ -68,7 +82,9 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     retentionFeeBase = await jonesController.BASIS_POINTS();
 
     jUSDC = core.jonesEcosystem!.jUSDC;
-    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_ADDRESS, true);
+    jUSDCNoSupply = await createTestVaultToken(core.tokens.usdc!);
+    await setupUSDCBalance(core, core.hhUser1, 1000e6, core.dolomiteMargin);
+    await core.tokens.usdc!.connect(core.hhUser1).transfer(jUSDCNoSupply.address, 100e6);
 
     await core.testEcosystem!.testPriceOracle!.setPrice(core.tokens.usdc!.address, USDC_PRICE);
     await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.usdc!, core.testEcosystem!.testPriceOracle.address);
@@ -136,13 +152,24 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     });
 
     it('returns the correct value when jUSDC total supply is 0', async () => {
-      const testToken = await createTestVaultToken(core.tokens.usdc!);
-      await jonesUSDCRegistry.connect(core.governance).ownerSetJUSDC(testToken.address);
-      await jonesUSDCWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
+      await jonesUSDCRegistry.connect(core.governance).ownerSetJUSDC(jUSDCNoSupply.address);
+      expect(await jUSDCNoSupply.totalSupply()).to.eq(0);
 
-      const usdcPrice = USDC_PRICE.div(USDC_SCALE_DIFF);
-      expect((await jonesUSDCWithChainlinkAutomationPriceOracle.getPrice(factory.address)).value)
-        .to.eq(usdcPrice.sub(usdcPrice.mul(retentionFee).div(retentionFeeBase)));
+      const jonesUSDCWithChainlinkAutomationPriceOracleNoSupply =
+        await createContractWithAbi<JonesUSDCWithChainlinkAutomationPriceOracle>(
+          JonesUSDCWithChainlinkAutomationPriceOracle__factory.abi,
+          JonesUSDCWithChainlinkAutomationPriceOracle__factory.bytecode,
+          [
+            core.dolomiteMargin.address,
+            chainlinkRegistry.address,
+            jonesUSDCRegistry.address,
+            core.marketIds.usdc,
+            factory.address
+          ],
+        );
+      const price = getjUSDCPrice(USDC_PRICE, BigNumber.from('0'), BigNumber.from('0'));
+      expect((await jonesUSDCWithChainlinkAutomationPriceOracleNoSupply.getPrice(factory.address)).value)
+        .to.eq(price);
     });
 
     it('fails when token sent is not djUSDC', async () => {
@@ -212,8 +239,13 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     });
   });
 
-  function getjUSDCPrice(usdcPrice: BigNumber, assets: BigNumber, totalSupply: BigNumber): BigNumber {
-    const price = usdcPrice.div(USDC_SCALE_DIFF).mul(assets).div(totalSupply);
+  function getjUSDCPrice(usdcPrice: BigNumber, totalAssets: BigNumber, totalSupply: BigNumber): BigNumber {
+    if (totalSupply.eq(0)) {
+      const scaledPrice = usdcPrice.div(USDC_SCALE_DIFF);
+      return scaledPrice.sub(scaledPrice.mul(retentionFee).div(retentionFeeBase));
+    }
+
+    const price = usdcPrice.div(USDC_SCALE_DIFF).mul(totalAssets).div(totalSupply);
     return price.sub(price.mul(retentionFee).div(retentionFeeBase));
   }
 });

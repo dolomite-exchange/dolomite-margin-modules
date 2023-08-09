@@ -34,7 +34,7 @@ import { Require } from "../../protocol/lib/Require.sol";
  * @title   JonesUSDCWithChainlinkAutomationPriceOracle
  * @author  Dolomite
  *
- * @notice  An implementation of the IDolomitePriceOracle interface that gets Jones DAO's jUSDC price in USD terms
+ * @notice  An implementation of ChainlinkAutomationPriceOracle that gets Jones DAO's jUSDC price in USD terms
  * @notice  Uses Chainlink automation
  */
 contract JonesUSDCWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceOracle {
