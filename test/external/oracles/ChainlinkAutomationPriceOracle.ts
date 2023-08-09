@@ -24,6 +24,7 @@ import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/help
 
 const CHAINLINK_REGISTRY_ADDRESS = '0x75c0530885F385721fddA23C539AF3701d6183D4';
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
+
 describe('ChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
 
@@ -45,6 +46,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
     await setupUSDCBalance(core, core.hhUser1, 1000e6, core.dolomiteMargin);
     await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 100e6);
     await token.addBalance(core.hhUser1.address, parseEther('10000'));
+
     await core.testEcosystem!.testPriceOracle.setPrice(
       token.address,
       '1000000000000000000', // $1.00

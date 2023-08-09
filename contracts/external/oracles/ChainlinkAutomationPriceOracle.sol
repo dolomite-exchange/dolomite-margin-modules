@@ -30,7 +30,7 @@ import { Require } from "../../protocol/lib/Require.sol";
  * @title   ChainlinkAutomationPriceOracle
  * @author  Dolomite
  *
- * @notice  An abstract contract that implements the IDolomitePriceOracle interface
+ * @notice  An abstract contract that implements the IChainlinkAutomationPriceOracle interface
  * @notice  Contains variables and functions for Chainlink Automation
  */
 abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOracle, OnlyDolomiteMargin {

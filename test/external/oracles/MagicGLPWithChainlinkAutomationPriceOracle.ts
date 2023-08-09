@@ -61,6 +61,8 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
       );
 
     await setupTestMarket(core, magicGlpWithNoTotalSupply, true, magicGLPWithChainlinkAutomationPriceOracleNoSupply);
+
+    // Do this just to reset time for heartbeat and grace period tests
     await increase(12 * 3600);
     await magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
