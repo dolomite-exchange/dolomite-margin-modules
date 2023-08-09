@@ -21,12 +21,14 @@
 pragma solidity ^0.8.9;
 
 import { ChainlinkAutomationPriceOracle } from "./ChainlinkAutomationPriceOracle.sol";
+import { JonesUSDCMathLib } from "../jones/jusdc/JonesUSDCMathLib.sol";
+
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IJonesUSDCRegistry } from "../interfaces/jones/IJonesUSDCRegistry.sol";
-import { JonesUSDCMathLib } from "../jones/jusdc/JonesUSDCMathLib.sol";
+
+import { Require } from "../../protocol/lib/Require.sol";
 
 /**
  * @title   JonesUSDCWithChainlinkAutomationPriceOracle
@@ -71,19 +73,19 @@ contract JonesUSDCWithChainlinkAutomationPriceOracle is ChainlinkAutomationPrice
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        Require.that(
-            _token == DJUSDC,
+        if (_token == DJUSDC) { /* FOR COVERAGE TESTING */ }
+        Require.that(_token == DJUSDC,
             _FILE,
             "Invalid token",
             _token
         );
-        Require.that(
-            DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
+        if (DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
+        Require.that(DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
             _FILE,
             "jUSDC cannot be borrowable"
         );
-        Require.that(
-            latestTimestamp + HEARTBEAT > block.timestamp,
+        if (latestTimestamp + HEARTBEAT + GRACE_PERIOD > block.timestamp) { /* FOR COVERAGE TESTING */ }
+        Require.that(latestTimestamp + HEARTBEAT + GRACE_PERIOD > block.timestamp,
             _FILE,
             "price expired"
         );

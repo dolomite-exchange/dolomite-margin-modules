@@ -20,9 +20,10 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "../../protocol/lib/Require.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IChainlinkAutomationPriceOracle } from "../interfaces/IChainlinkAutomationPriceOracle.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+
+import { Require } from "../../protocol/lib/Require.sol";
 
 
 /**
@@ -83,8 +84,8 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     function checkUpkeep(bytes calldata /* checkData */)
     external
     returns (bool upkeepNeeded, bytes memory /* performData */) {
-        Require.that(
-            tx.origin == address(0),
+        if (tx.origin == address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(tx.origin == address(0),
             _FILE,
             "static rpc calls only"
         );
@@ -93,13 +94,13 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function performUpkeep(bytes calldata /* performData */) external {
-        Require.that(
-            msg.sender == CHAINLINK_REGISTRY,
+        if (msg.sender == CHAINLINK_REGISTRY) { /* FOR COVERAGE TESTING */ }
+        Require.that(msg.sender == CHAINLINK_REGISTRY,
             _FILE,
             "caller is not Chainlink"
         );
-        Require.that(
-            _checkUpkeepConditions(),
+        if (_checkUpkeepConditions()) { /* FOR COVERAGE TESTING */ }
+        Require.that(_checkUpkeepConditions(),
             _FILE,
             "checkUpkeep conditions not met"
         );
@@ -120,8 +121,8 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function _ownerSetUpperEdge(uint256 _upperEdge) internal {
-        Require.that(
-            _upperEdge > 10000,
+        if (_upperEdge > 10000) { /* FOR COVERAGE TESTING */ }
+        Require.that(_upperEdge > 10000,
             _FILE,
             "Invalid upper edge"
         );
@@ -130,8 +131,8 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function _ownerSetLowerEdge(uint256 _lowerEdge) internal {
-        Require.that(
-            _lowerEdge < 10000,
+        if (_lowerEdge < 10000) { /* FOR COVERAGE TESTING */ }
+        Require.that(_lowerEdge < 10000,
             _FILE,
             "Invalid lower edge"
         );
@@ -140,8 +141,8 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function _ownerSetChainlinkRegistry(address _chainlinkRegistry) internal {
-        Require.that(
-            _chainlinkRegistry != address(0),
+        if (_chainlinkRegistry != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_chainlinkRegistry != address(0),
             _FILE,
             "Invalid chainlink registry"
         );

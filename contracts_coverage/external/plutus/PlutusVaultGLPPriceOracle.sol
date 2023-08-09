@@ -23,9 +23,10 @@ pragma solidity ^0.8.9;
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
+
+import { Require } from "../../protocol/lib/Require.sol";
 
 
 /**
@@ -71,14 +72,14 @@ contract PlutusVaultGLPPriceOracle is IDolomitePriceOracle {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        Require.that(
-            _token == DPLV_GLP,
+        if (_token == DPLV_GLP) { /* FOR COVERAGE TESTING */ }
+        Require.that(_token == DPLV_GLP,
             _FILE,
             "invalid token",
             _token
         );
-        Require.that(
-            DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
+        if (DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
+        Require.that(DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
             _FILE,
             "plvGLP cannot be borrowable"
         );

@@ -45,8 +45,8 @@ library ValidationLib {
         bytes memory _data
     ) internal view returns (bytes memory) {
         (bool success, bytes memory returnData) = _target.staticcall(abi.encodePacked(_selector, _data));
-        Require.that(
-            success && returnData.length > 0,
+        if (success && returnData.length > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(success && returnData.length > 0,
             _FILE,
             "Call to target failed",
             _target

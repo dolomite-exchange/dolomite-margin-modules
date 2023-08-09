@@ -133,8 +133,8 @@ contract PendlePtGLP2024Registry is IPendlePtGLP2024Registry, BaseRegistry {
     // =================== Internal Functions ===================
 
     function _ownerSetPendleRouter(address _pendleRouter) internal {
-        Require.that(
-            _pendleRouter != address(0),
+        if (_pendleRouter != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_pendleRouter != address(0),
             _FILE,
             "Invalid pendleRouter address"
         );
@@ -143,8 +143,8 @@ contract PendlePtGLP2024Registry is IPendlePtGLP2024Registry, BaseRegistry {
     }
 
     function _ownerSetPtGlpMarket(address _ptGlpMarket) internal {
-        Require.that(
-            _ptGlpMarket != address(0),
+        if (_ptGlpMarket != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_ptGlpMarket != address(0),
             _FILE,
             "Invalid ptGlpMarket address"
         );
@@ -153,8 +153,8 @@ contract PendlePtGLP2024Registry is IPendlePtGLP2024Registry, BaseRegistry {
     }
 
     function _ownerSetPtGlpToken(address _ptGlpToken) internal {
-        Require.that(
-            _ptGlpToken != address(0),
+        if (_ptGlpToken != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_ptGlpToken != address(0),
             _FILE,
             "Invalid ptGlpToken address"
         );
@@ -163,8 +163,8 @@ contract PendlePtGLP2024Registry is IPendlePtGLP2024Registry, BaseRegistry {
     }
 
     function _ownerSetPtOracle(address _ptOracle) internal {
-        Require.that(
-            _ptOracle != address(0),
+        if (_ptOracle != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_ptOracle != address(0),
             _FILE,
             "Invalid ptOracle address"
         );
@@ -173,8 +173,8 @@ contract PendlePtGLP2024Registry is IPendlePtGLP2024Registry, BaseRegistry {
     }
 
     function _ownerSetSyGlpToken(address _syGlpToken) internal {
-        Require.that(
-            _syGlpToken != address(0),
+        if (_syGlpToken != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_syGlpToken != address(0),
             _FILE,
             "Invalid syGlpToken address"
         );

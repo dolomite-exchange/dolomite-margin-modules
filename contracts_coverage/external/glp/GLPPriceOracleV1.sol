@@ -70,8 +70,8 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        Require.that(
-            _token == address(DFS_GLP),
+        if (_token == address(DFS_GLP)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_token == address(DFS_GLP),
             _FILE,
             "invalid token"
         );
@@ -101,7 +101,7 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
         uint256 totalSupply = glp().totalSupply();
 
         // total supply should always be > 0 if the user is using GLP and interacting with Dolomite
-        assert(totalSupply > 0);
+        /*assert(totalSupply > 0);*/
 
         uint256 rawPrice = glpManager().getAumInUsdg(false) * GLP_PRECISION / totalSupply;
         // understate the price by the fees needed to burn GLP for USDG. This is okay to do because GLP cannot be

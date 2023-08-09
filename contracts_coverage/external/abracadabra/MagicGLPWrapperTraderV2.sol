@@ -79,20 +79,20 @@ contract MagicGLPWrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomite
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
+        if (GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken)) { /* FOR COVERAGE TESTING */ }
+        Require.that(GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
-        Require.that(
-            _outputToken == address(MAGIC_GLP),
+        if (_outputToken == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_outputToken == address(MAGIC_GLP),
             _FILE,
             "Invalid output token",
             _outputToken
         );
-        Require.that(
-            _inputAmount > 0,
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(_inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -129,20 +129,20 @@ contract MagicGLPWrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomite
     override
     view
     returns (uint256) {
-        Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
+        if (GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken)) { /* FOR COVERAGE TESTING */ }
+        Require.that(GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
-        Require.that(
-            _outputToken == address(MAGIC_GLP),
+        if (_outputToken == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_outputToken == address(MAGIC_GLP),
             _FILE,
             "Invalid output token",
             _outputToken
         );
-        Require.that(
-            _desiredInputAmount > 0,
+        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(_desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );

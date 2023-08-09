@@ -78,8 +78,8 @@ abstract contract IsolationModeUnwrapperTraderV1 is
     external
     onlyDolomiteMargin(msg.sender)
     onlyDolomiteMarginGlobalOperator(_sender) {
-        Require.that(
-            VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0),
+        if (VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0),
             _FILE,
             "Account owner is not a vault",
             _accountInfo.owner
@@ -88,15 +88,15 @@ abstract contract IsolationModeUnwrapperTraderV1 is
         // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
         // designated recipient
         (uint256 transferAmount) = abi.decode(_data, (uint256));
-        Require.that(
-            transferAmount > 0,
+        if (transferAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(transferAmount > 0,
             _FILE,
             "Invalid transfer amount"
         );
 
         uint256 underlyingBalanceOf = IIsolationModeTokenVaultV1(_accountInfo.owner).underlyingBalanceOf();
-        Require.that(
-            underlyingBalanceOf >= transferAmount,
+        if (underlyingBalanceOf >= transferAmount) { /* FOR COVERAGE TESTING */ }
+        Require.that(underlyingBalanceOf >= transferAmount,
             _FILE,
             "Insufficient balance",
             underlyingBalanceOf,
@@ -117,14 +117,14 @@ abstract contract IsolationModeUnwrapperTraderV1 is
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        Require.that(
-            _inputToken == address(VAULT_FACTORY),
+        if (_inputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_inputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid input token",
             _inputToken
         );
-        Require.that(
-            _inputAmount > 0,
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(_inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -133,8 +133,8 @@ abstract contract IsolationModeUnwrapperTraderV1 is
 
         {
             uint256 balance = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
-            Require.that(
-                balance >= _inputAmount,
+            if (balance >= _inputAmount) { /* FOR COVERAGE TESTING */ }
+            Require.that(balance >= _inputAmount,
                 _FILE,
                 "Insufficient input token",
                 balance,
@@ -151,8 +151,8 @@ abstract contract IsolationModeUnwrapperTraderV1 is
             _inputAmount,
             _orderData
         );
-        Require.that(
-            outputAmount >= minOutputAmount,
+        if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
+        Require.that(outputAmount >= minOutputAmount,
             _FILE,
             "Insufficient output amount",
             outputAmount,

@@ -95,8 +95,8 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
         _overwriteInputAmountAndCall(_inputAmount, paraswapFunctionSelector, paraswapCallData);
         uint256 outputAmount = IERC20(_outputToken).balanceOf(address(this));
 
-        Require.that(
-            outputAmount >= minAmountOutWei,
+        if (outputAmount >= minAmountOutWei) { /* FOR COVERAGE TESTING */ }
+        Require.that(outputAmount >= minAmountOutWei,
             _FILE,
             "Insufficient output amount",
             outputAmount,

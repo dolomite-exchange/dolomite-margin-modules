@@ -90,21 +90,21 @@ contract MagicGLPUnwrapperTraderV1 is IDolomiteMarginUnwrapperTraderForLiquidato
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        Require.that(
-            _inputToken == address(MAGIC_GLP),
+        if (_inputToken == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_inputToken == address(MAGIC_GLP),
             _FILE,
             "Invalid input token",
             _inputToken
         );
-        Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
+        if (GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)&& DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId()) { /* FOR COVERAGE TESTING */ }
+        Require.that(GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
                 && DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
             _FILE,
             "Invalid output token",
             _outputToken
         );
-        Require.that(
-            _inputAmount > 0,
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(_inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -136,21 +136,21 @@ contract MagicGLPUnwrapperTraderV1 is IDolomiteMarginUnwrapperTraderForLiquidato
     override
     view
     returns (uint256) {
-        Require.that(
-            _inputToken == address(MAGIC_GLP),
+        if (_inputToken == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_inputToken == address(MAGIC_GLP),
             _FILE,
             "Invalid input token",
             _inputToken
         );
-        Require.that(
-            GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
+        if (GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)&& DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId()) { /* FOR COVERAGE TESTING */ }
+        Require.that(GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
                 && DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
             _FILE,
             "Invalid output token",
             _outputToken
         );
-        Require.that(
-            _desiredInputAmount > 0,
+        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(_desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );

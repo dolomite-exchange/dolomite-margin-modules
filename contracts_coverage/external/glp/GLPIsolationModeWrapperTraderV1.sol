@@ -77,21 +77,21 @@ contract GLPIsolationModeWrapperTraderV1 is IsolationModeWrapperTraderV1 {
     override
     view
     returns (uint256) {
-        Require.that(
-            _inputToken == USDC,
+        if (_inputToken == USDC) { /* FOR COVERAGE TESTING */ }
+        Require.that(_inputToken == USDC,
             _FILE,
             "Invalid input token",
             _inputToken
         );
         // VAULT_FACTORY is the DFS_GLP token
-        Require.that(
-            _vaultToken == address(VAULT_FACTORY),
+        if (_vaultToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_vaultToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid output token",
             _vaultToken
         );
-        Require.that(
-            _desiredInputAmount > 0,
+        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(_desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );
@@ -114,8 +114,8 @@ contract GLPIsolationModeWrapperTraderV1 is IsolationModeWrapperTraderV1 {
     internal
     override
     returns (uint256) {
-        Require.that(
-            _inputToken == USDC,
+        if (_inputToken == USDC) { /* FOR COVERAGE TESTING */ }
+        Require.that(_inputToken == USDC,
             _FILE,
             "Invalid input token",
             _inputToken

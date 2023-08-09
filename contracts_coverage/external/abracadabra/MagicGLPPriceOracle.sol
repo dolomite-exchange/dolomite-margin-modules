@@ -65,14 +65,14 @@ contract MagicGLPPriceOracle is IDolomitePriceOracle {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        Require.that(
-            _token == address(MAGIC_GLP),
+        if (_token == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_token == address(MAGIC_GLP),
             _FILE,
             "invalid token",
             _token
         );
-        Require.that(
-            DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
+        if (DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
+        Require.that(DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
             _FILE,
             "magicGLP cannot be borrowable"
         );

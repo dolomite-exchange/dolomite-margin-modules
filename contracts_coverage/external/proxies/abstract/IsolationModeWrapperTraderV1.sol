@@ -76,14 +76,14 @@ abstract contract IsolationModeWrapperTraderV1 is IDolomiteMarginWrapperTraderFo
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        Require.that(
-            _outputToken == address(VAULT_FACTORY),
+        if (_outputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_outputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid output token",
             _outputToken
         );
-        Require.that(
-            _inputAmount > 0,
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(_inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -99,8 +99,8 @@ abstract contract IsolationModeWrapperTraderV1 is IDolomiteMarginWrapperTraderFo
             _inputAmount,
             _orderData
         );
-        Require.that(
-            outputAmount >= minOutputAmount,
+        if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
+        Require.that(outputAmount >= minOutputAmount,
             _FILE,
             "Insufficient output amount",
             outputAmount,
@@ -126,8 +126,8 @@ abstract contract IsolationModeWrapperTraderV1 is IDolomiteMarginWrapperTraderFo
     override
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
-        Require.that(
-            DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(VAULT_FACTORY),
+        if (DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
+        Require.that(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(VAULT_FACTORY),
             _FILE,
             "Invalid output market",
             _outputMarket

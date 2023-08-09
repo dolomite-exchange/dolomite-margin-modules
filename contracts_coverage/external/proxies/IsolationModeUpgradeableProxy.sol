@@ -48,8 +48,8 @@ contract IsolationModeUpgradeableProxy is
     // ======== Modifiers =========
 
     modifier requireIsInitialized() {
-        Require.that(
-            isInitialized(),
+        if (isInitialized()) { /* FOR COVERAGE TESTING */ }
+        Require.that(isInitialized(),
             _FILE,
             "Not initialized"
         );
@@ -72,13 +72,13 @@ contract IsolationModeUpgradeableProxy is
     function initialize(
         address _account
     ) external {
-        Require.that(
-            !isInitialized(),
+        if (!isInitialized()) { /* FOR COVERAGE TESTING */ }
+        Require.that(!isInitialized(),
             _FILE,
             "Already initialized"
         );
-        Require.that(
-            IIsolationModeVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this),
+        if (IIsolationModeVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this)) { /* FOR COVERAGE TESTING */ }
+        Require.that(IIsolationModeVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this),
             _FILE,
             "Invalid account",
             _account

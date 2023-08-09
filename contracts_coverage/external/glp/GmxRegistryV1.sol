@@ -210,8 +210,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     // ==================== Internal Functions =========================
 
     function _ownerSetEsGmx(address _esGmx) internal {
-        Require.that(
-            _esGmx != address(0),
+        if (_esGmx != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_esGmx != address(0),
             _FILE,
             "Invalid esGmx address"
         );
@@ -220,8 +220,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetFSGlp(address _fsGlp) internal {
-        Require.that(
-            _fsGlp != address(0),
+        if (_fsGlp != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_fsGlp != address(0),
             _FILE,
             "Invalid fsGlp address"
         );
@@ -230,8 +230,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetGlp(address _glp) internal {
-        Require.that(
-            _glp != address(0),
+        if (_glp != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_glp != address(0),
             _FILE,
             "Invalid glp address"
         );
@@ -240,8 +240,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetGlpManager(address _glpManager) internal {
-        Require.that(
-            _glpManager != address(0),
+        if (_glpManager != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_glpManager != address(0),
             _FILE,
             "Invalid glpManager address"
         );
@@ -250,8 +250,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetGlpRewardsRouter(address _glpRewardsRouter) internal {
-        Require.that(
-            _glpRewardsRouter != address(0),
+        if (_glpRewardsRouter != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_glpRewardsRouter != address(0),
             _FILE,
             "Invalid glpRewardsRouter address"
         );
@@ -260,8 +260,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetGmx(address _gmx) internal {
-        Require.that(
-            _gmx != address(0),
+        if (_gmx != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_gmx != address(0),
             _FILE,
             "Invalid gmx address"
         );
@@ -270,8 +270,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetGmxRewardsRouter(address _gmxRewardsRouter) internal {
-        Require.that(
-            _gmxRewardsRouter != address(0),
+        if (_gmxRewardsRouter != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_gmxRewardsRouter != address(0),
             _FILE,
             "Invalid gmxRewardsRouter address"
         );
@@ -280,8 +280,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetGmxVault(address _gmxVault) internal {
-        Require.that(
-            _gmxVault != address(0),
+        if (_gmxVault != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_gmxVault != address(0),
             _FILE,
             "Invalid gmxVault address"
         );
@@ -290,8 +290,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetSGlp(address _sGlp) internal {
-        Require.that(
-            _sGlp != address(0),
+        if (_sGlp != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_sGlp != address(0),
             _FILE,
             "Invalid sGlp address"
         );
@@ -300,8 +300,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetSGmx(address _sGmx) internal {
-        Require.that(
-            _sGmx != address(0),
+        if (_sGmx != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_sGmx != address(0),
             _FILE,
             "Invalid sGmx address"
         );
@@ -310,8 +310,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetSbfGmx(address _sbfGmx) internal {
-        Require.that(
-            _sbfGmx != address(0),
+        if (_sbfGmx != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_sbfGmx != address(0),
             _FILE,
             "Invalid sbfGmx address"
         );
@@ -320,8 +320,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetVGlp(address _vGlp) internal {
-        Require.that(
-            _vGlp != address(0),
+        if (_vGlp != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_vGlp != address(0),
             _FILE,
             "Invalid vGlp address"
         );
@@ -330,8 +330,8 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     function _ownerSetVGmx(address _vGmx) internal {
-        Require.that(
-            _vGmx != address(0),
+        if (_vGmx != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_vGmx != address(0),
             _FILE,
             "Invalid vGmx address"
         );
