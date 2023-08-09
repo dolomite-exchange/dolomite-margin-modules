@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 
 import { ChainlinkAutomationPriceOracle } from "./ChainlinkAutomationPriceOracle.sol";
+
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
