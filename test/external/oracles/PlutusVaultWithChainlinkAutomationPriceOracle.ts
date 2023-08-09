@@ -1,20 +1,23 @@
 import {
   CoreProtocol,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
-  setupTestMarket,
   setupUSDCBalance
 } from '../../utils/setup';
 import {
-  IPlutusVaultGLP, IPlutusVaultGLP__factory, IPlutusVaultGLPRouter, IPlutusVaultGLPRouter__factory,
+  IPlutusVaultGLP,
+  IPlutusVaultGLP__factory,
+  IPlutusVaultGLPRouter,
+  IPlutusVaultGLPRouter__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1,
   PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory,
   PlutusVaultGLPIsolationModeVaultFactory,
   PlutusVaultGLPIsolationModeVaultFactory__factory,
   PlutusVaultWithChainlinkAutomationPriceOracle,
+  PlutusVaultWithChainlinkAutomationPriceOracle__factory,
   PlutusVaultRegistry,
-  PlutusVaultRegistry__factory, CustomTestVaultToken, PlutusVaultWithChainlinkAutomationPriceOracle__factory,
+  PlutusVaultRegistry__factory,
+  CustomTestVaultToken,
 } from '../../../src/types';
 import { BigNumber, BigNumberish } from 'ethers';
 import { Network } from '../../../src/utils/no-deps-constants';
@@ -97,10 +100,10 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
 
     plvWithChainlinkAutomationPriceOracle = await createPlutusVaultWithChainlinkAutomationPriceOracle(
       core,
+      chainlinkRegistry,
       plutusVaultRegistry,
       factory,
       unwrapperTrader,
-      chainlinkRegistry,
     );
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
     exitFeeBp = (await plvGlpRouter.getFeeBp(unwrapperTrader.address))._exitFeeBp;

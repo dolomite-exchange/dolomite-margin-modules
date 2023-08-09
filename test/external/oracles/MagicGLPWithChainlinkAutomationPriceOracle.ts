@@ -2,7 +2,7 @@ import {
   CustomTestVaultToken,
   IERC4626,
   MagicGLPWithChainlinkAutomationPriceOracle,
-  MagicGLPWithChainlinkAutomationPriceOracle__factory, TestPriceOracle
+  MagicGLPWithChainlinkAutomationPriceOracle__factory,
 } from '../../../src/types';
 import { expect } from 'chai';
 import { Network } from '../../../src/utils/no-deps-constants';

@@ -106,20 +106,20 @@ export function createPlutusVaultGLPPriceOracle(
 
 export function createPlutusVaultWithChainlinkAutomationPriceOracle(
   core: CoreProtocol,
+  chainlinkRegistry: SignerWithAddress,
   plutusVaultRegistry: PlutusVaultRegistry,
   dplvGlpToken: { address: address },
   unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
-  chainlinkRegistry: SignerWithAddress,
 ): Promise<PlutusVaultWithChainlinkAutomationPriceOracle> {
   return createContractWithAbi<PlutusVaultWithChainlinkAutomationPriceOracle>(
     PlutusVaultWithChainlinkAutomationPriceOracle__factory.abi,
     PlutusVaultWithChainlinkAutomationPriceOracle__factory.bytecode,
     getPlutusVaultWithChainlinkAutomationPriceOracleConstructorParams(
       core,
+      chainlinkRegistry,
       plutusVaultRegistry,
       dplvGlpToken,
       unwrapper,
-      chainlinkRegistry,
     ),
   );
 }

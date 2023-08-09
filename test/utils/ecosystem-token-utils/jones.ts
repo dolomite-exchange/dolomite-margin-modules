@@ -78,18 +78,18 @@ export function createJonesUSDCPriceOracle(
 
 export async function createJonesUSDCWithChainlinkAutomationPriceOracle(
   core: CoreProtocol,
+  chainlinkRegistry: SignerWithAddress,
   jonesUSDCRegistry: JonesUSDCRegistry,
   djUSDCToken: { address: address },
-  chainlinkRegistry: SignerWithAddress
 ): Promise<JonesUSDCWithChainlinkAutomationPriceOracle> {
   return createContractWithAbi(
     JonesUSDCWithChainlinkAutomationPriceOracle__factory.abi,
     JonesUSDCWithChainlinkAutomationPriceOracle__factory.bytecode,
     getJonesUSDCWithChainlinkAutomationPriceOracleCosntructorParams(
       core,
+      chainlinkRegistry,
       jonesUSDCRegistry,
       djUSDCToken,
-      chainlinkRegistry
     ),
   );
 }

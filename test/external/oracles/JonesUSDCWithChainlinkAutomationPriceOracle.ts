@@ -1,9 +1,7 @@
 import { BigNumber, BigNumberish } from 'ethers';
 import {
   CoreProtocol,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
-  setupTestMarket,
   setupUSDCBalance
 } from '../../utils/setup';
 import {
@@ -91,9 +89,9 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
 
     jonesUSDCWithChainlinkAutomationPriceOracle = await createJonesUSDCWithChainlinkAutomationPriceOracle(
       core,
+      chainlinkRegistry,
       jonesUSDCRegistry,
       factory,
-      chainlinkRegistry
     );
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 

@@ -51,9 +51,9 @@ export function getJonesUSDCPriceOracleConstructorParams(
 
 export function getJonesUSDCWithChainlinkAutomationPriceOracleCosntructorParams(
   core: CoreProtocol,
+  chainlinkRegistry: SignerWithAddress,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
-  chainlinkRegistry: SignerWithAddress,
 ): any[] {
   if (!core.jonesEcosystem) {
     throw new Error('Jones ecosystem not initialized');
