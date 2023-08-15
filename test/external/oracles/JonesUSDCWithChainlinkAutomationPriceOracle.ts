@@ -34,9 +34,9 @@ import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/help
 import { expectThrow } from '../../utils/assertions';
 import { ADDRESSES } from '@dolomite-margin/dist/src';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
 
 const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.99998605
-const CHAINLINK_REGISTRY_ADDRESS = '0x75c0530885F385721fddA23C539AF3701d6183D4';
 const USDC_SCALE_DIFF = BigNumber.from('10').pow(12);
 
 describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
@@ -59,7 +59,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     const network = Network.ArbitrumOne;
     const blockNumber = await getRealLatestBlockNumber(true, network);
     core = await setupCoreProtocol({ blockNumber, network });
-    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_ADDRESS, true);
+    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[network], true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
     jonesUSDCRegistry = JonesUSDCRegistry__factory.connect(
@@ -120,9 +120,9 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     });
   });
 
-  describe('#latestTimestamp', () => {
+  describe('#lastUpdateTimestamp', () => {
     it('returns the correct value', async () => {
-      expect(await jonesUSDCWithChainlinkAutomationPriceOracle.latestTimestamp()).to.eq(deploymentTimestamp);
+      expect(await jonesUSDCWithChainlinkAutomationPriceOracle.lastUpdateTimestamp()).to.eq(deploymentTimestamp);
     });
   });
 
@@ -204,7 +204,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
       await increase(3600);
       await expectThrow(
         jonesUSDCWithChainlinkAutomationPriceOracle.getPrice(factory.address),
-        'jUSDCWithChainlinkPriceOracle: price expired',
+        'ChainlinkAutomationPriceOracle: Price is expired',
       );
     });
   });
@@ -227,7 +227,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
       await increase(3600);
       await jonesUSDCWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
       const upkeepTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
-      expect(await jonesUSDCWithChainlinkAutomationPriceOracle.latestTimestamp()).to.eq(upkeepTimestamp);
+      expect(await jonesUSDCWithChainlinkAutomationPriceOracle.lastUpdateTimestamp()).to.eq(upkeepTimestamp);
 
       const totalAssets = await jUSDC.totalAssets();
       const totalSupply = await jUSDC.totalSupply();

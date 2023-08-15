@@ -18,9 +18,10 @@ import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/help
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { parseEther } from 'ethers/lib/utils';
+import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
 
 const GLP_PRICE = BigNumber.from('1004682394802947459'); // $1.004682394802947459
-const CHAINLINK_REGISTRY_ADDRESS = '0x75c0530885F385721fddA23C539AF3701d6183D4';
+
 describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
 
@@ -38,7 +39,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
 
     magicGlp = core.abraEcosystem!.magicGlp;
     magicGlpWithNoTotalSupply = await createTestVaultToken(core.tokens.usdc!);
-    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_ADDRESS, true);
+    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[Network.ArbitrumOne], true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
     await core.testEcosystem!.testPriceOracle!.setPrice(core.tokens.dfsGlp!.address, GLP_PRICE);
@@ -86,9 +87,9 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
     });
   });
 
-  describe('#latestTimestamp', () => {
+  describe('#lastUpdateTimestamp', () => {
     it('returns the correct value', async () => {
-      expect(await magicGLPWithChainlinkAutomationPriceOracle.latestTimestamp()).to.eq(deploymentTimestamp);
+      expect(await magicGLPWithChainlinkAutomationPriceOracle.lastUpdateTimestamp()).to.eq(deploymentTimestamp);
     });
   });
 
@@ -129,15 +130,15 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
     it('fails when token sent is not magicGLP', async () => {
       await expectThrow(
         magicGLPWithChainlinkAutomationPriceOracle.getPrice(ADDRESSES.ZERO),
-        `MagicGLPWithChainlinkPriceOracle: invalid token <${ADDRESSES.ZERO}>`,
+        `MagicGLPWithChainlinkPriceOracle: Invalid token <${ADDRESSES.ZERO}>`,
       );
       await expectThrow(
         magicGLPWithChainlinkAutomationPriceOracle.getPrice(ADDRESSES.TEST_UNISWAP),
-        `MagicGLPWithChainlinkPriceOracle: invalid token <${ADDRESSES.TEST_UNISWAP.toLowerCase()}>`,
+        `MagicGLPWithChainlinkPriceOracle: Invalid token <${ADDRESSES.TEST_UNISWAP.toLowerCase()}>`,
       );
       await expectThrow(
         magicGLPWithChainlinkAutomationPriceOracle.getPrice(core.gmxEcosystem!.glp.address),
-        `MagicGLPWithChainlinkPriceOracle: invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`,
+        `MagicGLPWithChainlinkPriceOracle: Invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`,
       );
     });
 
@@ -156,7 +157,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
       await increase(3600);
       await expectThrow(
         magicGLPWithChainlinkAutomationPriceOracle.getPrice(magicGlp.address),
-        'MagicGLPWithChainlinkPriceOracle: price expired',
+        'ChainlinkAutomationPriceOracle: Price is expired',
       );
     });
   });
@@ -181,7 +182,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
 
       await magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
       const upkeepTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
-      expect(await magicGLPWithChainlinkAutomationPriceOracle.latestTimestamp()).to.eq(upkeepTimestamp);
+      expect(await magicGLPWithChainlinkAutomationPriceOracle.lastUpdateTimestamp()).to.eq(upkeepTimestamp);
 
       const balance = await core.gmxEcosystem!.fsGlp.balanceOf(magicGlp.address);
       const totalSupply = await magicGlp.totalSupply();

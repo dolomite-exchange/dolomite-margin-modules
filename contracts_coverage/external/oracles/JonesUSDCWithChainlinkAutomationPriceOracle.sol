@@ -84,8 +84,8 @@ contract JonesUSDCWithChainlinkAutomationPriceOracle is ChainlinkAutomationPrice
             _FILE,
             "jUSDC cannot be borrowable"
         );
-        if (latestTimestamp + HEARTBEAT + GRACE_PERIOD > block.timestamp) { /* FOR COVERAGE TESTING */ }
-        Require.that(latestTimestamp + HEARTBEAT + GRACE_PERIOD > block.timestamp,
+        if (lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp) { /* FOR COVERAGE TESTING */ }
+        Require.that(lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp,
             _FILE,
             "price expired"
         );

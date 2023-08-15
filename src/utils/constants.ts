@@ -13,6 +13,11 @@ interface TokenWithMarketId {
   marketId: number;
 }
 
+export const CHAINLINK_REGISTRY_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x75c0530885F385721fddA23C539AF3701d6183D4',
+  [Network.ArbitrumGoerli]: '0x291093864bafc9aA517eF90ce954dD7D95D68C80',
+};
+
 export const DAI_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',

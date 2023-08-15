@@ -84,11 +84,8 @@ contract JonesUSDCWithChainlinkAutomationPriceOracle is ChainlinkAutomationPrice
             _FILE,
             "jUSDC cannot be borrowable"
         );
-        Require.that(
-            latestTimestamp + HEARTBEAT + GRACE_PERIOD > block.timestamp,
-            _FILE,
-            "price expired"
-        );
+
+        _checkIsPriceExpired();
 
         return IDolomiteStructs.MonetaryPrice({
             value: _getCurrentPrice()

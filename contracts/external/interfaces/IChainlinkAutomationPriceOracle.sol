@@ -85,19 +85,19 @@ interface IChainlinkAutomationPriceOracle is IDolomitePriceOracle, IChainlinkAut
     // =================== Getter Functions ===================
     // ========================================================
 
-    function HEARTBEAT() external view returns (uint256);
+    function heartbeat() external view returns (uint256);
 
-    function GRACE_PERIOD() external view returns (uint256);
+    function gracePeriod() external view returns (uint256);
 
-    function UPPER_EDGE() external view returns (uint256);
+    function upperEdge() external view returns (uint256);
 
-    function LOWER_EDGE() external view returns (uint256);
+    function lowerEdge() external view returns (uint256);
 
-    function CHAINLINK_REGISTRY() external view returns (address);
+    function chainlinkRegistry() external view returns (address);
 
     function exchangeRateNumerator() external view returns (uint256);
 
     function exchangeRateDenominator() external view returns (uint256);
 
-    function latestTimestamp() external view returns (uint256);
+    function lastUpdateTimestamp() external view returns (uint256);
 }

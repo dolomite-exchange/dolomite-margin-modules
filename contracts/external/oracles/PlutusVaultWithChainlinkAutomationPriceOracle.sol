@@ -42,7 +42,7 @@ contract PlutusVaultWithChainlinkAutomationPriceOracle is ChainlinkAutomationPri
 
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "plvWithChainlinkPriceOracle";
+    bytes32 private constant _FILE = "PlvWithChainlinkPriceOracle";
     uint256 private constant _FEE_PRECISION = 10_000;
 
     // ============================ Public State Variables ============================
@@ -88,12 +88,7 @@ contract PlutusVaultWithChainlinkAutomationPriceOracle is ChainlinkAutomationPri
             "plvGLP cannot be borrowable"
         );
 
-        // add second value for expiration value
-        Require.that(
-            latestTimestamp + HEARTBEAT + GRACE_PERIOD > block.timestamp,
-            _FILE,
-            "price expired"
-        );
+        _checkIsPriceExpired();
 
         return IDolomiteStructs.MonetaryPrice({
             value: _getCurrentPrice()

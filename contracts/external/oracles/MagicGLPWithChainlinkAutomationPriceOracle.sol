@@ -64,7 +64,7 @@ contract MagicGLPWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceO
         Require.that(
             _token == address(MAGIC_GLP),
             _FILE,
-            "invalid token",
+            "Invalid token",
             _token
         );
         Require.that(
@@ -72,11 +72,8 @@ contract MagicGLPWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceO
             _FILE,
             "magicGLP cannot be borrowable"
         );
-        Require.that(
-            latestTimestamp + HEARTBEAT + GRACE_PERIOD > block.timestamp,
-            _FILE,
-            "price expired"
-        );
+
+        _checkIsPriceExpired();
 
         return IDolomiteStructs.MonetaryPrice({
             value: _getCurrentPrice()

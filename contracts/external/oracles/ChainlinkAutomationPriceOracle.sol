@@ -21,9 +21,11 @@
 pragma solidity ^0.8.9;
 
 import { IChainlinkAutomationPriceOracle } from "../interfaces/IChainlinkAutomationPriceOracle.sol";
+import { IChainlinkRegistry } from "../interfaces/IChainlinkRegistry.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
+import { ValidationLib } from "../lib/ValidationLib.sol";
 
 
 /**
@@ -42,15 +44,15 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
 
     // ============================ Public State Variables ============================
 
-    uint256 public HEARTBEAT = 12 * 3600; // solhint-disable-line var-name-mixedcase
-    uint256 public GRACE_PERIOD = 3600; // solhint-disable-line var-name-mixedcase
-    uint256 public UPPER_EDGE = 10025; // solhint-disable-line var-name-mixedcase
-    uint256 public LOWER_EDGE = 9975; // solhint-disable-line var-name-mixedcase
-    address public CHAINLINK_REGISTRY; // solhint-disable-line var-name-mixedcase
+    uint256 public heartbeat;
+    uint256 public gracePeriod;
+    uint256 public upperEdge;
+    uint256 public lowerEdge;
+    address public chainlinkRegistry;
 
     uint256 public exchangeRateNumerator;
     uint256 public exchangeRateDenominator;
-    uint256 public latestTimestamp;
+    uint256 public lastUpdateTimestamp;
 
     // ============================ Constructor ============================
 
@@ -58,7 +60,11 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         address _dolomiteMargin,
         address _chainlinkRegistry
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        CHAINLINK_REGISTRY = _chainlinkRegistry;
+        _ownerSetHeartbeat(12 hours);
+        _ownerSetGracePeriod(1 hours);
+        _ownerSetUpperEdge(10025);
+        _ownerSetLowerEdge(9975);
+        _ownerSetChainlinkRegistry(_chainlinkRegistry);
     }
 
     function ownerSetHeartbeat(uint256 _heartbeat) external onlyDolomiteMarginOwner(msg.sender) {
@@ -87,17 +93,17 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         Require.that(
             tx.origin == address(0),
             _FILE,
-            "static rpc calls only"
+            "Static rpc calls only"
         );
 
-        return (_checkUpkeepConditions(), "0x");
+        return (_checkUpkeepConditions(), bytes(""));
     }
 
     function performUpkeep(bytes calldata /* performData */) external {
         Require.that(
-            msg.sender == CHAINLINK_REGISTRY,
+            msg.sender == chainlinkRegistry,
             _FILE,
-            "caller is not Chainlink"
+            "Caller is not Chainlink"
         );
         Require.that(
             _checkUpkeepConditions(),
@@ -112,32 +118,32 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
 
     function _ownerSetHeartbeat(uint256 _heartbeat) internal {
         emit HeartbeatSet(_heartbeat);
-        HEARTBEAT = _heartbeat;
+        heartbeat = _heartbeat;
     }
 
     function _ownerSetGracePeriod(uint256 _gracePeriod) internal {
         emit GracePeriodSet(_gracePeriod);
-        GRACE_PERIOD = _gracePeriod;
+        gracePeriod = _gracePeriod;
     }
 
     function _ownerSetUpperEdge(uint256 _upperEdge) internal {
         Require.that(
-            _upperEdge > 10000,
+            _upperEdge > 10_000,
             _FILE,
             "Invalid upper edge"
         );
         emit UpperEdgeSet(_upperEdge);
-        UPPER_EDGE = _upperEdge;
+        upperEdge = _upperEdge;
     }
 
     function _ownerSetLowerEdge(uint256 _lowerEdge) internal {
         Require.that(
-            _lowerEdge < 10000,
+            _lowerEdge < 10_000,
             _FILE,
             "Invalid lower edge"
         );
         emit LowerEdgeSet(_lowerEdge);
-        LOWER_EDGE = _lowerEdge;
+        lowerEdge = _lowerEdge;
     }
 
     function _ownerSetChainlinkRegistry(address _chainlinkRegistry) internal {
@@ -146,34 +152,51 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
             _FILE,
             "Invalid chainlink registry"
         );
+
+        (bytes memory data) = ValidationLib.callAndCheckSuccess(
+            _chainlinkRegistry,
+            IChainlinkRegistry(_chainlinkRegistry).LINK.selector,
+            bytes("")
+        );
+
         emit ChainlinkRegistrySet(_chainlinkRegistry);
-        CHAINLINK_REGISTRY = _chainlinkRegistry;
+        chainlinkRegistry = _chainlinkRegistry;
     }
 
     function _updateExchangeRateAndTimestamp() internal {
         (exchangeRateNumerator, exchangeRateDenominator) = _getExchangeRate();
-        latestTimestamp = block.timestamp;
+        lastUpdateTimestamp = block.timestamp;
     }
 
     function _checkUpkeepConditions() internal view returns (bool) {
         (uint256 currentNumerator, uint256 currentDenominator) = _getExchangeRate();
-        if (currentDenominator == 0) { return false; }
+        if (currentDenominator == 0) {
+            return false;
+        }
 
         uint256 cachedExchangeRate = exchangeRateNumerator * _ONE_UNIT / exchangeRateDenominator;
         uint256 currentExchangeRate = currentNumerator * _ONE_UNIT / currentDenominator;
 
-        uint256 upperEdge = cachedExchangeRate * UPPER_EDGE / 10000;
-        uint256 lowerEdge = cachedExchangeRate * LOWER_EDGE / 10000;
+        uint256 upperEdge = cachedExchangeRate * upperEdge / 10_000;
+        uint256 lowerEdge = cachedExchangeRate * lowerEdge / 10_000;
         return (
             currentExchangeRate >= upperEdge ||
             currentExchangeRate <= lowerEdge ||
-            block.timestamp >= latestTimestamp + HEARTBEAT
+            block.timestamp >= lastUpdateTimestamp + heartbeat
+        );
+    }
+
+    function _checkIsPriceExpired() internal view {
+        Require.that(
+            lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp,
+            _FILE,
+            "Price is expired"
         );
     }
 
     // ============================ Virtual Functions ============================
 
-    function _getExchangeRate() internal virtual view returns (uint256, uint256);
+    function _getExchangeRate() internal virtual view returns (uint256 numerator, uint256 denominator);
 
     function _getCurrentPrice() internal virtual view returns (uint256);
 }
