@@ -33,13 +33,6 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  */
 interface IGenericTraderProxyV1 is IGenericTraderBase {
 
-    event ZapExecuted(
-        address indexed _accountOwner,
-        uint256 _accountNumber,
-        uint256[] _marketIdsPath,
-        TraderParam[] _tradersPath
-    );
-
     // ============ Structs ============
 
     struct TransferAmount {
