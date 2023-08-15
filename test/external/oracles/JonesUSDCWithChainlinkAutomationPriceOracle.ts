@@ -89,7 +89,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
 
     jonesUSDCWithChainlinkAutomationPriceOracle = await createJonesUSDCWithChainlinkAutomationPriceOracle(
       core,
-      chainlinkRegistry,
+      chainlinkRegistry.address,
       jonesUSDCRegistry,
       factory,
     );

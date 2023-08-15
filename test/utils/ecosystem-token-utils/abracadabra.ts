@@ -34,7 +34,7 @@ export async function createMagicGLPPriceOracle(core: CoreProtocol): Promise<Mag
 
 export async function createMagicGLPWithChainlinkAutomationPriceOracle(
   core: CoreProtocol,
-  chainlinkRegistry: SignerWithAddress
+  chainlinkRegistry: string
 ): Promise<MagicGLPWithChainlinkAutomationPriceOracle> {
   return createContractWithAbi(
     MagicGLPWithChainlinkAutomationPriceOracle__factory.abi,

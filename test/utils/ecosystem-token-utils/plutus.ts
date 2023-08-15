@@ -106,7 +106,7 @@ export function createPlutusVaultGLPPriceOracle(
 
 export function createPlutusVaultWithChainlinkAutomationPriceOracle(
   core: CoreProtocol,
-  chainlinkRegistry: SignerWithAddress,
+  chainlinkRegistry: string,
   plutusVaultRegistry: PlutusVaultRegistry,
   dplvGlpToken: { address: address },
   unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,

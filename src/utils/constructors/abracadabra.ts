@@ -11,11 +11,11 @@ export function getMagicGLPPriceOracleConstructorParams(core: CoreProtocol): any
 
 export function getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams(
   core: CoreProtocol,
-  chainlinkRegistry: SignerWithAddress
+  chainlinkRegistry: string
 ): any[] {
   return [
     core.dolomiteMargin.address,
-    chainlinkRegistry.address,
+    chainlinkRegistry,
     core.abraEcosystem!.magicGlp.address,
     core.marketIds.dfsGlp!,
   ];

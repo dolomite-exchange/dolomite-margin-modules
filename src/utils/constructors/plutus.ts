@@ -56,7 +56,7 @@ export function getPlutusVaultGLPPriceOracleConstructorParams(
 
 export function getPlutusVaultWithChainlinkAutomationPriceOracleConstructorParams(
   core: CoreProtocol,
-  chainlinkRegistry: SignerWithAddress,
+  chainlinkRegistry: string,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dplvGlpToken: { address: address },
   unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
@@ -67,7 +67,7 @@ export function getPlutusVaultWithChainlinkAutomationPriceOracleConstructorParam
 
   return [
     core.dolomiteMargin.address,
-    chainlinkRegistry.address,
+    chainlinkRegistry,
     core.marketIds.dfsGlp!,
     dplvGlpToken.address,
     plutusVaultRegistry.address,

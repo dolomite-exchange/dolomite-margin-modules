@@ -100,7 +100,7 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
 
     plvWithChainlinkAutomationPriceOracle = await createPlutusVaultWithChainlinkAutomationPriceOracle(
       core,
-      chainlinkRegistry,
+      chainlinkRegistry.address,
       plutusVaultRegistry,
       factory,
       unwrapperTrader,

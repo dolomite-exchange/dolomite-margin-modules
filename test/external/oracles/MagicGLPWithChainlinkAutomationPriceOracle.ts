@@ -47,7 +47,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
 
     magicGLPWithChainlinkAutomationPriceOracle = await createMagicGLPWithChainlinkAutomationPriceOracle(
       core,
-      chainlinkRegistry
+      chainlinkRegistry.address
     );
     magicGLPWithChainlinkAutomationPriceOracleNoSupply =
       await createContractWithAbi<MagicGLPWithChainlinkAutomationPriceOracle>(

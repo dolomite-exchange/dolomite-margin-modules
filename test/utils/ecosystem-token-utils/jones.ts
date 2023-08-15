@@ -26,7 +26,7 @@ import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,
   getJonesUSDCIsolationModeVaultFactoryConstructorParams,
   getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
-  getJonesUSDCWithChainlinkAutomationPriceOracleCosntructorParams,
+  getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams,
   getJonesUSDCPriceOracleConstructorParams,
   getJonesUSDCRegistryConstructorParams,
 } from '../../../src/utils/constructors/jones';
@@ -78,14 +78,14 @@ export function createJonesUSDCPriceOracle(
 
 export async function createJonesUSDCWithChainlinkAutomationPriceOracle(
   core: CoreProtocol,
-  chainlinkRegistry: SignerWithAddress,
+  chainlinkRegistry: string,
   jonesUSDCRegistry: JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): Promise<JonesUSDCWithChainlinkAutomationPriceOracle> {
   return createContractWithAbi(
     JonesUSDCWithChainlinkAutomationPriceOracle__factory.abi,
     JonesUSDCWithChainlinkAutomationPriceOracle__factory.bytecode,
-    getJonesUSDCWithChainlinkAutomationPriceOracleCosntructorParams(
+    getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams(
       core,
       chainlinkRegistry,
       jonesUSDCRegistry,
