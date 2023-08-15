@@ -21,13 +21,15 @@
 pragma solidity ^0.8.9;
 
 
-import "./ChainlinkAutomationPriceOracle.sol";
-import {IDolomiteMargin} from "../../protocol/interfaces/IDolomiteMargin.sol";
-import {IDolomitePriceOracle} from "../../protocol/interfaces/IDolomitePriceOracle.sol";
-import {IDolomiteStructs} from "../../protocol/interfaces/IDolomiteStructs.sol";
-import {Require} from "../../protocol/lib/Require.sol";
-import {IERC4626} from "../interfaces/IERC4626.sol";
-import {IPlutusVaultRegistry} from "../interfaces/plutus/IPlutusVaultRegistry.sol";
+import { ChainlinkAutomationPriceOracle } from "./ChainlinkAutomationPriceOracle.sol";
+
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IERC4626 } from "../interfaces/IERC4626.sol";
+import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
+
+import { Require } from "../../protocol/lib/Require.sol";
 
 /**
  * @title   PlutusVaultWithChainlinkAutomationPriceOracle
@@ -40,7 +42,7 @@ contract PlutusVaultWithChainlinkAutomationPriceOracle is ChainlinkAutomationPri
 
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "plvWithChainlinkPriceOracle";
+    bytes32 private constant _FILE = "PlvWithChainlinkPriceOracle";
     uint256 private constant _FEE_PRECISION = 10_000;
 
     // ============================ Public State Variables ============================
@@ -77,7 +79,7 @@ contract PlutusVaultWithChainlinkAutomationPriceOracle is ChainlinkAutomationPri
         if (_token == DPLV_GLP) { /* FOR COVERAGE TESTING */ }
         Require.that(_token == DPLV_GLP,
             _FILE,
-            "invalid token",
+            "Invalid token",
             _token
         );
         if (DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
@@ -86,12 +88,7 @@ contract PlutusVaultWithChainlinkAutomationPriceOracle is ChainlinkAutomationPri
             "plvGLP cannot be borrowable"
         );
 
-        // add second value for expiration value
-        if (lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp) { /* FOR COVERAGE TESTING */ }
-        Require.that(lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp,
-            _FILE,
-            "price expired"
-        );
+        _checkIsPriceExpired();
 
         return IDolomiteStructs.MonetaryPrice({
             value: _getCurrentPrice()

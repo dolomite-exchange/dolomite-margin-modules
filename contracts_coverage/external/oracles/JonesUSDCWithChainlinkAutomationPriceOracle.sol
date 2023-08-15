@@ -34,7 +34,7 @@ import { Require } from "../../protocol/lib/Require.sol";
  * @title   JonesUSDCWithChainlinkAutomationPriceOracle
  * @author  Dolomite
  *
- * @notice  An implementation of the IDolomitePriceOracle interface that gets Jones DAO's jUSDC price in USD terms
+ * @notice  An implementation of ChainlinkAutomationPriceOracle that gets Jones DAO's jUSDC price in USD terms
  * @notice  Uses Chainlink automation
  */
 contract JonesUSDCWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceOracle {
@@ -84,11 +84,8 @@ contract JonesUSDCWithChainlinkAutomationPriceOracle is ChainlinkAutomationPrice
             _FILE,
             "jUSDC cannot be borrowable"
         );
-        if (lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp) { /* FOR COVERAGE TESTING */ }
-        Require.that(lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp,
-            _FILE,
-            "price expired"
-        );
+
+        _checkIsPriceExpired();
 
         return IDolomiteStructs.MonetaryPrice({
             value: _getCurrentPrice()

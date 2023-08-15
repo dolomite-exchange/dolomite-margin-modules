@@ -64,7 +64,7 @@ contract MagicGLPWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceO
         if (_token == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
         Require.that(_token == address(MAGIC_GLP),
             _FILE,
-            "invalid token",
+            "Invalid token",
             _token
         );
         if (DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
@@ -72,11 +72,8 @@ contract MagicGLPWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceO
             _FILE,
             "magicGLP cannot be borrowable"
         );
-        if (lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp) { /* FOR COVERAGE TESTING */ }
-        Require.that(lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp,
-            _FILE,
-            "price expired"
-        );
+
+        _checkIsPriceExpired();
 
         return IDolomiteStructs.MonetaryPrice({
             value: _getCurrentPrice()

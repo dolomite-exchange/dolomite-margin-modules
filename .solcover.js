@@ -2,5 +2,5 @@ module.exports = {
   measureStatementCoverage: true,
   measureFunctionCoverage: true,
   measureModifierCoverage: true,
-  skipFiles: ['test/', 'utils/'],
+  skipFiles: ['test/', 'utils/', 'external/umami'],
 };
