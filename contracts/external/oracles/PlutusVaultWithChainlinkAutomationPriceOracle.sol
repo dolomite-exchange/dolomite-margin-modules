@@ -79,7 +79,7 @@ contract PlutusVaultWithChainlinkAutomationPriceOracle is ChainlinkAutomationPri
         Require.that(
             _token == DPLV_GLP,
             _FILE,
-            "invalid token",
+            "Invalid token",
             _token
         );
         Require.that(

@@ -153,7 +153,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
             "Invalid chainlink registry"
         );
 
-        (bytes memory data) = ValidationLib.callAndCheckSuccess(
+        ValidationLib.callAndCheckSuccess(
             _chainlinkRegistry,
             IChainlinkRegistry(_chainlinkRegistry).LINK.selector,
             bytes("")

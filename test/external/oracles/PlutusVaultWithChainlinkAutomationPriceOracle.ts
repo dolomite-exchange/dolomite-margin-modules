@@ -194,19 +194,19 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
     it('fails when token sent is not dplvGLP', async () => {
       await expectThrow(
         plvWithChainlinkAutomationPriceOracle.getPrice(ADDRESSES.ZERO),
-        `PlvWithChainlinkPriceOracle: invalid token <${ADDRESSES.ZERO}>`,
+        `PlvWithChainlinkPriceOracle: Invalid token <${ADDRESSES.ZERO}>`,
       );
       await expectThrow(
         plvWithChainlinkAutomationPriceOracle.getPrice(core.gmxEcosystem!.fsGlp.address),
-        `PlvWithChainlinkPriceOracle: invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`,
+        `PlvWithChainlinkPriceOracle: Invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`,
       );
       await expectThrow(
         plvWithChainlinkAutomationPriceOracle.getPrice(core.tokens.dfsGlp!.address),
-        `PlvWithChainlinkPriceOracle: invalid token <${(core.tokens.dfsGlp!.address).toLowerCase()}>`,
+        `PlvWithChainlinkPriceOracle: Invalid token <${(core.tokens.dfsGlp!.address).toLowerCase()}>`,
       );
       await expectThrow(
         plvWithChainlinkAutomationPriceOracle.getPrice(core.gmxEcosystem!.glp.address),
-        `PlvWithChainlinkPriceOracle: invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`,
+        `PlvWithChainlinkPriceOracle: Invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`,
       );
     });
 
