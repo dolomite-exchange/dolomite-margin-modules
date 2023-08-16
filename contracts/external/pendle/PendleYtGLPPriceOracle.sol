@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
@@ -39,13 +40,13 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
 
     bytes32 private constant _FILE = "PendleYtGLPPriceOracle";
     uint32 public constant TWAP_DURATION = 900; // 15 minutes
-    uint256 public constant PT_ASSET_SCALE = 1e18; // 18 decimals
 
     // ============================ Public State Variables ============================
 
     address public immutable DYT_GLP; // solhint-disable-line var-name-mixedcase
     IPendleGLPRegistry public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteMargin public immutable DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable PT_ASSET_SCALE; // solhint-disable-line var-name-mixedcase
     uint256 public immutable DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
@@ -59,6 +60,7 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
         REGISTRY = IPendleGLPRegistry(_pendleGLPRegistry);
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
+        PT_ASSET_SCALE = 10 ** uint256(IERC20Metadata(DYT_GLP).decimals());
 
         (
             bool increaseCardinalityRequired,,
@@ -81,7 +83,7 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
         Require.that(
             _token == address(DYT_GLP),
             _FILE,
-            "invalid token",
+            "Invalid token",
             _token
         );
         Require.that(

@@ -4,7 +4,7 @@ import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { createTestToken } from '../../../src/utils/dolomite-utils';
+import { createTestToken, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { createDolomiteRegistryImplementation } from 'test/utils/dolomite';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import {
@@ -44,9 +44,11 @@ import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
+  setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { expectThrow, expectWalletBalance } from 'test/utils/assertions';
+import { expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
+import { getSimpleZapParams } from 'test/utils/zap-utils';
 
 const ONE_WEEK = 7 * 24 * 3600;
 
@@ -55,7 +57,6 @@ const borrowAccountNumber = '123';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const initialAllowableDebtMarketIds = [0, 1];
-const initialAllowableCollateralMarketIds = [2, 3];
 
 describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -72,10 +73,10 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
   let rewardToken: IERC20;
   let router: BaseRouter;
 
-  let otherToken: CustomTestToken;
-  let otherMarketId: BigNumber;
-  let anotherToken: CustomTestToken;
-  let anotherMarketId: BigNumber;
+  let otherToken1: CustomTestToken;
+  let otherMarketId1: BigNumber;
+  let otherToken2: CustomTestToken;
+  let otherMarketId2: BigNumber;
   let implementation: DolomiteRegistryImplementation;
 
   before(async () => {
@@ -87,7 +88,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     factory = await createPendleYtGLP2024IsolationModeVaultFactory(
       pendleRegistry,
       initialAllowableDebtMarketIds,
-      initialAllowableCollateralMarketIds,
+      [],
       core,
       core.pendleEcosystem!.ytGlpToken,
       userVaultImplementation
@@ -124,21 +125,21 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       core.hhUser1
     );
 
-    otherToken = await createTestToken();
+    otherToken1 = await createTestToken();
     await core.testEcosystem!.testPriceOracle!.setPrice(
-      otherToken.address,
+      otherToken1.address,
       '1000000000000000000000000000000'
     ); // $1.00 in USDC
-    otherMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, otherToken, false);
+    otherMarketId1 = await core.dolomiteMargin.getNumMarkets();
+    await setupTestMarket(core, otherToken1, false);
 
-    anotherToken = await createTestToken();
+    otherToken2 = await createTestToken();
     await core.testEcosystem!.testPriceOracle!.setPrice(
-      anotherToken.address,
+      otherToken2.address,
       '1000000000000000000000000000000'
     ); // $1.00 in USDC
-    anotherMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, anotherToken, false);
+    otherMarketId2 = await core.dolomiteMargin.getNumMarkets();
+    await setupTestMarket(core, otherToken2, false);
 
     const syGlp = IPendleSyToken__factory.connect(await pendleRegistry.syGlpToken(), core.hhUser1);
     await syGlp.connect(core.hhUser1).deposit(
@@ -155,6 +156,14 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     await underlyingToken.connect(core.hhUser1).approve(vault.address, ethers.constants.MaxUint256);
     const ytBal = await underlyingToken.balanceOf(core.hhUser1.address);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, ytBal);
+
+    await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
+    await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, otherAmountWei);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, otherAmountWei);
+
+    await otherToken2.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
+    await otherToken2.connect(core.hhUser1).approve(core.dolomiteMargin.address, otherAmountWei);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
 
     snapshotId = await snapshot();
   });
@@ -183,7 +192,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
       await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
-      const rewardDeposit = [{ marketId: core.marketIds.weth, depositIntoDolomite: true }];
+      const rewardDeposit = [{ token: core.tokens.weth.address, depositIntoDolomite: true }];
       await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, rewardDeposit);
 
       const account = { owner: core.hhUser1.address, number: defaultAccountNumber };
@@ -199,7 +208,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
       await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
-      const rewardDeposit = [{ marketId: core.marketIds.weth, depositIntoDolomite: false }];
+      const rewardDeposit = [{ token: core.tokens.weth.address, depositIntoDolomite: false }];
       await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, rewardDeposit);
 
       expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.be.gt(ZERO_BI);
@@ -207,7 +216,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail when not called by vault owner', async () => {
-      const rewardDeposit = [{ marketId: core.marketIds.weth, depositIntoDolomite: false }];
+      const rewardDeposit = [{ token: core.tokens.weth.address, depositIntoDolomite: false }];
       await expectThrow(
         vault.connect(core.hhUser2).redeemDueInterestAndRewards(true, true, rewardDeposit),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
@@ -215,94 +224,323 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     });
   });
 
-  describe('#transferIntoPositionWithOtherToken', () => {
+  describe('#openBorrowPosition', () => {
     it('should work normally', async () => {
-      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId]);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1, otherMarketId2]);
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 8 * 24 * 3600);
+
       await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
-      await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
-        borrowAccountNumber,
-        defaultAccountNumber,
-        otherMarketId,
-        otherAmountWei,
-        BalanceCheckFlag.To
-      );
     });
 
-    it('should use existing expiry if borrow position already exists', async () => {
+    it('should fail if within 1 week of ytMaturityDate', async () => {
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1, otherMarketId2]);
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 7 * 24 * 3600);
+
+      await expectThrow(
+        vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei),
+        'PendleYtGLP2024UserVaultV1: Too close to expiry'
+      );
+    });
+  });
+
+  describe('#swapExactInputForOutput', () => {
+    it('should work normally', async () => {
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, otherMarketId1, otherAmountWei, BalanceCheckFlag.Both);
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, otherMarketId2, otherAmountWei, BalanceCheckFlag.Both);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId2, otherAmountWei);
+
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
+      await vault.connect(core.hhUser1).swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId2, otherAmountWei.mul(2));
+    });
+
+    it('should work normally with debt', async () => {
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, otherMarketId2, otherAmountWei, BalanceCheckFlag.Both);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
+      const inputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, inputAmount, otherMarketId2, otherAmountWei, core);
+      await vault.connect(core.hhUser1).swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, ZERO_BI.sub(inputAmount));
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId2, otherAmountWei.mul(2));
+    });
+
+    it('should set expiration to 4 weeks if ytMaturityTimestamp is more than 5 weeks away and balance goes negative', async () => {
       let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
-      await factory.connect(core.governance).ownerSetYtMaturityDate(timestamp + 12 * ONE_WEEK);
-      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId, anotherMarketId]);
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 6 * ONE_WEEK);
+
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, otherMarketId2, otherAmountWei, BalanceCheckFlag.Both);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
+      const inputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, inputAmount, otherMarketId2, otherAmountWei, core);
+      await vault.connect(core.hhUser1).swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, ZERO_BI.sub(inputAmount));
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId2, otherAmountWei.mul(2));
+      const accountInfo = { owner: vault.address, number: borrowAccountNumber };
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK);
+    });
+
+    it('should use existing expiry if borrow position already exists and balance goes negative', async () => {
+      let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 12 * ONE_WEEK);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1, otherMarketId2]);
 
       await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
-        otherMarketId,
+        otherMarketId1,
         otherAmountWei,
         BalanceCheckFlag.To
       );
       timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
       const accountInfo = { owner: vault.address, number: borrowAccountNumber };
-      expect(await core.expiry.getExpiry(accountInfo, otherMarketId)).to.eq(timestamp + 4 * ONE_WEEK);
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK);
+      await increaseToTimestamp(timestamp + 2 * ONE_WEEK);
+
+      const inputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId2, inputAmount, otherMarketId1, inputAmount, core);
+      await vault.connect(core.hhUser1).swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, ZERO_BI.sub(inputAmount));
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId2, ZERO_BI.sub(inputAmount));
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK);
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId2)).to.eq(timestamp + 4 * ONE_WEEK);
+    });
+
+    it('should set expiration to ytMaturityDate - 1 week if expiry is less than 5 weeks away and balance goes negative', async () => {
+      let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 3 * ONE_WEEK);
+
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, otherMarketId2, otherAmountWei, BalanceCheckFlag.Both);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
+      const inputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, inputAmount, otherMarketId2, otherAmountWei, core);
+      await vault.connect(core.hhUser1).swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, ZERO_BI.sub(inputAmount));
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId2, otherAmountWei.mul(2));
+      const accountInfo = { owner: vault.address, number: borrowAccountNumber };
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 2 * ONE_WEEK);
+    });
+
+    it('should fail when not called by vault owner', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
+      await expectThrow(
+        vault.connect(core.hhUser2).swapExactInputForOutput(
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if within 1 week of ytMaturityTimestamp and balance goes negative', async () => {
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, otherMarketId2, otherAmountWei, BalanceCheckFlag.Both);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
+      let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp);
+
+      const inputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, inputAmount, otherMarketId2, otherAmountWei, core);
+      await expectThrow(
+        vault.connect(core.hhUser1).swapExactInputForOutput(
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'PendleYtGLP2024UserVaultV1: Too close to expiry',
+      );
+    });
+  });
+
+  describe('#transferFromPositionWithOtherToken', () => {
+    it('should work normally', async () => {
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
+      await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.To
+      );
+    });
+
+    it('should withdraw collateral normally', async () => {
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
+      await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, otherMarketId1, otherAmountWei, BalanceCheckFlag.Both);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, otherAmountWei);
+
+      await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei, 
+        BalanceCheckFlag.Both
+      );
+
+      const accountInfo = { owner: vault.address, number: borrowAccountNumber };
+      expect((await core.dolomiteMargin.getAccountWei(accountInfo, otherMarketId1)).value).to.eq(ZERO_BI);
+    });
+
+    it('should allow withdrawing collateral after market expiration', async () => {
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
+      await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(defaultAccountNumber, borrowAccountNumber, otherMarketId1, otherAmountWei, BalanceCheckFlag.Both);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, otherAmountWei);
+
+      let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp);
+      await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei, 
+        BalanceCheckFlag.Both
+      );
+
+      const accountInfo = { owner: vault.address, number: borrowAccountNumber };
+      expect((await core.dolomiteMargin.getAccountWei(accountInfo, otherMarketId1)).value).to.eq(ZERO_BI);
+    });
+
+    it('should use existing expiry if borrow position already exists', async () => {
+      let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 12 * ONE_WEEK);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1, otherMarketId2]);
+
+      await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.To
+      );
+      timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+
+      const accountInfo = { owner: vault.address, number: borrowAccountNumber };
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK);
       await increaseToTimestamp(timestamp + 2 * ONE_WEEK);
 
       await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
-        anotherMarketId,
+        otherMarketId2,
         otherAmountWei,
         BalanceCheckFlag.To
       );
-      expect(await core.expiry.getExpiry(accountInfo, otherMarketId)).to.eq(timestamp + 4 * ONE_WEEK);
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK);
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId2)).to.eq(timestamp + 4 * ONE_WEEK);
     });
 
-    it('should set expiration to 4 weeks if ytMaturityDate is more than 5 weeks away', async () => {
+    it('should set expiration to 4 weeks if ytMaturityTimestamp is more than 5 weeks away', async () => {
       let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
-      await factory.connect(core.governance).ownerSetYtMaturityDate(timestamp + 6 * ONE_WEEK);
-      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId]);
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 6 * ONE_WEEK);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
 
       await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
-        otherMarketId,
+        otherMarketId1,
         otherAmountWei,
         BalanceCheckFlag.To
       );
       timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
       const accountInfo = { owner: vault.address, number: borrowAccountNumber };
-      expect(await core.expiry.getExpiry(accountInfo, otherMarketId)).to.eq(timestamp + 4 * ONE_WEEK);
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK);
     });
 
     it('should set expiration to ytMaturityDate - 1 week if expiry is less than 5 weeks away', async () => {
       const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
-      await factory.connect(core.governance).ownerSetYtMaturityDate(timestamp + 3 * ONE_WEEK);
-      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId]);
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 3 * ONE_WEEK);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
 
       await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
-        otherMarketId,
+        otherMarketId1,
         otherAmountWei,
         BalanceCheckFlag.To
       );
 
       const accountInfo = { owner: vault.address, number: borrowAccountNumber };
-      expect(await core.expiry.getExpiry(accountInfo, otherMarketId)).to.eq(timestamp + 2 * ONE_WEEK);
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 2 * ONE_WEEK);
     });
 
     it('should fail when not called by vault owner', async () => {
-      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId]);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
       await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
 
       await expectThrow(
         vault.connect(core.hhUser2).transferFromPositionWithOtherToken(
           borrowAccountNumber,
           defaultAccountNumber,
-          otherMarketId,
+          otherMarketId1,
           otherAmountWei,
           BalanceCheckFlag.To
         ),
@@ -311,21 +549,21 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if within 1 week of ytMaturityDate', async () => {
-      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId]);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
       await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
 
       const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
-      await factory.connect(core.governance).ownerSetYtMaturityDate(timestamp + 7 * 24 * 3600);
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 7 * 24 * 3600);
 
       await expectThrow(
         vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
           borrowAccountNumber,
           defaultAccountNumber,
-          otherMarketId,
+          otherMarketId1,
           otherAmountWei,
           BalanceCheckFlag.To
         ),
-      'PendleYtGLP2024UserVaultV1: too close to expiry'
+        'PendleYtGLP2024UserVaultV1: Too close to expiry'
       );
     });
   });

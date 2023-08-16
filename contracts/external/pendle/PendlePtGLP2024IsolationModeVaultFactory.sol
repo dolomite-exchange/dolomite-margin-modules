@@ -42,12 +42,12 @@ contract PendlePtGLP2024IsolationModeVaultFactory is
 
     // ============ Field Variables ============
 
-    IPendleGLPRegistry public override pendleGLPRegistry;
+    IPendleGLPRegistry public override pendlePtGLP2024Registry;
 
     // ============ Constructor ============
 
     constructor(
-        address _pendleGLPRegistry,
+        address _pendlePtGLP2024Registry,
         address _ptGlp, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
@@ -59,19 +59,19 @@ contract PendlePtGLP2024IsolationModeVaultFactory is
         _userVaultImplementation,
         _dolomiteMargin
     ) {
-        pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
+        pendlePtGLP2024Registry = IPendleGLPRegistry(_pendlePtGLP2024Registry);
     }
 
     // ============ External Functions ============
 
-    function ownerSetPendleGLPRegistry(
-        address _pendleGLPRegistry
+    function ownerSetPendlePtGLP2024Registry(
+        address _pendlePtGLP2024Registry
     )
     external
     override
     onlyDolomiteMarginOwner(msg.sender) {
-        pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
-        emit PendleGLPRegistrySet(_pendleGLPRegistry);
+        pendlePtGLP2024Registry = IPendleGLPRegistry(_pendlePtGLP2024Registry);
+        emit PendlePtGLP2024RegistrySet(_pendlePtGLP2024Registry);
     }
 
     function allowableDebtMarketIds() external pure returns (uint256[] memory) {

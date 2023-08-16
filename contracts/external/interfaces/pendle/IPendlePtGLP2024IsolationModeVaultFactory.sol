@@ -36,13 +36,13 @@ interface IPendlePtGLP2024IsolationModeVaultFactory is IIsolationModeVaultFactor
     // ==================== Events ====================
     // ================================================
 
-    event PendleGLPRegistrySet(address _pendleGLPRegistry);
+    event PendlePtGLP2024RegistrySet(address _pendlePtGLP2024Registry);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function ownerSetPendleGLPRegistry(address _pendleGLPRegistry) external;
+    function ownerSetPendlePtGLP2024Registry(address _pendlePtGLP2024Registry) external;
 
-    function pendleGLPRegistry() external view returns (IPendleGLPRegistry);
+    function pendlePtGLP2024Registry() external view returns (IPendleGLPRegistry);
 }

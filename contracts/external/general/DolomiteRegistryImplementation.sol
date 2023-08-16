@@ -131,6 +131,12 @@ contract DolomiteRegistryImplementation is
             _FILE,
             "Invalid expiry"
         );
+        bytes memory returnData = ValidationLib.callAndCheckSuccess(
+            _expiry,
+            IExpiry(_expiry).g_expiryRampTime.selector,
+            bytes("")
+        );
+        abi.decode(returnData, (uint256));
 
         _setAddress(_EXPIRY_SLOT, _expiry);
         emit ExpirySet(_expiry);

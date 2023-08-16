@@ -52,7 +52,7 @@ contract PendlePtGLP2024IsolationModeTokenVaultV1 is
     // ==================================================================
 
     function registry() public view returns (IPendleGLPRegistry) {
-        return IPendlePtGLP2024IsolationModeVaultFactory(VAULT_FACTORY()).pendleGLPRegistry();
+        return IPendlePtGLP2024IsolationModeVaultFactory(VAULT_FACTORY()).pendlePtGLP2024Registry();
     }
 
     function dolomiteRegistry()

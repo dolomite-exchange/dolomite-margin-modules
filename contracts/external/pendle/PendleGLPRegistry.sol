@@ -46,18 +46,12 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
 
     bytes32 private constant _FILE = "PendleGLPRegistry";
 
-    bytes32 private constant _PENDLE_ROUTER_SLOT = 
-        bytes32(uint256(keccak256("eip1967.proxy.pendleRouter")) - 1);
-    bytes32 private constant _PENDLE_PT_GLP_MARKET_SLOT = 
-        bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpMarket")) - 1);
-    bytes32 private constant _PENDLE_PT_ORACLE_SLOT = 
-        bytes32(uint256(keccak256("eip1967.proxy.pendlePtOracle")) - 1);
-    bytes32 private constant _PENDLE_SY_GLP_TOKEN_SLOT = 
-        bytes32(uint256(keccak256("eip1967.proxy.pendleSyGlpToken")) - 1);
-    bytes32 private constant _PENDLE_PT_GLP_TOKEN_SLOT = 
-        bytes32(uint256(keccak256("eip1967.proxy.pendlePtGlpToken")) - 1);
-    bytes32 private constant _PENDLE_YT_GLP_TOKEN_SLOT = 
-        bytes32(uint256(keccak256("eip1967.proxy.pendleYtGlpToken")) - 1);
+    bytes32 private constant _PENDLE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendleRouter")) - 1);
+    bytes32 private constant _PENDLE_PT_GLP_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ptGlpMarket")) - 1);
+    bytes32 private constant _PENDLE_PT_GLP_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ptGlpToken")) - 1);
+    bytes32 private constant _PENDLE_PT_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ptOracle")) - 1);
+    bytes32 private constant _PENDLE_SY_GLP_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.syGlpToken")) - 1);
+    bytes32 private constant _PENDLE_YT_GLP_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ytGlpToken")) - 1);
 
     // ==================== Initializer ====================
 
@@ -84,7 +78,7 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
     function ownerSetPendleRouter(
         address _pendleRouter
     )
-    external 
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetPendleRouter(_pendleRouter);
     }
@@ -92,7 +86,7 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
     function ownerSetPtGlpMarket(
         address _ptGlpMarket
     )
-    external 
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetPtGlpMarket(_ptGlpMarket);
     }
@@ -100,7 +94,7 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
     function ownerSetPtOracle(
         address _ptOracle
     )
-    external 
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetPtOracle(_ptOracle);
     }
@@ -108,7 +102,7 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
     function ownerSetSyGlpToken(
         address _syGlpToken
     )
-    external 
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetSyGlpToken(_syGlpToken);
     }
@@ -116,7 +110,7 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
     function ownerSetPtGlpToken(
         address _ptGlpToken
     )
-    external 
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetPtGlpToken(_ptGlpToken);
     }
@@ -124,7 +118,7 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
     function ownerSetYtGlpToken(
         address _ytGlpToken
     )
-    external 
+    external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetYtGlpToken(_ytGlpToken);
     }

@@ -62,7 +62,7 @@ interface IExpiry {
     returns (IDolomiteMargin.MonetaryPrice memory heldPrice, IDolomiteMargin.MonetaryPrice memory owedPriceAdj);
 
     function getExpiry(
-        IDolomiteMargin.AccountInfo memory account,
+        IDolomiteMargin.AccountInfo calldata account,
         uint256 marketId
     )
     external

@@ -46,7 +46,7 @@ describe('PendleGLPRegistry', () => {
           core.pendleEcosystem!.ptOracle.address,
           core.pendleEcosystem!.syGlpToken.address,
           core.pendleEcosystem!.ytGlpToken.address,
-          core.dolomiteRegistry.address
+          core.dolomiteRegistry.address,
         ),
         'Initializable: contract is already initialized',
       );

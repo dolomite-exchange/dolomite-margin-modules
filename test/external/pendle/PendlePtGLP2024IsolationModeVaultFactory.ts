@@ -44,7 +44,7 @@ describe('PendlePtGLP2024IsolationModeVaultFactory', () => {
 
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await factory.pendleGLPRegistry()).to.equal(pendleRegistry.address);
+      expect(await factory.pendlePtGLP2024Registry()).to.equal(pendleRegistry.address);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(core.pendleEcosystem!.ptGlpToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
@@ -54,16 +54,16 @@ describe('PendlePtGLP2024IsolationModeVaultFactory', () => {
 
   describe('#ownerSetPendleGLPRegistry', () => {
     it('should work normally', async () => {
-      const result = await factory.connect(core.governance).ownerSetPendleGLPRegistry(OTHER_ADDRESS);
-      await expectEvent(factory, result, 'PendleGLPRegistrySet', {
-        pendleGLPRegistry: OTHER_ADDRESS,
+      const result = await factory.connect(core.governance).ownerSetPendlePtGLP2024Registry(OTHER_ADDRESS);
+      await expectEvent(factory, result, 'PendlePtGLP2024RegistrySet', {
+        pendlePtGLP2024Registry: OTHER_ADDRESS,
       });
-      expect(await factory.pendleGLPRegistry()).to.equal(OTHER_ADDRESS);
+      expect(await factory.pendlePtGLP2024Registry()).to.equal(OTHER_ADDRESS);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        factory.connect(core.hhUser1).ownerSetPendleGLPRegistry(OTHER_ADDRESS),
+        factory.connect(core.hhUser1).ownerSetPendlePtGLP2024Registry(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

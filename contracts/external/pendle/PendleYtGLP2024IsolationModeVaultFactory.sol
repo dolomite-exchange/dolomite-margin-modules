@@ -48,7 +48,7 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
     address public immutable override WETH; // solhint-disable-line var-name-mixedcase
     uint256 public immutable override WETH_MARKET_ID; // solhint-disable-line var-name-mixedcase
     IPendleGLPRegistry public override pendleGLPRegistry;
-    uint256 public override ytMaturityDate;
+    uint256 public override ytMaturityTimestamp;
 
     // ============ Constructor ============
 
@@ -74,7 +74,7 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
         WETH = _weth;
         WETH_MARKET_ID = _wethMarketId;
         pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
-        ytMaturityDate = IPendleYtToken(UNDERLYING_TOKEN).expiry();
+        ytMaturityTimestamp = IPendleYtToken(UNDERLYING_TOKEN).expiry();
     }
 
     // ================================================
@@ -91,14 +91,14 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
         emit PendleGLPRegistrySet(_pendleGLPRegistry);
     }
 
-    function ownerSetYtMaturityDate(
-        uint256 _ytMaturityDate
+    function ownerSetYtMaturityTimestamp(
+        uint256 _ytMaturityTimestamp
     ) 
     external 
     override 
     onlyDolomiteMarginOwner(msg.sender) {
-        ytMaturityDate = _ytMaturityDate;
-        emit YtMaturityDateSet(_ytMaturityDate);
+        ytMaturityTimestamp = _ytMaturityTimestamp;
+        emit YtMaturityTimestampSet(_ytMaturityTimestamp);
     }
 
     function ownerSetAllowableDebtMarketIds(
@@ -110,7 +110,7 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
         Require.that(
             _newAllowableDebtMarketIds.length > 0,
             _FILE,
-            "invalid allowableDebtMarketIds"
+            "Invalid allowableDebtMarketIds"
         );
         _ownerSetAllowableDebtMarketIds(_newAllowableDebtMarketIds);
     }

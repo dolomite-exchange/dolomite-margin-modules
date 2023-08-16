@@ -54,7 +54,7 @@ describe('PendleYtGLP2024IsolationModeVaultFactory', () => {
       expect(await factory.pendleGLPRegistry()).to.equal(pendleRegistry.address);
       expectArrayEq(await factory.allowableDebtMarketIds(), initialAllowableDebtMarketIds);
       expectArrayEq(await factory.allowableCollateralMarketIds(), initialAllowableCollateralMarketIds);
-      expect(await factory.ytMaturityDate()).to.equal(YT_EXPIRY_TIME);
+      expect(await factory.ytMaturityTimestamp()).to.equal(YT_EXPIRY_TIME);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(core.pendleEcosystem!.ytGlpToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
@@ -79,18 +79,18 @@ describe('PendleYtGLP2024IsolationModeVaultFactory', () => {
     });
   });
 
-  describe('#ownerSetYtMaturityDate', () => {
+  describe('#ownerSetYtMaturityTimestamp', () => {
     it('should work normally', async () => {
-      const result = await factory.connect(core.governance).ownerSetYtMaturityDate(100);
-      await expectEvent(factory, result, 'YtMaturityDateSet', {
-        ytMaturityDate: 100,
+      const result = await factory.connect(core.governance).ownerSetYtMaturityTimestamp(100);
+      await expectEvent(factory, result, 'YtMaturityTimestampSet', {
+        ytMaturityTimestamp: 100,
       });
-      expect(await factory.ytMaturityDate()).to.equal(100);
+      expect(await factory.ytMaturityTimestamp()).to.equal(100);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        factory.connect(core.hhUser1).ownerSetYtMaturityDate(100),
+        factory.connect(core.hhUser1).ownerSetYtMaturityTimestamp(100),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -117,7 +117,7 @@ describe('PendleYtGLP2024IsolationModeVaultFactory', () => {
     it('should fail when passed an empty array', async () => {
       await expectThrow(
         factory.connect(core.governance).ownerSetAllowableDebtMarketIds([]),
-        'PendleYtGLP2024VaultFactory: invalid allowableDebtMarketIds',
+        'PendleYtGLP2024VaultFactory: Invalid allowableDebtMarketIds',
       );
     });
   });

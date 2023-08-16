@@ -33,7 +33,7 @@ import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
 interface IPendleYtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     struct RewardDeposit {
-        uint256 marketId;
+        address token;
         bool depositIntoDolomite;
     }
 

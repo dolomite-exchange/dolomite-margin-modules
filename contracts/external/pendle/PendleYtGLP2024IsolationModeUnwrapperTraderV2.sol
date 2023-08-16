@@ -87,12 +87,12 @@ contract PendleYtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
         uint256 _inputAmount,
         bytes memory _extraOrderData
     ) 
-        internal 
-        override 
-        returns (uint256) 
+        internal
+        override
+        returns (uint256)
     {
         (
-        IPendleRouter.TokenOutput memory tokenOutput
+            IPendleRouter.TokenOutput memory tokenOutput
         ) = abi.decode(_extraOrderData, (IPendleRouter.TokenOutput));
 
         // redeem ytGLP for GLP

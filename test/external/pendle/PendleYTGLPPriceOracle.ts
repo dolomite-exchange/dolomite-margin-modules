@@ -122,19 +122,19 @@ describe('PendleYtGLPPriceOracle', () => {
     it('fails when token sent is not dytGLP', async () => {
       await expectThrow(
         ytGlpOracle.getPrice(ADDRESSES.ZERO),
-        `PendleYtGLPPriceOracle: invalid token <${ADDRESSES.ZERO}>`
+        `PendleYtGLPPriceOracle: Invalid token <${ADDRESSES.ZERO}>`
       );
       await expectThrow(
         ytGlpOracle.getPrice(core.gmxEcosystem!.fsGlp.address),
-        `PendleYtGLPPriceOracle: invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`
+        `PendleYtGLPPriceOracle: Invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`
       );
       await expectThrow(
         ytGlpOracle.getPrice(core.tokens.dfsGlp!.address),
-        `PendleYtGLPPriceOracle: invalid token <${core.tokens.dfsGlp!.address.toLowerCase()}>`
+        `PendleYtGLPPriceOracle: Invalid token <${core.tokens.dfsGlp!.address.toLowerCase()}>`
       );
       await expectThrow(
         ytGlpOracle.getPrice(core.gmxEcosystem!.glp.address),
-        `PendleYtGLPPriceOracle: invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`
+        `PendleYtGLPPriceOracle: Invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`
       );
     });
 

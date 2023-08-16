@@ -96,8 +96,8 @@ import {
   IParaswapFeeClaimer__factory,
   IPendlePtGLP2024IsolationModeVaultFactory,
   IPendlePtGLP2024IsolationModeVaultFactory__factory,
-  IPendlePtGLP2024Registry,
-  IPendlePtGLP2024Registry__factory,
+  IPendleGLPRegistry,
+  IPendleGLPRegistry__factory,
   IPendlePtMarket,
   IPendlePtMarket__factory,
   IPendlePtOracle,
@@ -871,9 +871,9 @@ async function createPendleEcosystem(
       address => IPendleYtToken__factory.connect(address, signer),
     ),
     live: {
-      pendlePtGLP2024Registry: getContract(
+      pendleGLPRegistry: getContract(
         (Deployments.PendlePtGLP2024RegistryProxy as any)[network]?.address,
-        IPendlePtGLP2024Registry__factory.connect,
+        IPendleGLPRegistry__factory.connect,
       ),
       ptGlpIsolationModeFactory: getContract(
         (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,

@@ -90,11 +90,19 @@ describe('DolomiteRegistryImplementation', () => {
 
   describe('#ownerSetExpiry', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetExpiry(OTHER_ADDRESS);
+      const expiryAddress = core.expiry!.address;
+      const result = await registry.connect(core.governance).ownerSetExpiry(expiryAddress);
       await expectEvent(registry, result, 'ExpirySet', {
-        OTHER_ADDRESS,
+        expiryAddress,
       });
-      expect(await registry.expiry()).to.equal(OTHER_ADDRESS);
+      expect(await registry.expiry()).to.equal(expiryAddress);
+    });
+
+    it('should fail if expiry is not valid', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetExpiry(OTHER_ADDRESS),
+        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`
+      );
     });
 
     it('should fail when not called by owner', async () => {
