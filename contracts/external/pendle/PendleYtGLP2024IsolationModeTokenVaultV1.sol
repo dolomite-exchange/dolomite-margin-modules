@@ -62,6 +62,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
 
     bytes32 private constant _FILE = "PendleYtGLP2024UserVaultV1";
     uint256 public constant ONE_WEEK = 1 weeks;
+    uint256 private constant _SAFETY_BUFFER_SECONDS = 5 minutes;
 
     // ==================================================================
     // ======================== Public Functions ========================
@@ -123,6 +124,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
             "Array length mismatch"
         );
 
+        // @note this code feels long and unclean. Would be a bit better if we get rid of interest section
+        // @note Should I also add checks if the balance diff is zero?
         uint256[] memory beforeRewardBalances = new uint256[](rewardTokenLength);
         for (uint256 i; i < rewardTokenLength; i++) {
             beforeRewardBalances[i] = IERC20(rewardTokens[i]).balanceOf(address(this));
@@ -291,10 +294,23 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         uint256 _ytMaturityTimestamp,
         IPendleYtGLP2024IsolationModeVaultFactory vaultFactory
     ) internal {
-        uint256 expiryDelta = _checkExistingBorrowPositions(_accountInfo);
-        if (expiryDelta == 0) {
+        IExpiry expiry = vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry();
+
+        // @note This require and the following if statement feels hacky. 
+        uint256 expirationDelta = _checkExistingBorrowPositions(_accountInfo, expiry);
+        Require.that(
+            expirationDelta > _SAFETY_BUFFER_SECONDS || expirationDelta == 0,
+            _FILE,
+            "Position is about to expire"
+        );
+        if (expirationDelta + block.timestamp == expiry.getExpiry(_accountInfo, _marketId)) {
+            // Expiration already exists
+            return;
+        }
+
+        if (expirationDelta == 0) {
             // If an expiry doesn't exist, use the min of 4 weeks or the time until 1-week before YT's expiration
-            expiryDelta = Math.min(4 * ONE_WEEK, _ytMaturityTimestamp - ONE_WEEK - block.timestamp);
+            expirationDelta = Math.min(4 * ONE_WEEK, _ytMaturityTimestamp - ONE_WEEK - block.timestamp);
         }
 
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
@@ -305,8 +321,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
             accounts[0],
             /* _accountId = */ 0,
             _marketId,
-            address(vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry()),
-            expiryDelta
+            address(expiry),
+            expirationDelta
         );
 
         vaultFactory.DOLOMITE_MARGIN().operate(accounts, actions);
@@ -320,12 +336,13 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
      *          the function will return 75.
      */
     function _checkExistingBorrowPositions(
-        IDolomiteStructs.AccountInfo memory accountInfo
+        IDolomiteStructs.AccountInfo memory accountInfo,
+        IExpiry _expiry
     ) internal view returns (uint256) {
+        // @note This chunk feels ok, but i don't feel it ties well with _setExpirationForBorrowPosition
         IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
             VAULT_FACTORY()
         );
-        IExpiry expiry = vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry();
 
         uint256[] memory allowableDebtMarketIds = vaultFactory.allowableDebtMarketIds();
         uint256 allowableDebtMarketIdsLength = allowableDebtMarketIds.length;
@@ -333,7 +350,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
 
         // Loop through all allowable debt markets checking for an expiry
         for (uint256 i = 0; i < allowableDebtMarketIdsLength; ++i) {
-            existingExpiry = expiry.getExpiry(accountInfo, allowableDebtMarketIds[i]);
+            existingExpiry = _expiry.getExpiry(accountInfo, allowableDebtMarketIds[i]);
             if (existingExpiry != 0) {
                 // If expiry exists, returns the time delta between the expiry and block.timestamp
                 return existingExpiry - block.timestamp;

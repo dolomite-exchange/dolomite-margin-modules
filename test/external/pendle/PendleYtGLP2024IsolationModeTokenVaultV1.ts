@@ -41,7 +41,7 @@ import {
   IPendleYtToken__factory,
   TestPendleYtGLP2024IsolationModeTokenVaultV1__factory,
 } from '../../../src/types';
-import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
@@ -194,7 +194,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     });
   });
 
-  describe('#redeemDueInterestAndRewards', () => {
+  describe.only('#redeemDueInterestAndRewards', () => {
     it('should work normally', async () => {
       expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
       expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
@@ -221,7 +221,12 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
     });
 
-    xit('should send interest to user', async () => {});
+    it('should fail when sending interest to user cause syGLP is invalid market', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [false], true),
+        'Getters: Invalid token'
+      );
+    });
 
     it('should fail when not called by vault owner', async () => {
       await expectThrow(
@@ -566,6 +571,35 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expect(await core.expiry.getExpiry(accountInfo, otherMarketId2)).to.eq(timestamp + 4 * ONE_WEEK);
     });
 
+    it('should leave expiration the same when borrowing more from same position', async () => {
+      let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 12 * ONE_WEEK);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1, otherMarketId2]);
+
+      await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.To
+      );
+      timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+
+      const accountInfo = { owner: vault.address, number: borrowAccountNumber };
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK);
+      await increaseToTimestamp(timestamp + 2 * ONE_WEEK);
+
+      await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.To
+      );
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK);
+    });
+
     it('should set expiration to 4 weeks if ytMaturityTimestamp is more than 5 weeks away', async () => {
       let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
       await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 6 * ONE_WEEK);
@@ -637,5 +671,37 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         'PendleYtGLP2024UserVaultV1: Too close to expiry'
       );
     });
+
+    it('should fail if within safety buffer seconds of existing expiration', async () => {
+      let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 12 * ONE_WEEK);
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1, otherMarketId2]);
+
+      await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.To
+      );
+      timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+
+      const accountInfo = { owner: vault.address, number: borrowAccountNumber };
+      expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK);
+      await increaseToTimestamp(timestamp + 4 * ONE_WEEK - 100);
+
+      await expectThrow(
+        vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
+          borrowAccountNumber,
+          defaultAccountNumber,
+          otherMarketId1,
+          ONE_BI,
+          BalanceCheckFlag.To
+        ),
+        'PendleYtGLP2024UserVaultV1: Position is about to expire',
+      );
+    });
+
   });
 });
