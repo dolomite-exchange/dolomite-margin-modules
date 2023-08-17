@@ -73,10 +73,10 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         bool _redeemRewards,
         bool[] memory _depositRewardsIntoDolomite,
         bool _depositInterestIntoDolomite
-    ) 
-    external 
-    nonReentrant 
-    onlyVaultOwner(msg.sender) 
+    )
+    external
+    nonReentrant
+    onlyVaultOwner(msg.sender)
     {
         _redeemDueInterestAndRewards(
             _redeemInterest,
@@ -124,53 +124,52 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
             "Array length mismatch"
         );
 
-        // @note this code feels long and unclean. Would be a bit better if we get rid of interest section
-        // @note Should I also add checks if the balance diff is zero?
-        uint256[] memory beforeRewardBalances = new uint256[](rewardTokenLength);
-        for (uint256 i; i < rewardTokenLength; i++) {
-            beforeRewardBalances[i] = IERC20(rewardTokens[i]).balanceOf(address(this));
-        }
-        uint256 beforeInterestBalance = IERC20(interestToken).balanceOf(address(this));
-
-        IPendleYtToken(underlyingToken).redeemDueInterestAndRewards(
+        (
+            uint256 interestAmount,
+            uint256[] memory rewardAmounts
+        ) = IPendleYtToken(underlyingToken).redeemDueInterestAndRewards(
             address(this),
             _redeemInterest,
             _redeemRewards
         );
 
-        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        address factory = VAULT_FACTORY();
-
-        for (uint256 i; i < rewardTokenLength; i++) {
+        for (uint256 i; i < rewardTokenLength; ++i) {
             assert(rewardTokens[i] != underlyingToken);
-            uint256 rewardAmount = IERC20(rewardTokens[i]).balanceOf(address(this)) - beforeRewardBalances[i];
-
-            if (_depositRewardsIntoDolomite[i]) {
-                IERC20(rewardTokens[i]).safeApprove(address(dolomiteMargin), rewardAmount);
-                uint256 marketId = dolomiteMargin.getMarketIdByTokenAddress(rewardTokens[i]);
-                IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
-                    /* _toAccountNumber = */ 0,
-                    marketId,
-                    rewardAmount
-                );
-            }
-            else {
-                IERC20(rewardTokens[i]).safeTransfer(msg.sender, rewardAmount);
-            }
-        }
-
-        uint256 interestAmount = IERC20(interestToken).balanceOf(address(this)) - beforeInterestBalance;
-        if(_depositInterestIntoDolomite) {
-            IERC20(interestToken).safeApprove(address(dolomiteMargin), interestAmount);
-            uint256 marketId = dolomiteMargin.getMarketIdByTokenAddress(interestToken);
-            IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
+            _depositOtherTokenIntoDolomiteMarginForVaultOwnerOrTransferOut(
                 /* _toAccountNumber = */ 0,
-                marketId,
-                interestAmount
+                rewardTokens[i],
+                rewardAmounts[i],
+                _depositRewardsIntoDolomite[i]
             );
+
         }
-        else {
-            IERC20(interestToken).safeTransfer(msg.sender, interestAmount);
+
+        assert(interestToken != underlyingToken);
+        _depositOtherTokenIntoDolomiteMarginForVaultOwnerOrTransferOut(
+            /* _toAccountNumber = */ 0,
+            interestToken,
+            interestAmount,
+            _depositInterestIntoDolomite
+        );
+    }
+
+    function _depositOtherTokenIntoDolomiteMarginForVaultOwnerOrTransferOut(
+        uint256 _toAccountNumber,
+        address _token,
+        uint256 _amountWei,
+        bool _depositIntoDolomite
+    ) internal {
+        if (_depositIntoDolomite) {
+            IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+            IERC20(_token).safeApprove(address(dolomiteMargin), _amountWei);
+            uint256 marketId = dolomiteMargin.getMarketIdByTokenAddress(_token);
+            IIsolationModeVaultFactory(VAULT_FACTORY()).depositOtherTokenIntoDolomiteMarginForVaultOwner(
+                _toAccountNumber,
+                marketId,
+                _amountWei
+            );
+        } else {
+            IERC20(_token).safeTransfer(msg.sender, _amountWei);
         }
     }
 
@@ -219,9 +218,9 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         // check if balanceAfterWei is negative and it is within 1 week of expiry. If so, revert
         uint256 ytMaturityTimestamp = vaultFactory.ytMaturityTimestamp();
         Require.that(
-            block.timestamp + ONE_WEEK < ytMaturityTimestamp 
-            || balanceAfterWei.isPositive() 
-            || balanceAfterWei.isZero(),
+            block.timestamp + ONE_WEEK < ytMaturityTimestamp
+                || balanceAfterWei.isPositive()
+                || balanceAfterWei.isZero(),
             _FILE,
             "Too close to expiry"
         );
@@ -267,8 +266,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         // check if balanceAfterWei is negative and it is within 1 week of expiry. If so, revert
         uint256 ytMaturityTimestamp = vaultFactory.ytMaturityTimestamp();
         Require.that(
-            block.timestamp + ONE_WEEK < ytMaturityTimestamp 
-            || balanceAfterWei.isPositive() 
+            block.timestamp + ONE_WEEK < ytMaturityTimestamp
+            || balanceAfterWei.isPositive()
             || balanceAfterWei.isZero(),
             _FILE,
             "Too close to expiry"
@@ -295,22 +294,28 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         IPendleYtGLP2024IsolationModeVaultFactory vaultFactory
     ) internal {
         IExpiry expiry = vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry();
-
-        // @note This require and the following if statement feels hacky. 
-        uint256 expirationDelta = _checkExistingBorrowPositions(_accountInfo, expiry);
-        Require.that(
-            expirationDelta > _SAFETY_BUFFER_SECONDS || expirationDelta == 0,
-            _FILE,
-            "Position is about to expire"
-        );
-        if (expirationDelta + block.timestamp == expiry.getExpiry(_accountInfo, _marketId)) {
-            // Expiration already exists
+        if (expiry.getExpiry(_accountInfo, _marketId) != 0) {
+            // Expiration already exists, return
             return;
         }
 
-        if (expirationDelta == 0) {
+        // @note    I made this function return the actual timestamp. There was an underflow issue that could have
+        //          happened with `expiration - block.timestamp` if the expiration had already passed.
+        uint256 expirationTimestamp = _getExistingExpirationTimestampFromAccount(_accountInfo, expiry);
+        Require.that(
+            expirationTimestamp > _SAFETY_BUFFER_SECONDS + block.timestamp || expirationTimestamp == 0,
+            _FILE,
+            "Position is about to expire"
+        );
+
+        uint256 expiryTimeDelta;
+        if (expirationTimestamp == 0) {
             // If an expiry doesn't exist, use the min of 4 weeks or the time until 1-week before YT's expiration
-            expirationDelta = Math.min(4 * ONE_WEEK, _ytMaturityTimestamp - ONE_WEEK - block.timestamp);
+            expiryTimeDelta = Math.min(4 * ONE_WEEK, _ytMaturityTimestamp - ONE_WEEK - block.timestamp);
+        } else {
+            // @note    We are protected from underflow here because we already checked above that the expiration
+            //          timestamp is greater than the block timestamp
+            expiryTimeDelta = expirationTimestamp - block.timestamp;
         }
 
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
@@ -322,7 +327,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
             /* _accountId = */ 0,
             _marketId,
             address(expiry),
-            expirationDelta
+            expiryTimeDelta
         );
 
         vaultFactory.DOLOMITE_MARGIN().operate(accounts, actions);
@@ -330,30 +335,27 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
 
     /**
      * @notice  Returns the time delta for any existing borrow position on the vault
-     * @param   accountInfo AccountInfo struct 
-     * @dev     Sets a new borrow position to have the same expiration as an existing borrow position
-     *          If a borrow position already exists expiring at time 100 and it is currently time 25, 
-     *          the function will return 75.
+     *
+     * @param   _accountInfo    The account whose expirations will be checked
+     * @param   _expiry         The Expiry contract to check for expirations on the account
+     * @return  The expiration timestamp for this borrow account if one exists, else returns 0
      */
-    function _checkExistingBorrowPositions(
-        IDolomiteStructs.AccountInfo memory accountInfo,
+    function _getExistingExpirationTimestampFromAccount(
+        IDolomiteStructs.AccountInfo memory _accountInfo,
         IExpiry _expiry
     ) internal view returns (uint256) {
-        // @note This chunk feels ok, but i don't feel it ties well with _setExpirationForBorrowPosition
         IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
             VAULT_FACTORY()
         );
 
         uint256[] memory allowableDebtMarketIds = vaultFactory.allowableDebtMarketIds();
         uint256 allowableDebtMarketIdsLength = allowableDebtMarketIds.length;
-        uint256 existingExpiry;
 
         // Loop through all allowable debt markets checking for an expiry
         for (uint256 i = 0; i < allowableDebtMarketIdsLength; ++i) {
-            existingExpiry = _expiry.getExpiry(accountInfo, allowableDebtMarketIds[i]);
+            uint256 existingExpiry = _expiry.getExpiry(_accountInfo, allowableDebtMarketIds[i]);
             if (existingExpiry != 0) {
-                // If expiry exists, returns the time delta between the expiry and block.timestamp
-                return existingExpiry - block.timestamp;
+                return existingExpiry;
             }
         }
 

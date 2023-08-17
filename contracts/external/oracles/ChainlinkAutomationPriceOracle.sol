@@ -87,9 +87,12 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         _ownerSetChainlinkRegistry(_chainlinkRegistry);
     }
 
-    function checkUpkeep(bytes calldata /* checkData */)
-    external
-    returns (bool upkeepNeeded, bytes memory /* performData */) {
+    function checkUpkeep(
+        bytes calldata /* checkData */
+    )
+        external
+        returns (bool upkeepNeeded, bytes memory /* performData */)
+    {
         Require.that(
             tx.origin == address(0),
             _FILE,
@@ -178,11 +181,11 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         uint256 cachedExchangeRate = exchangeRateNumerator * _ONE_UNIT / exchangeRateDenominator;
         uint256 currentExchangeRate = currentNumerator * _ONE_UNIT / currentDenominator;
 
-        uint256 upperEdge = cachedExchangeRate * upperEdge / 10_000;
-        uint256 lowerEdge = cachedExchangeRate * lowerEdge / 10_000;
+        uint256 upperExchangeRate = cachedExchangeRate * upperEdge / 10_000;
+        uint256 lowerExchangeRate = cachedExchangeRate * lowerEdge / 10_000;
         return (
-            currentExchangeRate >= upperEdge ||
-            currentExchangeRate <= lowerEdge ||
+            currentExchangeRate >= upperExchangeRate ||
+            currentExchangeRate <= lowerExchangeRate ||
             block.timestamp >= lastUpdateTimestamp + heartbeat
         );
     }
