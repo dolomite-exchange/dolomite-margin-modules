@@ -70,7 +70,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     function redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards,
-        RewardDeposit[] memory _rewardDeposits
+        bool[] memory _depositIntoDolomite
     ) 
     external 
     nonReentrant 
@@ -79,7 +79,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         _redeemDueInterestAndRewards(
             _redeemInterest,
             _redeemRewards,
-            _rewardDeposits
+            _depositIntoDolomite
         );
     }
 
@@ -107,24 +107,39 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     function _redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards,
-        RewardDeposit[] memory _rewardDeposits
+        bool[] memory _depositIntoDolomite
     ) internal {
-        IPendleYtToken(UNDERLYING_TOKEN()).redeemDueInterestAndRewards(
-                address(this),
-                _redeemInterest,
-                _redeemRewards
-            );
+        address underlyingToken = UNDERLYING_TOKEN();
+        address[] memory rewardTokens = IPendleYtToken(underlyingToken).getRewardTokens();
+        uint256 rewardTokenLength = rewardTokens.length;
+
+        Require.that(
+            _depositIntoDolomite.length == rewardTokenLength,
+            _FILE,
+            'Array length mismatch'
+        );
+
+        uint256[] memory beforeBalances = new uint256[](rewardTokenLength);
+        for (uint256 i; i < rewardTokenLength; i++) {
+            beforeBalances[i] = IERC20(rewardTokens[i]).balanceOf(address(this));
+        }
+
+        IPendleYtToken(underlyingToken).redeemDueInterestAndRewards(
+            address(this),
+            _redeemInterest,
+            _redeemRewards
+        );
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         address factory = VAULT_FACTORY();
 
-        for (uint256 i; i < _rewardDeposits.length; i++) {
-            address token = _rewardDeposits[i].token;
-            uint256 amount = IERC20(token).balanceOf(address(this));
+        for (uint256 i; i < rewardTokenLength; i++) {
+            assert(rewardTokens[i] != underlyingToken);
+            uint256 amount = IERC20(rewardTokens[i]).balanceOf(address(this)) - beforeBalances[i];
 
-            if (_rewardDeposits[i].depositIntoDolomite) {
-                IERC20(token).safeApprove(address(dolomiteMargin), amount);
-                uint256 marketId = dolomiteMargin.getMarketIdByTokenAddress(token);
+            if (_depositIntoDolomite[i]) {
+                IERC20(rewardTokens[i]).safeApprove(address(dolomiteMargin), amount);
+                uint256 marketId = dolomiteMargin.getMarketIdByTokenAddress(rewardTokens[i]);
                 IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
                     /* _toAccountNumber = */ 0,
                     marketId,
@@ -132,7 +147,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
                 );
             }
             else {
-                IERC20(token).safeTransfer(msg.sender, amount);
+                IERC20(rewardTokens[i]).safeTransfer(msg.sender, amount);
             }
         }
     }

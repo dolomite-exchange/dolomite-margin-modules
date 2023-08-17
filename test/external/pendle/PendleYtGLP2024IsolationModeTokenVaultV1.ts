@@ -37,6 +37,8 @@ import {
   PendleYtGLP2024IsolationModeUnwrapperTraderV2,
   PendleYtGLP2024IsolationModeWrapperTraderV2,
   DolomiteRegistryImplementation,
+  IPendleSyToken,
+  IPendleYtToken__factory,
 } from '../../../src/types';
 import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import {
@@ -49,6 +51,7 @@ import {
 } from '../../utils/setup';
 import { expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
 import { getSimpleZapParams } from 'test/utils/zap-utils';
+import { deployMockContract } from 'ethereum-waffle';
 
 const ONE_WEEK = 7 * 24 * 3600;
 
@@ -63,6 +66,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
   let core: CoreProtocol;
   let underlyingToken: IPendleYtToken;
+  let syGlp: IPendleSyToken;
   let pendleRegistry: PendleGLPRegistry;
   let unwrapper: PendleYtGLP2024IsolationModeUnwrapperTraderV2;
   let wrapper: PendleYtGLP2024IsolationModeWrapperTraderV2;
@@ -141,7 +145,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     otherMarketId2 = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken2, false);
 
-    const syGlp = IPendleSyToken__factory.connect(await pendleRegistry.syGlpToken(), core.hhUser1);
+    syGlp = IPendleSyToken__factory.connect(await pendleRegistry.syGlpToken(), core.hhUser1);
     await syGlp.connect(core.hhUser1).deposit(
       core.hhUser1.address,
       ethers.constants.AddressZero,
@@ -192,8 +196,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
       await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
-      const rewardDeposit = [{ token: core.tokens.weth.address, depositIntoDolomite: true }];
-      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, rewardDeposit);
+      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [true]);
 
       const account = { owner: core.hhUser1.address, number: defaultAccountNumber };
       const balance = await core.dolomiteMargin.getAccountWei(account, core.marketIds.weth);
@@ -208,18 +211,23 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
       await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
-      const rewardDeposit = [{ token: core.tokens.weth.address, depositIntoDolomite: false }];
-      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, rewardDeposit);
+      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [false]);
 
       expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.be.gt(ZERO_BI);
       expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
     });
 
     it('should fail when not called by vault owner', async () => {
-      const rewardDeposit = [{ token: core.tokens.weth.address, depositIntoDolomite: false }];
       await expectThrow(
-        vault.connect(core.hhUser2).redeemDueInterestAndRewards(true, true, rewardDeposit),
+        vault.connect(core.hhUser2).redeemDueInterestAndRewards(true, true, [false]),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail if _depositIntoDolomite length does not equal rewardTokens length', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, []),
+        'PendleYtGLP2024UserVaultV1: Array length mismatch'
       );
     });
   });
