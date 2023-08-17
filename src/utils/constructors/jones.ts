@@ -6,6 +6,7 @@ import {
   JonesUSDCIsolationModeTokenVaultV1,
   JonesUSDCRegistry,
 } from '../../types';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export async function getJonesUSDCRegistryConstructorParams(
   implementation: JonesUSDCRegistry,
@@ -42,6 +43,25 @@ export function getJonesUSDCPriceOracleConstructorParams(
 
   return [
     core.dolomiteMargin.address,
+    jonesUSDCRegistry.address,
+    core.marketIds.usdc,
+    djUSDCToken.address,
+  ];
+}
+
+export function getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams(
+  core: CoreProtocol,
+  chainlinkRegistry: string,
+  jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
+  djUSDCToken: { address: address },
+): any[] {
+  if (!core.jonesEcosystem) {
+    throw new Error('Jones ecosystem not initialized');
+  }
+
+  return [
+    core.dolomiteMargin.address,
+    chainlinkRegistry,
     jonesUSDCRegistry.address,
     core.marketIds.usdc,
     djUSDCToken.address,

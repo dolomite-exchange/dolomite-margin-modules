@@ -1,8 +1,21 @@
 import { CoreProtocol } from '../../../test/utils/setup';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export function getMagicGLPPriceOracleConstructorParams(core: CoreProtocol): any[] {
   return [
     core.dolomiteMargin.address,
+    core.abraEcosystem!.magicGlp.address,
+    core.marketIds.dfsGlp!,
+  ];
+}
+
+export function getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams(
+  core: CoreProtocol,
+  chainlinkRegistry: string
+): any[] {
+  return [
+    core.dolomiteMargin.address,
+    chainlinkRegistry,
     core.abraEcosystem!.magicGlp.address,
     core.marketIds.dfsGlp!,
   ];

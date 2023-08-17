@@ -18,6 +18,8 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV2__factory,
   PlutusVaultGLPPriceOracle,
   PlutusVaultGLPPriceOracle__factory,
+  PlutusVaultWithChainlinkAutomationPriceOracle,
+  PlutusVaultWithChainlinkAutomationPriceOracle__factory,
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory,
   RegistryProxy,
@@ -31,10 +33,12 @@ import {
   getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
   getPlutusVaultGLPPriceOracleConstructorParams,
+  getPlutusVaultWithChainlinkAutomationPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../../../src/utils/constructors/plutus';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export function createDolomiteCompatibleWhitelistForPlutusDAO(
   core: CoreProtocol,
@@ -93,6 +97,26 @@ export function createPlutusVaultGLPPriceOracle(
     PlutusVaultGLPPriceOracle__factory.bytecode,
     getPlutusVaultGLPPriceOracleConstructorParams(
       core,
+      plutusVaultRegistry,
+      dplvGlpToken,
+      unwrapper,
+    ),
+  );
+}
+
+export function createPlutusVaultWithChainlinkAutomationPriceOracle(
+  core: CoreProtocol,
+  chainlinkRegistry: string,
+  plutusVaultRegistry: PlutusVaultRegistry,
+  dplvGlpToken: { address: address },
+  unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
+): Promise<PlutusVaultWithChainlinkAutomationPriceOracle> {
+  return createContractWithAbi<PlutusVaultWithChainlinkAutomationPriceOracle>(
+    PlutusVaultWithChainlinkAutomationPriceOracle__factory.abi,
+    PlutusVaultWithChainlinkAutomationPriceOracle__factory.bytecode,
+    getPlutusVaultWithChainlinkAutomationPriceOracleConstructorParams(
+      core,
+      chainlinkRegistry,
       plutusVaultRegistry,
       dplvGlpToken,
       unwrapper,

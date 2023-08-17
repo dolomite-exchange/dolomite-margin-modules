@@ -23,9 +23,10 @@ pragma solidity ^0.8.9;
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
+
+import { Require } from "../../protocol/lib/Require.sol";
 
 
 /**

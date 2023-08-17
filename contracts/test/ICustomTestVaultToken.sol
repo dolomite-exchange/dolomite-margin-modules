@@ -20,32 +20,17 @@
 
 pragma solidity ^0.8.9;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ICustomTestToken } from "./ICustomTestToken.sol";
 
 /**
- * @title   CustomTestToken
+ * @title   ICustomTestVaultToken
  * @author  Dolomite
  *
- * @notice  Contract creating ERC20s for testing.
+ * @notice  Interface contract for accessing test methods on test ERC4626 for testing.
  */
-contract CustomTestToken is ERC20, ICustomTestToken {
+interface ICustomTestVaultToken is ICustomTestToken {
 
-    uint8 immutable private _decimals;
+    function addBalance(address _receiver, uint256 _amount) external;
 
-    constructor(
-        string memory name_,
-        string memory symbol_,
-        uint8 decimals_
-    ) ERC20(name_, symbol_) {
-        _decimals = decimals_;
-    }
-
-    function addBalance(address _receiver, uint256 _amount) external {
-        _mint(_receiver, _amount);
-    }
-
-    function burn(uint256 _amount) external {
-        _burn(msg.sender, _amount);
-    }
+    function totalAssets() external view returns (uint256);
 }
