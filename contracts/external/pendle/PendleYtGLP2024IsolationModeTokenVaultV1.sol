@@ -70,7 +70,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     function redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards,
-        bool[] memory _depositIntoDolomite
+        bool[] memory _depositRewardsIntoDolomite,
+        bool _depositInterestIntoDolomite
     ) 
     external 
     nonReentrant 
@@ -79,7 +80,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         _redeemDueInterestAndRewards(
             _redeemInterest,
             _redeemRewards,
-            _depositIntoDolomite
+            _depositRewardsIntoDolomite,
+            _depositInterestIntoDolomite
         );
     }
 
@@ -107,22 +109,25 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     function _redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards,
-        bool[] memory _depositIntoDolomite
+        bool[] memory _depositRewardsIntoDolomite,
+        bool _depositInterestIntoDolomite
     ) internal {
         address underlyingToken = UNDERLYING_TOKEN();
         address[] memory rewardTokens = IPendleYtToken(underlyingToken).getRewardTokens();
+        address interestToken = IPendleYtToken(underlyingToken).SY();
         uint256 rewardTokenLength = rewardTokens.length;
 
         Require.that(
-            _depositIntoDolomite.length == rewardTokenLength,
+            _depositRewardsIntoDolomite.length == rewardTokenLength,
             _FILE,
             "Array length mismatch"
         );
 
-        uint256[] memory beforeBalances = new uint256[](rewardTokenLength);
+        uint256[] memory beforeRewardBalances = new uint256[](rewardTokenLength);
         for (uint256 i; i < rewardTokenLength; i++) {
-            beforeBalances[i] = IERC20(rewardTokens[i]).balanceOf(address(this));
+            beforeRewardBalances[i] = IERC20(rewardTokens[i]).balanceOf(address(this));
         }
+        uint256 beforeInterestBalance = IERC20(interestToken).balanceOf(address(this));
 
         IPendleYtToken(underlyingToken).redeemDueInterestAndRewards(
             address(this),
@@ -135,20 +140,34 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
 
         for (uint256 i; i < rewardTokenLength; i++) {
             assert(rewardTokens[i] != underlyingToken);
-            uint256 amount = IERC20(rewardTokens[i]).balanceOf(address(this)) - beforeBalances[i];
+            uint256 rewardAmount = IERC20(rewardTokens[i]).balanceOf(address(this)) - beforeRewardBalances[i];
 
-            if (_depositIntoDolomite[i]) {
-                IERC20(rewardTokens[i]).safeApprove(address(dolomiteMargin), amount);
+            if (_depositRewardsIntoDolomite[i]) {
+                IERC20(rewardTokens[i]).safeApprove(address(dolomiteMargin), rewardAmount);
                 uint256 marketId = dolomiteMargin.getMarketIdByTokenAddress(rewardTokens[i]);
                 IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
                     /* _toAccountNumber = */ 0,
                     marketId,
-                    amount
+                    rewardAmount
                 );
             }
             else {
-                IERC20(rewardTokens[i]).safeTransfer(msg.sender, amount);
+                IERC20(rewardTokens[i]).safeTransfer(msg.sender, rewardAmount);
             }
+        }
+
+        uint256 interestAmount = IERC20(interestToken).balanceOf(address(this)) - beforeInterestBalance;
+        if(_depositInterestIntoDolomite) {
+            IERC20(interestToken).safeApprove(address(dolomiteMargin), interestAmount);
+            uint256 marketId = dolomiteMargin.getMarketIdByTokenAddress(interestToken);
+            IIsolationModeVaultFactory(factory).depositOtherTokenIntoDolomiteMarginForVaultOwner(
+                /* _toAccountNumber = */ 0,
+                marketId,
+                interestAmount
+            );
+        }
+        else {
+            IERC20(interestToken).safeTransfer(msg.sender, interestAmount);
         }
     }
 
@@ -293,8 +312,15 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         vaultFactory.DOLOMITE_MARGIN().operate(accounts, actions);
     }
 
+    /**
+     * @notice  Returns the time delta for any existing borrow position on the vault
+     * @param   accountInfo AccountInfo struct 
+     * @dev     Sets a new borrow position to have the same expiration as an existing borrow position
+     *          If a borrow position already exists expiring at time 100 and it is currently time 25, 
+     *          the function will return 75.
+     */
     function _checkExistingBorrowPositions(
-        IDolomiteStructs.AccountInfo memory info
+        IDolomiteStructs.AccountInfo memory accountInfo
     ) internal view returns (uint256) {
         IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
             VAULT_FACTORY()
@@ -305,9 +331,11 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         uint256 allowableDebtMarketIdsLength = allowableDebtMarketIds.length;
         uint256 existingExpiry;
 
+        // Loop through all allowable debt markets checking for an expiry
         for (uint256 i = 0; i < allowableDebtMarketIdsLength; ++i) {
-            existingExpiry = expiry.getExpiry(info, allowableDebtMarketIds[i]);
+            existingExpiry = expiry.getExpiry(accountInfo, allowableDebtMarketIds[i]);
             if (existingExpiry != 0) {
+                // If expiry exists, returns the time delta between the expiry and block.timestamp
                 return existingExpiry - block.timestamp;
             }
         }

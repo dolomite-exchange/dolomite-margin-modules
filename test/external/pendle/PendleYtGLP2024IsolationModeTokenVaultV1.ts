@@ -200,7 +200,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
       await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
-      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [true]);
+      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [true], false);
 
       const account = { owner: core.hhUser1.address, number: defaultAccountNumber };
       const balance = await core.dolomiteMargin.getAccountWei(account, core.marketIds.weth);
@@ -215,22 +215,24 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
       await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
-      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [false]);
+      await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [false], false);
 
       expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.be.gt(ZERO_BI);
       expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
     });
 
+    xit('should send interest to user', async () => {});
+
     it('should fail when not called by vault owner', async () => {
       await expectThrow(
-        vault.connect(core.hhUser2).redeemDueInterestAndRewards(true, true, [false]),
+        vault.connect(core.hhUser2).redeemDueInterestAndRewards(true, true, [false], false),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
       );
     });
 
     it('should fail if _depositIntoDolomite length does not equal rewardTokens length', async () => {
       await expectThrow(
-        vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, []),
+        vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [], false),
         'PendleYtGLP2024UserVaultV1: Array length mismatch'
       );
     });
@@ -238,7 +240,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     it('should fail when reentrancy is triggered', async () => {
       await expectThrow(
         vault.callRedeemDueInterestAndRewardsTriggerReentrancy(
-          true, true, [true]
+          true, true, [true], false
         ),
         'IsolationModeTokenVaultV1: Reentrant call'
       );

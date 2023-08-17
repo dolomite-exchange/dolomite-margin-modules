@@ -35,6 +35,7 @@ interface IPendleYtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV
     function redeemDueInterestAndRewards(
         bool _redeemInterest,
         bool _redeemRewards,
-        bool[] memory _depositIntoDolomite
+        bool[] memory _depositRewardsIntoDolomite,
+        bool _depositInterestIntoDolomite
     ) external;
 }

@@ -36,15 +36,17 @@ contract TestPendleYtGLP2024IsolationModeTokenVaultV1 is PendleYtGLP2024Isolatio
     function callRedeemDueInterestAndRewardsTriggerReentrancy(
         bool _redeemInterest,
         bool _redeemRewards,
-        bool[] memory _depositIntoDolomite
+        bool[] memory _depositRewardsIntoDolomite,
+        bool _depositInterestIntoDolomite
     ) external nonReentrant {
         // solhint-disable-next-line avoid-low-level-calls
         (bool isSuccessful, bytes memory result) = address(this).delegatecall(
             abi.encodeWithSignature(
-                "redeemDueInterestAndRewards(bool,bool,bool[])",
+                "redeemDueInterestAndRewards(bool,bool,bool[],bool)",
                 _redeemInterest,
                 _redeemRewards,
-                _depositIntoDolomite
+                _depositRewardsIntoDolomite,
+                _depositInterestIntoDolomite
             )
         );
         if (!isSuccessful) {
