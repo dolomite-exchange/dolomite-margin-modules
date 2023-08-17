@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { Require } from "../../protocol/lib/Require.sol";
 import { IsolationModeVaultFactory } from "./abstract/IsolationModeVaultFactory.sol";
 
-import { Require } from "../../protocol/lib/Require.sol";
 
 
 /**
