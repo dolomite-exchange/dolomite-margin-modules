@@ -4,7 +4,7 @@ import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { createTestToken, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { createDolomiteRegistryImplementation } from 'test/utils/dolomite';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import {
@@ -27,7 +27,7 @@ import {
   RegistryProxy__factory,
   CustomTestToken,
   PendleYtGLP2024IsolationModeVaultFactory,
-  PendleYtGLP2024IsolationModeTokenVaultV1,
+  TestPendleYtGLP2024IsolationModeTokenVaultV1,
   IPendleSyToken__factory,
   PendleYtGLP2024IsolationModeTokenVaultV1__factory,
   PendleYtGLPPriceOracle,
@@ -39,6 +39,7 @@ import {
   DolomiteRegistryImplementation,
   IPendleSyToken,
   IPendleYtToken__factory,
+  TestPendleYtGLP2024IsolationModeTokenVaultV1__factory,
 } from '../../../src/types';
 import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import {
@@ -51,7 +52,6 @@ import {
 } from '../../utils/setup';
 import { expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
 import { getSimpleZapParams } from 'test/utils/zap-utils';
-import { deployMockContract } from 'ethereum-waffle';
 
 const ONE_WEEK = 7 * 24 * 3600;
 
@@ -72,7 +72,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
   let wrapper: PendleYtGLP2024IsolationModeWrapperTraderV2;
   let priceOracle: PendleYtGLPPriceOracle;
   let factory: PendleYtGLP2024IsolationModeVaultFactory;
-  let vault: PendleYtGLP2024IsolationModeTokenVaultV1;
+  let vault: TestPendleYtGLP2024IsolationModeTokenVaultV1;
   let underlyingMarketId: BigNumber;
   let rewardToken: IERC20;
   let router: BaseRouter;
@@ -87,7 +87,11 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.pendleEcosystem!.ytGlpToken.connect(core.hhUser1);
     rewardToken = core.tokens.weth.connect(core.hhUser1);
-    const userVaultImplementation = await createPendleYtGLP2024IsolationModeTokenVaultV1();
+    const userVaultImplementation = await createContractWithAbi<TestPendleYtGLP2024IsolationModeTokenVaultV1>(
+      TestPendleYtGLP2024IsolationModeTokenVaultV1__factory.abi,
+      TestPendleYtGLP2024IsolationModeTokenVaultV1__factory.bytecode,
+      [],
+    );
     pendleRegistry = await createPendleGLPRegistry(core);
     factory = await createPendleYtGLP2024IsolationModeVaultFactory(
       pendleRegistry,
@@ -123,9 +127,9 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    vault = setupUserVaultProxy<PendleYtGLP2024IsolationModeTokenVaultV1>(
+    vault = setupUserVaultProxy<TestPendleYtGLP2024IsolationModeTokenVaultV1>(
       vaultAddress,
-      PendleYtGLP2024IsolationModeTokenVaultV1__factory,
+      TestPendleYtGLP2024IsolationModeTokenVaultV1__factory,
       core.hhUser1
     );
 
@@ -230,6 +234,15 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         'PendleYtGLP2024UserVaultV1: Array length mismatch'
       );
     });
+
+    it('should fail when reentrancy is triggered', async () => {
+      await expectThrow(
+        vault.callRedeemDueInterestAndRewardsTriggerReentrancy(
+          true, true, [true]
+        ),
+        'IsolationModeTokenVaultV1: Reentrant call'
+      );
+    })
   });
 
   describe('#openBorrowPosition', () => {
