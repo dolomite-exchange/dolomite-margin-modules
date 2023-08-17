@@ -101,17 +101,15 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
         emit YtMaturityTimestampSet(_ytMaturityTimestamp);
     }
 
-    function ownerSetAllowableDebtMarketIds(
+    function _ownerSetAllowableDebtMarketIds(
         uint256[] memory _newAllowableDebtMarketIds
-    ) 
-    external 
-    override 
-    onlyDolomiteMarginOwner(msg.sender) {
+    ) internal override {
         Require.that(
             _newAllowableDebtMarketIds.length > 0,
             _FILE,
             "Invalid allowableDebtMarketIds"
         );
-        _ownerSetAllowableDebtMarketIds(_newAllowableDebtMarketIds);
+
+        super._ownerSetAllowableDebtMarketIds(_newAllowableDebtMarketIds);
     }
 }

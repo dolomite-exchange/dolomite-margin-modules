@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IsolationModeVaultFactory } from "./abstract/IsolationModeVaultFactory.sol";
 
+import { Require } from "../../protocol/lib/Require.sol";
 
 
 /**
@@ -42,8 +43,8 @@ abstract contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
     // ==================== Fields ====================
     // ================================================
 
-    uint256[] private _allowableDebtMarketIds;
-    uint256[] private _allowableCollateralMarketIds;
+    uint256[] internal _allowableDebtMarketIds;
+    uint256[] internal _allowableCollateralMarketIds;
 
     // ===================================================
     // ===================== Events ======================
@@ -105,14 +106,23 @@ abstract contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
 
     function _ownerSetAllowableDebtMarketIds(
         uint256[] memory _newAllowableDebtMarketIds
-    ) internal {
+    ) internal virtual {
+        uint256 len = _newAllowableDebtMarketIds.length;
+        for (uint256 i; i < len; i++) {
+            Require.that(
+                !DOLOMITE_MARGIN().getMarketIsClosing(_newAllowableDebtMarketIds[i]),
+                _FILE,
+                "Market cannot be closing"
+            );
+        }
+
         _allowableDebtMarketIds = _newAllowableDebtMarketIds;
         emit AllowableDebtMarketIdsSet(_newAllowableDebtMarketIds);
     }
 
     function _ownerSetAllowableCollateralMarketIds(
         uint256[] memory _newAllowableCollateralMarketIds
-    ) internal {
+    ) internal virtual {
         _allowableCollateralMarketIds = _newAllowableCollateralMarketIds;
         emit AllowableCollateralMarketIdsSet(_newAllowableCollateralMarketIds);
     }
