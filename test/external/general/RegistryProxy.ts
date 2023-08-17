@@ -18,7 +18,7 @@ describe('RegistryProxy', () => {
     implementation = await createDolomiteRegistryImplementation();
     const calldata = await implementation.populateTransaction.initialize(
       core.genericTraderProxy!.address,
-      core.expiry!.address
+      core.expiry!.address,
     );
     registry = await createRegistryProxy(implementation.address, calldata.data!, core);
 
@@ -36,7 +36,7 @@ describe('RegistryProxy', () => {
         registry,
         await registry.connect(core.governance).upgradeTo(newImplementation.address),
         'ImplementationSet',
-        { newImplementation: newImplementation.address }
+        { newImplementation: newImplementation.address },
       );
       expect(await registry.implementation()).to.equal(newImplementation.address);
     });
@@ -44,14 +44,14 @@ describe('RegistryProxy', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).upgradeTo(implementation.address),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail when new implementation is not a contract', async () => {
       await expectThrow(
         registry.connect(core.governance).upgradeTo(core.hhUser1.address),
-        'RegistryProxy: Implementation is not a contract'
+        'RegistryProxy: Implementation is not a contract',
       );
     });
   });
@@ -67,14 +67,14 @@ describe('RegistryProxy', () => {
         registry,
         await registry.connect(core.governance).upgradeToAndCall(newImplementation.address, calldata.data!),
         'ImplementationSet',
-        { newImplementation: newImplementation.address }
+        { newImplementation: newImplementation.address },
       );
       expect(await registry.implementation()).to.equal(newImplementation.address);
     });
 
     it('should fail when not called by owner', async () => {
       const calldata = await implementation.populateTransaction.ownerSetGenericTraderProxy(
-        core.genericTraderProxy!.address
+        core.genericTraderProxy!.address,
       );
       await expectThrow(
         registry.connect(core.hhUser1).upgradeToAndCall(implementation.address, calldata.data!),
@@ -83,25 +83,23 @@ describe('RegistryProxy', () => {
     });
 
     it('should fail when new implementation is not a contract', async () => {
-      const calldata =
-        await implementation.populateTransaction.ownerSetGenericTraderProxy(
-          core.genericTraderProxy!.address
-        );
+      const calldata = await implementation.populateTransaction.ownerSetGenericTraderProxy(
+        core.genericTraderProxy!.address,
+      );
       await expectThrow(
         registry.connect(core.governance).upgradeToAndCall(core.hhUser1.address, calldata.data!),
-        'RegistryProxy: Implementation is not a contract'
+        'RegistryProxy: Implementation is not a contract',
       );
     });
 
     it('should fail when call to the new implementation fails', async () => {
       const newImplementation = await createDolomiteRegistryImplementation();
-      const calldata =
-        await implementation.populateTransaction.ownerSetGenericTraderProxy(
-          core.dolomiteMargin!.address
-        );
+      const calldata = await implementation.populateTransaction.ownerSetGenericTraderProxy(
+        core.dolomiteMargin!.address,
+      );
       await expectThrow(
         registry.connect(core.governance).upgradeToAndCall(newImplementation.address, calldata.data!),
-        `ValidationLib: Call to target failed <${core.dolomiteMargin.address.toLowerCase()}>`
+        `ValidationLib: Call to target failed <${core.dolomiteMargin.address.toLowerCase()}>`,
       );
     });
   });
