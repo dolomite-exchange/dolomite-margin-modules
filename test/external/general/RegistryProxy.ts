@@ -59,10 +59,9 @@ describe('RegistryProxy', () => {
   describe('#upgradeToAndCall', () => {
     it('should work normally', async () => {
       const newImplementation = await createDolomiteRegistryImplementation();
-      const calldata =
-        await newImplementation.populateTransaction.ownerSetGenericTraderProxy(
-          core.genericTraderProxy!.address
-        );
+      const calldata = await newImplementation.populateTransaction.ownerSetGenericTraderProxy(
+        core.genericTraderProxy!.address,
+      );
       await expectEvent(
         registry,
         await registry.connect(core.governance).upgradeToAndCall(newImplementation.address, calldata.data!),
@@ -78,7 +77,7 @@ describe('RegistryProxy', () => {
       );
       await expectThrow(
         registry.connect(core.hhUser1).upgradeToAndCall(implementation.address, calldata.data!),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
