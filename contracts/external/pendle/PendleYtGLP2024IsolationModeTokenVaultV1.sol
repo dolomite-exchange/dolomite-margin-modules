@@ -116,7 +116,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         Require.that(
             _depositIntoDolomite.length == rewardTokenLength,
             _FILE,
-            'Array length mismatch'
+            "Array length mismatch"
         );
 
         uint256[] memory beforeBalances = new uint256[](rewardTokenLength);
@@ -187,12 +187,19 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
             address(this),
             _tradeAccountNumber
         );
-        IDolomiteStructs.Wei memory balanceAfterWei = _getBalanceAfterWei(accountInfo, _marketIdsPath[0], _inputAmountWei, vaultFactory);
+        IDolomiteStructs.Wei memory balanceAfterWei = _getBalanceAfterWei(
+            accountInfo,
+            _marketIdsPath[0],
+            _inputAmountWei,
+            vaultFactory
+        );
 
         // check if balanceAfterWei is negative and it is within 1 week of expiry. If so, revert
         uint256 ytMaturityTimestamp = vaultFactory.ytMaturityTimestamp();
         Require.that(
-            block.timestamp + ONE_WEEK < ytMaturityTimestamp || balanceAfterWei.isPositive() || balanceAfterWei.isZero(),
+            block.timestamp + ONE_WEEK < ytMaturityTimestamp 
+            || balanceAfterWei.isPositive() 
+            || balanceAfterWei.isZero(),
             _FILE,
             "Too close to expiry"
         );
@@ -228,12 +235,19 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
             address(this),
             _borrowAccountNumber
         );
-        IDolomiteStructs.Wei memory balanceAfterWei = _getBalanceAfterWei(accountInfo, _marketId, _amountWei, vaultFactory);
+        IDolomiteStructs.Wei memory balanceAfterWei = _getBalanceAfterWei(
+            accountInfo,
+            _marketId,
+            _amountWei,
+            vaultFactory
+        );
 
         // check if balanceAfterWei is negative and it is within 1 week of expiry. If so, revert
         uint256 ytMaturityTimestamp = vaultFactory.ytMaturityTimestamp();
         Require.that(
-            block.timestamp + ONE_WEEK < ytMaturityTimestamp || balanceAfterWei.isPositive() || balanceAfterWei.isZero(),
+            block.timestamp + ONE_WEEK < ytMaturityTimestamp 
+            || balanceAfterWei.isPositive() 
+            || balanceAfterWei.isZero(),
             _FILE,
             "Too close to expiry"
         );
@@ -252,27 +266,12 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         }
     }
 
-    function _checkExistingBorrowPositions(
-        IDolomiteStructs.AccountInfo memory info
-    ) internal view returns (uint256) {
-        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY());
-        IExpiry expiry = vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry();
-
-        uint256[] memory allowableDebtMarketIds = vaultFactory.allowableDebtMarketIds();
-        uint256 allowableDebtMarketIdsLength = allowableDebtMarketIds.length;
-        uint256 existingExpiry;
-
-        for (uint256 i = 0; i < allowableDebtMarketIdsLength; ++i) {
-            existingExpiry = expiry.getExpiry(info, allowableDebtMarketIds[i]);
-            if (existingExpiry != 0) {
-                return existingExpiry - block.timestamp;
-            }
-        }
-
-        return 0;
-    }
-
-    function _setExpirationForBorrowPosition(IDolomiteStructs.AccountInfo memory _accountInfo, uint256 _marketId, uint256 _ytMaturityTimestamp, IPendleYtGLP2024IsolationModeVaultFactory vaultFactory) internal {
+    function _setExpirationForBorrowPosition(
+        IDolomiteStructs.AccountInfo memory _accountInfo,
+        uint256 _marketId,
+        uint256 _ytMaturityTimestamp,
+        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory
+    ) internal {
         uint256 expiryDelta = _checkExistingBorrowPositions(_accountInfo);
         if (expiryDelta == 0) {
             // If an expiry doesn't exist, use the min of 4 weeks or the time until 1-week before YT's expiration
@@ -294,8 +293,38 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         vaultFactory.DOLOMITE_MARGIN().operate(accounts, actions);
     }
 
-    function _getBalanceAfterWei(IDolomiteStructs.AccountInfo memory _accountInfo, uint256 _marketId, uint256 _inputAmountWei, IPendleYtGLP2024IsolationModeVaultFactory vaultFactory) internal view returns (IDolomiteStructs.Wei memory balanceAfterWei) {
-        IDolomiteStructs.Wei memory balanceBeforeWei = vaultFactory.DOLOMITE_MARGIN().getAccountWei(_accountInfo, _marketId);
+    function _checkExistingBorrowPositions(
+        IDolomiteStructs.AccountInfo memory info
+    ) internal view returns (uint256) {
+        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory = IPendleYtGLP2024IsolationModeVaultFactory(
+            VAULT_FACTORY()
+        );
+        IExpiry expiry = vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry();
+
+        uint256[] memory allowableDebtMarketIds = vaultFactory.allowableDebtMarketIds();
+        uint256 allowableDebtMarketIdsLength = allowableDebtMarketIds.length;
+        uint256 existingExpiry;
+
+        for (uint256 i = 0; i < allowableDebtMarketIdsLength; ++i) {
+            existingExpiry = expiry.getExpiry(info, allowableDebtMarketIds[i]);
+            if (existingExpiry != 0) {
+                return existingExpiry - block.timestamp;
+            }
+        }
+
+        return 0;
+    }
+
+    function _getBalanceAfterWei(
+        IDolomiteStructs.AccountInfo memory _accountInfo,
+        uint256 _marketId,
+        uint256 _inputAmountWei,
+        IPendleYtGLP2024IsolationModeVaultFactory vaultFactory
+    ) internal view returns (IDolomiteStructs.Wei memory balanceAfterWei) {
+        IDolomiteStructs.Wei memory balanceBeforeWei = vaultFactory.DOLOMITE_MARGIN().getAccountWei(
+            _accountInfo,
+            _marketId
+        );
         IDolomiteStructs.Wei memory deltaWei = IDolomiteStructs.Wei({
             sign: false,
             value: _inputAmountWei
