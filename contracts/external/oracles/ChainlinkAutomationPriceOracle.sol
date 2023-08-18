@@ -93,11 +93,13 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         external
         returns (bool upkeepNeeded, bytes memory /* performData */)
     {
+        // solhint-disable-line avoid-tx-origin
         Require.that(
-            tx.origin == address(0), // solhint-disable-line avoid-tx-origin
+            tx.origin == address(0),
             _FILE,
             "Static rpc calls only"
         );
+        // solhint-enable avoid-tx-origin
 
         return (_checkUpkeepConditions(), bytes(""));
     }

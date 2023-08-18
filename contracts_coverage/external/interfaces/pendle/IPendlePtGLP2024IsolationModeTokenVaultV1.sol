@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendlePtGLP2024Registry } from "./IPendlePtGLP2024Registry.sol";
+import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
 
 
@@ -33,5 +33,5 @@ import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
  */
 interface IPendlePtGLP2024IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
-    function registry() external view returns (IPendlePtGLP2024Registry);
+    function registry() external view returns (IPendleGLPRegistry);
 }

@@ -25,6 +25,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IExpiry } from "../interfaces/IExpiry.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 
@@ -46,14 +47,17 @@ contract DolomiteRegistryImplementation is
 
     bytes32 private constant _FILE = "DolomiteRegistryImplementation";
     bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
     function initialize(
-        address _genericTraderProxy
+        address _genericTraderProxy,
+        address _expiry
     ) external initializer {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
+        _ownerSetExpiry(_expiry);
     }
 
     // ===================== Functions =====================
@@ -66,6 +70,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetGenericTraderProxy(_genericTraderProxy);
     }
 
+    function ownerSetExpiry(
+        address _expiry
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetExpiry(_expiry);
+    }
+
     function ownerSetSlippageToleranceForPauseSentinel(
         uint256 _slippageToleranceForPauseSentinel
     )
@@ -76,6 +88,10 @@ contract DolomiteRegistryImplementation is
 
     function genericTraderProxy() external view returns (IGenericTraderProxyV1) {
         return IGenericTraderProxyV1(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
+    }
+
+    function expiry() external view returns (IExpiry) {
+        return IExpiry(_getAddress(_EXPIRY_SLOT));
     }
 
     function slippageToleranceForPauseSentinel() external view returns (uint256) {
@@ -105,6 +121,25 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_GENERIC_TRADER_PROXY_SLOT, _genericTraderProxy);
         emit GenericTraderProxySet(_genericTraderProxy);
+    }
+
+    function _ownerSetExpiry(
+        address _expiry
+    ) internal {
+        if (_expiry != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_expiry != address(0),
+            _FILE,
+            "Invalid expiry"
+        );
+        bytes memory returnData = ValidationLib.callAndCheckSuccess(
+            _expiry,
+            IExpiry(_expiry).g_expiryRampTime.selector,
+            bytes("")
+        );
+        abi.decode(returnData, (uint256));
+
+        _setAddress(_EXPIRY_SLOT, _expiry);
+        emit ExpirySet(_expiry);
     }
 
     function _ownerSetSlippageToleranceForPauseSentinel(

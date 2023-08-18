@@ -23,26 +23,33 @@ pragma solidity ^0.8.9;
 import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
 
-
 /**
- * @title   IPendlePtGLP2024IsolationModeVaultFactory
+ * @title   IPendleYtGLP2024IsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ptGLP tokens.
+ * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ytGLP tokens.
  */
-interface IPendlePtGLP2024IsolationModeVaultFactory is IIsolationModeVaultFactory {
-
+interface IPendleYtGLP2024IsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ================================================
     // ==================== Events ====================
     // ================================================
 
-    event PendlePtGLP2024RegistrySet(address _pendlePtGLP2024Registry);
+    event PendleGLPRegistrySet(address _pendleGLPRegistry);
+    event YtMaturityTimestampSet(uint256 _ytMaturityTimestamp);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function ownerSetPendlePtGLP2024Registry(address _pendlePtGLP2024Registry) external;
+    function ownerSetPendleGLPRegistry(address _pendleGLPRegistry) external;
 
-    function pendlePtGLP2024Registry() external view returns (IPendleGLPRegistry);
+    function ownerSetYtMaturityTimestamp(uint256 _ytMaturityTimstamp) external;
+
+    function WETH() external view returns (address);
+
+    function WETH_MARKET_ID() external view returns (uint256);
+
+    function pendleGLPRegistry() external view returns (IPendleGLPRegistry);
+
+    function ytMaturityTimestamp() external view returns (uint256);
 }

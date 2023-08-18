@@ -20,50 +20,58 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+
 import { Require } from "../../protocol/lib/Require.sol";
-import { IERC4626 } from "../interfaces/IERC4626.sol";
-import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
 
-
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
 
 /**
- * @title   PlutusVaultGLPPriceOracle
+ * @title   PendleYtGLPPriceOracle
  * @author  Dolomite
  *
- * @notice  An implementation of the IDolomitePriceOracle interface that gets Plutus' plvGLP price in USD terms.
+ * @notice  An implementation of the IDolomitePriceOracle interface that gets Pendle's ytGLP price in USD terms.
  */
-contract PlutusVaultGLPPriceOracle is IDolomitePriceOracle {
-
+contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "PlutusVaultGLPPriceOracle";
-    uint256 private constant _FEE_PRECISION = 10_000;
+    bytes32 private constant _FILE = "PendleYtGLPPriceOracle";
+    uint32 public constant TWAP_DURATION = 900; // 15 minutes
 
     // ============================ Public State Variables ============================
 
-    IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
-    uint256 immutable public DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
-    address immutable public DPLV_GLP; // solhint-disable-line var-name-mixedcase
-    IPlutusVaultRegistry immutable public PLUTUS_VAULT_REGISTRY; // solhint-disable-line var-name-mixedcase
-    address immutable public PLUTUS_VAULT_GLP_UNWRAPPER_TRADER; // solhint-disable-line var-name-mixedcase
+    address public immutable DYT_GLP; // solhint-disable-line var-name-mixedcase
+    IPendleGLPRegistry public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
+    IDolomiteMargin public immutable DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable PT_ASSET_SCALE; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
-
     constructor(
+        address _dytGlp,
+        address _pendleGLPRegistry,
         address _dolomiteMargin,
-        uint256 _dfsGlpMarketId,
-        address _dplvGlp,
-        address _plutusVaultRegistry,
-        address _plutusVaultGLPUnwrapperTrader
+        uint256 _dfsGlpMarketId
     ) {
+        DYT_GLP = _dytGlp;
+        REGISTRY = IPendleGLPRegistry(_pendleGLPRegistry);
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
-        DPLV_GLP = _dplvGlp;
-        PLUTUS_VAULT_REGISTRY = IPlutusVaultRegistry(_plutusVaultRegistry);
-        PLUTUS_VAULT_GLP_UNWRAPPER_TRADER = _plutusVaultGLPUnwrapperTrader;
+        PT_ASSET_SCALE = 10 ** uint256(IERC20Metadata(DYT_GLP).decimals());
+
+        (
+            bool increaseCardinalityRequired,,
+            bool oldestObservationSatisfied
+        ) = REGISTRY.ptOracle().getOracleState(address(REGISTRY.ptGlpMarket()),TWAP_DURATION);
+
+        if (!increaseCardinalityRequired && oldestObservationSatisfied) { /* FOR COVERAGE TESTING */ }
+        Require.that(!increaseCardinalityRequired && oldestObservationSatisfied,
+            _FILE,
+            "Oracle not ready yet"
+        );
     }
 
     function getPrice(
@@ -72,16 +80,16 @@ contract PlutusVaultGLPPriceOracle is IDolomitePriceOracle {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        if (_token == DPLV_GLP) { /* FOR COVERAGE TESTING */ }
-        Require.that(_token == DPLV_GLP,
+        if (_token == address(DYT_GLP)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_token == address(DYT_GLP),
             _FILE,
-            "invalid token",
+            "Invalid token",
             _token
         );
         if (DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
         Require.that(DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
             _FILE,
-            "plvGLP cannot be borrowable"
+            "ytGLP cannot be borrowable"
         );
 
         return IDolomiteStructs.MonetaryPrice({
@@ -93,19 +101,7 @@ contract PlutusVaultGLPPriceOracle is IDolomitePriceOracle {
 
     function _getCurrentPrice() internal view returns (uint256) {
         uint256 glpPrice = DOLOMITE_MARGIN.getMarketPrice(DFS_GLP_MARKET_ID).value;
-        IERC4626 plvGlp = PLUTUS_VAULT_REGISTRY.plvGlpToken();
-        uint256 totalSupply = plvGlp.totalSupply();
-        uint256 glpPriceWithExchangeRate;
-        if (totalSupply == 0) {
-            // exchange rate is 1 if the total supply is 0
-            glpPriceWithExchangeRate = glpPrice;
-        } else {
-            glpPriceWithExchangeRate = glpPrice * plvGlp.totalAssets() / totalSupply;
-        }
-
-        (uint256 exitFeeBp,) = PLUTUS_VAULT_REGISTRY.plvGlpRouter().getFeeBp(PLUTUS_VAULT_GLP_UNWRAPPER_TRADER);
-        uint256 exitFee = glpPriceWithExchangeRate * exitFeeBp / _FEE_PRECISION;
-
-        return glpPriceWithExchangeRate - exitFee;
+        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptGlpMarket()),TWAP_DURATION);
+        return PT_ASSET_SCALE - ((glpPrice * ptExchangeRate) / PT_ASSET_SCALE);
     }
 }
