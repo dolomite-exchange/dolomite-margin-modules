@@ -29,22 +29,25 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @notice  Interface for interacting with Pendle's yield tokens (YTs).
  */
 interface IPendleYtToken is IERC20 {
+
     /**
-     * @notice Redeems interests and rewards for `user`
-     * @param redeemInterest will only transfer out interest for user if true
-     * @param redeemRewards will only transfer out rewards for user if true
-     * @dev With YT yielding interest in the form of SY, which is redeemable by users, the reward
-     * distribution should be based on the amount of SYs that their YT currently represent, plus
-     * their dueInterest. It has been proven and tested that _rewardSharesUser will not change over
-     * time, unless users redeem their dueInterest or redeemPY. Due to this, it is required to
-     * update users' accruedReward STRICTLY BEFORE transferring out their interest.
-     * @dev Interest yield is denominated in the same unit as the interest bearing token
-     * @dev Reward yield is given out in a different unit than the interest bearing token
+     * @notice  Redeems interests and rewards for `_user`
+     * @dev     With YT yielding interest in the form of SY, which is redeemable by users, the reward distribution
+     *          should be based on the amount of SYs that their YT currently represent, plus their dueInterest. It has
+     *          been proven and tested that _rewardSharesUser will not change over time, unless users redeem their
+     *          dueInterest or redeemPY. Due to this, it is required to update users' accruedReward STRICTLY BEFORE
+     *          transferring out their interest.
+     * @dev     Interest yield is denominated in the same unit as the interest bearing token
+     * @dev     Reward yield is given out in a different unit than the interest bearing token
+     *
+     * @param  _user            The user whose interest and rewards will be redeemed
+     * @param  _redeemInterest  Will only transfer out interest for user if true
+     * @param  _redeemRewards   Will only transfer out rewards for user if true
      */
     function redeemDueInterestAndRewards(
-        address user,
-        bool redeemInterest,
-        bool redeemRewards
+        address _user,
+        bool _redeemInterest,
+        bool _redeemRewards
     ) external returns (uint256 interestOut, uint256[] memory rewardsOut);
 
     function getRewardTokens() external view returns (address[] memory);

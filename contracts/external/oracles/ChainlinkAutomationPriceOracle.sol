@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
+import { Require } from "../../protocol/lib/Require.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IChainlinkAutomationPriceOracle } from "../interfaces/IChainlinkAutomationPriceOracle.sol";
 import { IChainlinkRegistry } from "../interfaces/IChainlinkRegistry.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-
-import { Require } from "../../protocol/lib/Require.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
+
 
 
 /**
@@ -94,7 +94,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         returns (bool upkeepNeeded, bytes memory /* performData */)
     {
         Require.that(
-            tx.origin == address(0),
+            tx.origin == address(0), // solhint-disable-line avoid-tx-origin
             _FILE,
             "Static rpc calls only"
         );

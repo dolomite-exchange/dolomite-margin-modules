@@ -12,6 +12,7 @@
     }],
     "max-line-length": ["error", 120],
     "modifier-name-mixedcase": "error",
+    "not-rely-on-time": "off",
     "ordering": "error",
     "private-vars-leading-underscore": "warn",
     "quotes": ["error", "double"]

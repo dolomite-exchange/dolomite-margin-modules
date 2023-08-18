@@ -60,7 +60,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     // ==================================================================
 
     bytes32 private constant _FILE = "PendleYtGLP2024UserVaultV1";
-    uint256 public constant ONE_WEEK = 1 weeks;
+    uint256 private constant _ONE_WEEK = 1 weeks;
     uint256 private constant _SAFETY_BUFFER_SECONDS = 5 minutes;
 
     // ==================================================================
@@ -73,9 +73,9 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         bool[] memory _depositRewardsIntoDolomite,
         bool _depositInterestIntoDolomite
     )
-    external
-    nonReentrant
-    onlyVaultOwner(msg.sender)
+        external
+        nonReentrant
+        onlyVaultOwner(msg.sender)
     {
         _redeemDueInterestAndRewards(
             _redeemInterest,
@@ -140,7 +140,6 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
                 rewardAmounts[i],
                 _depositRewardsIntoDolomite[i]
             );
-
         }
 
         assert(interestToken != underlyingToken);
@@ -176,11 +175,13 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         uint256 _fromAccountNumber,
         uint256 _toAccountNumber,
         uint256 _amountWei
-    ) internal override
+    )
+        internal
+        override
     {
         uint256 ytMaturityTimestamp = IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY()).ytMaturityTimestamp();
         Require.that(
-            block.timestamp + ONE_WEEK < ytMaturityTimestamp,
+            block.timestamp + _ONE_WEEK < ytMaturityTimestamp,
             _FILE,
             "Too close to expiry"
         );
@@ -217,7 +218,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         // check if balanceAfterWei is negative and it is within 1 week of expiry. If so, revert
         uint256 ytMaturityTimestamp = vaultFactory.ytMaturityTimestamp();
         Require.that(
-            block.timestamp + ONE_WEEK < ytMaturityTimestamp
+            block.timestamp + _ONE_WEEK < ytMaturityTimestamp
                 || balanceAfterWei.isPositive()
                 || balanceAfterWei.isZero(),
             _FILE,
@@ -265,7 +266,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         // check if balanceAfterWei is negative and it is within 1 week of expiry. If so, revert
         uint256 ytMaturityTimestamp = vaultFactory.ytMaturityTimestamp();
         Require.that(
-            block.timestamp + ONE_WEEK < ytMaturityTimestamp
+            block.timestamp + _ONE_WEEK < ytMaturityTimestamp
                 || balanceAfterWei.isPositive()
                 || balanceAfterWei.isZero(),
             _FILE,
@@ -296,7 +297,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
 
         uint256 expirationTimestamp = _getExistingExpirationTimestampFromAccount(_accountInfo, expiry);
         Require.that(
-            expirationTimestamp > _SAFETY_BUFFER_SECONDS + block.timestamp || expirationTimestamp == 0,
+            expirationTimestamp == 0 || expirationTimestamp > _SAFETY_BUFFER_SECONDS + block.timestamp,
             _FILE,
             "Position is about to expire"
         );
@@ -308,7 +309,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         uint256 expiryTimeDelta;
         if (expirationTimestamp == 0) {
             // If an expiry doesn't exist, use the min of 4 weeks or the time until 1-week before YT's expiration
-            expiryTimeDelta = Math.min(4 * ONE_WEEK, _ytMaturityTimestamp - ONE_WEEK - block.timestamp);
+            expiryTimeDelta = Math.min(4 * _ONE_WEEK, _ytMaturityTimestamp - _ONE_WEEK - block.timestamp);
         } else {
             expiryTimeDelta = expirationTimestamp - block.timestamp;
         }
@@ -331,9 +332,9 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     /**
      * @notice  Returns the expiration timestamp for any existing borrow position on the vault
      *
-     * @param   _accountInfo    The account whose expirations will be checked
-     * @param   _expiry         The Expiry contract to check for expirations on the account
-     * @return  The expiration timestamp for this borrow account if one exists, else returns 0
+     * @param  _accountInfo The account whose expirations will be checked
+     * @param  _expiry      The Expiry contract to check for expirations on the account
+     * @return              The expiration timestamp for this borrow account if one exists, else returns 0
      */
     function _getExistingExpirationTimestampFromAccount(
         IDolomiteStructs.AccountInfo memory _accountInfo,
