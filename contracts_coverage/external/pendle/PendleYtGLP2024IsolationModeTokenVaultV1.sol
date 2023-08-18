@@ -41,6 +41,7 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
+
 /**
  * @title   PendleYtGLP2024IsolationModeTokenVaultV1
  * @author  Dolomite
