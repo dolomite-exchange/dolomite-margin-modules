@@ -194,7 +194,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     });
   });
 
-  describe.only('#redeemDueInterestAndRewards', () => {
+  describe('#redeemDueInterestAndRewards', () => {
     it('should work normally', async () => {
       expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
       expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);

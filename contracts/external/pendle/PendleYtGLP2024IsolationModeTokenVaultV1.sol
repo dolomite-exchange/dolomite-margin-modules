@@ -41,7 +41,6 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
-
 /**
  * @title   PendleYtGLP2024IsolationModeTokenVaultV1
  * @author  Dolomite
@@ -267,8 +266,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         uint256 ytMaturityTimestamp = vaultFactory.ytMaturityTimestamp();
         Require.that(
             block.timestamp + ONE_WEEK < ytMaturityTimestamp
-            || balanceAfterWei.isPositive()
-            || balanceAfterWei.isZero(),
+                || balanceAfterWei.isPositive()
+                || balanceAfterWei.isZero(),
             _FILE,
             "Too close to expiry"
         );
@@ -294,27 +293,23 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         IPendleYtGLP2024IsolationModeVaultFactory vaultFactory
     ) internal {
         IExpiry expiry = vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry();
-        if (expiry.getExpiry(_accountInfo, _marketId) != 0) {
-            // Expiration already exists, return
-            return;
-        }
 
-        // @note    I made this function return the actual timestamp. There was an underflow issue that could have
-        //          happened with `expiration - block.timestamp` if the expiration had already passed.
         uint256 expirationTimestamp = _getExistingExpirationTimestampFromAccount(_accountInfo, expiry);
         Require.that(
             expirationTimestamp > _SAFETY_BUFFER_SECONDS + block.timestamp || expirationTimestamp == 0,
             _FILE,
             "Position is about to expire"
         );
+        if (expiry.getExpiry(_accountInfo, _marketId) != 0) {
+            // Expiration already exists, return
+            return;
+        }
 
         uint256 expiryTimeDelta;
         if (expirationTimestamp == 0) {
             // If an expiry doesn't exist, use the min of 4 weeks or the time until 1-week before YT's expiration
             expiryTimeDelta = Math.min(4 * ONE_WEEK, _ytMaturityTimestamp - ONE_WEEK - block.timestamp);
         } else {
-            // @note    We are protected from underflow here because we already checked above that the expiration
-            //          timestamp is greater than the block timestamp
             expiryTimeDelta = expirationTimestamp - block.timestamp;
         }
 
@@ -334,7 +329,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     }
 
     /**
-     * @notice  Returns the time delta for any existing borrow position on the vault
+     * @notice  Returns the expiration timestamp for any existing borrow position on the vault
      *
      * @param   _accountInfo    The account whose expirations will be checked
      * @param   _expiry         The Expiry contract to check for expirations on the account
