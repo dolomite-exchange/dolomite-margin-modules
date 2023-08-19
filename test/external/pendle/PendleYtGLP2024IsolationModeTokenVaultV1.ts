@@ -309,6 +309,59 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId2, otherAmountWei.mul(2));
     });
 
+    it('should work normally if within maturity time and partial swap with no debt', async () => {
+      let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 12 * ONE_WEEK);
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.Both
+      );
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
+      const inputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, inputAmount, otherMarketId2, otherAmountWei, core);
+      await increaseToTimestamp(timestamp + 12 * ONE_WEEK);
+      await vault.connect(core.hhUser1).swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, inputAmount);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId2, otherAmountWei);
+    });
+
+    it('should work normally if within maturity time and full swap with no debt', async () => {
+      let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 12 * ONE_WEEK);
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.Both
+      );
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
+      await increaseToTimestamp(timestamp + 12 * ONE_WEEK);
+      await vault.connect(core.hhUser1).swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId2, otherAmountWei);
+    });
+
     it('should work normally with debt', async () => {
       await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -514,7 +567,34 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expect((await core.dolomiteMargin.getAccountWei(accountInfo, otherMarketId1)).value).to.eq(ZERO_BI);
     });
 
-    it('should allow withdrawing collateral after market expiration', async () => {
+    it('should withdraw some collateral after market expiration', async () => {
+      await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
+      await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.Both
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, otherAmountWei);
+
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp);
+      await vault.connect(core.hhUser1).transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei.sub(1),
+        BalanceCheckFlag.Both
+      );
+
+      const accountInfo = { owner: vault.address, number: borrowAccountNumber };
+      expect((await core.dolomiteMargin.getAccountWei(accountInfo, otherMarketId1)).value).to.eq(ONE_BI);
+    });
+
+    it('should withdraw all collateral after market expiration', async () => {
       await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
       await vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
 
