@@ -14,10 +14,10 @@ import {
   JonesUSDCIsolationModeWrapperTraderV2__factory,
   JonesUSDCPriceOracle,
   JonesUSDCPriceOracle__factory,
-  JonesUSDCWithChainlinkAutomationPriceOracle,
-  JonesUSDCWithChainlinkAutomationPriceOracle__factory,
   JonesUSDCRegistry,
   JonesUSDCRegistry__factory,
+  JonesUSDCWithChainlinkAutomationPriceOracle,
+  JonesUSDCWithChainlinkAutomationPriceOracle__factory,
   RegistryProxy,
   RegistryProxy__factory,
 } from '../../../src/types';
@@ -26,13 +26,12 @@ import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,
   getJonesUSDCIsolationModeVaultFactoryConstructorParams,
   getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
-  getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams,
   getJonesUSDCPriceOracleConstructorParams,
   getJonesUSDCRegistryConstructorParams,
+  getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/jones';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export function createJonesUSDCIsolationModeVaultFactory(
   core: CoreProtocol,

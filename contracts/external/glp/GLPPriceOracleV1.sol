@@ -47,7 +47,7 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
     bytes32 private constant _FILE = "GLPPriceOracleV1";
 
     uint256 public constant GLP_PRECISION = 1e18;
-    uint256 public constant FEE_PRECISION = 10000;
+    uint256 public constant FEE_PRECISION = 10_000;
 
     // ============================ Public State Variables ============================
 

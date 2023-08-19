@@ -94,10 +94,10 @@ import {
   IParaswapAugustusRouter,
   IParaswapAugustusRouter__factory,
   IParaswapFeeClaimer__factory,
-  IPendlePtGLP2024IsolationModeVaultFactory,
-  IPendlePtGLP2024IsolationModeVaultFactory__factory,
   IPendleGLPRegistry,
   IPendleGLPRegistry__factory,
+  IPendlePtGLP2024IsolationModeVaultFactory,
+  IPendlePtGLP2024IsolationModeVaultFactory__factory,
   IPendlePtMarket,
   IPendlePtMarket__factory,
   IPendlePtOracle,
@@ -132,6 +132,7 @@ import {
   PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory,
   PlutusVaultGLPIsolationModeWrapperTraderV1,
   PlutusVaultGLPIsolationModeWrapperTraderV1__factory,
+  RegistryProxy,
   RegistryProxy__factory,
   TestDolomiteMarginExchangeWrapper,
   TestDolomiteMarginExchangeWrapper__factory,
@@ -165,6 +166,7 @@ import {
   JONES_WHITELIST_CONTROLLER_MAP,
   LINK_MAP,
   MAGIC_GLP_MAP,
+  MIM_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
   PARASWAP_FEE_CLAIMER_MAP,
   PARASWAP_TRANSFER_PROXY_MAP,
@@ -274,7 +276,8 @@ export interface PendleEcosystem {
   ytGlpToken: IPendleYtToken;
   live: {
     ptGlpIsolationModeFactory: IPendlePtGLP2024IsolationModeVaultFactory;
-    pendlePtGLP2024Registry: IPendlePtGLP2024Registry
+    pendleGLP2024Registry: IPendleGLPRegistry
+    pendleGLP2024RegistryProxy: RegistryProxy
   };
 }
 
@@ -366,6 +369,7 @@ export interface CoreProtocol {
     dPtGlp: BigNumberish | undefined;
     link: BigNumberish;
     magicGlp: BigNumberish | undefined;
+    mim: BigNumberish | undefined;
     usdc: BigNumberish;
     usdt: BigNumberish | undefined;
     wbtc: BigNumberish;
@@ -619,6 +623,7 @@ export async function setupCoreProtocol(
       dPtGlp: DPT_GLP_MAP[config.network]?.marketId,
       link: LINK_MAP[config.network].marketId,
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
+      mim: MIM_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
       usdt: USDT_MAP[config.network]?.marketId,
       wbtc: WBTC_MAP[config.network].marketId,
@@ -871,9 +876,13 @@ async function createPendleEcosystem(
       address => IPendleYtToken__factory.connect(address, signer),
     ),
     live: {
-      pendleGLPRegistry: getContract(
-        (Deployments.PendlePtGLP2024RegistryProxy as any)[network]?.address,
+      pendleGLP2024Registry: getContract(
+        (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
         IPendleGLPRegistry__factory.connect,
+      ),
+      pendleGLP2024RegistryProxy: getContract(
+        (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
+        RegistryProxy__factory.connect,
       ),
       ptGlpIsolationModeFactory: getContract(
         (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,

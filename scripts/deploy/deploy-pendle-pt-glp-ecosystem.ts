@@ -25,7 +25,7 @@ async function main() {
   const pendleRegistryAddress = await deployContractAndSave(
     Number(network),
     'PendlePtGLP2024Registry',
-    getPendleGLPRegistryConstructorParams(core),
+    await getPendleGLPRegistryConstructorParams(core),
   );
   const pendleRegistry = PendleGLPRegistry__factory.connect(pendleRegistryAddress, core.hhUser1);
 
@@ -101,11 +101,9 @@ async function main() {
   const expectedMarketId = 11; // deploy this after jUSDC
   await prettyPrintEncodedDataWithTypeSafety(
     core,
-    core.liquidatorAssetRegistry!.populateTransaction.ownerAddLiquidatorToAssetWhitelist(
-      expectedMarketId,
-      core.liquidatorProxyV4.address,
-    ),
-    'liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist',
+    'liquidatorAssetRegistry',
+    'ownerAddLiquidatorToAssetWhitelist',
+    [expectedMarketId, core.liquidatorProxyV4.address],
   );
 }
 

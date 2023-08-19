@@ -1,6 +1,6 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { sleep } from '@openzeppelin/upgrades';
-import { BaseContract, BigNumberish, PopulatedTransaction } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
 import fs from 'fs';
 import { network, run } from 'hardhat';
 import { createContract } from '../src/utils/dolomite-utils';
@@ -131,9 +131,23 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 ): Promise<void> {
   const contract = liveMap[key];
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
+  const mappedArgs = (args as any[]).map(arg => {
+    if (BigNumber.isBigNumber(arg)) {
+      return arg.toString();
+    }
+    if (typeof arg === 'object') {
+      return JSON.stringify(
+        Object.keys(arg).reduce<Record<string, any>>((memo, key) => {
+          memo[key] = BigNumber.isBigNumber(arg[key]) ? arg[key].toString() : arg[key];
+          return memo;
+        }, {}),
+      );
+    }
+    return arg;
+  });
   console.log(''); // add a new line
   console.log(`=================================== ${counter++} - ${key}.${methodName} ===================================`);
-  console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${(args as any).join(',\n\t\t\t')}\n\t\t)`);
+  console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(',\n\t\t\t')}\n\t\t)`);
   console.log('To:\t\t', transaction.to);
   console.log('Data:\t\t', transaction.data);
   console.log('='.repeat(76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length));

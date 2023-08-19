@@ -1,57 +1,52 @@
-import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { createDolomiteRegistryImplementation } from 'test/utils/dolomite';
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import { getBlockTimestamp, impersonate, increaseToTimestamp, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import {
-  impersonate,
-  revertToSnapshotAndCapture,
-  snapshot,
-  increaseToTimestamp,
-  getBlockTimestamp,
-} from 'test/utils';
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectThrow,
+  expectWalletBalance,
+  expectWalletBalanceIsGreaterThan,
+} from 'test/utils/assertions';
+import { createDolomiteRegistryImplementation } from 'test/utils/dolomite';
 import {
   createPendleGLPRegistry,
-  createPendleYtGLP2024IsolationModeTokenVaultV1,
   createPendleYtGLP2024IsolationModeUnwrapperTraderV2,
   createPendleYtGLP2024IsolationModeVaultFactory,
   createPendleYtGLP2024IsolationModeWrapperTraderV2,
   createPendleYtGLPPriceOracle,
 } from 'test/utils/ecosystem-token-utils/pendle';
+import { getSimpleZapParams } from 'test/utils/zap-utils';
 import {
-  DolomiteRegistryImplementation__factory,
-  RegistryProxy__factory,
   CustomTestToken,
-  PendleYtGLP2024IsolationModeVaultFactory,
-  TestPendleYtGLP2024IsolationModeTokenVaultV1,
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+  IPendleSyToken,
   IPendleSyToken__factory,
-  PendleYtGLP2024IsolationModeTokenVaultV1__factory,
-  PendleYtGLPPriceOracle,
-  IERC20,
   IPendleYtToken,
   PendleGLPRegistry,
   PendleYtGLP2024IsolationModeUnwrapperTraderV2,
+  PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeWrapperTraderV2,
-  DolomiteRegistryImplementation,
-  IPendleSyToken,
-  IPendleYtToken__factory,
+  PendleYtGLPPriceOracle,
+  RegistryProxy__factory,
+  TestPendleYtGLP2024IsolationModeTokenVaultV1,
   TestPendleYtGLP2024IsolationModeTokenVaultV1__factory,
 } from '../../../src/types';
+import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
-  setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
-import { getSimpleZapParams } from 'test/utils/zap-utils';
 
 const ONE_WEEK = 7 * 24 * 3600;
 
@@ -73,8 +68,6 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
   let priceOracle: PendleYtGLPPriceOracle;
   let factory: PendleYtGLP2024IsolationModeVaultFactory;
   let vault: TestPendleYtGLP2024IsolationModeTokenVaultV1;
-  let underlyingMarketId: BigNumber;
-  let rewardToken: IERC20;
   let router: BaseRouter;
 
   let otherToken1: CustomTestToken;
@@ -86,7 +79,6 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.pendleEcosystem!.ytGlpToken.connect(core.hhUser1);
-    rewardToken = core.tokens.weth.connect(core.hhUser1);
     const userVaultImplementation = await createContractWithAbi<TestPendleYtGLP2024IsolationModeTokenVaultV1>(
       TestPendleYtGLP2024IsolationModeTokenVaultV1__factory.abi,
       TestPendleYtGLP2024IsolationModeTokenVaultV1__factory.bytecode,
@@ -94,12 +86,12 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     );
     pendleRegistry = await createPendleGLPRegistry(core);
     factory = await createPendleYtGLP2024IsolationModeVaultFactory(
+      core,
       pendleRegistry,
       initialAllowableDebtMarketIds,
       [],
-      core,
       core.pendleEcosystem!.ytGlpToken,
-      userVaultImplementation
+      userVaultImplementation,
     );
     unwrapper = await createPendleYtGLP2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
     wrapper = await createPendleYtGLP2024IsolationModeWrapperTraderV2(core, factory, pendleRegistry);
@@ -115,11 +107,10 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     await doloRegistry.upgradeTo(implementation.address);
     const registryImpl = DolomiteRegistryImplementation__factory.connect(
       core.dolomiteRegistry.address,
-      core.governance
+      core.governance,
     );
     await registryImpl.ownerSetExpiry(core.expiry.address);
 
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
@@ -130,13 +121,13 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     vault = setupUserVaultProxy<TestPendleYtGLP2024IsolationModeTokenVaultV1>(
       vaultAddress,
       TestPendleYtGLP2024IsolationModeTokenVaultV1__factory,
-      core.hhUser1
+      core.hhUser1,
     );
 
     otherToken1 = await createTestToken();
     await core.testEcosystem!.testPriceOracle!.setPrice(
       otherToken1.address,
-      '1000000000000000000000000000000'
+      '1000000000000000000000000000000',
     ); // $1.00 in USDC
     otherMarketId1 = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken1, false);
@@ -144,7 +135,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     otherToken2 = await createTestToken();
     await core.testEcosystem!.testPriceOracle!.setPrice(
       otherToken2.address,
-      '1000000000000000000000000000000'
+      '1000000000000000000000000000000',
     ); // $1.00 in USDC
     otherMarketId2 = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken2, false);
@@ -155,7 +146,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       ethers.constants.AddressZero,
       ethers.utils.parseEther('1'),
       0,
-      { value: parseEther('1') }
+      { value: parseEther('1') },
     );
     const syGLPBal = await syGlp.balanceOf(core.hhUser1.address);
     await syGlp.connect(core.hhUser1).approve(router.address, ethers.constants.MaxUint256);
@@ -196,58 +187,60 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
   describe('#redeemDueInterestAndRewards', () => {
     it('should work normally', async () => {
-      expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
-      expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
+      const account = { owner: core.hhUser1.address, number: defaultAccountNumber };
+      await expectProtocolBalance(core, account.owner, account.number, core.marketIds.weth, ZERO_BI);
+      await expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
+      await expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
       await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
       await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [true], false);
 
-      const account = { owner: core.hhUser1.address, number: defaultAccountNumber };
-      const balance = await core.dolomiteMargin.getAccountWei(account, core.marketIds.weth);
-      expect(balance.sign).to.eq(true);
-      expect(balance.value).to.be.gt(ZERO_BI);
-      expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
-      expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(core, account, core.marketIds.weth, ZERO_BI, ZERO_BI);
+      await expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
+      await expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
     });
 
     it('should send rewards to user', async () => {
-      expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
-      expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
+      const account = { owner: core.hhUser1.address, number: defaultAccountNumber };
+      await expectProtocolBalance(core, account.owner, account.number, core.marketIds.weth, ZERO_BI);
+      await expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
+      await expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
       await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
       await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [false], false);
 
-      expect(await core.tokens.weth.balanceOf(core.hhUser1.address)).to.be.gt(ZERO_BI);
-      expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
+      await expectWalletBalanceIsGreaterThan(core.hhUser1, core.tokens.weth, ZERO_BI);
+      await expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
+      await expectProtocolBalance(core, account.owner, account.number, core.marketIds.weth, ZERO_BI);
     });
 
     it('should fail when sending interest to user cause syGLP is invalid market', async () => {
       await expectThrow(
         vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [false], true),
-        'Getters: Invalid token'
+        'Getters: Invalid token',
       );
     });
 
     it('should fail when not called by vault owner', async () => {
       await expectThrow(
         vault.connect(core.hhUser2).redeemDueInterestAndRewards(true, true, [false], false),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if _depositIntoDolomite length does not equal rewardTokens length', async () => {
       await expectThrow(
         vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [], false),
-        'PendleYtGLP2024UserVaultV1: Array length mismatch'
+        'PendleYtGLP2024UserVaultV1: Array length mismatch',
       );
     });
 
     it('should fail when reentrancy is triggered', async () => {
       await expectThrow(
         vault.callRedeemDueInterestAndRewardsTriggerReentrancy(
-          true, true, [true], false
+          true, true, [true], false,
         ),
-        'IsolationModeTokenVaultV1: Reentrant call'
+        'IsolationModeTokenVaultV1: Reentrant call',
       );
     });
   });
@@ -268,7 +261,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
       await expectThrow(
         vault.connect(core.hhUser1).openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'PendleYtGLP2024UserVaultV1: Too close to expiry'
+        'PendleYtGLP2024UserVaultV1: Too close to expiry',
       );
     });
   });
@@ -280,14 +273,14 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
         otherMarketId2,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
@@ -310,14 +303,14 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     });
 
     it('should work normally if within maturity time and partial swap with no debt', async () => {
-      let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
       await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 12 * ONE_WEEK);
       await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
       const inputAmount = otherAmountWei.div(2);
@@ -337,14 +330,14 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
     });
 
     it('should work normally if within maturity time and full swap with no debt', async () => {
-      let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+      const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
       await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 12 * ONE_WEEK);
       await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
       const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
@@ -368,7 +361,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId2,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
       const inputAmount = otherAmountWei.div(2);
@@ -395,7 +388,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId2,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
       const inputAmount = otherAmountWei.div(2);
@@ -428,7 +421,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
       timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
@@ -463,7 +456,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId2,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
       const inputAmount = otherAmountWei.div(2);
@@ -506,7 +499,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId2,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1]);
       const timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
@@ -538,7 +531,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
     });
 
@@ -551,7 +544,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, otherAmountWei);
 
@@ -560,7 +553,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
 
       const accountInfo = { owner: vault.address, number: borrowAccountNumber };
@@ -576,7 +569,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, otherAmountWei);
 
@@ -587,7 +580,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei.sub(1),
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
 
       const accountInfo = { owner: vault.address, number: borrowAccountNumber };
@@ -603,7 +596,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, otherAmountWei);
 
@@ -614,7 +607,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
 
       const accountInfo = { owner: vault.address, number: borrowAccountNumber };
@@ -632,7 +625,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
       timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
@@ -645,7 +638,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId2,
         otherAmountWei,
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
       expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK);
       expect(await core.expiry.getExpiry(accountInfo, otherMarketId2)).to.eq(timestamp + 4 * ONE_WEEK);
@@ -662,7 +655,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
       timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
@@ -675,7 +668,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
       expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK);
     });
@@ -691,7 +684,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
       timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
@@ -710,7 +703,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
 
       const accountInfo = { owner: vault.address, number: borrowAccountNumber };
@@ -727,9 +720,9 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
           defaultAccountNumber,
           otherMarketId1,
           otherAmountWei,
-          BalanceCheckFlag.To
+          BalanceCheckFlag.To,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -746,9 +739,9 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
           defaultAccountNumber,
           otherMarketId1,
           otherAmountWei,
-          BalanceCheckFlag.To
+          BalanceCheckFlag.To,
         ),
-        'PendleYtGLP2024UserVaultV1: Too close to expiry'
+        'PendleYtGLP2024UserVaultV1: Too close to expiry',
       );
     });
 
@@ -763,7 +756,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         otherAmountWei,
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
       timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
@@ -777,7 +770,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
           defaultAccountNumber,
           otherMarketId1,
           ONE_BI,
-          BalanceCheckFlag.To
+          BalanceCheckFlag.To,
         ),
         'PendleYtGLP2024UserVaultV1: Position is about to expire',
       );

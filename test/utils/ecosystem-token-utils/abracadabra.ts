@@ -1,12 +1,12 @@
 import {
   MagicGLPPriceOracle,
   MagicGLPPriceOracle__factory,
-  MagicGLPWithChainlinkAutomationPriceOracle,
-  MagicGLPWithChainlinkAutomationPriceOracle__factory,
   MagicGLPUnwrapperTraderV1,
   MagicGLPUnwrapperTraderV1__factory,
   MagicGLPUnwrapperTraderV2,
   MagicGLPUnwrapperTraderV2__factory,
+  MagicGLPWithChainlinkAutomationPriceOracle,
+  MagicGLPWithChainlinkAutomationPriceOracle__factory,
   MagicGLPWrapperTraderV1,
   MagicGLPWrapperTraderV1__factory,
   MagicGLPWrapperTraderV2,
@@ -14,15 +14,14 @@ import {
 } from '../../../src/types';
 import {
   getMagicGLPPriceOracleConstructorParams,
-  getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams,
   getMagicGLPUnwrapperTraderV1ConstructorParams,
   getMagicGLPUnwrapperTraderV2ConstructorParams,
+  getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams,
   getMagicGLPWrapperTraderV1ConstructorParams,
   getMagicGLPWrapperTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/abracadabra';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export async function createMagicGLPPriceOracle(core: CoreProtocol): Promise<MagicGLPPriceOracle> {
   return createContractWithAbi(
@@ -34,7 +33,7 @@ export async function createMagicGLPPriceOracle(core: CoreProtocol): Promise<Mag
 
 export async function createMagicGLPWithChainlinkAutomationPriceOracle(
   core: CoreProtocol,
-  chainlinkRegistry: string
+  chainlinkRegistry: string,
 ): Promise<MagicGLPWithChainlinkAutomationPriceOracle> {
   return createContractWithAbi(
     MagicGLPWithChainlinkAutomationPriceOracle__factory.abi,

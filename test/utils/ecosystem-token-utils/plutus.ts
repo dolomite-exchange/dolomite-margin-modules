@@ -18,10 +18,10 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV2__factory,
   PlutusVaultGLPPriceOracle,
   PlutusVaultGLPPriceOracle__factory,
-  PlutusVaultWithChainlinkAutomationPriceOracle,
-  PlutusVaultWithChainlinkAutomationPriceOracle__factory,
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory,
+  PlutusVaultWithChainlinkAutomationPriceOracle,
+  PlutusVaultWithChainlinkAutomationPriceOracle__factory,
   RegistryProxy,
   RegistryProxy__factory,
 } from '../../../src/types';
@@ -33,12 +33,11 @@ import {
   getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
   getPlutusVaultGLPPriceOracleConstructorParams,
-  getPlutusVaultWithChainlinkAutomationPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
+  getPlutusVaultWithChainlinkAutomationPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/plutus';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export function createDolomiteCompatibleWhitelistForPlutusDAO(
   core: CoreProtocol,

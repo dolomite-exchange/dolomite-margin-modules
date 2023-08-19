@@ -1,19 +1,19 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
+  PendleGLPRegistry,
   PendleYtGLP2024IsolationModeTokenVaultV1,
   PendleYtGLP2024IsolationModeVaultFactory,
-  PendleGLPRegistry,
 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectThrow, expectArrayEq } from '../../utils/assertions';
+import { expectArrayEq, expectEvent, expectThrow } from '../../utils/assertions';
 import {
+  createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeTokenVaultV1,
   createPendleYtGLP2024IsolationModeVaultFactory,
-  createPendleGLPRegistry,
 } from '../../utils/ecosystem-token-utils/pendle';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const YT_EXPIRY_TIME = BigNumber.from('1711584000'); // Thu Mar 28 2024 00:00:00 GMT+0000
@@ -34,10 +34,10 @@ describe('PendleYtGLP2024IsolationModeVaultFactory', () => {
     pendleRegistry = await createPendleGLPRegistry(core);
     vaultImplementation = await createPendleYtGLP2024IsolationModeTokenVaultV1();
     factory = await createPendleYtGLP2024IsolationModeVaultFactory(
+      core,
       pendleRegistry,
       initialAllowableDebtMarketIds,
       initialAllowableCollateralMarketIds,
-      core,
       core.pendleEcosystem!.ytGlpToken,
       vaultImplementation,
     );
@@ -102,7 +102,7 @@ describe('PendleYtGLP2024IsolationModeVaultFactory', () => {
 
       const result = await factory.connect(core.governance).ownerSetAllowableDebtMarketIds(newAllowableDebtMarketIds);
       await expectEvent(factory, result, 'AllowableDebtMarketIdsSet', {
-        allowableDebtMarketIds: newAllowableDebtMarketIds
+        allowableDebtMarketIds: newAllowableDebtMarketIds,
       });
       expectArrayEq(await factory.allowableDebtMarketIds(), newAllowableDebtMarketIds);
     });

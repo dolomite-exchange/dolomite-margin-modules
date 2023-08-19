@@ -1,27 +1,27 @@
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { expect } from 'chai';
+import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
+import {
+  CustomTestVaultToken,
+  TestChainlinkAutomationPriceOracle,
+  TestChainlinkAutomationPriceOracle__factory,
+} from '../../../src/types';
+import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
+import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { expectThrow } from '../../utils/assertions';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
-  setupUSDCBalance
+  setupUSDCBalance,
 } from '../../utils/setup';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import {
-  CustomTestVaultToken,
-  TestChainlinkAutomationPriceOracle,
-  TestChainlinkAutomationPriceOracle__factory
-} from '../../../src/types';
-import { createContractWithAbi, createTestToken, createTestVaultToken } from '../../../src/utils/dolomite-utils';
-import { expect } from 'chai';
-import { expectThrow } from '../../utils/assertions';
-import { ethers } from 'hardhat';
-import { BigNumber, BigNumberish } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
@@ -163,7 +163,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
   describe('#ownerSetChainlinkRegistry', () => {
     it('should work normally', async () => {
       await chainlinkAutomationPriceOracle.connect(core.governance).ownerSetChainlinkRegistry(
-        chainlinkRegistry.address
+        chainlinkRegistry.address,
       );
       expect(await chainlinkAutomationPriceOracle.chainlinkRegistry()).to.eq(chainlinkRegistry.address);
     });
@@ -238,7 +238,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
       await increase(11 * 3600);
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
-        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met'
+        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',
       );
 
       await increase(3600);
@@ -276,27 +276,27 @@ describe('ChainlinkAutomationPriceOracle', () => {
       await token.connect(core.hhUser1).burn(parseEther('10000'));
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
-        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met'
+        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',
       );
     });
 
     it('fails when not called by Chainlink', async () => {
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(core.hhUser1).performUpkeep('0x'),
-        'ChainlinkAutomationPriceOracle: Caller is not Chainlink'
+        'ChainlinkAutomationPriceOracle: Caller is not Chainlink',
       );
     });
 
     it('fails when before heartbeat and within deviation range', async () => {
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
-        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met'
+        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',
       );
 
       await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 24e4);
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
-        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met'
+        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',
       );
 
       await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 1e4);

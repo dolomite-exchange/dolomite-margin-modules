@@ -144,6 +144,15 @@ export async function expectWalletBalance(
   expect(await token.balanceOf(owner)).eq(amount);
 }
 
+export async function expectWalletBalanceIsGreaterThan(
+  accountOwner: { address: address } | address,
+  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber> },
+  amount: BigNumberish,
+) {
+  const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
+  expect(await token.balanceOf(owner)).to.be.gt(amount);
+}
+
 export async function expectVaultBalanceToMatchAccountBalances(
   core: CoreProtocol,
   vault: { underlyingBalanceOf(overrides?: CallOverrides): Promise<BigNumber> },

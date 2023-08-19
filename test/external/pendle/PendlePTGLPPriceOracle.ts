@@ -2,9 +2,8 @@ import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
-  PendlePtGLP2024IsolationModeUnwrapperTraderV2,
-  PendlePtGLP2024IsolationModeVaultFactory,
   PendleGLPRegistry,
+  PendlePtGLP2024IsolationModeVaultFactory,
   PendlePtGLPPriceOracle,
   TestPendlePtOracle,
   TestPendlePtOracle__factory,
@@ -14,20 +13,19 @@ import { Network } from '../../../src/utils/no-deps-constants';
 import { increaseToTimestamp, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
-  createPendlePtGLP2024IsolationModeTokenVaultV1,
-  createPendlePtGLP2024IsolationModeUnwrapperTraderV2,
-  createPendlePtGLP2024IsolationModeVaultFactory,
   createPendleGLPRegistry,
+  createPendlePtGLP2024IsolationModeTokenVaultV1,
+  createPendlePtGLP2024IsolationModeVaultFactory,
   createPendlePtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 /**
- * This is the expected price at the following timestamp: 1983002000
+ * This is the expected price at the following timestamp: 1700000000
  *
  * Keep in mind that Pendle's prices tick upward each second.
  */
-const PT_GLP_PRICE = BigNumber.from('956920341643951030'); // $0.956920341643951030
+const PT_GLP_PRICE = BigNumber.from('915069158541073688'); // $0.915069158541073688
 
 describe('PendlePtGLPPriceOracle', () => {
   let snapshotId: string;
@@ -36,7 +34,6 @@ describe('PendlePtGLPPriceOracle', () => {
   let ptGlpOracle: PendlePtGLPPriceOracle;
   let pendleRegistry: PendleGLPRegistry;
   let factory: PendlePtGLP2024IsolationModeVaultFactory;
-  let unwrapperTrader: PendlePtGLP2024IsolationModeUnwrapperTraderV2;
   let marketId: BigNumberish;
 
   before(async () => {
@@ -50,7 +47,6 @@ describe('PendlePtGLPPriceOracle', () => {
       core.pendleEcosystem!.ptGlpToken,
       userVaultImplementation,
     );
-    unwrapperTrader = await createPendlePtGLP2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
     ptGlpOracle = await createPendlePtGLPPriceOracle(
       core,
       factory,
@@ -107,7 +103,7 @@ describe('PendlePtGLPPriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for dptGLP', async () => {
-      await increaseToTimestamp(1_983_002_000);
+      await increaseToTimestamp(1_700_000_000);
       const price = await ptGlpOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_GLP_PRICE);
     });

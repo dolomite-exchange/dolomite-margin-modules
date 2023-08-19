@@ -7,12 +7,12 @@ import { BigNumber } from 'ethers';
 import {
   IGmxRegistryV1,
   IPendlePtToken,
+  PendleGLPRegistry,
   PendlePtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeTokenVaultV1__factory,
   PendlePtGLP2024IsolationModeUnwrapperTraderV2,
   PendlePtGLP2024IsolationModeVaultFactory,
   PendlePtGLP2024IsolationModeWrapperTraderV2,
-  PendleGLPRegistry,
   PendlePtGLPPriceOracle,
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
@@ -20,11 +20,11 @@ import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-consta
 import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow, expectWalletBalance } from '../../utils/assertions';
 import {
+  createPendleGLPRegistry,
   createPendlePtGLP2024IsolationModeTokenVaultV1,
   createPendlePtGLP2024IsolationModeUnwrapperTraderV2,
   createPendlePtGLP2024IsolationModeVaultFactory,
   createPendlePtGLP2024IsolationModeWrapperTraderV2,
-  createPendleGLPRegistry,
   createPendlePtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
 import {

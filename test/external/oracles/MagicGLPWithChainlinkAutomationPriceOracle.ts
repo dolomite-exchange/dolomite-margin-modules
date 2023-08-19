@@ -1,24 +1,24 @@
+import { ADDRESSES } from '@dolomite-margin/dist/src';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { expect } from 'chai';
+import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
 import {
   CustomTestVaultToken,
   IERC4626,
   MagicGLPWithChainlinkAutomationPriceOracle,
   MagicGLPWithChainlinkAutomationPriceOracle__factory,
 } from '../../../src/types';
-import { expect } from 'chai';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
-import { getBlockTimestamp, impersonate, increaseToTimestamp, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
-import { createMagicGLPWithChainlinkAutomationPriceOracle } from '../../utils/ecosystem-token-utils/abracadabra';
-import { BigNumber, BigNumberish } from 'ethers';
-import { ethers } from 'hardhat';
-import { expectThrow } from '../../utils/assertions';
-import { ADDRESSES } from '@dolomite-margin/dist/src';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { parseEther } from 'ethers/lib/utils';
 import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
+import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { expectThrow } from '../../utils/assertions';
+import { createMagicGLPWithChainlinkAutomationPriceOracle } from '../../utils/ecosystem-token-utils/abracadabra';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 const GLP_PRICE = BigNumber.from('1004682394802947459'); // $1.004682394802947459
 
@@ -47,7 +47,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
 
     magicGLPWithChainlinkAutomationPriceOracle = await createMagicGLPWithChainlinkAutomationPriceOracle(
       core,
-      chainlinkRegistry.address
+      chainlinkRegistry.address,
     );
     magicGLPWithChainlinkAutomationPriceOracleNoSupply =
       await createContractWithAbi<MagicGLPWithChainlinkAutomationPriceOracle>(
@@ -174,7 +174,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
       await increase(11 * 3600);
       await expectThrow(
         magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
-        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met'
+        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',
       );
 
       await increase(3600);

@@ -80,6 +80,14 @@ export const MAGIC_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const MIM_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A',
+    marketId: 13,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const USDC_MAP: Record<Network, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',

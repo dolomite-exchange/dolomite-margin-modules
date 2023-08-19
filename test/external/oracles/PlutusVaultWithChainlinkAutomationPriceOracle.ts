@@ -1,9 +1,14 @@
+import { ADDRESSES } from '@dolomite-margin/dist/src';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { expect } from 'chai';
+import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
+import deployments from '../../../scripts/deployments.json';
 import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupUSDCBalance
-} from '../../utils/setup';
-import {
+  CustomTestVaultToken,
   IPlutusVaultGLP,
   IPlutusVaultGLP__factory,
   IPlutusVaultGLPRouter,
@@ -13,35 +18,24 @@ import {
   PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory,
   PlutusVaultGLPIsolationModeVaultFactory,
   PlutusVaultGLPIsolationModeVaultFactory__factory,
-  PlutusVaultWithChainlinkAutomationPriceOracle,
-  PlutusVaultWithChainlinkAutomationPriceOracle__factory,
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory,
-  CustomTestVaultToken,
+  PlutusVaultWithChainlinkAutomationPriceOracle,
+  PlutusVaultWithChainlinkAutomationPriceOracle__factory,
 } from '../../../src/types';
-import { BigNumber, BigNumberish } from 'ethers';
+import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
+import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
-import deployments from '../../../scripts/deployments.json';
-import {
-  createPlutusVaultWithChainlinkAutomationPriceOracle,
-} from '../../utils/ecosystem-token-utils/plutus';
 import {
   getBlockTimestamp,
   getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
-  snapshot
+  snapshot,
 } from '../../utils';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { expect } from 'chai';
-import { ethers } from 'hardhat';
 import { expectThrow } from '../../utils/assertions';
-import { ADDRESSES } from '@dolomite-margin/dist/src';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { parseEther } from 'ethers/lib/utils';
-import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
-import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
+import { createPlutusVaultWithChainlinkAutomationPriceOracle } from '../../utils/ecosystem-token-utils/plutus';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 
 const GLP_PRICE = BigNumber.from('984588746906888510'); // $0.984588746906888510
 const FEE_PRECISION = BigNumber.from('10000');
@@ -183,7 +177,7 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
             core.marketIds.dfsGlp!,
             factory.address,
             plutusVaultRegistry.address,
-            unwrapperTrader.address
+            unwrapperTrader.address,
           ],
         );
 
@@ -242,7 +236,7 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
       await increase(11 * 3600);
       await expectThrow(
         plvWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
-        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met'
+        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',
       );
 
       await increase(3600);
@@ -264,7 +258,7 @@ describe('PlutusVaultWithChainlinkAutomationPriceOracle', () => {
     glpPrice: BigNumber,
     totalAssets: BigNumber,
     totalSupply: BigNumber,
-    exitFeeBp: BigNumber
+    exitFeeBp: BigNumber,
   ): BigNumber {
     if (totalSupply.eq(0)) {
       return glpPrice.sub(glpPrice.mul(exitFeeBp).div(FEE_PRECISION));

@@ -2,7 +2,6 @@ import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
-  PendleYtGLP2024IsolationModeUnwrapperTraderV2,
   PendleGLPRegistry,
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLPPriceOracle,
@@ -11,24 +10,24 @@ import {
 } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { Network } from 'src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot, increaseToTimestamp } from 'test/utils';
+import { getBlockTimestamp, increaseToTimestamp, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectThrow } from 'test/utils/assertions';
 import {
   createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeTokenVaultV1,
-  createPendleYtGLP2024IsolationModeUnwrapperTraderV2,
   createPendleYtGLP2024IsolationModeVaultFactory,
   createPendleYtGLPPriceOracle,
 } from 'test/utils/ecosystem-token-utils/pendle';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 /**
- * This is the expected price at the following timestamp: 1689700000
+ * This is the expected price at the following timestamp: 1690134516
  *
  * Keep in mind that Pendle's PT prices tick upward each second so YT prices tick downward
  */
-const PT_GLP_PRICE = BigNumber.from('870767188326032931'); // $0.870767188326032931
-const YT_GLP_PRICE = BigNumber.from('129232811673967069'); // $0.129232811673967069
+const PT_GLP_PRICE = BigNumber.from('923876121116027818'); // $0.923876121116027818
+const YT_GLP_PRICE = BigNumber.from('79759797083751374'); // $0.79759797083751374
+const GLP_PRICE = BigNumber.from('1003635918199779193'); // $1.003635918199779193
 const initialAllowableDebtMarketIds = [0, 1];
 const initialAllowableCollateralMarketIds = [2, 3];
 
@@ -39,30 +38,28 @@ describe('PendleYtGLPPriceOracle', () => {
   let ytGlpOracle: PendleYtGLPPriceOracle;
   let pendleRegistry: PendleGLPRegistry;
   let factory: PendleYtGLP2024IsolationModeVaultFactory;
-  let unwrapperTrader: PendleYtGLP2024IsolationModeUnwrapperTraderV2;
   let marketId: BigNumberish;
+  let timestampTeleport: number;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: 112489707,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    const timestamp = await getBlockTimestamp(getDefaultCoreProtocolConfig(Network.ArbitrumOne).blockNumber);
+    timestampTeleport = timestamp + 600; // add 10 minutes
 
     pendleRegistry = await createPendleGLPRegistry(core);
     const userVaultImplementation = await createPendleYtGLP2024IsolationModeTokenVaultV1();
     factory = await createPendleYtGLP2024IsolationModeVaultFactory(
+      core,
       pendleRegistry,
       initialAllowableDebtMarketIds,
       initialAllowableCollateralMarketIds,
-      core,
       core.pendleEcosystem!.ytGlpToken,
-      userVaultImplementation
+      userVaultImplementation,
     );
-    unwrapperTrader = await createPendleYtGLP2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
     ytGlpOracle = await createPendleYtGLPPriceOracle(
       core,
       factory,
-      pendleRegistry
+      pendleRegistry,
     );
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, ytGlpOracle);
@@ -86,25 +83,25 @@ describe('PendleYtGLPPriceOracle', () => {
       const testPtOracle = await createContractWithAbi<TestPendlePtOracle>(
         TestPendlePtOracle__factory.abi,
         TestPendlePtOracle__factory.bytecode,
-        []
+        [],
       );
       await pendleRegistry.connect(core.governance).ownerSetPtOracle(testPtOracle.address);
 
       await testPtOracle.setOracleState(true, 0, false);
       await expectThrow(
         createPendleYtGLPPriceOracle(core, factory, pendleRegistry),
-        'PendleYtGLPPriceOracle: Oracle not ready yet'
+        'PendleYtGLPPriceOracle: Oracle not ready yet',
       );
       await testPtOracle.setOracleState(false, 0, false);
       await expectThrow(
         createPendleYtGLPPriceOracle(core, factory, pendleRegistry),
-        'PendleYtGLPPriceOracle: Oracle not ready yet'
+        'PendleYtGLPPriceOracle: Oracle not ready yet',
       );
 
       await testPtOracle.setOracleState(true, 0, true);
       await expectThrow(
         createPendleYtGLPPriceOracle(core, factory, pendleRegistry),
-        'PendleYtGLPPriceOracle: Oracle not ready yet'
+        'PendleYtGLPPriceOracle: Oracle not ready yet',
       );
 
       await testPtOracle.setOracleState(false, 0, true);
@@ -114,27 +111,31 @@ describe('PendleYtGLPPriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for dytGLP', async () => {
-      await increaseToTimestamp(1_689_700_000);
-      const price = await ytGlpOracle.getPrice(factory.address);
-      expect(price.value).to.eq(YT_GLP_PRICE);
+      await increaseToTimestamp(timestampTeleport);
+      expect((await core.dolomiteMargin.getMarketPrice(core.marketIds.dPtGlp!)).value).to.eq(PT_GLP_PRICE);
+      expect((await core.dolomiteMargin.getMarketPrice(core.marketIds.dfsGlp!)).value).to.eq(GLP_PRICE);
+      expect((await ytGlpOracle.getPrice(factory.address)).value).to.eq(YT_GLP_PRICE);
+
+      // Verify the two equal each other, roughly. YT_GLP is rounded down because of decimal truncation
+      expect(GLP_PRICE.sub(PT_GLP_PRICE).sub(1)).to.eq(YT_GLP_PRICE);
     });
 
     it('fails when token sent is not dytGLP', async () => {
       await expectThrow(
         ytGlpOracle.getPrice(ADDRESSES.ZERO),
-        `PendleYtGLPPriceOracle: Invalid token <${ADDRESSES.ZERO}>`
+        `PendleYtGLPPriceOracle: Invalid token <${ADDRESSES.ZERO}>`,
       );
       await expectThrow(
         ytGlpOracle.getPrice(core.gmxEcosystem!.fsGlp.address),
-        `PendleYtGLPPriceOracle: Invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`
+        `PendleYtGLPPriceOracle: Invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`,
       );
       await expectThrow(
         ytGlpOracle.getPrice(core.tokens.dfsGlp!.address),
-        `PendleYtGLPPriceOracle: Invalid token <${core.tokens.dfsGlp!.address.toLowerCase()}>`
+        `PendleYtGLPPriceOracle: Invalid token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
       await expectThrow(
         ytGlpOracle.getPrice(core.gmxEcosystem!.glp.address),
-        `PendleYtGLPPriceOracle: Invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`
+        `PendleYtGLPPriceOracle: Invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`,
       );
     });
 
@@ -142,7 +143,7 @@ describe('PendleYtGLPPriceOracle', () => {
       await core.dolomiteMargin.ownerSetIsClosing(marketId, false);
       await expectThrow(
         ytGlpOracle.getPrice(factory.address),
-        'PendleYtGLPPriceOracle: ytGLP cannot be borrowable'
+        'PendleYtGLPPriceOracle: ytGLP cannot be borrowable',
       );
     });
   });

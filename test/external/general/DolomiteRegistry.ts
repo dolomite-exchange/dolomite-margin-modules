@@ -21,7 +21,7 @@ describe('DolomiteRegistryImplementation', () => {
     implementation = await createDolomiteRegistryImplementation();
     const calldata = await implementation.populateTransaction.initialize(
       core.genericTraderProxy!.address,
-      core.expiry!.address
+      core.expiry!.address,
     );
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
     registry = DolomiteRegistryImplementation__factory.connect(registryProxy.address, core.governance);
@@ -43,9 +43,9 @@ describe('DolomiteRegistryImplementation', () => {
       await expectThrow(
         registry.initialize(
           core.genericTraderProxy!.address,
-          core.expiry!.address
+          core.expiry!.address,
         ),
-        'Initializable: contract is already initialized'
+        'Initializable: contract is already initialized',
       );
     });
   });
@@ -69,21 +69,21 @@ describe('DolomiteRegistryImplementation', () => {
     it('should fail if genericTraderProxy is invalid', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGenericTraderProxy(OTHER_ADDRESS),
-        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`
+        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
       );
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGenericTraderProxy(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGenericTraderProxy(ZERO_ADDRESS),
-        'DolomiteRegistryImplementation: Invalid genericTraderProxy'
+        'DolomiteRegistryImplementation: Invalid genericTraderProxy',
       );
     });
   });
@@ -101,21 +101,21 @@ describe('DolomiteRegistryImplementation', () => {
     it('should fail if expiry is not valid', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetExpiry(OTHER_ADDRESS),
-        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`
+        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
       );
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetExpiry(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetExpiry(ZERO_ADDRESS),
-        'DolomiteRegistryImplementation: Invalid expiry'
+        'DolomiteRegistryImplementation: Invalid expiry',
       );
     });
   });

@@ -5,22 +5,22 @@ import {
   IPendlePtToken,
   IPendleSyToken__factory,
   IPlutusVaultGLPFarm,
+  PendleGLPRegistry,
   PendlePtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeTokenVaultV1__factory,
   PendlePtGLP2024IsolationModeUnwrapperTraderV2,
   PendlePtGLP2024IsolationModeVaultFactory,
   PendlePtGLP2024IsolationModeWrapperTraderV2,
-  PendleGLPRegistry,
   PendlePtGLPPriceOracle,
 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
+  createPendleGLPRegistry,
   createPendlePtGLP2024IsolationModeTokenVaultV1,
   createPendlePtGLP2024IsolationModeUnwrapperTraderV2,
   createPendlePtGLP2024IsolationModeVaultFactory,
   createPendlePtGLP2024IsolationModeWrapperTraderV2,
-  createPendleGLPRegistry,
   createPendlePtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
 import {

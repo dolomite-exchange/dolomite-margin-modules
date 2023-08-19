@@ -38,6 +38,9 @@ export const BYTES_ZERO = '0x000000000000000000000000000000000000000000000000000
 export const ZERO_BI = BigNumber.from('0');
 
 export const ONE_BI = BigNumber.from('1');
+
+export const ONE_ETH_BI = BigNumber.from('1000000000000000000');
+
 export const TEN_BI = BigNumber.from('10');
 
 export const MAX_UINT_256_BI = BigNumber.from('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');

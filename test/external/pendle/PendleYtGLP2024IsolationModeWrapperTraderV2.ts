@@ -5,28 +5,28 @@ import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
+import { createDepositAction } from 'src/utils/dolomite-utils';
 import {
   IGmxRegistryV1,
   IPendleYtToken,
+  PendleGLPRegistry,
   PendleYtGLP2024IsolationModeTokenVaultV1,
   PendleYtGLP2024IsolationModeTokenVaultV1__factory,
   PendleYtGLP2024IsolationModeUnwrapperTraderV2,
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeWrapperTraderV2,
-  PendleGLPRegistry,
   PendleYtGLPPriceOracle,
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot, setEtherBalance } from '../../utils';
-import { createDepositAction } from 'src/utils/dolomite-utils';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '../../utils';
 import { expectThrow, expectWalletBalance } from '../../utils/assertions';
 import {
+  createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeTokenVaultV1,
   createPendleYtGLP2024IsolationModeUnwrapperTraderV2,
   createPendleYtGLP2024IsolationModeVaultFactory,
   createPendleYtGLP2024IsolationModeWrapperTraderV2,
-  createPendleGLPRegistry,
   createPendleYtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
 import {
@@ -76,12 +76,12 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     pendleRegistry = await createPendleGLPRegistry(core);
     factory = await createPendleYtGLP2024IsolationModeVaultFactory(
+      core,
       pendleRegistry,
       initialAllowableDebtMarketIds,
       initialAllowableCollateralMarketIds,
-      core,
       core.pendleEcosystem!.ytGlpToken,
-      userVaultImplementation
+      userVaultImplementation,
     );
 
     unwrapper = await createPendleYtGLP2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
@@ -102,7 +102,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     vault = setupUserVaultProxy<PendleYtGLP2024IsolationModeTokenVaultV1>(
       vaultAddress,
       PendleYtGLP2024IsolationModeTokenVaultV1__factory,
-      core.hhUser1
+      core.hhUser1,
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
@@ -125,7 +125,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
       core.pendleEcosystem!.ptGlpMarket.address as any,
       core.gmxEcosystem!.sGlp.address as any,
       glpAmount,
-      FIVE_BIPS
+      FIVE_BIPS,
     );
     await core.pendleEcosystem!.ytGlpToken.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -150,7 +150,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
           core.tokens.usdc.address,
           core.tokens.dfsGlp!.address,
           usableUsdcAmount,
-          BYTES_EMPTY
+          BYTES_EMPTY,
         );
 
       const { extraOrderData, approxParams } = await encodeSwapExactTokensForYt(router, core, glpAmount, 0);
@@ -167,7 +167,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
           usableUsdcAmount,
           core.marketIds.usdc,
           vaultImpersonater,
-          vaultImpersonater.address
+          vaultImpersonater.address,
         ),
         (
           await wrapper.createActionsForWrapping(
@@ -179,7 +179,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
             core.marketIds.usdc,
             ZERO_BI,
             usableUsdcAmount,
-            extraOrderData
+            extraOrderData,
           )
         )[0],
       ];
@@ -214,9 +214,9 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
             factory.address,
             core.tokens.usdc.address,
             usableUsdcAmount,
-            BYTES_EMPTY
+            BYTES_EMPTY,
           ),
-        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -229,9 +229,9 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
           factory.address,
           OTHER_ADDRESS,
           usableUsdcAmount,
-          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI])
+          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
         ),
-        `IsolationModeWrapperTraderV2: Invalid trade originator <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeWrapperTraderV2: Invalid trade originator <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -244,9 +244,9 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
           factory.address,
           OTHER_ADDRESS,
           usableUsdcAmount,
-          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI])
+          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
         ),
-        `IsolationModeWrapperTraderV2: Invalid input token <${OTHER_ADDRESS.toLowerCase()}>`
+        `IsolationModeWrapperTraderV2: Invalid input token <${OTHER_ADDRESS.toLowerCase()}>`,
       );
     });
 
@@ -259,9 +259,9 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
           core.tokens.weth.address,
           core.tokens.usdc.address,
           amountWei,
-          ethers.utils.defaultAbiCoder.encode(['uint256'], [otherAmountWei])
+          ethers.utils.defaultAbiCoder.encode(['uint256'], [otherAmountWei]),
         ),
-        `IsolationModeWrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`
+        `IsolationModeWrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -274,9 +274,9 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
           factory.address,
           core.tokens.usdc.address,
           ZERO_BI,
-          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI])
+          ethers.utils.defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
         ),
-        'IsolationModeWrapperTraderV2: Invalid input amount'
+        'IsolationModeWrapperTraderV2: Invalid input amount',
       );
     });
   });
@@ -297,7 +297,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     it('should fail because it is not implemented', async () => {
       await expectThrow(
         wrapper.getExchangeCost(core.tokens.usdc.address, factory.address, amountWei, BYTES_EMPTY),
-        'PendleYtGLP2024WrapperV2: getExchangeCost is not implemented'
+        'PendleYtGLP2024WrapperV2: getExchangeCost is not implemented',
       );
     });
   });

@@ -1,40 +1,36 @@
+import { ADDRESSES } from '@dolomite-margin/dist/src';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
+import { ethers } from 'hardhat';
+import deployments from '../../../scripts/deployments.json';
 import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupUSDCBalance
-} from '../../utils/setup';
-import {
+  CustomTestVaultToken,
   IERC4626,
   IJonesWhitelistController,
   IJonesWhitelistController__factory,
   JonesUSDCIsolationModeVaultFactory,
   JonesUSDCIsolationModeVaultFactory__factory,
-  JonesUSDCWithChainlinkAutomationPriceOracle,
   JonesUSDCRegistry,
   JonesUSDCRegistry__factory,
+  JonesUSDCWithChainlinkAutomationPriceOracle,
   JonesUSDCWithChainlinkAutomationPriceOracle__factory,
-  CustomTestVaultToken
 } from '../../../src/types';
-import deployments from '../../../scripts/deployments.json';
+import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
+import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
 import {
   getBlockTimestamp,
   getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
-  snapshot
+  snapshot,
 } from '../../utils';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
-import { createJonesUSDCWithChainlinkAutomationPriceOracle } from '../../utils/ecosystem-token-utils/jones';
-import { ethers } from 'hardhat';
-import { expect } from 'chai';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expectThrow } from '../../utils/assertions';
-import { ADDRESSES } from '@dolomite-margin/dist/src';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
+import { createJonesUSDCWithChainlinkAutomationPriceOracle } from '../../utils/ecosystem-token-utils/jones';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 
 const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.99998605
 const USDC_SCALE_DIFF = BigNumber.from('10').pow(12);
@@ -68,12 +64,12 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     );
     factory = JonesUSDCIsolationModeVaultFactory__factory.connect(
       deployments.JonesUSDCIsolationModeVaultFactory[Network.ArbitrumOne].address,
-      core.hhUser1
+      core.hhUser1,
     );
 
     jonesController = IJonesWhitelistController__factory.connect(
       await jonesUSDCRegistry.whitelistController(),
-      core.hhUser1
+      core.hhUser1,
     );
     const role = await jonesController.getUserRole(await jonesUSDCRegistry.unwrapperTraderForLiquidation());
     retentionFee = (await jonesController.getRoleInfo(role)).jUSDC_RETENTION;
@@ -162,7 +158,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
             chainlinkRegistry.address,
             jonesUSDCRegistry.address,
             core.marketIds.usdc,
-            factory.address
+            factory.address,
           ],
         );
       const price = getjUSDCPrice(USDC_PRICE, BigNumber.from('0'), BigNumber.from('0'));
@@ -221,7 +217,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
       await increase(11 * 3600);
       await expectThrow(
         jonesUSDCWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
-        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met'
+        'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',
       );
 
       await increase(3600);

@@ -6,12 +6,12 @@ import { BigNumber, ethers } from 'ethers';
 import {
   IGmxRegistryV1,
   IPendleYtToken,
+  PendleGLPRegistry,
   PendleYtGLP2024IsolationModeTokenVaultV1,
   PendleYtGLP2024IsolationModeTokenVaultV1__factory,
   PendleYtGLP2024IsolationModeUnwrapperTraderV2,
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeWrapperTraderV2,
-  PendleGLPRegistry,
   PendleYtGLPPriceOracle,
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
@@ -19,11 +19,11 @@ import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-consta
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
+  createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeTokenVaultV1,
   createPendleYtGLP2024IsolationModeUnwrapperTraderV2,
   createPendleYtGLP2024IsolationModeVaultFactory,
   createPendleYtGLP2024IsolationModeWrapperTraderV2,
-  createPendleGLPRegistry,
   createPendleYtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
 import {
@@ -69,10 +69,10 @@ describe('PendleYtGLP2024IsolationModeUnwrapperTraderV2', () => {
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     pendleRegistry = await createPendleGLPRegistry(core);
     factory = await createPendleYtGLP2024IsolationModeVaultFactory(
+      core,
       pendleRegistry,
       initialAllowableDebtMarketIds,
       initialAllowableCollateralMarketIds,
-      core,
       core.pendleEcosystem!.ytGlpToken,
       userVaultImplementation,
     );

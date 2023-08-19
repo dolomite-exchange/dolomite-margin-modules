@@ -8,12 +8,12 @@ import {
   IGmxRegistryV1__factory,
   IJonesUSDCRegistry,
   IJonesUSDCRegistry__factory,
-  IPendlePtGLP2024Registry,
-  IPendlePtGLP2024Registry__factory,
+  IPendleGLPRegistry,
+  IPendleGLPRegistry__factory,
   IPlutusVaultRegistry,
   IPlutusVaultRegistry__factory,
   JonesUSDCRegistry__factory,
-  PendlePtGLP2024Registry__factory,
+  PendleGLPRegistry__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory,
   PlutusVaultRegistry__factory,
   RegistryProxy__factory,
@@ -32,9 +32,9 @@ import {
   getJonesUSDCRegistryConstructorParams,
 } from '../../../src/utils/constructors/jones';
 import {
+  getPendleGLPRegistryConstructorParams,
   getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
-  getPendlePtGLP2024RegistryConstructorParams,
   getPendlePtGLPPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/pendle';
 import {
@@ -181,32 +181,32 @@ async function deployJonesUSDCContracts(network: Network, core: CoreProtocol) {
   };
 }
 
-async function deployPendlePtGLP2024Contracts(network: Network, core: CoreProtocol) {
+async function deployPendleGLPContracts(network: Network, core: CoreProtocol) {
   const pendlePtGLPRegistryImplementationAddress = await deployContractAndSave(
     Number(network),
-    'PendlePtGLP2024Registry',
+    'PendleGLPRegistry',
     [],
-    'PendlePtGLP2024RegistryV1Implementation',
+    'PendleGLP2024RegistryV1Implementation',
   );
-  const pendleRegistryImplementation = PendlePtGLP2024Registry__factory.connect(
+  const pendleRegistryImplementation = PendleGLPRegistry__factory.connect(
     pendlePtGLPRegistryImplementationAddress,
     core.hhUser1,
   );
   const pendleRegistryAddress = await deployContractAndSave(
     Number(network),
     'RegistryProxy',
-    await getPendlePtGLP2024RegistryConstructorParams(pendleRegistryImplementation, core),
-    'PendlePtGLP2024RegistryProxy',
+    await getPendleGLPRegistryConstructorParams(core, pendleRegistryImplementation),
+    'PendleGLPRegistryProxy',
   );
-  const pendleRegistry = IPendlePtGLP2024Registry__factory.connect(pendleRegistryAddress, core.hhUser1);
+  const pendleRegistry = IPendleGLPRegistry__factory.connect(pendleRegistryAddress, core.hhUser1);
   const pendlePtGlpTokenVaultAddress = await deployContractAndSave(
     Number(network),
-    'PendlePtGLP2024IsolationModeTokenVaultV1',
+    'PendleGLPIsolationModeTokenVaultV1',
     [],
   );
   const pendlePtGlpUnwrapperV2Address = await deployContractAndSave(
     Number(network),
-    'PendlePtGLP2024IsolationModeUnwrapperTraderV2',
+    'PendleGLPIsolationModeUnwrapperTraderV2',
     getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.live.ptGlpIsolationModeFactory,
@@ -215,7 +215,7 @@ async function deployPendlePtGLP2024Contracts(network: Network, core: CoreProtoc
   );
   const pendlePtGlpWrapperV2Address = await deployContractAndSave(
     Number(network),
-    'PendlePtGLP2024IsolationModeWrapperTraderV2',
+    'PendleGLPIsolationModeWrapperTraderV2',
     getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.live.ptGlpIsolationModeFactory,
@@ -443,9 +443,9 @@ async function encodeJonesUSDCTransactions(
   );
 }
 
-async function encodePendlePtGLP2024Transactions(
+async function encodePendleGLPTransactions(
   core: CoreProtocol,
-  pendleRegistry: IPendlePtGLP2024Registry,
+  pendleRegistry: IPendleGLPRegistry,
   pendlePtGlpTokenVaultAddress: string,
   pendlePtGlpUnwrapperV2Address: string,
   pendlePtGlpWrapperV2Address: string,
@@ -497,7 +497,7 @@ async function encodePendlePtGLP2024Transactions(
     core.pendleEcosystem!.live.ptGlpIsolationModeFactory.populateTransaction.ownerSetPendlePtGLP2024Registry(
       pendleRegistry.address,
     ),
-    'pendlePtGlpIsolationModeFactory.ownerSetPendlePtGLP2024Registry(pendleRegistry)',
+    'pendlePtGlpIsolationModeFactory.ownerSetPendleGLPRegistry(pendleRegistry)',
   );
   await prettyPrintEncodedData(
     core.pendleEcosystem!.live.ptGlpIsolationModeFactory.populateTransaction.ownerSetUserVaultImplementation(
@@ -630,7 +630,7 @@ async function main() {
     pendlePtGlpUnwrapperV2Address,
     pendlePtGlpWrapperV2Address,
     pendlePtGlpPriceOracleAddress,
-  } = await deployPendlePtGLP2024Contracts(network, core);
+  } = await deployPendleGLPContracts(network, core);
 
   const {
     plutusVaultRegistry,
@@ -689,7 +689,7 @@ async function main() {
     jUSDCPriceOracleAddress,
   );
 
-  await encodePendlePtGLP2024Transactions(
+  await encodePendleGLPTransactions(
     core,
     pendleRegistry,
     pendlePtGlpTokenVaultAddress,

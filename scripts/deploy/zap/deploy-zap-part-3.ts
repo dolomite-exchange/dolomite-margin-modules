@@ -37,7 +37,7 @@ async function main() {
     'jonesUSDCRegistry.ownerSetDolomiteRegistry(dolomiteRegistryProxy)',
   );
   await prettyPrintEncodedData(
-    core.pendleEcosystem!.live.pendlePtGLP2024Registry.populateTransaction.ownerSetDolomiteRegistry(
+    core.pendleEcosystem!.live.pendleGLP2024Registry.populateTransaction.ownerSetDolomiteRegistry(
       core.dolomiteRegistry.address,
     ),
     'pendlePtGLP2024Registry.ownerSetDolomiteRegistry(dolomiteRegistryProxy)',

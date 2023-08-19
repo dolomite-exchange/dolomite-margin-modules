@@ -1,16 +1,16 @@
 import { expect } from 'chai';
 import {
+  PendleGLPRegistry,
   PendlePtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeVaultFactory,
-  PendleGLPRegistry,
 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
 import {
+  createPendleGLPRegistry,
   createPendlePtGLP2024IsolationModeTokenVaultV1,
   createPendlePtGLP2024IsolationModeVaultFactory,
-  createPendleGLPRegistry,
 } from '../../utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
