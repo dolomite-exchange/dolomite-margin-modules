@@ -96,8 +96,8 @@ import {
   IParaswapFeeClaimer__factory,
   IPendlePtGLP2024IsolationModeVaultFactory,
   IPendlePtGLP2024IsolationModeVaultFactory__factory,
-  IPendlePtGLP2024Registry,
-  IPendlePtGLP2024Registry__factory,
+  IPendleGLPRegistry,
+  IPendleGLPRegistry__factory,
   IPendlePtMarket,
   IPendlePtMarket__factory,
   IPendlePtOracle,
@@ -108,6 +108,8 @@ import {
   IPendleRouter__factory,
   IPendleSyToken,
   IPendleSyToken__factory,
+  IPendleYtToken,
+  IPendleYtToken__factory,
   IPlutusVaultGLPFarm,
   IPlutusVaultGLPFarm__factory,
   IPlutusVaultGLPIsolationModeVaultFactory,
@@ -171,6 +173,7 @@ import {
   PENDLE_PT_ORACLE_MAP,
   PENDLE_ROUTER_MAP,
   PENDLE_SY_GLP_2024_TOKEN_MAP,
+  PENDLE_YT_GLP_2024_TOKEN_MAP,
   PLS_TOKEN_MAP,
   PLV_GLP_FARM_MAP,
   PLV_GLP_MAP,
@@ -268,6 +271,7 @@ export interface PendleEcosystem {
   ptGlpToken: IPendlePtToken;
   ptOracle: IPendlePtOracle;
   syGlpToken: IPendleSyToken;
+  ytGlpToken: IPendleYtToken;
   live: {
     ptGlpIsolationModeFactory: IPendlePtGLP2024IsolationModeVaultFactory;
     pendlePtGLP2024Registry: IPendlePtGLP2024Registry
@@ -862,10 +866,14 @@ async function createPendleEcosystem(
       PENDLE_SY_GLP_2024_TOKEN_MAP[network] as string,
       address => IPendleSyToken__factory.connect(address, signer),
     ),
+    ytGlpToken: getContract(
+      PENDLE_YT_GLP_2024_TOKEN_MAP[network] as string,
+      address => IPendleYtToken__factory.connect(address, signer),
+    ),
     live: {
-      pendlePtGLP2024Registry: getContract(
+      pendleGLPRegistry: getContract(
         (Deployments.PendlePtGLP2024RegistryProxy as any)[network]?.address,
-        IPendlePtGLP2024Registry__factory.connect,
+        IPendleGLPRegistry__factory.connect,
       ),
       ptGlpIsolationModeFactory: getContract(
         (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,

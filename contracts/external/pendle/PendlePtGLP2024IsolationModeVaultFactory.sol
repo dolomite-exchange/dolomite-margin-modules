@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
 import { IPendlePtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IPendlePtGLP2024Registry } from "../interfaces/pendle/IPendlePtGLP2024Registry.sol";
 import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
 
 
@@ -42,7 +42,7 @@ contract PendlePtGLP2024IsolationModeVaultFactory is
 
     // ============ Field Variables ============
 
-    IPendlePtGLP2024Registry public override pendlePtGLP2024Registry;
+    IPendleGLPRegistry public override pendlePtGLP2024Registry;
 
     // ============ Constructor ============
 
@@ -59,7 +59,7 @@ contract PendlePtGLP2024IsolationModeVaultFactory is
         _userVaultImplementation,
         _dolomiteMargin
     ) {
-        pendlePtGLP2024Registry = IPendlePtGLP2024Registry(_pendlePtGLP2024Registry);
+        pendlePtGLP2024Registry = IPendleGLPRegistry(_pendlePtGLP2024Registry);
     }
 
     // ============ External Functions ============
@@ -70,7 +70,7 @@ contract PendlePtGLP2024IsolationModeVaultFactory is
     external
     override
     onlyDolomiteMarginOwner(msg.sender) {
-        pendlePtGLP2024Registry = IPendlePtGLP2024Registry(_pendlePtGLP2024Registry);
+        pendlePtGLP2024Registry = IPendleGLPRegistry(_pendlePtGLP2024Registry);
         emit PendlePtGLP2024RegistrySet(_pendlePtGLP2024Registry);
     }
 

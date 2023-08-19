@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import {
   PendlePtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtGLP2024Registry,
+  PendleGLPRegistry,
 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -10,7 +10,7 @@ import { expectEvent, expectThrow } from '../../utils/assertions';
 import {
   createPendlePtGLP2024IsolationModeTokenVaultV1,
   createPendlePtGLP2024IsolationModeVaultFactory,
-  createPendlePtGLP2024Registry,
+  createPendleGLPRegistry,
 } from '../../utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
@@ -20,13 +20,13 @@ describe('PendlePtGLP2024IsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let pendleRegistry: PendlePtGLP2024Registry;
+  let pendleRegistry: PendleGLPRegistry;
   let vaultImplementation: PendlePtGLP2024IsolationModeTokenVaultV1;
   let factory: PendlePtGLP2024IsolationModeVaultFactory;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    pendleRegistry = await createPendlePtGLP2024Registry(core);
+    pendleRegistry = await createPendleGLPRegistry(core);
     vaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
     factory = await createPendlePtGLP2024IsolationModeVaultFactory(
       core,
@@ -52,7 +52,7 @@ describe('PendlePtGLP2024IsolationModeVaultFactory', () => {
     });
   });
 
-  describe('#ownerSetPendlePtGLP2024Registry', () => {
+  describe('#ownerSetPendleGLPRegistry', () => {
     it('should work normally', async () => {
       const result = await factory.connect(core.governance).ownerSetPendlePtGLP2024Registry(OTHER_ADDRESS);
       await expectEvent(factory, result, 'PendlePtGLP2024RegistrySet', {

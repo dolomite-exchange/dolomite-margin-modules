@@ -22,9 +22,9 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
 import { IPendlePtGLP2024IsolationModeTokenVaultV1 } from "../interfaces/pendle/IPendlePtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IPendlePtGLP2024IsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IPendlePtGLP2024Registry } from "../interfaces/pendle/IPendlePtGLP2024Registry.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
@@ -51,7 +51,7 @@ contract PendlePtGLP2024IsolationModeTokenVaultV1 is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function registry() public view returns (IPendlePtGLP2024Registry) {
+    function registry() public view returns (IPendleGLPRegistry) {
         return IPendlePtGLP2024IsolationModeVaultFactory(VAULT_FACTORY()).pendlePtGLP2024Registry();
     }
 

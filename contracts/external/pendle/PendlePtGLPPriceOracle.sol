@@ -26,8 +26,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { IPendlePtGLP2024Registry } from "../interfaces/pendle/IPendlePtGLP2024Registry.sol";
-
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
 
 /**
  * @title   PendlePtGLPPriceOracle
@@ -46,7 +45,7 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
     // ============================ Public State Variables ============================
 
     address immutable public DPT_GLP; // solhint-disable-line var-name-mixedcase
-    IPendlePtGLP2024Registry immutable public REGISTRY; // solhint-disable-line var-name-mixedcase
+    IPendleGLPRegistry immutable public REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
     uint256 immutable public DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
@@ -54,12 +53,12 @@ contract PendlePtGLPPriceOracle is IDolomitePriceOracle {
 
     constructor(
         address _dptGlp,
-        address _pendlePtGLP2024Registry,
+        address _pendleGLPRegistry,
         address _dolomiteMargin,
         uint256 _dfsGlpMarketId
     ) {
         DPT_GLP = _dptGlp;
-        REGISTRY = IPendlePtGLP2024Registry(_pendlePtGLP2024Registry);
+        REGISTRY = IPendleGLPRegistry(_pendleGLPRegistry);
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         DFS_GLP_MARKET_ID = _dfsGlpMarketId;
 

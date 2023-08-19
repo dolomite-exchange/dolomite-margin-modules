@@ -4,7 +4,7 @@ import { BigNumber, BigNumberish } from 'ethers';
 import {
   PendlePtGLP2024IsolationModeUnwrapperTraderV2,
   PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtGLP2024Registry,
+  PendleGLPRegistry,
   PendlePtGLPPriceOracle,
   TestPendlePtOracle,
   TestPendlePtOracle__factory,
@@ -17,13 +17,13 @@ import {
   createPendlePtGLP2024IsolationModeTokenVaultV1,
   createPendlePtGLP2024IsolationModeUnwrapperTraderV2,
   createPendlePtGLP2024IsolationModeVaultFactory,
-  createPendlePtGLP2024Registry,
+  createPendleGLPRegistry,
   createPendlePtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 /**
- * This is the expected price at the following timestamp: 1683002000
+ * This is the expected price at the following timestamp: 1983002000
  *
  * Keep in mind that Pendle's prices tick upward each second.
  */
@@ -34,7 +34,7 @@ describe('PendlePtGLPPriceOracle', () => {
 
   let core: CoreProtocol;
   let ptGlpOracle: PendlePtGLPPriceOracle;
-  let pendleRegistry: PendlePtGLP2024Registry;
+  let pendleRegistry: PendleGLPRegistry;
   let factory: PendlePtGLP2024IsolationModeVaultFactory;
   let unwrapperTrader: PendlePtGLP2024IsolationModeUnwrapperTraderV2;
   let marketId: BigNumberish;
@@ -42,7 +42,7 @@ describe('PendlePtGLPPriceOracle', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
-    pendleRegistry = await createPendlePtGLP2024Registry(core);
+    pendleRegistry = await createPendleGLPRegistry(core);
     const userVaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
     factory = await createPendlePtGLP2024IsolationModeVaultFactory(
       core,

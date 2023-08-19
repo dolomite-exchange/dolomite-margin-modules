@@ -20,9 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { ChainlinkAutomationPriceOracle } from "../external/oracles/ChainlinkAutomationPriceOracle.sol";
-
 import { ICustomTestVaultToken } from "./ICustomTestVaultToken.sol";
+import { ChainlinkAutomationPriceOracle } from "../external/oracles/ChainlinkAutomationPriceOracle.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 

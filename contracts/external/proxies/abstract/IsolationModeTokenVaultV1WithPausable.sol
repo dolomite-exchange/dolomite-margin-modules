@@ -28,7 +28,6 @@ import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
-
 /**
  * @title   IsolationModeTokenVaultV1WithPausable
  * @author  Dolomite
@@ -77,6 +76,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         uint256 _amountWei
     )
         internal
+        virtual
         override
         requireNotPaused
     {
@@ -120,6 +120,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
         internal
+        virtual
         override
     {
         IDolomiteMargin.Par memory valueBefore = DOLOMITE_MARGIN().getAccountPar(
@@ -162,6 +163,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
         internal
+        virtual
         override
     {
         bool isPaused = isExternalRedemptionPaused();

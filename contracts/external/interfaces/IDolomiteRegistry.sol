@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 
 
@@ -36,6 +37,7 @@ interface IDolomiteRegistry {
     // ========================================================
 
     event GenericTraderProxySet(address indexed _genericTraderProxy);
+    event ExpirySet(address indexed _expiry);
     event SlippageToleranceForPauseSentinelSet(uint256 slippageTolerance);
 
     // ========================================================
@@ -48,6 +50,11 @@ interface IDolomiteRegistry {
      */
     function ownerSetGenericTraderProxy(address _genericTraderProxy) external;
 
+    /**
+     *
+     * @param  _expiry  The new address of the expiry contract
+     */
+    function ownerSetExpiry(address _expiry) external;
     /**
      *
      * @param  _slippageToleranceForPauseSentinel   The slippage tolerance (using 1e18 as the base) for zaps when pauses
@@ -63,6 +70,11 @@ interface IDolomiteRegistry {
      * @return  The address of the generic trader proxy for making zaps
      */
     function genericTraderProxy() external view returns (IGenericTraderProxyV1);
+
+    /**
+     * @return  The address of the expiry contract
+     */
+    function expiry() external view returns (IExpiry);
 
     /**
      * @return  The slippage tolerance (using 1e18 as the base) for zaps when pauses are enabled

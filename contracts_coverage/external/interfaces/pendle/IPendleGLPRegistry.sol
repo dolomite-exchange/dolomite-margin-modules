@@ -25,18 +25,18 @@ import { IPendlePtOracle } from "./IPendlePtOracle.sol";
 import { IPendlePtToken } from "./IPendlePtToken.sol";
 import { IPendleRouter } from "./IPendleRouter.sol";
 import { IPendleSyToken } from "./IPendleSyToken.sol";
+import { IPendleYtToken } from "./IPendleYtToken.sol";
 import { IBaseRegistry } from "../IBaseRegistry.sol";
 
 
 /**
- * @title   IPendlePtGLP2024Registry
+ * @title   IPendleGLPRegistry
  * @author  Dolomite
  *
  * @notice  A registry contract for storing all of the addresses that can interact with the Pendle ecosystem for GLP
  *          (March 2024).
  */
-interface IPendlePtGLP2024Registry is IBaseRegistry {
-
+interface IPendleGLPRegistry is IBaseRegistry {
     // ========================================================
     // ======================== Events ========================
     // ========================================================
@@ -46,6 +46,7 @@ interface IPendlePtGLP2024Registry is IBaseRegistry {
     event PtGlpTokenSet(address indexed _ptGlpToken);
     event PtOracleSet(address indexed _ptOracle);
     event SyGlpTokenSet(address indexed _syGlpToken);
+    event YtGlpTokenSet(address indexed _ytGlpToken);
 
     // ========================================================
     // =================== Admin Functions ====================
@@ -61,6 +62,8 @@ interface IPendlePtGLP2024Registry is IBaseRegistry {
 
     function ownerSetSyGlpToken(address _syGlpToken) external;
 
+    function ownerSetYtGlpToken(address _ytGlpToken) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
@@ -74,4 +77,6 @@ interface IPendlePtGLP2024Registry is IBaseRegistry {
     function ptOracle() external view returns (IPendlePtOracle);
 
     function syGlpToken() external view returns (IPendleSyToken);
+
+    function ytGlpToken() external view returns (IPendleYtToken);
 }

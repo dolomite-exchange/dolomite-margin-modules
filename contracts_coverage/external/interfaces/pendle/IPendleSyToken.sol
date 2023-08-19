@@ -39,6 +39,13 @@ interface IPendleSyToken is IERC20 {
         bool renounce
     ) external;
 
+    function deposit(
+        address receiver,
+        address tokenIn,
+        uint256 amountTokenToDeposit,
+        uint256 minSharesOut
+    ) external payable returns (uint256 amountSharesOut);
+
     function paused() external view returns (bool);
 
     function owner() external view returns (address);

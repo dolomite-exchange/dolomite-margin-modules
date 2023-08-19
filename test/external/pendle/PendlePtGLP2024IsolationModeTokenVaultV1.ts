@@ -10,7 +10,7 @@ import {
   PendlePtGLP2024IsolationModeUnwrapperTraderV2,
   PendlePtGLP2024IsolationModeVaultFactory,
   PendlePtGLP2024IsolationModeWrapperTraderV2,
-  PendlePtGLP2024Registry,
+  PendleGLPRegistry,
   PendlePtGLPPriceOracle,
 } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
@@ -20,7 +20,7 @@ import {
   createPendlePtGLP2024IsolationModeUnwrapperTraderV2,
   createPendlePtGLP2024IsolationModeVaultFactory,
   createPendlePtGLP2024IsolationModeWrapperTraderV2,
-  createPendlePtGLP2024Registry,
+  createPendleGLPRegistry,
   createPendlePtGLPPriceOracle,
 } from '../../utils/ecosystem-token-utils/pendle';
 import {
@@ -36,7 +36,7 @@ describe('PendlePtGLP2024IsolationModeTokenVaultV1', () => {
 
   let core: CoreProtocol;
   let underlyingToken: IPendlePtToken;
-  let pendleRegistry: PendlePtGLP2024Registry;
+  let pendleRegistry: PendleGLPRegistry;
   let unwrapper: PendlePtGLP2024IsolationModeUnwrapperTraderV2;
   let wrapper: PendlePtGLP2024IsolationModeWrapperTraderV2;
   let priceOracle: PendlePtGLPPriceOracle;
@@ -52,7 +52,7 @@ describe('PendlePtGLP2024IsolationModeTokenVaultV1', () => {
     rewardToken = core.plutusEcosystem!.plsToken.connect(core.hhUser1);
     farm = core.plutusEcosystem!.plvGlpFarm.connect(core.hhUser1);
     const userVaultImplementation = await createPendlePtGLP2024IsolationModeTokenVaultV1();
-    pendleRegistry = await createPendlePtGLP2024Registry(core);
+    pendleRegistry = await createPendleGLPRegistry(core);
     factory = await createPendlePtGLP2024IsolationModeVaultFactory(
       core,
       pendleRegistry,

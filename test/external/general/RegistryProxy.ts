@@ -16,7 +16,10 @@ describe('RegistryProxy', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     implementation = await createDolomiteRegistryImplementation();
-    const calldata = await implementation.populateTransaction.initialize(core.genericTraderProxy!.address);
+    const calldata = await implementation.populateTransaction.initialize(
+      core.genericTraderProxy!.address,
+      core.expiry!.address,
+    );
     registry = await createRegistryProxy(implementation.address, calldata.data!, core);
 
     snapshotId = await snapshot();

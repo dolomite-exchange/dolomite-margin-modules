@@ -1,23 +1,23 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { PendlePtGLP2024Registry } from '../../../src/types';
+import { PendleGLPRegistry } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
-import { createPendlePtGLP2024Registry } from '../../utils/ecosystem-token-utils/pendle';
+import { createPendleGLPRegistry } from '../../utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendlePtGLP2024Registry', () => {
+describe('PendleGLPRegistry', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let registry: PendlePtGLP2024Registry;
+  let registry: PendleGLPRegistry;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    registry = await createPendlePtGLP2024Registry(core);
+    registry = await createPendleGLPRegistry(core);
 
     snapshotId = await snapshot();
   });
@@ -33,6 +33,7 @@ describe('PendlePtGLP2024Registry', () => {
       expect(await registry.ptGlpToken()).to.equal(core.pendleEcosystem!.ptGlpToken.address);
       expect(await registry.ptOracle()).to.equal(core.pendleEcosystem!.ptOracle.address);
       expect(await registry.syGlpToken()).to.equal(core.pendleEcosystem!.syGlpToken.address);
+      expect(await registry.ytGlpToken()).to.equal(core.pendleEcosystem!.ytGlpToken.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
 
@@ -44,6 +45,7 @@ describe('PendlePtGLP2024Registry', () => {
           core.pendleEcosystem!.ptGlpToken.address,
           core.pendleEcosystem!.ptOracle.address,
           core.pendleEcosystem!.syGlpToken.address,
+          core.pendleEcosystem!.ytGlpToken.address,
           core.dolomiteRegistry.address,
         ),
         'Initializable: contract is already initialized',
@@ -70,7 +72,7 @@ describe('PendlePtGLP2024Registry', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetPendleRouter(ZERO_ADDRESS),
-        'PendlePtGLP2024Registry: Invalid pendleRouter address',
+        'PendleGLPRegistry: Invalid pendleRouter address',
       );
     });
   });
@@ -79,7 +81,7 @@ describe('PendlePtGLP2024Registry', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetPtGlpMarket(OTHER_ADDRESS);
       await expectEvent(registry, result, 'PtGlpMarketSet', {
-        plvGlpToken: OTHER_ADDRESS,
+        ptGlpMarket: OTHER_ADDRESS,
       });
       expect(await registry.ptGlpMarket()).to.equal(OTHER_ADDRESS);
     });
@@ -94,31 +96,7 @@ describe('PendlePtGLP2024Registry', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetPtGlpMarket(ZERO_ADDRESS),
-        'PendlePtGLP2024Registry: Invalid ptGlpMarket address',
-      );
-    });
-  });
-
-  describe('#ownerSetPtGlpToken', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetPtGlpToken(OTHER_ADDRESS);
-      await expectEvent(registry, result, 'PtGlpTokenSet', {
-        glp: OTHER_ADDRESS,
-      });
-      expect(await registry.ptGlpToken()).to.equal(OTHER_ADDRESS);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetPtGlpToken(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetPtGlpToken(ZERO_ADDRESS),
-        'PendlePtGLP2024Registry: Invalid ptGlpToken address',
+        'PendleGLPRegistry: Invalid ptGlpMarket address',
       );
     });
   });
@@ -127,7 +105,7 @@ describe('PendlePtGLP2024Registry', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetPtOracle(OTHER_ADDRESS);
       await expectEvent(registry, result, 'PtOracleSet', {
-        glpManager: OTHER_ADDRESS,
+        ptOracle: OTHER_ADDRESS,
       });
       expect(await registry.ptOracle()).to.equal(OTHER_ADDRESS);
     });
@@ -142,7 +120,7 @@ describe('PendlePtGLP2024Registry', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetPtOracle(ZERO_ADDRESS),
-        'PendlePtGLP2024Registry: Invalid ptOracle address',
+        'PendleGLPRegistry: Invalid ptOracle address',
       );
     });
   });
@@ -151,7 +129,7 @@ describe('PendlePtGLP2024Registry', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetSyGlpToken(OTHER_ADDRESS);
       await expectEvent(registry, result, 'SyGlpTokenSet', {
-        glpManager: OTHER_ADDRESS,
+        syGLPToken: OTHER_ADDRESS,
       });
       expect(await registry.syGlpToken()).to.equal(OTHER_ADDRESS);
     });
@@ -166,7 +144,55 @@ describe('PendlePtGLP2024Registry', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetSyGlpToken(ZERO_ADDRESS),
-        'PendlePtGLP2024Registry: Invalid syGlpToken address',
+        'PendleGLPRegistry: Invalid syGlpToken address',
+      );
+    });
+  });
+
+  describe('#ownerSetPtGlpToken', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetPtGlpToken(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'PtGlpTokenSet', {
+        ptGlpToken: OTHER_ADDRESS,
+      });
+      expect(await registry.ptGlpToken()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetPtGlpToken(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetPtGlpToken(ZERO_ADDRESS),
+        'PendleGLPRegistry: Invalid ptGlpToken address',
+      );
+    });
+  });
+
+  describe('#ownerSetYtGlpToken', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetYtGlpToken(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'YtGlpTokenSet', {
+        ytGlpToken: OTHER_ADDRESS,
+      });
+      expect(await registry.ytGlpToken()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetYtGlpToken(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetYtGlpToken(ZERO_ADDRESS),
+        'PendleGLPRegistry: Invalid ytGlpToken address',
       );
     });
   });

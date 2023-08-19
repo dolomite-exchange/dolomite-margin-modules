@@ -20,11 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { Require } from "../../protocol/lib/Require.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IChainlinkAutomationPriceOracle } from "../interfaces/IChainlinkAutomationPriceOracle.sol";
 import { IChainlinkRegistry } from "../interfaces/IChainlinkRegistry.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-
-import { Require } from "../../protocol/lib/Require.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 
 
@@ -87,14 +86,19 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         _ownerSetChainlinkRegistry(_chainlinkRegistry);
     }
 
-    function checkUpkeep(bytes calldata /* checkData */)
-    external
-    returns (bool upkeepNeeded, bytes memory /* performData */) {
+    function checkUpkeep(
+        bytes calldata /* checkData */
+    )
+        external
+        returns (bool upkeepNeeded, bytes memory /* performData */)
+    {
+        // solhint-disable-line avoid-tx-origin
         Require.that(
             tx.origin == address(0),
             _FILE,
             "Static rpc calls only"
         );
+        // solhint-enable avoid-tx-origin
 
         return (_checkUpkeepConditions(), bytes(""));
     }
@@ -178,11 +182,11 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         uint256 cachedExchangeRate = exchangeRateNumerator * _ONE_UNIT / exchangeRateDenominator;
         uint256 currentExchangeRate = currentNumerator * _ONE_UNIT / currentDenominator;
 
-        uint256 upperEdge = cachedExchangeRate * upperEdge / 10_000;
-        uint256 lowerEdge = cachedExchangeRate * lowerEdge / 10_000;
+        uint256 upperExchangeRate = cachedExchangeRate * upperEdge / 10_000;
+        uint256 lowerExchangeRate = cachedExchangeRate * lowerEdge / 10_000;
         return (
-            currentExchangeRate >= upperEdge ||
-            currentExchangeRate <= lowerEdge ||
+            currentExchangeRate >= upperExchangeRate ||
+            currentExchangeRate <= lowerExchangeRate ||
             block.timestamp >= lastUpdateTimestamp + heartbeat
         );
     }

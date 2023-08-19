@@ -24,10 +24,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
-import { IPendlePtGLP2024Registry } from "../interfaces/pendle/IPendlePtGLP2024Registry.sol";
+import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
 import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
-
 
 /**
  * @title   PendlePtGLP2024IsolationModeWrapperTraderV2
@@ -45,7 +44,7 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
 
     // ============ Constructor ============
 
-    IPendlePtGLP2024Registry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
+    IPendleGLPRegistry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
@@ -60,7 +59,7 @@ contract PendlePtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
         _dptGlp,
         _dolomiteMargin
     ) {
-        PENDLE_REGISTRY = IPendlePtGLP2024Registry(_pendleRegistry);
+        PENDLE_REGISTRY = IPendleGLPRegistry(_pendleRegistry);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
 

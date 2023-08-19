@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendlePtGLP2024Registry } from "./IPendlePtGLP2024Registry.sol";
+import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
 
 
@@ -44,5 +44,5 @@ interface IPendlePtGLP2024IsolationModeVaultFactory is IIsolationModeVaultFactor
 
     function ownerSetPendlePtGLP2024Registry(address _pendlePtGLP2024Registry) external;
 
-    function pendlePtGLP2024Registry() external view returns (IPendlePtGLP2024Registry);
+    function pendlePtGLP2024Registry() external view returns (IPendleGLPRegistry);
 }
