@@ -95,8 +95,8 @@ export function getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams(
 
 export function getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams(
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
-  debtMarketIds: Array<BigNumberish>,
-  collateralMarketIds: Array<BigNumberish>,
+  debtMarketIds: BigNumberish[],
+  collateralMarketIds: BigNumberish[],
   core: CoreProtocol,
   ytGlpToken: IPendleYtToken,
   userVaultImplementation: IPendleYtGLP2024IsolationModeTokenVaultV1 | PendleYtGLP2024IsolationModeTokenVaultV1,

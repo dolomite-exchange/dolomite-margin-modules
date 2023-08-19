@@ -28,7 +28,6 @@ import { IJonesUSDCRegistry } from "../interfaces/jones/IJonesUSDCRegistry.sol";
 import { JonesUSDCMathLib } from "../jones/jusdc/JonesUSDCMathLib.sol";
 
 
-
 /**
  * @title   JonesUSDCWithChainlinkAutomationPriceOracle
  * @author  Dolomite

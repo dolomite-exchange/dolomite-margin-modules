@@ -76,9 +76,9 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
 
     function getPrice(
         address _token
-    ) 
-    public 
-    view 
+    )
+    public
+    view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
             _token == address(DYT_GLP),
@@ -101,7 +101,7 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
 
     function _getCurrentPrice() internal view returns (uint256) {
         uint256 glpPrice = DOLOMITE_MARGIN.getMarketPrice(DFS_GLP_MARKET_ID).value;
-        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptGlpMarket()),TWAP_DURATION);
+        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptGlpMarket()), TWAP_DURATION);
         return PT_ASSET_SCALE - ((glpPrice * ptExchangeRate) / PT_ASSET_SCALE);
     }
 }

@@ -134,8 +134,8 @@ export function createPendleYtGLP2024IsolationModeTokenVaultV1(): Promise<Pendle
 
 export function createPendleYtGLP2024IsolationModeVaultFactory(
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
-  debtMarketIds: Array<Number>,
-  collateralMarketIds: Array<Number>,
+  debtMarketIds: BigNumberish[],
+  collateralMarketIds: BigNumberish[],
   core: CoreProtocol,
   ytGlpToken: IPendleYtToken,
   userVaultImplementation: IPendleYtGLP2024IsolationModeTokenVaultV1 | PendleYtGLP2024IsolationModeTokenVaultV1,

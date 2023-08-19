@@ -24,7 +24,6 @@ import { OnlyDolomiteMarginForUpgradeable } from "./OnlyDolomiteMarginForUpgrade
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 
 
-
 /**
  * @title   OnlyDolomiteMargin
  * @author  Dolomite
@@ -44,8 +43,7 @@ abstract contract OnlyDolomiteMargin is OnlyDolomiteMarginForUpgradeable {
 
     // ============ Constructor ============
 
-    constructor (address _dolomiteMargin)
-    {
+    constructor (address _dolomiteMargin) {
         _DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
     }
 

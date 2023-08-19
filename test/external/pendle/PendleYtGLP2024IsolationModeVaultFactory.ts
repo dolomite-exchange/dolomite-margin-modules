@@ -16,7 +16,7 @@ import {
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
-const YT_EXPIRY_TIME = BigNumber.from('1711584000');
+const YT_EXPIRY_TIME = BigNumber.from('1711584000'); // Thu Mar 28 2024 00:00:00 GMT+0000
 const initialAllowableDebtMarketIds = [0, 1];
 const initialAllowableCollateralMarketIds = [2, 3];
 const newAllowableDebtMarketIds = [1, 2, 3];

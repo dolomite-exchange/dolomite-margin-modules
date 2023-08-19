@@ -27,7 +27,6 @@ import { IChainlinkRegistry } from "../interfaces/IChainlinkRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 
 
-
 /**
  * @title   ChainlinkAutomationPriceOracle
  * @author  Dolomite
