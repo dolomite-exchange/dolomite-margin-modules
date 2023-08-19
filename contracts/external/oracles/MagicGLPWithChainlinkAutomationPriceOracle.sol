@@ -26,8 +26,6 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
 
 
-
-
 /**
  * @title   MagicGLPWithChainlinkAutomationPriceOracle
  * @author  Dolomite

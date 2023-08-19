@@ -28,7 +28,6 @@ import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
 
 
-
 /**
  * @title   PlutusVaultWithChainlinkAutomationPriceOracle
  * @author  Dolomite
