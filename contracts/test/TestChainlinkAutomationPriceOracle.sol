@@ -25,7 +25,6 @@ import { ChainlinkAutomationPriceOracle } from "../external/oracles/ChainlinkAut
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
-
 /**
  * @title   TestChainlinkAutomationPriceOracle
  * @author  Dolomite
