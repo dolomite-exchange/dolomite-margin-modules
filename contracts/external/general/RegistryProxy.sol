@@ -25,6 +25,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 
+
 /**
  * @title   RegistryProxy
  * @author  Dolomite

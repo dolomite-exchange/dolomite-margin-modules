@@ -135,6 +135,9 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     if (BigNumber.isBigNumber(arg)) {
       return arg.toString();
     }
+    if (Array.isArray(arg)) {
+      return `[ ${arg.join(', ')} ]`;
+    }
     if (typeof arg === 'object') {
       return JSON.stringify(
         Object.keys(arg).reduce<Record<string, any>>((memo, key) => {

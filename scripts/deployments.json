@@ -27,6 +27,13 @@
       "isVerified": true
     }
   },
+  "DolomiteRegistryImplementationV3": {
+    "42161": {
+      "address": "0xe8EF4707313c529f9144Af52EEcb8fb94e3C0A5b",
+      "transaction": "0x5977e32d0797bd6a4a4f513ce12066ec11aaa3803c34cb8938aac39ae57630ce",
+      "isVerified": true
+    }
+  },
   "DolomiteRegistryProxy": {
     "42161": {
       "address": "0x2A059D6d682e5fB1226eB8bC2977b512698C2404",

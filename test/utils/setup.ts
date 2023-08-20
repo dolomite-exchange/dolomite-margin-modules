@@ -339,6 +339,7 @@ export interface CoreProtocol {
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
   dolomiteMargin: IDolomiteMargin;
   dolomiteRegistry: IDolomiteRegistry;
+  dolomiteRegistryProxy: RegistryProxy;
   expiry: IExpiry;
   genericTraderProxy: IGenericTraderProxyV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
@@ -494,6 +495,7 @@ export async function setupCoreProtocol(
   const dolomiteMargin = DOLOMITE_MARGIN.connect(governance);
 
   let dolomiteRegistry: IDolomiteRegistry;
+  let dolomiteRegistryProxy: RegistryProxy;
   if (
     config.blockNumber >= NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[config.network]
     || network.name === NetworkName.ArbitrumOne
@@ -502,10 +504,15 @@ export async function setupCoreProtocol(
       (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
       governance,
     );
+    dolomiteRegistryProxy = RegistryProxy__factory.connect(
+      (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
+      governance,
+    );
   } else {
     // Use a "dummy" implementation
     const implementation = await createDolomiteRegistryImplementation();
     dolomiteRegistry = IDolomiteRegistry__factory.connect(implementation.address, hhUser1);
+    dolomiteRegistryProxy = null as any;
   }
 
   const expiry = IExpiry__factory.connect(
@@ -573,6 +580,7 @@ export async function setupCoreProtocol(
     dolomiteAmmRouterProxy,
     dolomiteMargin,
     dolomiteRegistry,
+    dolomiteRegistryProxy,
     expiry,
     genericTraderProxy,
     gmxEcosystem,

@@ -20,6 +20,13 @@ async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
+  const dolomiteRegistryImplementationAddress = await deployContractAndSave(
+    Number(network),
+    'DolomiteRegistryImplementation',
+    [],
+    'DolomiteRegistryImplementationV3',
+  );
+
   const pendleRegistryImplementationAddress = await deployContractAndSave(
     Number(network),
     'PendleGLPRegistry',
@@ -86,6 +93,18 @@ async function main() {
     getPendleYtGLPPriceOracleConstructorParams(core, dytGlpToken, core.pendleEcosystem!.live.pendleGLP2024Registry),
   );
 
+  await prettyPrintEncodedDataWithTypeSafety(
+    core,
+    'dolomiteRegistryProxy',
+    'upgradeTo',
+    [dolomiteRegistryImplementationAddress],
+  );
+  await prettyPrintEncodedDataWithTypeSafety(
+    core,
+    'dolomiteRegistry',
+    'ownerSetExpiry',
+    [core.expiry.address],
+  );
   await prettyPrintEncodedDataWithTypeSafety(
     core.pendleEcosystem!.live,
     'pendleGLP2024RegistryProxy',
