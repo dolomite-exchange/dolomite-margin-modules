@@ -28,6 +28,7 @@ import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol"
 import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 
+
 /**
  * @title   PendleYtGLP2024IsolationModeWrapperTraderV2
  * @author  Dolomite
@@ -83,10 +84,10 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
         address _inputToken,
         uint256 _inputAmount,
         bytes memory _extraOrderData
-    ) 
-        internal 
-        override 
-        returns (uint256) 
+    )
+        internal
+        override
+        returns (uint256)
     {
         (
             IPendleRouter.ApproxParams memory guessYtOut,
@@ -126,11 +127,11 @@ contract PendleYtGLP2024IsolationModeWrapperTraderV2 is IsolationModeWrapperTrad
         address,
         uint256,
         bytes memory
-    ) 
-    internal 
-    override 
-    pure 
-    returns (uint256) 
+    )
+    internal
+    override
+    pure
+    returns (uint256)
     {
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
