@@ -34,7 +34,7 @@ import {
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
   getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
-  getPlutusVaultWithChainlinkAutomationPriceOracleConstructorParams,
+  getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/plutus';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
@@ -103,9 +103,8 @@ export function createPlutusVaultGLPPriceOracle(
   );
 }
 
-export function createPlutusVaultWithChainlinkAutomationPriceOracle(
+export function createPlutusVaultGLPWithChainlinkAutomationPriceOracle(
   core: CoreProtocol,
-  chainlinkRegistry: string,
   plutusVaultRegistry: PlutusVaultRegistry,
   dplvGlpToken: { address: address },
   unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
@@ -113,9 +112,8 @@ export function createPlutusVaultWithChainlinkAutomationPriceOracle(
   return createContractWithAbi<PlutusVaultWithChainlinkAutomationPriceOracle>(
     PlutusVaultWithChainlinkAutomationPriceOracle__factory.abi,
     PlutusVaultWithChainlinkAutomationPriceOracle__factory.bytecode,
-    getPlutusVaultWithChainlinkAutomationPriceOracleConstructorParams(
+    getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams(
       core,
-      chainlinkRegistry,
       plutusVaultRegistry,
       dplvGlpToken,
       unwrapper,

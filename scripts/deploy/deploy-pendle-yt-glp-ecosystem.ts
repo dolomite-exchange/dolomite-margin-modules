@@ -95,29 +95,34 @@ async function main() {
 
   await prettyPrintEncodedDataWithTypeSafety(
     core,
+    core,
     'dolomiteRegistryProxy',
     'upgradeTo',
     [dolomiteRegistryImplementationAddress],
   );
   await prettyPrintEncodedDataWithTypeSafety(
     core,
+    core,
     'dolomiteRegistry',
     'ownerSetExpiry',
     [core.expiry.address],
   );
   await prettyPrintEncodedDataWithTypeSafety(
+    core,
     core.pendleEcosystem!.live,
     'pendleGLP2024RegistryProxy',
     'upgradeTo',
     [pendleRegistryImplementationAddress],
   );
   await prettyPrintEncodedDataWithTypeSafety(
+    core,
     core.pendleEcosystem!.live,
     'pendleGLP2024Registry',
     'ownerSetYtGlpToken',
     [core.pendleEcosystem!.ytGlpToken.address],
   );
   await prettyPrintEncodedDataWithTypeSafety(
+    core,
     core,
     'dolomiteMargin',
     'ownerAddMarket',
@@ -133,6 +138,7 @@ async function main() {
     ],
   );
   await prettyPrintEncodedDataWithTypeSafety(
+    core,
     { dytGlpToken },
     'dytGlpToken',
     'ownerInitialize',
@@ -140,12 +146,14 @@ async function main() {
   );
   await prettyPrintEncodedDataWithTypeSafety(
     core,
+    core,
     'dolomiteMargin',
     'ownerSetGlobalOperator',
     [dytGlpToken.address, true],
   );
   const expectedMarketId = await core.dolomiteMargin.getNumMarkets();
   await prettyPrintEncodedDataWithTypeSafety(
+    core,
     core,
     'liquidatorAssetRegistry',
     'ownerAddLiquidatorToAssetWhitelist',

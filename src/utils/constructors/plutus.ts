@@ -1,6 +1,7 @@
 import { address } from '@dolomite-margin/dist/src';
 import { CoreProtocol } from '../../../test/utils/setup';
 import {
+  IChainlinkRegistry,
   IPlutusVaultGLPIsolationModeTokenVaultV1,
   IPlutusVaultRegistry,
   PlutusVaultGLPIsolationModeTokenVaultV1,
@@ -54,9 +55,8 @@ export function getPlutusVaultGLPPriceOracleConstructorParams(
   ];
 }
 
-export function getPlutusVaultWithChainlinkAutomationPriceOracleConstructorParams(
+export function getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams(
   core: CoreProtocol,
-  chainlinkRegistry: string,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dplvGlpToken: { address: address },
   unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
@@ -67,7 +67,7 @@ export function getPlutusVaultWithChainlinkAutomationPriceOracleConstructorParam
 
   return [
     core.dolomiteMargin.address,
-    chainlinkRegistry,
+    core.chainlinkRegistry!.address,
     core.marketIds.dfsGlp!,
     dplvGlpToken.address,
     plutusVaultRegistry.address,

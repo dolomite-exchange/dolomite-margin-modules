@@ -5,7 +5,7 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
-import deployments from '../../../scripts/deployments.json';
+import deployments from '../../../../scripts/deployments.json';
 import {
   CustomTestVaultToken,
   IERC4626,
@@ -17,20 +17,20 @@ import {
   JonesUSDCRegistry__factory,
   JonesUSDCWithChainlinkAutomationPriceOracle,
   JonesUSDCWithChainlinkAutomationPriceOracle__factory,
-} from '../../../src/types';
-import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
-import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
+} from '../../../../src/types';
+import { CHAINLINK_REGISTRY_MAP } from '../../../../src/utils/constants';
+import { createContractWithAbi, createTestVaultToken } from '../../../../src/utils/dolomite-utils';
+import { Network } from '../../../../src/utils/no-deps-constants';
 import {
   getBlockTimestamp,
   getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
-} from '../../utils';
-import { expectThrow } from '../../utils/assertions';
-import { createJonesUSDCWithChainlinkAutomationPriceOracle } from '../../utils/ecosystem-token-utils/jones';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+} from '../../../utils';
+import { expectThrow } from '../../../utils/assertions';
+import { createJonesUSDCWithChainlinkAutomationPriceOracle } from '../../../utils/ecosystem-token-utils/jones';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../../utils/setup';
 
 const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.99998605
 const USDC_SCALE_DIFF = BigNumber.from('10').pow(12);
@@ -85,7 +85,6 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
 
     jonesUSDCWithChainlinkAutomationPriceOracle = await createJonesUSDCWithChainlinkAutomationPriceOracle(
       core,
-      chainlinkRegistry.address,
       jonesUSDCRegistry,
       factory,
     );

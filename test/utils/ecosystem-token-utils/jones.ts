@@ -77,7 +77,6 @@ export function createJonesUSDCPriceOracle(
 
 export async function createJonesUSDCWithChainlinkAutomationPriceOracle(
   core: CoreProtocol,
-  chainlinkRegistry: string,
   jonesUSDCRegistry: JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): Promise<JonesUSDCWithChainlinkAutomationPriceOracle> {
@@ -86,7 +85,7 @@ export async function createJonesUSDCWithChainlinkAutomationPriceOracle(
     JonesUSDCWithChainlinkAutomationPriceOracle__factory.bytecode,
     getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams(
       core,
-      chainlinkRegistry,
+      core.chainlinkRegistry!,
       jonesUSDCRegistry,
       djUSDCToken,
     ),

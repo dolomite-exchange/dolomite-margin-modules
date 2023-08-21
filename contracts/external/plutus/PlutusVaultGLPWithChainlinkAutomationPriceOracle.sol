@@ -21,25 +21,25 @@
 pragma solidity ^0.8.9;
 
 
-import { ChainlinkAutomationPriceOracle } from "./ChainlinkAutomationPriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IPlutusVaultRegistry } from "../interfaces/plutus/IPlutusVaultRegistry.sol";
+import { ChainlinkAutomationPriceOracle } from "../oracles/ChainlinkAutomationPriceOracle.sol";
 
 
 /**
- * @title   PlutusVaultWithChainlinkAutomationPriceOracle
+ * @title   PlutusVaultGLPWithChainlinkAutomationPriceOracle
  * @author  Dolomite
  *
  * @notice  An implementation of the ChainlinkAutomationPriceOracle that gets Plutus' plvGLP price in USD terms.
  * @notice  Uses Chainlink automation
  */
-contract PlutusVaultWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceOracle {
+contract PlutusVaultGLPWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceOracle {
 
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "PlvWithChainlinkPriceOracle";
+    bytes32 private constant _FILE = "PlvGLPWithChainlinkPriceOracle";
     uint256 private constant _FEE_PRECISION = 10_000;
 
     // ============================ Public State Variables ============================

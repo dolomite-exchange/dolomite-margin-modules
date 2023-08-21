@@ -16,6 +16,7 @@
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy/deploy-atlas-ecosystem.ts",
     "deploy:coveralls": "coveralls < coverage/lcov.info",
+    "deploy:chainlink-automation-price-oracles": "hardhat --network arbitrum_one run scripts/deploy/deploy-chainlink-automation-price-oracles.ts",
     "deploy:deprecate-trader-v1": "hardhat --network arbitrum_one run scripts/deploy/zap/deploy-deprecate-trader-v1.ts",
     "deploy:dolomite-registry": "hardhat --network arbitrum_one run scripts/deploy/deploy-dolomite-registry.ts",
     "deploy:gmx-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-gmx-ecosystem.ts",

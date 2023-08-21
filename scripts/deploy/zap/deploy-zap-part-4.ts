@@ -29,6 +29,7 @@ async function main() {
   );
 
   await prettyPrintEncodedDataWithTypeSafety(
+    core,
     core.gmxEcosystem!.live,
     'glpIsolationModeFactory',
     'setUserVaultImplementation',
@@ -36,6 +37,7 @@ async function main() {
   );
 
   await prettyPrintEncodedDataWithTypeSafety(
+    core,
     core.jonesEcosystem!.live,
     'jUSDCIsolationModeFactory',
     'ownerSetUserVaultImplementation',
@@ -43,6 +45,7 @@ async function main() {
   );
 
   await prettyPrintEncodedDataWithTypeSafety(
+    core,
     core.pendleEcosystem!.live,
     'ptGlpIsolationModeFactory',
     'ownerSetUserVaultImplementation',
@@ -50,6 +53,7 @@ async function main() {
   );
 
   await prettyPrintEncodedDataWithTypeSafety(
+    core,
     core.plutusEcosystem!.live,
     'plvGlpIsolationModeFactory',
     'ownerSetUserVaultImplementation',

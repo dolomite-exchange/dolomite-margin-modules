@@ -33,6 +33,8 @@ import {
   GLPIsolationModeWrapperTraderV1__factory,
   IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
+  IChainlinkRegistry,
+  IChainlinkRegistry__factory,
   IDepositWithdrawalProxy,
   IDepositWithdrawalProxy__factory,
   IDolomiteAmmFactory,
@@ -144,6 +146,7 @@ import {
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
   ATLAS_SI_TOKEN_MAP,
+  CHAINLINK_REGISTRY_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
   DJ_USDC,
@@ -334,6 +337,7 @@ export interface CoreProtocol {
   alwaysZeroInterestSetter: IDolomiteInterestSetter;
   atlasEcosystem: AtlasEcosystem | undefined;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
+  chainlinkRegistry: IChainlinkRegistry | undefined;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteAmmFactory: IDolomiteAmmFactory;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
@@ -477,6 +481,11 @@ export async function setupCoreProtocol(
     governance,
   );
 
+  const chainlinkRegistry = getContractOpt(
+    CHAINLINK_REGISTRY_MAP[config.network],
+    IChainlinkRegistry__factory.connect,
+  );
+
   const depositWithdrawalProxy = IDepositWithdrawalProxy__factory.connect(
     DepositWithdrawalProxyJson.networks[config.network].address,
     governance,
@@ -575,6 +584,7 @@ export async function setupCoreProtocol(
     alwaysZeroInterestSetter,
     atlasEcosystem,
     borrowPositionProxyV2,
+    chainlinkRegistry,
     depositWithdrawalProxy,
     dolomiteAmmFactory,
     dolomiteAmmRouterProxy,

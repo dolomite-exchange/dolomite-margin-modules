@@ -12,7 +12,6 @@ import {
   MagicGLPWithChainlinkAutomationPriceOracle,
   MagicGLPWithChainlinkAutomationPriceOracle__factory,
 } from '../../../src/types';
-import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
 import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -30,32 +29,28 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
   let magicGlp: IERC4626;
   let magicGlpWithNoTotalSupply: CustomTestVaultToken;
   let core: CoreProtocol;
-  let chainlinkRegistry: SignerWithAddress;
   let zeroAddress: SignerWithAddress;
   let deploymentTimestamp: BigNumberish;
+  let chainlinkRegistryImpersonated: SignerWithAddress;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     magicGlp = core.abraEcosystem!.magicGlp;
     magicGlpWithNoTotalSupply = await createTestVaultToken(core.tokens.usdc!);
-    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[Network.ArbitrumOne], true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
     await core.testEcosystem!.testPriceOracle!.setPrice(core.tokens.dfsGlp!.address, GLP_PRICE);
     await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.dfsGlp!, core.testEcosystem!.testPriceOracle!.address);
 
-    magicGLPWithChainlinkAutomationPriceOracle = await createMagicGLPWithChainlinkAutomationPriceOracle(
-      core,
-      chainlinkRegistry.address,
-    );
+    magicGLPWithChainlinkAutomationPriceOracle = await createMagicGLPWithChainlinkAutomationPriceOracle(core);
     magicGLPWithChainlinkAutomationPriceOracleNoSupply =
       await createContractWithAbi<MagicGLPWithChainlinkAutomationPriceOracle>(
         MagicGLPWithChainlinkAutomationPriceOracle__factory.abi,
         MagicGLPWithChainlinkAutomationPriceOracle__factory.bytecode,
         [
           core.dolomiteMargin.address,
-          chainlinkRegistry.address,
+          core.chainlinkRegistry!.address,
           magicGlpWithNoTotalSupply.address,
           core.marketIds.dfsGlp!,
         ],
@@ -65,7 +60,8 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
 
     // Do this just to reset time for heartbeat and grace period tests
     await increase(12 * 3600);
-    await magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
+    chainlinkRegistryImpersonated = await impersonate(core.chainlinkRegistry!.address);
+    await magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistryImpersonated).performUpkeep('0x');
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
     snapshotId = await snapshot();
@@ -173,14 +169,14 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
     it('works normally', async () => {
       await increase(11 * 3600);
       await expectThrow(
-        magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
+        magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistryImpersonated).performUpkeep('0x'),
         'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',
       );
 
       await increase(3600);
       await core.testEcosystem!.testPriceOracle!.setPrice(core.tokens.dfsGlp!.address, parseEther('1'));
 
-      await magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
+      await magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistryImpersonated).performUpkeep('0x');
       const upkeepTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
       expect(await magicGLPWithChainlinkAutomationPriceOracle.lastUpdateTimestamp()).to.eq(upkeepTimestamp);
 

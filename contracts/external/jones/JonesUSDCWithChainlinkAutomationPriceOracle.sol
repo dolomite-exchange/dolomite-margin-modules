@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { ChainlinkAutomationPriceOracle } from "./ChainlinkAutomationPriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IJonesUSDCRegistry } from "../interfaces/jones/IJonesUSDCRegistry.sol";
 import { JonesUSDCMathLib } from "../jones/jusdc/JonesUSDCMathLib.sol";
+import { ChainlinkAutomationPriceOracle } from "../oracles/ChainlinkAutomationPriceOracle.sol";
 
 
 /**

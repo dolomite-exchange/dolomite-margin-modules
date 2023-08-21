@@ -1,22 +1,22 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import {
+  PendleGLPRegistry__factory,
   PendlePtGLP2024IsolationModeTokenVaultV1__factory,
   PendlePtGLP2024IsolationModeUnwrapperTraderV2__factory,
   PendlePtGLP2024IsolationModeVaultFactory__factory,
   PendlePtGLP2024IsolationModeWrapperTraderV2__factory,
-  PendleGLPRegistry__factory,
 } from '../../src/types';
-import { Network, TEN_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import {
+  getPendleGLPRegistryConstructorParams,
   getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams,
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
-  getPendleGLPRegistryConstructorParams,
   getPendlePtGLPPriceOracleConstructorParams,
 } from '../../src/utils/constructors/pendle';
+import { Network, TEN_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../test/utils/setup';
-import { deployContractAndSave, prettyPrintEncodedData, prettyPrintEncodedDataWithTypeSafety } from '../deploy-utils';
+import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../deploy-utils';
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
@@ -73,6 +73,7 @@ async function main() {
 
   await prettyPrintEncodedDataWithTypeSafety(
     core,
+    core,
     'dolomiteMargin',
     'ownerAddMarket',
     [
@@ -87,6 +88,7 @@ async function main() {
     ],
   );
   await prettyPrintEncodedDataWithTypeSafety(
+    core,
     { dptGlpToken },
     'dptGlpToken',
     'ownerInitialize',
@@ -94,12 +96,14 @@ async function main() {
   );
   await prettyPrintEncodedDataWithTypeSafety(
     core,
+    core,
     'dolomiteMargin',
     'ownerSetGlobalOperator',
     [dptGlpToken.address, true],
   );
   const expectedMarketId = 11; // deploy this after jUSDC
   await prettyPrintEncodedDataWithTypeSafety(
+    core,
     core,
     'liquidatorAssetRegistry',
     'ownerAddLiquidatorToAssetWhitelist',

@@ -33,12 +33,11 @@ export async function createMagicGLPPriceOracle(core: CoreProtocol): Promise<Mag
 
 export async function createMagicGLPWithChainlinkAutomationPriceOracle(
   core: CoreProtocol,
-  chainlinkRegistry: string,
 ): Promise<MagicGLPWithChainlinkAutomationPriceOracle> {
   return createContractWithAbi(
     MagicGLPWithChainlinkAutomationPriceOracle__factory.abi,
     MagicGLPWithChainlinkAutomationPriceOracle__factory.bytecode,
-    getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams(core, chainlinkRegistry),
+    getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams(core),
   );
 }
 

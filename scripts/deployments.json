@@ -174,6 +174,13 @@
       "isVerified": true
     }
   },
+  "JonesUSDCWithChainlinkAutomationPriceOracle": {
+    "42161": {
+      "address": "0x42f596850B23D3B6c06ef9Eb6914DDd7F6A13488",
+      "transaction": "0x0c351cfa79696d77d42e014d80b070085768779975507e48e8863e154bf8b0d0",
+      "isVerified": true
+    }
+  },
   "MagicGLPPriceOracle": {
     "42161": {
       "address": "0x4Dfbb88233c1EBBaF9fF55D4C0AbA97343A78f5F",
@@ -192,6 +199,13 @@
     "42161": {
       "address": "0x76a03cEd39f0930777974906Ee7E792Bd25A29dd",
       "transaction": "0xf4c1ac943866171d0f9a12bd7f447f1283adae4aa161e035f91bf7d8618c5df7",
+      "isVerified": true
+    }
+  },
+  "MagicGLPWithChainlinkAutomationPriceOracle": {
+    "42161": {
+      "address": "0x9a4b632B11471C2afE92b0ecA4024cd4a20E41AA",
+      "transaction": "0x9872aef696d2c94d1d9f1f5293b27373c3b155c757b6187d9da44c0bdbc6470c",
       "isVerified": true
     }
   },
@@ -360,6 +374,13 @@
     "42161": {
       "address": "0x11E4e70B4ac087624f55D1dccaB306440250a3A0",
       "transaction": "0x683aa713de6d40e1f5c55c6342265521d3730fd0c4eb43c2654ad1291b738683",
+      "isVerified": true
+    }
+  },
+  "PlutusVaultGLPWithChainlinkAutomationPriceOracle": {
+    "42161": {
+      "address": "0xB7D6e77Cd2B7968Da45284800E1169edf0946429",
+      "transaction": "0x22cb5cb785e903492b35c1a1512c38291af764c7f85ddad22a0b256fb61d2f8e",
       "isVerified": true
     }
   },

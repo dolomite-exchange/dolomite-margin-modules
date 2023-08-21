@@ -13,7 +13,7 @@ interface TokenWithMarketId {
   marketId: number;
 }
 
-export const CHAINLINK_REGISTRY_MAP: Record<Network, string> = {
+export const CHAINLINK_REGISTRY_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x75c0530885F385721fddA23C539AF3701d6183D4',
   [Network.ArbitrumGoerli]: '0x291093864bafc9aA517eF90ce954dD7D95D68C80',
 };

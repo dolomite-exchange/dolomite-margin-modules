@@ -1,9 +1,12 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { sleep } from '@openzeppelin/upgrades';
 import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
+import { FormatTypes, ParamType } from 'ethers/lib/utils';
 import fs from 'fs';
 import { network, run } from 'hardhat';
+import { IERC20Metadata__factory } from '../src/types';
 import { createContract } from '../src/utils/dolomite-utils';
+import { CoreProtocol } from '../test/utils/setup';
 
 type ChainId = string;
 
@@ -118,12 +121,41 @@ export async function prettyPrintEncodedData(
   console.log(''); // add a new line
 }
 
+const numMarketsKey = 'numMarkets';
+const marketIdToMarketNameCache: Record<string, string | undefined> = {};
+
+async function getMarketName(core: CoreProtocol, marketId: BigNumberish): Promise<string> {
+  let cachedNumMarkets = marketIdToMarketNameCache[numMarketsKey];
+  if (!cachedNumMarkets) {
+    cachedNumMarkets = (await core.dolomiteMargin.getNumMarkets()).toString();
+    marketIdToMarketNameCache[cachedNumMarkets] = cachedNumMarkets;
+  }
+  if (BigNumber.from(marketId).gte(cachedNumMarkets)) {
+    return 'Unknown';
+  }
+
+  const cachedName = marketIdToMarketNameCache[marketId.toString()];
+  if (cachedName) {
+    return cachedName;
+  }
+  const tokenAddress = await core.dolomiteMargin.getMarketTokenAddress(marketId);
+  const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
+  const marketName = await token.symbol();
+  marketIdToMarketNameCache[marketId.toString()] = marketName;
+  return marketName;
+}
+
+function isMarketIdParam(paramType: ParamType): boolean {
+  return paramType.name.includes('marketId') || paramType.name.includes('MarketId');
+}
+
 export async function prettyPrintEncodedDataWithTypeSafety<
   T extends V[K],
   U extends keyof T['populateTransaction'],
   V extends Record<K, BaseContract>,
   K extends keyof V,
 >(
+  core: CoreProtocol,
   liveMap: V,
   key: K,
   methodName: U,
@@ -131,26 +163,50 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 ): Promise<void> {
   const contract = liveMap[key];
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
-  const mappedArgs = (args as any[]).map(arg => {
+  const fragment = contract.interface.getFunction(methodName.toString());
+  const mappedArgs = await Promise.all((args as any[]).map(async (arg, i) => {
+    const inputParam = fragment.inputs[i];
+    const formattedInputParamName = inputParam.format(FormatTypes.full);
     if (BigNumber.isBigNumber(arg)) {
-      return arg.toString();
+      if (isMarketIdParam(inputParam)) {
+        return `${formattedInputParamName} = ${arg.toString()} (${await getMarketName(core, arg)})`;
+      }
+      return `${formattedInputParamName} = ${arg.toString()}`;
     }
+
     if (Array.isArray(arg)) {
-      return `[ ${arg.join(', ')} ]`;
+      if (isMarketIdParam(inputParam)) {
+        const formattedArgs = await Promise.all(arg.map(async marketId => {
+          return `${marketId} (${await getMarketName(core, marketId)})`;
+        }));
+        return `${formattedInputParamName} = [\n\t\t\t\t${formattedArgs.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
+      }
+      return `${formattedInputParamName} = [\n\t\t\t\t${arg.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
     }
+
     if (typeof arg === 'object') {
-      return JSON.stringify(
-        Object.keys(arg).reduce<Record<string, any>>((memo, key) => {
-          memo[key] = BigNumber.isBigNumber(arg[key]) ? arg[key].toString() : arg[key];
-          return memo;
-        }, {}),
-      );
+      if (fragment.inputs[i].baseType !== 'tuple') {
+        return Promise.reject(new Error('Object type is not tuple'));
+      }
+      const values = Object.keys(arg).reduce<string[]>((memo, key, j) => {
+        const component = fragment.inputs[i].components[j];
+        const name = component.format(FormatTypes.full);
+        const value = BigNumber.isBigNumber(arg[key]) ? arg[key].toString() : arg[key];
+        memo.push(`${name} = ${value}`);
+        return memo;
+      }, []);
+      return `${formattedInputParamName} = {\n\t\t\t\t${values.join(' ,\n\t\t\t\t')}\n\t\t\t}`;
     }
-    return arg;
-  });
+
+    if (isMarketIdParam(inputParam)) {
+      return `${formattedInputParamName} = ${arg} (${await getMarketName(core, arg)})`;
+    }
+
+    return `${formattedInputParamName} = ${arg}`;
+  }));
   console.log(''); // add a new line
   console.log(`=================================== ${counter++} - ${key}.${methodName} ===================================`);
-  console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(',\n\t\t\t')}\n\t\t)`);
+  console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
   console.log('To:\t\t', transaction.to);
   console.log('Data:\t\t', transaction.data);
   console.log('='.repeat(76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length));
