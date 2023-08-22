@@ -3,6 +3,7 @@ import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeVaultFactory,
   GmxRegistryV1,
+  GmxRegistryV2,
   IGLPIsolationModeTokenVaultV1,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
@@ -116,5 +117,26 @@ export async function getGmxRegistryConstructorParams(
     implementation.address,
     core.dolomiteMargin.address,
     (await implementation.populateTransaction.initialize(initializer, core.dolomiteRegistry.address)).data!,
+  ];
+}
+
+export async function getGmxRegistryV2ConstructorParams(
+  core: CoreProtocol,
+  implementation: GmxRegistryV2,
+): Promise<any[]> {
+  if (!core.gmxEcosystem) {
+    throw new Error('GMX ecosystem not initialized');
+  }
+
+  const calldata = await implementation.populateTransaction.initialize(
+    core.gmxEcosystem!.gmxExchangeRouter.address,
+    core.gmxEcosystem!.gmxEthUsdMarketToken.address,
+    core.dolomiteRegistry.address
+  );
+
+  return [
+    implementation.address,
+    core.dolomiteMargin.address,
+    calldata.data,
   ];
 }

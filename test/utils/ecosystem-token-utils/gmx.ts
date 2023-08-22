@@ -15,6 +15,8 @@ import {
   GLPPriceOracleV1__factory,
   GmxRegistryV1,
   GmxRegistryV1__factory,
+  GmxRegistryV2,
+  GmxRegistryV2__factory,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
   IGmxRegistryV1,
@@ -29,6 +31,7 @@ import {
   getGLPWrapperTraderV1ConstructorParams,
   getGLPWrapperTraderV2ConstructorParams,
   getGmxRegistryConstructorParams,
+  getGmxRegistryV2ConstructorParams,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
@@ -125,4 +128,18 @@ export async function createGmxRegistry(core: CoreProtocol): Promise<GmxRegistry
     await getGmxRegistryConstructorParams(core, implementation),
   );
   return GmxRegistryV1__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createGmxRegistryV2(core: CoreProtocol): Promise<GmxRegistryV2> {
+  const implementation = await createContractWithAbi<GmxRegistryV2>(
+    GmxRegistryV2__factory.abi,
+    GmxRegistryV2__factory.bytecode,
+    [],
+  );
+  const proxy = await createContractWithAbi<RegistryProxy>(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getGmxRegistryV2ConstructorParams(core, implementation),
+  );
+  return GmxRegistryV2__factory.connect(proxy.address, core.hhUser1);
 }

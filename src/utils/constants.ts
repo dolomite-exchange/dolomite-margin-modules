@@ -174,6 +174,16 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const GMX_EXCHANGE_ROUTER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x3B070aA6847bd0fB56eFAdB351f49BBb7619dbc2',
+  [Network.ArbitrumGoerli]: undefined,
+}
+
+export const GMX_ETH_USD_MARKET_TOKEN_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x70d95587d40A2caf56bd97485aB3Eec10Bee6336',
+  [Network.ArbitrumGoerli]: undefined,
+}
+
 export const GMX_REWARD_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1',
   [Network.ArbitrumGoerli]: undefined,
