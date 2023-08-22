@@ -114,7 +114,7 @@ export async function liquidateV4WithZap(
       return await core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
         solidAccountStruct,
         liquidAccountStruct,
-        zapOutput.marketIdsPath,
+        zapOutput.marketIdsPath.map(marketId => marketId.toString()),
         MAX_UINT_256_BI,
         MAX_UINT_256_BI,
         zapOutput.traderParams,
