@@ -1,4 +1,6 @@
+import { BigNumberish } from 'ethers';
 import {
+  ERC20,
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV1__factory,
   GLPIsolationModeUnwrapperTraderV1,
@@ -17,9 +19,16 @@ import {
   GmxRegistryV1__factory,
   GmxRegistryV2,
   GmxRegistryV2__factory,
+  GmxV2IsolationModeTokenVaultV1,
+  GmxV2IsolationModeTokenVaultV1__factory,
+  GmxV2IsolationModeVaultFactory,
+  GmxV2IsolationModeVaultFactory__factory,
+  IERC20,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
+  IGmxMarketToken,
   IGmxRegistryV1,
+  IGmxRegistryV2,
   RegistryProxy,
   RegistryProxy__factory,
 } from '../../../src/types';
@@ -32,6 +41,7 @@ import {
   getGLPWrapperTraderV2ConstructorParams,
   getGmxRegistryConstructorParams,
   getGmxRegistryV2ConstructorParams,
+  getGmxV2IsolationModeVaultFactoryConstructorParams,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
@@ -143,3 +153,34 @@ export async function createGmxRegistryV2(core: CoreProtocol): Promise<GmxRegist
   );
   return GmxRegistryV2__factory.connect(proxy.address, core.hhUser1);
 }
+
+export async function createGmxV2IsolationModeTokenVaultV1(): Promise<GmxV2IsolationModeTokenVaultV1> {
+  return createContractWithAbi(
+    GmxV2IsolationModeTokenVaultV1__factory.abi,
+    GmxV2IsolationModeTokenVaultV1__factory.bytecode,
+    [],
+  );
+}
+
+export async function createGmxV2IsolationModeVaultFactory(
+  core: CoreProtocol,
+  gmxRegistry: IGmxRegistryV2,
+  debtMarketIds: BigNumberish[],
+  collateralMarketIds: BigNumberish[],
+  gmToken: IGmxMarketToken,
+  userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
+): Promise<GmxV2IsolationModeVaultFactory> {
+  return createContractWithAbi<GmxV2IsolationModeVaultFactory>(
+    GmxV2IsolationModeVaultFactory__factory.abi,
+    GmxV2IsolationModeVaultFactory__factory.bytecode,
+    getGmxV2IsolationModeVaultFactoryConstructorParams(
+      core,
+      gmxRegistry,
+      debtMarketIds,
+      collateralMarketIds,
+      gmToken,
+      userVaultImplementation
+    ),
+  );
+}
+

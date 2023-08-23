@@ -27,55 +27,43 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
+import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 
 
 /**
- * @title   PendleYtGLPPriceOracle
+ * @title   GmxV2MarketTokenPriceOracle
  * @author  Dolomite
  *
- * @notice  An implementation of the IDolomitePriceOracle interface that gets Pendle's ytGLP price in USD terms.
+ * @notice  An implementation of the IDolomitePriceOracle interface that gets GMX's V2 Market token price in USD
  */
-contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
+contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
 
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "PendleYtGLPPriceOracle";
-    uint32 public constant TWAP_DURATION = 900; // 15 minutes
+    bytes32 private constant _FILE = "GmxV2MarketTokenPriceOracle";
+    uint256 public constant ETH_USD_PRECISION = 1e18;
     uint256 public constant FEE_PRECISION = 10_000;
 
     // ============================ Public State Variables ============================
 
-    address public immutable DYT_GLP; // solhint-disable-line var-name-mixedcase
-    IPendleGLPRegistry public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
+    // @note Revisit naming conventions
+    address public immutable DETH_USD; // solhint-disable-line var-name-mixedcase
+    IGmxRegistryV2 public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteMargin public immutable DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
-    uint256 public immutable PT_ASSET_SCALE; // solhint-disable-line var-name-mixedcase
-    uint256 public immutable DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable DFS_ETH_USD_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
 
     constructor(
-        address _dytGlp,
-        address _pendleGLPRegistry,
+        address _dEthUsd,
+        address _gmxRegistryV2,
         address _dolomiteMargin,
-        uint256 _dfsGlpMarketId
+        uint256 _dfsEthUsdMarketId
     ) {
-        DYT_GLP = _dytGlp;
-        REGISTRY = IPendleGLPRegistry(_pendleGLPRegistry);
+        DETH_USD = _dEthUsd;
+        REGISTRY = IGmxRegistryV2(_gmxRegistryV2);
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
-        DFS_GLP_MARKET_ID = _dfsGlpMarketId;
-        PT_ASSET_SCALE = 10 ** uint256(IERC20Metadata(DYT_GLP).decimals());
-
-        (
-            bool increaseCardinalityRequired,,
-            bool oldestObservationSatisfied
-        ) = REGISTRY.ptOracle().getOracleState(address(REGISTRY.ptGlpMarket()), TWAP_DURATION);
-
-        if (!increaseCardinalityRequired && oldestObservationSatisfied) { /* FOR COVERAGE TESTING */ }
-        Require.that(!increaseCardinalityRequired && oldestObservationSatisfied,
-            _FILE,
-            "Oracle not ready yet"
-        );
+        DFS_ETH_USD_MARKET_ID = _dfsEthUsdMarketId;
     }
 
     function getPrice(
@@ -84,8 +72,8 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        if (_token == address(DYT_GLP)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_token == address(DYT_GLP),
+        if (_token == address(DETH_USD)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_token == address(DETH_USD),
             _FILE,
             "Invalid token",
             _token
@@ -93,7 +81,7 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
         if (DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
         Require.that(DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
             _FILE,
-            "ytGLP cannot be borrowable"
+            "ethUsd cannot be borrowable"
         );
 
         return IDolomiteStructs.MonetaryPrice({
@@ -103,9 +91,8 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
 
     // ============================ Internal Functions ============================
 
+    // @note Look at stuff GMX sent
     function _getCurrentPrice() internal view returns (uint256) {
-        uint256 glpPrice = DOLOMITE_MARGIN.getMarketPrice(DFS_GLP_MARKET_ID).value;
-        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptGlpMarket()), TWAP_DURATION);
-        return glpPrice * (PT_ASSET_SCALE - ptExchangeRate) / PT_ASSET_SCALE;
+        return 0;
     }
 }

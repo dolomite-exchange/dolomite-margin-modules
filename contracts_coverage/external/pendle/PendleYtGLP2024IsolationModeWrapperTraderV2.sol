@@ -28,6 +28,7 @@ import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol"
 import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 
+
 /**
  * @title   PendleYtGLP2024IsolationModeWrapperTraderV2
  * @author  Dolomite

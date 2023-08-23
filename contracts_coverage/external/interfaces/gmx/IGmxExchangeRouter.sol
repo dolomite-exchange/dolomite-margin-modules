@@ -21,14 +21,27 @@
 pragma solidity ^0.8.9;
 
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-
 /**
- * @title   IGmxMarketToken
+ * @title   IGmxExchangeRouter
  * @author  Dolomite
  *
- * @notice  GMX MarketToken Interface
+ * @notice  Interface of the GMX Exchange Router contract
  */
-interface IGmxMarketToken is IERC20 {
+interface IGmxExchangeRouter {
+    struct CreateDepositParams {
+        address receiver;
+        address callbackContract;
+        address uiFeeReceiver;
+        address market;
+        address initialLongToken;
+        address initialShortToken;
+        address[] longTokenSwapPath;
+        address[] shortTokenSwapPath;
+        uint256 minMarketTokens;
+        bool shouldUnwrapNativeToken;
+        uint256 executionFee;
+        uint256 callbackGasLimit;
+    }
+
+    function createDeposit(CreateDepositParams calldata params) external returns (bytes32);
 }

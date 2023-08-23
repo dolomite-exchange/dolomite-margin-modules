@@ -1,15 +1,21 @@
+import { BigNumberish } from 'ethers';
 import { CoreProtocol } from '../../../test/utils/setup';
 import {
+  ERC20,
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeVaultFactory,
   GmxRegistryV1,
   GmxRegistryV2,
+  GmxV2IsolationModeTokenVaultV1,
   IGLPIsolationModeTokenVaultV1,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
+  IGmxMarketToken,
   IGmxRegistryV1,
+  IGmxRegistryV2,
   TestGLPIsolationModeTokenVaultV1,
 } from '../../types';
+import { IERC20 } from '@dolomite-exchange/dolomite-margin/dist/build/wrappers/IERC20';
 
 export function getGLPPriceOracleV1ConstructorParams(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
@@ -138,5 +144,28 @@ export async function getGmxRegistryV2ConstructorParams(
     implementation.address,
     core.dolomiteMargin.address,
     calldata.data,
+  ];
+}
+
+export function getGmxV2IsolationModeVaultFactoryConstructorParams(
+  core: CoreProtocol,
+  gmxRegistry: IGmxRegistryV2,
+  debtMarketIds: BigNumberish[],
+  collateralMarketIds: BigNumberish[],
+  gmToken: IGmxMarketToken,
+  userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
+): any[] {
+  if (!core.gmxEcosystem) {
+    throw new Error('Gmx ecosystem not initialized');
+  }
+
+  return [
+    gmxRegistry.address,
+    debtMarketIds,
+    collateralMarketIds,
+    gmToken.address,
+    core.borrowPositionProxyV2.address,
+    userVaultImplementation.address,
+    core.dolomiteMargin.address,
   ];
 }

@@ -162,6 +162,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         bytes calldata _orderData
     )
     external
+    virtual
     override
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
