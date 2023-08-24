@@ -7,12 +7,14 @@ import {
   GmxRegistryV1,
   GmxRegistryV2,
   GmxV2IsolationModeTokenVaultV1,
+  GmxV2IsolationModeVaultFactory,
   IGLPIsolationModeTokenVaultV1,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
   IGmxMarketToken,
   IGmxRegistryV1,
   IGmxRegistryV2,
+  IGmxV2IsolationModeVaultFactory,
   TestGLPIsolationModeTokenVaultV1,
 } from '../../types';
 import { IERC20 } from '@dolomite-exchange/dolomite-margin/dist/build/wrappers/IERC20';
@@ -166,6 +168,38 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
     gmToken.address,
     core.borrowPositionProxyV2.address,
     userVaultImplementation.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
+  core: CoreProtocol,
+  dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
+  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+): any[] {
+  if (!core.gmxEcosystem) {
+    throw new Error('Gmx ecosystem not initialized');
+  }
+
+  return [
+    gmxRegistryV2.address,
+    dGM.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
+  core: CoreProtocol,
+  dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
+  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+): any[] {
+  if (!core.gmxEcosystem) {
+    throw new Error('Gmx ecosystem not initialized');
+  }
+
+  return [
+    gmxRegistryV2.address,
+    dGM.address,
     core.dolomiteMargin.address,
   ];
 }

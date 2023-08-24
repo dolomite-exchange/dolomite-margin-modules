@@ -39,6 +39,8 @@ interface IGmxRegistryV2 is IBaseRegistry {
     // ================================================
 
     event GmxExchangeRouterSet(address _gmxExchangeRouter);
+    event GmxDepositHandlerSet(address _gmxDepositHandler);
+    event GmxWithdrawalHandlerSet(address _gmxWithdrawalHandler);
     event EthUsdMarketTokenSet(address _ethUsdMarketToken);
 
     // ===================================================
@@ -47,9 +49,17 @@ interface IGmxRegistryV2 is IBaseRegistry {
 
     function ownerSetGmxExchangeRouter(address _gmxExchangeRouter) external;
 
+    function ownerSetGmxDepositHandler(address _gmxDepositHandler) external;
+
+    function ownerSetGmxWithdrawalHandler(address _gmxWithdrawalHandler) external;
+
     function ownerSetEthUsdMarketToken(address _ethUsdMarketToken) external;
 
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter);
+
+    function gmxDepositHandler() external view returns (address);
+
+    function gmxWithdrawalHandler() external view returns (address);
 
     function ethUsdMarketToken() external view returns (IERC20);
 }

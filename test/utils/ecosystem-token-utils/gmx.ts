@@ -21,14 +21,19 @@ import {
   GmxRegistryV2__factory,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
+  GmxV2IsolationModeUnwrapperTraderV2,
+  GmxV2IsolationModeUnwrapperTraderV2__factory,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeVaultFactory__factory,
+  GmxV2IsolationModeWrapperTraderV2,
+  GmxV2IsolationModeWrapperTraderV2__factory,
   IERC20,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
   IGmxMarketToken,
   IGmxRegistryV1,
   IGmxRegistryV2,
+  IGmxV2IsolationModeVaultFactory,
   RegistryProxy,
   RegistryProxy__factory,
 } from '../../../src/types';
@@ -41,7 +46,9 @@ import {
   getGLPWrapperTraderV2ConstructorParams,
   getGmxRegistryConstructorParams,
   getGmxRegistryV2ConstructorParams,
+  getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
   getGmxV2IsolationModeVaultFactoryConstructorParams,
+  getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
@@ -184,3 +191,26 @@ export async function createGmxV2IsolationModeVaultFactory(
   );
 }
 
+export async function createGmxV2IsolationModeUnwrapperTraderV2(
+  core: CoreProtocol,
+  dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
+  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
+  return createContractWithAbi(
+    GmxV2IsolationModeUnwrapperTraderV2__factory.abi,
+    GmxV2IsolationModeUnwrapperTraderV2__factory.bytecode,
+    getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(core, dGM, gmxRegistryV2),
+  );
+}
+
+export async function createGmxV2IsolationModeWrapperTraderV2(
+  core: CoreProtocol,
+  dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
+  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+): Promise<GmxV2IsolationModeWrapperTraderV2> {
+  return createContractWithAbi(
+    GmxV2IsolationModeWrapperTraderV2__factory.abi,
+    GmxV2IsolationModeWrapperTraderV2__factory.bytecode,
+    getGmxV2IsolationModeWrapperTraderV2ConstructorParams(core, dGM, gmxRegistryV2),
+  );
+}

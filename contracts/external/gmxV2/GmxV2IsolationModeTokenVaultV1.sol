@@ -26,6 +26,7 @@ import { EventUtils } from "../interfaces/gmx/EventUtils.sol";
 import { IWithdrawalCallbackReceiver } from "../interfaces/gmx/IWithdrawalCallbackReceiver.sol";
 import { Withdrawal } from "../interfaces/gmx/Withdrawal.sol";
 
+import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
@@ -47,6 +48,10 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithPausable
     // ==================================================================
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultV1";
+
+    // ===================================================
+    // ==================== Modifiers ====================
+    // ===================================================
 
     // ==================================================================
     // ======================== Public Functions ========================
@@ -70,7 +75,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithPausable
         // unfreeze vault
     }
 
-    function initiateWithdraw() external nonReentrant onlyVaultOwner(msg.sender) {
+    function initiateWithdrawal() external nonReentrant onlyVaultOwner(msg.sender) {
 
     }
 

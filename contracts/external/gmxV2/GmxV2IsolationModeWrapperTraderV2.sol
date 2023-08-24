@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
+import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 
 /**
@@ -36,10 +37,12 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
 
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
 
+    IGmxRegistryV2 public immutable GMX_REGISTRY_V2; // solhint-disable-line var-name-mixedcase
+
     // ============ Constructor ============
 
-    constructor(address _dGM, address _dolomiteMargin) IsolationModeWrapperTraderV2(_dGM, _dolomiteMargin) {
-
+    constructor(address _gmxRegistryV2, address _dGM, address _dolomiteMargin) IsolationModeWrapperTraderV2(_dGM, _dolomiteMargin) {
+        GMX_REGISTRY_V2 = IGmxRegistryV2(_gmxRegistryV2);
     }
 
     // ============================================
