@@ -174,6 +174,11 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const GMX_DEPOSIT_HANDLER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xD9AebEA68DE4b4A3B58833e1bc2AEB9682883AB0',
+  [Network.ArbitrumGoerli]: undefined,
+}
+
 export const GMX_EXCHANGE_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x3B070aA6847bd0fB56eFAdB351f49BBb7619dbc2',
   [Network.ArbitrumGoerli]: undefined,
@@ -196,6 +201,11 @@ export const GMX_MAP: Record<Network, string | undefined> = {
 
 export const GMX_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x489ee077994B6658eAfA855C308275EAd8097C4A',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_WITHDRAWAL_HANDLER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x79B99855676dB97e488F33CF52DaCF552102A950',
   [Network.ArbitrumGoerli]: undefined,
 };
 

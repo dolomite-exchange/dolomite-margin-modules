@@ -24,6 +24,8 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title   GmxV2IsolationModeWrapperTraderV2
  * @author  Dolomite
@@ -72,10 +74,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         returns (uint256)
     {
         // Initiates deposit into GMX
-
+        console.log('_exchangeIntoUnderlyingToken');
         // Callback contract will be the vault address (should be receiver)
 
         // Since we don't get output amount here, return minOutputAmount
+        return _minOutputAmount;
     }
 
     function _getExchangeCost(

@@ -138,8 +138,10 @@ export async function getGmxRegistryV2ConstructorParams(
 
   const calldata = await implementation.populateTransaction.initialize(
     core.gmxEcosystem!.gmxExchangeRouter.address,
+    core.gmxEcosystem!.gmxDepositHandler.address,
+    core.gmxEcosystem!.gmxWithdrawalHandler.address,
     core.gmxEcosystem!.gmxEthUsdMarketToken.address,
-    core.dolomiteRegistry.address
+    core.dolomiteRegistry.address,
   );
 
   return [

@@ -29,6 +29,10 @@ describe('GmxRegistryV2', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.gmxExchangeRouter()).to.eq(core.gmxEcosystem!.gmxExchangeRouter.address);
       expect(await registry.ethUsdMarketToken()).to.eq(core.gmxEcosystem!.gmxEthUsdMarketToken.address);
+      expect(await registry.gmxDepositHandler()).to.eq(core.gmxEcosystem!.gmxDepositHandler.address);
+      expect(await registry.gmxWithdrawalHandler()).to.eq(core.gmxEcosystem!.gmxWithdrawalHandler.address);
+      expect(await registry.gmxV2UnwrapperTrader()).to.eq(ZERO_ADDRESS);
+      expect(await registry.gmxV2WrapperTrader()).to.eq(ZERO_ADDRESS);
       expect(await registry.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
     });
   });
@@ -104,6 +108,55 @@ describe('GmxRegistryV2', () => {
       );
     });
   });
+
+  describe('#ownerSetGmxV2UnwrapperTrader', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'GmxV2UnwrapperTraderSet', {
+        gmxV2UnwrapperTrader: OTHER_ADDRESS,
+      });
+      expect(await registry.gmxV2UnwrapperTrader()).to.eq(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetGmxV2UnwrapperTrader(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(ZERO_ADDRESS),
+        'GmxRegistryV2: Invalid address',
+      );
+    });
+  });
+
+  describe('#ownerSetGmxV2WrapperTrader', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetGmxV2WrapperTrader(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'GmxV2WrapperTraderSet', {
+        gmxV2WrapperTrader: OTHER_ADDRESS,
+      });
+      expect(await registry.gmxV2WrapperTrader()).to.eq(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetGmxV2WrapperTrader(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetGmxV2WrapperTrader(ZERO_ADDRESS),
+        'GmxRegistryV2: Invalid address',
+      );
+    });
+  });
+
 
   describe('#ownerSetEthUsdMarketToken', () => {
     it('should work normally', async () => {

@@ -42,6 +42,8 @@ interface IGmxRegistryV2 is IBaseRegistry {
     event GmxDepositHandlerSet(address _gmxDepositHandler);
     event GmxWithdrawalHandlerSet(address _gmxWithdrawalHandler);
     event EthUsdMarketTokenSet(address _ethUsdMarketToken);
+    event GmxV2UnwrapperTraderSet(address _gmxV2UnwrapperTrader);
+    event GmxV2WrapperTraderSet(address _gmxV2WrapperTrader);
 
     // ===================================================
     // ==================== Functions ====================
@@ -55,6 +57,10 @@ interface IGmxRegistryV2 is IBaseRegistry {
 
     function ownerSetEthUsdMarketToken(address _ethUsdMarketToken) external;
 
+    function ownerSetGmxV2UnwrapperTrader(address _gmxV2UnwrapperTrader) external;
+
+    function ownerSetGmxV2WrapperTrader(address _gmxV2UnwrapperTrader) external;
+
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter);
 
     function gmxDepositHandler() external view returns (address);
@@ -62,4 +68,8 @@ interface IGmxRegistryV2 is IBaseRegistry {
     function gmxWithdrawalHandler() external view returns (address);
 
     function ethUsdMarketToken() external view returns (IERC20);
+
+    function gmxV2UnwrapperTrader() external view returns (address);
+
+    function gmxV2WrapperTrader() external view returns (address);
 }

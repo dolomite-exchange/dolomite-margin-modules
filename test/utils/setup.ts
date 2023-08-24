@@ -35,6 +35,8 @@ import {
   IBorrowPositionProxyV2__factory,
   IChainlinkRegistry,
   IChainlinkRegistry__factory,
+  IDepositHandler,
+  IDepositHandler__factory,
   IDepositWithdrawalProxy,
   IDepositWithdrawalProxy__factory,
   IDolomiteAmmFactory,
@@ -131,6 +133,8 @@ import {
   IUmamiAssetVaultStorageViewer__factory,
   IWETH,
   IWETH__factory,
+  IWithdrawalHandler,
+  IWithdrawalHandler__factory,
   ParaswapAggregatorTrader,
   ParaswapAggregatorTrader__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1,
@@ -204,6 +208,8 @@ import {
   V_GMX_MAP,
   WBTC_MAP,
   WETH_MAP,
+  GMX_DEPOSIT_HANDLER_MAP,
+  GMX_WITHDRAWAL_HANDLER_MAP,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { createDolomiteRegistryImplementation } from './dolomite';
@@ -241,10 +247,12 @@ export interface GmxEcosystem {
   glpManager: IGLPManager;
   glpRewardsRouter: IGLPRewardsRouterV2;
   gmx: IERC20;
+  gmxDepositHandler: IDepositHandler;
   gmxEthUsdMarketToken: IERC20;
   gmxExchangeRouter: IGmxExchangeRouter;
   gmxRewardsRouter: IGmxRewardRouterV2;
   gmxVault: IGmxVault;
+  gmxWithdrawalHandler: IWithdrawalHandler;
   sGlp: IERC20;
   sGmx: ISGMX;
   sbfGmx: IERC20;
@@ -424,6 +432,18 @@ export async function setupUSDCBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupGMBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xa329ac2efffea563159897d7828866cfaed42167';
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.gmxEcosystem!.gmxEthUsdMarketToken.connect(whaleSigner).transfer(signer.address, amount);
+  await core.gmxEcosystem!.gmxEthUsdMarketToken.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupGMXBalance(
@@ -825,9 +845,11 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
       address => IGmxRewardRouterV2__factory.connect(address, signer),
     ),
     gmx: getContract(GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
+    gmxDepositHandler: getContract(GMX_DEPOSIT_HANDLER_MAP[network] as string, address => IDepositHandler__factory.connect(address, signer)),
     gmxEthUsdMarketToken: getContract(GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string, address => IGmxMarketToken__factory.connect(address, signer)),
     gmxExchangeRouter: getContract(GMX_EXCHANGE_ROUTER_MAP[network] as string, address => IGmxExchangeRouter__factory.connect(address, signer)),
     gmxVault: getContract(GMX_VAULT_MAP[network] as string, address => IGmxVault__factory.connect(address, signer)),
+    gmxWithdrawalHandler: getContract(GMX_WITHDRAWAL_HANDLER_MAP[network] as string, address => IWithdrawalHandler__factory.connect(address, signer)),
     sGlp: getContract(S_GLP_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     sGmx: getContract(S_GMX_MAP[network] as string, address => ISGMX__factory.connect(address, signer)),
     sbfGmx: getContract(SBF_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
