@@ -22,8 +22,8 @@ import {
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
 } from '../../utils/assertions';
-import { getCalldataForParaswap } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
+import { getCalldataForParaswap } from '../../utils/trader-utils';
 
 const USDC_PRICE = BigNumber.from('1000000000000000000000000000000');
 const solidNumber = '321';

@@ -29,6 +29,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 
 import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
 
+
 /**
  * @title   PendleYtGLPPriceOracle
  * @author  Dolomite
@@ -36,10 +37,12 @@ import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol"
  * @notice  An implementation of the IDolomitePriceOracle interface that gets Pendle's ytGLP price in USD terms.
  */
 contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
+
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "PendleYtGLPPriceOracle";
     uint32 public constant TWAP_DURATION = 900; // 15 minutes
+    uint256 public constant FEE_PRECISION = 10_000;
 
     // ============================ Public State Variables ============================
 
@@ -50,6 +53,7 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
     uint256 public immutable DFS_GLP_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
+
     constructor(
         address _dytGlp,
         address _pendleGLPRegistry,
@@ -65,7 +69,7 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
         (
             bool increaseCardinalityRequired,,
             bool oldestObservationSatisfied
-        ) = REGISTRY.ptOracle().getOracleState(address(REGISTRY.ptGlpMarket()),TWAP_DURATION);
+        ) = REGISTRY.ptOracle().getOracleState(address(REGISTRY.ptGlpMarket()), TWAP_DURATION);
 
         if (!increaseCardinalityRequired && oldestObservationSatisfied) { /* FOR COVERAGE TESTING */ }
         Require.that(!increaseCardinalityRequired && oldestObservationSatisfied,
@@ -101,7 +105,7 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
 
     function _getCurrentPrice() internal view returns (uint256) {
         uint256 glpPrice = DOLOMITE_MARGIN.getMarketPrice(DFS_GLP_MARKET_ID).value;
-        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptGlpMarket()),TWAP_DURATION);
-        return PT_ASSET_SCALE - ((glpPrice * ptExchangeRate) / PT_ASSET_SCALE);
+        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptGlpMarket()), TWAP_DURATION);
+        return glpPrice * (PT_ASSET_SCALE - ptExchangeRate) / PT_ASSET_SCALE;
     }
 }

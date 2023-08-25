@@ -219,6 +219,11 @@ export const JONES_WHITELIST_CONTROLLER_MAP: Record<Network, string | undefined>
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const ODOS_ROUTER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xa669e7A0d4b3e4Fa48af2dE86BD4CD7126Be4e13',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
   [Network.ArbitrumGoerli]: undefined,

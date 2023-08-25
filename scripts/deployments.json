@@ -223,6 +223,13 @@
       "isVerified": true
     }
   },
+  "OdosAggregatorTrader": {
+    "42161": {
+      "address": "0x2cdBb25b4aca98a55F6B1A0f67d9f43455e67f3c",
+      "transaction": "0xc382bb815b1c4b7b18a40996b0e1fe109e16e7c29b2c3ab78ffeea9aefc5f1cb",
+      "isVerified": true
+    }
+  },
   "ParaswapAggregatorTrader": {
     "42161": {
       "address": "0x6173C34E01A18d5897C06b4991152F2969059A68",

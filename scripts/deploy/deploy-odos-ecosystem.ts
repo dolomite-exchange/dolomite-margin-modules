@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { Network } from '../../src/utils/no-deps-constants';
-import { getParaswapAggregatorTraderConstructorParams } from '../../src/utils/constructors/traders';
+import { getOdosAggregatorTraderConstructorParams } from '../../src/utils/constructors/traders';
 import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave } from '../deploy-utils';
 
@@ -9,8 +9,8 @@ async function main() {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
   await deployContractAndSave(
     Number(network),
-    'ParaswapAggregatorTraderV2',
-    getParaswapAggregatorTraderConstructorParams(core),
+    'OdosAggregatorTrader',
+    getOdosAggregatorTraderConstructorParams(core),
   );
 }
 

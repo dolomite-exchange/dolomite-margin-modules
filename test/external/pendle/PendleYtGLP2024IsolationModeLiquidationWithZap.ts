@@ -27,7 +27,6 @@ import {
 } from '../../utils/assertions';
 import { setExpiry } from '../../utils/expiry-utils';
 import {
-  checkForParaswapSuccess,
   getLastZapAmountToBigNumber,
   liquidateV4WithZap,
   toZapBigNumber,
@@ -39,6 +38,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import { checkForParaswapSuccess } from '../../utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '420';

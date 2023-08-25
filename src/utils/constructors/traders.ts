@@ -15,3 +15,10 @@ export function getParaswapAggregatorTraderV2ConstructorParams(core: CoreProtoco
     core.dolomiteMargin.address,
   ];
 }
+
+export function getOdosAggregatorTraderConstructorParams(core: CoreProtocol): any[] {
+  return [
+    core.odosEcosystem!.odosRouter.address,
+    core.dolomiteMargin.address,
+  ];
+}

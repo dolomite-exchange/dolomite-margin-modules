@@ -28,7 +28,6 @@ import {
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
 import { setExpiry } from '../../utils/expiry-utils';
-import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/liquidation-utils';
 import {
   CoreProtocol,
   setupCoreProtocol,
@@ -36,6 +35,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/trader-utils';
 import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
 
 const defaultAccountNumber = '0';

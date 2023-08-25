@@ -1,36 +1,30 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { ParaswapAggregatorTraderV2 } from '../../../src/types';
+import { ethers } from 'hardhat';
+import { OdosAggregatorTrader } from '../../../src/types';
 import { AccountStruct } from '../../../src/utils/constants';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import {
-  encodeExternalSellActionData,
-  getRealLatestBlockNumber,
-  impersonate,
-  revertToSnapshotAndCapture,
-  snapshot,
-} from '../../utils';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
-  expectThrowWithMatchingReason,
 } from '../../utils/assertions';
-import { createParaswapAggregatorTraderV2 } from '../../utils/ecosystem-token-utils/traders';
-import { getCalldataForParaswap, ParaswapSwapType, swapTypeToSelector } from '../../utils/liquidation-utils';
+import { createOdosAggregatorTrader } from '../../utils/ecosystem-token-utils/traders';
 import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
+import { getCalldataForOdos } from '../../utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');
 const minAmountOut = BigNumber.from('123123123');
 
-describe('ParaswapAggregatorTraderV2', () => {
+describe('OdosAggregatorTrader', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let trader: ParaswapAggregatorTraderV2;
+  let trader: OdosAggregatorTrader;
   let defaultAccount: AccountStruct;
 
   before(async () => {
@@ -39,7 +33,7 @@ describe('ParaswapAggregatorTraderV2', () => {
       blockNumber: latestBlockNumber,
       network: Network.ArbitrumOne,
     });
-    trader = (await createParaswapAggregatorTraderV2(core)).connect(core.hhUser1);
+    trader = (await createOdosAggregatorTrader(core)).connect(core.hhUser1);
     defaultAccount = { owner: core.hhUser1.address, number: defaultAccountNumber };
 
     // prevent interest accrual between calls
@@ -58,118 +52,39 @@ describe('ParaswapAggregatorTraderV2', () => {
 
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await trader.PARASWAP_AUGUSTUS_ROUTER()).to.equal(core.paraswapEcosystem!.augustusRouter.address);
-      expect(await trader.PARASWAP_TRANSFER_PROXY()).to.equal(core.paraswapEcosystem!.transferProxy);
+      expect(await trader.ODOS_ROUTER()).to.equal(core.odosEcosystem!.odosRouter.address);
     });
   });
 
   describe('#exchange', () => {
-    it('should succeed for mega swap', async () => {
-      const swapType = ParaswapSwapType.Mega;
-      const { calldata } = await getCalldataForParaswap(
+    it('should succeed for normal swap', async () => {
+      const { calldata } = await getCalldataForOdos(
         amountIn,
         core.tokens.weth,
         18,
         minAmountOut,
         core.tokens.usdc,
         6,
-        core.dolomiteMargin,
         trader,
         core,
-        [swapType],
       );
 
-      await doSwapAndCheckResults(calldata, swapType);
+      await doSwapAndCheckResults(calldata);
     });
 
-    it('should succeed for multi swap', async () => {
-      const swapType = ParaswapSwapType.Multi;
-      const { calldata } = await getCalldataForParaswap(
-        amountIn,
-        core.tokens.weth,
-        18,
-        minAmountOut,
-        core.tokens.usdc,
-        6,
-        core.dolomiteMargin,
-        trader,
-        core,
-        [swapType],
-      );
-
-      await doSwapAndCheckResults(calldata, swapType);
-    });
-
-    it('should succeed for simple swap', async () => {
-      const swapType = ParaswapSwapType.Simple;
-      const { calldata } = await getCalldataForParaswap(
-        amountIn,
-        core.tokens.weth,
-        18,
-        minAmountOut,
-        core.tokens.usdc,
-        6,
-        core.dolomiteMargin,
-        trader,
-        core,
-        [swapType],
-      );
-
-      await doSwapAndCheckResults(calldata, swapType);
-    });
-
-    it('should succeed for mega swap when inputAmount is different', async () => {
-      const swapType = ParaswapSwapType.Mega;
-      const { calldata } = await getCalldataForParaswap(
+    it('should succeed for normal swap when inputAmount is different', async () => {
+      const { calldata } = await getCalldataForOdos(
         amountIn.mul(9).div(10),
         core.tokens.weth,
         18,
         minAmountOut,
         core.tokens.usdc,
         6,
-        core.dolomiteMargin,
         trader,
         core,
-        [swapType],
       );
 
-      await doSwapAndCheckResults(calldata, swapType);
-    });
-
-    it('should succeed for multi swap when inputAmount is different', async () => {
-      const swapType = ParaswapSwapType.Multi;
-      const { calldata } = await getCalldataForParaswap(
-        amountIn.mul(9).div(10),
-        core.tokens.weth,
-        18,
-        minAmountOut,
-        core.tokens.usdc,
-        6,
-        core.dolomiteMargin,
-        trader,
-        core,
-        [swapType],
-      );
-
-      await doSwapAndCheckResults(calldata, swapType);
-    });
-
-    it('should succeed for simple swap when inputAmount is different', async () => {
-      const swapType = ParaswapSwapType.Simple;
-      const { calldata } = await getCalldataForParaswap(
-        amountIn.mul(9).div(10),
-        core.tokens.weth,
-        18,
-        minAmountOut,
-        core.tokens.usdc,
-        6,
-        core.dolomiteMargin,
-        trader,
-        core,
-        [swapType],
-      );
-
-      await doSwapAndCheckResults(calldata, swapType);
+      await doSwapAndCheckResults(calldata);
     });
 
     it('should fail when caller is not DolomiteMargin', async () => {
@@ -187,23 +102,24 @@ describe('ParaswapAggregatorTraderV2', () => {
     });
 
     it('should fail when output is insufficient', async () => {
-      const { calldata: tradeData, outputAmount } = await getCalldataForParaswap(
+      const { calldata, outputAmount } = await getCalldataForOdos(
         amountIn,
         core.tokens.weth,
         18,
         minAmountOut,
         core.tokens.usdc,
         6,
-        core.hhUser1,
         trader,
         core,
       );
-      const actualOrderData = encodeExternalSellActionData(
-        outputAmount,
-        ['bytes4', 'bytes'],
-        [`0x${tradeData.slice(2, 10)}`, `0x${tradeData.slice(10)}`],
+      const actualOrderData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'bytes'],
+        [
+          outputAmount.mul(2),
+          calldata,
+        ],
       );
-      await expectThrowWithMatchingReason(
+      await expectThrow(
         core.dolomiteMargin.connect(core.hhUser1).operate(
           [{ owner: core.hhUser1.address, number: defaultAccountNumber }],
           [
@@ -224,39 +140,7 @@ describe('ParaswapAggregatorTraderV2', () => {
             },
           ],
         ),
-        /ParaswapAggregatorTraderV2: Insufficient output amount <\d+, \d+>/,
-      );
-    });
-
-    it('should fail when function selector is invalid', async () => {
-      const caller = await impersonate(core.dolomiteMargin.address, true);
-      const { calldata } = await getCalldataForParaswap(
-        amountIn,
-        core.tokens.weth,
-        18,
-        minAmountOut,
-        core.tokens.usdc,
-        6,
-        core.dolomiteMargin,
-        trader,
-        core,
-      );
-      const actualOrderData = encodeExternalSellActionData(
-        minAmountOut,
-        ['bytes4', 'bytes'],
-        ['0x12345678', `0x${calldata.slice(10)}`],
-      );
-      await expectThrow(
-        trader.connect(caller)
-          .exchange(
-            core.hhUser1.address,
-            core.dolomiteMargin.address,
-            core.tokens.weth.address,
-            core.tokens.usdc.address,
-            amountIn,
-            actualOrderData,
-          ),
-        'ParaswapAggregatorTraderV2: Invalid Paraswap function selector <0x12345678>',
+        'Minimum greater than quote',
       );
     });
   });
@@ -265,19 +149,20 @@ describe('ParaswapAggregatorTraderV2', () => {
     it('should always fail', async () => {
       await expectThrow(
         trader.getExchangeCost(core.tokens.weth.address, core.tokens.usdc.address, ZERO_BI, BYTES_EMPTY),
-        'ParaswapAggregatorTraderV2: getExchangeCost not implemented',
+        'OdosAggregatorTrader: getExchangeCost not implemented',
       );
     });
   });
 
   async function doSwapAndCheckResults(
     calldata: string,
-    swapType: ParaswapSwapType,
   ) {
-    const actualOrderData = encodeExternalSellActionData(
-      minAmountOut,
-      ['bytes4', 'bytes'],
-      [swapTypeToSelector(swapType), `0x${calldata.slice(10)}`],
+    const actualOrderData = ethers.utils.defaultAbiCoder.encode(
+      ['uint256', 'bytes'],
+      [
+        minAmountOut,
+        calldata,
+      ],
     );
     await core.dolomiteMargin.connect(core.hhUser1).operate(
       [{ owner: core.hhUser1.address, number: defaultAccountNumber }],

@@ -1,10 +1,12 @@
 import {
+  OdosAggregatorTrader, OdosAggregatorTrader__factory,
   ParaswapAggregatorTrader,
   ParaswapAggregatorTrader__factory,
   ParaswapAggregatorTraderV2,
   ParaswapAggregatorTraderV2__factory,
 } from '../../../src/types';
 import {
+  getOdosAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/traders';
@@ -28,5 +30,15 @@ export async function createParaswapAggregatorTraderV2(
     ParaswapAggregatorTraderV2__factory.abi,
     ParaswapAggregatorTraderV2__factory.bytecode,
     getParaswapAggregatorTraderV2ConstructorParams(core),
+  );
+}
+
+export async function createOdosAggregatorTrader(
+  core: CoreProtocol,
+): Promise<OdosAggregatorTrader> {
+  return await createContractWithAbi<OdosAggregatorTrader>(
+    OdosAggregatorTrader__factory.abi,
+    OdosAggregatorTrader__factory.bytecode,
+    getOdosAggregatorTraderConstructorParams(core),
   );
 }

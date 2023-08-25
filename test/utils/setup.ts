@@ -1,4 +1,4 @@
-import { ApiToken } from '@dolomite-exchange/zap-sdk/dist';
+import { ApiToken, BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk/dist';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
 import * as DolomiteAmmFactoryJson from '@dolomite-margin/deployed-contracts/DolomiteAmmFactory.json';
@@ -92,7 +92,7 @@ import {
   ILiquidatorProxyV3WithLiquidityToken,
   ILiquidatorProxyV3WithLiquidityToken__factory,
   ILiquidatorProxyV4WithGenericTrader,
-  ILiquidatorProxyV4WithGenericTrader__factory,
+  ILiquidatorProxyV4WithGenericTrader__factory, IOdosRouter, IOdosRouter__factory,
   IParaswapAugustusRouter,
   IParaswapAugustusRouter__factory,
   IParaswapFeeClaimer__factory,
@@ -169,7 +169,7 @@ import {
   JONES_WHITELIST_CONTROLLER_MAP,
   LINK_MAP,
   MAGIC_GLP_MAP,
-  MIM_MAP,
+  MIM_MAP, ODOS_ROUTER_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
   PARASWAP_FEE_CLAIMER_MAP,
   PARASWAP_TRANSFER_PROXY_MAP,
@@ -264,6 +264,10 @@ export interface JonesEcosystem {
   };
 }
 
+export interface OdosEcosystem {
+  odosRouter: IOdosRouter;
+}
+
 export interface ParaswapEcosystem {
   augustusRouter: IParaswapAugustusRouter;
   feeClaimer: IParaswapFeeClaimer;
@@ -354,6 +358,7 @@ export interface CoreProtocol {
   liquidatorProxyV2: ILiquidatorProxyV2WithExternalLiquidity | undefined;
   liquidatorProxyV3: ILiquidatorProxyV3WithLiquidityToken | undefined;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
+  odosEcosystem: OdosEcosystem | undefined;
   paraswapEcosystem: ParaswapEcosystem | undefined;
   paraswapTrader: ParaswapAggregatorTrader | undefined;
   pendleEcosystem: PendleEcosystem | undefined;
@@ -573,6 +578,7 @@ export async function setupCoreProtocol(
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
   const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
+  const odosEcosystem = await createOdosEcosystem(config.network, hhUser1);
   const paraswapEcosystem = await createParaswapEcosystem(config.network, hhUser1);
   const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
@@ -607,6 +613,7 @@ export async function setupCoreProtocol(
     hhUser3,
     hhUser4,
     hhUser5,
+    odosEcosystem,
     paraswapEcosystem,
     paraswapTrader,
     pendleEcosystem,
@@ -619,14 +626,14 @@ export async function setupCoreProtocol(
     },
     apiTokens: {
       usdc: {
-        marketId: USDC_MAP[config.network].marketId,
+        marketId: new ZapBigNumber(USDC_MAP[config.network].marketId),
         symbol: 'USDC',
         name: 'USD Coin',
         decimals: 6,
         tokenAddress: USDC_MAP[config.network].address,
       },
       weth: {
-        marketId: WETH_MAP[config.network].marketId,
+        marketId: new ZapBigNumber(WETH_MAP[config.network].marketId),
         symbol: 'WETH',
         name: 'Wrapped Ether',
         decimals: 18,
@@ -842,6 +849,19 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
         IGmxRegistryV1__factory.connect,
       ),
     },
+  };
+}
+
+async function createOdosEcosystem(
+  network: Network,
+  signer: SignerWithAddress,
+): Promise<OdosEcosystem | undefined> {
+  if (!ODOS_ROUTER_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    odosRouter: IOdosRouter__factory.connect(ODOS_ROUTER_MAP[network]!, signer),
   };
 }
 
