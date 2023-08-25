@@ -1,6 +1,6 @@
 {
   "name": "@dolomite-exchange/dolomite-margin-modules",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Repository uses the DolomiteMargin instance on Arbitrum One for testing new modules and features against the live deployment.",
   "directories": {
     "test": "test"
@@ -12,7 +12,7 @@
     "build": "hardhat compile",
     "clean": "hardhat clean",
     "coverage": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/**/!(*Liquidation*|*LiquidatorProxyV2*|*Umami*)*.ts\" --network hardhat",
-    "coverage:specific": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/external/proxies/abstract/IsolationModeTokenVaultV1.ts\" --network hardhat",
+    "coverage:specific": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat coverage --testfiles \"test/external/traders/OdosAggregatorTrader.ts\" --network hardhat",
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy/deploy-atlas-ecosystem.ts",
     "deploy:coveralls": "coveralls < coverage/lcov.info",
@@ -22,6 +22,7 @@
     "deploy:gmx-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-gmx-ecosystem.ts",
     "deploy:stablecoin-interest-setter": "hardhat --network arbitrum_one run scripts/deploy/deploy-stablecoin-interest-setter.ts",
     "deploy:jones-usdc-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-jones-usdc-ecosystem.ts",
+    "deploy:odos-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-odos-ecosystem.ts",
     "deploy:paraswap-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-paraswap-ecosystem.ts",
     "deploy:pendle-pt-glp-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-pendle-pt-glp-ecosystem.ts",
     "deploy:pendle-yt-glp-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-pendle-yt-glp-ecosystem.ts",
@@ -35,7 +36,7 @@
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "sort:contracts": "hardhat --network hardhat run scripts/sort-contract.ts",
     "test": "hardhat --network hardhat test",
-    "test:specific": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/pendle/PendleYtGLP2024IsolationModeLiquidationWithZap.ts",
+    "test:specific": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/traders/OdosAggregatorTrader.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
   "repository": {
