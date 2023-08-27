@@ -1,8 +1,8 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { Network } from '../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../test/utils/setup';
-import { deployContractAndSave, prettyPrintEncodedData } from '../deploy-utils';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../test/utils/setup';
+import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';
 
 async function main() {
   const chainId = (await ethers.provider.getNetwork()).chainId;

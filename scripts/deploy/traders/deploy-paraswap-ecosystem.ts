@@ -1,8 +1,8 @@
 import { ethers } from 'hardhat';
-import { Network } from '../../src/utils/no-deps-constants';
-import { getParaswapAggregatorTraderConstructorParams } from '../../src/utils/constructors/traders';
-import { setupCoreProtocol } from '../../test/utils/setup';
-import { deployContractAndSave } from '../deploy-utils';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { getParaswapAggregatorTraderConstructorParams } from '../../../src/utils/constructors/traders';
+import { setupCoreProtocol } from '../../../test/utils/setup';
+import { deployContractAndSave } from '../../deploy-utils';
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;

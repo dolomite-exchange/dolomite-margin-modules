@@ -16,10 +16,10 @@ import * as LiquidatorProxyV3WithLiquidityTokenJson
 import * as LiquidatorProxyV4WithGenericTraderJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV4WithGenericTrader.json';
 import { address } from '@dolomite-margin/dist/src';
+import { Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
-import { IParaswapFeeClaimer } from 'src/types/contracts/external/interfaces/traders/IParaswapFeeClaimer';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkName } from 'src/utils/no-deps-constants';
 import Deployments from '../../scripts/deployments.json';
 import {
@@ -33,6 +33,8 @@ import {
   GLPIsolationModeWrapperTraderV1__factory,
   IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
+  IChainlinkPriceOracleOld,
+  IChainlinkPriceOracleOld__factory,
   IChainlinkRegistry,
   IChainlinkRegistry__factory,
   IDepositWithdrawalProxy,
@@ -92,9 +94,12 @@ import {
   ILiquidatorProxyV3WithLiquidityToken,
   ILiquidatorProxyV3WithLiquidityToken__factory,
   ILiquidatorProxyV4WithGenericTrader,
-  ILiquidatorProxyV4WithGenericTrader__factory, IOdosRouter, IOdosRouter__factory,
+  ILiquidatorProxyV4WithGenericTrader__factory,
+  IOdosRouter,
+  IOdosRouter__factory,
   IParaswapAugustusRouter,
   IParaswapAugustusRouter__factory,
+  IParaswapFeeClaimer,
   IParaswapFeeClaimer__factory,
   IPendleGLPRegistry,
   IPendleGLPRegistry__factory,
@@ -146,6 +151,7 @@ import {
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
   ATLAS_SI_TOKEN_MAP,
+  CHAINLINK_PRICE_ORACLE_OLD_MAP,
   CHAINLINK_REGISTRY_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
@@ -169,7 +175,9 @@ import {
   JONES_WHITELIST_CONTROLLER_MAP,
   LINK_MAP,
   MAGIC_GLP_MAP,
-  MIM_MAP, ODOS_ROUTER_MAP,
+  MIM_MAP,
+  NATIVE_USDC_MAP,
+  ODOS_ROUTER_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
   PARASWAP_FEE_CLAIMER_MAP,
   PARASWAP_TRANSFER_PROXY_MAP,
@@ -341,6 +349,7 @@ export interface CoreProtocol {
   alwaysZeroInterestSetter: IDolomiteInterestSetter;
   atlasEcosystem: AtlasEcosystem | undefined;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
+  chainlinkPriceOracleOld: IChainlinkPriceOracleOld | undefined;
   chainlinkRegistry: IChainlinkRegistry | undefined;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteAmmFactory: IDolomiteAmmFactory;
@@ -380,6 +389,7 @@ export interface CoreProtocol {
     link: BigNumberish;
     magicGlp: BigNumberish | undefined;
     mim: BigNumberish | undefined;
+    nativeUsdc: BigNumberish | undefined;
     usdc: BigNumberish;
     usdt: BigNumberish | undefined;
     wbtc: BigNumberish;
@@ -392,6 +402,7 @@ export interface CoreProtocol {
   tokens: {
     dfsGlp: IERC20 | undefined;
     link: IERC20;
+    nativeUsdc: IERC20 | undefined;
     usdc: IERC20;
     wbtc: IERC20;
     weth: IWETH;
@@ -486,9 +497,16 @@ export async function setupCoreProtocol(
     governance,
   );
 
+  const chainlinkPriceOracleOld = getContractOpt(
+    CHAINLINK_PRICE_ORACLE_OLD_MAP[config.network],
+    IChainlinkPriceOracleOld__factory.connect,
+    governance,
+  );
+
   const chainlinkRegistry = getContractOpt(
     CHAINLINK_REGISTRY_MAP[config.network],
     IChainlinkRegistry__factory.connect,
+    governance,
   );
 
   const depositWithdrawalProxy = IDepositWithdrawalProxy__factory.connect(
@@ -537,6 +555,7 @@ export async function setupCoreProtocol(
   const genericTraderProxy = getContractOpt(
     (IGenericTraderProxyV1Json.networks as any)[config.network]?.address,
     IGenericTraderProxyV1__factory.connect,
+    governance,
   );
 
   const liquidatorAssetRegistry = ILiquidatorAssetRegistry__factory.connect(
@@ -557,11 +576,13 @@ export async function setupCoreProtocol(
   const liquidatorProxyV2 = getContractOpt(
     (LiquidatorProxyV2WithExternalLiquidityJson.networks as any)[config.network]?.address,
     ILiquidatorProxyV2WithExternalLiquidity__factory.connect,
+    governance,
   );
 
   const liquidatorProxyV3 = getContractOpt(
     (LiquidatorProxyV3WithLiquidityTokenJson.networks as any)[config.network]?.address,
     ILiquidatorProxyV3WithLiquidityToken__factory.connect,
+    governance,
   );
 
   const liquidatorProxyV4 = getContract(
@@ -572,6 +593,7 @@ export async function setupCoreProtocol(
   const paraswapTrader = getContractOpt(
     (Deployments.ParaswapAggregatorTrader as any)[config.network]?.address,
     ParaswapAggregatorTrader__factory.connect,
+    governance,
   );
 
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
@@ -591,6 +613,7 @@ export async function setupCoreProtocol(
     atlasEcosystem,
     borrowPositionProxyV2,
     chainlinkRegistry,
+    chainlinkPriceOracleOld,
     depositWithdrawalProxy,
     dolomiteAmmFactory,
     dolomiteAmmRouterProxy,
@@ -649,6 +672,7 @@ export async function setupCoreProtocol(
       link: LINK_MAP[config.network].marketId,
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       mim: MIM_MAP[config.network]?.marketId,
+      nativeUsdc: NATIVE_USDC_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
       usdt: USDT_MAP[config.network]?.marketId,
       wbtc: WBTC_MAP[config.network].marketId,
@@ -657,6 +681,7 @@ export async function setupCoreProtocol(
     tokens: {
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
       link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
+      nativeUsdc: createIERC20Opt(NATIVE_USDC_MAP[config.network]?.address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
       wbtc: IERC20__factory.connect(WBTC_MAP[config.network].address, hhUser1),
       weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
@@ -1027,10 +1052,11 @@ function getContract<T>(
 function getContractOpt<T>(
   address: string | undefined,
   connector: (address: string, signerOrProvider: any) => T,
+  signerOrProvider: Signer | Provider,
 ): T | undefined {
   if (!address) {
     return undefined;
   }
 
-  return connector(address, undefined);
+  return connector(address, signerOrProvider);
 }

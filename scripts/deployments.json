@@ -13,6 +13,13 @@
       "isVerified": true
     }
   },
+  "ChainlinkPriceOracle": {
+    "42161": {
+      "address": "0x8959a8d7D1B250531D6Fe94cB5d43Edc6d9aF663",
+      "transaction": "0xc4442e10b6977418ffa71d000255d4513eb47f46ab1726984655df172f9ee07c",
+      "isVerified": true
+    }
+  },
   "DolomiteRegistryImplementationV1": {
     "42161": {
       "address": "0x5343C6a56C60e836182bF4B669BC57d9b888199c",

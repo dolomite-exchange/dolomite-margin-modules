@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { IChainlinkAutomationPriceOracle } from "../interfaces/IChainlinkAutomationPriceOracle.sol";
-import { IChainlinkRegistry } from "../interfaces/IChainlinkRegistry.sol";
+import { IChainlinkAutomationPriceOracle } from "../interfaces/chainlink/IChainlinkAutomationPriceOracle.sol";
+import { IChainlinkRegistry } from "../interfaces/chainlink/IChainlinkRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 
 

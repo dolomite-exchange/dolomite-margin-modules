@@ -6,17 +6,17 @@ import {
   PendlePtGLP2024IsolationModeUnwrapperTraderV2__factory,
   PendlePtGLP2024IsolationModeVaultFactory__factory,
   PendlePtGLP2024IsolationModeWrapperTraderV2__factory,
-} from '../../src/types';
+} from '../../../src/types';
 import {
   getPendleGLPRegistryConstructorParams,
   getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams,
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendlePtGLPPriceOracleConstructorParams,
-} from '../../src/utils/constructors/pendle';
-import { Network, TEN_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../test/utils/setup';
-import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../deploy-utils';
+} from '../../../src/utils/constructors/pendle';
+import { Network, TEN_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../test/utils/setup';
+import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../deploy-utils';
 
 async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;

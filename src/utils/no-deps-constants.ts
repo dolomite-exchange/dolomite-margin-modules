@@ -24,13 +24,15 @@ export const NETWORK_ID: Network = Network[typedNetworkIdString as keyof typeof 
 export const NO_EXPIRY = BigNumber.from('0');
 
 export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
-  [Network.ArbitrumOne]: 114200000,
-  [Network.ArbitrumGoerli]: 14700000,
+  [Network.ArbitrumOne]: 114_200_000,
+  [Network.ArbitrumGoerli]: 14_700_000,
 };
 
 export const DEFAULT_BLOCK_NUMBER = NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[NETWORK_ID];
 
-export const ONE_WEEK_SECONDS = 604800;
+export const ONE_DAY_SECONDS = 86_400;
+
+export const ONE_WEEK_SECONDS = 604_800;
 
 export const BYTES_EMPTY = '0x';
 export const BYTES_ZERO = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -43,6 +45,7 @@ export const ONE_ETH_BI = BigNumber.from('1000000000000000000');
 
 export const TEN_BI = BigNumber.from('10');
 
+export const MAX_INT_192_BI = BigNumber.from('0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
 export const MAX_UINT_256_BI = BigNumber.from('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
 
 export const LIQUIDATE_ALL = MAX_UINT_256_BI;

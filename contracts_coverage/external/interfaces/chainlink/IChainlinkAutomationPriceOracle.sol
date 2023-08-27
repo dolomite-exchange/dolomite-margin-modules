@@ -21,8 +21,8 @@
 pragma solidity ^0.8.9;
 
 import { IChainlinkAutomation } from "./IChainlinkAutomation.sol";
-import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
-import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IOnlyDolomiteMargin } from "../IOnlyDolomiteMargin.sol";
+import { IDolomitePriceOracle } from "../../../protocol/interfaces/IDolomitePriceOracle.sol";
 
 
 /**
