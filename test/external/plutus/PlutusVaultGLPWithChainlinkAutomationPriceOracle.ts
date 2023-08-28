@@ -59,7 +59,7 @@ describe('PlutusVaultGLPWithChainlinkAutomationPriceOracle', () => {
     const network = Network.ArbitrumOne;
     const blockNumber = await getRealLatestBlockNumber(true, network);
     core = await setupCoreProtocol({ blockNumber, network });
-    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[network], true);
+    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[network]!, true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
     await core.testEcosystem!.testPriceOracle!.setPrice(core.tokens.dfsGlp!.address, GLP_PRICE);
@@ -179,19 +179,19 @@ describe('PlutusVaultGLPWithChainlinkAutomationPriceOracle', () => {
     it('fails when token sent is not dplvGLP', async () => {
       await expectThrow(
         plvGlpPriceOracle.getPrice(ADDRESSES.ZERO),
-        `PlvWithChainlinkPriceOracle: Invalid token <${ADDRESSES.ZERO}>`,
+        `PlvGLPWithChainlinkPriceOracle: Invalid token <${ADDRESSES.ZERO}>`,
       );
       await expectThrow(
         plvGlpPriceOracle.getPrice(core.gmxEcosystem!.fsGlp.address),
-        `PlvWithChainlinkPriceOracle: Invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`,
+        `PlvGLPWithChainlinkPriceOracle: Invalid token <${core.gmxEcosystem!.fsGlp.address.toLowerCase()}>`,
       );
       await expectThrow(
         plvGlpPriceOracle.getPrice(core.tokens.dfsGlp!.address),
-        `PlvWithChainlinkPriceOracle: Invalid token <${(core.tokens.dfsGlp!.address).toLowerCase()}>`,
+        `PlvGLPWithChainlinkPriceOracle: Invalid token <${(core.tokens.dfsGlp!.address).toLowerCase()}>`,
       );
       await expectThrow(
         plvGlpPriceOracle.getPrice(core.gmxEcosystem!.glp.address),
-        `PlvWithChainlinkPriceOracle: Invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`,
+        `PlvGLPWithChainlinkPriceOracle: Invalid token <${core.gmxEcosystem!.glp.address.toLowerCase()}>`,
       );
     });
 
@@ -199,12 +199,12 @@ describe('PlutusVaultGLPWithChainlinkAutomationPriceOracle', () => {
       await core.dolomiteMargin.ownerSetIsClosing(core.marketIds.dplvGlp!, false);
       await expectThrow(
         plvGlpPriceOracle.getPrice(factory.address),
-        'PlvWithChainlinkPriceOracle: plvGLP cannot be borrowable',
+        'PlvGLPWithChainlinkPriceOracle: plvGLP cannot be borrowable',
       );
     });
 
     it('fails when price has expired', async () => {
-      await increase(12 * 3600);
+      await increase(24 * 3600);
       await plvGlpPriceOracle.getPrice(factory.address);
 
       await increase(3600);
@@ -224,7 +224,7 @@ describe('PlutusVaultGLPWithChainlinkAutomationPriceOracle', () => {
 
   describe('#performUpkeep', async () => {
     it('works normally', async () => {
-      await increase(11 * 3600);
+      await increase(23 * 3600);
       await expectThrow(
         plvGlpPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
         'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',

@@ -1,22 +1,22 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import {
+  PlutusVaultGLPIsolationModeTokenVaultV1__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory,
   PlutusVaultGLPIsolationModeVaultFactory__factory,
-  PlutusVaultGLPIsolationModeTokenVaultV1__factory,
   PlutusVaultGLPIsolationModeWrapperTraderV1__factory,
   PlutusVaultRegistry__factory,
 } from '../../src/types';
-import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../test/utils/setup';
 import {
   getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
-  getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams,
   getPlutusVaultGLPIsolationModeVaultFactoryConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
+  getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../../src/utils/constructors/plutus';
+import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../deploy-utils';
 
 async function main() {

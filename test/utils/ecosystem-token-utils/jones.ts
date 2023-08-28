@@ -85,7 +85,6 @@ export async function createJonesUSDCWithChainlinkAutomationPriceOracle(
     JonesUSDCWithChainlinkAutomationPriceOracle__factory.bytecode,
     getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams(
       core,
-      core.chainlinkRegistry!,
       jonesUSDCRegistry,
       djUSDCToken,
     ),

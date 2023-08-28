@@ -1,18 +1,18 @@
 import { ethers } from 'hardhat';
-import { Network } from '../../src/utils/no-deps-constants';
 import {
-  GLPPriceOracleV1,
   GLPIsolationModeTokenVaultV1__factory,
+  GLPPriceOracleV1,
   IGLPIsolationModeVaultFactory__factory,
   IGmxRegistryV1__factory,
 } from '../../src/types';
 import {
+  getGLPIsolationModeVaultFactoryConstructorParams,
   getGLPPriceOracleV1ConstructorParams,
   getGLPUnwrapperTraderV1ConstructorParams,
-  getGLPIsolationModeVaultFactoryConstructorParams,
   getGLPWrapperTraderV1ConstructorParams,
   getGmxRegistryConstructorParams,
 } from '../../src/utils/constructors/gmx';
+import { Network } from '../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave } from '../deploy-utils';
 

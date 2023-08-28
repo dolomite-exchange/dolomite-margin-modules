@@ -1,6 +1,5 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { ethers } from 'hardhat';
-import { Network } from '../../../src/utils/no-deps-constants';
 import {
   DolomiteRegistryImplementation,
   GmxRegistryV1__factory,
@@ -43,6 +42,7 @@ import {
   getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../../../src/utils/constructors/plutus';
+import { Network } from '../../../src/utils/no-deps-constants';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';
 

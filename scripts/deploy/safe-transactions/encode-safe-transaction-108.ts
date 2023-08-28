@@ -1,4 +1,3 @@
-import { BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
 import { getChainlinkPriceOracleParams } from '../../../src/utils/constructors/oracles';
 import { Network } from '../../../src/utils/no-deps-constants';

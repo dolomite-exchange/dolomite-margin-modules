@@ -21,12 +21,11 @@
 pragma solidity ^0.8.9;
 
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-
 import { Require } from "../../protocol/lib/Require.sol";
-
 import { IPendleGLPRegistry } from "../interfaces/pendle/IPendleGLPRegistry.sol";
 
 
@@ -96,8 +95,9 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
             "ytGLP cannot be borrowable"
         );
 
+        // disallow the number to be `0` since it will cause DolomiteMargin to throw an error
         return IDolomiteStructs.MonetaryPrice({
-            value: _getCurrentPrice()
+            value: Math.max(_getCurrentPrice(), 1)
         });
     }
 

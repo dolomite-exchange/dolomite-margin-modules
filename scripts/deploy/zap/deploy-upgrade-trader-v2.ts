@@ -1,5 +1,4 @@
 import { ethers } from 'hardhat';
-import { Network } from '../../../src/utils/no-deps-constants';
 import {
   getMagicGLPUnwrapperTraderV2ConstructorParams,
   getMagicGLPWrapperTraderV2ConstructorParams,
@@ -12,6 +11,7 @@ import {
   getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/plutus';
+import { Network } from '../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';
 
@@ -33,7 +33,7 @@ async function main() {
   const glpTokenVaultAddress = await deployContractAndSave(
     Number(network),
     'GLPIsolationModeTokenVaultV1',
-    []
+    [],
   );
   const glpUnwrapperV2Address = await deployContractAndSave(
     Number(network),
@@ -57,7 +57,7 @@ async function main() {
   const plvGlpTokenVaultAddress = await deployContractAndSave(
     Number(network),
     'PlutusVaultGLPIsolationModeTokenVaultV1',
-    []
+    [],
   );
   const plvGlpUnwrapperV2Address = await deployContractAndSave(
     Number(network),

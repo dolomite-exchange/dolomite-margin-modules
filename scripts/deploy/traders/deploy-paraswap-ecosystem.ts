@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
-import { Network } from '../../../src/utils/no-deps-constants';
 import { getParaswapAggregatorTraderConstructorParams } from '../../../src/utils/constructors/traders';
+import { Network } from '../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../test/utils/setup';
 import { deployContractAndSave } from '../../deploy-utils';
 

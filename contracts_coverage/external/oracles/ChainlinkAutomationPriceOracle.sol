@@ -59,7 +59,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         address _dolomiteMargin,
         address _chainlinkRegistry
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        _ownerSetHeartbeat(12 hours);
+        _ownerSetHeartbeat(24 hours);
         _ownerSetGracePeriod(1 hours);
         _ownerSetUpperEdge(10_025);
         _ownerSetLowerEdge(9_975);

@@ -1,4 +1,3 @@
-import { BigNumberish } from 'ethers';
 import { ethers } from 'hardhat';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../test/utils/setup';

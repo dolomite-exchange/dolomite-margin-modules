@@ -1,11 +1,11 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import {
   getMagicGLPPriceOracleConstructorParams,
   getMagicGLPUnwrapperTraderV1ConstructorParams,
   getMagicGLPWrapperTraderV1ConstructorParams,
 } from '../../src/utils/constructors/abracadabra';
+import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../deploy-utils';
 

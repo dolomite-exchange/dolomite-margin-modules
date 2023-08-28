@@ -8,7 +8,6 @@ import {
   JonesUSDCIsolationModeWrapperTraderV2__factory,
   JonesUSDCRegistry__factory,
 } from '../../src/types';
-import { Network, TEN_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams,
   getJonesUSDCIsolationModeVaultFactoryConstructorParams,
@@ -16,6 +15,7 @@ import {
   getJonesUSDCPriceOracleConstructorParams,
   getJonesUSDCRegistryConstructorParams,
 } from '../../src/utils/constructors/jones';
+import { Network, TEN_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../deploy-utils';
 

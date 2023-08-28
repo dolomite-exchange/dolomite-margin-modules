@@ -16,7 +16,7 @@ async function main() {
     chainId,
     'LinearStepFunctionInterestSetter',
     [lowerOptimal, upperOptimal],
-    `Stablecoin${lower}L${upper}ULinearStepFunctionInterestSetter`
+    `Stablecoin${lower}L${upper}ULinearStepFunctionInterestSetter`,
   );
 
   await prettyPrintEncodedData(

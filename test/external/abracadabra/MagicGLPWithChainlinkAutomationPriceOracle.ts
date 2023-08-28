@@ -59,8 +59,8 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
     await setupTestMarket(core, magicGlpWithNoTotalSupply, true, magicGLPWithChainlinkAutomationPriceOracleNoSupply);
 
     // Do this just to reset time for heartbeat and grace period tests
-    await increase(12 * 3600);
-    chainlinkRegistryImpersonated = await impersonate(core.chainlinkRegistry!.address);
+    await increase(24 * 3600);
+    chainlinkRegistryImpersonated = await impersonate(core.chainlinkRegistry!.address, true);
     await magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistryImpersonated).performUpkeep('0x');
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
@@ -147,7 +147,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
     });
 
     it('fails when price has expired', async () => {
-      await increase(12 * 3600);
+      await increase(24 * 3600);
       await magicGLPWithChainlinkAutomationPriceOracle.getPrice(magicGlp.address);
 
       await increase(3600);
@@ -167,7 +167,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
 
   describe('#performUpkeep', () => {
     it('works normally', async () => {
-      await increase(11 * 3600);
+      await increase(23 * 3600);
       await expectThrow(
         magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistryImpersonated).performUpkeep('0x'),
         'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',

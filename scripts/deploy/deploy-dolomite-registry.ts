@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
-import { Network } from '../../src/utils/no-deps-constants';
 import { DolomiteRegistryImplementation__factory } from '../../src/types';
 import { getRegistryProxyConstructorParams } from '../../src/utils/constructors/dolomite';
+import { Network } from '../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave } from '../deploy-utils';
 

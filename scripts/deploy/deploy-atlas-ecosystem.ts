@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
-import { Network } from '../../src/utils/no-deps-constants';
 import { ATLAS_SI_TOKEN_MAP } from '../../src/utils/constants';
+import { Network } from '../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave } from '../deploy-utils';
 

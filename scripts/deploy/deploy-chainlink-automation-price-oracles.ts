@@ -3,7 +3,9 @@ import {
   getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams,
 } from '../../src/utils/constructors/abracadabra';
 import { getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams } from '../../src/utils/constructors/jones';
-import { getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams } from '../../src/utils/constructors/plutus';
+import {
+  getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
+} from '../../src/utils/constructors/plutus';
 import { Network } from '../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../deploy-utils';
