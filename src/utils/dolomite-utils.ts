@@ -10,7 +10,7 @@ import {
   CustomTestVaultToken__factory,
 } from '../types';
 import { ActionArgsStruct } from './index';
-import { MAX_UINT_256_BI } from './no-deps-constants';
+import { MAX_UINT_256_BI, Network, networkToNetworkNameMap } from './no-deps-constants';
 
 /**
  * @return  The deployed contract
@@ -156,4 +156,29 @@ export function heldWeiToOwedWei(
   owedPrice: BigNumber,
 ): BigNumber {
   return getPartialRoundUp(heldWei, heldPrice, owedPrice);
+}
+
+const NETWORK_TO_VALID_MAP: Record<Network, boolean> = {
+  [Network.ArbitrumOne]: true,
+  [Network.ArbitrumGoerli]: true,
+};
+
+export async function getAnyNetwork(): Promise<Network> {
+  const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
+  if (!NETWORK_TO_VALID_MAP[network]) {
+    return Promise.reject(new Error(`Invalid network, found ${network}`));
+  }
+
+  return network;
+}
+
+export async function getAndCheckSpecificNetwork<T extends Network>(networkInvariant: T): Promise<T> {
+  const network = (await ethers.provider.getNetwork()).chainId.toString();
+  if (network !== networkInvariant) {
+    return Promise.reject(new Error(
+      `This script can only be run on ${networkInvariant} (${networkToNetworkNameMap[networkInvariant]})`,
+    ));
+  }
+
+  return networkInvariant;
 }

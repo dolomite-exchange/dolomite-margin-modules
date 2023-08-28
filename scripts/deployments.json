@@ -337,8 +337,8 @@
   },
   "PendleYtGLPPriceOracle": {
     "42161": {
-      "address": "0x0Ebd3BEF480b62493048233d05F922E7Ad968fAe",
-      "transaction": "0x5314de5bb0dd7a70e87931bb3092b16fb5c16c3fa3c38f58ab9a467526bd6bb1",
+      "address": "0xB1d583D7112Bd7eFeC095d72c45c59C8EA818c9B",
+      "transaction": "0x46bd79bed7aee4b4609e58547a6dd2e4c8923653c00b7d6568b20e3e160007e3",
       "isVerified": true
     }
   },

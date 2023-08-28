@@ -157,7 +157,7 @@ import {
   DFS_GLP_MAP,
   DJ_USDC,
   DPLV_GLP_MAP,
-  DPT_GLP_MAP,
+  DPT_GLP_2024_MAP, DYT_GLP_2024_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
   ES_GMX_MAP,
   FS_GLP_MAP,
@@ -386,6 +386,7 @@ export interface CoreProtocol {
     djUSDC: BigNumberish | undefined;
     dplvGlp: BigNumberish | undefined;
     dPtGlp: BigNumberish | undefined;
+    dYtGlp: BigNumberish | undefined;
     link: BigNumberish;
     magicGlp: BigNumberish | undefined;
     mim: BigNumberish | undefined;
@@ -401,6 +402,8 @@ export interface CoreProtocol {
   };
   tokens: {
     dfsGlp: IERC20 | undefined;
+    dPtGlp: IERC20 | undefined;
+    dYtGlp: IERC20 | undefined;
     link: IERC20;
     nativeUsdc: IERC20 | undefined;
     usdc: IERC20;
@@ -668,7 +671,8 @@ export async function setupCoreProtocol(
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
       djUSDC: DJ_USDC[config.network]?.marketId,
       dplvGlp: DPLV_GLP_MAP[config.network]?.marketId,
-      dPtGlp: DPT_GLP_MAP[config.network]?.marketId,
+      dPtGlp: DPT_GLP_2024_MAP[config.network]?.marketId,
+      dYtGlp: DYT_GLP_2024_MAP[config.network]?.marketId,
       link: LINK_MAP[config.network].marketId,
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       mim: MIM_MAP[config.network]?.marketId,
@@ -680,6 +684,8 @@ export async function setupCoreProtocol(
     },
     tokens: {
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
+      dPtGlp: createIERC20Opt(DPT_GLP_2024_MAP[config.network]?.address, hhUser1),
+      dYtGlp: createIERC20Opt(DYT_GLP_2024_MAP[config.network]?.address, hhUser1),
       link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
       nativeUsdc: createIERC20Opt(NATIVE_USDC_MAP[config.network]?.address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),

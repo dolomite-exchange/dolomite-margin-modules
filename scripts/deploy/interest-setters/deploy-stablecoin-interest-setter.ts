@@ -1,19 +1,18 @@
 import { BigNumber } from 'ethers';
-import { ethers } from 'hardhat';
-import { Network } from '../../../src/utils/no-deps-constants';
+import { getAnyNetwork } from '../../../src/utils/dolomite-utils';
 import { setupCoreProtocol } from '../../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';
 
 async function main() {
-  const chainId = (await ethers.provider.getNetwork()).chainId;
-  const core = await setupCoreProtocol({ network: chainId.toString() as Network, blockNumber: 0 });
+  const network = await getAnyNetwork();
+  const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const lowerOptimal = BigNumber.from('80000000000000000');
   const upperOptimal = BigNumber.from('920000000000000000');
   const lower = lowerOptimal.toString().match(/^([1-9]+)/)![0];
   const upper = upperOptimal.toString().match(/^([1-9]+)/)![0];
   const stablecoinLinearInterestSetter = await deployContractAndSave(
-    chainId,
+    Number(network),
     'LinearStepFunctionInterestSetter',
     [lowerOptimal, upperOptimal],
     `Stablecoin${lower}L${upper}ULinearStepFunctionInterestSetter`,

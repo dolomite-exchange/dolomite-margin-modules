@@ -22,10 +22,21 @@ async function main() {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
+  const pendleRegistryImplementationAddress = await deployContractAndSave(
+    Number(network),
+    'PendleGLPRegistry',
+    [],
+    'PendleGLP2024RegistryV1Implementation',
+  );
+  const pendleRegistryImplementation = PendleGLPRegistry__factory.connect(
+    pendleRegistryImplementationAddress,
+    core.hhUser1,
+  );
   const pendleRegistryAddress = await deployContractAndSave(
     Number(network),
-    'PendlePtGLP2024Registry',
-    await getPendleGLPRegistryConstructorParams(core),
+    'RegistryProxy',
+    await getPendleGLPRegistryConstructorParams(pendleRegistryImplementation, core),
+    'PendleGLP2024RegistryProxy',
   );
   const pendleRegistry = PendleGLPRegistry__factory.connect(pendleRegistryAddress, core.hhUser1);
 

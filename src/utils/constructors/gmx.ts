@@ -89,8 +89,8 @@ export function getGLPWrapperTraderV2ConstructorParams(
 }
 
 export async function getGmxRegistryConstructorParams(
-  core: CoreProtocol,
   implementation: GmxRegistryV1,
+  core: CoreProtocol,
 ): Promise<any[]> {
   if (!core.gmxEcosystem) {
     throw new Error('GMX ecosystem not initialized');

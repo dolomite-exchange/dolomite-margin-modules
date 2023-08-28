@@ -1,10 +1,10 @@
 import { BigNumber } from 'ethers';
-import { ethers } from 'hardhat';
-import { IDolomiteInterestSetter__factory, IDolomitePriceOracle__factory } from '../../../src/types';
-import { getOwnerAddMarketParameters } from '../../../src/utils/constructors/dolomite';
-import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../test/utils/setup';
-import { prettyPrintEncodedDataWithTypeSafety } from '../../deploy-utils';
+import { IDolomiteInterestSetter__factory, IDolomitePriceOracle__factory } from '../../../../src/types';
+import { getOwnerAddMarketParameters } from '../../../../src/utils/constructors/dolomite';
+import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
+import { Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../../test/utils/setup';
+import { prettyPrintEncodedDataWithTypeSafety } from '../../../deploy-utils';
 
 /**
  * This script encodes the following transactions:
@@ -12,7 +12,7 @@ import { prettyPrintEncodedDataWithTypeSafety } from '../../deploy-utils';
  * - Increases the PT-GLP supply cap to 1M units
  */
 async function main() {
-  const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
+  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
   const usdcPriceOracle = IDolomitePriceOracle__factory.connect(
     await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.usdc),

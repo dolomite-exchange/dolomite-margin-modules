@@ -5,12 +5,13 @@ import {
   getMagicGLPUnwrapperTraderV1ConstructorParams,
   getMagicGLPWrapperTraderV1ConstructorParams,
 } from '../../src/utils/constructors/abracadabra';
+import { getAndCheckSpecificNetwork } from '../../src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../deploy-utils';
 
 async function main() {
-  const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
+  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
   const magicGlpPriceOracle = await deployContractAndSave(
     Number(network),

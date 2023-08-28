@@ -58,10 +58,18 @@ export const DPLV_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
-export const DPT_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
+export const DPT_GLP_2024_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x7b07E78561a3C2C1Eade652A2a92Da150743F4D7',
     marketId: 11,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const DYT_GLP_2024_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x851729Df6C39BDB6E92721f2ADf750023D967eE8',
+    marketId: 16,
   },
   [Network.ArbitrumGoerli]: undefined,
 };

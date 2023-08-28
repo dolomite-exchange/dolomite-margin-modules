@@ -122,7 +122,7 @@ export async function createGmxRegistry(core: CoreProtocol): Promise<GmxRegistry
   const proxy = await createContractWithAbi<RegistryProxy>(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    await getGmxRegistryConstructorParams(core, implementation),
+    await getGmxRegistryConstructorParams(implementation, core),
   );
   return GmxRegistryV1__factory.connect(proxy.address, core.hhUser1);
 }

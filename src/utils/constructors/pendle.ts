@@ -33,8 +33,8 @@ export function getPendlePtGLPPriceOracleConstructorParams(
 }
 
 export async function getPendleGLPRegistryConstructorParams(
-  core: CoreProtocol,
   implementation: PendleGLPRegistry,
+  core: CoreProtocol,
 ): Promise<any[]> {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');

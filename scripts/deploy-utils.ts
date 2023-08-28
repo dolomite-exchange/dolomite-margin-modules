@@ -124,29 +124,49 @@ export async function prettyPrintEncodedData(
 const numMarketsKey = 'numMarkets';
 const marketIdToMarketNameCache: Record<string, string | undefined> = {};
 
-async function getMarketName(core: CoreProtocol, marketId: BigNumberish): Promise<string> {
+async function getFormattedMarketName(core: CoreProtocol, marketId: BigNumberish): Promise<string> {
   let cachedNumMarkets = marketIdToMarketNameCache[numMarketsKey];
   if (!cachedNumMarkets) {
     cachedNumMarkets = (await core.dolomiteMargin.getNumMarkets()).toString();
     marketIdToMarketNameCache[cachedNumMarkets] = cachedNumMarkets;
   }
   if (BigNumber.from(marketId).gte(cachedNumMarkets)) {
-    return 'Unknown';
+    return '(Unknown)';
   }
 
   const cachedName = marketIdToMarketNameCache[marketId.toString()];
-  if (cachedName) {
+  if (typeof cachedName !== 'undefined') {
     return cachedName;
   }
   const tokenAddress = await core.dolomiteMargin.getMarketTokenAddress(marketId);
-  const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
-  const marketName = await token.symbol();
+  const marketName = await getFormattedTokenName(core, tokenAddress);
   marketIdToMarketNameCache[marketId.toString()] = marketName;
   return marketName;
 }
 
+const tokenAddressToMarketNameCache: Record<string, string | undefined> = {};
+
+async function getFormattedTokenName(core: CoreProtocol, tokenAddress: string): Promise<string> {
+  const cachedName = tokenAddressToMarketNameCache[tokenAddress.toLowerCase()];
+  if (typeof cachedName !== 'undefined') {
+    return cachedName;
+  }
+  const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
+  try {
+    tokenAddressToMarketNameCache[tokenAddress.toLowerCase()] = `(${await token.symbol()})`;
+    return tokenAddressToMarketNameCache[tokenAddress.toLowerCase()]!;
+  } catch (e) {
+    tokenAddressToMarketNameCache[tokenAddress.toLowerCase()] = '';
+    return '';
+  }
+}
+
 function isMarketIdParam(paramType: ParamType): boolean {
   return paramType.name.includes('marketId') || paramType.name.includes('MarketId');
+}
+
+function isTokenParam(paramType: ParamType): boolean {
+  return paramType.name.includes('token') || paramType.name.includes('Token');
 }
 
 export async function prettyPrintEncodedDataWithTypeSafety<
@@ -169,7 +189,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     const formattedInputParamName = inputParam.format(FormatTypes.full);
     if (BigNumber.isBigNumber(arg)) {
       if (isMarketIdParam(inputParam)) {
-        return `${formattedInputParamName} = ${arg.toString()} (${await getMarketName(core, arg)})`;
+        return `${formattedInputParamName} = ${arg.toString()} ${await getFormattedMarketName(core, arg)}`;
       }
       return `${formattedInputParamName} = ${arg.toString()}`;
     }
@@ -177,7 +197,13 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     if (Array.isArray(arg)) {
       if (isMarketIdParam(inputParam)) {
         const formattedArgs = await Promise.all(arg.map(async marketId => {
-          return `${marketId} (${await getMarketName(core, marketId)})`;
+          return `${marketId} ${await getFormattedMarketName(core, marketId)}`;
+        }));
+        return `${formattedInputParamName} = [\n\t\t\t\t${formattedArgs.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
+      }
+      if (isTokenParam(inputParam)) {
+        const formattedArgs = await Promise.all(arg.map(async tokenAddress => {
+          return `${tokenAddress} ${await getFormattedTokenName(core, tokenAddress)}`;
         }));
         return `${formattedInputParamName} = [\n\t\t\t\t${formattedArgs.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
       }
@@ -191,7 +217,14 @@ export async function prettyPrintEncodedDataWithTypeSafety<
       const values = Object.keys(arg).reduce<string[]>((memo, key, j) => {
         const component = fragment.inputs[i].components[j];
         const name = component.format(FormatTypes.full);
-        const value = BigNumber.isBigNumber(arg[key]) ? arg[key].toString() : arg[key];
+        let value: string;
+        if (isMarketIdParam(component)) {
+          value = `${arg[key].toString()} ${getFormattedMarketName(core, arg[key])}`;
+        } else if (isTokenParam(component)) {
+          value = `${arg[key]} ${getFormattedTokenName(core, arg[key])}`;
+        } else {
+          value = arg[key];
+        }
         memo.push(`${name} = ${value}`);
         return memo;
       }, []);
@@ -199,7 +232,10 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     }
 
     if (isMarketIdParam(inputParam)) {
-      return `${formattedInputParamName} = ${arg} (${await getMarketName(core, arg)})`;
+      return `${formattedInputParamName} = ${arg} ${await getFormattedMarketName(core, arg)}`;
+    }
+    if (isTokenParam(inputParam)) {
+      return `${formattedInputParamName} = ${arg} ${await getFormattedTokenName(core, arg)}`;
     }
 
     return `${formattedInputParamName} = ${arg}`;
