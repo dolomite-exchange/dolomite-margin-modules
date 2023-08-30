@@ -26,12 +26,12 @@ import {
 } from '../../utils/assertions';
 import { setExpiry } from '../../utils/expiry-utils';
 import {
-  checkForParaswapSuccess,
   getLastZapAmountToBigNumber,
   liquidateV4WithZap,
   toZapBigNumber,
 } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
+import { checkForParaswapSuccess } from '../../utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

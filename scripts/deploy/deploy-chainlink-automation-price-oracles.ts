@@ -1,15 +1,17 @@
-import { ethers } from 'hardhat';
 import {
   getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams,
 } from '../../src/utils/constructors/abracadabra';
 import { getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams } from '../../src/utils/constructors/jones';
-import { getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams } from '../../src/utils/constructors/plutus';
+import {
+  getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
+} from '../../src/utils/constructors/plutus';
+import { getAndCheckSpecificNetwork } from '../../src/utils/dolomite-utils';
 import { Network } from '../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../deploy-utils';
 
 async function main() {
-  const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
+  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const magicGLPWithChainlinkAutomationPriceOracle = await deployContractAndSave(

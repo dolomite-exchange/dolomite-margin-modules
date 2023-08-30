@@ -16,8 +16,8 @@ import {
   createMagicGLPUnwrapperTraderV1,
 } from '../../utils/ecosystem-token-utils/abracadabra';
 import { setExpiry } from '../../utils/expiry-utils';
-import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

@@ -291,10 +291,10 @@
     enabled "2.0.x"
     kuler "^2.0.0"
 
-"@dolomite-exchange/dolomite-margin-modules@0.0.5":
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin-modules/-/dolomite-margin-modules-0.0.5.tgz#813920807c920d979b2296edb327f2bb2c376876"
-  integrity sha512-SR8Py4aumBSk1JsSSv1TwsKrVziulsSS5vUzuz+HgIPOvTSxgv63VhnW2S2dblpwtFA9doPyjLPbKht2zJ6xNQ==
+"@dolomite-exchange/dolomite-margin-modules@0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/dolomite-margin-modules/-/dolomite-margin-modules-0.0.7.tgz#0fbcebf29f6a021ba529cebf00f9028a1e15744d"
+  integrity sha512-3aB/xzBjqJJE72e43pibz1lOas9UMN73vW1zmmiKMC8BinRx4GIqXA75u8CDeS/PoCzrsaUz6M4MQAvt8m/WLQ==
 
 "@dolomite-exchange/dolomite-margin@^0.9.29":
   version "0.9.29"
@@ -313,13 +313,13 @@
     query-string "^6.9.0"
     web3 "1.2.1"
 
-"@dolomite-exchange/zap-sdk@^0.1.5":
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/@dolomite-exchange/zap-sdk/-/zap-sdk-0.1.5.tgz#fa1aaf34d28692bc5c1a1ecb8133773f82481c0d"
-  integrity sha512-qdBB4xLkbRUA2/F9tqPAtCxM6a/8B4JVLOUVliMRtyZIND6T+zPR1kmKqAeSC5FIzj+SVKvszQjRzkEpM2ZuoQ==
+"@dolomite-exchange/zap-sdk@^0.1.24":
+  version "0.1.24"
+  resolved "https://registry.yarnpkg.com/@dolomite-exchange/zap-sdk/-/zap-sdk-0.1.24.tgz#3d65ffee9a3e433e6f64ce90dc482551b54b2d6a"
+  integrity sha512-QOket3GbRzGIWsCnBeOi+9HLwkmfAHkpQ2S6AkPYROVcw16i3WUb//0BPTY5tzvDYUanxNg16sVOV7YrrrCBbA==
   dependencies:
-    "@dolomite-exchange/dolomite-margin-modules" "0.0.5"
-    "@pendle/sdk-v2" "^2.3.4"
+    "@dolomite-exchange/dolomite-margin-modules" "0.0.7"
+    "@pendle/sdk-v2" "^2.6.0"
     axios "^1.1.3"
     bignumber.js "^9.1.1"
     dotenv-flow "^0.4.0"
@@ -1946,21 +1946,21 @@
     "@openzeppelin/contracts" "4.7.3"
     "@openzeppelin/contracts-upgradeable" "4.7.3"
 
-"@pendle/core-v2@2.15.2":
-  version "2.15.2"
-  resolved "https://registry.yarnpkg.com/@pendle/core-v2/-/core-v2-2.15.2.tgz#f568a143406c9c8af9d9a5ef898e7fd9b7f261d1"
-  integrity sha512-1ueSP72xFDIY6lV495oamPZcQEp+0wHrjRN0Xp+h1EhgAR+iMDSx3AYkxF2h4zudvJvLv+lKGbuvbgXNtJ/IIw==
+"@pendle/core-v2@2.26.1":
+  version "2.26.1"
+  resolved "https://registry.yarnpkg.com/@pendle/core-v2/-/core-v2-2.26.1.tgz#10553d874369e69bb2cb4ca5b707ea13a57bebad"
+  integrity sha512-3y4qTxlKuUSHJbsidf0MrT7Q0I9ve+32UJgkmcmjfODnatMpdm6FxBGu7X+ddz1qzM3AUbnhYMpPbOPhxb14yA==
   dependencies:
     "@chainlink/contracts" "^0.6.1"
     "@openzeppelin/contracts" "4.7.3"
     "@openzeppelin/contracts-upgradeable" "4.7.3"
 
-"@pendle/sdk-v2@^2.3.4":
-  version "2.3.4"
-  resolved "https://registry.yarnpkg.com/@pendle/sdk-v2/-/sdk-v2-2.3.4.tgz#ea6e8c978d7fd5fd669f4f8e398aebb23fd4cc69"
-  integrity sha512-cwi8s4jOon/RnV1kFIaF/ZnYfn/I9BIPiJf6PiAXzYFCOeP7oN0NXZQrq0fPB5WDx/Hv8SFVRm+hz8sjKHr8WQ==
+"@pendle/sdk-v2@^2.6.0":
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/@pendle/sdk-v2/-/sdk-v2-2.6.0.tgz#80798e99956b4d93b189a29d73d0cd9f9201d698"
+  integrity sha512-rw335h0ijXCU0Fs4xae6Q7DyHHwFCVMU83yT+QB10bx5Xqq5eG+puH2ZuQj8/vKHWoy9k4ffeUqoVBVeo+c4CQ==
   dependencies:
-    "@pendle/core-v2" "2.15.2"
+    "@pendle/core-v2" "2.26.1"
     "@pendle/core-v2-for-legacy-fee-distributor" "npm:@pendle/core-v2@2.9.0-mainnet"
     axios "^0.27.2"
     bignumber.js "^9.1.0"
@@ -1968,6 +1968,7 @@
     merkletreejs "^0.3.10"
     ts-essentials "^9.3.1"
     tslib "^2.5.0"
+    ulid "^2.3.0"
 
 "@resolver-engine/core@^0.2.1":
   version "0.2.1"
@@ -9217,6 +9218,11 @@ uglify-js@^3.1.4:
   version "3.17.4"
   resolved "https://registry.yarnpkg.com/uglify-js/-/uglify-js-3.17.4.tgz#61678cf5fa3f5b7eb789bb345df29afb8257c22c"
   integrity sha512-T9q82TJI9e/C1TAxYvfb16xO120tMVFZrGA3f9/P4424DNu6ypK103y0GPFVa17yotwSyZW5iYXgjYHkGrJW/g==
+
+ulid@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/ulid/-/ulid-2.3.0.tgz#93063522771a9774121a84d126ecd3eb9804071f"
+  integrity sha512-keqHubrlpvT6G2wH0OEfSW4mquYRcbe/J8NMmveoQOjUqmo+hXtO+ORCpWhdbZ7k72UtY61BL7haGxW6enBnjw==
 
 ultron@~1.1.0:
   version "1.1.1"

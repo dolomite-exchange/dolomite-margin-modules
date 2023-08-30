@@ -13,6 +13,13 @@
       "isVerified": true
     }
   },
+  "ChainlinkPriceOracle": {
+    "42161": {
+      "address": "0x8959a8d7D1B250531D6Fe94cB5d43Edc6d9aF663",
+      "transaction": "0xc4442e10b6977418ffa71d000255d4513eb47f46ab1726984655df172f9ee07c",
+      "isVerified": true
+    }
+  },
   "DolomiteRegistryImplementationV1": {
     "42161": {
       "address": "0x5343C6a56C60e836182bF4B669BC57d9b888199c",
@@ -223,6 +230,13 @@
       "isVerified": true
     }
   },
+  "OdosAggregatorTrader": {
+    "42161": {
+      "address": "0x2cdBb25b4aca98a55F6B1A0f67d9f43455e67f3c",
+      "transaction": "0xc382bb815b1c4b7b18a40996b0e1fe109e16e7c29b2c3ab78ffeea9aefc5f1cb",
+      "isVerified": true
+    }
+  },
   "ParaswapAggregatorTrader": {
     "42161": {
       "address": "0x6173C34E01A18d5897C06b4991152F2969059A68",
@@ -323,8 +337,8 @@
   },
   "PendleYtGLPPriceOracle": {
     "42161": {
-      "address": "0x0Ebd3BEF480b62493048233d05F922E7Ad968fAe",
-      "transaction": "0x5314de5bb0dd7a70e87931bb3092b16fb5c16c3fa3c38f58ab9a467526bd6bb1",
+      "address": "0xB1d583D7112Bd7eFeC095d72c45c59C8EA818c9B",
+      "transaction": "0x46bd79bed7aee4b4609e58547a6dd2e4c8923653c00b7d6568b20e3e160007e3",
       "isVerified": true
     }
   },

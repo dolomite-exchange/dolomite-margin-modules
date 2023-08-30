@@ -55,7 +55,7 @@ export async function createPendleGLPRegistry(core: CoreProtocol): Promise<Pendl
   const registry = await createContractWithAbi<RegistryProxy>(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    await getPendleGLPRegistryConstructorParams(core, implementation),
+    await getPendleGLPRegistryConstructorParams(implementation, core),
   );
 
   return PendleGLPRegistry__factory.connect(registry.address, core.hhUser1);

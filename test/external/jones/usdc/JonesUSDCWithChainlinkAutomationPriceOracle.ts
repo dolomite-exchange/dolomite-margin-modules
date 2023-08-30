@@ -55,7 +55,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     const network = Network.ArbitrumOne;
     const blockNumber = await getRealLatestBlockNumber(true, network);
     core = await setupCoreProtocol({ blockNumber, network });
-    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[network], true);
+    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[network]!, true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
     jonesUSDCRegistry = JonesUSDCRegistry__factory.connect(
@@ -193,7 +193,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     });
 
     it('fails when price has expired', async () => {
-      await increase(12 * 3600);
+      await increase(24 * 3600);
       await jonesUSDCWithChainlinkAutomationPriceOracle.getPrice(factory.address);
 
       await increase(3600);
@@ -213,7 +213,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
 
   describe('#performUpkeep', async () => {
     it('works normally', async () => {
-      await increase(11 * 3600);
+      await increase(23 * 3600);
       await expectThrow(
         jonesUSDCWithChainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
         'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',

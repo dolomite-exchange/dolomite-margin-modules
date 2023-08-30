@@ -1,32 +1,44 @@
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import {
+  PlutusVaultGLPIsolationModeTokenVaultV1__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory,
   PlutusVaultGLPIsolationModeVaultFactory__factory,
-  PlutusVaultGLPIsolationModeTokenVaultV1__factory,
   PlutusVaultGLPIsolationModeWrapperTraderV1__factory,
   PlutusVaultRegistry__factory,
 } from '../../src/types';
-import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../test/utils/setup';
 import {
   getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
-  getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams,
   getPlutusVaultGLPIsolationModeVaultFactoryConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
+  getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../../src/utils/constructors/plutus';
+import { getAndCheckSpecificNetwork } from '../../src/utils/dolomite-utils';
+import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../deploy-utils';
 
 async function main() {
-  const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
+  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const plutusVaultRegistryAddress = await deployContractAndSave(
+  const plutusVaultRegistryImplementationAddress = await deployContractAndSave(
     Number(network),
     'PlutusVaultRegistry',
-    getPlutusVaultRegistryConstructorParams(core),
+    [],
+    'PlutusVaultRegistryV1Implementation',
+  );
+  const plutusVaultRegistryImplementation = PlutusVaultRegistry__factory.connect(
+    plutusVaultRegistryImplementationAddress,
+    core.hhUser1,
+  );
+  const plutusVaultRegistryAddress = await deployContractAndSave(
+    Number(network),
+    'RegistryProxy',
+    await getPlutusVaultRegistryConstructorParams(plutusVaultRegistryImplementation, core),
+    'PlutusVaultRegistryProxy',
   );
   const plutusVaultRegistry = PlutusVaultRegistry__factory.connect(plutusVaultRegistryAddress, core.hhUser1);
 

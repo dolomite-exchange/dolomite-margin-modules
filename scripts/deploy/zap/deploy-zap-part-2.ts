@@ -1,6 +1,5 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { ethers } from 'hardhat';
-import { Network } from '../../../src/utils/no-deps-constants';
 import {
   DolomiteRegistryImplementation,
   GmxRegistryV1__factory,
@@ -43,6 +42,7 @@ import {
   getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../../../src/utils/constructors/plutus';
+import { Network } from '../../../src/utils/no-deps-constants';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';
 
@@ -59,7 +59,7 @@ async function deployGmxContracts(network: Network, core: CoreProtocol) {
   const gmxRegistryAddress = await deployContractAndSave(
     Number(network),
     'RegistryProxy',
-    await getGmxRegistryConstructorParams(core, gmxRegistryImplementation),
+    await getGmxRegistryConstructorParams(gmxRegistryImplementation, core),
     'GmxRegistryProxy',
   );
   const gmxRegistry = IGmxRegistryV1__factory.connect(gmxRegistryAddress, core.hhUser1);
@@ -195,7 +195,7 @@ async function deployPendleGLPContracts(network: Network, core: CoreProtocol) {
   const pendleRegistryAddress = await deployContractAndSave(
     Number(network),
     'RegistryProxy',
-    await getPendleGLPRegistryConstructorParams(core, pendleRegistryImplementation),
+    await getPendleGLPRegistryConstructorParams(pendleRegistryImplementation, core),
     'PendleGLPRegistryProxy',
   );
   const pendleRegistry = IPendleGLPRegistry__factory.connect(pendleRegistryAddress, core.hhUser1);

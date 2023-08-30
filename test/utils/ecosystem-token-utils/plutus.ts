@@ -20,8 +20,8 @@ import {
   PlutusVaultGLPPriceOracle__factory,
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory,
-  PlutusVaultWithChainlinkAutomationPriceOracle,
-  PlutusVaultWithChainlinkAutomationPriceOracle__factory,
+  PlutusVaultGLPWithChainlinkAutomationPriceOracle,
+  PlutusVaultGLPWithChainlinkAutomationPriceOracle__factory,
   RegistryProxy,
   RegistryProxy__factory,
 } from '../../../src/types';
@@ -108,10 +108,10 @@ export function createPlutusVaultGLPWithChainlinkAutomationPriceOracle(
   plutusVaultRegistry: PlutusVaultRegistry,
   dplvGlpToken: { address: address },
   unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
-): Promise<PlutusVaultWithChainlinkAutomationPriceOracle> {
-  return createContractWithAbi<PlutusVaultWithChainlinkAutomationPriceOracle>(
-    PlutusVaultWithChainlinkAutomationPriceOracle__factory.abi,
-    PlutusVaultWithChainlinkAutomationPriceOracle__factory.bytecode,
+): Promise<PlutusVaultGLPWithChainlinkAutomationPriceOracle> {
+  return createContractWithAbi<PlutusVaultGLPWithChainlinkAutomationPriceOracle>(
+    PlutusVaultGLPWithChainlinkAutomationPriceOracle__factory.abi,
+    PlutusVaultGLPWithChainlinkAutomationPriceOracle__factory.bytecode,
     getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams(
       core,
       plutusVaultRegistry,

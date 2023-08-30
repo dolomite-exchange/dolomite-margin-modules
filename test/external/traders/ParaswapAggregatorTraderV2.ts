@@ -19,8 +19,8 @@ import {
   expectThrowWithMatchingReason,
 } from '../../utils/assertions';
 import { createParaswapAggregatorTraderV2 } from '../../utils/ecosystem-token-utils/traders';
-import { getCalldataForParaswap, ParaswapSwapType, swapTypeToSelector } from '../../utils/liquidation-utils';
 import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
+import { getCalldataForParaswap, ParaswapSwapType, swapTypeToSelector } from '../../utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');

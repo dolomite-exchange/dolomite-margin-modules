@@ -2,6 +2,7 @@ import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
+  IPendleYtToken__factory,
   PendleGLPRegistry,
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLPPriceOracle,
@@ -118,6 +119,12 @@ describe('PendleYtGLPPriceOracle', () => {
 
       // Verify the two equal each other, roughly. YT_GLP is rounded down because of decimal truncation
       expect(GLP_PRICE.sub(PT_GLP_PRICE).sub(1)).to.eq(YT_GLP_PRICE);
+    });
+
+    it('returns 1 instead of 0 after maturity for dytGLP', async () => {
+      const ytGlp = IPendleYtToken__factory.connect(await pendleRegistry.ytGlpToken(), core.hhUser1);
+      await increaseToTimestamp((await ytGlp.expiry()).toNumber() + 1);
+      expect((await ytGlpOracle.getPrice(factory.address)).value).to.eq(1);
     });
 
     it('fails when token sent is not dytGLP', async () => {

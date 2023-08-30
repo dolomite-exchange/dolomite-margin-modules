@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { IChainlinkAutomationPriceOracle } from "../interfaces/IChainlinkAutomationPriceOracle.sol";
-import { IChainlinkRegistry } from "../interfaces/IChainlinkRegistry.sol";
+import { IChainlinkAutomationPriceOracle } from "../interfaces/chainlink/IChainlinkAutomationPriceOracle.sol";
+import { IChainlinkRegistry } from "../interfaces/chainlink/IChainlinkRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 
 
@@ -59,7 +59,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         address _dolomiteMargin,
         address _chainlinkRegistry
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        _ownerSetHeartbeat(12 hours);
+        _ownerSetHeartbeat(24 hours);
         _ownerSetGracePeriod(1 hours);
         _ownerSetUpperEdge(10_025);
         _ownerSetLowerEdge(9_975);
@@ -92,7 +92,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         external
         returns (bool upkeepNeeded, bytes memory /* performData */)
     {
-        // solhint-disable-line avoid-tx-origin
+        // solhint-disable avoid-tx-origin
         if (tx.origin == address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(tx.origin == address(0),
             _FILE,

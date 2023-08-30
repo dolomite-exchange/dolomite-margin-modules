@@ -39,7 +39,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[Network.ArbitrumOne], true);
+    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[Network.ArbitrumOne]!, true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
     token = await createTestVaultToken(core.tokens.usdc!);
@@ -70,7 +70,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
 
   describe('#constructor', () => {
     it('should construct properly', async () => {
-      expect(await chainlinkAutomationPriceOracle.heartbeat()).to.eq(12 * 3600);
+      expect(await chainlinkAutomationPriceOracle.heartbeat()).to.eq(24 * 3600);
       expect(await chainlinkAutomationPriceOracle.gracePeriod()).to.eq(3600);
       expect(await chainlinkAutomationPriceOracle.upperEdge()).to.eq(10025);
       expect(await chainlinkAutomationPriceOracle.lowerEdge()).to.eq(9975);
@@ -84,13 +84,13 @@ describe('ChainlinkAutomationPriceOracle', () => {
 
   describe('#ownerSetHeartbeat', () => {
     it('should work', async () => {
-      await chainlinkAutomationPriceOracle.connect(core.governance).ownerSetHeartbeat(11 * 3600);
-      expect(await chainlinkAutomationPriceOracle.heartbeat()).to.eq(11 * 3600);
+      await chainlinkAutomationPriceOracle.connect(core.governance).ownerSetHeartbeat(23 * 3600);
+      expect(await chainlinkAutomationPriceOracle.heartbeat()).to.eq(23 * 3600);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        chainlinkAutomationPriceOracle.connect(core.hhUser1).ownerSetHeartbeat(11 * 3600),
+        chainlinkAutomationPriceOracle.connect(core.hhUser1).ownerSetHeartbeat(23 * 3600),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -227,7 +227,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
     });
 
     it('returns true when deviation is less than 0.25% and lastTimestamp is more than heartbeat', async () => {
-      await increase(12 * 3600);
+      await increase(24 * 3600);
       expect((await chainlinkAutomationPriceOracle.connect(zeroAddress)
         .callStatic.checkUpkeep('0x')).upkeepNeeded).to.eq(true);
     });
@@ -235,7 +235,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
 
   describe('#performUpkeep', () => {
     it('works if greater than heartbeat period', async () => {
-      await increase(11 * 3600);
+      await increase(23 * 3600);
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
         'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',

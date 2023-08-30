@@ -13,6 +13,11 @@ interface TokenWithMarketId {
   marketId: number;
 }
 
+export const CHAINLINK_PRICE_ORACLE_OLD_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xeA3Fe12d8CC2E87f99e985EE271971C808006531',
+  [Network.ArbitrumGoerli]: '0x1BEC3A1331d36e57Ef3b1A8ccf1946c8cfe3Fef0',
+};
+
 export const CHAINLINK_REGISTRY_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x75c0530885F385721fddA23C539AF3701d6183D4',
   [Network.ArbitrumGoerli]: '0x291093864bafc9aA517eF90ce954dD7D95D68C80',
@@ -53,10 +58,18 @@ export const DPLV_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
-export const DPT_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
+export const DPT_GLP_2024_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x7b07E78561a3C2C1Eade652A2a92Da150743F4D7',
     marketId: 11,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const DYT_GLP_2024_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x851729Df6C39BDB6E92721f2ADf750023D967eE8',
+    marketId: 16,
   },
   [Network.ArbitrumGoerli]: undefined,
 };
@@ -97,6 +110,14 @@ export const USDC_MAP: Record<Network, TokenWithMarketId> = {
     address: '0x7317eb743583250739862644cef74B982708eBB4',
     marketId: 2,
   },
+};
+
+export const NATIVE_USDC_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+    marketId: 17,
+  },
+  [Network.ArbitrumGoerli]: undefined,
 };
 
 export const USDT_MAP: Record<Network, TokenWithMarketId | undefined> = {
@@ -246,6 +267,11 @@ export const JONES_JUSDC_RECEIPT_TOKEN_MAP: Record<Network, string | undefined> 
 
 export const JONES_WHITELIST_CONTROLLER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x2ACc798DA9487fdD7F4F653e04D8E8411cd73e88',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const ODOS_ROUTER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xa669e7A0d4b3e4Fa48af2dE86BD4CD7126Be4e13',
   [Network.ArbitrumGoerli]: undefined,
 };
 

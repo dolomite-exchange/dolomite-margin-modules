@@ -1,6 +1,5 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { BigNumber } from 'ethers';
-import { ethers } from 'hardhat';
 import {
   JonesUSDCIsolationModeTokenVaultV1__factory,
   JonesUSDCIsolationModeUnwrapperTraderV2__factory,
@@ -8,25 +7,38 @@ import {
   JonesUSDCIsolationModeWrapperTraderV2__factory,
   JonesUSDCRegistry__factory,
 } from '../../src/types';
-import { Network, TEN_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import {
-  getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams,
+  getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
+  getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,
   getJonesUSDCIsolationModeVaultFactoryConstructorParams,
   getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
   getJonesUSDCPriceOracleConstructorParams,
   getJonesUSDCRegistryConstructorParams,
 } from '../../src/utils/constructors/jones';
+import { getAndCheckSpecificNetwork } from '../../src/utils/dolomite-utils';
+import { Network, TEN_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../deploy-utils';
 
 async function main() {
-  const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
+  const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const jonesUsdcRegistryAddress = await deployContractAndSave(
+  const jonesUSDCRegistryV1ImplementationAddress = await deployContractAndSave(
     Number(network),
     'JonesUSDCRegistry',
-    getJonesUSDCRegistryConstructorParams(core),
+    [],
+    'JonesUSDCRegistryV1Implementation',
+  );
+  const jonesUSDCRegistryV1Implementation = JonesUSDCRegistry__factory.connect(
+    jonesUSDCRegistryV1ImplementationAddress,
+    core.hhUser1,
+  );
+  const jonesUsdcRegistryAddress = await deployContractAndSave(
+    Number(network),
+    'RegistryProxy',
+    await getJonesUSDCRegistryConstructorParams(jonesUSDCRegistryV1Implementation, core),
+    'JonesUSDCRegistryProxy',
   );
   const jonesUsdcRegistry = JonesUSDCRegistry__factory.connect(jonesUsdcRegistryAddress, core.hhUser1);
 
@@ -52,12 +64,24 @@ async function main() {
   );
   const djUSDCToken = JonesUSDCIsolationModeVaultFactory__factory.connect(djUSDCTokenAddress, core.hhUser1);
 
-  const unwrapperAddress = await deployContractAndSave(
+  const unwrapperForLiquidationAddress = await deployContractAndSave(
+    Number(network),
+    'JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation',
+    getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams(core, jonesUsdcRegistry, djUSDCToken),
+  );
+  const unwrapperForLiquidation = JonesUSDCIsolationModeUnwrapperTraderV2__factory.connect(
+    unwrapperForLiquidationAddress,
+    core.hhUser1,
+  );
+  const unwrapperForZapAddress = await deployContractAndSave(
     Number(network),
     'JonesUSDCIsolationModeUnwrapperTraderV2',
-    getJonesUSDCIsolationModeUnwrapperTraderV2ConstructorParams(core, jonesUsdcRegistry, djUSDCToken),
+    getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams(core, jonesUsdcRegistry, djUSDCToken),
   );
-  const unwrapper = JonesUSDCIsolationModeUnwrapperTraderV2__factory.connect(unwrapperAddress, core.hhUser1);
+  const unwrapperForZap = JonesUSDCIsolationModeUnwrapperTraderV2__factory.connect(
+    unwrapperForZapAddress,
+    core.hhUser1,
+  );
 
   const wrapperAddress = await deployContractAndSave(
     Number(network),
@@ -72,9 +96,9 @@ async function main() {
     getJonesUSDCPriceOracleConstructorParams(core, jonesUsdcRegistry, djUSDCToken),
   );
 
-  if ((await jonesUsdcRegistry.unwrapperTrader()) === ADDRESSES.ZERO) {
-    console.log('Initializing unwrapper trader on JonesUSDCRegistry...');
-    await jonesUsdcRegistry.initializeUnwrapperTrader(unwrapper.address);
+  if ((await jonesUsdcRegistry.unwrapperTraderForLiquidation()) === ADDRESSES.ZERO) {
+    console.log('Initializing unwrappers on JonesUSDCRegistry...');
+    await jonesUsdcRegistry.initializeUnwrapperTraders(unwrapperForLiquidation.address, unwrapperForZap.address);
   }
 
   await prettyPrintEncodedData(
@@ -91,7 +115,7 @@ async function main() {
     'dolomiteMargin.ownerAddMarket',
   );
   await prettyPrintEncodedData(
-    djUSDCToken.populateTransaction.ownerInitialize([unwrapper.address, wrapper.address]),
+    djUSDCToken.populateTransaction.ownerInitialize([unwrapperForLiquidation.address, wrapper.address]),
     'djUSDCToken.ownerInitialize',
   );
   await prettyPrintEncodedData(

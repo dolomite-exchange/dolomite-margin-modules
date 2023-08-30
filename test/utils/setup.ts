@@ -1,4 +1,4 @@
-import { ApiToken } from '@dolomite-exchange/zap-sdk/dist';
+import { ApiToken, BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk/dist';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
 import * as DolomiteAmmFactoryJson from '@dolomite-margin/deployed-contracts/DolomiteAmmFactory.json';
@@ -16,10 +16,10 @@ import * as LiquidatorProxyV3WithLiquidityTokenJson
 import * as LiquidatorProxyV4WithGenericTraderJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV4WithGenericTrader.json';
 import { address } from '@dolomite-margin/dist/src';
+import { Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
-import { IParaswapFeeClaimer } from 'src/types/contracts/external/interfaces/traders/IParaswapFeeClaimer';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkName } from 'src/utils/no-deps-constants';
 import Deployments from '../../scripts/deployments.json';
 import {
@@ -33,6 +33,8 @@ import {
   GLPIsolationModeWrapperTraderV1__factory,
   IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
+  IChainlinkPriceOracleOld,
+  IChainlinkPriceOracleOld__factory,
   IChainlinkRegistry,
   IChainlinkRegistry__factory,
   IDepositHandler,
@@ -101,8 +103,11 @@ import {
   ILiquidatorProxyV3WithLiquidityToken__factory,
   ILiquidatorProxyV4WithGenericTrader,
   ILiquidatorProxyV4WithGenericTrader__factory,
+  IOdosRouter,
+  IOdosRouter__factory,
   IParaswapAugustusRouter,
   IParaswapAugustusRouter__factory,
+  IParaswapFeeClaimer,
   IParaswapFeeClaimer__factory,
   IPendleGLPRegistry,
   IPendleGLPRegistry__factory,
@@ -156,12 +161,13 @@ import {
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
   ATLAS_SI_TOKEN_MAP,
+  CHAINLINK_PRICE_ORACLE_OLD_MAP,
   CHAINLINK_REGISTRY_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
   DJ_USDC,
   DPLV_GLP_MAP,
-  DPT_GLP_MAP,
+  DPT_GLP_2024_MAP, DYT_GLP_2024_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
   ES_GMX_MAP,
   FS_GLP_MAP,
@@ -182,6 +188,8 @@ import {
   LINK_MAP,
   MAGIC_GLP_MAP,
   MIM_MAP,
+  NATIVE_USDC_MAP,
+  ODOS_ROUTER_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
   PARASWAP_FEE_CLAIMER_MAP,
   PARASWAP_TRANSFER_PROXY_MAP,
@@ -286,6 +294,10 @@ export interface JonesEcosystem {
   };
 }
 
+export interface OdosEcosystem {
+  odosRouter: IOdosRouter;
+}
+
 export interface ParaswapEcosystem {
   augustusRouter: IParaswapAugustusRouter;
   feeClaimer: IParaswapFeeClaimer;
@@ -359,6 +371,7 @@ export interface CoreProtocol {
   alwaysZeroInterestSetter: IDolomiteInterestSetter;
   atlasEcosystem: AtlasEcosystem | undefined;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
+  chainlinkPriceOracleOld: IChainlinkPriceOracleOld | undefined;
   chainlinkRegistry: IChainlinkRegistry | undefined;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteAmmFactory: IDolomiteAmmFactory;
@@ -376,6 +389,7 @@ export interface CoreProtocol {
   liquidatorProxyV2: ILiquidatorProxyV2WithExternalLiquidity | undefined;
   liquidatorProxyV3: ILiquidatorProxyV3WithLiquidityToken | undefined;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
+  odosEcosystem: OdosEcosystem | undefined;
   paraswapEcosystem: ParaswapEcosystem | undefined;
   paraswapTrader: ParaswapAggregatorTrader | undefined;
   pendleEcosystem: PendleEcosystem | undefined;
@@ -394,9 +408,11 @@ export interface CoreProtocol {
     djUSDC: BigNumberish | undefined;
     dplvGlp: BigNumberish | undefined;
     dPtGlp: BigNumberish | undefined;
+    dYtGlp: BigNumberish | undefined;
     link: BigNumberish;
     magicGlp: BigNumberish | undefined;
     mim: BigNumberish | undefined;
+    nativeUsdc: BigNumberish | undefined;
     usdc: BigNumberish;
     usdt: BigNumberish | undefined;
     wbtc: BigNumberish;
@@ -408,7 +424,10 @@ export interface CoreProtocol {
   };
   tokens: {
     dfsGlp: IERC20 | undefined;
+    dPtGlp: IERC20 | undefined;
+    dYtGlp: IERC20 | undefined;
     link: IERC20;
+    nativeUsdc: IERC20 | undefined;
     usdc: IERC20;
     wbtc: IERC20;
     weth: IWETH;
@@ -514,9 +533,16 @@ export async function setupCoreProtocol(
     governance,
   );
 
+  const chainlinkPriceOracleOld = getContractOpt(
+    CHAINLINK_PRICE_ORACLE_OLD_MAP[config.network],
+    IChainlinkPriceOracleOld__factory.connect,
+    governance,
+  );
+
   const chainlinkRegistry = getContractOpt(
     CHAINLINK_REGISTRY_MAP[config.network],
     IChainlinkRegistry__factory.connect,
+    governance,
   );
 
   const depositWithdrawalProxy = IDepositWithdrawalProxy__factory.connect(
@@ -565,6 +591,7 @@ export async function setupCoreProtocol(
   const genericTraderProxy = getContractOpt(
     (IGenericTraderProxyV1Json.networks as any)[config.network]?.address,
     IGenericTraderProxyV1__factory.connect,
+    governance,
   );
 
   const liquidatorAssetRegistry = ILiquidatorAssetRegistry__factory.connect(
@@ -585,11 +612,13 @@ export async function setupCoreProtocol(
   const liquidatorProxyV2 = getContractOpt(
     (LiquidatorProxyV2WithExternalLiquidityJson.networks as any)[config.network]?.address,
     ILiquidatorProxyV2WithExternalLiquidity__factory.connect,
+    governance,
   );
 
   const liquidatorProxyV3 = getContractOpt(
     (LiquidatorProxyV3WithLiquidityTokenJson.networks as any)[config.network]?.address,
     ILiquidatorProxyV3WithLiquidityToken__factory.connect,
+    governance,
   );
 
   const liquidatorProxyV4 = getContract(
@@ -600,12 +629,14 @@ export async function setupCoreProtocol(
   const paraswapTrader = getContractOpt(
     (Deployments.ParaswapAggregatorTrader as any)[config.network]?.address,
     ParaswapAggregatorTrader__factory.connect,
+    governance,
   );
 
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
   const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
+  const odosEcosystem = await createOdosEcosystem(config.network, hhUser1);
   const paraswapEcosystem = await createParaswapEcosystem(config.network, hhUser1);
   const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
@@ -618,6 +649,7 @@ export async function setupCoreProtocol(
     atlasEcosystem,
     borrowPositionProxyV2,
     chainlinkRegistry,
+    chainlinkPriceOracleOld,
     depositWithdrawalProxy,
     dolomiteAmmFactory,
     dolomiteAmmRouterProxy,
@@ -640,6 +672,7 @@ export async function setupCoreProtocol(
     hhUser3,
     hhUser4,
     hhUser5,
+    odosEcosystem,
     paraswapEcosystem,
     paraswapTrader,
     pendleEcosystem,
@@ -652,14 +685,14 @@ export async function setupCoreProtocol(
     },
     apiTokens: {
       usdc: {
-        marketId: USDC_MAP[config.network].marketId,
+        marketId: new ZapBigNumber(USDC_MAP[config.network].marketId),
         symbol: 'USDC',
         name: 'USD Coin',
         decimals: 6,
         tokenAddress: USDC_MAP[config.network].address,
       },
       weth: {
-        marketId: WETH_MAP[config.network].marketId,
+        marketId: new ZapBigNumber(WETH_MAP[config.network].marketId),
         symbol: 'WETH',
         name: 'Wrapped Ether',
         decimals: 18,
@@ -671,10 +704,12 @@ export async function setupCoreProtocol(
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
       djUSDC: DJ_USDC[config.network]?.marketId,
       dplvGlp: DPLV_GLP_MAP[config.network]?.marketId,
-      dPtGlp: DPT_GLP_MAP[config.network]?.marketId,
+      dPtGlp: DPT_GLP_2024_MAP[config.network]?.marketId,
+      dYtGlp: DYT_GLP_2024_MAP[config.network]?.marketId,
       link: LINK_MAP[config.network].marketId,
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       mim: MIM_MAP[config.network]?.marketId,
+      nativeUsdc: NATIVE_USDC_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
       usdt: USDT_MAP[config.network]?.marketId,
       wbtc: WBTC_MAP[config.network].marketId,
@@ -682,7 +717,10 @@ export async function setupCoreProtocol(
     },
     tokens: {
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
+      dPtGlp: createIERC20Opt(DPT_GLP_2024_MAP[config.network]?.address, hhUser1),
+      dYtGlp: createIERC20Opt(DYT_GLP_2024_MAP[config.network]?.address, hhUser1),
       link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
+      nativeUsdc: createIERC20Opt(NATIVE_USDC_MAP[config.network]?.address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
       wbtc: IERC20__factory.connect(WBTC_MAP[config.network].address, hhUser1),
       weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
@@ -884,6 +922,19 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
   };
 }
 
+async function createOdosEcosystem(
+  network: Network,
+  signer: SignerWithAddress,
+): Promise<OdosEcosystem | undefined> {
+  if (!ODOS_ROUTER_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    odosRouter: IOdosRouter__factory.connect(ODOS_ROUTER_MAP[network]!, signer),
+  };
+}
+
 async function createParaswapEcosystem(
   network: Network,
   signer: SignerWithAddress,
@@ -1046,10 +1097,11 @@ function getContract<T>(
 function getContractOpt<T>(
   address: string | undefined,
   connector: (address: string, signerOrProvider: any) => T,
+  signerOrProvider: Signer | Provider,
 ): T | undefined {
   if (!address) {
     return undefined;
   }
 
-  return connector(address, undefined);
+  return connector(address, signerOrProvider);
 }
