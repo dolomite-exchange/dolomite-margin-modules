@@ -198,22 +198,22 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network, string | undefined> = {
 export const GMX_DEPOSIT_HANDLER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xD9AebEA68DE4b4A3B58833e1bc2AEB9682883AB0',
   [Network.ArbitrumGoerli]: undefined,
-}
+};
 
 export const GMX_DEPOSIT_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xF89e77e8Dc11691C9e8757e84aaFbCD8A67d7A55',
   [Network.ArbitrumGoerli]: undefined,
-}
+};
 
 export const GMX_EXCHANGE_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x3B070aA6847bd0fB56eFAdB351f49BBb7619dbc2',
   [Network.ArbitrumGoerli]: undefined,
-}
+};
 
 export const GMX_ETH_USD_MARKET_TOKEN_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x70d95587d40A2caf56bd97485aB3Eec10Bee6336',
   [Network.ArbitrumGoerli]: undefined,
-}
+};
 
 export const GMX_REWARD_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1',

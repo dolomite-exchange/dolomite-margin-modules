@@ -885,17 +885,29 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
       address => IGLPRewardsRouterV2__factory.connect(address, signer),
     ),
     gmx: getContract(GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
-    gmxDepositHandler: getContract(GMX_DEPOSIT_HANDLER_MAP[network] as string, address => IDepositHandler__factory.connect(address, signer)),
+    gmxDepositHandler: getContract(
+      GMX_DEPOSIT_HANDLER_MAP[network] as string,
+      address => IDepositHandler__factory.connect(address, signer)
+    ),
     gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network] as string, true, signer),
-    gmxEthUsdMarketToken: getContract(GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string, address => IGmxMarketToken__factory.connect(address, signer)),
-    gmxExchangeRouter: getContract(GMX_EXCHANGE_ROUTER_MAP[network] as string, address => IGmxExchangeRouter__factory.connect(address, signer)),
+    gmxEthUsdMarketToken: getContract(
+      GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
+      address => IGmxMarketToken__factory.connect(address, signer)
+    ),
+    gmxExchangeRouter: getContract(
+      GMX_EXCHANGE_ROUTER_MAP[network] as string,
+      address => IGmxExchangeRouter__factory.connect(address, signer)
+    ),
     gmxRewardsRouter: getContract(
       GMX_REWARD_ROUTER_MAP[network] as string,
       address => IGmxRewardRouterV2__factory.connect(address, signer),
     ),
     gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, address => IGmxRouter__factory.connect(address, signer)),
     gmxVault: getContract(GMX_VAULT_MAP[network] as string, address => IGmxVault__factory.connect(address, signer)),
-    gmxWithdrawalHandler: getContract(GMX_WITHDRAWAL_HANDLER_MAP[network] as string, address => IWithdrawalHandler__factory.connect(address, signer)),
+    gmxWithdrawalHandler: getContract(
+      GMX_WITHDRAWAL_HANDLER_MAP[network] as string,
+      address => IWithdrawalHandler__factory.connect(address, signer)
+    ),
     sGlp: getContract(S_GLP_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     sGmx: getContract(S_GMX_MAP[network] as string, address => ISGMX__factory.connect(address, signer)),
     sbfGmx: getContract(SBF_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),

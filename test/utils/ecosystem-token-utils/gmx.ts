@@ -228,12 +228,12 @@ export function getInitiateWrappingParams(
     marketPath: [marketId1, marketId2],
     amountIn: amountIn,
     minAmountOut: minAmountOut,
-    traderParams: [{ 
+    traderParams: [{
       trader: wrapper.address,
       traderType: 3,
       tradeData: ethers.utils.defaultAbiCoder.encode(['uint256'], [accountNumber]),
       makerAccountIndex: 0}],
     makerAccounts: [],
-    userConfig: { deadline: '123123123123123', balanceCheckFlag: 3},
-  }
+    userConfig: { deadline: '123123123123123', balanceCheckFlag: 3 },
+  };
 }
