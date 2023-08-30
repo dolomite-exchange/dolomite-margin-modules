@@ -44,4 +44,10 @@ interface IGmxExchangeRouter {
     }
 
     function createDeposit(CreateDepositParams calldata params) external returns (bytes32);
+
+    function sendWnt(address receiver, uint256 amount) external payable;
+
+    function sendTokens(address token, address receiver, uint256 amount) external payable;
+
+    function cancelDeposit(bytes32 key) external payable;
 }

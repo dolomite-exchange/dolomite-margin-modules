@@ -28,8 +28,10 @@ describe('GmxRegistryV2', () => {
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.gmxExchangeRouter()).to.eq(core.gmxEcosystem!.gmxExchangeRouter.address);
+      expect(await registry.gmxRouter()).to.eq(core.gmxEcosystem!.gmxRouter.address);
       expect(await registry.ethUsdMarketToken()).to.eq(core.gmxEcosystem!.gmxEthUsdMarketToken.address);
       expect(await registry.gmxDepositHandler()).to.eq(core.gmxEcosystem!.gmxDepositHandler.address);
+      expect(await registry.gmxDepositVault()).to.eq(core.gmxEcosystem!.gmxDepositVault.address);
       expect(await registry.gmxWithdrawalHandler()).to.eq(core.gmxEcosystem!.gmxWithdrawalHandler.address);
       expect(await registry.gmxV2UnwrapperTrader()).to.eq(ZERO_ADDRESS);
       expect(await registry.gmxV2WrapperTrader()).to.eq(ZERO_ADDRESS);
@@ -61,6 +63,30 @@ describe('GmxRegistryV2', () => {
     });
   });
 
+  describe('#ownerSetGmxRouter', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetGmxRouter(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'GmxRouterSet', {
+        gmxRouter: OTHER_ADDRESS,
+      });
+      expect(await registry.gmxRouter()).to.eq(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetGmxRouter(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetGmxRouter(ZERO_ADDRESS),
+        'GmxRegistryV2: Invalid address',
+      );
+    });
+  });
+
   describe('#ownerSetGmxDepositHandler', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetGmxDepositHandler(OTHER_ADDRESS);
@@ -80,6 +106,30 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxDepositHandler(ZERO_ADDRESS),
+        'GmxRegistryV2: Invalid address',
+      );
+    });
+  });
+
+  describe('#ownerSetGmxDepositVault', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetGmxDepositVault(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'GmxDepositVaultSet', {
+        gmxDepositVault: OTHER_ADDRESS,
+      });
+      expect(await registry.gmxDepositVault()).to.eq(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetGmxDepositVault(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetGmxDepositVault(ZERO_ADDRESS),
         'GmxRegistryV2: Invalid address',
       );
     });
@@ -156,7 +206,6 @@ describe('GmxRegistryV2', () => {
       );
     });
   });
-
 
   describe('#ownerSetEthUsdMarketToken', () => {
     it('should work normally', async () => {

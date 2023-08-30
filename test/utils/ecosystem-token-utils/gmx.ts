@@ -1,4 +1,4 @@
-import { BigNumberish } from 'ethers';
+import { BigNumberish, ethers } from 'ethers';
 import {
   ERC20,
   GLPIsolationModeTokenVaultV1,
@@ -53,6 +53,7 @@ import {
 } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
+import { BYTES_EMPTY } from 'src/utils/no-deps-constants';
 
 export async function createGLPPriceOracleV1(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
@@ -213,4 +214,26 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
     GmxV2IsolationModeWrapperTraderV2__factory.bytecode,
     getGmxV2IsolationModeWrapperTraderV2ConstructorParams(core, dGM, gmxRegistryV2),
   );
+}
+
+export function getInitiateWrappingParams(
+  accountNumber: BigNumberish,
+  marketId1: BigNumberish,
+  amountIn: BigNumberish,
+  marketId2: BigNumberish,
+  minAmountOut: BigNumberish,
+  wrapper: GmxV2IsolationModeWrapperTraderV2,
+): any {
+  return {
+    marketPath: [marketId1, marketId2],
+    amountIn: amountIn,
+    minAmountOut: minAmountOut,
+    traderParams: [{ 
+      trader: wrapper.address,
+      traderType: 3,
+      tradeData: ethers.utils.defaultAbiCoder.encode(['uint256'], [accountNumber]),
+      makerAccountIndex: 0}],
+    makerAccounts: [],
+    userConfig: { deadline: '123123123123123', balanceCheckFlag: 3},
+  }
 }

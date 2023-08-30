@@ -23,6 +23,10 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGmxExchangeRouter } from "./IGmxExchangeRouter.sol";
+import { IGmxRouter } from "./IGmxRouter.sol";
+import { IGmxV2IsolationModeWrapperTraderV2 } from "./IGmxV2IsolationModeWrapperTraderV2.sol";
+import { IDepositHandler } from "./IDepositHandler.sol";
+import { IWithdrawalHandler } from "./IWithdrawalHandler.sol";
 import { IBaseRegistry } from "../IBaseRegistry.sol";
 
 
@@ -39,7 +43,9 @@ interface IGmxRegistryV2 is IBaseRegistry {
     // ================================================
 
     event GmxExchangeRouterSet(address _gmxExchangeRouter);
+    event GmxRouterSet(address _gmxRouter);
     event GmxDepositHandlerSet(address _gmxDepositHandler);
+    event GmxDepositVaultSet(address _gmxDepositVault);
     event GmxWithdrawalHandlerSet(address _gmxWithdrawalHandler);
     event EthUsdMarketTokenSet(address _ethUsdMarketToken);
     event GmxV2UnwrapperTraderSet(address _gmxV2UnwrapperTrader);
@@ -51,7 +57,11 @@ interface IGmxRegistryV2 is IBaseRegistry {
 
     function ownerSetGmxExchangeRouter(address _gmxExchangeRouter) external;
 
+    function ownerSetGmxRouter(address _gmxRouter) external;
+
     function ownerSetGmxDepositHandler(address _gmxDepositHandler) external;
+
+    function ownerSetGmxDepositVault(address _gmxDepositVault) external;
 
     function ownerSetGmxWithdrawalHandler(address _gmxWithdrawalHandler) external;
 
@@ -63,13 +73,17 @@ interface IGmxRegistryV2 is IBaseRegistry {
 
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter);
 
-    function gmxDepositHandler() external view returns (address);
+    function gmxRouter() external view returns (IGmxRouter);
 
-    function gmxWithdrawalHandler() external view returns (address);
+    function gmxDepositHandler() external view returns (IDepositHandler);
+
+    function gmxDepositVault() external view returns (address);
+
+    function gmxWithdrawalHandler() external view returns (IWithdrawalHandler);
 
     function ethUsdMarketToken() external view returns (IERC20);
 
     function gmxV2UnwrapperTrader() external view returns (address);
 
-    function gmxV2WrapperTrader() external view returns (address);
+    function gmxV2WrapperTrader() external view returns (IGmxV2IsolationModeWrapperTraderV2);
 }

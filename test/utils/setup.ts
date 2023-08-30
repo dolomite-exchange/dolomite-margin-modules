@@ -67,11 +67,14 @@ import {
   IGLPRewardsRouterV2__factory,
   IGmxExchangeRouter,
   IGmxExchangeRouter__factory,
+  IGmxMarketToken,
   IGmxMarketToken__factory,
   IGmxRegistryV1,
   IGmxRegistryV1__factory,
   IGmxRewardRouterV2,
   IGmxRewardRouterV2__factory,
+  IGmxRouter,
+  IGmxRouter__factory,
   IGmxVault,
   IGmxVault__factory,
   IGmxVester,
@@ -210,6 +213,8 @@ import {
   WETH_MAP,
   GMX_DEPOSIT_HANDLER_MAP,
   GMX_WITHDRAWAL_HANDLER_MAP,
+  GMX_ROUTER_MAP,
+  GMX_DEPOSIT_VAULT_MAP,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { createDolomiteRegistryImplementation } from './dolomite';
@@ -248,8 +253,10 @@ export interface GmxEcosystem {
   glpRewardsRouter: IGLPRewardsRouterV2;
   gmx: IERC20;
   gmxDepositHandler: IDepositHandler;
-  gmxEthUsdMarketToken: IERC20;
+  gmxDepositVault: SignerWithAddress;
+  gmxEthUsdMarketToken: IGmxMarketToken;
   gmxExchangeRouter: IGmxExchangeRouter;
+  gmxRouter: IGmxRouter;
   gmxRewardsRouter: IGmxRewardRouterV2;
   gmxVault: IGmxVault;
   gmxWithdrawalHandler: IWithdrawalHandler;
@@ -434,16 +441,15 @@ export async function setupUSDCBalance(
   await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+// @follow-up this doesn't match other setups. Is that ok?
 export async function setupGMBalance(
   core: CoreProtocol,
-  signer: SignerWithAddress,
+  signer: address,
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  const whaleAddress = '0xa329ac2efffea563159897d7828866cfaed42167';
-  const whaleSigner = await impersonate(whaleAddress, true);
-  await core.gmxEcosystem!.gmxEthUsdMarketToken.connect(whaleSigner).transfer(signer.address, amount);
-  await core.gmxEcosystem!.gmxEthUsdMarketToken.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  const controller = await impersonate(core.gmxEcosystem!.gmxExchangeRouter.address, true);
+  await core.gmxEcosystem!.gmxEthUsdMarketToken.connect(controller).mint(signer, amount);
 }
 
 export async function setupGMXBalance(
@@ -840,14 +846,16 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
       GLP_REWARD_ROUTER_MAP[network] as string,
       address => IGLPRewardsRouterV2__factory.connect(address, signer),
     ),
+    gmx: getContract(GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
+    gmxDepositHandler: getContract(GMX_DEPOSIT_HANDLER_MAP[network] as string, address => IDepositHandler__factory.connect(address, signer)),
+    gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network] as string, true, signer),
+    gmxEthUsdMarketToken: getContract(GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string, address => IGmxMarketToken__factory.connect(address, signer)),
+    gmxExchangeRouter: getContract(GMX_EXCHANGE_ROUTER_MAP[network] as string, address => IGmxExchangeRouter__factory.connect(address, signer)),
     gmxRewardsRouter: getContract(
       GMX_REWARD_ROUTER_MAP[network] as string,
       address => IGmxRewardRouterV2__factory.connect(address, signer),
     ),
-    gmx: getContract(GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
-    gmxDepositHandler: getContract(GMX_DEPOSIT_HANDLER_MAP[network] as string, address => IDepositHandler__factory.connect(address, signer)),
-    gmxEthUsdMarketToken: getContract(GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string, address => IGmxMarketToken__factory.connect(address, signer)),
-    gmxExchangeRouter: getContract(GMX_EXCHANGE_ROUTER_MAP[network] as string, address => IGmxExchangeRouter__factory.connect(address, signer)),
+    gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, address => IGmxRouter__factory.connect(address, signer)),
     gmxVault: getContract(GMX_VAULT_MAP[network] as string, address => IGmxVault__factory.connect(address, signer)),
     gmxWithdrawalHandler: getContract(GMX_WITHDRAWAL_HANDLER_MAP[network] as string, address => IWithdrawalHandler__factory.connect(address, signer)),
     sGlp: getContract(S_GLP_MAP[network] as string, address => IERC20__factory.connect(address, signer)),

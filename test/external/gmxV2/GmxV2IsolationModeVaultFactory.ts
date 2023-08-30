@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { GmxRegistryV2, GmxV2IsolationModeTokenVaultV1, GmxV2IsolationModeVaultFactory } from "src/types";
+import { GmxRegistryV2, GmxV2IsolationModeTokenVaultV1, GmxV2IsolationModeVaultFactory, IERC20 } from "src/types";
 import { Network } from "src/utils/no-deps-constants";
 import { revertToSnapshotAndCapture, snapshot } from "test/utils";
 import { expectArrayEq, expectEvent, expectThrow } from 'test/utils/assertions';
@@ -41,6 +41,10 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     describe('#constructor', () => {
         it('should initialize variables properly', async () => {
             expect(await factory.gmxRegistryV2()).to.equal(gmxRegistryV2.address);
+            expect(await factory.initialShortToken()).to.equal(core.tokens.usdc.address);
+            expect(await factory.initialShortTokenMarketId()).to.equal(core.marketIds.usdc);
+            expect(await factory.initialLongToken()).to.equal(core.tokens.weth.address);
+            expect(await factory.initialLongTokenMarketId()).to.equal(core.marketIds.weth);
             expectArrayEq(await factory.allowableDebtMarketIds(), []);
             expectArrayEq(await factory.allowableCollateralMarketIds(), []);
             expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem!.gmxEthUsdMarketToken.address);

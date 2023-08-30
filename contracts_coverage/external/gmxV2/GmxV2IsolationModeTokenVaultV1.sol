@@ -19,6 +19,8 @@
 */
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IDepositCallbackReceiver } from "../interfaces/gmx/IDepositCallbackReceiver.sol";
 import { Deposit } from "../interfaces/gmx/Deposit.sol";
 import { EventUtils } from "../interfaces/gmx/EventUtils.sol";
@@ -26,12 +28,17 @@ import { EventUtils } from "../interfaces/gmx/EventUtils.sol";
 import { IWithdrawalCallbackReceiver } from "../interfaces/gmx/IWithdrawalCallbackReceiver.sol";
 import { Withdrawal } from "../interfaces/gmx/Withdrawal.sol";
 
+import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
+import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
-import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
-
 
 /**
  * @title   GmxV2IsolationModeTokenVaultV1
@@ -40,50 +47,151 @@ import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/Isola
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the
  *          Eth-Usdc GMX Market token that can be used to credit a user's Dolomite balance.
  */
-contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithPausable, IDepositCallbackReceiver, IWithdrawalCallbackReceiver {
+contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContractHelpers {
+    using SafeERC20 for IERC20;
 
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultV1";
+    bytes32 private constant _VAULT_FROZEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFrozen")) - 1);
+    bytes32 private constant _SOURCE_IS_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.sourceIsWrapper")) - 1);
+    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1);
+
+    // ===================================================
+    // ==================== Modifiers ====================
+    // ===================================================
+
+    modifier requireNotFrozen() {
+        if (!isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
+        Require.that(!isVaultFrozen(),
+            _FILE,
+            "Vault is frozen"
+        );
+        _;
+    }
 
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function initiateWrapping() external nonReentrant onlyVaultOwner(msg.sender) {
-        // freeze vault
+    function initiateWrapping(
+        uint256 _tradeAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen() {
+        if (msg.value > 0) {
+            address payable wrapper = payable(address(registry().gmxV2WrapperTrader()));
+            (bool success, ) = wrapper.call{value: msg.value}("");
+            require(success, "Unable to send funds to wrapper");
+        }
 
-        // mint virtual GM tokens based on minimum market tokens value
+        _swapExactInputForOutput(
+            _tradeAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+        // @audit Will this allow reentrancy in _swapExactInputForOutput. May have to requireNotFrozen on external functions instead of internal
+        _setVaultFrozen(true);
     }
 
-    function afterDepositExecution(bytes32 key, Deposit.Props memory deposit, EventUtils.EventLogData memory eventData) external {
-        // adjust virtual GM token amount based on actual amount returned
-
-        // unfreeze vault
+    function initiateUnwrapping() external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen() {
+        // @todo
     }
 
-    function afterDepositCancellation(bytes32 key, Deposit.Props memory deposit, EventUtils.EventLogData memory eventData) external {
-        // burn the virtual GM tokens that were intially set
-
-        // unfreeze vault
+    // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit
+    function cancelDeposit(bytes32 _key) external onlyVaultOwner(msg.sender) {
+        registry().gmxV2WrapperTrader().cancelDeposit(_key);
+        _setVaultFrozen(false);
     }
 
-    function initiateWithdraw() external nonReentrant onlyVaultOwner(msg.sender) {
-
+    function setVaultFrozen(
+        bool _vaultFrozen
+    )
+    external
+    onlyVaultFactory(msg.sender) {
+        _setVaultFrozen(_vaultFrozen);
     }
 
-    function afterWithdrawalExecution(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external {
-
+    // @follow-up Should these emit events? I think not but just want to ask
+    function setSourceIsWrapper(
+        bool _sourceIsWrapper
+    )
+    external
+    onlyVaultFactory(msg.sender) {
+        _setSourceIsWrapper(_sourceIsWrapper);
     }
 
-    function afterWithdrawalCancellation(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external {
+    function setShouldSkipTransfer(
+        bool _shouldSkipTransfer
+    )
+    external
+    onlyVaultFactory(msg.sender) {
+        _setShouldSkipTransfer(_shouldSkipTransfer);
+    }
 
+    // @audit Does this need to be requireNotFrozen? I don't think so but want to confirm
+    function executeDepositIntoVault(
+        address _from,
+        uint256 _amount
+    )
+    public
+    override
+    onlyVaultFactory(msg.sender) {
+        // @todo track virtual balance and compare to real balanceOf
+        if (!isShouldSkipTransfer()) {
+            if (!isSourceIsWrapper()) {
+                IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
+            }
+            else {
+                IERC20(UNDERLYING_TOKEN()).safeTransferFrom(address(registry().gmxV2WrapperTrader()), address(this), _amount);
+                _setSourceIsWrapper(false);
+            }
+        } else {
+            _setShouldSkipTransfer(false);
+        }
+    }
+
+    // @audit Does this need to be requireNotFrozen? I don't think so but want to confirm
+    function executeWithdrawalFromVault(
+        address _recipient,
+        uint256 _amount
+    )
+    public
+    override
+    onlyVaultFactory(msg.sender) {
+        // track virtual balance and compare to real balanceOf
+        if (!isShouldSkipTransfer()) {
+                IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
+        }
+        else {
+            _setShouldSkipTransfer(false);
+        }
+    }
+
+    function isVaultFrozen() public view returns (bool) {
+        return _getUint256(_VAULT_FROZEN_SLOT) == 1;
+    }
+
+    function isSourceIsWrapper() public view returns (bool) {
+        return _getUint256(_SOURCE_IS_WRAPPER_SLOT) == 1;
+    }
+
+    function isShouldSkipTransfer() public view returns (bool) {
+        return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
     }
 
     function registry() public view returns (IGmxRegistryV2) {
-        return IGmxRegistryV2(address(0));
+        return IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).gmxRegistryV2();
     }
 
     function dolomiteRegistry()
@@ -95,7 +203,176 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithPausable
         return registry().dolomiteRegistry();
     }
 
-    function isExternalRedemptionPaused() public override view returns (bool) {
-        return true;
+    // ==================================================================
+    // ======================== Internal Functions ========================
+    // ==================================================================
+
+    function _depositIntoVaultForDolomiteMargin(
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    ) internal override requireNotFrozen() {
+        super._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
     }
+
+    function _withdrawFromVaultForDolomiteMargin(
+        uint256 _fromAccountNumber,
+        uint256 _amountWei
+    ) internal override requireNotFrozen() {
+        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+    }
+
+    function _openBorrowPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+    internal override requireNotFrozen() {
+        super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+    }
+
+    function _closeBorrowPositionWithUnderlyingVaultToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber
+    )
+    internal override requireNotFrozen() {
+        super._closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
+    }
+
+    function _closeBorrowPositionWithOtherTokens(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256[] calldata _collateralMarketIds
+    )
+    internal override requireNotFrozen() {
+        super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+    }
+
+    function _transferIntoPositionWithUnderlyingToken(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256 _amountWei
+    )
+    internal override requireNotFrozen() {
+        super._transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
+    }
+
+    function _transferIntoPositionWithOtherToken(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256 _marketId,
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    )
+    internal override requireNotFrozen() {
+        super._transferIntoPositionWithOtherToken(_fromAccountNumber, _borrowAccountNumber, _marketId, _amountWei, _balanceCheckFlag);
+    }
+
+    function _transferFromPositionWithUnderlyingToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+    internal override requireNotFrozen() {
+        super._transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
+    }
+
+    function _transferFromPositionWithOtherToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _marketId,
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    )
+    internal override requireNotFrozen() {
+        super._transferFromPositionWithOtherToken(_borrowAccountNumber, _toAccountNumber, _marketId, _amountWei, _balanceCheckFlag);
+    }
+
+    function _repayAllForBorrowPosition(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256 _marketId,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    )
+    internal override requireNotFrozen() {
+        super._repayAllForBorrowPosition(_fromAccountNumber, _borrowAccountNumber, _marketId, _balanceCheckFlag);
+    }
+
+    function _addCollateralAndSwapExactInputForOutput(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    ) internal override requireNotFrozen() {
+        super._addCollateralAndSwapExactInputForOutput(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+    }
+
+    function _swapExactInputForOutputAndRemoveCollateral(
+        uint256 _toAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    )
+    internal override requireNotFrozen() {
+        super._swapExactInputForOutputAndRemoveCollateral(
+            _toAccountNumber,
+            _borrowAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+    }
+
+    function _swapExactInputForOutput(
+        uint256 _tradeAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    )
+    internal override requireNotFrozen() {
+        super._swapExactInputForOutput(
+            _tradeAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+    }
+
+    function _setVaultFrozen(bool _vaultFrozen) internal {
+        _setUint256(_VAULT_FROZEN_SLOT, _vaultFrozen ? 1 : 0);
+    }
+
+    function _setSourceIsWrapper(bool _sourceIsWrapper) internal {
+        _setUint256(_SOURCE_IS_WRAPPER_SLOT, _sourceIsWrapper ? 1 : 0);
+    }
+
+    function _setShouldSkipTransfer(bool _shouldSkipTransfer) internal {
+        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
+    }
+
 }

@@ -138,7 +138,9 @@ export async function getGmxRegistryV2ConstructorParams(
 
   const calldata = await implementation.populateTransaction.initialize(
     core.gmxEcosystem!.gmxExchangeRouter.address,
+    core.gmxEcosystem!.gmxRouter.address,
     core.gmxEcosystem!.gmxDepositHandler.address,
+    core.gmxEcosystem!.gmxDepositVault.address,
     core.gmxEcosystem!.gmxWithdrawalHandler.address,
     core.gmxEcosystem!.gmxEthUsdMarketToken.address,
     core.dolomiteRegistry.address,
@@ -165,6 +167,10 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
 
   return [
     gmxRegistry.address,
+    core.tokens.usdc.address, // NOT CORRECT. GMX uses non-bridged USDC
+    core.marketIds.usdc, // NOT CORRECT. GMX uses non-bridged USDC
+    core.tokens.weth.address,
+    core.marketIds.weth,
     debtMarketIds,
     collateralMarketIds,
     gmToken.address,

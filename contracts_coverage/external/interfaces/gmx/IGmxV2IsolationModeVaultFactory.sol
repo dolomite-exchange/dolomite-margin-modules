@@ -40,7 +40,40 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ==================== Functions ====================
     // ===================================================
 
+    function depositIntoDolomiteMarginFromTokenConverter(
+        address _vault,
+        uint256 _vaultAccountNumber,
+        uint256 _amountWei
+    )
+    external;
+
+    function depositOtherTokenIntoDolomiteMarginFromTokenConverter(
+        address _vault,
+        uint256 _vaultAccountNumber,
+        uint256 _otherMarketId,
+        uint256 _amountWei
+    )
+    external;
+
+    function withdrawFromDolomiteMarginFromTokenConverter(
+        address _vault,
+        uint256 _vaultAccountNumber,
+        uint256 _amountWei
+    ) external;
+
     function ownerSetGmxRegistryV2(address _gmxRegistryV2) external;
 
     function gmxRegistryV2() external view returns (IGmxRegistryV2);
+
+    function initialShortToken() external view returns (address);
+
+    function initialShortTokenMarketId() external view returns (uint256);
+
+    function initialLongToken() external view returns (address);
+
+    function initialLongTokenMarketId() external view returns (uint256);
+
+    function setSourceIsWrapper(address _vault, bool _sourceIsWrapper) external;
+
+    function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
 }

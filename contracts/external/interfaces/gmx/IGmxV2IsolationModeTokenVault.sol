@@ -20,17 +20,14 @@
 
 pragma solidity ^0.8.9;
 
-
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-
 /**
- * @title   IGmxMarketToken
+ * @title   IGmxV2IsolationModeTokenVault
  * @author  Dolomite
- *
- * @notice  GMX MarketToken Interface
  */
-interface IGmxMarketToken is IERC20 {
+interface IGmxV2IsolationModeTokenVault {
+    function setVaultFrozen(bool _vaultFrozen) external;
 
-    function mint(address account, uint256 amount) external;
+    function setSourceIsWrapper(bool _sourceIsWrapper) external;
+
+    function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
 }

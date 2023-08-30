@@ -365,7 +365,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     function _depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
-    ) internal {
+    ) internal virtual {
         // This implementation requires we deposit into index 0
         Require.that(
             _toAccountNumber == 0,
@@ -379,7 +379,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     function _withdrawFromVaultForDolomiteMargin(
         uint256 _fromAccountNumber,
         uint256 _amountWei
-    ) internal {
+    ) internal virtual {
         // This implementation requires we withdraw from index 0
         Require.that(
             _fromAccountNumber == 0,
@@ -556,8 +556,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
-        virtual
         internal
+        virtual
     {
         Require.that(
             _borrowAccountNumber != 0,

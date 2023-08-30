@@ -20,17 +20,18 @@
 
 pragma solidity ^0.8.9;
 
-
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
 
 /**
- * @title   IGmxMarketToken
+ * @title   IGmxV2IsolationModeWrapperTraderV2
  * @author  Dolomite
- *
- * @notice  GMX MarketToken Interface
  */
-interface IGmxMarketToken is IERC20 {
+interface IGmxV2IsolationModeWrapperTraderV2 {
+    event DepositCreated(bytes32 indexed key);
+    event DepositExecuted(bytes32 indexed key);
+    event DepositCancelled(bytes32 indexed key);
 
-    function mint(address account, uint256 amount) external;
+    function GMX_REGISTRY_V2() external returns (IGmxRegistryV2);
+
+    function cancelDeposit(bytes32 _key) external;
 }
