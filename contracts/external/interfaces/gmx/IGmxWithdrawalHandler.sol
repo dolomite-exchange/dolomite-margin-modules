@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.9;
 
-interface IWithdrawalHandler {
+interface IGmxWithdrawalHandler {
         /**
      * @param receiver The address that will receive the withdrawal tokens.
      * @param callbackContract The contract that will be called back.

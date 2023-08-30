@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
 import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
 
+
 /**
  * @title   IGmxV2IsolationModeVaultFactory
  * @author  Dolomite
@@ -63,6 +64,12 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     function ownerSetGmxRegistryV2(address _gmxRegistryV2) external;
 
+    function setVaultFrozen(address _vault, bool _vaultFrozen) external;
+
+    function setSourceIsWrapper(address _vault, bool _sourceIsWrapper) external;
+
+    function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
+
     function gmxRegistryV2() external view returns (IGmxRegistryV2);
 
     function initialShortToken() external view returns (address);
@@ -73,9 +80,4 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     function initialLongTokenMarketId() external view returns (uint256);
 
-    function setVaultFrozen(address _vault, bool _vaultFrozen) external;
-
-    function setSourceIsWrapper(address _vault, bool _sourceIsWrapper) external;
-
-    function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
 }

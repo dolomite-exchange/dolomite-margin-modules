@@ -151,12 +151,12 @@ contract GmxV2IsolationModeVaultFactory is
             owner: _vault,
             number: _vaultAccountNumber
         });
-
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
 
         address token = DOLOMITE_MARGIN().getMarketTokenAddress(_otherMarketId);
         IERC20(token).transferFrom(msg.sender, address(this), _amountWei);
         IERC20(token).approve(address(DOLOMITE_MARGIN()), _amountWei);
+
         actions[0] = AccountActionLib.encodeDepositAction(
             /* _accountId = */ 0,
             _otherMarketId,

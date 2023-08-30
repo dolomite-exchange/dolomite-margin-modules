@@ -20,22 +20,22 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "../../protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
-import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
+
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2IsolationModeTokenVault } from "../interfaces/gmx/IGmxV2IsolationModeTokenVault.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 
-import { IDepositCallbackReceiver } from "../interfaces/gmx/IDepositCallbackReceiver.sol";
-import { Deposit } from "../interfaces/gmx/Deposit.sol";
-import { EventUtils } from "../interfaces/gmx/EventUtils.sol";
-
-import { IWithdrawalCallbackReceiver } from "../interfaces/gmx/IWithdrawalCallbackReceiver.sol";
-import { Withdrawal } from "../interfaces/gmx/Withdrawal.sol";
+import { Deposit } from "../interfaces/gmx/GmxDeposit.sol";
+import { EventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
+import { Withdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
+import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
+import { IGmxDepositCallbackReceiver } from "../interfaces/gmx/IGmxDepositCallbackReceiver.sol";
+import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
+import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawalCallbackReceiver.sol";
 
 
 /**
@@ -45,7 +45,12 @@ import { Withdrawal } from "../interfaces/gmx/Withdrawal.sol";
  * @notice  Used for wrapping GMX GM tokens (via depositing into GMX)
  */
 
-contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmxV2IsolationModeWrapperTraderV2, IDepositCallbackReceiver, IWithdrawalCallbackReceiver  {
+contract GmxV2IsolationModeWrapperTraderV2 is 
+    IsolationModeWrapperTraderV2,
+    IGmxV2IsolationModeWrapperTraderV2,
+    IGmxDepositCallbackReceiver,
+    IGmxWithdrawalCallbackReceiver  
+{
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
@@ -55,14 +60,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
     IGmxRegistryV2 public immutable GMX_REGISTRY_V2; // solhint-disable-line var-name-mixedcase
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
     bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
-
-    // =================================================
-    // ================ Field Variables ================
-    // =================================================
-    struct DepositInfo {
-        address vault;
-        uint256 accountNumber;
-    }
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -80,13 +77,140 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
 
     // ============ Constructor ============
 
-    constructor(address _gmxRegistryV2, address _dGM, address _dolomiteMargin) IsolationModeWrapperTraderV2(_dGM, _dolomiteMargin) {
+    constructor(
+        address _gmxRegistryV2,
+        address _dGM,
+        address _dolomiteMargin
+    ) IsolationModeWrapperTraderV2(_dGM, _dolomiteMargin) {
         GMX_REGISTRY_V2 = IGmxRegistryV2(_gmxRegistryV2);
     }
 
     // ============================================
     // ============= Public Functions =============
     // ============================================
+
+    receive() external payable {}
+
+    function afterDepositExecution(
+        bytes32 key,
+        Deposit.Props memory deposit,
+        EventUtils.EventLogData memory eventData
+    ) 
+    external 
+    onlyHandler(msg.sender) {
+        DepositInfo storage depositInfo = _getDepositSlot(key);
+        Require.that(
+            depositInfo.vault != address(0),
+            _FILE,
+            "Invalid deposit key"
+        );
+
+        // @follow-up EventData is weird so we should discuss
+        uint256 len = eventData.uintItems.items.length;
+        EventUtils.UintKeyValue memory receivedMarketTokens = eventData.uintItems.items[len-1];
+        Require.that(
+            keccak256(abi.encodePacked(receivedMarketTokens.key)) == keccak256(abi.encodePacked("receivedMarketToken")),
+            _FILE,
+            "Unexpected return data"
+        );
+
+        IERC20 underlyingToken = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN());
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY));
+
+        underlyingToken.safeTransfer(depositInfo.vault, deposit.numbers.minMarketTokens);
+        if (receivedMarketTokens.value > deposit.numbers.minMarketTokens) {
+            uint256 diff = receivedMarketTokens.value - deposit.numbers.minMarketTokens;
+            underlyingToken.approve(depositInfo.vault, diff);
+
+            factory.depositIntoDolomiteMarginFromTokenConverter(
+                depositInfo.vault,
+                depositInfo.accountNumber,
+                diff
+            ); 
+            factory.setVaultFrozen(depositInfo.vault, false);
+        }
+
+        depositInfo.vault = address(0);
+        depositInfo.accountNumber = 0;
+        emit DepositExecuted(key);
+    }
+
+    function afterDepositCancellation(
+        bytes32 key,
+        Deposit.Props memory deposit,
+        EventUtils.EventLogData memory // eventData
+    ) 
+    external 
+    onlyHandler(msg.sender) {
+        DepositInfo storage depositInfo = _getDepositSlot(key);
+        Require.that(
+            depositInfo.vault != address(0),
+            _FILE,
+            "Invalid deposit key"
+        );
+
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY));
+
+        if (deposit.numbers.initialLongTokenAmount > 0) {
+            _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
+                deposit.addresses.initialLongToken,
+                deposit.numbers.initialLongTokenAmount,
+                depositInfo,
+                factory
+            );
+        }
+        else {
+            _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
+                deposit.addresses.initialShortToken,
+                deposit.numbers.initialShortTokenAmount,
+                depositInfo,
+                factory
+            );
+        }
+
+        factory.setShouldSkipTransfer(depositInfo.vault, true);
+        factory.withdrawFromDolomiteMarginFromTokenConverter(
+            depositInfo.vault,
+            depositInfo.accountNumber, 
+            deposit.numbers.minMarketTokens
+        );
+        factory.setVaultFrozen(depositInfo.vault, false);
+
+        // @todo investigate if need to send execution fee back to user
+        depositInfo.vault = address(0);
+        depositInfo.accountNumber = 0;
+        emit DepositCancelled(key);
+    }
+
+    function afterWithdrawalExecution(
+        bytes32 key,
+        Withdrawal.Props memory withdrawal,
+        EventUtils.EventLogData memory eventData
+    ) 
+    external 
+    onlyHandler(msg.sender) {}
+
+    function afterWithdrawalCancellation(
+        bytes32 key,
+        Withdrawal.Props memory withdrawal,
+        EventUtils.EventLogData memory eventData
+    ) 
+    external 
+    onlyHandler(msg.sender) {}
+
+    function cancelDeposit(bytes32 _key) external {
+        DepositInfo memory depositInfo = _getDepositSlot(_key);
+        Require.that(
+            depositInfo.vault == msg.sender,
+            _FILE,
+            "Only vault can cancel deposit"
+        );
+        GMX_REGISTRY_V2.gmxExchangeRouter().cancelDeposit(_key);
+    }
+
+    function setHandlerStatus(address _address, bool _status) external onlyDolomiteMarginOwner(msg.sender) {
+        _setHandlerStatus(_address, _status);
+    }
 
     function isValidInputToken(address _inputToken) public view override returns (bool) {
         address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).initialLongToken();
@@ -153,132 +277,12 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
         return _minOutputAmount;
     }
 
-    function _getExchangeCost(
-        address,
-        address,
-        uint256,
-        bytes memory
-    )
-    internal
-    override
-    pure
-    returns (uint256)
-    {
-        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
-    }
-
-    function afterDepositExecution(
-        bytes32 key,
-        Deposit.Props memory deposit,
-        EventUtils.EventLogData memory eventData
-    ) 
-    external 
-    onlyHandler(msg.sender) {
-        DepositInfo storage depositInfo = _getDepositSlot(key);
-        Require.that(
-            depositInfo.vault != address(0),
-            _FILE,
-            'Invalid deposit key'
-        );
-
-        // @follow-up These are weird so we should discuss
-        uint256 len = eventData.uintItems.items.length;
-        EventUtils.UintKeyValue memory receivedMarketTokens = eventData.uintItems.items[len-1];
-        Require.that(
-            keccak256(abi.encodePacked(receivedMarketTokens.key)) == keccak256(abi.encodePacked('receivedMarketToken')),
-            _FILE,
-            "Unexpected return data"
-        );
-
-        IERC20 underlyingToken = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN());
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY));
-
-        if (receivedMarketTokens.value > deposit.numbers.minMarketTokens) {
-            underlyingToken.safeTransfer(depositInfo.vault, deposit.numbers.minMarketTokens);
-            underlyingToken.approve(depositInfo.vault, receivedMarketTokens.value);
-
-            factory.setSourceIsWrapper(depositInfo.vault, true);
-            factory.depositIntoDolomiteMarginFromTokenConverter(
-                depositInfo.vault,
-                depositInfo.accountNumber,
-                receivedMarketTokens.value - deposit.numbers.minMarketTokens
-            ); 
-            factory.setVaultFrozen(depositInfo.vault, false);
-        }
-
-        depositInfo.vault = address(0);
-        depositInfo.accountNumber = 0;
-        emit DepositExecuted(key);
-    }
-
-    function afterDepositCancellation(
-        bytes32 key,
-        Deposit.Props memory deposit,
-        EventUtils.EventLogData memory // eventData
-    ) 
-    external 
-    onlyHandler(msg.sender) {
-        DepositInfo storage depositInfo = _getDepositSlot(key);
-        Require.that(
-            depositInfo.vault != address(0),
-            _FILE,
-            'Invalid deposit key'
-        );
-
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY));
-
-        if (deposit.numbers.initialLongTokenAmount > 0) {
-            _sendOtherTokenToVault(
-                deposit.addresses.initialLongToken,
-                deposit.numbers.initialLongTokenAmount,
-                depositInfo,
-                factory
-            );
-        }
-        else {
-            _sendOtherTokenToVault(
-                deposit.addresses.initialShortToken,
-                deposit.numbers.initialShortTokenAmount,
-                depositInfo,
-                factory
-            );
-        }
-
-        factory.setShouldSkipTransfer(depositInfo.vault, true);
-        factory.withdrawFromDolomiteMarginFromTokenConverter(
-            depositInfo.vault,
-            depositInfo.accountNumber, 
-            deposit.numbers.minMarketTokens
-        );
-        factory.setVaultFrozen(depositInfo.vault, false);
-
-        // @todo investigate if need to send execution fee back to user
-        depositInfo.vault = address(0);
-        depositInfo.accountNumber = 0;
-        emit DepositCancelled(key);
-    }
-
-    function afterWithdrawalExecution(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external onlyHandler(msg.sender) {}
-
-    function afterWithdrawalCancellation(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external onlyHandler(msg.sender) {}
-
-    function cancelDeposit(bytes32 _key) external {
-        DepositInfo memory depositInfo = _getDepositSlot(_key);
-        Require.that(
-            depositInfo.vault == msg.sender,
-            _FILE,
-            "Only vault can cancel deposit"
-        );
-        GMX_REGISTRY_V2.gmxExchangeRouter().cancelDeposit(_key);
-    }
-
-    function setHandlerStatus(address _address, bool _status) external onlyDolomiteMarginOwner(msg.sender) {
-        _setHandlerStatus(_address, _status);
-    }
-
-    receive() external payable {}
-
-    function _sendOtherTokenToVault(address _token, uint256 _amount, DepositInfo memory _info, IGmxV2IsolationModeVaultFactory factory) internal {
+    function _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
+        address _token,
+        uint256 _amount,
+        DepositInfo memory _info,
+        IGmxV2IsolationModeVaultFactory factory
+    ) internal {
         IERC20(_token).approve(address(factory), _amount);
         factory.depositOtherTokenIntoDolomiteMarginFromTokenConverter(
             _info.vault,
@@ -293,6 +297,12 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
         _setUint256(slot, _status ? 1 : 0);
     }
 
+    function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
+        DepositInfo storage storageInfo = _getDepositSlot(_key);
+        storageInfo.vault = _info.vault;
+        storageInfo.accountNumber = _info.accountNumber;
+    }
+
     function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {
         bytes32 slot = keccak256(abi.encodePacked(_DEPOSIT_INFO_SLOT, _key));
         // solhint-disable-next-line no-inline-assembly
@@ -301,9 +311,18 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
         }
     }
 
-    function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
-        DepositInfo storage storageInfo = _getDepositSlot(_key);
-        storageInfo.vault = _info.vault;
-        storageInfo.accountNumber = _info.accountNumber;
+    function _getExchangeCost(
+        address,
+        address,
+        uint256,
+        bytes memory
+    )
+    internal
+    override
+    pure
+    returns (uint256)
+    {
+        revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
+
 }

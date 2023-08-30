@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.9;
 
-interface IDepositHandler {
+interface IGmxDepositHandler {
     // @dev CreateDepositParams struct used in createDeposit to avoid stack
     // too deep errors
     //

@@ -26,9 +26,9 @@ import { Require } from "../../protocol/lib/Require.sol";
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
-import { IWithdrawalCallbackReceiver } from "../interfaces/gmx/IWithdrawalCallbackReceiver.sol";
-import { EventUtils } from "../interfaces/gmx/EventUtils.sol";
-import { Withdrawal } from "../interfaces/gmx/Withdrawal.sol";
+import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawalCallbackReceiver.sol";
+import { EventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
+import { Withdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
 
 /**
@@ -37,7 +37,7 @@ import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationMod
  *
  * @notice  Used for unwrapping GMX GM (via withdrawing from GMX)
  */
-contract GmxV2IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2, IWithdrawalCallbackReceiver {
+contract GmxV2IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2, IGmxWithdrawalCallbackReceiver {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
 library EventUtils {
     struct EmitPositionDecreaseParams {
@@ -139,7 +139,12 @@ library EventUtils {
         items.items[index].value = value;
     }
 
-    function setItem(AddressItems memory items, uint256 index, string memory key, address[] memory value) internal pure {
+    function setItem(
+        AddressItems memory items,
+        uint256 index,
+        string memory key,
+        address[] memory value
+    ) internal pure {
         items.arrayItems[index].key = key;
         items.arrayItems[index].value = value;
     }
@@ -211,7 +216,12 @@ library EventUtils {
         items.items[index].value = value;
     }
 
-    function setItem(Bytes32Items memory items, uint256 index, string memory key, bytes32[] memory value) internal pure {
+    function setItem(
+        Bytes32Items memory items,
+        uint256 index,
+        string memory key,
+        bytes32[] memory value
+    ) internal pure {
         items.arrayItems[index].key = key;
         items.arrayItems[index].value = value;
     }

@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
-import "./EventUtils.sol";
+import { EventUtils } from "./GmxEventUtils.sol";
 
-interface IEventEmitter {
+interface IGmxEventEmitter {
     event EventLog(
         address msgSender,
         string eventName,
         string indexed eventNameHash,
         EventUtils.EventLogData eventData
     );
+
     event EventLog1(
         address msgSender,
         string eventName,
