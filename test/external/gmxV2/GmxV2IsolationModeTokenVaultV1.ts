@@ -94,6 +94,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
+    await wrapper.connect(core.governance).setHandlerStatus(core.gmxEcosystem!.gmxDepositHandler.address, true);
+    await wrapper.connect(core.governance).setHandlerStatus(core.gmxEcosystem!.gmxWithdrawalHandler.address, true);
 
     snapshotId = await snapshot();
   });
@@ -130,7 +132,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        {value: parseEther(".005")}
+        {value: parseEther(".01")}
       );
 
       expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 1);

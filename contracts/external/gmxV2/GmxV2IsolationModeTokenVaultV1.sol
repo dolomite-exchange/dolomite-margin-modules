@@ -40,7 +40,6 @@ import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   GmxV2IsolationModeTokenVaultV1
@@ -162,6 +161,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContr
             }
             _compareVirtualToRealBalance();
         } else {
+            // @todo confirm the vault is frozen
             _setShouldSkipTransfer(false);
         }
     }

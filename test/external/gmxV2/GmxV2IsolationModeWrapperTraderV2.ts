@@ -75,6 +75,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
     await setupWETHBalance(core, core.hhUser1, wethAmount, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, wethAmount);
+    await wrapper.connect(core.governance).setHandlerStatus(core.gmxEcosystem!.gmxDepositHandler.address, true);
+    await wrapper.connect(core.governance).setHandlerStatus(core.gmxEcosystem!.gmxWithdrawalHandler.address, true);
 
     snapshotId = await snapshot();
   });
@@ -284,13 +286,12 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       await expectThrow(
         wrapper.connect(core.hhUser1).afterDepositExecution(DUMMY_DEPOSIT_KEY, deposit, eventData),
-        `GmxV2IsolationModeWrapperV2: Only deposit handler can call <${core.hhUser1.address.toLowerCase()}>`,
+        `GmxV2IsolationModeWrapperV2: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail when deposit was not created through wrapper', async () => {
       const depositExecutor = await impersonate(core.gmxEcosystem!.gmxDepositHandler.address, true);
-      let key = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
       let deposit = {
         addresses: {
           account: wrapper.address,
@@ -347,7 +348,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         };
 
       await expectThrow(
-        wrapper.connect(depositExecutor).afterDepositExecution(key, deposit, eventData),
+        wrapper.connect(depositExecutor).afterDepositExecution(DUMMY_DEPOSIT_KEY, deposit, eventData),
         'GmxV2IsolationModeWrapperV2: Invalid deposit key',
       );
     });
@@ -399,7 +400,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
 
     it('should fail when not called by deposit handler', async () => {
-      let key = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
       let deposit = {
         addresses: {
           account: wrapper.address,
@@ -456,14 +456,13 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         };
 
       await expectThrow(
-        wrapper.connect(core.hhUser1).afterDepositCancellation(key, deposit, eventData),
-        `GmxV2IsolationModeWrapperV2: Only deposit handler can call <${core.hhUser1.address.toLowerCase()}>`,
+        wrapper.connect(core.hhUser1).afterDepositCancellation(DUMMY_DEPOSIT_KEY, deposit, eventData),
+        `GmxV2IsolationModeWrapperV2: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail when deposit was not created through wrapper', async () => {
       const depositExecutor = await impersonate(core.gmxEcosystem!.gmxDepositHandler.address, true);
-      let key = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
       let deposit = {
         addresses: {
           account: wrapper.address,
@@ -520,7 +519,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         };
 
       await expectThrow(
-        wrapper.connect(depositExecutor).afterDepositCancellation(key, deposit, eventData),
+        wrapper.connect(depositExecutor).afterDepositCancellation(DUMMY_DEPOSIT_KEY, deposit, eventData),
         'GmxV2IsolationModeWrapperV2: Invalid deposit key',
       );
     });
@@ -605,6 +604,17 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     it('should fail if token is not one of two assets in LP', async () => {
       expect(await wrapper.isValidInputToken(core.tokens.wbtc.address)).to.eq(false);
       expect(await wrapper.isValidInputToken(core.hhUser1.address)).to.eq(false);
+    });
+  });
+
+  describe('#setHandlerStatus', () => {
+    it('should work normally', async () => {
+      await wrapper.connect(core.governance).setHandlerStatus(core.gmxEcosystem!.gmxDepositHandler.address, true);
+      expect(await wrapper.getHandlerStatus(core.gmxEcosystem!.gmxDepositHandler.address)).to.eq(true);
+    });
+
+    it('should failed if not called by dolomite owner', async () => {
+
     });
   });
 });

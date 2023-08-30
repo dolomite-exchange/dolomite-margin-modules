@@ -53,6 +53,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
 
     IGmxRegistryV2 public immutable GMX_REGISTRY_V2; // solhint-disable-line var-name-mixedcase
+    bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
+    bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
 
     // =================================================
     // ================ Field Variables ================
@@ -62,16 +64,13 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
         uint256 accountNumber;
     }
 
-    mapping(bytes32 => DepositInfo) public depositKeyToVault;
-    mapping(address => bool) private handlers;
-
     // ===================================================
     // ==================== Modifiers ====================
     // ===================================================
 
     modifier onlyHandler(address _from) {
         Require.that(
-            handlers[_from],
+            getHandlerStatus(_from),
             _FILE,
             "Only handler can call",
             _from
@@ -95,6 +94,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
         return (_inputToken == longToken || _inputToken == shortToken);
     }
 
+    function getHandlerStatus(address _address) public view returns (bool) {
+        bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _address));
+        return _getUint256(slot) == 1;
+    }
+
     // ============================================
     // ============ Internal Functions ============
     // ============================================
@@ -113,13 +117,14 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
         returns (uint256)
     {
         IGmxExchangeRouter exchangeRouter = GMX_REGISTRY_V2.gmxExchangeRouter();
-        address depositVault = GMX_REGISTRY_V2.gmxDepositVault();
         uint256 bal = address(this).balance;
 
-        exchangeRouter.sendWnt{value: bal}(depositVault, bal);
-        IERC20(_inputToken).approve(address(GMX_REGISTRY_V2.gmxRouter()), _inputAmount);
-        exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY));
+        {
+            address depositVault = GMX_REGISTRY_V2.gmxDepositVault();
+            exchangeRouter.sendWnt{value: bal}(depositVault, bal);
+            IERC20(_inputToken).approve(address(GMX_REGISTRY_V2.gmxRouter()), _inputAmount);
+            exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
+        }
 
         {
             IGmxExchangeRouter.CreateDepositParams memory depositParamsTest = IGmxExchangeRouter.CreateDepositParams(
@@ -127,24 +132,24 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
                 address(this), // callbackContract
                 address(0), // uiFeeReceiver
                 _outputTokenUnderlying, // market
-                factory.initialLongToken(), // initialLongToken
-                factory.initialShortToken(), // initialShortToken
+                IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).initialLongToken(), // initialLongToken
+                IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).initialShortToken(), // initialShortToken
                 new address[](0), // longTokenSwapPath
                 new address[](0), // shortTokenSwapPath
                 _minOutputAmount,
                 false, // shouldUnwrapNativeToken
                 bal, // executionFee
-                850000 // callbackGasLimit // @follow-up How much gas to spend? Should this be in extraOrderData
+                1500000 // callbackGasLimit // @follow-up How much gas to spend? Should this be in extraOrderData
             );
 
             bytes32 depositKey = exchangeRouter.createDeposit(depositParamsTest);
             // @audit Do we trust this extraOrderData
-            depositKeyToVault[depositKey] = DepositInfo(_tradeOriginator, abi.decode(_extraOrderData, (uint256))); 
+            _setDepositInfo(depositKey, DepositInfo(_tradeOriginator, abi.decode(_extraOrderData, (uint256))));
             emit DepositCreated(depositKey);
         }
 
         // @audit Do we need to confirm if _tradeOriginator is a vault?
-        factory.setShouldSkipTransfer(_tradeOriginator, true);
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setShouldSkipTransfer(_tradeOriginator, true);
         return _minOutputAmount;
     }
 
@@ -169,8 +174,9 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
     ) 
     external 
     onlyHandler(msg.sender) {
+        DepositInfo storage depositInfo = _getDepositSlot(key);
         Require.that(
-            depositKeyToVault[key].vault != address(0),
+            depositInfo.vault != address(0),
             _FILE,
             'Invalid deposit key'
         );
@@ -188,17 +194,21 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY));
 
         if (receivedMarketTokens.value > deposit.numbers.minMarketTokens) {
-            underlyingToken.safeTransfer(depositKeyToVault[key].vault, deposit.numbers.minMarketTokens);
-            underlyingToken.approve(depositKeyToVault[key].vault, receivedMarketTokens.value);
+            underlyingToken.safeTransfer(depositInfo.vault, deposit.numbers.minMarketTokens);
+            underlyingToken.approve(depositInfo.vault, receivedMarketTokens.value);
 
-            factory.setSourceIsWrapper(depositKeyToVault[key].vault, true);
+            factory.setSourceIsWrapper(depositInfo.vault, true);
             factory.depositIntoDolomiteMarginFromTokenConverter(
-                depositKeyToVault[key].vault,
-                depositKeyToVault[key].accountNumber,
+                depositInfo.vault,
+                depositInfo.accountNumber,
                 receivedMarketTokens.value - deposit.numbers.minMarketTokens
             ); 
-            factory.setVaultFrozen(depositKeyToVault[key].vault, false);
+            factory.setVaultFrozen(depositInfo.vault, false);
         }
+
+        depositInfo.vault = address(0);
+        depositInfo.accountNumber = 0;
+        emit DepositExecuted(key);
     }
 
     function afterDepositCancellation(
@@ -208,9 +218,9 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
     ) 
     external 
     onlyHandler(msg.sender) {
-        DepositInfo memory info = depositKeyToVault[key];
+        DepositInfo storage depositInfo = _getDepositSlot(key);
         Require.that(
-            info.vault != address(0),
+            depositInfo.vault != address(0),
             _FILE,
             'Invalid deposit key'
         );
@@ -221,7 +231,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
             _sendOtherTokenToVault(
                 deposit.addresses.initialLongToken,
                 deposit.numbers.initialLongTokenAmount,
-                info,
+                depositInfo,
                 factory
             );
         }
@@ -229,22 +239,23 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
             _sendOtherTokenToVault(
                 deposit.addresses.initialShortToken,
                 deposit.numbers.initialShortTokenAmount,
-                info,
+                depositInfo,
                 factory
             );
         }
 
-        factory.setShouldSkipTransfer(depositKeyToVault[key].vault, true);
+        factory.setShouldSkipTransfer(depositInfo.vault, true);
         factory.withdrawFromDolomiteMarginFromTokenConverter(
-            depositKeyToVault[key].vault,
-            depositKeyToVault[key].accountNumber, 
+            depositInfo.vault,
+            depositInfo.accountNumber, 
             deposit.numbers.minMarketTokens
         );
-        factory.setVaultFrozen(depositKeyToVault[key].vault, false);
+        factory.setVaultFrozen(depositInfo.vault, false);
 
         // @todo investigate if need to send execution fee back to user
+        depositInfo.vault = address(0);
+        depositInfo.accountNumber = 0;
         emit DepositCancelled(key);
-        delete depositKeyToVault[key];
     }
 
     function afterWithdrawalExecution(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external onlyHandler(msg.sender) {}
@@ -252,8 +263,9 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
     function afterWithdrawalCancellation(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external onlyHandler(msg.sender) {}
 
     function cancelDeposit(bytes32 _key) external {
+        DepositInfo memory depositInfo = _getDepositSlot(_key);
         Require.that(
-            depositKeyToVault[_key].vault == msg.sender,
+            depositInfo.vault == msg.sender,
             _FILE,
             "Only vault can cancel deposit"
         );
@@ -277,6 +289,21 @@ contract GmxV2IsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2, IGmx
     }
 
     function _setHandlerStatus(address _address, bool _status) internal {
-        handlers[_address] = _status;
+        bytes32 slot =  keccak256(abi.encodePacked(_HANDLERS_SLOT, _address));
+        _setUint256(slot, _status ? 1 : 0);
+    }
+
+    function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {
+        bytes32 slot = keccak256(abi.encodePacked(_DEPOSIT_INFO_SLOT, _key));
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            info.slot := slot
+        }
+    }
+
+    function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
+        DepositInfo storage storageInfo = _getDepositSlot(_key);
+        storageInfo.vault = _info.vault;
+        storageInfo.accountNumber = _info.accountNumber;
     }
 }
