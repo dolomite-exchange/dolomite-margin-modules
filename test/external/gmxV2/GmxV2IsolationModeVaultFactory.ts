@@ -89,8 +89,8 @@ describe('GmxV2IsolationModeVaultFactory', () => {
   describe('#constructor', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.gmxRegistryV2()).to.equal(gmxRegistryV2.address);
-      expect(await factory.initialShortToken()).to.equal(core.tokens.usdc.address);
-      expect(await factory.initialShortTokenMarketId()).to.equal(core.marketIds.usdc);
+      expect(await factory.initialShortToken()).to.equal(core.tokens.nativeUsdc!.address);
+      expect(await factory.initialShortTokenMarketId()).to.equal(core.marketIds.nativeUsdc!);
       expect(await factory.initialLongToken()).to.equal(core.tokens.weth.address);
       expect(await factory.initialLongTokenMarketId()).to.equal(core.marketIds.weth);
       expectArrayEq(await factory.allowableDebtMarketIds(), []);

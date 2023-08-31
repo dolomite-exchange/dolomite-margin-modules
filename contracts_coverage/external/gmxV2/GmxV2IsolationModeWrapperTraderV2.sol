@@ -174,7 +174,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         );
         factory.setVaultFrozen(depositInfo.vault, false);
 
-        // @todo investigate if need to send execution fee back to user
+        // @todo send execution fee back to user
         depositInfo.vault = address(0);
         depositInfo.accountNumber = 0;
         emit DepositCancelled(key);

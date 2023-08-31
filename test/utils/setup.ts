@@ -448,6 +448,18 @@ export async function setupWETHBalance(
   await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupNativeUSDCBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x3dd1d15b3c78d6acfd75a254e857cbe5b9ff0af2'; // Radiant USDC pool
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.nativeUsdc!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.nativeUsdc!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupUSDCBalance(
   core: CoreProtocol,
   signer: SignerWithAddress,

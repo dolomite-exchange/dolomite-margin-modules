@@ -167,8 +167,8 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
 
   return [
     gmxRegistry.address,
-    core.tokens.usdc.address, // NOT CORRECT. GMX uses non-bridged USDC
-    core.marketIds.usdc, // NOT CORRECT. GMX uses non-bridged USDC
+    core.tokens.nativeUsdc!.address,
+    core.marketIds.nativeUsdc,
     core.tokens.weth.address,
     core.marketIds.weth,
     debtMarketIds,
