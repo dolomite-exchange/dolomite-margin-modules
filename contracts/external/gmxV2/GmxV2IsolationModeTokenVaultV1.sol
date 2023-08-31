@@ -90,7 +90,11 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContr
         if (msg.value > 0) {
             address payable wrapper = payable(address(registry().gmxV2WrapperTrader()));
             (bool success, ) = wrapper.call{value: msg.value}("");
-            require(success, "Unable to send funds to wrapper");
+            Require.that(
+                success,
+                _FILE,
+                "Unable to send funds to wrapper"
+            );
         }
 
         _swapExactInputForOutput(

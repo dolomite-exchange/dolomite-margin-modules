@@ -174,7 +174,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         );
         factory.setVaultFrozen(depositInfo.vault, false);
 
-        // @todo send execution fee back to user
         depositInfo.vault = address(0);
         depositInfo.accountNumber = 0;
         emit DepositCancelled(key);
@@ -192,6 +191,16 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function setHandlerStatus(address _address, bool _status) external onlyDolomiteMarginOwner(msg.sender) {
         _setHandlerStatus(_address, _status);
+    }
+
+    function ownerWithdrawETH(address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
+        uint256 bal = address(this).balance;
+        (bool success, ) = payable(_receiver).call{value: bal}("");
+        if (success) { /* FOR COVERAGE TESTING */ }
+        Require.that(success,
+            _FILE,
+            "Unable to withdraw funds"
+        );
     }
 
     function isValidInputToken(address _inputToken) public view override returns (bool) {

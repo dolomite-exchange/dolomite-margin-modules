@@ -15,7 +15,7 @@ import {
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network } from 'src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, sendEther, setEtherBalance, snapshot } from 'test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
@@ -954,6 +954,29 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         wrapper.connect(core.hhUser1).cancelDeposit(depositKey),
         'GmxV2IsolationModeWrapperV2: Only vault can cancel deposit'
       );
+    });
+  });
+
+  describe('#ownerWithdrawETH', () => {
+    it('should work normally', async () => {
+      await setEtherBalance(wrapper.address, parseEther("1"));
+      await expect(() => wrapper.connect(core.governance).ownerWithdrawETH(core.hhUser1.address))
+      .to.changeEtherBalance(core.hhUser1, parseEther("1"));
+    });
+
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        wrapper.connect(core.hhUser1).ownerWithdrawETH(core.hhUser1.address),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail if call fails', async () => {
+      await setEtherBalance(wrapper.address, parseEther("1"));
+      await expectThrow(
+        wrapper.connect(core.governance).ownerWithdrawETH(core.governance.address),
+        'GmxV2IsolationModeWrapperV2: Unable to withdraw funds',
+        );
     });
   });
 
