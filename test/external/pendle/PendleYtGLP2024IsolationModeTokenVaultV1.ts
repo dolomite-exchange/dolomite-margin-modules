@@ -410,7 +410,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 4 * ONE_WEEK_SECONDS);
     });
 
-    it.only('should use existing expiry if borrow position already exists and balance goes negative', async () => {
+    it('should use existing expiry if borrow position already exists and balance goes negative', async () => {
       let timestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
       await factory.connect(core.governance).ownerSetYtMaturityTimestamp(timestamp + 12 * ONE_WEEK_SECONDS);
       await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([otherMarketId1, otherMarketId2]);
@@ -431,9 +431,6 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
 
       const inputAmount = otherAmountWei.div(2);
       const zapParams = await getSimpleZapParams(otherMarketId2, inputAmount, otherMarketId1, inputAmount, core);
-      console.log(zapParams.tradersPath);
-      console.log(zapParams.makerAccounts);
-      console.log(zapParams.userConfig);
       await vault.connect(core.hhUser1).swapExactInputForOutput(
         borrowAccountNumber,
         zapParams.marketIdsPath,
