@@ -20,25 +20,26 @@
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IDepositCallbackReceiver } from "../interfaces/gmx/IDepositCallbackReceiver.sol";
-import { Deposit } from "../interfaces/gmx/Deposit.sol";
-import { EventUtils } from "../interfaces/gmx/EventUtils.sol";
-
-import { IWithdrawalCallbackReceiver } from "../interfaces/gmx/IWithdrawalCallbackReceiver.sol";
-import { Withdrawal } from "../interfaces/gmx/Withdrawal.sol";
-
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
+import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
-import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
-import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
-import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
+
+import { Deposit } from "../interfaces/gmx/GmxDeposit.sol";
+import { EventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
+import { Withdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
+import { IGmxDepositCallbackReceiver } from "../interfaces/gmx/IGmxDepositCallbackReceiver.sol";
+import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawalCallbackReceiver.sol";
+
 
 /**
  * @title   GmxV2IsolationModeTokenVaultV1
@@ -55,9 +56,10 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContr
     // ==================================================================
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultV1";
+    bytes32 private constant _VIRTUAL_BALANCE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.virtualBalance")) - 1);
     bytes32 private constant _VAULT_FROZEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFrozen")) - 1);
     bytes32 private constant _SOURCE_IS_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.sourceIsWrapper")) - 1);
-    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1);
+    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable max-line-length
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -108,7 +110,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContr
         // @todo
     }
 
-    // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit
+    // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can
     function cancelDeposit(bytes32 _key) external onlyVaultOwner(msg.sender) {
         registry().gmxV2WrapperTrader().cancelDeposit(_key);
         _setVaultFrozen(false);
@@ -147,16 +149,23 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContr
     public
     override
     onlyVaultFactory(msg.sender) {
-        // @todo track virtual balance and compare to real balanceOf
+        _setVirtualBalance(getVirtualBalance() + _amount);
+
         if (!isShouldSkipTransfer()) {
             if (!isSourceIsWrapper()) {
                 IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
             }
             else {
-                IERC20(UNDERLYING_TOKEN()).safeTransferFrom(address(registry().gmxV2WrapperTrader()), address(this), _amount);
+                IERC20(UNDERLYING_TOKEN()).safeTransferFrom(
+                    address(registry().gmxV2WrapperTrader()),
+                    address(this),
+                    _amount
+                );
                 _setSourceIsWrapper(false);
             }
+            _compareVirtualToRealBalance();
         } else {
+            // @todo confirm the vault is frozen
             _setShouldSkipTransfer(false);
         }
     }
@@ -169,13 +178,19 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContr
     public
     override
     onlyVaultFactory(msg.sender) {
-        // track virtual balance and compare to real balanceOf
+        _setVirtualBalance(getVirtualBalance() - _amount);
+
         if (!isShouldSkipTransfer()) {
                 IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
+                _compareVirtualToRealBalance();
         }
         else {
             _setShouldSkipTransfer(false);
         }
+    }
+
+    function getVirtualBalance() public view returns (uint256) {
+        return _getUint256(_VIRTUAL_BALANCE_SLOT);
     }
 
     function isVaultFrozen() public view returns (bool) {
@@ -207,6 +222,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContr
     // ======================== Internal Functions ========================
     // ==================================================================
 
+    // @follow-up If these internal functions need to be used when frozen, we can overwrite external ones instead
     function _depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -264,7 +280,13 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContr
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     internal override requireNotFrozen() {
-        super._transferIntoPositionWithOtherToken(_fromAccountNumber, _borrowAccountNumber, _marketId, _amountWei, _balanceCheckFlag);
+        super._transferIntoPositionWithOtherToken(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _marketId,
+            _amountWei,
+            _balanceCheckFlag
+        );
     }
 
     function _transferFromPositionWithUnderlyingToken(
@@ -284,7 +306,13 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContr
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     internal override requireNotFrozen() {
-        super._transferFromPositionWithOtherToken(_borrowAccountNumber, _toAccountNumber, _marketId, _amountWei, _balanceCheckFlag);
+        super._transferFromPositionWithOtherToken(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _marketId,
+            _amountWei,
+            _balanceCheckFlag
+        );
     }
 
     function _repayAllForBorrowPosition(
@@ -363,6 +391,10 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContr
         );
     }
 
+    function _setVirtualBalance(uint256 _bal) internal {
+        _setUint256(_VIRTUAL_BALANCE_SLOT, _bal);
+    }
+
     function _setVaultFrozen(bool _vaultFrozen) internal {
         _setUint256(_VAULT_FROZEN_SLOT, _vaultFrozen ? 1 : 0);
     }
@@ -375,4 +407,11 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1, ProxyContr
         _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
     }
 
+    function _compareVirtualToRealBalance() internal view {
+        if (getVirtualBalance() == IERC20(UNDERLYING_TOKEN()).balanceOf(address(this))) { /* FOR COVERAGE TESTING */ }
+        Require.that(getVirtualBalance() == IERC20(UNDERLYING_TOKEN()).balanceOf(address(this)),
+            _FILE,
+            "Virtual and real balance error"
+        );
+    }
 }

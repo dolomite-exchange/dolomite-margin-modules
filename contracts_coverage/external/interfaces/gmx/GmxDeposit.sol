@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
-/**
- * @title Withdrawal
- * @dev Struct for withdrawals
- */
-library Withdrawal {
+// @title Deposit
+// @dev Struct for deposits
+library Deposit {
     // @dev there is a limit on the number of fields a struct can have when being passed
     // or returned as a memory variable which can cause "Stack too deep" errors
     // use sub-structs to avoid this issue
@@ -19,31 +17,34 @@ library Withdrawal {
         Flags flags;
     }
 
-     // @param account The account to withdraw for.
-     // @param receiver The address that will receive the withdrawn tokens.
-     // @param callbackContract The contract that will be called back.
-     // @param uiFeeReceiver The ui fee receiver.
-     // @param market The market on which the withdrawal will be executed.
+    // @param account the account depositing liquidity
+    // @param receiver the address to send the liquidity tokens to
+    // @param callbackContract the callback contract
+    // @param uiFeeReceiver the ui fee receiver
+    // @param market the market to deposit to
     struct Addresses {
         address account;
         address receiver;
         address callbackContract;
         address uiFeeReceiver;
         address market;
+        address initialLongToken;
+        address initialShortToken;
         address[] longTokenSwapPath;
         address[] shortTokenSwapPath;
     }
 
-     // @param marketTokenAmount The amount of market tokens that will be withdrawn.
-     // @param minLongTokenAmount The minimum amount of long tokens that must be withdrawn.
-     // @param minShortTokenAmount The minimum amount of short tokens that must be withdrawn.
-     // @param updatedAtBlock The block at which the withdrawal was last updated.
-     // @param executionFee The execution fee for the withdrawal.
-     // @param callbackGasLimit The gas limit for calling the callback contract.
+    // @param initialLongTokenAmount the amount of long tokens to deposit
+    // @param initialShortTokenAmount the amount of short tokens to deposit
+    // @param minMarketTokens the minimum acceptable number of liquidity tokens
+    // @param updatedAtBlock the block that the deposit was last updated at
+    // sending funds back to the user in case the deposit gets cancelled
+    // @param executionFee the execution fee for keepers
+    // @param callbackGasLimit the gas limit for the callbackContract
     struct Numbers {
-        uint256 marketTokenAmount;
-        uint256 minLongTokenAmount;
-        uint256 minShortTokenAmount;
+        uint256 initialLongTokenAmount;
+        uint256 initialShortTokenAmount;
+        uint256 minMarketTokens;
         uint256 updatedAtBlock;
         uint256 executionFee;
         uint256 callbackGasLimit;
@@ -94,6 +95,22 @@ library Withdrawal {
         props.addresses.market = value;
     }
 
+    function initialLongToken(Props memory props) internal pure returns (address) {
+        return props.addresses.initialLongToken;
+    }
+
+    function setInitialLongToken(Props memory props, address value) internal pure {
+        props.addresses.initialLongToken = value;
+    }
+
+    function initialShortToken(Props memory props) internal pure returns (address) {
+        return props.addresses.initialShortToken;
+    }
+
+    function setInitialShortToken(Props memory props, address value) internal pure {
+        props.addresses.initialShortToken = value;
+    }
+
     function longTokenSwapPath(Props memory props) internal pure returns (address[] memory) {
         return props.addresses.longTokenSwapPath;
     }
@@ -110,28 +127,28 @@ library Withdrawal {
         props.addresses.shortTokenSwapPath = value;
     }
 
-    function marketTokenAmount(Props memory props) internal pure returns (uint256) {
-        return props.numbers.marketTokenAmount;
+    function initialLongTokenAmount(Props memory props) internal pure returns (uint256) {
+        return props.numbers.initialLongTokenAmount;
     }
 
-    function setMarketTokenAmount(Props memory props, uint256 value) internal pure {
-        props.numbers.marketTokenAmount = value;
+    function setInitialLongTokenAmount(Props memory props, uint256 value) internal pure {
+        props.numbers.initialLongTokenAmount = value;
     }
 
-    function minLongTokenAmount(Props memory props) internal pure returns (uint256) {
-        return props.numbers.minLongTokenAmount;
+    function initialShortTokenAmount(Props memory props) internal pure returns (uint256) {
+        return props.numbers.initialShortTokenAmount;
     }
 
-    function setMinLongTokenAmount(Props memory props, uint256 value) internal pure {
-        props.numbers.minLongTokenAmount = value;
+    function setInitialShortTokenAmount(Props memory props, uint256 value) internal pure {
+        props.numbers.initialShortTokenAmount = value;
     }
 
-    function minShortTokenAmount(Props memory props) internal pure returns (uint256) {
-        return props.numbers.minShortTokenAmount;
+    function minMarketTokens(Props memory props) internal pure returns (uint256) {
+        return props.numbers.minMarketTokens;
     }
 
-    function setMinShortTokenAmount(Props memory props, uint256 value) internal pure {
-        props.numbers.minShortTokenAmount = value;
+    function setMinMarketTokens(Props memory props, uint256 value) internal pure {
+        props.numbers.minMarketTokens = value;
     }
 
     function updatedAtBlock(Props memory props) internal pure returns (uint256) {

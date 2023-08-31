@@ -90,16 +90,6 @@ contract GmxV2IsolationModeVaultFactory is
     // ============ External Functions ============
     // ================================================
 
-    function ownerSetGmxRegistryV2(
-        address _gmxRegistryV2
-    )
-    external
-    override
-    onlyDolomiteMarginOwner(msg.sender) {
-        gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
-        emit GmxRegistryV2Set(_gmxRegistryV2);
-    }
-
     function depositIntoDolomiteMarginFromTokenConverter(
         address _vault,
         uint256 _vaultAccountNumber,
@@ -151,12 +141,12 @@ contract GmxV2IsolationModeVaultFactory is
             owner: _vault,
             number: _vaultAccountNumber
         });
-
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
 
         address token = DOLOMITE_MARGIN().getMarketTokenAddress(_otherMarketId);
         IERC20(token).transferFrom(msg.sender, address(this), _amountWei);
         IERC20(token).approve(address(DOLOMITE_MARGIN()), _amountWei);
+
         actions[0] = AccountActionLib.encodeDepositAction(
             /* _accountId = */ 0,
             _otherMarketId,
@@ -199,6 +189,26 @@ contract GmxV2IsolationModeVaultFactory is
             }),
             AccountBalanceLib.BalanceCheckFlag.From
         );
+    }
+
+    function ownerSetGmxRegistryV2(
+        address _gmxRegistryV2
+    )
+    external
+    override
+    onlyDolomiteMarginOwner(msg.sender) {
+        gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
+        emit GmxRegistryV2Set(_gmxRegistryV2);
+    }
+
+    function setVaultFrozen(
+        address _vault,
+        bool _vaultFrozen
+    )
+    external
+    requireIsTokenConverter(msg.sender)
+    requireIsVault(_vault) {
+        IGmxV2IsolationModeTokenVault(_vault).setVaultFrozen(_vaultFrozen);
     }
 
     function setSourceIsWrapper(

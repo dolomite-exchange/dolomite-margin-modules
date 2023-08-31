@@ -37,8 +37,8 @@ import {
   IChainlinkPriceOracleOld__factory,
   IChainlinkRegistry,
   IChainlinkRegistry__factory,
-  IDepositHandler,
-  IDepositHandler__factory,
+  IGmxDepositHandler,
+  IGmxDepositHandler__factory,
   IDepositWithdrawalProxy,
   IDepositWithdrawalProxy__factory,
   IDolomiteAmmFactory,
@@ -141,8 +141,8 @@ import {
   IUmamiAssetVaultStorageViewer__factory,
   IWETH,
   IWETH__factory,
-  IWithdrawalHandler,
-  IWithdrawalHandler__factory,
+  IGmxWithdrawalHandler,
+  IGmxWithdrawalHandler__factory,
   ParaswapAggregatorTrader,
   ParaswapAggregatorTrader__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1,
@@ -260,14 +260,14 @@ export interface GmxEcosystem {
   glpManager: IGLPManager;
   glpRewardsRouter: IGLPRewardsRouterV2;
   gmx: IERC20;
-  gmxDepositHandler: IDepositHandler;
+  gmxDepositHandler: IGmxDepositHandler;
   gmxDepositVault: SignerWithAddress;
   gmxEthUsdMarketToken: IGmxMarketToken;
   gmxExchangeRouter: IGmxExchangeRouter;
   gmxRouter: IGmxRouter;
   gmxRewardsRouter: IGmxRewardRouterV2;
   gmxVault: IGmxVault;
-  gmxWithdrawalHandler: IWithdrawalHandler;
+  gmxWithdrawalHandler: IGmxWithdrawalHandler;
   sGlp: IERC20;
   sGmx: ISGMX;
   sbfGmx: IERC20;
@@ -887,7 +887,7 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
     gmx: getContract(GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     gmxDepositHandler: getContract(
       GMX_DEPOSIT_HANDLER_MAP[network] as string,
-      address => IDepositHandler__factory.connect(address, signer)
+      address => IGmxDepositHandler__factory.connect(address, signer)
     ),
     gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network] as string, true, signer),
     gmxEthUsdMarketToken: getContract(
@@ -906,7 +906,7 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
     gmxVault: getContract(GMX_VAULT_MAP[network] as string, address => IGmxVault__factory.connect(address, signer)),
     gmxWithdrawalHandler: getContract(
       GMX_WITHDRAWAL_HANDLER_MAP[network] as string,
-      address => IWithdrawalHandler__factory.connect(address, signer)
+      address => IGmxWithdrawalHandler__factory.connect(address, signer)
     ),
     sGlp: getContract(S_GLP_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     sGmx: getContract(S_GMX_MAP[network] as string, address => ISGMX__factory.connect(address, signer)),

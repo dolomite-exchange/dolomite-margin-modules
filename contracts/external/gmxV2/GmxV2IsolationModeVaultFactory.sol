@@ -90,16 +90,6 @@ contract GmxV2IsolationModeVaultFactory is
     // ============ External Functions ============
     // ================================================
 
-    function ownerSetGmxRegistryV2(
-        address _gmxRegistryV2
-    ) 
-    external 
-    override 
-    onlyDolomiteMarginOwner(msg.sender) {
-        gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
-        emit GmxRegistryV2Set(_gmxRegistryV2);
-    }
-
     function depositIntoDolomiteMarginFromTokenConverter(
         address _vault,
         uint256 _vaultAccountNumber,
@@ -199,6 +189,16 @@ contract GmxV2IsolationModeVaultFactory is
             }),
             AccountBalanceLib.BalanceCheckFlag.From
         );
+    }
+
+    function ownerSetGmxRegistryV2(
+        address _gmxRegistryV2
+    ) 
+    external 
+    override 
+    onlyDolomiteMarginOwner(msg.sender) {
+        gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
+        emit GmxRegistryV2Set(_gmxRegistryV2);
     }
 
     function setVaultFrozen(

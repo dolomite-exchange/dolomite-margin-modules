@@ -20,16 +20,16 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
-
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+
+import { IGmxDepositHandler } from "../interfaces/gmx/IGmxDepositHandler.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
+import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxRouter } from "../interfaces/gmx/IGmxRouter.sol";
-import { IGmxV2IsolationModeWrapperTrader } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTrader.sol";
-import { IDepositHandler } from "../interfaces/gmx/IDepositHandler.sol";
-import { IWithdrawalHandler } from "../interfaces/gmx/IWithdrawalHandler.sol";
+import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
+import { IGmxWithdrawalHandler } from "../interfaces/gmx/IGmxWithdrawalHandler.sol";
 
 /**
  * @title   GmxRegistryV2
@@ -153,16 +153,16 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         return IGmxRouter(_getAddress(_GMX_ROUTER_SLOT));
     }
 
-    function gmxDepositHandler() external view returns (IDepositHandler) {
-        return IDepositHandler(_getAddress(_GMX_DEPOSIT_HANDLER_SLOT));
+    function gmxDepositHandler() external view returns (IGmxDepositHandler) {
+        return IGmxDepositHandler(_getAddress(_GMX_DEPOSIT_HANDLER_SLOT));
     }
 
     function gmxDepositVault() external view returns (address) {
         return _getAddress(_GMX_DEPOSIT_VAULT_SLOT);
     }
 
-    function gmxWithdrawalHandler() external view returns (IWithdrawalHandler) {
-        return IWithdrawalHandler(_getAddress(_GMX_WITHDRAWAL_HANDLER_SLOT));
+    function gmxWithdrawalHandler() external view returns (IGmxWithdrawalHandler) {
+        return IGmxWithdrawalHandler(_getAddress(_GMX_WITHDRAWAL_HANDLER_SLOT));
     }
 
     function ethUsdMarketToken() external view returns (IERC20) {
@@ -173,8 +173,8 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         return _getAddress(_GMX_V2_UNWRAPPER_TRADER_SLOT);
     }
 
-    function gmxV2WrapperTrader() external view returns (IGmxV2IsolationModeWrapperTrader) {
-        return IGmxV2IsolationModeWrapperTrader(_getAddress(_GMX_V2_WRAPPER_TRADER_SLOT));
+    function gmxV2WrapperTrader() external view returns (IGmxV2IsolationModeWrapperTraderV2) {
+        return IGmxV2IsolationModeWrapperTraderV2(_getAddress(_GMX_V2_WRAPPER_TRADER_SLOT));
     }
 
     // ============================================================

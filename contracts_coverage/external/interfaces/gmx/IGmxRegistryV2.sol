@@ -24,9 +24,9 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGmxExchangeRouter } from "./IGmxExchangeRouter.sol";
 import { IGmxRouter } from "./IGmxRouter.sol";
-import { IGmxV2IsolationModeWrapperTrader } from "./IGmxV2IsolationModeWrapperTrader.sol";
-import { IDepositHandler } from "./IDepositHandler.sol";
-import { IWithdrawalHandler } from "./IWithdrawalHandler.sol";
+import { IGmxV2IsolationModeWrapperTraderV2 } from "./IGmxV2IsolationModeWrapperTraderV2.sol";
+import { IGmxDepositHandler } from "./IGmxDepositHandler.sol";
+import { IGmxWithdrawalHandler } from "./IGmxWithdrawalHandler.sol";
 import { IBaseRegistry } from "../IBaseRegistry.sol";
 
 
@@ -75,15 +75,15 @@ interface IGmxRegistryV2 is IBaseRegistry {
 
     function gmxRouter() external view returns (IGmxRouter);
 
-    function gmxDepositHandler() external view returns (IDepositHandler);
+    function gmxDepositHandler() external view returns (IGmxDepositHandler);
 
     function gmxDepositVault() external view returns (address);
 
-    function gmxWithdrawalHandler() external view returns (IWithdrawalHandler);
+    function gmxWithdrawalHandler() external view returns (IGmxWithdrawalHandler);
 
     function ethUsdMarketToken() external view returns (IERC20);
 
     function gmxV2UnwrapperTrader() external view returns (address);
 
-    function gmxV2WrapperTrader() external view returns (IGmxV2IsolationModeWrapperTrader);
+    function gmxV2WrapperTrader() external view returns (IGmxV2IsolationModeWrapperTraderV2);
 }

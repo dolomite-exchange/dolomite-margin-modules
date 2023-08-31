@@ -35,7 +35,6 @@ import { Withdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxDepositCallbackReceiver } from "../interfaces/gmx/IGmxDepositCallbackReceiver.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
-import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawalCallbackReceiver.sol";
 
 
 /**
@@ -48,8 +47,7 @@ import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawal
 contract GmxV2IsolationModeWrapperTraderV2 is 
     IsolationModeWrapperTraderV2,
     IGmxV2IsolationModeWrapperTraderV2,
-    IGmxDepositCallbackReceiver,
-    IGmxWithdrawalCallbackReceiver  
+    IGmxDepositCallbackReceiver
 {
     using SafeERC20 for IERC20;
 
@@ -127,9 +125,9 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                 depositInfo.accountNumber,
                 diff
             ); 
-            factory.setVaultFrozen(depositInfo.vault, false);
         }
 
+        factory.setVaultFrozen(depositInfo.vault, false);
         depositInfo.vault = address(0);
         depositInfo.accountNumber = 0;
         emit DepositExecuted(key);
@@ -176,27 +174,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         );
         factory.setVaultFrozen(depositInfo.vault, false);
 
-        // @todo investigate if need to send execution fee back to user
+        // @todo send execution fee back to user
         depositInfo.vault = address(0);
         depositInfo.accountNumber = 0;
         emit DepositCancelled(key);
     }
-
-    function afterWithdrawalExecution(
-        bytes32 key,
-        Withdrawal.Props memory withdrawal,
-        EventUtils.EventLogData memory eventData
-    ) 
-    external 
-    onlyHandler(msg.sender) {}
-
-    function afterWithdrawalCancellation(
-        bytes32 key,
-        Withdrawal.Props memory withdrawal,
-        EventUtils.EventLogData memory eventData
-    ) 
-    external 
-    onlyHandler(msg.sender) {}
 
     function cancelDeposit(bytes32 _key) external {
         DepositInfo memory depositInfo = _getDepositSlot(_key);
