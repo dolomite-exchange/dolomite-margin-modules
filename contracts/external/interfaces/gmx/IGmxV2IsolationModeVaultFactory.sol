@@ -72,12 +72,16 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     function gmxRegistryV2() external view returns (IGmxRegistryV2);
 
-    function initialShortToken() external view returns (address);
+    function indexToken() external view returns (address);
 
-    function initialShortTokenMarketId() external view returns (uint256);
+    function indexTokenMarketId() external view returns (uint256);
 
-    function initialLongToken() external view returns (address);
+    function shortToken() external view returns (address);
 
-    function initialLongTokenMarketId() external view returns (uint256);
+    function shortTokenMarketId() external view returns (uint256);
+
+    function longToken() external view returns (address);
+
+    function longTokenMarketId() external view returns (uint256);
 
 }

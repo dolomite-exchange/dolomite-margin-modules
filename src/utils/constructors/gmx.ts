@@ -138,6 +138,7 @@ export async function getGmxRegistryV2ConstructorParams(
 
   const calldata = await implementation.populateTransaction.initialize(
     core.gmxEcosystem!.gmxExchangeRouter.address,
+    core.gmxEcosystem!.gmxReader.address,
     core.gmxEcosystem!.gmxRouter.address,
     core.gmxEcosystem!.gmxDepositHandler.address,
     core.gmxEcosystem!.gmxDepositVault.address,
@@ -167,10 +168,14 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
 
   return [
     gmxRegistry.address,
-    core.tokens.nativeUsdc!.address,
-    core.marketIds.nativeUsdc,
-    core.tokens.weth.address,
-    core.marketIds.weth,
+    [
+      core.tokens.weth.address,
+      core.marketIds.weth,
+      core.tokens.nativeUsdc!.address,
+      core.marketIds.nativeUsdc,
+      core.tokens.weth.address,
+      core.marketIds.weth,
+    ],
     debtMarketIds,
     collateralMarketIds,
     gmToken.address,
@@ -210,4 +215,20 @@ export function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
     dGM.address,
     core.dolomiteMargin.address,
   ];
+}
+
+export function getGmxV2MarketTokenPriceOracleConstructorParams(
+  core: CoreProtocol,
+  dGm: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
+  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+): any[] {
+  if (!core.gmxEcosystem) {
+    throw new Error('Gmx ecosystem not initialized');
+  }
+
+  return [
+    dGm.address,
+    gmxRegistryV2.address,
+    core.dolomiteMargin.address,
+  ]
 }

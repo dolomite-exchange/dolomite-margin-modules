@@ -44,6 +44,14 @@ contract GmxV2IsolationModeVaultFactory is
     IGmxV2IsolationModeVaultFactory,
     SimpleIsolationModeVaultFactory
 {
+    struct TokenAndMarketParams {
+        address indexToken;
+        uint256 indexTokenMarketId;
+        address shortToken;
+        uint256 shortTokenMarketId;
+        address longToken;
+        uint256 longTokenMarketId;
+    }
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultFactory"; // needed to be shortened to fit into 32 bytes
@@ -51,19 +59,18 @@ contract GmxV2IsolationModeVaultFactory is
     // ============ Field Variables ============
 
     IGmxRegistryV2 public override gmxRegistryV2;
-    address public immutable initialShortToken;
-    uint256 public immutable initialShortTokenMarketId;
-    address public immutable initialLongToken;
-    uint256 public immutable initialLongTokenMarketId;
+    address public immutable indexToken;
+    uint256 public immutable indexTokenMarketId;
+    address public immutable shortToken;
+    uint256 public immutable shortTokenMarketId;
+    address public immutable longToken;
+    uint256 public immutable longTokenMarketId;
 
     // ============ Constructor ============
 
     constructor(
         address _gmxRegistryV2,
-        address _initialShortToken,
-        uint256 _initialShortTokenMarketId,
-        address _initialLongToken,
-        uint256 _initialLongTokenMarketId,
+        TokenAndMarketParams memory _tokenAndMarketParams,
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
         address _gm, // this serves as the underlying token
@@ -80,10 +87,12 @@ contract GmxV2IsolationModeVaultFactory is
         _dolomiteMargin
     ) {
         gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
-        initialShortToken = _initialShortToken;
-        initialShortTokenMarketId = _initialShortTokenMarketId;
-        initialLongToken = _initialLongToken;
-        initialLongTokenMarketId = _initialLongTokenMarketId;
+        indexToken = _tokenAndMarketParams.indexToken;
+        indexTokenMarketId = _tokenAndMarketParams.indexTokenMarketId;
+        shortToken = _tokenAndMarketParams.shortToken;
+        shortTokenMarketId = _tokenAndMarketParams.shortTokenMarketId;
+        longToken = _tokenAndMarketParams.longToken;
+        longTokenMarketId = _tokenAndMarketParams.longTokenMarketId;
     }
 
     // ================================================

@@ -27,6 +27,8 @@ import {
   GmxV2IsolationModeVaultFactory__factory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2IsolationModeWrapperTraderV2__factory,
+  GmxV2MarketTokenPriceOracle,
+  GmxV2MarketTokenPriceOracle__factory,
   IERC20,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
@@ -49,6 +51,7 @@ import {
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
   getGmxV2IsolationModeVaultFactoryConstructorParams,
   getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
+  getGmxV2MarketTokenPriceOracleConstructorParams,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
@@ -213,6 +216,18 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
     GmxV2IsolationModeWrapperTraderV2__factory.abi,
     GmxV2IsolationModeWrapperTraderV2__factory.bytecode,
     getGmxV2IsolationModeWrapperTraderV2ConstructorParams(core, dGM, gmxRegistryV2),
+  );
+}
+
+export async function createGmxV2MarketTokenPriceOracle(
+  core: CoreProtocol,
+  dGm: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
+  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+): Promise<GmxV2MarketTokenPriceOracle> {
+  return createContractWithAbi(
+    GmxV2MarketTokenPriceOracle__factory.abi,
+    GmxV2MarketTokenPriceOracle__factory.bytecode,
+    getGmxV2MarketTokenPriceOracleConstructorParams(core, dGm, gmxRegistryV2),
   );
 }
 

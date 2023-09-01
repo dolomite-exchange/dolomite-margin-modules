@@ -157,6 +157,8 @@ import {
   TestInterestSetter__factory,
   TestPriceOracle,
   TestPriceOracle__factory,
+  IGmxReader,
+  IGmxReader__factory,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
@@ -223,6 +225,7 @@ import {
   GMX_WITHDRAWAL_HANDLER_MAP,
   GMX_ROUTER_MAP,
   GMX_DEPOSIT_VAULT_MAP,
+  GMX_READER_MAP,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { createDolomiteRegistryImplementation } from './dolomite';
@@ -264,6 +267,7 @@ export interface GmxEcosystem {
   gmxDepositVault: SignerWithAddress;
   gmxEthUsdMarketToken: IGmxMarketToken;
   gmxExchangeRouter: IGmxExchangeRouter;
+  gmxReader: IGmxReader;
   gmxRouter: IGmxRouter;
   gmxRewardsRouter: IGmxRewardRouterV2;
   gmxVault: IGmxVault;
@@ -914,6 +918,7 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
       GMX_REWARD_ROUTER_MAP[network] as string,
       address => IGmxRewardRouterV2__factory.connect(address, signer),
     ),
+    gmxReader: getContract(GMX_READER_MAP[network] as string, address => IGmxReader__factory.connect(address, signer)),
     gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, address => IGmxRouter__factory.connect(address, signer)),
     gmxVault: getContract(GMX_VAULT_MAP[network] as string, address => IGmxVault__factory.connect(address, signer)),
     gmxWithdrawalHandler: getContract(

@@ -24,11 +24,13 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   GmxV2MarketTokenPriceOracle
@@ -47,23 +49,20 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
     // ============================ Public State Variables ============================
 
     // @note Revisit naming conventions
-    address public immutable DETH_USD; // solhint-disable-line var-name-mixedcase
+    address public immutable DGM_ETH_USD; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV2 public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteMargin public immutable DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
-    uint256 public immutable DFS_ETH_USD_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
 
     constructor(
-        address _dEthUsd,
+        address _dGmEthUsd,
         address _gmxRegistryV2,
-        address _dolomiteMargin,
-        uint256 _dfsEthUsdMarketId
+        address _dolomiteMargin
     ) {
-        DETH_USD = _dEthUsd;
+        DGM_ETH_USD = _dGmEthUsd;
         REGISTRY = IGmxRegistryV2(_gmxRegistryV2);
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
-        DFS_ETH_USD_MARKET_ID = _dfsEthUsdMarketId;
     }
 
     function getPrice(
@@ -73,7 +72,7 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         Require.that(
-            _token == address(DETH_USD),
+            _token == address(DGM_ETH_USD),
             _FILE,
             "Invalid token",
             _token
@@ -81,7 +80,7 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
         Require.that(
             DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
             _FILE,
-            "ethUsd cannot be borrowable"
+            "gmEthUsd cannot be borrowable"
         );
 
         return IDolomiteStructs.MonetaryPrice({
@@ -93,6 +92,9 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
 
     // @note Look at stuff GMX sent
     function _getCurrentPrice() internal view returns (uint256) {
-        return 0;
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(DGM_ETH_USD);
+
+        console.log(factory.indexToken());
+        return 1;
     }
 }

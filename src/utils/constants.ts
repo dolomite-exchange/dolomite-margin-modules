@@ -220,6 +220,11 @@ export const GMX_REWARD_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const GMX_READER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x38d91ED96283d62182Fc6d990C24097A918a4d9b',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const GMX_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6',
   [Network.ArbitrumGoerli]: undefined,

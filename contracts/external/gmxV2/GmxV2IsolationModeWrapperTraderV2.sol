@@ -204,8 +204,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     }
 
     function isValidInputToken(address _inputToken) public view override returns (bool) {
-        address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).initialLongToken();
-        address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).initialShortToken();
+        address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).longToken();
+        address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).shortToken();
         return (_inputToken == longToken || _inputToken == shortToken);
     }
 
@@ -247,8 +247,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                 address(this), // callbackContract
                 address(0), // uiFeeReceiver
                 _outputTokenUnderlying, // market
-                IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).initialLongToken(), // initialLongToken
-                IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).initialShortToken(), // initialShortToken
+                IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).longToken(), // initialLongToken
+                IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).shortToken(), // initialShortToken
                 new address[](0), // longTokenSwapPath
                 new address[](0), // shortTokenSwapPath
                 _minOutputAmount,
