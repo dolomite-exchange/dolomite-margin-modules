@@ -31,6 +31,7 @@ import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for GM tokens.
  */
 interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
+
     // ================================================
     // ==================== Events ====================
     // ================================================
@@ -45,7 +46,7 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
         address _vault,
         uint256 _vaultAccountNumber,
         uint256 _amountWei
-    ) 
+    )
     external;
 
     function depositOtherTokenIntoDolomiteMarginFromTokenConverter(
@@ -83,5 +84,4 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
     function longToken() external view returns (address);
 
     function longTokenMarketId() external view returns (uint256);
-
 }
