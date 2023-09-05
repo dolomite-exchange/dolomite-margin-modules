@@ -44,14 +44,6 @@ contract GmxV2IsolationModeVaultFactory is
     IGmxV2IsolationModeVaultFactory,
     SimpleIsolationModeVaultFactory
 {
-    struct TokenAndMarketParams {
-        address indexToken;
-        uint256 indexTokenMarketId;
-        address shortToken;
-        uint256 shortTokenMarketId;
-        address longToken;
-        uint256 longTokenMarketId;
-    }
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultFactory"; // needed to be shortened to fit into 32 bytes
@@ -59,6 +51,7 @@ contract GmxV2IsolationModeVaultFactory is
     // ============ Field Variables ============
 
     IGmxRegistryV2 public override gmxRegistryV2;
+    address public immutable marketToken;
     address public immutable indexToken;
     uint256 public immutable indexTokenMarketId;
     address public immutable shortToken;
@@ -73,7 +66,6 @@ contract GmxV2IsolationModeVaultFactory is
         TokenAndMarketParams memory _tokenAndMarketParams,
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
-        address _gm, // this serves as the underlying token
         address _borrowPositionProxyV2,
         address _userVaultImplementation,
         address _dolomiteMargin
@@ -81,12 +73,13 @@ contract GmxV2IsolationModeVaultFactory is
     SimpleIsolationModeVaultFactory(
         _initialAllowableDebtMarketIds,
         _initialAllowableCollateralMarketIds,
-        _gm,
+        _tokenAndMarketParams.marketToken,
         _borrowPositionProxyV2,
         _userVaultImplementation,
         _dolomiteMargin
     ) {
         gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
+        marketToken = _tokenAndMarketParams.marketToken;
         indexToken = _tokenAndMarketParams.indexToken;
         indexTokenMarketId = _tokenAndMarketParams.indexTokenMarketId;
         shortToken = _tokenAndMarketParams.shortToken;
@@ -238,5 +231,18 @@ contract GmxV2IsolationModeVaultFactory is
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
         IGmxV2IsolationModeTokenVault(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
+    }
+
+    // @follow-up Should we add a view function to return all market info?
+    function getMarketInfo() external view returns (TokenAndMarketParams memory) {
+        return TokenAndMarketParams({
+            marketToken: UNDERLYING_TOKEN,
+            indexToken: indexToken,
+            indexTokenMarketId: indexTokenMarketId,
+            shortToken: shortToken,
+            shortTokenMarketId: shortTokenMarketId,
+            longToken: longToken,
+            longTokenMarketId: longTokenMarketId
+        });
     }
 }

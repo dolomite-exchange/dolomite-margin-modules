@@ -28,6 +28,7 @@ describe('GmxRegistryV2', () => {
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.gmxExchangeRouter()).to.eq(core.gmxEcosystem!.gmxExchangeRouter.address);
+      expect(await registry.gmxDataStore()).to.eq(core.gmxEcosystem!.gmxDataStore.address);
       expect(await registry.gmxReader()).to.eq(core.gmxEcosystem!.gmxReader.address);
       expect(await registry.gmxRouter()).to.eq(core.gmxEcosystem!.gmxRouter.address);
       expect(await registry.ethUsdMarketToken()).to.eq(core.gmxEcosystem!.gmxEthUsdMarketToken.address);
@@ -59,6 +60,30 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxExchangeRouter(ZERO_ADDRESS),
+        'GmxRegistryV2: Invalid address'
+      );
+    });
+  });
+
+  describe('#ownerSetGmxDataStore', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetGmxDataStore(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'GmxDataStoreSet', {
+        gmxDataStore: OTHER_ADDRESS,
+      });
+      expect(await registry.gmxDataStore()).to.eq(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetGmxDataStore(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetGmxDataStore(ZERO_ADDRESS),
         'GmxRegistryV2: Invalid address'
       );
     });

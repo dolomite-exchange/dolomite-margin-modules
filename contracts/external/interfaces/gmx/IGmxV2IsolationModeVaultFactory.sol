@@ -31,6 +31,16 @@ import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for GM tokens.
  */
 interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
+
+    struct TokenAndMarketParams {
+        address marketToken;
+        address indexToken;
+        uint256 indexTokenMarketId;
+        address shortToken;
+        uint256 shortTokenMarketId;
+        address longToken;
+        uint256 longTokenMarketId;
+    }
     // ================================================
     // ==================== Events ====================
     // ================================================
@@ -71,6 +81,8 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
     function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
 
     function gmxRegistryV2() external view returns (IGmxRegistryV2);
+    
+    function marketToken() external view returns (address);
 
     function indexToken() external view returns (address);
 
@@ -83,5 +95,7 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
     function longToken() external view returns (address);
 
     function longTokenMarketId() external view returns (uint256);
+
+    function getMarketInfo() external view returns (TokenAndMarketParams memory);
 
 }

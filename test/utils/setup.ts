@@ -159,6 +159,8 @@ import {
   TestPriceOracle__factory,
   IGmxReader,
   IGmxReader__factory,
+  IGmxDataStore,
+  IGmxDataStore__factory,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
@@ -226,6 +228,7 @@ import {
   GMX_ROUTER_MAP,
   GMX_DEPOSIT_VAULT_MAP,
   GMX_READER_MAP,
+  GMX_DATASTORE_MAP,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { createDolomiteRegistryImplementation } from './dolomite';
@@ -263,6 +266,7 @@ export interface GmxEcosystem {
   glpManager: IGLPManager;
   glpRewardsRouter: IGLPRewardsRouterV2;
   gmx: IERC20;
+  gmxDataStore: IGmxDataStore;
   gmxDepositHandler: IGmxDepositHandler;
   gmxDepositVault: SignerWithAddress;
   gmxEthUsdMarketToken: IGmxMarketToken;
@@ -909,6 +913,10 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
     gmxEthUsdMarketToken: getContract(
       GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
       address => IGmxMarketToken__factory.connect(address, signer)
+    ),
+    gmxDataStore: getContract(
+      GMX_DATASTORE_MAP[network] as string,
+      address => IGmxDataStore__factory.connect(address, signer)
     ),
     gmxExchangeRouter: getContract(
       GMX_EXCHANGE_ROUTER_MAP[network] as string,

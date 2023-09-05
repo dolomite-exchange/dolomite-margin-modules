@@ -24,6 +24,7 @@ import { BaseRegistry } from "../general/BaseRegistry.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 
+import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
 import { IGmxDepositHandler } from "../interfaces/gmx/IGmxDepositHandler.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
@@ -48,6 +49,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
 
     // solhint-disable max-line-length
     bytes32 private constant _ETH_USD_MARKET_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ethUsdMarketToken")) - 1);
+    bytes32 private constant _GMX_DATASTORE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDataStore")) - 1);
     bytes32 private constant _GMX_DEPOSIT_HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDepositHandler")) - 1);
     bytes32 private constant _GMX_DEPOSIT_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDepositVault")) - 1);
     bytes32 private constant _GMX_EXCHANGE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxExchangeRouter")) - 1);
@@ -62,6 +64,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
 
     function initialize(
         address _gmxExchangeRouter,
+        address _gmxDataStore,
         address _gmxReader,
         address _gmxRouter,
         address _gmxDepositHandler,
@@ -71,6 +74,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         address _dolomiteRegistry
     ) external initializer {
         _ownerSetGmxExchangeRouter(_gmxExchangeRouter);
+        _ownerSetGmxDataStore(_gmxDataStore);
         _ownerSetGmxReader(_gmxReader);
         _ownerSetGmxRouter(_gmxRouter);
         _ownerSetEthUsdMarketToken(_ethUsdMarketToken);
@@ -89,6 +93,14 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetGmxExchangeRouter(_gmxExchangeRouter);
+    }
+
+    function ownerSetGmxDataStore(
+        address _gmxDataStore
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetGmxDataStore(_gmxDataStore);
     }
 
     function ownerSetGmxReader(
@@ -161,6 +173,10 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         return IGmxExchangeRouter(_getAddress(_GMX_EXCHANGE_ROUTER_SLOT));
     }
 
+    function gmxDataStore() external view returns (IGmxDataStore) {
+        return IGmxDataStore(_getAddress(_GMX_DATASTORE_SLOT));
+    }
+
     function gmxReader() external view returns (IGmxReader) {
         return IGmxReader(_getAddress(_GMX_READER_SLOT));
     }
@@ -205,6 +221,16 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         );
         _setAddress(_GMX_EXCHANGE_ROUTER_SLOT, _gmxExchangeRouter);
         emit GmxExchangeRouterSet(_gmxExchangeRouter);
+    }
+
+    function _ownerSetGmxDataStore(address _gmxDataStore) internal {
+        Require.that(
+            _gmxDataStore != address(0),
+            _FILE,
+            "Invalid address"
+        );
+        _setAddress(_GMX_DATASTORE_SLOT, _gmxDataStore);
+        emit GmxDataStoreSet(_gmxDataStore);
     }
 
     function _ownerSetGmxReader(address _gmxReader) internal {

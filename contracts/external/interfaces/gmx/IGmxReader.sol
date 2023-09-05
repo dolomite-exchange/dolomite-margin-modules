@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 
-import { DataStore } from "./GmxDataStore.sol";
+import { IGmxDataStore } from "./IGmxDataStore.sol";
 import { Market } from "./GmxMarket.sol";
 import { Price } from "./GmxPrice.sol";
 import { MarketPoolValueInfo } from "./GmxMarketPoolValueInfo.sol";
@@ -36,7 +36,7 @@ import { MarketPoolValueInfo } from "./GmxMarketPoolValueInfo.sol";
 interface IGmxReader {
 
     function getMarketTokenPrice(
-        DataStore dataStore,
+        IGmxDataStore dataStore,
         Market.Props memory market,
         Price.Props memory indexTokenPrice,
         Price.Props memory longTokenPrice,

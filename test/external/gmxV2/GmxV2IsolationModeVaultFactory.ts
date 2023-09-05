@@ -272,4 +272,17 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       );
     });
   });
+
+  describe('#getMarketInfo', async () => {
+    it('should work normally', async () => {
+      const marketInfo = await factory.getMarketInfo();
+      expect(marketInfo.marketToken).to.eq(core.gmxEcosystem!.gmxEthUsdMarketToken.address);
+      expect(marketInfo.indexToken).to.eq(core.tokens.weth.address);
+      expect(marketInfo.indexTokenMarketId).to.eq(core.marketIds.weth);
+      expect(marketInfo.shortToken).to.eq(core.tokens.nativeUsdc!.address);
+      expect(marketInfo.shortTokenMarketId).to.eq(core.marketIds.nativeUsdc);
+      expect(marketInfo.longToken).to.eq(core.tokens.weth.address);
+      expect(marketInfo.longTokenMarketId).to.eq(core.marketIds.weth);
+    });
+  });
 });

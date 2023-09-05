@@ -26,11 +26,13 @@ import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOr
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 
+import { Market } from "../interfaces/gmx/GmxMarket.sol";
+import { Price } from "../interfaces/gmx/GmxPrice.sol";
+import { MarketPoolValueInfo } from "../interfaces/gmx/GmxMarketPoolValueInfo.sol";
+
 import { Require } from "../../protocol/lib/Require.sol";
 
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
-
-import "hardhat/console.sol";
 
 /**
  * @title   GmxV2MarketTokenPriceOracle
@@ -45,6 +47,9 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
     bytes32 private constant _FILE = "GmxV2MarketTokenPriceOracle";
     uint256 public constant ETH_USD_PRECISION = 1e18;
     uint256 public constant FEE_PRECISION = 10_000;
+    uint256 public constant DECIMAL_ADJUSTMENT = 6;
+
+    bytes32 public constant MAX_PNL_FACTOR_FOR_WITHDRAWALS = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS"));
 
     // ============================ Public State Variables ============================
 
@@ -71,6 +76,7 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
+        // @follow-up How do we change this to allow any GM token
         Require.that(
             _token == address(DGM_ETH_USD),
             _FILE,
@@ -90,11 +96,55 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
 
     // ============================ Internal Functions ============================
 
-    // @note Look at stuff GMX sent
     function _getCurrentPrice() internal view returns (uint256) {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(DGM_ETH_USD);
+        IGmxV2IsolationModeVaultFactory.TokenAndMarketParams memory info = factory.getMarketInfo();
 
-        console.log(factory.indexToken());
-        return 1;
+        uint256 indexTokenPrice = DOLOMITE_MARGIN.getMarketPrice(info.indexTokenMarketId).value;
+        uint256 shortTokenPrice = DOLOMITE_MARGIN.getMarketPrice(info.shortTokenMarketId).value;
+        uint256 longTokenPrice = DOLOMITE_MARGIN.getMarketPrice(info.longTokenMarketId).value;
+
+        Market.Props memory marketProps = Market.Props(
+            info.marketToken,
+            info.indexToken,
+            info.longToken,
+            info.shortToken
+        );
+
+       // Dolomite returns price as 36 decimals - token decimals
+       // GMX expects 30 decimals - token decimals so we divide by 10 ** 6
+        Price.Props memory indexTokenPriceProps = Price.Props(
+            indexTokenPrice / 10 ** DECIMAL_ADJUSTMENT,
+            indexTokenPrice / 10 ** DECIMAL_ADJUSTMENT
+        );
+
+        Price.Props memory longTokenPriceProps = Price.Props(
+            longTokenPrice / 10 ** DECIMAL_ADJUSTMENT,
+            longTokenPrice / 10 ** DECIMAL_ADJUSTMENT
+        );
+
+        Price.Props memory shortTokenPriceProps = Price.Props(
+            shortTokenPrice / 10 ** DECIMAL_ADJUSTMENT,
+            shortTokenPrice / 10 ** DECIMAL_ADJUSTMENT
+        );
+       // @audit Are we worried about this precision loss?
+
+        (int256 value, ) = REGISTRY.gmxReader().getMarketTokenPrice(
+            REGISTRY.gmxDataStore(),
+            marketProps,
+            indexTokenPriceProps,
+            longTokenPriceProps,
+            shortTokenPriceProps,
+            MAX_PNL_FACTOR_FOR_WITHDRAWALS,
+            true
+        );
+
+        if (value > 0) {
+            // @audit This appears to be 30 decimals. Does that matter?
+            return uint256(value);
+        }
+        else {
+            revert();
+        }
     }
 }

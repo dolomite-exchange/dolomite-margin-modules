@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 
+import { IGmxDataStore } from "./IGmxDataStore.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGmxExchangeRouter } from "./IGmxExchangeRouter.sol";
 import { IGmxReader } from "./IGmxReader.sol";
@@ -44,6 +45,7 @@ interface IGmxRegistryV2 is IBaseRegistry {
     // ================================================
 
     event GmxExchangeRouterSet(address _gmxExchangeRouter);
+    event GmxDataStoreSet(address _gmxDataStore);
     event GmxReaderSet(address _gmxReader);
     event GmxRouterSet(address _gmxRouter);
     event GmxDepositHandlerSet(address _gmxDepositHandler);
@@ -58,6 +60,8 @@ interface IGmxRegistryV2 is IBaseRegistry {
     // ===================================================
 
     function ownerSetGmxExchangeRouter(address _gmxExchangeRouter) external;
+
+    function ownerSetGmxDataStore(address _gmxDataStore) external;
 
     function ownerSetGmxReader(address _gmxReader) external;
 
@@ -76,6 +80,8 @@ interface IGmxRegistryV2 is IBaseRegistry {
     function ownerSetGmxV2WrapperTrader(address _gmxV2UnwrapperTrader) external;
 
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter);
+
+    function gmxDataStore() external view returns (IGmxDataStore);
 
     function gmxReader() external view returns (IGmxReader);
 

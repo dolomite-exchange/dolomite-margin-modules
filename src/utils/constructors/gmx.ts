@@ -138,6 +138,7 @@ export async function getGmxRegistryV2ConstructorParams(
 
   const calldata = await implementation.populateTransaction.initialize(
     core.gmxEcosystem!.gmxExchangeRouter.address,
+    core.gmxEcosystem!.gmxDataStore.address,
     core.gmxEcosystem!.gmxReader.address,
     core.gmxEcosystem!.gmxRouter.address,
     core.gmxEcosystem!.gmxDepositHandler.address,
@@ -169,6 +170,7 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   return [
     gmxRegistry.address,
     [
+      gmToken.address,
       core.tokens.weth.address,
       core.marketIds.weth,
       core.tokens.nativeUsdc!.address,
@@ -178,7 +180,6 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
     ],
     debtMarketIds,
     collateralMarketIds,
-    gmToken.address,
     core.borrowPositionProxyV2.address,
     userVaultImplementation.address,
     core.dolomiteMargin.address,

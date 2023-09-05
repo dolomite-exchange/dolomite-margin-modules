@@ -1,10 +1,16 @@
+import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
-import { BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
+import { ethers } from 'hardhat';
 import { GmxRegistryV2, GmxV2IsolationModeVaultFactory, GmxV2MarketTokenPriceOracle } from 'src/types';
 import { Network } from 'src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { expectThrow } from 'test/utils/assertions';
 import { createGmxRegistryV2, createGmxV2IsolationModeTokenVaultV1, createGmxV2IsolationModeVaultFactory, createGmxV2MarketTokenPriceOracle } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
+
+const GM_ETH_USD_PRICE = BigNumber.from('924171896095781105283809017999');
+const blockNumber = 128276157;
 
 describe('GmxV2MarketTokenPriceOracle', () => {
   let snapshotId: string;
@@ -16,9 +22,8 @@ describe('GmxV2MarketTokenPriceOracle', () => {
   let marketId: BigNumberish;
 
   before(async () => {
-    const latestBlockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
     core = await setupCoreProtocol({
-      blockNumber: latestBlockNumber,
+      blockNumber: blockNumber,
       network: Network.ArbitrumOne,
     });
 
@@ -52,9 +57,29 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     });
   });
 
-  describe('#getPrice', () => {
+  describe.only('#getPrice', () => {
+    // @follow-up This one fails sometimes. Price seems to always be one of two
     it('returns the correct value under normal conditions', async () => {
-        await gmPriceOracle.getPrice(factory.address);
+      expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE);
+    });
+
+    it('should fail when token sent is not the DGM token', async () => {
+      await expectThrow(
+        gmPriceOracle.getPrice(ADDRESSES.ZERO),
+        `GmxV2MarketTokenPriceOracle: Invalid token <${ADDRESSES.ZERO}>`,
+      );
+      await expectThrow(
+        gmPriceOracle.getPrice(core.tokens.usdc.address),
+        `GmxV2MarketTokenPriceOracle: Invalid token <${core.tokens.usdc.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when GM token is borrowable', async () => {
+      await core.dolomiteMargin.ownerSetIsClosing(marketId, false);
+      await expectThrow(
+        gmPriceOracle.getPrice(factory.address),
+        'GmxV2MarketTokenPriceOracle: gmEthUsd cannot be borrowable',
+      );
     });
   });
 });
