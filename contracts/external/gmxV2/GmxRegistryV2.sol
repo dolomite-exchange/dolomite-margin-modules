@@ -18,6 +18,7 @@
 
 */
 
+
 pragma solidity ^0.8.9;
 
 import { BaseRegistry } from "../general/BaseRegistry.sol";
@@ -43,6 +44,7 @@ import { IGmxWithdrawalHandler } from "../interfaces/gmx/IGmxWithdrawalHandler.s
  *          points) when Dolomite needs to point to new contracts or functions that GMX introduces.
  */
 contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
+
     // ==================== Constants ====================
 
     bytes32 private constant _FILE = "GmxRegistryV2";

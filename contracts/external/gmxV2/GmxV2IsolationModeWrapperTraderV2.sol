@@ -127,7 +127,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             ); 
         }
 
-        factory.setVaultFrozen(depositInfo.vault, false);
+        factory.setIsVaultFrozen(depositInfo.vault, false);
         depositInfo.vault = address(0);
         depositInfo.accountNumber = 0;
         emit DepositExecuted(key);
@@ -172,7 +172,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             depositInfo.accountNumber, 
             deposit.numbers.minMarketTokens
         );
-        factory.setVaultFrozen(depositInfo.vault, false);
+        factory.setIsVaultFrozen(depositInfo.vault, false);
 
         depositInfo.vault = address(0);
         depositInfo.accountNumber = 0;

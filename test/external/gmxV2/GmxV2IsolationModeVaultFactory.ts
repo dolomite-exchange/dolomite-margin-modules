@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { BigNumber, Signer } from 'ethers';
+import { BigNumber, BigNumberish, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
   GmxRegistryV2,
@@ -10,7 +10,7 @@ import {
   GmxV2IsolationModeWrapperTraderV2,
 } from 'src/types';
 import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectArrayEq, expectEvent, expectThrow } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
@@ -36,6 +36,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
 
   let core: CoreProtocol;
   let gmxRegistryV2: GmxRegistryV2;
+  let allowableMarketIds: BigNumberish[];
   let vaultImplementation: GmxV2IsolationModeTokenVaultV1;
   let factory: GmxV2IsolationModeVaultFactory;
   let wrapper: GmxV2IsolationModeWrapperTraderV2;
@@ -45,14 +46,20 @@ describe('GmxV2IsolationModeVaultFactory', () => {
   let marketId: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    const latestBlockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
+    core = await setupCoreProtocol({
+      blockNumber: latestBlockNumber,
+      network: Network.ArbitrumOne,
+    });
     gmxRegistryV2 = await createGmxRegistryV2(core);
     vaultImplementation = await createGmxV2IsolationModeTokenVaultV1();
+
+    allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
       gmxRegistryV2,
-      [], // initialAllowableDebtMarketIds
-      [], // initialAllowableCollateralMarketIds
+      allowableMarketIds,
+      allowableMarketIds,
       core.gmxEcosystem!.gmxEthUsdMarketToken,
       vaultImplementation
     );
@@ -95,12 +102,72 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       expect(await factory.shortTokenMarketId()).to.equal(core.marketIds.nativeUsdc!);
       expect(await factory.longToken()).to.equal(core.tokens.weth.address);
       expect(await factory.longTokenMarketId()).to.equal(core.marketIds.weth);
-      expectArrayEq(await factory.allowableDebtMarketIds(), []);
-      expectArrayEq(await factory.allowableCollateralMarketIds(), []);
+      expectArrayEq(await factory.allowableDebtMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth]);
+      expectArrayEq(await factory.allowableCollateralMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth]);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem!.gmxEthUsdMarketToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
+    });
+    
+    it('should fail if allowable debt market ids does not have length of 2', async () => {
+      const badAllowableDebtMarketIds = [1];
+      await expectThrow(
+        createGmxV2IsolationModeVaultFactory(
+          core,
+          gmxRegistryV2,
+          badAllowableDebtMarketIds,
+          allowableMarketIds,
+          core.gmxEcosystem!.gmxEthUsdMarketToken,
+          vaultImplementation
+        ),
+        'GmxV2IsolationModeVaultFactory: Invalid debt market ids',
+      );
+    });
+
+    it('should fail if allowable debt market ids does not have length of 2', async () => {
+      const badAllowableDebtMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.dai!];
+      await expectThrow(
+        createGmxV2IsolationModeVaultFactory(
+          core,
+          gmxRegistryV2,
+          badAllowableDebtMarketIds,
+          allowableMarketIds,
+          core.gmxEcosystem!.gmxEthUsdMarketToken,
+          vaultImplementation
+        ),
+        'GmxV2IsolationModeVaultFactory: Invalid debt market ids',
+      );
+    });
+
+    it('should fail if allowable collateral market ids does not have short and long token', async () => {
+      const badAllowableCollateralMarketIds = [1];
+      await expectThrow(
+        createGmxV2IsolationModeVaultFactory(
+          core,
+          gmxRegistryV2,
+          allowableMarketIds,
+          badAllowableCollateralMarketIds,
+          core.gmxEcosystem!.gmxEthUsdMarketToken,
+          vaultImplementation
+        ),
+        'GmxV2IsolationModeVaultFactory: Invalid collateral market ids',
+      );
+    });
+
+    it('should fail if allowable collateral market ids does not have short and long token', async () => {
+      const badAllowableCollateralMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.dai!];
+      await expectThrow(
+        createGmxV2IsolationModeVaultFactory(
+          core,
+          gmxRegistryV2,
+          allowableMarketIds,
+          badAllowableCollateralMarketIds,
+          core.gmxEcosystem!.gmxEthUsdMarketToken,
+          vaultImplementation
+        ),
+        'GmxV2IsolationModeVaultFactory: Invalid collateral market ids',
+      );
     });
   });
 
@@ -207,45 +274,45 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     });
   });
 
-  describe('#setVaultFrozen', () => {
+  describe('#setIsVaultFrozen', () => {
     it('should work normally', async () => {
       expect(await vault.isVaultFrozen()).to.eq(false);
-      await factory.connect(impersonatedWrapper).setVaultFrozen(vault.address, true);
+      await factory.connect(impersonatedWrapper).setIsVaultFrozen(vault.address, true);
       expect(await vault.isVaultFrozen()).to.eq(true);
     });
 
     it('should fail if not token converter', async () => {
       await expectThrow(
-        factory.connect(core.hhUser1).setVaultFrozen(vault.address, true),
+        factory.connect(core.hhUser1).setIsVaultFrozen(vault.address, true),
         `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`
       );
     });
 
     it('should fail if invalid vault', async () => {
       await expectThrow(
-        factory.connect(impersonatedWrapper).setVaultFrozen(core.hhUser1.address, false),
+        factory.connect(impersonatedWrapper).setIsVaultFrozen(core.hhUser1.address, false),
         `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
       );
     });
   });
 
-  describe('#setSourceIsWrapper', () => {
+  describe('#setIsDepositSourceWrapper', () => {
     it('should work normally', async () => {
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
-      await factory.connect(impersonatedWrapper).setSourceIsWrapper(vault.address, true);
-      expect(await vault.isSourceIsWrapper()).to.eq(true);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      await factory.connect(impersonatedWrapper).setIsDepositSourceWrapper(vault.address, true);
+      expect(await vault.isDepositSourceWrapper()).to.eq(true);
     });
 
     it('should fail if not token converter', async () => {
       await expectThrow(
-        factory.connect(core.hhUser1).setSourceIsWrapper(vault.address, true),
+        factory.connect(core.hhUser1).setIsDepositSourceWrapper(vault.address, true),
         `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`
       );
     });
 
     it('should fail if invalid vault', async () => {
       await expectThrow(
-        factory.connect(impersonatedWrapper).setSourceIsWrapper(core.hhUser1.address, false),
+        factory.connect(impersonatedWrapper).setIsDepositSourceWrapper(core.hhUser1.address, false),
         `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
       );
     });

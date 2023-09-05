@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
@@ -44,6 +45,8 @@ contract GmxV2IsolationModeVaultFactory is
     IGmxV2IsolationModeVaultFactory,
     SimpleIsolationModeVaultFactory
 {
+    using SafeERC20 for IERC20;
+
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultFactory"; // needed to be shortened to fit into 32 bytes
@@ -63,7 +66,7 @@ contract GmxV2IsolationModeVaultFactory is
 
     constructor(
         address _gmxRegistryV2,
-        TokenAndMarketParams memory _tokenAndMarketParams,
+        TokenAndMarketAddresses memory _tokenAndMarketAddresses,
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
         address _borrowPositionProxyV2,
@@ -73,19 +76,43 @@ contract GmxV2IsolationModeVaultFactory is
     SimpleIsolationModeVaultFactory(
         _initialAllowableDebtMarketIds,
         _initialAllowableCollateralMarketIds,
-        _tokenAndMarketParams.marketToken,
+        _tokenAndMarketAddresses.marketToken,
         _borrowPositionProxyV2,
         _userVaultImplementation,
         _dolomiteMargin
     ) {
         gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
-        marketToken = _tokenAndMarketParams.marketToken;
-        indexToken = _tokenAndMarketParams.indexToken;
-        indexTokenMarketId = _tokenAndMarketParams.indexTokenMarketId;
-        shortToken = _tokenAndMarketParams.shortToken;
-        shortTokenMarketId = _tokenAndMarketParams.shortTokenMarketId;
-        longToken = _tokenAndMarketParams.longToken;
-        longTokenMarketId = _tokenAndMarketParams.longTokenMarketId;
+        marketToken = _tokenAndMarketAddresses.marketToken;
+        indexToken = _tokenAndMarketAddresses.indexToken;
+        indexTokenMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(indexToken);
+        shortToken = _tokenAndMarketAddresses.shortToken;
+        shortTokenMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(shortToken);
+        longToken = _tokenAndMarketAddresses.longToken;
+        longTokenMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(longToken);
+
+        Require.that(
+            _initialAllowableDebtMarketIds.length == 2,
+            _FILE,
+            "Invalid debt market ids"
+        );
+        Require.that(
+            (_initialAllowableDebtMarketIds[0] == longTokenMarketId && _initialAllowableDebtMarketIds[1] == shortTokenMarketId) 
+            || (_initialAllowableDebtMarketIds[0] == shortTokenMarketId && _initialAllowableDebtMarketIds[1] == longTokenMarketId),
+            _FILE,
+            "Invalid debt market ids"
+        );
+
+        Require.that(
+            _initialAllowableCollateralMarketIds.length == 2,
+            _FILE,
+            "Invalid collateral market ids"
+        );
+        Require.that(
+            (_initialAllowableCollateralMarketIds[0] == longTokenMarketId && _initialAllowableCollateralMarketIds[1] == shortTokenMarketId) 
+            || (_initialAllowableCollateralMarketIds[0] == shortTokenMarketId && _initialAllowableCollateralMarketIds[1] == longTokenMarketId),
+            _FILE,
+            "Invalid collateral market ids"
+        );
     }
 
     // ================================================
@@ -100,7 +127,7 @@ contract GmxV2IsolationModeVaultFactory is
     external 
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVault(_vault).setSourceIsWrapper(true);
+        IGmxV2IsolationModeTokenVault(_vault).setIsDepositSourceWrapper(true);
         _enqueueTransfer(
             _vault,
             address(DOLOMITE_MARGIN()),
@@ -146,8 +173,8 @@ contract GmxV2IsolationModeVaultFactory is
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
 
         address token = DOLOMITE_MARGIN().getMarketTokenAddress(_otherMarketId);
-        IERC20(token).transferFrom(msg.sender, address(this), _amountWei);
-        IERC20(token).approve(address(DOLOMITE_MARGIN()), _amountWei);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), _amountWei);
+        IERC20(token).safeApprove(address(DOLOMITE_MARGIN()), _amountWei);
 
         actions[0] = AccountActionLib.encodeDepositAction(
             /* _accountId = */ 0,
@@ -203,24 +230,24 @@ contract GmxV2IsolationModeVaultFactory is
         emit GmxRegistryV2Set(_gmxRegistryV2);
     }
 
-    function setVaultFrozen(
+    function setIsVaultFrozen(
         address _vault,
-        bool _vaultFrozen
+        bool _isVaultFrozen
     )
     external 
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVault(_vault).setVaultFrozen(_vaultFrozen);
+        IGmxV2IsolationModeTokenVault(_vault).setIsVaultFrozen(_isVaultFrozen);
     }
 
-    function setSourceIsWrapper(
+    function setIsDepositSourceWrapper(
         address _vault,
-        bool _sourceIsWrapper
+        bool _isDepositSourceWrapper
     ) 
     external 
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVault(_vault).setSourceIsWrapper(_sourceIsWrapper);
+        IGmxV2IsolationModeTokenVault(_vault).setIsDepositSourceWrapper(_isDepositSourceWrapper);
     }
 
     function setShouldSkipTransfer(

@@ -1,6 +1,6 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import {
@@ -47,6 +47,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   let core: CoreProtocol;
   let underlyingToken: IGmxMarketToken;
   let gmxRegistryV2: GmxRegistryV2;
+  let allowableMarketIds: BigNumberish[];
   let unwrapper: GmxV2IsolationModeUnwrapperTraderV2;
   let wrapper: GmxV2IsolationModeWrapperTraderV2;
   let factory: GmxV2IsolationModeVaultFactory;
@@ -67,11 +68,13 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     underlyingToken = core.gmxEcosystem!.gmxEthUsdMarketToken.connect(core.hhUser1);
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1();
     gmxRegistryV2 = await createGmxRegistryV2(core);
+
+    allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
       gmxRegistryV2,
-      [], // initialAllowableDebtMarketIds
-      [], // initialAllowableCollateralMarketIds
+      allowableMarketIds,
+      allowableMarketIds,
       core.gmxEcosystem!.gmxEthUsdMarketToken,
       userVaultImplementation
     );
@@ -101,6 +104,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     );
     otherMarketId2 = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken2, false);
+
+    await factory.connect(core.governance).ownerSetAllowableCollateralMarketIds([...allowableMarketIds, marketId, otherMarketId1, otherMarketId2]);
+    await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([...allowableMarketIds, otherMarketId1, otherMarketId2]);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -136,7 +142,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   describe('#constructor', () => {
     it('should work normally', async () => {
       expect(await vault.isVaultFrozen()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
     });
   });
@@ -175,7 +181,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
 
     it('should fail if no funds are send with transaction', async () => {
@@ -209,7 +215,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail when vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
@@ -230,7 +236,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.userConfig,
           { value: amountWei }
         ),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
 
@@ -358,10 +364,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   describe('#depositIntoVaultForDolomiteMargin', () => {
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -369,10 +375,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   describe('#withdrawFromVaultForDolomiteMargin', () => {
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -387,10 +393,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -406,10 +412,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.closeBorrowPositionWithUnderlyingVaultToken(defaultAccountNumber, borrowAccountNumber),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -428,10 +434,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.closeBorrowPositionWithOtherTokens(defaultAccountNumber, borrowAccountNumber, []),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -446,10 +452,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -467,7 +473,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.transferIntoPositionWithOtherToken(
           defaultAccountNumber,
@@ -476,7 +482,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           BalanceCheckFlag.Both
         ),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -492,10 +498,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.transferFromPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -518,7 +524,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.transferFromPositionWithOtherToken(
           defaultAccountNumber,
@@ -527,7 +533,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           BalanceCheckFlag.Both
         ),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -555,7 +561,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.repayAllForBorrowPosition(
           defaultAccountNumber,
@@ -563,7 +569,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           otherMarketId1,
           BalanceCheckFlag.Both
         ),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -586,7 +592,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
       await expectThrow(
         vault.addCollateralAndSwapExactInputForOutput(
@@ -599,7 +605,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig
         ),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -634,7 +640,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
       await expectThrow(
         vault.swapExactInputForOutputAndRemoveCollateral(
@@ -647,7 +653,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig
         ),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
@@ -684,7 +690,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
       await expectThrow(
         vault.swapExactInputForOutput(
@@ -696,36 +702,36 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig
         ),
-        'GmxV2IsolationModeVaultV1: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen'
       );
     });
   });
 
-  describe('#setVaultFrozen', () => {
+  describe('#setIsVaultFrozen', () => {
     it('should work normally', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setVaultFrozen(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       expect(await vault.isVaultFrozen()).to.eq(true);
     });
 
     it('should fail if not called by factory', async () => {
       await expectThrow(
-        vault.connect(core.hhUser1).setVaultFrozen(true),
+        vault.connect(core.hhUser1).setIsVaultFrozen(true),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
       );
     });
   });
 
-  describe('#setSourceIsWrapper', () => {
+  describe('#setIsDepositSourceWrapper', () => {
     it('should work normally', async () => {
       const impersonatedFactory = await impersonate(factory.address, true);
-      await vault.connect(impersonatedFactory).setSourceIsWrapper(true);
-      expect(await vault.isSourceIsWrapper()).to.eq(true);
+      await vault.connect(impersonatedFactory).setIsDepositSourceWrapper(true);
+      expect(await vault.isDepositSourceWrapper()).to.eq(true);
     });
 
     it('should fail if not called by factory', async () => {
       await expectThrow(
-        vault.connect(core.hhUser1).setSourceIsWrapper(true),
+        vault.connect(core.hhUser1).setIsDepositSourceWrapper(true),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
       );
     });

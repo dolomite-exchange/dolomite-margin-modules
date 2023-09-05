@@ -172,11 +172,8 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
     [
       gmToken.address,
       core.tokens.weth.address,
-      core.marketIds.weth,
       core.tokens.nativeUsdc!.address,
-      core.marketIds.nativeUsdc,
       core.tokens.weth.address,
-      core.marketIds.weth,
     ],
     debtMarketIds,
     collateralMarketIds,

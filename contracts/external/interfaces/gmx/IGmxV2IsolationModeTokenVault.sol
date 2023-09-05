@@ -25,9 +25,9 @@ pragma solidity ^0.8.9;
  * @author  Dolomite
  */
 interface IGmxV2IsolationModeTokenVault {
-    function setVaultFrozen(bool _vaultFrozen) external;
+    function setIsVaultFrozen(bool _isVaultFrozen) external;
 
-    function setSourceIsWrapper(bool _sourceIsWrapper) external;
+    function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
 }
