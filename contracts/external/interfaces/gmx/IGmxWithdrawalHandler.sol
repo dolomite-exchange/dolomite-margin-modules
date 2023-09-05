@@ -2,8 +2,10 @@
 
 pragma solidity ^0.8.9;
 
+
 interface IGmxWithdrawalHandler {
-        /**
+
+    /**
      * @param receiver The address that will receive the withdrawal tokens.
      * @param callbackContract The contract that will be called back.
      * @param market The market on which the withdrawal will be executed.
@@ -37,9 +39,9 @@ interface IGmxWithdrawalHandler {
         Props[] primaryPrices;
     }
 
-    function createWithdrawal(address account, CreateWithdrawalParams calldata params) external returns (bytes32);
+    function createWithdrawal(address _account, CreateWithdrawalParams calldata _params) external returns (bytes32);
 
-    function cancelWithdrawal(bytes32 key) external;
+    function cancelWithdrawal(bytes32 _key) external;
 
-    function simulateExecuteWithdrawal(bytes32 key, SimulatePricesParams memory params) external;
+    function simulateExecuteWithdrawal(bytes32 _key, SimulatePricesParams memory _params) external;
 }

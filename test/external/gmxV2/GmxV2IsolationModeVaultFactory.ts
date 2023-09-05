@@ -21,7 +21,6 @@ import {
 } from 'test/utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
@@ -103,7 +102,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       expect(await factory.longToken()).to.equal(core.tokens.weth.address);
       expect(await factory.longTokenMarketId()).to.equal(core.marketIds.weth);
       expectArrayEq(await factory.allowableDebtMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth]);
-      expectArrayEq(await factory.allowableCollateralMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth]);
+      expectArrayEq(await factory.allowableCollateralMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth, marketId]);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem!.gmxEthUsdMarketToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);

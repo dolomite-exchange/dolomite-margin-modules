@@ -121,8 +121,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
-    await wrapper.connect(core.governance).setHandlerStatus(core.gmxEcosystem!.gmxDepositHandler.address, true);
-    await wrapper.connect(core.governance).setHandlerStatus(core.gmxEcosystem!.gmxWithdrawalHandler.address, true);
+    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystem!.gmxDepositHandler.address, true);
+    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystem!.gmxWithdrawalHandler.address, true);
 
     await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
     await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);

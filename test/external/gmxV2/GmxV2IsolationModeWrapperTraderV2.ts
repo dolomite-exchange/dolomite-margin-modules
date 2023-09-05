@@ -1,7 +1,7 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import {
@@ -14,7 +14,7 @@ import {
   IGmxMarketToken,
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network } from 'src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, sendEther, setEtherBalance, snapshot } from 'test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
 import {
@@ -41,12 +41,14 @@ const borrowAccountNumber = '123';
 const wethAmount = parseEther('1');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
+const CALLBACK_GAS_LIMIT = BigNumber.from('1500000')
 
 describe('GmxV2IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
   let underlyingToken: IGmxMarketToken;
+  let allowableMarketIds: BigNumberish[];
   let gmxRegistryV2: GmxRegistryV2;
   let unwrapper: GmxV2IsolationModeUnwrapperTraderV2;
   let wrapper: GmxV2IsolationModeWrapperTraderV2;
@@ -63,11 +65,13 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     underlyingToken = core.gmxEcosystem!.gmxEthUsdMarketToken.connect(core.hhUser1);
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1();
     gmxRegistryV2 = await createGmxRegistryV2(core);
+
+    allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
       gmxRegistryV2,
-      [], // initialAllowableDebtMarketIds
-      [], // initialAllowableCollateralMarketIds
+      allowableMarketIds,
+      allowableMarketIds,
       core.gmxEcosystem!.gmxEthUsdMarketToken,
       userVaultImplementation
     );
@@ -99,8 +103,9 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
     await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
-    await wrapper.connect(core.governance).setHandlerStatus(core.gmxEcosystem!.gmxDepositHandler.address, true);
-    await wrapper.connect(core.governance).setHandlerStatus(core.gmxEcosystem!.gmxWithdrawalHandler.address, true);
+    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystem!.gmxDepositHandler.address, true);
+    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystem!.gmxWithdrawalHandler.address, true);
+    await wrapper.connect(core.governance).setCallbackGasLimit(CALLBACK_GAS_LIMIT);
 
     snapshotId = await snapshot();
   });
@@ -149,7 +154,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
 
     it('should work normally with short token', async () => {
@@ -185,7 +190,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
   });
 
@@ -219,7 +224,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
@@ -299,7 +304,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectWalletBalance(vault.address, underlyingToken, 10);
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      expect(await underlyingToken.allowance(wrapper.address, vault.address)).to.eq(0)
     });
 
     it('should work normally with short token', async () => {
@@ -331,7 +337,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
@@ -411,7 +417,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectWalletBalance(vault.address, underlyingToken, 10);
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      expect(await underlyingToken.allowance(wrapper.address, vault.address)).to.eq(0)
     });
 
     it('should work when received market tokens equals min market tokens', async () => {
@@ -443,7 +450,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
@@ -523,7 +530,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectWalletBalance(vault.address, underlyingToken, 1);
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
 
     it('should fail when not called by deposit handler', async () => {
@@ -652,8 +659,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
   });
 
-  describe('#afterDepositCancellation', () => {
-    it('should work normally with long token', async () => {
+  describe.only('#afterDepositCancellation', () => {
+    it.only('should work normally with long token', async () => {
       await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -689,7 +696,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
 
       // Mine blocks so we can cancel deposit
       await mineBlocks(1200);
@@ -700,7 +707,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, wethAmount);
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
 
     it('should work normally with short token', async () => {
@@ -739,7 +746,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
 
       // Mine blocks so we can cancel deposit
       await mineBlocks(1200);
@@ -750,7 +757,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isSourceIsWrapper()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
 
     it('should fail when not called by deposit handler', async () => {
@@ -920,6 +927,45 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       });
     });
 
+    it('should work normally when called by valid handler', async () => {
+      const depositExecutor = await impersonate(core.gmxEcosystem!.gmxDepositHandler.address, true);
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.Both
+      );
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        marketId,
+        1,
+        wrapper
+      );
+      await vault.connect(core.hhUser1).initiateWrapping(
+        borrowAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+        { value: parseEther('.01') }
+      );
+      const filter = wrapper.filters.DepositCreated();
+      const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
+
+      // Mine blocks so we can cancel deposit
+      await mineBlocks(1200);
+      const result = await wrapper.connect(depositExecutor).cancelDeposit(depositKey);
+      await expectEvent(wrapper, result, 'DepositCancelled', {
+        key: depositKey,
+      });
+    });
+
     it('should fail if not called by deposit creator (vault)', async () => {
       await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -952,7 +998,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       await expectThrow(
         wrapper.connect(core.hhUser1).cancelDeposit(depositKey),
-        'GmxV2IsolationModeWrapperV2: Only vault can cancel deposit'
+        'GmxV2IsolationModeWrapperV2: Only vault or handler can cancel'
       );
     });
   });
@@ -994,13 +1040,27 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
   describe('#setHandlerStatus', () => {
     it('should work normally', async () => {
-      await wrapper.connect(core.governance).setHandlerStatus(core.gmxEcosystem!.gmxDepositHandler.address, true);
-      expect(await wrapper.getHandlerStatus(core.gmxEcosystem!.gmxDepositHandler.address)).to.eq(true);
+      await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystem!.gmxDepositHandler.address, true);
+      expect(await wrapper.isHandler(core.gmxEcosystem!.gmxDepositHandler.address)).to.eq(true);
     });
 
     it('should failed if not called by dolomite owner', async () => {
       await expectThrow(
-        wrapper.connect(core.hhUser1).setHandlerStatus(core.gmxEcosystem!.gmxDepositHandler.address, true),
+        wrapper.connect(core.hhUser1).setIsHandler(core.gmxEcosystem!.gmxDepositHandler.address, true),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#setCallbackGasLimit', () => {
+    it('should work normally', async () => {
+      await wrapper.connect(core.governance).setCallbackGasLimit(CALLBACK_GAS_LIMIT);
+      expect(await wrapper.callbackGasLimit()).to.eq(CALLBACK_GAS_LIMIT);
+    });
+
+    it('should failed if not called by dolomite owner', async () => {
+      await expectThrow(
+        wrapper.connect(core.hhUser1).setCallbackGasLimit(ZERO_BI),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });

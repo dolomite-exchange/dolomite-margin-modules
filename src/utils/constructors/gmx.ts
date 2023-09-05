@@ -137,14 +137,14 @@ export async function getGmxRegistryV2ConstructorParams(
   }
 
   const calldata = await implementation.populateTransaction.initialize(
-    core.gmxEcosystem!.gmxExchangeRouter.address,
+    core.gmxEcosystem!.gmxEthUsdMarketToken.address,
     core.gmxEcosystem!.gmxDataStore.address,
-    core.gmxEcosystem!.gmxReader.address,
-    core.gmxEcosystem!.gmxRouter.address,
     core.gmxEcosystem!.gmxDepositHandler.address,
     core.gmxEcosystem!.gmxDepositVault.address,
+    core.gmxEcosystem!.gmxExchangeRouter.address,
+    core.gmxEcosystem!.gmxReader.address,
+    core.gmxEcosystem!.gmxRouter.address,
     core.gmxEcosystem!.gmxWithdrawalHandler.address,
-    core.gmxEcosystem!.gmxEthUsdMarketToken.address,
     core.dolomiteRegistry.address,
   );
 

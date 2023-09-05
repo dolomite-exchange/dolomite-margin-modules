@@ -24,15 +24,14 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 
-import { Market } from "../interfaces/gmx/GmxMarket.sol";
-import { Price } from "../interfaces/gmx/GmxPrice.sol";
-import { MarketPoolValueInfo } from "../interfaces/gmx/GmxMarketPoolValueInfo.sol";
+import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
+import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
 
 import { Require } from "../../protocol/lib/Require.sol";
 
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 
 /**
  * @title   GmxV2MarketTokenPriceOracle
@@ -104,7 +103,7 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
         uint256 shortTokenPrice = DOLOMITE_MARGIN.getMarketPrice(info.shortTokenMarketId).value;
         uint256 longTokenPrice = DOLOMITE_MARGIN.getMarketPrice(info.longTokenMarketId).value;
 
-        Market.Props memory marketProps = Market.Props(
+        GmxMarket.Props memory marketProps = GmxMarket.Props(
             info.marketToken,
             info.indexToken,
             info.longToken,
@@ -113,17 +112,17 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
 
        // Dolomite returns price as 36 decimals - token decimals
        // GMX expects 30 decimals - token decimals so we divide by 10 ** 6
-        Price.Props memory indexTokenPriceProps = Price.Props(
+        GmxPrice.Props memory indexTokenPriceProps = GmxPrice.Props(
             indexTokenPrice / 10 ** DECIMAL_ADJUSTMENT,
             indexTokenPrice / 10 ** DECIMAL_ADJUSTMENT
         );
 
-        Price.Props memory longTokenPriceProps = Price.Props(
+        GmxPrice.Props memory longTokenPriceProps = GmxPrice.Props(
             longTokenPrice / 10 ** DECIMAL_ADJUSTMENT,
             longTokenPrice / 10 ** DECIMAL_ADJUSTMENT
         );
 
-        Price.Props memory shortTokenPriceProps = Price.Props(
+        GmxPrice.Props memory shortTokenPriceProps = GmxPrice.Props(
             shortTokenPrice / 10 ** DECIMAL_ADJUSTMENT,
             shortTokenPrice / 10 ** DECIMAL_ADJUSTMENT
         );

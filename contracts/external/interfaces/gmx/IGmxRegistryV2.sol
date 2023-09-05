@@ -54,6 +54,8 @@ interface IGmxRegistryV2 is IBaseRegistry {
     event EthUsdMarketTokenSet(address _ethUsdMarketToken);
     event GmxV2UnwrapperTraderSet(address _gmxV2UnwrapperTrader);
     event GmxV2WrapperTraderSet(address _gmxV2WrapperTrader);
+    event UnwrapperTraderForLiquidationSet(address indexed _unwrapperTraderForLiquidation);
+    event UnwrapperTraderForZapSet(address indexed _unwrapperTraderForZap);
 
     // ===================================================
     // ==================== Functions ====================

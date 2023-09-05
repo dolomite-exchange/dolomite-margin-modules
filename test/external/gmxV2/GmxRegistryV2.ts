@@ -6,7 +6,9 @@ import { Network } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
+
+const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
+const OTHER_ADDRESS_2 = '0x1234567812345678123456781234567812345672';
 
 describe('GmxRegistryV2', () => {
   let snapshotId: string;
@@ -41,18 +43,50 @@ describe('GmxRegistryV2', () => {
     });
   });
 
+  describe('#initializeUnwrapperTrader', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.hhUser1).initializeUnwrapperTraders(
+        OTHER_ADDRESS_1,
+        OTHER_ADDRESS_2,
+      );
+      await expectEvent(registry, result, 'UnwrapperTraderForLiquidationSet', {
+        unwrapperForLiquidation: OTHER_ADDRESS_1,
+      });
+      await expectEvent(registry, result, 'UnwrapperTraderForZapSet', {
+        unwrapperForZp: OTHER_ADDRESS_2,
+      });
+      expect(await registry.unwrapperTraderForLiquidation()).to.equal(OTHER_ADDRESS_1);
+      expect(await registry.unwrapperTraderForZap()).to.equal(OTHER_ADDRESS_2);
+    });
+
+    it('should fail when already initialized', async () => {
+      await registry.connect(core.hhUser1).initializeUnwrapperTraders(OTHER_ADDRESS_1, OTHER_ADDRESS_2);
+      await expectThrow(
+        registry.connect(core.hhUser1).initializeUnwrapperTraders(OTHER_ADDRESS_1, OTHER_ADDRESS_2),
+        'GmxRegistryV2: Already initialized',
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).initializeUnwrapperTraders(ZERO_ADDRESS, ZERO_ADDRESS),
+        'GmxRegistryV2: Invalid unwrapperTrader address',
+      );
+    });
+  });
+
   describe('#ownerSetGmxExchangeRouter', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGmxExchangeRouter(OTHER_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetGmxExchangeRouter(OTHER_ADDRESS_1);
       await expectEvent(registry, result, 'GmxExchangeRouterSet', {
-        gmxExchangeRouter: OTHER_ADDRESS,
+        gmxExchangeRouter: OTHER_ADDRESS_1,
       });
-      expect(await registry.gmxExchangeRouter()).to.eq(OTHER_ADDRESS);
+      expect(await registry.gmxExchangeRouter()).to.eq(OTHER_ADDRESS_1);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGmxExchangeRouter(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetGmxExchangeRouter(OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -67,16 +101,16 @@ describe('GmxRegistryV2', () => {
 
   describe('#ownerSetGmxDataStore', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGmxDataStore(OTHER_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetGmxDataStore(OTHER_ADDRESS_1);
       await expectEvent(registry, result, 'GmxDataStoreSet', {
-        gmxDataStore: OTHER_ADDRESS,
+        gmxDataStore: OTHER_ADDRESS_1,
       });
-      expect(await registry.gmxDataStore()).to.eq(OTHER_ADDRESS);
+      expect(await registry.gmxDataStore()).to.eq(OTHER_ADDRESS_1);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGmxDataStore(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetGmxDataStore(OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -91,16 +125,16 @@ describe('GmxRegistryV2', () => {
 
   describe('#ownerSetGmxReader', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGmxReader(OTHER_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetGmxReader(OTHER_ADDRESS_1);
       await expectEvent(registry, result, 'GmxReaderSet', {
-        gmxReader: OTHER_ADDRESS,
+        gmxReader: OTHER_ADDRESS_1,
       });
-      expect(await registry.gmxReader()).to.eq(OTHER_ADDRESS);
+      expect(await registry.gmxReader()).to.eq(OTHER_ADDRESS_1);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGmxReader(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetGmxReader(OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -115,16 +149,16 @@ describe('GmxRegistryV2', () => {
 
   describe('#ownerSetGmxRouter', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGmxRouter(OTHER_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetGmxRouter(OTHER_ADDRESS_1);
       await expectEvent(registry, result, 'GmxRouterSet', {
-        gmxRouter: OTHER_ADDRESS,
+        gmxRouter: OTHER_ADDRESS_1,
       });
-      expect(await registry.gmxRouter()).to.eq(OTHER_ADDRESS);
+      expect(await registry.gmxRouter()).to.eq(OTHER_ADDRESS_1);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGmxRouter(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetGmxRouter(OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -139,16 +173,16 @@ describe('GmxRegistryV2', () => {
 
   describe('#ownerSetGmxDepositHandler', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGmxDepositHandler(OTHER_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetGmxDepositHandler(OTHER_ADDRESS_1);
       await expectEvent(registry, result, 'GmxDepositHandlerSet', {
-        gmxDepositHandler: OTHER_ADDRESS,
+        gmxDepositHandler: OTHER_ADDRESS_1,
       });
-      expect(await registry.gmxDepositHandler()).to.eq(OTHER_ADDRESS);
+      expect(await registry.gmxDepositHandler()).to.eq(OTHER_ADDRESS_1);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGmxDepositHandler(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetGmxDepositHandler(OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -163,16 +197,16 @@ describe('GmxRegistryV2', () => {
 
   describe('#ownerSetGmxDepositVault', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGmxDepositVault(OTHER_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetGmxDepositVault(OTHER_ADDRESS_1);
       await expectEvent(registry, result, 'GmxDepositVaultSet', {
-        gmxDepositVault: OTHER_ADDRESS,
+        gmxDepositVault: OTHER_ADDRESS_1,
       });
-      expect(await registry.gmxDepositVault()).to.eq(OTHER_ADDRESS);
+      expect(await registry.gmxDepositVault()).to.eq(OTHER_ADDRESS_1);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGmxDepositVault(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetGmxDepositVault(OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -187,16 +221,16 @@ describe('GmxRegistryV2', () => {
 
   describe('#ownerSetGmxWithdrawalHandler', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGmxWithdrawalHandler(OTHER_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetGmxWithdrawalHandler(OTHER_ADDRESS_1);
       await expectEvent(registry, result, 'GmxWithdrawalHandlerSet', {
-        gmxWithdrawalHandler: OTHER_ADDRESS,
+        gmxWithdrawalHandler: OTHER_ADDRESS_1,
       });
-      expect(await registry.gmxWithdrawalHandler()).to.eq(OTHER_ADDRESS);
+      expect(await registry.gmxWithdrawalHandler()).to.eq(OTHER_ADDRESS_1);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGmxWithdrawalHandler(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetGmxWithdrawalHandler(OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -211,16 +245,16 @@ describe('GmxRegistryV2', () => {
 
   describe('#ownerSetGmxV2UnwrapperTrader', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(OTHER_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(OTHER_ADDRESS_1);
       await expectEvent(registry, result, 'GmxV2UnwrapperTraderSet', {
-        gmxV2UnwrapperTrader: OTHER_ADDRESS,
+        gmxV2UnwrapperTrader: OTHER_ADDRESS_1,
       });
-      expect(await registry.gmxV2UnwrapperTrader()).to.eq(OTHER_ADDRESS);
+      expect(await registry.gmxV2UnwrapperTrader()).to.eq(OTHER_ADDRESS_1);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGmxV2UnwrapperTrader(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetGmxV2UnwrapperTrader(OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -235,16 +269,16 @@ describe('GmxRegistryV2', () => {
 
   describe('#ownerSetGmxV2WrapperTrader', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGmxV2WrapperTrader(OTHER_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetGmxV2WrapperTrader(OTHER_ADDRESS_1);
       await expectEvent(registry, result, 'GmxV2WrapperTraderSet', {
-        gmxV2WrapperTrader: OTHER_ADDRESS,
+        gmxV2WrapperTrader: OTHER_ADDRESS_1,
       });
-      expect(await registry.gmxV2WrapperTrader()).to.eq(OTHER_ADDRESS);
+      expect(await registry.gmxV2WrapperTrader()).to.eq(OTHER_ADDRESS_1);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGmxV2WrapperTrader(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetGmxV2WrapperTrader(OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -259,16 +293,16 @@ describe('GmxRegistryV2', () => {
 
   describe('#ownerSetEthUsdMarketToken', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetEthUsdMarketToken(OTHER_ADDRESS);
+      const result = await registry.connect(core.governance).ownerSetEthUsdMarketToken(OTHER_ADDRESS_1);
       await expectEvent(registry, result, 'EthUsdMarketTokenSet', {
-        ethUsdMarketToken: OTHER_ADDRESS,
+        ethUsdMarketToken: OTHER_ADDRESS_1,
       });
-      expect(await registry.ethUsdMarketToken()).to.eq(OTHER_ADDRESS);
+      expect(await registry.ethUsdMarketToken()).to.eq(OTHER_ADDRESS_1);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetEthUsdMarketToken(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetEthUsdMarketToken(OTHER_ADDRESS_1),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });

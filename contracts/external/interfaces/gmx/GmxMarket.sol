@@ -22,12 +22,12 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   Market
+ * @title   GmxMarket
  * @author  Dolomite
  *
  * @notice  GMX Market Library
  */
-library Market {
+library GmxMarket {
     struct Props {
         address marketToken;
         address indexToken;

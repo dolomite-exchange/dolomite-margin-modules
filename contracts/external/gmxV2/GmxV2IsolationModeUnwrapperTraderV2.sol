@@ -27,8 +27,8 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawalCallbackReceiver.sol";
-import { EventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
-import { Withdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
+import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
+import { GmxWithdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
 
 /**
@@ -92,13 +92,13 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2, 
         return true;
     }
 
-    function afterWithdrawalExecution(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external {
+    function afterWithdrawalExecution(bytes32 key, GmxWithdrawal.Props memory withdrawal, GmxEventUtils.EventLogData memory eventData) external {
         // Burn the dolomite tokens
 
         // Create the rest of the actions
     }
 
-    function afterWithdrawalCancellation(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external {
+    function afterWithdrawalCancellation(bytes32 key, GmxWithdrawal.Props memory withdrawal, GmxEventUtils.EventLogData memory eventData) external {
 
     }
 

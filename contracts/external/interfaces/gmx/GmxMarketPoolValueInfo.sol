@@ -27,7 +27,7 @@ pragma solidity ^0.8.9;
  *
  * @notice  GMX MarketPoolVaultInfo Library
  */
-library MarketPoolValueInfo {
+library GmxMarketPoolValueInfo {
     // @dev struct to avoid stack too deep errors for the getPoolValue call
     // @param value the pool value
     // @param longTokenAmount the amount of long token in the pool

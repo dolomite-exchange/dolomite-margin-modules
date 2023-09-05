@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.9;
 
+
 interface IGmxDepositHandler {
     // @dev CreateDepositParams struct used in createDeposit to avoid stack
     // too deep errors
@@ -55,11 +56,11 @@ interface IGmxDepositHandler {
         address[] priceFeedTokens;
     }
 
-    function createDeposit(address account, CreateDepositParams calldata params) external returns (bytes32);
+    function createDeposit(address _account, CreateDepositParams calldata _params) external returns (bytes32);
 
-    function cancelDeposit(bytes32 key) external;
+    function cancelDeposit(bytes32 _key) external;
 
-    function simulateExecuteDeposit(bytes32 key, SimulatePricesParams memory params) external;
+    function simulateExecuteDeposit(bytes32 _key, SimulatePricesParams memory _params) external;
 
-    function executeDeposit(bytes32 key, SetPricesParams calldata oracleParams) external;
+    function executeDeposit(bytes32 _key, SetPricesParams calldata _oracleParams) external;
 }

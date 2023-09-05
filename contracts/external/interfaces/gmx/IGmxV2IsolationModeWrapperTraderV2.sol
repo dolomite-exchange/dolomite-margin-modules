@@ -21,15 +21,14 @@
 pragma solidity ^0.8.9;
 
 import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
-import { Deposit } from "./GmxDeposit.sol";
-import { EventUtils } from "./GmxEventUtils.sol";
-import { IIsolationModeWrapperTrader } from "../IIsolationModeWrapperTrader.sol";
+
 
 /**
  * @title   IGmxV2IsolationModeWrapperTraderV2
  * @author  Dolomite
  */
 interface IGmxV2IsolationModeWrapperTraderV2 {
+
     struct DepositInfo {
         address vault;
         uint256 accountNumber;
@@ -41,9 +40,13 @@ interface IGmxV2IsolationModeWrapperTraderV2 {
 
     function cancelDeposit(bytes32 _key) external;
 
-    function setHandlerStatus(address _address, bool _status) external;
+    function setIsHandler(address _address, bool _status) external;
 
-    function getHandlerStatus(address _address) external view returns (bool);
+    function setCallbackGasLimit(uint256 _callbackGasLimit) external;
+
+    function isHandler(address _address) external view returns (bool);
+
+    function callbackGasLimit() external view returns (uint256);
 
     function GMX_REGISTRY_V2() external view returns (IGmxRegistryV2);
 }

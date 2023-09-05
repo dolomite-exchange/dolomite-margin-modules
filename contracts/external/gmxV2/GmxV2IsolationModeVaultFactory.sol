@@ -272,4 +272,12 @@ contract GmxV2IsolationModeVaultFactory is
             longTokenMarketId: longTokenMarketId
         });
     }
+
+    // ====================================================
+    // ================ Internal Functions ================
+    // ====================================================
+
+    function _afterInitialize() internal override {
+        _allowableCollateralMarketIds.push(marketId);
+    }
 }

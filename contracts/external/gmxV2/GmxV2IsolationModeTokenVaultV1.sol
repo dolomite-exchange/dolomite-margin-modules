@@ -34,12 +34,6 @@ import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 
-import { Deposit } from "../interfaces/gmx/GmxDeposit.sol";
-import { EventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
-import { Withdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
-import { IGmxDepositCallbackReceiver } from "../interfaces/gmx/IGmxDepositCallbackReceiver.sol";
-import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawalCallbackReceiver.sol";
-
 
 /**
  * @title   GmxV2IsolationModeTokenVaultV1

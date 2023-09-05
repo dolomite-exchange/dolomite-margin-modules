@@ -22,9 +22,9 @@ pragma solidity ^0.8.9;
 
 
 import { IGmxDataStore } from "./IGmxDataStore.sol";
-import { Market } from "./GmxMarket.sol";
-import { Price } from "./GmxPrice.sol";
-import { MarketPoolValueInfo } from "./GmxMarketPoolValueInfo.sol";
+import { GmxMarket } from "./GmxMarket.sol";
+import { GmxPrice } from "./GmxPrice.sol";
+import { GmxMarketPoolValueInfo } from "./GmxMarketPoolValueInfo.sol";
 
 
 /**
@@ -36,12 +36,12 @@ import { MarketPoolValueInfo } from "./GmxMarketPoolValueInfo.sol";
 interface IGmxReader {
 
     function getMarketTokenPrice(
-        IGmxDataStore dataStore,
-        Market.Props memory market,
-        Price.Props memory indexTokenPrice,
-        Price.Props memory longTokenPrice,
-        Price.Props memory shortTokenPrice,
-        bytes32 pnlFactorType,
-        bool maximize
-    ) external view returns (int256, MarketPoolValueInfo.Props memory);
+        IGmxDataStore _dataStore,
+        GmxMarket.Props memory _market,
+        GmxPrice.Props memory _indexTokenPrice,
+        GmxPrice.Props memory _longTokenPrice,
+        GmxPrice.Props memory _shortTokenPrice,
+        bytes32 _pnlFactorType,
+        bool _maximize
+    ) external view returns (int256, GmxMarketPoolValueInfo.Props memory);
 }
