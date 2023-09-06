@@ -110,5 +110,12 @@ describe('GmxV2MarketTokenPriceOracle', () => {
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
+
+    it('should fail if token does not have 18 decimals', async () => {
+      await expectThrow(
+        gmPriceOracle.connect(core.governance).ownerSetMarketToken(core.tokens.usdc.address, true),
+        'GmxV2MarketTokenPriceOracle: Invalid market token decimals'
+      );
+    });
   });
 });

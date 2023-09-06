@@ -72,7 +72,6 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
-        // @follow-up How do we change this to allow any GM token
         Require.that(
             marketTokens[_token],
             _FILE,
@@ -147,8 +146,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         );
 
         if (value > 0) {
-            // @audit This appears to be 30 decimals. Does that matter?
-            return uint256(value);
+            return uint256(value / 10 ** 12);
         }
         else {
             revert();
@@ -156,6 +154,11 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     }
 
     function _ownerSetMarketToken(address _token, bool _status) internal {
+        Require.that(
+            IERC20Metadata(_token).decimals() == 18,
+            _FILE,
+            'Invalid market token decimals'
+        );
         marketTokens[_token] = _status;
         emit MarketTokenSet(_token, _status);
     }

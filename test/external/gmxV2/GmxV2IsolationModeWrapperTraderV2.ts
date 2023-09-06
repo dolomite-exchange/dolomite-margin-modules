@@ -11,6 +11,7 @@ import {
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
+  GmxV2MarketTokenPriceOracle,
   IGmxMarketToken,
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
@@ -23,6 +24,7 @@ import {
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
+  createGmxV2MarketTokenPriceOracle,
   getInitiateWrappingParams,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import {
@@ -41,7 +43,8 @@ const borrowAccountNumber = '123';
 const executionFee = parseEther('.01');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
-const CALLBACK_GAS_LIMIT = BigNumber.from('1500000')
+const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
+const SLIPPAGE_MINIMUM = 3;
 
 describe('GmxV2IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
@@ -54,6 +57,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
   let wrapper: GmxV2IsolationModeWrapperTraderV2;
   let factory: GmxV2IsolationModeVaultFactory;
   let vault: GmxV2IsolationModeTokenVaultV1;
+  let priceOracle: GmxV2MarketTokenPriceOracle;
   let marketId: BigNumber;
 
   before(async () => {
@@ -80,10 +84,11 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
-    // Use actual price oracle later
-    await core.testEcosystem!.testPriceOracle!.setPrice(factory.address, '1000000000000000000000000000000');
+    priceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxRegistryV2);
+    await priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
     marketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, factory, true);
+    await setupTestMarket(core, factory, true, priceOracle);
+
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.nativeUsdc!);
 
@@ -120,7 +125,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
   });
 
-  describe('#initiateWrapping', () => {
+  describe.only('#initiateWrapping', () => {
     it('should work normally with long token', async () => {
       await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -190,6 +195,43 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 1);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, 0);
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+    });
+
+    it.only('should fail when slippage minimum is not met', async () => {
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ONE_ETH_BI,
+        BalanceCheckFlag.Both
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ONE_ETH_BI,
+        marketId,
+        parseEther('1800'),
+        wrapper,
+        executionFee,
+      );
+      await vault.connect(core.hhUser1).initiateWrapping(
+        borrowAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+        { value: executionFee }
+      );
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, parseEther('1800'));
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -708,6 +750,20 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     it('should failed if not called by dolomite owner', async () => {
       await expectThrow(
         wrapper.connect(core.hhUser1).setCallbackGasLimit(ZERO_BI),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#setSlippageMinimum', () => {
+    it('should work normally', async () => {
+      await wrapper.connect(core.governance).setSlippageMinimum(25);
+      expect(await wrapper.slippageMinimum()).to.eq(25);
+    });
+
+    it('should failed if not called by dolomite owner', async () => {
+      await expectThrow(
+        wrapper.connect(core.hhUser1).setSlippageMinimum(ZERO_BI),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });

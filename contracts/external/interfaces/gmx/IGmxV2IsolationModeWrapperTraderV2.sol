@@ -44,9 +44,13 @@ interface IGmxV2IsolationModeWrapperTraderV2 {
 
     function setCallbackGasLimit(uint256 _callbackGasLimit) external;
 
+    function setSlippageMinimum(uint256 _slippageMinimum) external;
+
     function isHandler(address _address) external view returns (bool);
 
     function callbackGasLimit() external view returns (uint256);
+
+    function slippageMinimum() external view returns (uint256);
 
     function GMX_REGISTRY_V2() external view returns (IGmxRegistryV2);
 }

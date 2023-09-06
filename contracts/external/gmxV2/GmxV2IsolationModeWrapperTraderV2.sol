@@ -24,6 +24,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2IsolationModeTokenVault } from "../interfaces/gmx/IGmxV2IsolationModeTokenVault.sol";
@@ -62,6 +63,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
     bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
     bytes32 private constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1);
+    bytes32 private constant _SLIPPAGE_MINIMUM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageMinimum")) - 1);
 
     IWETH public immutable weth;
 
@@ -205,6 +207,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         _setCallbackGasLimit(_callbackGasLimit);
     }
 
+    function setSlippageMinimum(uint256 _slippageMinimum) external onlyDolomiteMarginOwner(msg.sender) {
+        _setSlippageMinimum(_slippageMinimum);
+    }
+
     function ownerWithdrawETH(address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
         uint256 bal = address(this).balance;
         weth.deposit{value: bal}();
@@ -220,6 +226,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     function isHandler(address _address) public view returns (bool) {
         bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _address));
         return _getUint256(slot) == 1;
+    }
+
+    function slippageMinimum() public view returns (uint256) {
+        return _getUint256(_SLIPPAGE_MINIMUM_SLOT);
     }
 
     function callbackGasLimit() public view returns (uint256) {
@@ -243,6 +253,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         override
         returns (uint256)
     {
+        _checkSlippage(_inputToken, _inputAmount, _minOutputAmount);
         (, uint256 tempParam) = abi.decode(_extraOrderData, (uint256, uint256));
         IGmxExchangeRouter exchangeRouter = GMX_REGISTRY_V2.gmxExchangeRouter();
         weth.safeTransferFrom(_tradeOriginator, address(this), tempParam);
@@ -307,6 +318,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         _setUint256(_CALLBACK_GAS_LIMIT_SLOT, _callbackGasLimit);
     }
 
+    function _setSlippageMinimum(uint256 _slippageMinimum) internal {
+        _setUint256(_SLIPPAGE_MINIMUM_SLOT, _slippageMinimum);
+    }
+
     function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
         DepositInfo storage storageInfo = _getDepositSlot(_key);
         storageInfo.vault = _info.vault;
@@ -319,6 +334,28 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         assembly {
             info.slot := slot
         }
+    }
+
+    function _checkSlippage(address _inputToken, uint256 _inputAmount, uint256 _minOutputAmount) internal view {
+        // @follow-up GM price is 30 decimals but token is 18 decimals
+        IDolomiteStructs.MonetaryPrice memory inputPrice = DOLOMITE_MARGIN().getMarketPrice(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_inputToken));
+        IDolomiteStructs.MonetaryPrice memory outputPrice = DOLOMITE_MARGIN().getMarketPrice(DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(VAULT_FACTORY)));
+        uint256 inputValue = _inputAmount * inputPrice.value;
+        uint256 outputValue = _minOutputAmount * outputPrice.value;
+        console.log(inputPrice.value);
+        console.log(outputPrice.value);
+        console.log('');
+        console.log(_inputAmount);
+        console.log(_minOutputAmount);
+        console.log('');
+        console.log(inputValue);
+        console.log(outputValue);
+        console.log('Done');
+        Require.that(
+            outputValue > inputValue * (100 - slippageMinimum()) / 100,
+            _FILE,
+            "Insufficient output amount"
+        );
     }
 
     function _getExchangeCost(
