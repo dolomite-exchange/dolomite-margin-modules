@@ -14,7 +14,7 @@ import {
   IGmxMarketToken,
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, sendEther, setEtherBalance, snapshot } from 'test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
 import {
@@ -38,7 +38,7 @@ import {
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
-const wethAmount = parseEther('1');
+const executionFee = parseEther('.01');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000')
@@ -98,8 +98,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       core.hhUser1
     );
 
-    await setupWETHBalance(core, core.hhUser1, wethAmount, core.dolomiteMargin);
-    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, wethAmount);
+    await setupWETHBalance(core, core.hhUser1, ONE_ETH_BI, core.dolomiteMargin);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, ONE_ETH_BI);
 
     await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
@@ -126,19 +126,19 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         BalanceCheckFlag.Both
       );
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, wethAmount);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         marketId,
         1,
         wrapper,
-        parseEther('.01'),
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -148,7 +148,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') } // @follow-up How to calculate executionFee
+        { value: executionFee }
       );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 1);
@@ -175,7 +175,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         1,
         wrapper,
-        parseEther('.01'),
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -185,7 +185,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') } // @follow-up How to calculate executionFee
+        { value: executionFee } // @follow-up How to calculate executionFee
       );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 1);
@@ -202,17 +202,17 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         BalanceCheckFlag.Both
       );
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         marketId,
         1,
         wrapper,
-        parseEther('.01'),
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -222,7 +222,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') }
+        { value: executionFee }
       );
 
       expect(await vault.isVaultFrozen()).to.eq(true);
@@ -233,75 +233,18 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       await setupGMBalance(core, wrapper.address, 10, vault);
       const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
-      // @todo Helper function for this
-      const deposit = {
-        addresses: {
-          account: wrapper.address,
-          receiver: wrapper.address,
-          callbackContract: wrapper.address,
-          uiFeeReceiver: ZERO_ADDRESS,
-          market: underlyingToken.address,
-          initialLongToken: core.tokens.weth.address,
-          initialShortToken: core.tokens.usdc.address,
-          longTokenSwapPath: [],
-          shortTokenSwapPath: [],
-        },
-        numbers: {
-          initialLongTokenAmount: parseEther('1'),
-          initialShortTokenAmount: 0,
-          minMarketTokens: 1,
-          updatedAtBlock: 123123123,
-          executionFee: parseEther('.01'),
-          callbackGasLimit: 850000,
-        },
-        flags: {
-          shouldUnwrapNativeToken: false,
-        },
-      };
-      const eventData = {
-        addressItems: {
-          items: [],
-          arrayItems: [],
-        },
-        uintItems: {
-          items: [
-            {
-              key: 'longTokenAmount',
-              value: wethAmount,
-            },
-            {
-              key: 'shortTokenAmount',
-              value: 0,
-            },
-            {
-              key: 'receivedMarketToken',
-              value: 10,
-            },
-          ],
-          arrayItems: [],
-        },
-        intItems: {
-          items: [],
-          arrayItems: [],
-        },
-        boolItems: {
-          items: [],
-          arrayItems: [],
-        },
-        bytes32Items: {
-          items: [],
-          arrayItems: [],
-        },
-        bytesItems: {
-          items: [],
-          arrayItems: [],
-        },
-        stringItems: {
-          items: [],
-          arrayItems: [],
-        },
-      };
-      await wrapper.connect(depositExecutor).afterDepositExecution(depositKey, deposit, eventData);
+      const depositInfo = getDepositObject(
+        wrapper.address,
+        underlyingToken.address,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        ONE_ETH_BI,
+        ZERO_BI,
+        ONE_BI,
+        BigNumber.from('10')
+      );
+      await wrapper.connect(depositExecutor).afterDepositExecution(depositKey, depositInfo.deposit, depositInfo.eventData);
+
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 10);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       await expectWalletBalance(vault.address, underlyingToken, 10);
@@ -326,7 +269,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         1,
         wrapper,
-        parseEther('.01'),
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -336,7 +279,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') }
+        { value: executionFee }
       );
 
       expect(await vault.isVaultFrozen()).to.eq(true);
@@ -347,75 +290,18 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       await setupGMBalance(core, wrapper.address, 10, vault);
       const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
-      // @todo Helper function for this
-      const deposit = {
-        addresses: {
-          account: wrapper.address,
-          receiver: wrapper.address,
-          callbackContract: wrapper.address,
-          uiFeeReceiver: ZERO_ADDRESS,
-          market: underlyingToken.address,
-          initialLongToken: core.tokens.weth.address,
-          initialShortToken: core.tokens.nativeUsdc!.address,
-          longTokenSwapPath: [],
-          shortTokenSwapPath: [],
-        },
-        numbers: {
-          initialLongTokenAmount: 0,
-          initialShortTokenAmount: usdcAmount,
-          minMarketTokens: 1,
-          updatedAtBlock: 123123123,
-          executionFee: parseEther('.01'),
-          callbackGasLimit: 850000,
-        },
-        flags: {
-          shouldUnwrapNativeToken: false,
-        },
-      };
-      const eventData = {
-        addressItems: {
-          items: [],
-          arrayItems: [],
-        },
-        uintItems: {
-          items: [
-            {
-              key: 'longTokenAmount',
-              value: 0,
-            },
-            {
-              key: 'shortTokenAmount',
-              value: usdcAmount,
-            },
-            {
-              key: 'receivedMarketToken',
-              value: 10,
-            },
-          ],
-          arrayItems: [],
-        },
-        intItems: {
-          items: [],
-          arrayItems: [],
-        },
-        boolItems: {
-          items: [],
-          arrayItems: [],
-        },
-        bytes32Items: {
-          items: [],
-          arrayItems: [],
-        },
-        bytesItems: {
-          items: [],
-          arrayItems: [],
-        },
-        stringItems: {
-          items: [],
-          arrayItems: [],
-        },
-      };
-      await wrapper.connect(depositExecutor).afterDepositExecution(depositKey, deposit, eventData);
+      const depositInfo = getDepositObject(
+        wrapper.address,
+        underlyingToken.address,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        ZERO_BI,
+        usdcAmount,
+        ONE_BI,
+        BigNumber.from('10')
+      );
+      await wrapper.connect(depositExecutor).afterDepositExecution(depositKey, depositInfo.deposit, depositInfo.eventData);
+
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 10);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, 0);
       await expectWalletBalance(vault.address, underlyingToken, 10);
@@ -430,17 +316,17 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         BalanceCheckFlag.Both
       );
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         marketId,
         1,
         wrapper,
-        parseEther('.01'),
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -450,7 +336,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') }
+        { value: executionFee }
       );
 
       expect(await vault.isVaultFrozen()).to.eq(true);
@@ -461,75 +347,18 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       await setupGMBalance(core, wrapper.address, 1, vault);
       const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
-      // @todo Helper function for this
-      const deposit = {
-        addresses: {
-          account: wrapper.address,
-          receiver: wrapper.address,
-          callbackContract: wrapper.address,
-          uiFeeReceiver: ZERO_ADDRESS,
-          market: underlyingToken.address,
-          initialLongToken: core.tokens.weth.address,
-          initialShortToken: core.tokens.usdc.address,
-          longTokenSwapPath: [],
-          shortTokenSwapPath: [],
-        },
-        numbers: {
-          initialLongTokenAmount: parseEther('1'),
-          initialShortTokenAmount: 0,
-          minMarketTokens: 1,
-          updatedAtBlock: 123123123,
-          executionFee: parseEther('.01'),
-          callbackGasLimit: 850000,
-        },
-        flags: {
-          shouldUnwrapNativeToken: false,
-        },
-      };
-      const eventData = {
-        addressItems: {
-          items: [],
-          arrayItems: [],
-        },
-        uintItems: {
-          items: [
-            {
-              key: 'longTokenAmount',
-              value: wethAmount,
-            },
-            {
-              key: 'shortTokenAmount',
-              value: 0,
-            },
-            {
-              key: 'receivedMarketToken',
-              value: 1,
-            },
-          ],
-          arrayItems: [],
-        },
-        intItems: {
-          items: [],
-          arrayItems: [],
-        },
-        boolItems: {
-          items: [],
-          arrayItems: [],
-        },
-        bytes32Items: {
-          items: [],
-          arrayItems: [],
-        },
-        bytesItems: {
-          items: [],
-          arrayItems: [],
-        },
-        stringItems: {
-          items: [],
-          arrayItems: [],
-        },
-      };
-      await wrapper.connect(depositExecutor).afterDepositExecution(depositKey, deposit, eventData);
+      const depositInfo = getDepositObject(
+        wrapper.address,
+        underlyingToken.address,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        ONE_ETH_BI,
+        ZERO_BI,
+        ONE_BI,
+        ONE_BI,
+      );
+      await wrapper.connect(depositExecutor).afterDepositExecution(depositKey, depositInfo.deposit, depositInfo.eventData);
+
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 1);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       await expectWalletBalance(vault.address, underlyingToken, 1);
@@ -539,126 +368,34 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
 
     it('should fail when not called by deposit handler', async () => {
-      const deposit = {
-        addresses: {
-          account: wrapper.address,
-          receiver: wrapper.address,
-          callbackContract: wrapper.address,
-          uiFeeReceiver: ZERO_ADDRESS,
-          market: underlyingToken.address,
-          initialLongToken: core.tokens.weth.address,
-          initialShortToken: core.tokens.usdc.address,
-          longTokenSwapPath: [],
-          shortTokenSwapPath: [],
-        },
-        numbers: {
-          initialLongTokenAmount: parseEther('1'),
-          initialShortTokenAmount: 0,
-          minMarketTokens: 1,
-          updatedAtBlock: 123123123,
-          executionFee: parseEther('.01'),
-          callbackGasLimit: 850000,
-        },
-        flags: {
-          shouldUnwrapNativeToken: false,
-        },
-      };
-      const eventData = {
-        addressItems: {
-          items: [],
-          arrayItems: [],
-        },
-        uintItems: {
-          items: [],
-          arrayItems: [],
-        },
-        intItems: {
-          items: [],
-          arrayItems: [],
-        },
-        boolItems: {
-          items: [],
-          arrayItems: [],
-        },
-        bytes32Items: {
-          items: [],
-          arrayItems: [],
-        },
-        bytesItems: {
-          items: [],
-          arrayItems: [],
-        },
-        stringItems: {
-          items: [],
-          arrayItems: [],
-        },
-      };
-
+      const depositInfo = getDepositObject(
+        wrapper.address,
+        underlyingToken.address,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        ONE_ETH_BI,
+        ZERO_BI,
+        ONE_BI,
+      );
       await expectThrow(
-        wrapper.connect(core.hhUser1).afterDepositExecution(DUMMY_DEPOSIT_KEY, deposit, eventData),
+        wrapper.connect(core.hhUser1).afterDepositExecution(DUMMY_DEPOSIT_KEY, depositInfo.deposit, depositInfo.eventData),
         `GmxV2IsolationModeWrapperV2: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
       );
     });
 
     it('should fail when deposit was not created through wrapper', async () => {
       const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
-      const deposit = {
-        addresses: {
-          account: wrapper.address,
-          receiver: wrapper.address,
-          callbackContract: wrapper.address,
-          uiFeeReceiver: ZERO_ADDRESS,
-          market: underlyingToken.address,
-          initialLongToken: core.tokens.weth.address,
-          initialShortToken: core.tokens.usdc.address,
-          longTokenSwapPath: [],
-          shortTokenSwapPath: [],
-        },
-        numbers: {
-          initialLongTokenAmount: parseEther('1'),
-          initialShortTokenAmount: 0,
-          minMarketTokens: 1,
-          updatedAtBlock: 123123123,
-          executionFee: parseEther('.01'),
-          callbackGasLimit: 850000,
-        },
-        flags: {
-          shouldUnwrapNativeToken: false,
-        },
-      };
-      const eventData = {
-        addressItems: {
-          items: [],
-          arrayItems: [],
-        },
-        uintItems: {
-          items: [],
-          arrayItems: [],
-        },
-        intItems: {
-          items: [],
-          arrayItems: [],
-        },
-        boolItems: {
-          items: [],
-          arrayItems: [],
-        },
-        bytes32Items: {
-          items: [],
-          arrayItems: [],
-        },
-        bytesItems: {
-          items: [],
-          arrayItems: [],
-        },
-        stringItems: {
-          items: [],
-          arrayItems: [],
-        },
-      };
-
+      const depositInfo = getDepositObject(
+        wrapper.address,
+        underlyingToken.address,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        ONE_ETH_BI,
+        ZERO_BI,
+        ONE_BI,
+      );
       await expectThrow(
-        wrapper.connect(depositExecutor).afterDepositExecution(DUMMY_DEPOSIT_KEY, deposit, eventData),
+        wrapper.connect(depositExecutor).afterDepositExecution(DUMMY_DEPOSIT_KEY, depositInfo.deposit, depositInfo.eventData),
         'GmxV2IsolationModeWrapperV2: Invalid deposit key'
       );
     });
@@ -670,20 +407,20 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         BalanceCheckFlag.Both
       );
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, wethAmount);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
       const wethBalanceBefore = await core.tokens.weth.balanceOf(core.dolomiteMargin.address);
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         marketId,
         1,
         wrapper,
-        parseEther('.01'),
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -693,7 +430,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') }
+        { value: executionFee }
       );
 
       const filter = wrapper.filters.DepositCreated();
@@ -710,7 +447,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       expect(await core.tokens.weth.balanceOf(core.dolomiteMargin.address)).to.eq(wethBalanceBefore);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 0);
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, wethAmount);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -734,7 +471,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         1,
         wrapper,
-        parseEther('.01'),
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -744,7 +481,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') }
+        { value: executionFee }
       );
 
       const filter = wrapper.filters.DepositCreated();
@@ -768,126 +505,34 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
 
     it('should fail when not called by deposit handler', async () => {
-      const deposit = {
-        addresses: {
-          account: wrapper.address,
-          receiver: wrapper.address,
-          callbackContract: wrapper.address,
-          uiFeeReceiver: ZERO_ADDRESS,
-          market: underlyingToken.address,
-          initialLongToken: core.tokens.weth.address,
-          initialShortToken: core.tokens.usdc.address,
-          longTokenSwapPath: [],
-          shortTokenSwapPath: [],
-        },
-        numbers: {
-          initialLongTokenAmount: parseEther('1'),
-          initialShortTokenAmount: 0,
-          minMarketTokens: 1,
-          updatedAtBlock: 123123123,
-          executionFee: parseEther('.01'),
-          callbackGasLimit: 850000,
-        },
-        flags: {
-          shouldUnwrapNativeToken: false,
-        },
-      };
-      const eventData = {
-        addressItems: {
-          items: [],
-          arrayItems: [],
-        },
-        uintItems: {
-          items: [],
-          arrayItems: [],
-        },
-        intItems: {
-          items: [],
-          arrayItems: [],
-        },
-        boolItems: {
-          items: [],
-          arrayItems: [],
-        },
-        bytes32Items: {
-          items: [],
-          arrayItems: [],
-        },
-        bytesItems: {
-          items: [],
-          arrayItems: [],
-        },
-        stringItems: {
-          items: [],
-          arrayItems: [],
-        },
-      };
-
+      const depositInfo = getDepositObject(
+        wrapper.address,
+        underlyingToken.address,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        ONE_ETH_BI,
+        ZERO_BI,
+        ONE_BI,
+      );
       await expectThrow(
-        wrapper.connect(core.hhUser1).afterDepositCancellation(DUMMY_DEPOSIT_KEY, deposit, eventData),
+        wrapper.connect(core.hhUser1).afterDepositCancellation(DUMMY_DEPOSIT_KEY, depositInfo.deposit, depositInfo.eventData),
         `GmxV2IsolationModeWrapperV2: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
       );
     });
 
     it('should fail when deposit was not created through wrapper', async () => {
       const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
-      const deposit = {
-        addresses: {
-          account: wrapper.address,
-          receiver: wrapper.address,
-          callbackContract: wrapper.address,
-          uiFeeReceiver: ZERO_ADDRESS,
-          market: underlyingToken.address,
-          initialLongToken: core.tokens.weth.address,
-          initialShortToken: core.tokens.usdc.address,
-          longTokenSwapPath: [],
-          shortTokenSwapPath: [],
-        },
-        numbers: {
-          initialLongTokenAmount: parseEther('1'),
-          initialShortTokenAmount: 0,
-          minMarketTokens: 1,
-          updatedAtBlock: 123123123,
-          executionFee: parseEther('.01'),
-          callbackGasLimit: 850000,
-        },
-        flags: {
-          shouldUnwrapNativeToken: false,
-        },
-      };
-      const eventData = {
-        addressItems: {
-          items: [],
-          arrayItems: [],
-        },
-        uintItems: {
-          items: [],
-          arrayItems: [],
-        },
-        intItems: {
-          items: [],
-          arrayItems: [],
-        },
-        boolItems: {
-          items: [],
-          arrayItems: [],
-        },
-        bytes32Items: {
-          items: [],
-          arrayItems: [],
-        },
-        bytesItems: {
-          items: [],
-          arrayItems: [],
-        },
-        stringItems: {
-          items: [],
-          arrayItems: [],
-        },
-      };
-
+      const depositInfo = getDepositObject(
+        wrapper.address,
+        underlyingToken.address,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        ONE_ETH_BI,
+        ZERO_BI,
+        ONE_BI,
+      );
       await expectThrow(
-        wrapper.connect(depositExecutor).afterDepositCancellation(DUMMY_DEPOSIT_KEY, deposit, eventData),
+        wrapper.connect(depositExecutor).afterDepositCancellation(DUMMY_DEPOSIT_KEY, depositInfo.deposit, depositInfo.eventData),
         'GmxV2IsolationModeWrapperV2: Invalid deposit key'
       );
     });
@@ -901,18 +546,18 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         BalanceCheckFlag.Both
       );
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         marketId,
         1,
         wrapper,
-        parseEther('.01'),
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -922,7 +567,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') }
+        { value: executionFee }
       );
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
@@ -941,18 +586,18 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         BalanceCheckFlag.Both
       );
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         marketId,
         1,
         wrapper,
-        parseEther('.01'),
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -962,7 +607,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') }
+        { value: executionFee }
       );
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
@@ -980,18 +625,18 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         BalanceCheckFlag.Both
       );
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
         core.marketIds.weth,
-        wethAmount,
+        ONE_ETH_BI,
         marketId,
         1,
         wrapper,
-        parseEther('.01'),
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -1001,7 +646,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') }
+        { value: executionFee }
       );
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
@@ -1071,7 +716,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
   describe('#getExchangeCost', () => {
     it('should fail because it is not implemented', async () => {
       await expectThrow(
-        wrapper.getExchangeCost(core.tokens.nativeUsdc!.address, factory.address, wethAmount, BYTES_EMPTY),
+        wrapper.getExchangeCost(core.tokens.nativeUsdc!.address, factory.address, ONE_ETH_BI, BYTES_EMPTY),
         'GmxV2IsolationModeWrapperV2: getExchangeCost is not implemented',
       );
     });
@@ -1084,4 +729,119 @@ async function mineBlocks(blockNumber: number) {
     await ethers.provider.send('evm_mine', []);
     i--;
   }
+}
+
+function getDepositObject(
+  wrapper: string,
+  marketToken: string,
+  longToken: string,
+  shortToken: string,
+  longAmount: BigNumber,
+  shortAmount: BigNumber,
+  minMarketTokens: BigNumber,
+  receivedMarketToken: BigNumber = BigNumber.from('0'),
+) {
+      const deposit = {
+        addresses: {
+          account: wrapper,
+          receiver: wrapper,
+          callbackContract: wrapper,
+          uiFeeReceiver: ZERO_ADDRESS,
+          market: marketToken,
+          initialLongToken: longToken,
+          initialShortToken: shortToken,
+          longTokenSwapPath: [],
+          shortTokenSwapPath: [],
+        },
+        numbers: {
+          initialLongTokenAmount: longAmount,
+          initialShortTokenAmount: shortAmount,
+          minMarketTokens: minMarketTokens,
+          updatedAtBlock: 123123123,
+          executionFee: executionFee,
+          callbackGasLimit: CALLBACK_GAS_LIMIT,
+        },
+        flags: {
+          shouldUnwrapNativeToken: false,
+        },
+      };
+
+      let eventData;
+      if (receivedMarketToken.eq(0)) {
+        eventData = {
+          addressItems: {
+            items: [],
+            arrayItems: [],
+          },
+          uintItems: {
+            items: [],
+            arrayItems: [],
+          },
+          intItems: {
+            items: [],
+            arrayItems: [],
+          },
+          boolItems: {
+            items: [],
+            arrayItems: [],
+          },
+          bytes32Items: {
+            items: [],
+            arrayItems: [],
+          },
+          bytesItems: {
+            items: [],
+            arrayItems: [],
+          },
+          stringItems: {
+            items: [],
+            arrayItems: [],
+          },
+        };
+      } else {
+        eventData = {
+          addressItems: {
+            items: [],
+            arrayItems: [],
+          },
+          uintItems: {
+            items: [
+              {
+                key: 'longTokenAmount',
+                value: longAmount,
+              },
+              {
+                key: 'shortTokenAmount',
+                value: shortAmount,
+              },
+              {
+                key: 'receivedMarketToken',
+                value: receivedMarketToken,
+              },
+            ],
+            arrayItems: [],
+          },
+          intItems: {
+            items: [],
+            arrayItems: [],
+          },
+          boolItems: {
+            items: [],
+            arrayItems: [],
+          },
+          bytes32Items: {
+            items: [],
+            arrayItems: [],
+          },
+          bytesItems: {
+            items: [],
+            arrayItems: [],
+          },
+          stringItems: {
+            items: [],
+            arrayItems: [],
+          },
+        };
+      }
+      return { deposit, eventData }
 }
