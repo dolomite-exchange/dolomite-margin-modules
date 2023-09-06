@@ -210,6 +210,7 @@ export function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
 
   return [
     gmxRegistryV2.address,
+    core.tokens.weth.address,
     dGM.address,
     core.dolomiteMargin.address,
   ];

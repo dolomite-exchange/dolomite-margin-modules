@@ -66,7 +66,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.gmxEcosystem!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1();
+    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core);
     gmxRegistryV2 = await createGmxRegistryV2(core);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
@@ -164,7 +164,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -200,7 +201,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await expect(vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -223,7 +225,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         1000e6,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await expectThrow(
         vault.connect(core.hhUser1).initiateWrapping(
@@ -240,6 +243,57 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       );
     });
 
+    it('should fail if _tradeAccountNumber does not match tradeData account number', async () => {
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        1000e6,
+        marketId,
+        1,
+        wrapper,
+        parseEther('.01'),
+      );
+      await expectThrow(
+        vault.connect(core.hhUser1).initiateWrapping(
+          ZERO_BI,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: parseEther('.01') }
+        ),
+        'GmxV2IsolationModeVaultV1: Invalid tradeData',
+      );
+    });
+
+    it('should fail if TraderType is not IsolationModeWrapper', async () => {
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        1000e6,
+        marketId,
+        1,
+        wrapper,
+        parseEther('.01'),
+      );
+      initiateWrappingParams.traderParams[0].traderType = 0;
+      await expectThrow(
+        vault.connect(core.hhUser1).initiateWrapping(
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: parseEther('.01') }
+        ),
+        'GmxV2IsolationModeVaultV1: Invalid traderType',
+      );
+    });
+
     it('should fail if not vault owner', async () => {
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
@@ -247,7 +301,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         1000e6,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await expectThrow(
         vault.connect(core.hhUser2).initiateWrapping(
@@ -283,7 +338,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,

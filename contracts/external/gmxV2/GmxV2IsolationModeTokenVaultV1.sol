@@ -29,10 +29,12 @@ import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/Isol
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 
 
 /**
@@ -44,6 +46,7 @@ import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVau
  */
 contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezable {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IWETH;
 
     // ==================================================================
     // =========================== Constants ============================
@@ -54,9 +57,15 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
     bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1);
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable max-line-length 
 
+    IWETH public immutable weth;
+
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
+
+    constructor(address _weth) {
+        weth = IWETH(_weth);
+    }
 
     function initiateWrapping(
         uint256 _tradeAccountNumber,
@@ -67,15 +76,26 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen() {
-        if (msg.value > 0) {
-            address payable wrapper = payable(address(registry().gmxV2WrapperTrader()));
-            (bool success, ) = wrapper.call{value: msg.value}("");
-            Require.that(
-                success,
-                _FILE,
-                "Unable to send funds to wrapper"
-            );
-        }
+        uint256 len = _tradersPath.length;
+        (uint256 accountNumber, uint256 executionFee) = abi.decode(_tradersPath[len-1].tradeData, (uint256, uint256));
+        Require.that(
+            msg.value > 0 && executionFee == msg.value,
+            _FILE,
+            "Invalid executionFee"
+        );
+        Require.that(
+            _tradersPath[len-1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper,
+            _FILE,
+            "Invalid traderType"
+        );
+        Require.that(
+            accountNumber == _tradeAccountNumber,
+            _FILE,
+            "Invalid tradeData"
+        );
+
+        weth.deposit{value: msg.value}();
+        weth.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
 
         _swapExactInputForOutput(
             _tradeAccountNumber,

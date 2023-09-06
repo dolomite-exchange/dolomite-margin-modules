@@ -28,6 +28,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2IsolationModeTokenVault } from "../interfaces/gmx/IGmxV2IsolationModeTokenVault.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
+import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 
 import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
@@ -51,6 +52,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     IGmxDepositCallbackReceiver
 {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IWETH;
 
     // ============ Constants ============
 
@@ -60,6 +62,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
     bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
     bytes32 private constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1);
+
+    IWETH public immutable weth;
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -79,10 +83,12 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     constructor(
         address _gmxRegistryV2,
+        address _weth,
         address _dGM,
         address _dolomiteMargin
     ) IsolationModeWrapperTraderV2(_dGM, _dolomiteMargin) {
         GMX_REGISTRY_V2 = IGmxRegistryV2(_gmxRegistryV2);
+        weth = IWETH(_weth);
     }
 
     // ============================================
@@ -98,7 +104,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     ) 
     external 
     onlyHandler(msg.sender) {
-        DepositInfo storage depositInfo = _getDepositSlot(_key);
+        DepositInfo memory depositInfo = _getDepositSlot(_key);
         Require.that(
             depositInfo.vault != address(0),
             _FILE,
@@ -131,8 +137,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         }
 
         factory.setIsVaultFrozen(depositInfo.vault, false);
-        depositInfo.vault = address(0);
-        depositInfo.accountNumber = 0;
+        _setDepositInfo(_key, DepositInfo(address(0), 0));
         emit DepositExecuted(_key);
     }
 
@@ -176,10 +181,9 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             depositInfo.accountNumber, 
             _deposit.numbers.minMarketTokens
         );
-        factory.setIsVaultFrozen(depositInfo.vault, false);
 
-        depositInfo.vault = address(0);
-        depositInfo.accountNumber = 0;
+        factory.setIsVaultFrozen(depositInfo.vault, false);
+        _setDepositInfo(_key, DepositInfo(address(0), 0));
         emit DepositCancelled(_key);
     }
 
@@ -243,12 +247,14 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         override
         returns (uint256)
     {
+        (, uint256 tempParam) = abi.decode(_extraOrderData, (uint256, uint256));
         IGmxExchangeRouter exchangeRouter = GMX_REGISTRY_V2.gmxExchangeRouter();
-        uint256 bal = address(this).balance;
+        weth.safeTransferFrom(_tradeOriginator, address(this), tempParam);
+        weth.withdraw(tempParam);
 
         {
             address depositVault = GMX_REGISTRY_V2.gmxDepositVault();
-            exchangeRouter.sendWnt{value: bal}(depositVault, bal);
+            exchangeRouter.sendWnt{value: tempParam}(depositVault, tempParam);
             IERC20(_inputToken).safeApprove(address(GMX_REGISTRY_V2.gmxRouter()), _inputAmount);
             exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
         }
@@ -265,13 +271,14 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                 new address[](0), /* shortTokenSwapPath */
                 _minOutputAmount,
                 false, /* shouldUnwrapNativeToken */
-                bal, /* executionFee */
+                tempParam, /* executionFee */
                 _getUint256(_CALLBACK_GAS_LIMIT_SLOT) /* callbackGasLimit */
             );
 
+            // @follow-up Using tempParam as a work around. Need to revisit
+            (tempParam,) = abi.decode(_extraOrderData, (uint256, uint256));
             bytes32 depositKey = exchangeRouter.createDeposit(depositParamsTest);
-            // @audit Do we trust this extraOrderData
-            _setDepositInfo(depositKey, DepositInfo(_tradeOriginator, abi.decode(_extraOrderData, (uint256))));
+            _setDepositInfo(depositKey, DepositInfo(_tradeOriginator, tempParam));
             emit DepositCreated(depositKey);
         }
 

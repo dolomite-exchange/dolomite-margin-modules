@@ -165,11 +165,15 @@ export async function createGmxRegistryV2(core: CoreProtocol): Promise<GmxRegist
   return GmxRegistryV2__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createGmxV2IsolationModeTokenVaultV1(): Promise<GmxV2IsolationModeTokenVaultV1> {
+export async function createGmxV2IsolationModeTokenVaultV1(
+  core: CoreProtocol,
+): Promise<GmxV2IsolationModeTokenVaultV1> {
   return createContractWithAbi(
     GmxV2IsolationModeTokenVaultV1__factory.abi,
     GmxV2IsolationModeTokenVaultV1__factory.bytecode,
-    [],
+    [
+      core.tokens.weth.address
+    ],
   );
 }
 
@@ -238,6 +242,7 @@ export function getInitiateWrappingParams(
   marketId2: BigNumberish,
   minAmountOut: BigNumberish,
   wrapper: GmxV2IsolationModeWrapperTraderV2,
+  executionFee: BigNumberish,
 ): any {
   return {
     marketPath: [marketId1, marketId2],
@@ -246,7 +251,7 @@ export function getInitiateWrappingParams(
     traderParams: [{
       trader: wrapper.address,
       traderType: 3,
-      tradeData: ethers.utils.defaultAbiCoder.encode(['uint256'], [accountNumber]),
+      tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
       makerAccountIndex: 0
     }],
     makerAccounts: [],

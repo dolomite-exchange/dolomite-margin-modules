@@ -53,18 +53,18 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
     // ============================ Public State Variables ============================
 
     // @note Revisit naming conventions
-    address public immutable DGM_ETH_USD; // solhint-disable-line var-name-mixedcase
+    address public immutable DGM_TOKEN; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV2 public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteMargin public immutable DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
 
     constructor(
-        address _dGmEthUsd,
+        address _dGmToken,
         address _gmxRegistryV2,
         address _dolomiteMargin
     ) {
-        DGM_ETH_USD = _dGmEthUsd;
+        DGM_TOKEN = _dGmToken;
         REGISTRY = IGmxRegistryV2(_gmxRegistryV2);
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
     }
@@ -77,7 +77,7 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
     returns (IDolomiteStructs.MonetaryPrice memory) {
         // @follow-up How do we change this to allow any GM token
         Require.that(
-            _token == address(DGM_ETH_USD),
+            _token == address(DGM_TOKEN),
             _FILE,
             "Invalid token",
             _token
@@ -85,7 +85,7 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
         Require.that(
             DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
             _FILE,
-            "gmEthUsd cannot be borrowable"
+            "gmToken cannot be borrowable"
         );
 
         return IDolomiteStructs.MonetaryPrice({
@@ -96,7 +96,7 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
     // ============================ Internal Functions ============================
 
     function _getCurrentPrice() internal view returns (uint256) {
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(DGM_ETH_USD);
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(DGM_TOKEN);
         IGmxV2IsolationModeVaultFactory.TokenAndMarketParams memory info = factory.getMarketInfo();
 
         uint256 indexTokenPrice = DOLOMITE_MARGIN.getMarketPrice(info.indexTokenMarketId).value;

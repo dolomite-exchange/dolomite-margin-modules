@@ -63,7 +63,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.gmxEcosystem!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1();
+    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core);
     gmxRegistryV2 = await createGmxRegistryV2(core);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
@@ -137,7 +137,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         wethAmount,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -173,7 +174,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         usdcAmount,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -209,7 +211,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         wethAmount,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -322,7 +325,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         usdcAmount,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -435,7 +439,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         wethAmount,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -659,8 +664,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
   });
 
-  describe.only('#afterDepositCancellation', () => {
-    it.only('should work normally with long token', async () => {
+  describe('#afterDepositCancellation', () => {
+    it('should work normally with long token', async () => {
       await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -677,7 +682,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         wethAmount,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -727,7 +733,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         usdcAmount,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -904,7 +911,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         wethAmount,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -943,7 +951,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         wethAmount,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -981,7 +990,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         wethAmount,
         marketId,
         1,
-        wrapper
+        wrapper,
+        parseEther('.01'),
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
