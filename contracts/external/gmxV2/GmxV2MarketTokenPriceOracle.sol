@@ -20,9 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
+import { IGmxV2MarketTokenPriceOracle } from "../interfaces/gmx/IGmxV2MarketTokenPriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
@@ -39,7 +40,7 @@ import { Require } from "../../protocol/lib/Require.sol";
  *
  * @notice  An implementation of the IDolomitePriceOracle interface that gets GMX's V2 Market token price in USD
  */
-contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
+contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomiteMargin {
 
     // ============================ Constants ============================
 
@@ -52,21 +53,17 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
 
     // ============================ Public State Variables ============================
 
-    // @note Revisit naming conventions
-    address public immutable DGM_TOKEN; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV2 public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
-    IDolomiteMargin public immutable DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
+
+    mapping(address => bool) public marketTokens;
 
     // ============================ Constructor ============================
 
     constructor(
-        address _dGmToken,
         address _gmxRegistryV2,
         address _dolomiteMargin
-    ) {
-        DGM_TOKEN = _dGmToken;
+    ) OnlyDolomiteMargin(_dolomiteMargin) {
         REGISTRY = IGmxRegistryV2(_gmxRegistryV2);
-        DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
     }
 
     function getPrice(
@@ -77,31 +74,42 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
     returns (IDolomiteStructs.MonetaryPrice memory) {
         // @follow-up How do we change this to allow any GM token
         Require.that(
-            _token == address(DGM_TOKEN),
+            marketTokens[_token],
             _FILE,
             "Invalid token",
             _token
         );
         Require.that(
-            DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
+            // @follow-up Is it worth loading this into memory first?
+            DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
             _FILE,
             "gmToken cannot be borrowable"
         );
 
         return IDolomiteStructs.MonetaryPrice({
-            value: _getCurrentPrice()
+            value: _getCurrentPrice(_token)
         });
+    }
+
+    function ownerSetMarketToken(
+        address _token,
+        bool _status    
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetMarketToken(_token, _status);
     }
 
     // ============================ Internal Functions ============================
 
-    function _getCurrentPrice() internal view returns (uint256) {
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(DGM_TOKEN);
+    function _getCurrentPrice(address _token) internal view returns (uint256) {
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(_token);
         IGmxV2IsolationModeVaultFactory.TokenAndMarketParams memory info = factory.getMarketInfo();
 
-        uint256 indexTokenPrice = DOLOMITE_MARGIN.getMarketPrice(info.indexTokenMarketId).value;
-        uint256 shortTokenPrice = DOLOMITE_MARGIN.getMarketPrice(info.shortTokenMarketId).value;
-        uint256 longTokenPrice = DOLOMITE_MARGIN.getMarketPrice(info.longTokenMarketId).value;
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        uint256 indexTokenPrice = dolomiteMargin.getMarketPrice(info.indexTokenMarketId).value;
+        uint256 shortTokenPrice = dolomiteMargin.getMarketPrice(info.shortTokenMarketId).value;
+        uint256 longTokenPrice = dolomiteMargin.getMarketPrice(info.longTokenMarketId).value;
 
         GmxMarket.Props memory marketProps = GmxMarket.Props(
             info.marketToken,
@@ -145,5 +153,10 @@ contract GmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
         else {
             revert();
         }
+    }
+
+    function _ownerSetMarketToken(address _token, bool _status) internal {
+        marketTokens[_token] = _status;
+        emit MarketTokenSet(_token, _status);
     }
 }

@@ -218,7 +218,6 @@ export function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
 
 export function getGmxV2MarketTokenPriceOracleConstructorParams(
   core: CoreProtocol,
-  dGm: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
 ): any[] {
   if (!core.gmxEcosystem) {
@@ -226,7 +225,6 @@ export function getGmxV2MarketTokenPriceOracleConstructorParams(
   }
 
   return [
-    dGm.address,
     gmxRegistryV2.address,
     core.dolomiteMargin.address,
   ]

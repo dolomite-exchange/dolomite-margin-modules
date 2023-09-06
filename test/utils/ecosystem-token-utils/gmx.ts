@@ -225,13 +225,12 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
 
 export async function createGmxV2MarketTokenPriceOracle(
   core: CoreProtocol,
-  dGm: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
 ): Promise<GmxV2MarketTokenPriceOracle> {
   return createContractWithAbi(
     GmxV2MarketTokenPriceOracle__factory.abi,
     GmxV2MarketTokenPriceOracle__factory.bytecode,
-    getGmxV2MarketTokenPriceOracleConstructorParams(core, dGm, gmxRegistryV2),
+    getGmxV2MarketTokenPriceOracleConstructorParams(core, gmxRegistryV2),
   );
 }
 

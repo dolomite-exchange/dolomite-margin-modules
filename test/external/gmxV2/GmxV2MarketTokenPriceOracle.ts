@@ -5,7 +5,7 @@ import { ethers } from 'hardhat';
 import { GmxRegistryV2, GmxV2IsolationModeUnwrapperTraderV2, GmxV2IsolationModeVaultFactory, GmxV2IsolationModeWrapperTraderV2, GmxV2MarketTokenPriceOracle } from 'src/types';
 import { Network } from 'src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from 'test/utils';
-import { expectThrow } from 'test/utils/assertions';
+import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { createGmxRegistryV2, createGmxV2IsolationModeTokenVaultV1, createGmxV2IsolationModeUnwrapperTraderV2, createGmxV2IsolationModeVaultFactory, createGmxV2IsolationModeWrapperTraderV2, createGmxV2MarketTokenPriceOracle } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
 
@@ -46,7 +46,8 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
-    gmPriceOracle = await createGmxV2MarketTokenPriceOracle(core, factory, gmxRegistryV2);
+    gmPriceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxRegistryV2);
+    await gmPriceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, gmPriceOracle);
 
@@ -59,21 +60,21 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('constructor', () => {
+  describe('#constructor', () => {
     it('should work normally', async () => {
-        expect(await gmPriceOracle.DGM_TOKEN()).to.eq(factory.address);
+        expect(await gmPriceOracle.marketTokens(factory.address)).to.eq(true);
         expect(await gmPriceOracle.REGISTRY()).to.eq(gmxRegistryV2.address);
         expect(await gmPriceOracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
     });
   });
 
-  describe.only('#getPrice', () => {
+  describe('#getPrice', () => {
     // @follow-up This one fails sometimes. Price seems to always be one of two
     it('returns the correct value under normal conditions', async () => {
       expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE);
     });
 
-    it('should fail when token sent is not the DGM token', async () => {
+    it('should fail when token sent is not a valid token', async () => {
       await expectThrow(
         gmPriceOracle.getPrice(ADDRESSES.ZERO),
         `GmxV2MarketTokenPriceOracle: Invalid token <${ADDRESSES.ZERO}>`,
@@ -89,6 +90,24 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       await expectThrow(
         gmPriceOracle.getPrice(factory.address),
         'GmxV2MarketTokenPriceOracle: gmToken cannot be borrowable',
+      );
+    });
+  });
+
+  describe('#ownerSetMarketToken', () => {
+    it('should work normally', async () => {
+      const result = await gmPriceOracle.connect(core.governance).ownerSetMarketToken(factory.address, false);
+      await expectEvent(gmPriceOracle, result, 'MarketTokenSet', {
+        token: factory.address,
+        status: false,
+      });
+      expect(await gmPriceOracle.marketTokens(factory.address)).to.eq(false);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        gmPriceOracle.connect(core.hhUser1).ownerSetMarketToken(core.tokens.weth.address, true),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
   });
