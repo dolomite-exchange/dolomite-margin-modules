@@ -44,6 +44,13 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2, 
 
     bytes32 private constant _FILE = "GmxV2IsolationModeUnwrapperV2";
 
+    // ============ Enums ============
+
+    enum ExchangeType {
+        Normal,
+        Liquidation
+    }
+
     // ============ Constructor ============
 
     IGmxRegistryV2 public immutable GMX_REGISTRY_V2; // solhint-disable-line var-name-mixedcase
@@ -54,7 +61,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2, 
         address _gmxRegistryV2,
         address _dytGlp,
         address _dolomiteMargin
-    ) 
+    )
     IsolationModeUnwrapperTraderV2(
         _dytGlp,
         _dolomiteMargin
@@ -114,12 +121,12 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2, 
         address,
         uint256 _inputAmount,
         bytes memory _extraOrderData
-    ) 
+    )
         internal
         override
         returns (uint256)
     {
-        // withdraw from 
+        // withdraw from
 
     }
 
@@ -130,8 +137,8 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2, 
         bytes memory
     )
     internal
-    override 
-    pure 
+    override
+    pure
     returns (uint256) {
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
