@@ -65,7 +65,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       blockNumber: latestBlockNumber,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.gmxEcosystem!.gmxEthUsdMarketToken.connect(core.hhUser1);
+    underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core);
     gmxRegistryV2 = await createGmxRegistryV2(core);
 
@@ -75,7 +75,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystem!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
@@ -121,8 +121,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
-    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystem!.gmxDepositHandler.address, true);
-    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystem!.gmxWithdrawalHandler.address, true);
+    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
+    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
 
     await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
     await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);

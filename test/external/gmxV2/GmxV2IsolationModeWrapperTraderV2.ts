@@ -62,7 +62,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       blockNumber: latestBlockNumber,
       network: Network.ArbitrumOne,
     });
-    underlyingToken = core.gmxEcosystem!.gmxEthUsdMarketToken.connect(core.hhUser1);
+    underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core);
     gmxRegistryV2 = await createGmxRegistryV2(core);
 
@@ -72,7 +72,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystem!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
@@ -103,8 +103,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
     await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
-    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystem!.gmxDepositHandler.address, true);
-    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystem!.gmxWithdrawalHandler.address, true);
+    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
+    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
     await wrapper.connect(core.governance).setCallbackGasLimit(CALLBACK_GAS_LIMIT);
 
     snapshotId = await snapshot();
@@ -232,7 +232,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
       await setupGMBalance(core, wrapper.address, 10, vault);
-      const depositExecutor = await impersonate(core.gmxEcosystem!.gmxDepositHandler.address, true);
+      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
       // @todo Helper function for this
       const deposit = {
         addresses: {
@@ -346,7 +346,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
       await setupGMBalance(core, wrapper.address, 10, vault);
-      const depositExecutor = await impersonate(core.gmxEcosystem!.gmxDepositHandler.address, true);
+      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
       // @todo Helper function for this
       const deposit = {
         addresses: {
@@ -460,7 +460,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
       await setupGMBalance(core, wrapper.address, 1, vault);
-      const depositExecutor = await impersonate(core.gmxEcosystem!.gmxDepositHandler.address, true);
+      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
       // @todo Helper function for this
       const deposit = {
         addresses: {
@@ -601,7 +601,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
 
     it('should fail when deposit was not created through wrapper', async () => {
-      const depositExecutor = await impersonate(core.gmxEcosystem!.gmxDepositHandler.address, true);
+      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
       const deposit = {
         addresses: {
           account: wrapper.address,
@@ -830,7 +830,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
 
     it('should fail when deposit was not created through wrapper', async () => {
-      const depositExecutor = await impersonate(core.gmxEcosystem!.gmxDepositHandler.address, true);
+      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
       const deposit = {
         addresses: {
           account: wrapper.address,
@@ -936,7 +936,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
 
     it('should work normally when called by valid handler', async () => {
-      const depositExecutor = await impersonate(core.gmxEcosystem!.gmxDepositHandler.address, true);
+      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
       await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -1050,13 +1050,13 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
   describe('#setHandlerStatus', () => {
     it('should work normally', async () => {
-      await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystem!.gmxDepositHandler.address, true);
-      expect(await wrapper.isHandler(core.gmxEcosystem!.gmxDepositHandler.address)).to.eq(true);
+      await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
+      expect(await wrapper.isHandler(core.gmxEcosystemV2!.gmxDepositHandler.address)).to.eq(true);
     });
 
     it('should failed if not called by dolomite owner', async () => {
       await expectThrow(
-        wrapper.connect(core.hhUser1).setIsHandler(core.gmxEcosystem!.gmxDepositHandler.address, true),
+        wrapper.connect(core.hhUser1).setIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });

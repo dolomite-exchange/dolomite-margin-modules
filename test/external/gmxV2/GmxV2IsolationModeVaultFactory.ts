@@ -51,7 +51,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       network: Network.ArbitrumOne,
     });
     gmxRegistryV2 = await createGmxRegistryV2(core);
-    vaultImplementation = await createGmxV2IsolationModeTokenVaultV1();
+    vaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
@@ -59,7 +59,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystem!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       vaultImplementation
     );
 
@@ -103,7 +103,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       expect(await factory.longTokenMarketId()).to.equal(core.marketIds.weth);
       expectArrayEq(await factory.allowableDebtMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth]);
       expectArrayEq(await factory.allowableCollateralMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth, marketId]);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem!.gmxEthUsdMarketToken.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystemV2!.gmxEthUsdMarketToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
@@ -117,7 +117,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           gmxRegistryV2,
           badAllowableDebtMarketIds,
           allowableMarketIds,
-          core.gmxEcosystem!.gmxEthUsdMarketToken,
+          core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation
         ),
         'GmxV2IsolationModeVaultFactory: Invalid debt market ids',
@@ -132,7 +132,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           gmxRegistryV2,
           badAllowableDebtMarketIds,
           allowableMarketIds,
-          core.gmxEcosystem!.gmxEthUsdMarketToken,
+          core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation
         ),
         'GmxV2IsolationModeVaultFactory: Invalid debt market ids',
@@ -147,7 +147,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           gmxRegistryV2,
           allowableMarketIds,
           badAllowableCollateralMarketIds,
-          core.gmxEcosystem!.gmxEthUsdMarketToken,
+          core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation
         ),
         'GmxV2IsolationModeVaultFactory: Invalid collateral market ids',
@@ -162,7 +162,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           gmxRegistryV2,
           allowableMarketIds,
           badAllowableCollateralMarketIds,
-          core.gmxEcosystem!.gmxEthUsdMarketToken,
+          core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation
         ),
         'GmxV2IsolationModeVaultFactory: Invalid collateral market ids',
@@ -342,7 +342,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
   describe('#getMarketInfo', async () => {
     it('should work normally', async () => {
       const marketInfo = await factory.getMarketInfo();
-      expect(marketInfo.marketToken).to.eq(core.gmxEcosystem!.gmxEthUsdMarketToken.address);
+      expect(marketInfo.marketToken).to.eq(core.gmxEcosystemV2!.gmxEthUsdMarketToken.address);
       expect(marketInfo.indexToken).to.eq(core.tokens.weth.address);
       expect(marketInfo.indexTokenMarketId).to.eq(core.marketIds.weth);
       expect(marketInfo.shortToken).to.eq(core.tokens.nativeUsdc!.address);

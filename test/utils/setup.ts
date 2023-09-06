@@ -266,16 +266,8 @@ export interface GmxEcosystem {
   glpManager: IGLPManager;
   glpRewardsRouter: IGLPRewardsRouterV2;
   gmx: IERC20;
-  gmxDataStore: IGmxDataStore;
-  gmxDepositHandler: IGmxDepositHandler;
-  gmxDepositVault: SignerWithAddress;
-  gmxEthUsdMarketToken: IGmxMarketToken;
-  gmxExchangeRouter: IGmxExchangeRouter;
-  gmxReader: IGmxReader;
-  gmxRouter: IGmxRouter;
   gmxRewardsRouter: IGmxRewardRouterV2;
   gmxVault: IGmxVault;
-  gmxWithdrawalHandler: IGmxWithdrawalHandler;
   sGlp: IERC20;
   sGmx: ISGMX;
   sbfGmx: IERC20;
@@ -287,6 +279,17 @@ export interface GmxEcosystem {
     glpIsolationModeWrapperTraderV1: GLPIsolationModeWrapperTraderV1;
     gmxRegistry: IGmxRegistryV1;
   };
+}
+
+export interface GmxEcosystemV2 {
+  gmxDataStore: IGmxDataStore;
+  gmxDepositHandler: IGmxDepositHandler;
+  gmxDepositVault: SignerWithAddress;
+  gmxEthUsdMarketToken: IGmxMarketToken;
+  gmxExchangeRouter: IGmxExchangeRouter;
+  gmxReader: IGmxReader;
+  gmxRouter: IGmxRouter;
+  gmxWithdrawalHandler: IGmxWithdrawalHandler;
 }
 
 export interface JonesEcosystem {
@@ -390,6 +393,7 @@ export interface CoreProtocol {
   expiry: IExpiry;
   genericTraderProxy: IGenericTraderProxyV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
+  gmxEcosystemV2: GmxEcosystemV2 | undefined;
   jonesEcosystem: JonesEcosystem | undefined;
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
@@ -487,8 +491,8 @@ export async function setupGMBalance(
   amount: BigNumberish,
   spender: { address: string },
 ) {
-  const controller = await impersonate(core.gmxEcosystem!.gmxExchangeRouter.address, true);
-  await core.gmxEcosystem!.gmxEthUsdMarketToken.connect(controller).mint(signer, amount);
+  const controller = await impersonate(core.gmxEcosystemV2!.gmxExchangeRouter.address, true);
+  await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(controller).mint(signer, amount);
 }
 
 export async function setupGMXBalance(
@@ -655,6 +659,7 @@ export async function setupCoreProtocol(
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
+  const gmxEcosystemV2 = await createGmxEcosystemV2(config.network, hhUser1);
   const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
   const odosEcosystem = await createOdosEcosystem(config.network, hhUser1);
   const paraswapEcosystem = await createParaswapEcosystem(config.network, hhUser1);
@@ -679,6 +684,7 @@ export async function setupCoreProtocol(
     expiry,
     genericTraderProxy,
     gmxEcosystem,
+    gmxEcosystemV2,
     governance,
     jonesEcosystem,
     liquidatorAssetRegistry,
@@ -905,34 +911,11 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
       address => IGLPRewardsRouterV2__factory.connect(address, signer),
     ),
     gmx: getContract(GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
-    gmxDepositHandler: getContract(
-      GMX_DEPOSIT_HANDLER_MAP[network] as string,
-      address => IGmxDepositHandler__factory.connect(address, signer)
-    ),
-    gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network] as string, true, signer),
-    gmxEthUsdMarketToken: getContract(
-      GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
-      address => IGmxMarketToken__factory.connect(address, signer)
-    ),
-    gmxDataStore: getContract(
-      GMX_DATASTORE_MAP[network] as string,
-      address => IGmxDataStore__factory.connect(address, signer)
-    ),
-    gmxExchangeRouter: getContract(
-      GMX_EXCHANGE_ROUTER_MAP[network] as string,
-      address => IGmxExchangeRouter__factory.connect(address, signer)
-    ),
     gmxRewardsRouter: getContract(
       GMX_REWARD_ROUTER_MAP[network] as string,
       address => IGmxRewardRouterV2__factory.connect(address, signer),
     ),
-    gmxReader: getContract(GMX_READER_MAP[network] as string, address => IGmxReader__factory.connect(address, signer)),
-    gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, address => IGmxRouter__factory.connect(address, signer)),
     gmxVault: getContract(GMX_VAULT_MAP[network] as string, address => IGmxVault__factory.connect(address, signer)),
-    gmxWithdrawalHandler: getContract(
-      GMX_WITHDRAWAL_HANDLER_MAP[network] as string,
-      address => IGmxWithdrawalHandler__factory.connect(address, signer)
-    ),
     sGlp: getContract(S_GLP_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
     sGmx: getContract(S_GMX_MAP[network] as string, address => ISGMX__factory.connect(address, signer)),
     sbfGmx: getContract(SBF_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
@@ -957,6 +940,34 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
       ),
     },
   };
+}
+
+async function createGmxEcosystemV2(network: Network, signer: SignerWithAddress): Promise<GmxEcosystemV2 | undefined> {
+  return {
+    gmxDepositHandler: getContract(
+      GMX_DEPOSIT_HANDLER_MAP[network] as string,
+      address => IGmxDepositHandler__factory.connect(address, signer)
+    ),
+    gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network] as string, true, signer),
+    gmxEthUsdMarketToken: getContract(
+      GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
+      address => IGmxMarketToken__factory.connect(address, signer)
+    ),
+    gmxDataStore: getContract(
+      GMX_DATASTORE_MAP[network] as string,
+      address => IGmxDataStore__factory.connect(address, signer)
+    ),
+    gmxExchangeRouter: getContract(
+      GMX_EXCHANGE_ROUTER_MAP[network] as string,
+      address => IGmxExchangeRouter__factory.connect(address, signer)
+    ),
+    gmxReader: getContract(GMX_READER_MAP[network] as string, address => IGmxReader__factory.connect(address, signer)),
+    gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, address => IGmxRouter__factory.connect(address, signer)),
+    gmxWithdrawalHandler: getContract(
+      GMX_WITHDRAWAL_HANDLER_MAP[network] as string,
+      address => IGmxWithdrawalHandler__factory.connect(address, signer)
+    ),
+  }
 }
 
 async function createOdosEcosystem(

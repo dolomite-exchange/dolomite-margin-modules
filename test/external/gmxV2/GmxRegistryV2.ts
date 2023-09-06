@@ -29,14 +29,14 @@ describe('GmxRegistryV2', () => {
 
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
-      expect(await registry.gmxExchangeRouter()).to.eq(core.gmxEcosystem!.gmxExchangeRouter.address);
-      expect(await registry.gmxDataStore()).to.eq(core.gmxEcosystem!.gmxDataStore.address);
-      expect(await registry.gmxReader()).to.eq(core.gmxEcosystem!.gmxReader.address);
-      expect(await registry.gmxRouter()).to.eq(core.gmxEcosystem!.gmxRouter.address);
-      expect(await registry.ethUsdMarketToken()).to.eq(core.gmxEcosystem!.gmxEthUsdMarketToken.address);
-      expect(await registry.gmxDepositHandler()).to.eq(core.gmxEcosystem!.gmxDepositHandler.address);
-      expect(await registry.gmxDepositVault()).to.eq(core.gmxEcosystem!.gmxDepositVault.address);
-      expect(await registry.gmxWithdrawalHandler()).to.eq(core.gmxEcosystem!.gmxWithdrawalHandler.address);
+      expect(await registry.gmxExchangeRouter()).to.eq(core.gmxEcosystemV2!.gmxExchangeRouter.address);
+      expect(await registry.gmxDataStore()).to.eq(core.gmxEcosystemV2!.gmxDataStore.address);
+      expect(await registry.gmxReader()).to.eq(core.gmxEcosystemV2!.gmxReader.address);
+      expect(await registry.gmxRouter()).to.eq(core.gmxEcosystemV2!.gmxRouter.address);
+      expect(await registry.ethUsdMarketToken()).to.eq(core.gmxEcosystemV2!.gmxEthUsdMarketToken.address);
+      expect(await registry.gmxDepositHandler()).to.eq(core.gmxEcosystemV2!.gmxDepositHandler.address);
+      expect(await registry.gmxDepositVault()).to.eq(core.gmxEcosystemV2!.gmxDepositVault.address);
+      expect(await registry.gmxWithdrawalHandler()).to.eq(core.gmxEcosystemV2!.gmxWithdrawalHandler.address);
       expect(await registry.gmxV2UnwrapperTrader()).to.eq(ZERO_ADDRESS);
       expect(await registry.gmxV2WrapperTrader()).to.eq(ZERO_ADDRESS);
       expect(await registry.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
