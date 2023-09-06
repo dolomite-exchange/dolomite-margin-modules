@@ -97,6 +97,9 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         weth.deposit{value: msg.value}();
         weth.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
 
+        // @audit Will this allow reentrancy in _swapExactInputForOutput. May have to requireNotFrozen on external functions instead of internal
+        // @follow-up Can't freeze before this or internal call fails because frozen. Can't freeze after or executeDepositFails because it's not frozen
+        // So currently freezing in the wrapper
         _swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
@@ -106,8 +109,6 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
             _makerAccounts,
             _userConfig
         );
-        // @audit Will this allow reentrancy in _swapExactInputForOutput. May have to requireNotFrozen on external functions instead of internal
-        _setIsVaultFrozen(true);
     }
 
     function initiateUnwrapping() external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen() {
@@ -115,6 +116,11 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
     }
 
     // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can
+    /**
+     * 
+     * @param _key  Deposit key
+     * @dev   This calls the wrapper trader which will revert if given an invalid _key
+     */
     function cancelDeposit(bytes32 _key) external onlyVaultOwner(msg.sender) {
         registry().gmxV2WrapperTrader().cancelDeposit(_key);
         _setIsVaultFrozen(false);
@@ -160,7 +166,11 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
             }
             _compareVirtualToRealBalance();
         } else {
-            // @todo confirm the vault is frozen
+            Require.that(
+                isVaultFrozen(),
+                _FILE,
+                "Vault should be frozen" // @follow-up Revisit this message
+            );
             _setShouldSkipTransfer(false);
         }
     }
@@ -179,6 +189,11 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
             IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
             _compareVirtualToRealBalance();
         } else {
+            Require.that(
+                isVaultFrozen(),
+                _FILE,
+                "Vault should be frozen" // @follow-up Revisit this message
+            );
             _setShouldSkipTransfer(false);
         }
     }

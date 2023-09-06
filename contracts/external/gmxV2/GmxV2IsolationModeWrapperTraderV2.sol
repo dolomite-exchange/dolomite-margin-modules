@@ -207,12 +207,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function ownerWithdrawETH(address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
         uint256 bal = address(this).balance;
-        (bool success, ) = payable(_receiver).call{value: bal}("");
-        Require.that(
-            success,
-            _FILE,
-            "Unable to withdraw funds"
-        );
+        weth.deposit{value: bal}();
+        weth.safeTransfer(_receiver, bal);
     }
 
     function isValidInputToken(address _inputToken) public view override returns (bool) {
@@ -282,6 +278,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             emit DepositCreated(depositKey);
         }
 
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setIsVaultFrozen(_tradeOriginator, true);
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setShouldSkipTransfer(_tradeOriginator, true);
         return _minOutputAmount;
     }
