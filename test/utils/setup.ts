@@ -37,8 +37,6 @@ import {
   IChainlinkPriceOracleOld__factory,
   IChainlinkRegistry,
   IChainlinkRegistry__factory,
-  IGmxDepositHandler,
-  IGmxDepositHandler__factory,
   IDepositWithdrawalProxy,
   IDepositWithdrawalProxy__factory,
   IDolomiteAmmFactory,
@@ -67,10 +65,16 @@ import {
   IGLPManager__factory,
   IGLPRewardsRouterV2,
   IGLPRewardsRouterV2__factory,
+  IGmxDataStore,
+  IGmxDataStore__factory,
+  IGmxDepositHandler,
+  IGmxDepositHandler__factory,
   IGmxExchangeRouter,
   IGmxExchangeRouter__factory,
   IGmxMarketToken,
   IGmxMarketToken__factory,
+  IGmxReader,
+  IGmxReader__factory,
   IGmxRegistryV1,
   IGmxRegistryV1__factory,
   IGmxRewardRouterV2,
@@ -81,6 +85,8 @@ import {
   IGmxVault__factory,
   IGmxVester,
   IGmxVester__factory,
+  IGmxWithdrawalHandler,
+  IGmxWithdrawalHandler__factory,
   IJonesGLPAdapter,
   IJonesGLPAdapter__factory,
   IJonesGLPVaultRouter,
@@ -139,8 +145,6 @@ import {
   IWETH__factory,
   JonesUSDCIsolationModeVaultFactory,
   JonesUSDCIsolationModeVaultFactory__factory,
-  IGmxWithdrawalHandler,
-  IGmxWithdrawalHandler__factory,
   ParaswapAggregatorTrader,
   ParaswapAggregatorTrader__factory,
   PendlePtGLP2024IsolationModeVaultFactory,
@@ -159,10 +163,6 @@ import {
   TestInterestSetter__factory,
   TestPriceOracle,
   TestPriceOracle__factory,
-  IGmxReader,
-  IGmxReader__factory,
-  IGmxDataStore,
-  IGmxDataStore__factory,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
@@ -181,11 +181,17 @@ import {
   GLP_MANAGER_MAP,
   GLP_MAP,
   GLP_REWARD_ROUTER_MAP,
-  GMX_MAP,
-  GMX_EXCHANGE_ROUTER_MAP,
+  GMX_DATASTORE_MAP,
+  GMX_DEPOSIT_HANDLER_MAP,
+  GMX_DEPOSIT_VAULT_MAP,
   GMX_ETH_USD_MARKET_TOKEN_MAP,
+  GMX_EXCHANGE_ROUTER_MAP,
+  GMX_MAP,
+  GMX_READER_MAP,
   GMX_REWARD_ROUTER_MAP,
+  GMX_ROUTER_MAP,
   GMX_VAULT_MAP,
+  GMX_WITHDRAWAL_HANDLER_MAP,
   JONES_ECOSYSTEM_GOVERNOR_MAP,
   JONES_GLP_ADAPTER_MAP,
   JONES_GLP_VAULT_ROUTER_MAP,
@@ -226,12 +232,6 @@ import {
   V_GMX_MAP,
   WBTC_MAP,
   WETH_MAP,
-  GMX_DEPOSIT_HANDLER_MAP,
-  GMX_WITHDRAWAL_HANDLER_MAP,
-  GMX_ROUTER_MAP,
-  GMX_DEPOSIT_VAULT_MAP,
-  GMX_READER_MAP,
-  GMX_DATASTORE_MAP,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { createDolomiteRegistryImplementation } from './dolomite';
@@ -961,26 +961,26 @@ async function createGmxEcosystemV2(network: Network, signer: SignerWithAddress)
   return {
     gmxDepositHandler: getContract(
       GMX_DEPOSIT_HANDLER_MAP[network] as string,
-      address => IGmxDepositHandler__factory.connect(address, signer)
+      address => IGmxDepositHandler__factory.connect(address, signer),
     ),
     gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network] as string, true, signer),
     gmxEthUsdMarketToken: getContract(
       GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
-      address => IGmxMarketToken__factory.connect(address, signer)
+      address => IGmxMarketToken__factory.connect(address, signer),
     ),
     gmxDataStore: getContract(
       GMX_DATASTORE_MAP[network] as string,
-      address => IGmxDataStore__factory.connect(address, signer)
+      address => IGmxDataStore__factory.connect(address, signer),
     ),
     gmxExchangeRouter: getContract(
       GMX_EXCHANGE_ROUTER_MAP[network] as string,
-      address => IGmxExchangeRouter__factory.connect(address, signer)
+      address => IGmxExchangeRouter__factory.connect(address, signer),
     ),
     gmxReader: getContract(GMX_READER_MAP[network] as string, address => IGmxReader__factory.connect(address, signer)),
     gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, address => IGmxRouter__factory.connect(address, signer)),
     gmxWithdrawalHandler: getContract(
       GMX_WITHDRAWAL_HANDLER_MAP[network] as string,
-      address => IGmxWithdrawalHandler__factory.connect(address, signer)
+      address => IGmxWithdrawalHandler__factory.connect(address, signer),
     ),
   };
 }
