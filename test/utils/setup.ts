@@ -961,26 +961,31 @@ async function createGmxEcosystemV2(network: Network, signer: SignerWithAddress)
   return {
     gmxDepositHandler: getContract(
       GMX_DEPOSIT_HANDLER_MAP[network] as string,
-      address => IGmxDepositHandler__factory.connect(address, signer),
+      IGmxDepositHandler__factory.connect,
+      signer,
     ),
     gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network] as string, true, signer),
     gmxEthUsdMarketToken: getContract(
       GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
-      address => IGmxMarketToken__factory.connect(address, signer),
+      IGmxMarketToken__factory.connect,
+      signer,
     ),
     gmxDataStore: getContract(
       GMX_DATASTORE_MAP[network] as string,
-      address => IGmxDataStore__factory.connect(address, signer),
+      IGmxDataStore__factory.connect,
+      signer,
     ),
     gmxExchangeRouter: getContract(
       GMX_EXCHANGE_ROUTER_MAP[network] as string,
-      address => IGmxExchangeRouter__factory.connect(address, signer),
+      IGmxExchangeRouter__factory.connect,
+      signer,
     ),
-    gmxReader: getContract(GMX_READER_MAP[network] as string, address => IGmxReader__factory.connect(address, signer)),
-    gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, address => IGmxRouter__factory.connect(address, signer)),
+    gmxReader: getContract(GMX_READER_MAP[network] as string, IGmxReader__factory.connect, signer),
+    gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, IGmxRouter__factory.connect, signer),
     gmxWithdrawalHandler: getContract(
       GMX_WITHDRAWAL_HANDLER_MAP[network] as string,
-      address => IGmxWithdrawalHandler__factory.connect(address, signer),
+      IGmxWithdrawalHandler__factory.connect,
+      signer,
     ),
   };
 }
