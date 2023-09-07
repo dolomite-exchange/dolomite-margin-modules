@@ -116,8 +116,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
     await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
-    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
-    await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+    await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
+    await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
     await wrapper.connect(core.governance).setCallbackGasLimit(CALLBACK_GAS_LIMIT);
 
     snapshotId = await snapshot();
@@ -764,13 +764,13 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
   describe('#setHandlerStatus', () => {
     it('should work normally', async () => {
-      await wrapper.connect(core.governance).setIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
+      await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
       expect(await wrapper.isHandler(core.gmxEcosystemV2!.gmxDepositHandler.address)).to.eq(true);
     });
 
     it('should failed if not called by dolomite owner', async () => {
       await expectThrow(
-        wrapper.connect(core.hhUser1).setIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true),
+        wrapper.connect(core.hhUser1).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });
