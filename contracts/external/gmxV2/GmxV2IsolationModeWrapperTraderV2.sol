@@ -66,9 +66,16 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     bytes32 private constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_MINIMUM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageMinimum")) - 1);
 
+    receive() external payable {} // solhint-disable-line no-empty-blocks
+
     // ============ Initializer ============
 
-    function initialize(address _gmxRegistryV2, address _weth, address _dGM, address _dolomiteMargin) external initializer {
+    function initialize(
+        address _gmxRegistryV2,
+        address _weth,
+        address _dGM,
+        address _dolomiteMargin
+    ) external initializer {
         _initializeWrapperTrader(_dGM, _dolomiteMargin);
         _initializeTraderBase(_weth);
         _setAddress(_GMX_REGISTRY_V2_SLOT, _gmxRegistryV2);
@@ -77,8 +84,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // ============================================
     // ============= Public Functions =============
     // ============================================
-
-    receive() external payable {} // solhint-disable-line no-empty-blocks
 
     function afterDepositExecution(
         bytes32 _key,
@@ -258,7 +263,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             emit DepositCreated(depositKey);
         }
 
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultFrozen(tradeOriginatorForStackTooDeep, true);
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultFrozen(
+            tradeOriginatorForStackTooDeep,
+            true
+        );
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setShouldSkipTransfer(
             tradeOriginatorForStackTooDeep,
             true
