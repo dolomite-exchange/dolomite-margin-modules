@@ -77,8 +77,6 @@ import {
   IJonesGLPAdapter__factory,
   IJonesGLPVaultRouter,
   IJonesGLPVaultRouter__factory,
-  IJonesUSDCIsolationModeVaultFactory,
-  IJonesUSDCIsolationModeVaultFactory__factory,
   IJonesUSDCRegistry,
   IJonesUSDCRegistry__factory,
   IJonesWhitelistController,
@@ -103,8 +101,6 @@ import {
   IParaswapFeeClaimer__factory,
   IPendleGLPRegistry,
   IPendleGLPRegistry__factory,
-  IPendlePtGLP2024IsolationModeVaultFactory,
-  IPendlePtGLP2024IsolationModeVaultFactory__factory,
   IPendlePtMarket,
   IPendlePtMarket__factory,
   IPendlePtOracle,
@@ -133,8 +129,14 @@ import {
   IUmamiAssetVaultStorageViewer__factory,
   IWETH,
   IWETH__factory,
+  JonesUSDCIsolationModeVaultFactory,
+  JonesUSDCIsolationModeVaultFactory__factory,
   ParaswapAggregatorTrader,
   ParaswapAggregatorTrader__factory,
+  PendlePtGLP2024IsolationModeVaultFactory,
+  PendlePtGLP2024IsolationModeVaultFactory__factory,
+  PendleYtGLP2024IsolationModeVaultFactory,
+  PendleYtGLP2024IsolationModeVaultFactory__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory,
   PlutusVaultGLPIsolationModeWrapperTraderV1,
@@ -157,7 +159,8 @@ import {
   DFS_GLP_MAP,
   DJ_USDC,
   DPLV_GLP_MAP,
-  DPT_GLP_2024_MAP, DYT_GLP_2024_MAP,
+  DPT_GLP_2024_MAP,
+  DYT_GLP_2024_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
   ES_GMX_MAP,
   FS_GLP_MAP,
@@ -267,7 +270,7 @@ export interface JonesEcosystem {
   jUSDC: IERC4626;
   admin: SignerWithAddress;
   live: {
-    jUSDCIsolationModeFactory: IJonesUSDCIsolationModeVaultFactory;
+    jUSDCIsolationModeFactory: JonesUSDCIsolationModeVaultFactory;
     jonesUSDCRegistry: IJonesUSDCRegistry;
   };
 }
@@ -290,9 +293,10 @@ export interface PendleEcosystem {
   syGlpToken: IPendleSyToken;
   ytGlpToken: IPendleYtToken;
   live: {
-    ptGlpIsolationModeFactory: IPendlePtGLP2024IsolationModeVaultFactory;
     pendleGLP2024Registry: IPendleGLPRegistry
     pendleGLP2024RegistryProxy: RegistryProxy
+    ptGlpIsolationModeFactory: PendlePtGLP2024IsolationModeVaultFactory;
+    ytGlpIsolationModeFactory: PendleYtGLP2024IsolationModeVaultFactory;
   };
 }
 
@@ -591,6 +595,7 @@ export async function setupCoreProtocol(
   const liquidatorProxyV4 = getContract(
     (LiquidatorProxyV4WithGenericTraderJson.networks as any)[config.network].address,
     ILiquidatorProxyV4WithGenericTrader__factory.connect,
+    governance,
   );
 
   const paraswapTrader = getContractOpt(
@@ -775,10 +780,7 @@ async function createAbraEcosystem(network: Network, signer: SignerWithAddress):
   }
 
   return {
-    magicGlp: getContract(
-      MAGIC_GLP_MAP[network]?.address as string,
-      address => IERC4626__factory.connect(address, signer),
-    ),
+    magicGlp: getContract(MAGIC_GLP_MAP[network]?.address as string, IERC4626__factory.connect, signer),
   };
 }
 
@@ -788,7 +790,67 @@ async function createAtlasEcosystem(network: Network, signer: SignerWithAddress)
   }
 
   return {
-    siToken: getContract(ATLAS_SI_TOKEN_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
+    siToken: getContract(ATLAS_SI_TOKEN_MAP[network] as string, IERC20__factory.connect, signer),
+  };
+}
+
+async function createGmxEcosystem(network: Network, signer: SignerWithAddress): Promise<GmxEcosystem | undefined> {
+  const esGmxDistributorAddress = ES_GMX_DISTRIBUTOR_MAP[network];
+  if (!esGmxDistributorAddress) {
+    return undefined;
+  }
+
+  const esGmxDistributor = getContract(esGmxDistributorAddress, IEsGmxDistributor__factory.connect, signer);
+  const esGmxAdmin = await impersonateOrFallback(await esGmxDistributor.connect(signer).admin(), true, signer);
+  return {
+    esGmx: getContract(ES_GMX_MAP[network] as string, IERC20__factory.connect, signer),
+    esGmxDistributor: esGmxDistributor.connect(esGmxAdmin),
+    fsGlp: getContract(FS_GLP_MAP[network] as string, IERC20__factory.connect, signer),
+    glp: getContract(GLP_MAP[network] as string, IERC20__factory.connect, signer),
+    glpManager: getContract(
+      GLP_MANAGER_MAP[network] as string,
+      IGLPManager__factory.connect,
+      signer,
+    ),
+    glpRewardsRouter: getContract(
+      GLP_REWARD_ROUTER_MAP[network] as string,
+      IGLPRewardsRouterV2__factory.connect,
+      signer,
+    ),
+    gmxRewardsRouter: getContract(
+      GMX_REWARD_ROUTER_MAP[network] as string,
+      IGmxRewardRouterV2__factory.connect,
+      signer,
+    ),
+    gmx: getContract(GMX_MAP[network] as string, IERC20__factory.connect, signer),
+    gmxVault: getContract(GMX_VAULT_MAP[network] as string, IGmxVault__factory.connect, signer),
+    sGlp: getContract(S_GLP_MAP[network] as string, IERC20__factory.connect, signer),
+    sGmx: getContract(S_GMX_MAP[network] as string, ISGMX__factory.connect, signer),
+    sbfGmx: getContract(SBF_GMX_MAP[network] as string, IERC20__factory.connect, signer),
+    vGlp: getContract(V_GLP_MAP[network] as string, IGmxVester__factory.connect, signer),
+    vGmx: getContract(V_GMX_MAP[network] as string, IGmxVester__factory.connect, signer),
+    live: {
+      glpIsolationModeFactory: getContract(
+        (Deployments.GLPIsolationModeVaultFactory as any)[network]?.address,
+        IGLPIsolationModeVaultFactoryOld__factory.connect,
+        signer,
+      ),
+      glpIsolationModeUnwrapperTraderV1: getContract(
+        (Deployments.GLPIsolationModeUnwrapperTraderV1 as any)[network]?.address,
+        GLPIsolationModeUnwrapperTraderV1__factory.connect,
+        signer,
+      ),
+      glpIsolationModeWrapperTraderV1: getContract(
+        (Deployments.GLPIsolationModeWrapperTraderV1 as any)[network]?.address,
+        GLPIsolationModeWrapperTraderV1__factory.connect,
+        signer,
+      ),
+      gmxRegistry: getContract(
+        (Deployments.GmxRegistryProxy as any)[network]?.address,
+        IGmxRegistryV1__factory.connect,
+        signer,
+      ),
+    },
   };
 }
 
@@ -799,85 +861,38 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
 
   const whitelist = getContract(
     JONES_WHITELIST_CONTROLLER_MAP[network] as string,
-    address => IJonesWhitelistController__factory.connect(address, signer),
+    IJonesWhitelistController__factory.connect,
+    signer,
   );
   return {
     admin: await impersonateOrFallback(JONES_ECOSYSTEM_GOVERNOR_MAP[network]!, true, signer),
     glpAdapter: getContract(
       JONES_GLP_ADAPTER_MAP[network] as string,
-      address => IJonesGLPAdapter__factory.connect(address, signer),
+      IJonesGLPAdapter__factory.connect,
+      signer,
     ),
     glpVaultRouter: getContract(
       JONES_GLP_VAULT_ROUTER_MAP[network] as string,
-      address => IJonesGLPVaultRouter__factory.connect(address, signer),
+      IJonesGLPVaultRouter__factory.connect,
+      signer,
     ),
     usdcReceiptToken: getContract(
       JONES_JUSDC_RECEIPT_TOKEN_MAP[network] as string,
-      address => IERC4626__factory.connect(address, signer),
+      IERC4626__factory.connect,
+      signer,
     ),
-    jUSDC: getContract(JONES_JUSDC_MAP[network] as string, address => IERC4626__factory.connect(address, signer)),
+    jUSDC: getContract(JONES_JUSDC_MAP[network] as string, IERC4626__factory.connect, signer),
     whitelistController: whitelist,
     live: {
       jUSDCIsolationModeFactory: getContract(
         (Deployments.JonesUSDCIsolationModeVaultFactory as any)[network]?.address,
-        IJonesUSDCIsolationModeVaultFactory__factory.connect,
+        JonesUSDCIsolationModeVaultFactory__factory.connect,
+        signer,
       ),
       jonesUSDCRegistry: getContract(
         (Deployments.JonesUSDCRegistryProxy as any)[network]?.address,
         IJonesUSDCRegistry__factory.connect,
-      ),
-    },
-  };
-}
-
-async function createGmxEcosystem(network: Network, signer: SignerWithAddress): Promise<GmxEcosystem | undefined> {
-  const esGmxDistributorAddress = ES_GMX_DISTRIBUTOR_MAP[network];
-  if (!esGmxDistributorAddress) {
-    return undefined;
-  }
-
-  const esGmxDistributor = getContract(esGmxDistributorAddress, IEsGmxDistributor__factory.connect);
-  const esGmxAdmin = await impersonateOrFallback(await esGmxDistributor.connect(signer).admin(), true, signer);
-  return {
-    esGmx: getContract(ES_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
-    esGmxDistributor: esGmxDistributor.connect(esGmxAdmin),
-    fsGlp: getContract(FS_GLP_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
-    glp: getContract(GLP_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
-    glpManager: getContract(
-      GLP_MANAGER_MAP[network] as string,
-      address => IGLPManager__factory.connect(address, signer),
-    ),
-    glpRewardsRouter: getContract(
-      GLP_REWARD_ROUTER_MAP[network] as string,
-      address => IGLPRewardsRouterV2__factory.connect(address, signer),
-    ),
-    gmxRewardsRouter: getContract(
-      GMX_REWARD_ROUTER_MAP[network] as string,
-      address => IGmxRewardRouterV2__factory.connect(address, signer),
-    ),
-    gmx: getContract(GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
-    gmxVault: getContract(GMX_VAULT_MAP[network] as string, address => IGmxVault__factory.connect(address, signer)),
-    sGlp: getContract(S_GLP_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
-    sGmx: getContract(S_GMX_MAP[network] as string, address => ISGMX__factory.connect(address, signer)),
-    sbfGmx: getContract(SBF_GMX_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
-    vGlp: getContract(V_GLP_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
-    vGmx: getContract(V_GMX_MAP[network] as string, address => IGmxVester__factory.connect(address, signer)),
-    live: {
-      glpIsolationModeFactory: getContract(
-        (Deployments.GLPIsolationModeVaultFactory as any)[network]?.address,
-        IGLPIsolationModeVaultFactoryOld__factory.connect,
-      ),
-      glpIsolationModeUnwrapperTraderV1: getContract(
-        (Deployments.GLPIsolationModeUnwrapperTraderV1 as any)[network]?.address,
-        GLPIsolationModeUnwrapperTraderV1__factory.connect,
-      ),
-      glpIsolationModeWrapperTraderV1: getContract(
-        (Deployments.GLPIsolationModeWrapperTraderV1 as any)[network]?.address,
-        GLPIsolationModeWrapperTraderV1__factory.connect,
-      ),
-      gmxRegistry: getContract(
-        (Deployments.GmxRegistryProxy as any)[network]?.address,
-        IGmxRegistryV1__factory.connect,
+        signer,
       ),
     },
   };
@@ -922,40 +937,54 @@ async function createPendleEcosystem(
   return {
     pendleRouter: getContract(
       PENDLE_ROUTER_MAP[network] as string,
-      address => IPendleRouter__factory.connect(address, signer),
+      IPendleRouter__factory.connect,
+      signer,
     ),
     ptGlpMarket: getContract(
       PENDLE_PT_GLP_2024_MARKET_MAP[network] as string,
-      address => IPendlePtMarket__factory.connect(address, signer),
+      IPendlePtMarket__factory.connect,
+      signer,
     ),
     ptGlpToken: getContract(
       PENDLE_PT_GLP_2024_TOKEN_MAP[network] as string,
-      address => IPendlePtToken__factory.connect(address, signer),
+      IPendlePtToken__factory.connect,
+      signer,
     ),
     ptOracle: getContract(
       PENDLE_PT_ORACLE_MAP[network] as string,
-      address => IPendlePtOracle__factory.connect(address, signer),
+      IPendlePtOracle__factory.connect,
+      signer,
     ),
     syGlpToken: getContract(
       PENDLE_SY_GLP_2024_TOKEN_MAP[network] as string,
-      address => IPendleSyToken__factory.connect(address, signer),
+      IPendleSyToken__factory.connect,
+      signer,
     ),
     ytGlpToken: getContract(
       PENDLE_YT_GLP_2024_TOKEN_MAP[network] as string,
-      address => IPendleYtToken__factory.connect(address, signer),
+      IPendleYtToken__factory.connect,
+      signer,
     ),
     live: {
       pendleGLP2024Registry: getContract(
         (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
         IPendleGLPRegistry__factory.connect,
+        signer,
       ),
       pendleGLP2024RegistryProxy: getContract(
         (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
         RegistryProxy__factory.connect,
+        signer,
       ),
       ptGlpIsolationModeFactory: getContract(
         (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,
-        IPendlePtGLP2024IsolationModeVaultFactory__factory.connect,
+        PendlePtGLP2024IsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
+      ytGlpIsolationModeFactory: getContract(
+        (Deployments.PendleYtGLP2024IsolationModeVaultFactory as any)[network]?.address,
+        PendleYtGLP2024IsolationModeVaultFactory__factory.connect,
+        signer,
       ),
     },
   };
@@ -971,41 +1000,49 @@ async function createPlutusEcosystem(
 
   const sGlpAddressForPlutus = '0x2F546AD4eDD93B956C8999Be404cdCAFde3E89AE';
   return {
-    plvGlp: getContract(PLV_GLP_MAP[network] as string, address => IERC4626__factory.connect(address, signer)),
-    plsToken: getContract(PLS_TOKEN_MAP[network] as string, address => IERC20__factory.connect(address, signer)),
+    plvGlp: getContract(PLV_GLP_MAP[network] as string, IERC4626__factory.connect, signer),
+    plsToken: getContract(PLS_TOKEN_MAP[network] as string, IERC20__factory.connect, signer),
     plvGlpFarm: getContract(
       PLV_GLP_FARM_MAP[network] as string,
-      address => IPlutusVaultGLPFarm__factory.connect(address, signer),
+      IPlutusVaultGLPFarm__factory.connect,
+      signer,
     ),
     plvGlpRouter: getContract(
       PLV_GLP_ROUTER_MAP[network] as string,
-      address => IPlutusVaultGLPRouter__factory.connect(address, signer),
+      IPlutusVaultGLPRouter__factory.connect,
+      signer,
     ),
-    sGlp: getContract(sGlpAddressForPlutus, address => IERC20__factory.connect(address, signer)),
+    sGlp: getContract(sGlpAddressForPlutus, IERC20__factory.connect, signer),
     live: {
       dolomiteWhitelistForGlpDepositor: getContract(
         (Deployments.DolomiteWhitelistForGlpDepositorV2 as any)[network]?.address,
-        address => DolomiteCompatibleWhitelistForPlutusDAO__factory.connect(address, signer),
+        DolomiteCompatibleWhitelistForPlutusDAO__factory.connect,
+        signer,
       ),
       dolomiteWhitelistForPlutusChef: getContract(
         (Deployments.DolomiteWhitelistForPlutusChef as any)[network]?.address,
-        address => DolomiteCompatibleWhitelistForPlutusDAO__factory.connect(address, signer),
+        DolomiteCompatibleWhitelistForPlutusDAO__factory.connect,
+        signer,
       ),
       plutusVaultRegistry: getContract(
         (Deployments.PlutusVaultRegistryProxy as any)[network]?.address,
         IPlutusVaultRegistry__factory.connect,
+        signer,
       ),
       plvGlpIsolationModeFactory: getContract(
         (Deployments.PlutusVaultGLPIsolationModeVaultFactory as any)[network]?.address,
         IPlutusVaultGLPIsolationModeVaultFactory__factory.connect,
+        signer,
       ),
       plvGlpIsolationModeUnwrapperTraderV1: getContract(
         (Deployments.PlutusVaultGLPIsolationModeUnwrapperTraderV1 as any)[network]?.address,
         PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory.connect,
+        signer,
       ),
       plvGlpIsolationModeWrapperTraderV1: getContract(
         (Deployments.PlutusVaultGLPIsolationModeWrapperTraderV1 as any)[network]?.address,
         PlutusVaultGLPIsolationModeWrapperTraderV1__factory.connect,
+        signer,
       ),
     },
   };
@@ -1022,27 +1059,33 @@ async function createUmamiEcosystem(
   return {
     glpLink: getContract(
       UMAMI_LINK_VAULT_MAP[network] as string,
-      address => IUmamiAssetVault__factory.connect(address, signer),
+      IUmamiAssetVault__factory.connect,
+      signer,
     ),
     glpUni: getContract(
       UMAMI_UNI_VAULT_MAP[network] as string,
-      address => IUmamiAssetVault__factory.connect(address, signer),
+      IUmamiAssetVault__factory.connect,
+      signer,
     ),
     glpUsdc: getContract(
       UMAMI_USDC_VAULT_MAP[network] as string,
-      address => IUmamiAssetVault__factory.connect(address, signer),
+      IUmamiAssetVault__factory.connect,
+      signer,
     ),
     glpWbtc: getContract(
       UMAMI_WBTC_VAULT_MAP[network] as string,
-      address => IUmamiAssetVault__factory.connect(address, signer),
+      IUmamiAssetVault__factory.connect,
+      signer,
     ),
     glpWeth: getContract(
       UMAMI_WETH_VAULT_MAP[network] as string,
-      address => IUmamiAssetVault__factory.connect(address, signer),
+      IUmamiAssetVault__factory.connect,
+      signer,
     ),
     storageViewer: getContract(
       UMAMI_STORAGE_VIEWER_MAP[network] as string,
-      address => IUmamiAssetVaultStorageViewer__factory.connect(address, signer),
+      IUmamiAssetVaultStorageViewer__factory.connect,
+      signer,
     ),
     configurator: await impersonateOrFallback(UMAMI_CONFIGURATOR_MAP[network] as string, true, signer),
   };
@@ -1051,8 +1094,9 @@ async function createUmamiEcosystem(
 function getContract<T>(
   address: string,
   connector: (address: string, signerOrProvider: any) => T,
+  signerOrProvider: Signer | Provider,
 ): T {
-  return connector(address, undefined);
+  return connector(address, signerOrProvider);
 }
 
 function getContractOpt<T>(

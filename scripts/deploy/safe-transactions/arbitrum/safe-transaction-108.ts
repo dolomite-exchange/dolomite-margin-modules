@@ -1,11 +1,12 @@
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import * as Deployments from '../../../deployments.json';
+import { BigNumber } from 'ethers';
 import { IPendleYtGLP2024IsolationModeVaultFactory__factory } from '../../../../src/types';
 import { getChainlinkPriceOracleParams } from '../../../../src/utils/constructors/oracles';
 import { getPendleYtGLPPriceOracleConstructorParams } from '../../../../src/utils/constructors/pendle';
+import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
 import { Network } from '../../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../../test/utils/setup';
+import { CoreProtocol, setupCoreProtocol } from '../../../../test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../deploy-utils';
+import * as Deployments from '../../../deployments.json';
 
 /**
  * This script encodes the following transactions:
@@ -74,6 +75,45 @@ async function main() {
     'ownerSetPriceOracle',
     [core.marketIds.djUSDC!, Deployments.JonesUSDCWithChainlinkAutomationPriceOracle[network].address],
   );
+
+  await prettyPrintEncodedDataWithTypeSafety(
+    core,
+    core.jonesEcosystem!.live,
+    'jUSDCIsolationModeFactory',
+    'ownerSetAllowableDebtMarketIds',
+    [await appendNativeUsdcToDebtMarketIdList(core, core.jonesEcosystem!.live.jUSDCIsolationModeFactory)],
+  );
+  await prettyPrintEncodedDataWithTypeSafety(
+    core,
+    core.jonesEcosystem!.live,
+    'jUSDCIsolationModeFactory',
+    'ownerSetAllowableCollateralMarketIds',
+    [await appendNativeUsdcToCollateralMarketIdList(core, core.jonesEcosystem!.live.jUSDCIsolationModeFactory)],
+  );
+
+  await prettyPrintEncodedDataWithTypeSafety(
+    core,
+    core.pendleEcosystem!.live,
+    'ytGlpIsolationModeFactory',
+    'ownerSetAllowableDebtMarketIds',
+    [await appendNativeUsdcToDebtMarketIdList(core, core.pendleEcosystem!.live.ytGlpIsolationModeFactory)],
+  );
+}
+
+async function appendNativeUsdcToDebtMarketIdList(
+  core: CoreProtocol,
+  factory: { allowableDebtMarketIds: () => Promise<BigNumber[]> },
+): Promise<BigNumber[]> {
+  const oldMarketIds = await factory.allowableDebtMarketIds();
+  return oldMarketIds.concat(BigNumber.from(core.marketIds.nativeUsdc!));
+}
+
+async function appendNativeUsdcToCollateralMarketIdList(
+  core: CoreProtocol,
+  factory: { allowableCollateralMarketIds: () => Promise<BigNumber[]> },
+): Promise<BigNumber[]> {
+  const oldMarketIds = await factory.allowableCollateralMarketIds();
+  return oldMarketIds.concat(BigNumber.from(core.marketIds.nativeUsdc!));
 }
 
 main()
