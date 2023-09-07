@@ -102,13 +102,35 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       expect(await factory.longToken()).to.equal(core.tokens.weth.address);
       expect(await factory.longTokenMarketId()).to.equal(core.marketIds.weth);
       expectArrayEq(await factory.allowableDebtMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth]);
-      expectArrayEq(await factory.allowableCollateralMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth, marketId]);
+      expectArrayEq(
+        await factory.allowableCollateralMarketIds(),
+        [core.marketIds.nativeUsdc!, core.marketIds.weth, marketId]
+      );
       expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystemV2!.gmxEthUsdMarketToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
     });
-    
+
+    it('should construct if allowable market ids is in either order', async () => {
+      await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxRegistryV2,
+        allowableMarketIds,
+        allowableMarketIds,
+        core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+        vaultImplementation
+      );
+      await createGmxV2IsolationModeVaultFactory(
+        core,
+        gmxRegistryV2,
+        allowableMarketIds.reverse(),
+        allowableMarketIds.reverse(),
+        core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+        vaultImplementation
+      );
+    });
+
     it('should fail if allowable debt market ids does not have length of 2', async () => {
       const badAllowableDebtMarketIds = [1];
       await expectThrow(

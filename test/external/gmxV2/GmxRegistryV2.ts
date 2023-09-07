@@ -6,6 +6,7 @@ import { Network } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { getGmxRegistryV2ConstructorParams } from 'src/utils/constructors/gmx';
 
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
 const OTHER_ADDRESS_2 = '0x1234567812345678123456781234567812345672';
@@ -40,6 +41,23 @@ describe('GmxRegistryV2', () => {
       expect(await registry.gmxV2UnwrapperTrader()).to.eq(ZERO_ADDRESS);
       expect(await registry.gmxV2WrapperTrader()).to.eq(ZERO_ADDRESS);
       expect(await registry.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
+    });
+
+    it('should not initalize twice', async () => {
+      await expectThrow(
+        registry.initialize(
+          core.gmxEcosystemV2!.gmxEthUsdMarketToken.address,
+          core.gmxEcosystemV2!.gmxDataStore.address,
+          core.gmxEcosystemV2!.gmxDepositHandler.address,
+          core.gmxEcosystemV2!.gmxDepositVault.address,
+          core.gmxEcosystemV2!.gmxExchangeRouter.address,
+          core.gmxEcosystemV2!.gmxReader.address,
+          core.gmxEcosystemV2!.gmxRouter.address,
+          core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
+          core.dolomiteRegistry.address,
+        ),
+        'Initializable: contract is already initialized',
+      );
     });
   });
 
@@ -287,6 +305,54 @@ describe('GmxRegistryV2', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxV2WrapperTrader(ZERO_ADDRESS),
         'GmxRegistryV2: Invalid address'
+      );
+    });
+  });
+
+  describe('#ownerSetUnwrapperTraderForLiquidation', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetUnwrapperTraderForLiquidation(OTHER_ADDRESS_1);
+      await expectEvent(registry, result, 'UnwrapperTraderForLiquidationSet', {
+        unwrapperTraderForLiquidation: OTHER_ADDRESS_1,
+      });
+      expect(await registry.unwrapperTraderForLiquidation()).to.eq(OTHER_ADDRESS_1);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetUnwrapperTraderForLiquidation(OTHER_ADDRESS_1),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetUnwrapperTraderForLiquidation(ZERO_ADDRESS),
+        'GmxRegistryV2: Invalid unwrapperTrader address'
+      );
+    });
+  });
+
+  describe('#ownerSetUnwrapperTraderForZap', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetUnwrapperTraderForZap(OTHER_ADDRESS_1);
+      await expectEvent(registry, result, 'UnwrapperTraderForZapSet', {
+        unwrapperTraderForZap: OTHER_ADDRESS_1,
+      });
+      expect(await registry.unwrapperTraderForZap()).to.eq(OTHER_ADDRESS_1);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetUnwrapperTraderForZap(OTHER_ADDRESS_1),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetUnwrapperTraderForZap(ZERO_ADDRESS),
+        'GmxRegistryV2: Invalid unwrapperTrader address'
       );
     });
   });

@@ -21,8 +21,10 @@
 pragma solidity ^0.8.9;
 
 
+import { IGmxDataStore } from "./IGmxDataStore.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGmxExchangeRouter } from "./IGmxExchangeRouter.sol";
+import { IGmxReader } from "./IGmxReader.sol";
 import { IGmxRouter } from "./IGmxRouter.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "./IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxDepositHandler } from "./IGmxDepositHandler.sol";
@@ -43,6 +45,8 @@ interface IGmxRegistryV2 is IBaseRegistry {
     // ================================================
 
     event GmxExchangeRouterSet(address _gmxExchangeRouter);
+    event GmxDataStoreSet(address _gmxDataStore);
+    event GmxReaderSet(address _gmxReader);
     event GmxRouterSet(address _gmxRouter);
     event GmxDepositHandlerSet(address _gmxDepositHandler);
     event GmxDepositVaultSet(address _gmxDepositVault);
@@ -50,12 +54,18 @@ interface IGmxRegistryV2 is IBaseRegistry {
     event EthUsdMarketTokenSet(address _ethUsdMarketToken);
     event GmxV2UnwrapperTraderSet(address _gmxV2UnwrapperTrader);
     event GmxV2WrapperTraderSet(address _gmxV2WrapperTrader);
+    event UnwrapperTraderForLiquidationSet(address indexed _unwrapperTraderForLiquidation);
+    event UnwrapperTraderForZapSet(address indexed _unwrapperTraderForZap);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
     function ownerSetGmxExchangeRouter(address _gmxExchangeRouter) external;
+
+    function ownerSetGmxDataStore(address _gmxDataStore) external;
+
+    function ownerSetGmxReader(address _gmxReader) external;
 
     function ownerSetGmxRouter(address _gmxRouter) external;
 
@@ -72,6 +82,10 @@ interface IGmxRegistryV2 is IBaseRegistry {
     function ownerSetGmxV2WrapperTrader(address _gmxV2UnwrapperTrader) external;
 
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter);
+
+    function gmxDataStore() external view returns (IGmxDataStore);
+
+    function gmxReader() external view returns (IGmxReader);
 
     function gmxRouter() external view returns (IGmxRouter);
 

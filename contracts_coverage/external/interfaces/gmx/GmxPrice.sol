@@ -22,14 +22,14 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IGmxV2IsolationModeTokenVault
+ * @title   Price
  * @author  Dolomite
+ *
+ * @notice  GMX Price Library
  */
-interface IGmxV2IsolationModeTokenVault {
-
-    function setIsVaultFrozen(bool _isVaultFrozen) external;
-
-    function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
-
-    function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
+library GmxPrice {
+    struct Props {
+        uint256 min;
+        uint256 max;
+    }
 }

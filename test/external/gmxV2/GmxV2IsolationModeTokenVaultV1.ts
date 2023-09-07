@@ -14,7 +14,7 @@ import {
   IGmxMarketToken,
 } from 'src/types';
 import { createTestToken, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
-import { Network, ONE_BI, ZERO_BI } from 'src/utils/no-deps-constants';
+import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from 'test/utils/assertions';
 import {
@@ -39,6 +39,7 @@ import { getSimpleZapParams } from 'test/utils/zap-utils';
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
 const amountWei = parseEther('1');
+const minAmountOut = parseEther('1800');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 
 describe('GmxV2IsolationModeTokenVaultV1', () => {
@@ -105,8 +106,12 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     otherMarketId2 = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken2, false);
 
-    await factory.connect(core.governance).ownerSetAllowableCollateralMarketIds([...allowableMarketIds, marketId, otherMarketId1, otherMarketId2]);
-    await factory.connect(core.governance).ownerSetAllowableDebtMarketIds([...allowableMarketIds, otherMarketId1, otherMarketId2]);
+    await factory.connect(core.governance).ownerSetAllowableCollateralMarketIds(
+      [...allowableMarketIds, marketId, otherMarketId1, otherMarketId2]
+    );
+    await factory.connect(core.governance).ownerSetAllowableDebtMarketIds(
+      [...allowableMarketIds, otherMarketId1, otherMarketId2]
+    );
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -163,7 +168,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         core.marketIds.weth,
         amountWei,
         marketId,
-        1,
+        minAmountOut,
         wrapper,
         parseEther('.01'),
       );
@@ -178,7 +183,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: parseEther('.01') }
       );
 
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 1);
+      expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
       expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
@@ -200,7 +205,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         core.marketIds.weth,
         amountWei,
         marketId,
-        1,
+        minAmountOut,
         wrapper,
         parseEther('.01'),
       );
@@ -224,7 +229,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         core.marketIds.usdc,
         1000e6,
         marketId,
-        1,
+        minAmountOut,
         wrapper,
         parseEther('.01'),
       );
@@ -249,7 +254,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         core.marketIds.usdc,
         1000e6,
         marketId,
-        1,
+        minAmountOut,
         wrapper,
         parseEther('.01'),
       );
@@ -274,7 +279,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         core.marketIds.usdc,
         1000e6,
         marketId,
-        1,
+        minAmountOut,
         wrapper,
         parseEther('.01'),
       );
@@ -300,7 +305,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         core.marketIds.usdc,
         1000e6,
         marketId,
-        1,
+        minAmountOut,
         wrapper,
         parseEther('.01'),
       );
@@ -337,7 +342,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         core.marketIds.weth,
         amountWei,
         marketId,
-        1,
+        minAmountOut,
         wrapper,
         parseEther('.01'),
       );
@@ -384,6 +389,28 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await expectTotalSupply(factory, amountWei);
     });
 
+    it('should fail if transfer is skipped and vault is not frozen', async () => {
+      const impersonatedFactory = await impersonate(factory.address, true);
+      await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
+      await expectThrow(
+        vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI),
+        'GmxV2IsolationModeVaultV1: Vault should be frozen',
+      );
+    });
+
+    it('should fail if virtual balance does not equal real balance', async () => {
+      const impersonatedFactory = await impersonate(factory.address, true);
+      const impersonatedWrapper = await impersonate(wrapper.address, true);
+      await setupGMBalance(core, wrapper.address, ONE_ETH_BI, vault);
+      await setupGMBalance(core, vault.address, ONE_BI, wrapper);
+      await underlyingToken.connect(impersonatedWrapper).approve(vault.address, ONE_ETH_BI);
+
+      await expectThrow(
+        vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI),
+        'GmxV2IsolationModeVaultV1: Virtual vs real balance mismatch',
+      );
+    });
+
     it('should fail if not called by factory', async () => {
       await expectThrow(
         vault.connect(core.hhUser1).executeDepositIntoVault(core.hhUser1.address, ONE_BI),
@@ -407,6 +434,29 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
 
       await expectTotalSupply(factory, ZERO_BI);
+    });
+
+    it('should fail if transfer is skipped and vault is not frozen', async () => {
+      const impersonatedFactory = await impersonate(factory.address, true);
+      await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
+      await expectThrow(
+        vault.connect(impersonatedFactory).executeWithdrawalFromVault(core.hhUser1.address, ZERO_BI),
+        'GmxV2IsolationModeVaultV1: Vault should be frozen',
+      );
+    });
+
+    it('should fail if virtual balance does not equal real balance', async () => {
+      const impersonatedFactory = await impersonate(factory.address, true);
+      await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI);
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(false);
+      await setupGMBalance(core, vault.address, parseEther('.5'), vault);
+
+      await expectThrow(
+        vault.connect(impersonatedFactory).executeWithdrawalFromVault(core.hhUser1.address, parseEther('.5')),
+        'GmxV2IsolationModeVaultV1: Virtual vs real balance mismatch',
+      );
     });
 
     it('should fail if not called by factory', async () => {

@@ -227,5 +227,5 @@ export function getGmxV2MarketTokenPriceOracleConstructorParams(
   return [
     gmxRegistryV2.address,
     core.dolomiteMargin.address,
-  ]
+  ];
 }

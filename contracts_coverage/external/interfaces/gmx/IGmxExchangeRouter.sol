@@ -28,6 +28,7 @@ pragma solidity ^0.8.9;
  * @notice  Interface of the GMX Exchange Router contract
  */
 interface IGmxExchangeRouter {
+
     struct CreateDepositParams {
         address receiver;
         address callbackContract;
@@ -43,11 +44,11 @@ interface IGmxExchangeRouter {
         uint256 callbackGasLimit;
     }
 
-    function createDeposit(CreateDepositParams calldata params) external returns (bytes32);
+    function createDeposit(CreateDepositParams calldata _params) external returns (bytes32);
 
-    function sendWnt(address receiver, uint256 amount) external payable;
+    function sendWnt(address _receiver, uint256 _amount) external payable;
 
-    function sendTokens(address token, address receiver, uint256 amount) external payable;
+    function sendTokens(address _token, address _receiver, uint256 _amount) external payable;
 
-    function cancelDeposit(bytes32 key) external payable;
+    function cancelDeposit(bytes32 _key) external payable;
 }

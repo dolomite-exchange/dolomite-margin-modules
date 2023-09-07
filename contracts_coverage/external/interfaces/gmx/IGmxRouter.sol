@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.9;
 
+
 interface IGmxRouter {
-    function pluginTransfer(address token, address account, address receiver, uint256 amount) external;
+
+    function pluginTransfer(address _token, address _account, address _receiver, uint256 _amount) external;
 }

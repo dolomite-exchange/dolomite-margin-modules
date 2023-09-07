@@ -2,14 +2,16 @@
 
 pragma solidity ^0.8.9;
 
-import { EventUtils } from "./GmxEventUtils.sol";
+import { GmxEventUtils } from "./GmxEventUtils.sol";
+
 
 interface IGmxEventEmitter {
+
     event EventLog(
         address msgSender,
         string eventName,
         string indexed eventNameHash,
-        EventUtils.EventLogData eventData
+        GmxEventUtils.EventLogData eventData
     );
 
     event EventLog1(
@@ -17,6 +19,6 @@ interface IGmxEventEmitter {
         string eventName,
         string indexed eventNameHash,
         bytes32 indexed topic1,
-        EventUtils.EventLogData eventData
+        GmxEventUtils.EventLogData eventData
     );
 }

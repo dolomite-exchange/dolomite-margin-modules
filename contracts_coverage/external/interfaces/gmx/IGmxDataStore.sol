@@ -22,14 +22,12 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IGmxV2IsolationModeTokenVault
+ * @title   IGmxDataStore
  * @author  Dolomite
+ *
+ * @notice  GMX DataStore interface
  */
-interface IGmxV2IsolationModeTokenVault {
+interface IGmxDataStore {
 
-    function setIsVaultFrozen(bool _isVaultFrozen) external;
-
-    function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
-
-    function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
+    function getUint(bytes32 key) external view returns (uint256);
 }

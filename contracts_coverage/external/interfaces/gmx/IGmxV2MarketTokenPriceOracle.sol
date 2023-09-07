@@ -20,16 +20,27 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomitePriceOracle } from "../../../protocol/interfaces/IDolomitePriceOracle.sol";
+
 
 /**
- * @title   IGmxV2IsolationModeTokenVault
+ * @title   IGmxV2MarketTokenPriceOracle
  * @author  Dolomite
+ *
+ * @notice  Interface for the GmxV2MarketTokenPriceOracle to report GM token prices
  */
-interface IGmxV2IsolationModeTokenVault {
+interface IGmxV2MarketTokenPriceOracle is IDolomitePriceOracle {
 
-    function setIsVaultFrozen(bool _isVaultFrozen) external;
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
 
-    function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
+    event MarketTokenSet(address _token, bool _status);
 
-    function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
+    // ===================================================
+    // ==================== Functions ====================
+    // ===================================================
+
+    function ownerSetMarketToken(address _token, bool _status) external;
+
 }

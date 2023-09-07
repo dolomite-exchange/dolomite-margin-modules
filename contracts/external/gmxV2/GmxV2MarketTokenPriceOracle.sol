@@ -78,9 +78,10 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             "Invalid token",
             _token
         );
+
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         Require.that(
-            // @follow-up Is it worth loading this into memory first?
-            DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
+            dolomiteMargin.getMarketIsClosing(dolomiteMargin.getMarketIdByTokenAddress(_token)),
             _FILE,
             "gmToken cannot be borrowable"
         );
@@ -145,12 +146,12 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             true
         );
 
-        if (value > 0) {
-            return uint256(value / 10 ** 12);
-        }
-        else {
-            revert();
-        }
+        Require.that(
+            value > 0,
+            _FILE,
+            "Invalid oracle response"
+        );
+        return uint256(value / 10 ** 12);
     }
 
     function _ownerSetMarketToken(address _token, bool _status) internal {

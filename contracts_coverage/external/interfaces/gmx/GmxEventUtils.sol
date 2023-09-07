@@ -2,7 +2,8 @@
 
 pragma solidity ^0.8.9;
 
-library EventUtils {
+
+library GmxEventUtils {
     struct EmitPositionDecreaseParams {
         bytes32 key;
         address account;
@@ -127,11 +128,11 @@ library EventUtils {
     }
 
     function initItems(AddressItems memory items, uint256 size) internal pure {
-        items.items = new EventUtils.AddressKeyValue[](size);
+        items.items = new GmxEventUtils.AddressKeyValue[](size);
     }
 
     function initArrayItems(AddressItems memory items, uint256 size) internal pure {
-        items.arrayItems = new EventUtils.AddressArrayKeyValue[](size);
+        items.arrayItems = new GmxEventUtils.AddressArrayKeyValue[](size);
     }
 
     function setItem(AddressItems memory items, uint256 index, string memory key, address value) internal pure {
@@ -150,11 +151,11 @@ library EventUtils {
     }
 
     function initItems(UintItems memory items, uint256 size) internal pure {
-        items.items = new EventUtils.UintKeyValue[](size);
+        items.items = new GmxEventUtils.UintKeyValue[](size);
     }
 
     function initArrayItems(UintItems memory items, uint256 size) internal pure {
-        items.arrayItems = new EventUtils.UintArrayKeyValue[](size);
+        items.arrayItems = new GmxEventUtils.UintArrayKeyValue[](size);
     }
 
     function setItem(UintItems memory items, uint256 index, string memory key, uint256 value) internal pure {
@@ -168,11 +169,11 @@ library EventUtils {
     }
 
     function initItems(IntItems memory items, uint256 size) internal pure {
-        items.items = new EventUtils.IntKeyValue[](size);
+        items.items = new GmxEventUtils.IntKeyValue[](size);
     }
 
     function initArrayItems(IntItems memory items, uint256 size) internal pure {
-        items.arrayItems = new EventUtils.IntArrayKeyValue[](size);
+        items.arrayItems = new GmxEventUtils.IntArrayKeyValue[](size);
     }
 
     function setItem(IntItems memory items, uint256 index, string memory key, int256 value) internal pure {
@@ -186,11 +187,11 @@ library EventUtils {
     }
 
     function initItems(BoolItems memory items, uint256 size) internal pure {
-        items.items = new EventUtils.BoolKeyValue[](size);
+        items.items = new GmxEventUtils.BoolKeyValue[](size);
     }
 
     function initArrayItems(BoolItems memory items, uint256 size) internal pure {
-        items.arrayItems = new EventUtils.BoolArrayKeyValue[](size);
+        items.arrayItems = new GmxEventUtils.BoolArrayKeyValue[](size);
     }
 
     function setItem(BoolItems memory items, uint256 index, string memory key, bool value) internal pure {
@@ -204,11 +205,11 @@ library EventUtils {
     }
 
     function initItems(Bytes32Items memory items, uint256 size) internal pure {
-        items.items = new EventUtils.Bytes32KeyValue[](size);
+        items.items = new GmxEventUtils.Bytes32KeyValue[](size);
     }
 
     function initArrayItems(Bytes32Items memory items, uint256 size) internal pure {
-        items.arrayItems = new EventUtils.Bytes32ArrayKeyValue[](size);
+        items.arrayItems = new GmxEventUtils.Bytes32ArrayKeyValue[](size);
     }
 
     function setItem(Bytes32Items memory items, uint256 index, string memory key, bytes32 value) internal pure {
@@ -227,11 +228,11 @@ library EventUtils {
     }
 
     function initItems(BytesItems memory items, uint256 size) internal pure {
-        items.items = new EventUtils.BytesKeyValue[](size);
+        items.items = new GmxEventUtils.BytesKeyValue[](size);
     }
 
     function initArrayItems(BytesItems memory items, uint256 size) internal pure {
-        items.arrayItems = new EventUtils.BytesArrayKeyValue[](size);
+        items.arrayItems = new GmxEventUtils.BytesArrayKeyValue[](size);
     }
 
     function setItem(BytesItems memory items, uint256 index, string memory key, bytes memory value) internal pure {
@@ -245,11 +246,11 @@ library EventUtils {
     }
 
     function initItems(StringItems memory items, uint256 size) internal pure {
-        items.items = new EventUtils.StringKeyValue[](size);
+        items.items = new GmxEventUtils.StringKeyValue[](size);
     }
 
     function initArrayItems(StringItems memory items, uint256 size) internal pure {
-        items.arrayItems = new EventUtils.StringArrayKeyValue[](size);
+        items.arrayItems = new GmxEventUtils.StringArrayKeyValue[](size);
     }
 
     function setItem(StringItems memory items, uint256 index, string memory key, string memory value) internal pure {

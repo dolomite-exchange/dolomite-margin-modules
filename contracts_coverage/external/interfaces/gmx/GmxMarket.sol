@@ -22,14 +22,16 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IGmxV2IsolationModeTokenVault
+ * @title   GmxMarket
  * @author  Dolomite
+ *
+ * @notice  GMX Market Library
  */
-interface IGmxV2IsolationModeTokenVault {
-
-    function setIsVaultFrozen(bool _isVaultFrozen) external;
-
-    function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
-
-    function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
+library GmxMarket {
+    struct Props {
+        address marketToken;
+        address indexToken;
+        address longToken;
+        address shortToken;
+    }
 }

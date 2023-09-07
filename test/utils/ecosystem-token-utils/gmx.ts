@@ -244,9 +244,9 @@ export function getInitiateWrappingParams(
   executionFee: BigNumberish,
 ): any {
   return {
+    amountIn,
+    minAmountOut,
     marketPath: [marketId1, marketId2],
-    amountIn: amountIn,
-    minAmountOut: minAmountOut,
     traderParams: [{
       trader: wrapper.address,
       traderType: 3,

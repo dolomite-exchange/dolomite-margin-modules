@@ -967,7 +967,7 @@ async function createGmxEcosystemV2(network: Network, signer: SignerWithAddress)
       GMX_WITHDRAWAL_HANDLER_MAP[network] as string,
       address => IGmxWithdrawalHandler__factory.connect(address, signer)
     ),
-  }
+  };
 }
 
 async function createOdosEcosystem(

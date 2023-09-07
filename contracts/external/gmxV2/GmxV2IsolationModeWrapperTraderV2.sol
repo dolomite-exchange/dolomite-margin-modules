@@ -24,6 +24,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
@@ -38,7 +39,6 @@ import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxDepositCallbackReceiver } from "../interfaces/gmx/IGmxDepositCallbackReceiver.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   GmxV2IsolationModeWrapperTraderV2
@@ -58,6 +58,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
+    uint256 private constant _SLIPPAGE_BASE = 10_000;
 
     IGmxRegistryV2 public immutable GMX_REGISTRY_V2; // solhint-disable-line var-name-mixedcase
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
@@ -65,7 +66,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     bytes32 private constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1);
     bytes32 private constant _SLIPPAGE_MINIMUM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageMinimum")) - 1);
 
-    IWETH public immutable weth;
+    IWETH public immutable WETH;
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -90,7 +91,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         address _dolomiteMargin
     ) IsolationModeWrapperTraderV2(_dGM, _dolomiteMargin) {
         GMX_REGISTRY_V2 = IGmxRegistryV2(_gmxRegistryV2);
-        weth = IWETH(_weth);
+        WETH = IWETH(_weth);
     }
 
     // ============================================
@@ -128,8 +129,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
         if (receivedMarketTokens.value > _deposit.numbers.minMarketTokens) {
             uint256 diff = receivedMarketTokens.value - _deposit.numbers.minMarketTokens;
-            // @follow-up Check allowance math. Approve is already called in exchange call
-            underlyingToken.safeIncreaseAllowance(depositInfo.vault, diff - _deposit.numbers.minMarketTokens);
+            underlyingToken.approve(depositInfo.vault, diff);
 
             factory.depositIntoDolomiteMarginFromTokenConverter(
                 depositInfo.vault,
@@ -199,8 +199,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         GMX_REGISTRY_V2.gmxExchangeRouter().cancelDeposit(_key);
     }
 
-    function setIsHandler(address _address, bool _status) external onlyDolomiteMarginOwner(msg.sender) {
-        _setIsHandler(_address, _status);
+    function setIsHandler(address _handler, bool _status) external onlyDolomiteMarginOwner(msg.sender) {
+        _setIsHandler(_handler, _status);
     }
 
     function setCallbackGasLimit(uint256 _callbackGasLimit) external onlyDolomiteMarginOwner(msg.sender) {
@@ -213,8 +213,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function ownerWithdrawETH(address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
         uint256 bal = address(this).balance;
-        weth.deposit{value: bal}();
-        weth.safeTransfer(_receiver, bal);
+        WETH.deposit{value: bal}();
+        WETH.safeTransfer(_receiver, bal);
     }
 
     function isValidInputToken(address _inputToken) public view override returns (bool) {
@@ -223,8 +223,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         return _inputToken == longToken || _inputToken == shortToken;
     }
 
-    function isHandler(address _address) public view returns (bool) {
-        bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _address));
+    function isHandler(address _handler) public view returns (bool) {
+        bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
         return _getUint256(slot) == 1;
     }
 
@@ -242,7 +242,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function _exchangeIntoUnderlyingToken(
         address _tradeOriginator,
-        address, /* _receiver */
+        address /* _receiver */,
         address _outputTokenUnderlying,
         uint256 _minOutputAmount,
         address _inputToken,
@@ -254,43 +254,43 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         returns (uint256)
     {
         _checkSlippage(_inputToken, _inputAmount, _minOutputAmount);
-        (, uint256 tempParam) = abi.decode(_extraOrderData, (uint256, uint256));
+
+        address tradeOriginatorForStackTooDeep = _tradeOriginator;
+        (uint256 accountNumber, uint256 ethExecutionFee) = abi.decode(_extraOrderData, (uint256, uint256));
         IGmxExchangeRouter exchangeRouter = GMX_REGISTRY_V2.gmxExchangeRouter();
-        weth.safeTransferFrom(_tradeOriginator, address(this), tempParam);
-        weth.withdraw(tempParam);
+        WETH.safeTransferFrom(tradeOriginatorForStackTooDeep, address(this), ethExecutionFee);
+        WETH.withdraw(ethExecutionFee);
 
         {
             address depositVault = GMX_REGISTRY_V2.gmxDepositVault();
-            exchangeRouter.sendWnt{value: tempParam}(depositVault, tempParam);
+            exchangeRouter.sendWnt{value: ethExecutionFee}(depositVault, ethExecutionFee);
             IERC20(_inputToken).safeApprove(address(GMX_REGISTRY_V2.gmxRouter()), _inputAmount);
             exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
         }
 
         {
             IGmxExchangeRouter.CreateDepositParams memory depositParamsTest = IGmxExchangeRouter.CreateDepositParams(
-                address(this), /* receiver */
-                address(this), /* callbackContract */
-                address(0), /* uiFeeReceiver */
-                _outputTokenUnderlying, /* market */
-                IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).longToken(), /* initialLongToken */
-                IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).shortToken(), /* initialShortToken */
-                new address[](0), /* longTokenSwapPath */
-                new address[](0), /* shortTokenSwapPath */
-                _minOutputAmount,
-                false, /* shouldUnwrapNativeToken */
-                tempParam, /* executionFee */
-                _getUint256(_CALLBACK_GAS_LIMIT_SLOT) /* callbackGasLimit */
+                /* receiver = */ address(this), 
+                /* callbackContract = */ address(this), 
+                /* uiFeeReceiver = */ address(0), 
+                /* market = */ _outputTokenUnderlying, 
+                /* initialLongToken = */ IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).longToken(), 
+                /* initialShortToken = */ IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).shortToken(), 
+                /* longTokenSwapPath = */ new address[](0), 
+                /* shortTokenSwapPath = */ new address[](0), 
+                /* minMarketTokens = */ _minOutputAmount,
+                /* shouldUnwrapNativeToken = */ false, 
+                /* executionFee = */ ethExecutionFee, 
+                /* callbackGasLimit = */ _getUint256(_CALLBACK_GAS_LIMIT_SLOT) 
             );
 
-            // @follow-up Using tempParam as a work around. Need to revisit
-            (tempParam,) = abi.decode(_extraOrderData, (uint256, uint256));
             bytes32 depositKey = exchangeRouter.createDeposit(depositParamsTest);
-            _setDepositInfo(depositKey, DepositInfo(_tradeOriginator, tempParam));
+            _setDepositInfo(depositKey, DepositInfo(tradeOriginatorForStackTooDeep, accountNumber));
             emit DepositCreated(depositKey);
         }
 
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setIsVaultFrozen(_tradeOriginator, true);
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setShouldSkipTransfer(_tradeOriginator, true);
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setIsVaultFrozen(tradeOriginatorForStackTooDeep, true);
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setShouldSkipTransfer(tradeOriginatorForStackTooDeep, true);
         return _minOutputAmount;
     }
 
@@ -309,8 +309,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         );
     }
 
-    function _setIsHandler(address _address, bool _status) internal {
-        bytes32 slot =  keccak256(abi.encodePacked(_HANDLERS_SLOT, _address));
+    function _setIsHandler(address _handler, bool _status) internal {
+        bytes32 slot =  keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
         _setUint256(slot, _status ? 1 : 0);
     }
 
@@ -319,6 +319,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     }
 
     function _setSlippageMinimum(uint256 _slippageMinimum) internal {
+        Require.that(
+            _slippageMinimum < _SLIPPAGE_BASE && _slippageMinimum > 0,
+            _FILE,
+            "Invalid slippageMinimum"
+        );
         _setUint256(_SLIPPAGE_MINIMUM_SLOT, _slippageMinimum);
     }
 
@@ -337,26 +342,31 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     }
 
     function _checkSlippage(address _inputToken, uint256 _inputAmount, uint256 _minOutputAmount) internal view {
-        // @follow-up GM price is 30 decimals but token is 18 decimals
-        IDolomiteStructs.MonetaryPrice memory inputPrice = DOLOMITE_MARGIN().getMarketPrice(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_inputToken));
-        IDolomiteStructs.MonetaryPrice memory outputPrice = DOLOMITE_MARGIN().getMarketPrice(DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(VAULT_FACTORY)));
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+
+        IDolomiteStructs.MonetaryPrice memory inputPrice = dolomiteMargin.getMarketPrice(dolomiteMargin.getMarketIdByTokenAddress(_inputToken));
+        IDolomiteStructs.MonetaryPrice memory outputPrice = dolomiteMargin.getMarketPrice(dolomiteMargin.getMarketIdByTokenAddress(address(VAULT_FACTORY)));
         uint256 inputValue = _inputAmount * inputPrice.value;
         uint256 outputValue = _minOutputAmount * outputPrice.value;
-        console.log(inputPrice.value);
-        console.log(outputPrice.value);
-        console.log('');
-        console.log(_inputAmount);
-        console.log(_minOutputAmount);
-        console.log('');
-        console.log(inputValue);
-        console.log(outputValue);
-        console.log('Done');
+
         Require.that(
-            outputValue > inputValue * (100 - slippageMinimum()) / 100,
+            outputValue > inputValue - (inputValue * slippageMinimum() / _SLIPPAGE_BASE),
             _FILE,
             "Insufficient output amount"
         );
     }
+
+    function _approveIsolationModeTokenForTransfer(
+        address _vault,
+        address _receiver,
+        uint256 _amount
+    )
+    internal
+    override {
+        VAULT_FACTORY.enqueueTransferIntoDolomiteMargin(_vault, _amount);
+        IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
+    }
+
 
     function _getExchangeCost(
         address,
