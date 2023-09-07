@@ -30,6 +30,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2IsolationModeTokenVault } from "../interfaces/gmx/IGmxV2IsolationModeTokenVault.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
+import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 
 import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
@@ -49,6 +50,7 @@ import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 
 contract GmxV2IsolationModeWrapperTraderV2 is 
     IsolationModeWrapperTraderV2,
+    GmxV2IsolationModeTraderBase,
     IGmxV2IsolationModeWrapperTraderV2,
     IGmxDepositCallbackReceiver
 {
