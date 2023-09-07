@@ -96,8 +96,10 @@ contract GmxV2IsolationModeVaultFactory is
             "Invalid debt market ids"
         );
         Require.that(
-            (_initialAllowableDebtMarketIds[0] == longTokenMarketId && _initialAllowableDebtMarketIds[1] == shortTokenMarketId) 
-            || (_initialAllowableDebtMarketIds[0] == shortTokenMarketId && _initialAllowableDebtMarketIds[1] == longTokenMarketId),
+            (_initialAllowableDebtMarketIds[0] == longTokenMarketId 
+                && _initialAllowableDebtMarketIds[1] == shortTokenMarketId) 
+            || (_initialAllowableDebtMarketIds[0] == shortTokenMarketId 
+                && _initialAllowableDebtMarketIds[1] == longTokenMarketId),
             _FILE,
             "Invalid debt market ids"
         );
@@ -108,8 +110,10 @@ contract GmxV2IsolationModeVaultFactory is
             "Invalid collateral market ids"
         );
         Require.that(
-            (_initialAllowableCollateralMarketIds[0] == longTokenMarketId && _initialAllowableCollateralMarketIds[1] == shortTokenMarketId) 
-            || (_initialAllowableCollateralMarketIds[0] == shortTokenMarketId && _initialAllowableCollateralMarketIds[1] == longTokenMarketId),
+            (_initialAllowableCollateralMarketIds[0] == longTokenMarketId 
+                && _initialAllowableCollateralMarketIds[1] == shortTokenMarketId) 
+            || (_initialAllowableCollateralMarketIds[0] == shortTokenMarketId 
+                && _initialAllowableCollateralMarketIds[1] == longTokenMarketId),
             _FILE,
             "Invalid collateral market ids"
         );

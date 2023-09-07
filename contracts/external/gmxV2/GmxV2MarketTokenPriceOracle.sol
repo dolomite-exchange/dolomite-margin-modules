@@ -66,6 +66,15 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         REGISTRY = IGmxRegistryV2(_gmxRegistryV2);
     }
 
+    function ownerSetMarketToken(
+        address _token,
+        bool _status    
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetMarketToken(_token, _status);
+    }
+
     function getPrice(
         address _token
     )
@@ -91,16 +100,17 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         });
     }
 
-    function ownerSetMarketToken(
-        address _token,
-        bool _status    
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetMarketToken(_token, _status);
-    }
-
     // ============================ Internal Functions ============================
+
+    function _ownerSetMarketToken(address _token, bool _status) internal {
+        Require.that(
+            IERC20Metadata(_token).decimals() == 18,
+            _FILE,
+            "Invalid market token decimals"
+        );
+        marketTokens[_token] = _status;
+        emit MarketTokenSet(_token, _status);
+    }
 
     function _getCurrentPrice(address _token) internal view returns (uint256) {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(_token);
@@ -152,15 +162,5 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             "Invalid oracle response"
         );
         return uint256(value / 10 ** 12);
-    }
-
-    function _ownerSetMarketToken(address _token, bool _status) internal {
-        Require.that(
-            IERC20Metadata(_token).decimals() == 18,
-            _FILE,
-            'Invalid market token decimals'
-        );
-        marketTokens[_token] = _status;
-        emit MarketTokenSet(_token, _status);
     }
 }

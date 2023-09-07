@@ -124,8 +124,8 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       await createGmxV2IsolationModeVaultFactory(
         core,
         gmxRegistryV2,
-        allowableMarketIds.reverse(),
-        allowableMarketIds.reverse(),
+        [allowableMarketIds[1], allowableMarketIds[0]],
+        [allowableMarketIds[1], allowableMarketIds[0]],
         core.gmxEcosystemV2!.gmxEthUsdMarketToken,
         vaultImplementation
       );

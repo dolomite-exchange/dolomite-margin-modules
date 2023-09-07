@@ -63,10 +63,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     IGmxRegistryV2 public immutable GMX_REGISTRY_V2; // solhint-disable-line var-name-mixedcase
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
     bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
-    bytes32 private constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1);
+    bytes32 private constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_MINIMUM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageMinimum")) - 1);
 
-    IWETH public immutable WETH;
+    IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -290,7 +290,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         }
 
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setIsVaultFrozen(tradeOriginatorForStackTooDeep, true);
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setShouldSkipTransfer(tradeOriginatorForStackTooDeep, true);
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setShouldSkipTransfer(
+            tradeOriginatorForStackTooDeep,
+            true
+        );
         return _minOutputAmount;
     }
 
@@ -333,19 +336,26 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         storageInfo.accountNumber = _info.accountNumber;
     }
 
-    function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {
-        bytes32 slot = keccak256(abi.encodePacked(_DEPOSIT_INFO_SLOT, _key));
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            info.slot := slot
-        }
+    function _approveIsolationModeTokenForTransfer(
+        address _vault,
+        address _receiver,
+        uint256 _amount
+    )
+    internal
+    override {
+        VAULT_FACTORY.enqueueTransferIntoDolomiteMargin(_vault, _amount);
+        IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
     }
 
     function _checkSlippage(address _inputToken, uint256 _inputAmount, uint256 _minOutputAmount) internal view {
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
 
-        IDolomiteStructs.MonetaryPrice memory inputPrice = dolomiteMargin.getMarketPrice(dolomiteMargin.getMarketIdByTokenAddress(_inputToken));
-        IDolomiteStructs.MonetaryPrice memory outputPrice = dolomiteMargin.getMarketPrice(dolomiteMargin.getMarketIdByTokenAddress(address(VAULT_FACTORY)));
+        IDolomiteStructs.MonetaryPrice memory inputPrice = dolomiteMargin.getMarketPrice(
+            dolomiteMargin.getMarketIdByTokenAddress(_inputToken)
+        );
+        IDolomiteStructs.MonetaryPrice memory outputPrice = dolomiteMargin.getMarketPrice(
+            dolomiteMargin.getMarketIdByTokenAddress(address(VAULT_FACTORY))
+        );
         uint256 inputValue = _inputAmount * inputPrice.value;
         uint256 outputValue = _minOutputAmount * outputPrice.value;
 
@@ -356,15 +366,12 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         );
     }
 
-    function _approveIsolationModeTokenForTransfer(
-        address _vault,
-        address _receiver,
-        uint256 _amount
-    )
-    internal
-    override {
-        VAULT_FACTORY.enqueueTransferIntoDolomiteMargin(_vault, _amount);
-        IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
+    function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {
+        bytes32 slot = keccak256(abi.encodePacked(_DEPOSIT_INFO_SLOT, _key));
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            info.slot := slot
+        }
     }
 
 
