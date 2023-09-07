@@ -20,21 +20,17 @@
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
-import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
-import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
-import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
+import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
+
 
 
 /**
@@ -57,6 +53,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
     bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1); // solhint-disable max-line-length 
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable max-line-length 
 
+    // @todo make uppercase
     IWETH public immutable weth;
 
     // ==================================================================
@@ -118,8 +115,8 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
     // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can
     /**
      * 
-     * @param _key  Deposit key
-     * @dev   This calls the wrapper trader which will revert if given an invalid _key
+     * @param  _key Deposit key
+     * @dev    This calls the wrapper trader which will revert if given an invalid _key
      */
     function cancelDeposit(bytes32 _key) external onlyVaultOwner(msg.sender) {
         registry().gmxV2WrapperTrader().cancelDeposit(_key);

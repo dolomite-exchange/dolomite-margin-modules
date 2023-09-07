@@ -21,11 +21,11 @@
 pragma solidity ^0.8.9;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import { IGmxV2IsolationModeTraderBase } from "../interfaces/gmx/IGmxV2IsolationModeTraderBase.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { IGmxV2IsolationModeTraderBase } from "../interfaces/gmx/IGmxV2IsolationModeTraderBase.sol";
+
 
 
 /**
@@ -43,7 +43,7 @@ abstract contract GmxV2IsolationModeTraderBase is OnlyDolomiteMargin, IGmxV2Isol
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
     bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
 
-    IWETH public immutable WETH;
+    IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
 
 
     // ===================================================
@@ -69,16 +69,16 @@ abstract contract GmxV2IsolationModeTraderBase is OnlyDolomiteMargin, IGmxV2Isol
         _ownerSetIsHandler(_handler, _isTrusted);
     }
 
-    function isHandler(address _handler) public view returns (bool) {
-        bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
-        return _getUint256(slot) == 1;
-    }
-
     function ownerWithdrawETH(address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
         uint256 bal = address(this).balance;
         WETH.deposit{value: bal}();
         WETH.safeTransfer(_receiver, bal);
         // TODO: emit event OwnerWithdrawETH(_receiver, bal);
+    }
+
+    function isHandler(address _handler) public view returns (bool) {
+        bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
+        return _getUint256(slot) == 1;
     }
 
     // ========================= Internal Functions =========================

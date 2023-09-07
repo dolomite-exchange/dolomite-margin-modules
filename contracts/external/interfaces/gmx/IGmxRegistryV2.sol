@@ -21,13 +21,13 @@
 pragma solidity ^0.8.9;
 
 
-import { IGmxDataStore } from "./IGmxDataStore.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IGmxDataStore } from "./IGmxDataStore.sol";
+import { IGmxDepositHandler } from "./IGmxDepositHandler.sol";
 import { IGmxExchangeRouter } from "./IGmxExchangeRouter.sol";
 import { IGmxReader } from "./IGmxReader.sol";
 import { IGmxRouter } from "./IGmxRouter.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "./IGmxV2IsolationModeWrapperTraderV2.sol";
-import { IGmxDepositHandler } from "./IGmxDepositHandler.sol";
 import { IGmxWithdrawalHandler } from "./IGmxWithdrawalHandler.sol";
 import { IBaseRegistry } from "../IBaseRegistry.sol";
 

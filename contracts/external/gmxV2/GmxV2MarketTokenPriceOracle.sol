@@ -20,18 +20,18 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IGmxV2MarketTokenPriceOracle } from "../interfaces/gmx/IGmxV2MarketTokenPriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
-import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
-
+import { Require } from "../../protocol/lib/Require.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
+import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2MarketTokenPriceOracle } from "../interfaces/gmx/IGmxV2MarketTokenPriceOracle.sol";
 
-import { Require } from "../../protocol/lib/Require.sol";
+
 
 
 /**

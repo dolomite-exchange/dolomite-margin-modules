@@ -27,6 +27,7 @@ import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.s
 /**
  * @title   IGmxV2IsolationModeWrapperTraderV2
  * @author  Dolomite
+ *
  */
 interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase {
 
