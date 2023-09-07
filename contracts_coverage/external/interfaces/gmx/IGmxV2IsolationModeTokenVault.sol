@@ -24,6 +24,7 @@ pragma solidity ^0.8.9;
 /**
  * @title   IGmxV2IsolationModeTokenVault
  * @author  Dolomite
+ *
  */
 interface IGmxV2IsolationModeTokenVault {
 

@@ -13,6 +13,14 @@ export function getRegistryProxyConstructorParams(
   return [implementationAddress, core.dolomiteMargin.address, implementationCalldata];
 }
 
+export function getIsolationModeTraderProxyConstructorParams(
+  implementationAddress: string,
+  implementationCalldata: string,
+  core: CoreProtocol,
+): any[] {
+  return [implementationAddress, core.dolomiteMargin.address, implementationCalldata];
+}
+
 type OwnerAddMarketParameters = [
   string, string, string, { value: BigNumberish }, {
     value: BigNumberish

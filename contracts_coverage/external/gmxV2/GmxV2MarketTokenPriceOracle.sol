@@ -20,18 +20,18 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IGmxV2MarketTokenPriceOracle } from "../interfaces/gmx/IGmxV2MarketTokenPriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
-import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
-
+import { Require } from "../../protocol/lib/Require.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
+import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2MarketTokenPriceOracle } from "../interfaces/gmx/IGmxV2MarketTokenPriceOracle.sol";
 
-import { Require } from "../../protocol/lib/Require.sol";
+
 
 
 /**
@@ -66,6 +66,15 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         REGISTRY = IGmxRegistryV2(_gmxRegistryV2);
     }
 
+    function ownerSetMarketToken(
+        address _token,
+        bool _status
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetMarketToken(_token, _status);
+    }
+
     function getPrice(
         address _token
     )
@@ -91,16 +100,17 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         });
     }
 
-    function ownerSetMarketToken(
-        address _token,
-        bool _status
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetMarketToken(_token, _status);
-    }
-
     // ============================ Internal Functions ============================
+
+    function _ownerSetMarketToken(address _token, bool _status) internal {
+        if (IERC20Metadata(_token).decimals() == 18) { /* FOR COVERAGE TESTING */ }
+        Require.that(IERC20Metadata(_token).decimals() == 18,
+            _FILE,
+            "Invalid market token decimals"
+        );
+        marketTokens[_token] = _status;
+        emit MarketTokenSet(_token, _status);
+    }
 
     function _getCurrentPrice(address _token) internal view returns (uint256) {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(_token);
@@ -152,15 +162,5 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             "Invalid oracle response"
         );
         return uint256(value / 10 ** 12);
-    }
-
-    function _ownerSetMarketToken(address _token, bool _status) internal {
-        if (IERC20Metadata(_token).decimals() == 18) { /* FOR COVERAGE TESTING */ }
-        Require.that(IERC20Metadata(_token).decimals() == 18,
-            _FILE,
-            'Invalid market token decimals'
-        );
-        marketTokens[_token] = _status;
-        emit MarketTokenSet(_token, _status);
     }
 }

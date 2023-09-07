@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   Price
+ * @title   GmxPrice
  * @author  Dolomite
  *
  * @notice  GMX Price Library

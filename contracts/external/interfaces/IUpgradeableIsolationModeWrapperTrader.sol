@@ -20,28 +20,20 @@
 
 pragma solidity ^0.8.9;
 
-
-import { GmxMarket } from "./GmxMarket.sol";
-import { GmxMarketPoolValueInfo } from "./GmxMarketPoolValueInfo.sol";
-import { GmxPrice } from "./GmxPrice.sol";
-import { IGmxDataStore } from "./IGmxDataStore.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IIsolationModeWrapperTrader } from "./IIsolationModeWrapperTrader.sol";
+import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
 
 
 /**
- * @title   IGmxReader
+ * @title   IUpgradeableIsolationModeWrapperTrader
  * @author  Dolomite
  *
- * @notice  GMX Reader Interface
+ * Interface for an upgradeable contract that can convert a token into an isolation mode token.
  */
-interface IGmxReader {
+interface IUpgradeableIsolationModeWrapperTrader is IIsolationModeWrapperTrader {
 
-    function getMarketTokenPrice(
-        IGmxDataStore _dataStore,
-        GmxMarket.Props memory _market,
-        GmxPrice.Props memory _indexTokenPrice,
-        GmxPrice.Props memory _longTokenPrice,
-        GmxPrice.Props memory _shortTokenPrice,
-        bytes32 _pnlFactorType,
-        bool _maximize
-    ) external view returns (int256, GmxMarketPoolValueInfo.Props memory);
+    function initializeWrapperTrader(address _vaultFactory, address _dolomiteMargin) external;
+
+    function VAULT_FACTORY() external view returns (IIsolationModeVaultFactory);
 }

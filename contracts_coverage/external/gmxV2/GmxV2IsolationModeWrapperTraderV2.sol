@@ -21,23 +21,22 @@
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
+import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
-import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
-import { IGmxV2IsolationModeTokenVault } from "../interfaces/gmx/IGmxV2IsolationModeTokenVault.sol";
-import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
-
+import { Require } from "../../protocol/lib/Require.sol";
 import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
-import { GmxWithdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
-import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxDepositCallbackReceiver } from "../interfaces/gmx/IGmxDepositCallbackReceiver.sol";
+import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
+import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
+
+
 
 
 /**
@@ -49,6 +48,7 @@ import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 
 contract GmxV2IsolationModeWrapperTraderV2 is
     IsolationModeWrapperTraderV2,
+    GmxV2IsolationModeTraderBase,
     IGmxV2IsolationModeWrapperTraderV2,
     IGmxDepositCallbackReceiver
 {
@@ -63,24 +63,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     IGmxRegistryV2 public immutable GMX_REGISTRY_V2; // solhint-disable-line var-name-mixedcase
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
     bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
-    bytes32 private constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1);
+    bytes32 private constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_MINIMUM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageMinimum")) - 1);
-
-    IWETH public immutable WETH;
-
-    // ===================================================
-    // ==================== Modifiers ====================
-    // ===================================================
-
-    modifier onlyHandler(address _from) {
-        if (isHandler(_from)) { /* FOR COVERAGE TESTING */ }
-        Require.that(isHandler(_from),
-            _FILE,
-            "Only handler can call",
-            _from
-        );
-        _;
-    }
 
     // ============ Constructor ============
 
@@ -89,9 +73,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         address _weth,
         address _dGM,
         address _dolomiteMargin
-    ) IsolationModeWrapperTraderV2(_dGM, _dolomiteMargin) {
+    )
+        IsolationModeWrapperTraderV2(_dGM, _dolomiteMargin)
+        GmxV2IsolationModeTraderBase(_weth)
+    {
         GMX_REGISTRY_V2 = IGmxRegistryV2(_gmxRegistryV2);
-        WETH = IWETH(_weth);
     }
 
     // ============================================
@@ -199,10 +185,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         GMX_REGISTRY_V2.gmxExchangeRouter().cancelDeposit(_key);
     }
 
-    function setIsHandler(address _handler, bool _status) external onlyDolomiteMarginOwner(msg.sender) {
-        _setIsHandler(_handler, _status);
-    }
-
     function setCallbackGasLimit(uint256 _callbackGasLimit) external onlyDolomiteMarginOwner(msg.sender) {
         _setCallbackGasLimit(_callbackGasLimit);
     }
@@ -211,21 +193,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         _setSlippageMinimum(_slippageMinimum);
     }
 
-    function ownerWithdrawETH(address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
-        uint256 bal = address(this).balance;
-        WETH.deposit{value: bal}();
-        WETH.safeTransfer(_receiver, bal);
-    }
-
     function isValidInputToken(address _inputToken) public view override returns (bool) {
         address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).longToken();
         address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).shortToken();
         return _inputToken == longToken || _inputToken == shortToken;
-    }
-
-    function isHandler(address _handler) public view returns (bool) {
-        bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
-        return _getUint256(slot) == 1;
     }
 
     function slippageMinimum() public view returns (uint256) {
@@ -290,7 +261,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         }
 
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setIsVaultFrozen(tradeOriginatorForStackTooDeep, true);
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setShouldSkipTransfer(tradeOriginatorForStackTooDeep, true);
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setShouldSkipTransfer(
+            tradeOriginatorForStackTooDeep,
+            true
+        );
         return _minOutputAmount;
     }
 
@@ -307,11 +281,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token),
             _amount
         );
-    }
-
-    function _setIsHandler(address _handler, bool _status) internal {
-        bytes32 slot =  keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
-        _setUint256(slot, _status ? 1 : 0);
     }
 
     function _setCallbackGasLimit(uint256 _callbackGasLimit) internal {
@@ -333,19 +302,26 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         storageInfo.accountNumber = _info.accountNumber;
     }
 
-    function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {
-        bytes32 slot = keccak256(abi.encodePacked(_DEPOSIT_INFO_SLOT, _key));
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            info.slot := slot
-        }
+    function _approveIsolationModeTokenForTransfer(
+        address _vault,
+        address _receiver,
+        uint256 _amount
+    )
+    internal
+    override {
+        VAULT_FACTORY.enqueueTransferIntoDolomiteMargin(_vault, _amount);
+        IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
     }
 
     function _checkSlippage(address _inputToken, uint256 _inputAmount, uint256 _minOutputAmount) internal view {
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
 
-        IDolomiteStructs.MonetaryPrice memory inputPrice = dolomiteMargin.getMarketPrice(dolomiteMargin.getMarketIdByTokenAddress(_inputToken));
-        IDolomiteStructs.MonetaryPrice memory outputPrice = dolomiteMargin.getMarketPrice(dolomiteMargin.getMarketIdByTokenAddress(address(VAULT_FACTORY)));
+        IDolomiteStructs.MonetaryPrice memory inputPrice = dolomiteMargin.getMarketPrice(
+            dolomiteMargin.getMarketIdByTokenAddress(_inputToken)
+        );
+        IDolomiteStructs.MonetaryPrice memory outputPrice = dolomiteMargin.getMarketPrice(
+            dolomiteMargin.getMarketIdByTokenAddress(address(VAULT_FACTORY))
+        );
         uint256 inputValue = _inputAmount * inputPrice.value;
         uint256 outputValue = _minOutputAmount * outputPrice.value;
 
@@ -356,15 +332,12 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         );
     }
 
-    function _approveIsolationModeTokenForTransfer(
-        address _vault,
-        address _receiver,
-        uint256 _amount
-    )
-    internal
-    override {
-        VAULT_FACTORY.enqueueTransferIntoDolomiteMargin(_vault, _amount);
-        IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
+    function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {
+        bytes32 slot = keccak256(abi.encodePacked(_DEPOSIT_INFO_SLOT, _key));
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            info.slot := slot
+        }
     }
 
 
