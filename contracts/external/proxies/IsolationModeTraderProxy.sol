@@ -61,7 +61,7 @@ contract IsolationModeTraderProxy is ProxyContractHelpers, OnlyDolomiteMarginFor
 
     // ===================== Functions =====================
 
-    fallback() external {
+    fallback() external payable {
         // solhint-disable-previous-line payable-fallback
         _callImplementation(implementation());
     }

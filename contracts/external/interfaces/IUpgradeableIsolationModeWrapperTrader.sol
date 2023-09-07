@@ -20,9 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IIsolationModeWrapperTrader } from "./IIsolationModeWrapperTrader.sol";
 import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
+import { IIsolationModeWrapperTrader } from "./IIsolationModeWrapperTrader.sol";
 
 
 /**
@@ -32,8 +31,6 @@ import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
  * Interface for an upgradeable contract that can convert a token into an isolation mode token.
  */
 interface IUpgradeableIsolationModeWrapperTrader is IIsolationModeWrapperTrader {
-
-    function initializeWrapperTrader(address _vaultFactory, address _dolomiteMargin) external;
 
     function VAULT_FACTORY() external view returns (IIsolationModeVaultFactory);
 }

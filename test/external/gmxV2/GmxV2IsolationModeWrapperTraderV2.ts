@@ -91,7 +91,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
-
     priceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxRegistryV2);
     await priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
     marketId = await core.dolomiteMargin.getNumMarkets();

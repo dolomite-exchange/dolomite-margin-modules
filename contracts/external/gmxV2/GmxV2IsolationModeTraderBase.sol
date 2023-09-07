@@ -20,10 +20,11 @@
 
 pragma solidity ^0.8.9;
 
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { IGmxV2IsolationModeTraderBase } from "../interfaces/gmx/IGmxV2IsolationModeTraderBase.sol";
 
 
@@ -35,15 +36,14 @@ import { IGmxV2IsolationModeTraderBase } from "../interfaces/gmx/IGmxV2Isolation
  * @notice  Base class for GMX V2 Wrappers and Unwrappers
  */
 
-abstract contract GmxV2IsolationModeTraderBase is OnlyDolomiteMargin, IGmxV2IsolationModeTraderBase {
+abstract contract GmxV2IsolationModeTraderBase is OnlyDolomiteMarginForUpgradeable, Initializable, IGmxV2IsolationModeTraderBase {
     using SafeERC20 for IWETH;
 
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
     bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
-
-    IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
+    bytes32 private constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.weth")) - 1);
 
 
     // ===================================================
@@ -60,19 +60,14 @@ abstract contract GmxV2IsolationModeTraderBase is OnlyDolomiteMargin, IGmxV2Isol
         _;
     }
 
-    constructor(address _weth) {
-        WETH = IWETH(_weth);
-    }
-
-
     function ownerSetIsHandler(address _handler, bool _isTrusted) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetIsHandler(_handler, _isTrusted);
     }
 
     function ownerWithdrawETH(address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
         uint256 bal = address(this).balance;
-        WETH.deposit{value: bal}();
-        WETH.safeTransfer(_receiver, bal);
+        WETH().deposit{value: bal}();
+        WETH().safeTransfer(_receiver, bal);
         // TODO: emit event OwnerWithdrawETH(_receiver, bal);
     }
 
@@ -81,7 +76,15 @@ abstract contract GmxV2IsolationModeTraderBase is OnlyDolomiteMargin, IGmxV2Isol
         return _getUint256(slot) == 1;
     }
 
+    function WETH() public view returns (IWETH) {
+        return IWETH(_getAddress(_WETH_SLOT));
+    }
+
     // ========================= Internal Functions =========================
+
+    function _initializeTraderBase(address _weth) internal initializer {
+        _setAddress(_WETH_SLOT, _weth);
+    }
 
     function _ownerSetIsHandler(address _handler, bool _isTrusted) internal {
         bytes32 slot =  keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));

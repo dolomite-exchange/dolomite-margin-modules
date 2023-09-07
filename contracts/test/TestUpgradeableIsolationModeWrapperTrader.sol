@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { ICustomTestToken } from "./ICustomTestToken.sol";
-import { UpgradeableIsolationModeWrapperTrader } from "../external/proxies/abstract/UpgradeableIsolationModeWrapperTrader.sol";
+import { UpgradeableIsolationModeWrapperTrader } from "../external/proxies/abstract/UpgradeableIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -40,7 +40,7 @@ contract TestUpgradeableIsolationModeWrapperTrader is UpgradeableIsolationModeWr
 
     function initialize(address _inputToken, address _vaultFactory, address _dolomiteMargin) external initializer {
         _setAddress(_INPUT_TOKEN_SLOT, _inputToken);
-        super.initializeWrapperTrader(_vaultFactory, _dolomiteMargin);
+        super._initializeWrapperTrader(_vaultFactory, _dolomiteMargin);
     }
 
     // ============ Public Functions ============

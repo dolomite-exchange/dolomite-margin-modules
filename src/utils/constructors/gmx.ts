@@ -8,6 +8,7 @@ import {
   GmxRegistryV2,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeVaultFactory,
+  GmxV2IsolationModeWrapperTraderV2,
   IGLPIsolationModeTokenVaultV1,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
@@ -199,20 +200,27 @@ export function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
   ];
 }
 
-export function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
+export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
   core: CoreProtocol,
+  implementation: GmxV2IsolationModeWrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
-): any[] {
+): Promise<any[]> {
   if (!core.gmxEcosystem) {
     throw new Error('Gmx ecosystem not initialized');
   }
 
-  return [
+  const calldata = await implementation.populateTransaction.initialize(
     gmxRegistryV2.address,
     core.tokens.weth.address,
     dGM.address,
+    core.dolomiteMargin.address
+  );
+
+  return [
+    implementation.address,
     core.dolomiteMargin.address,
+    calldata.data,
   ];
 }
 

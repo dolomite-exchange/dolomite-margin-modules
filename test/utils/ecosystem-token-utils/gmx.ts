@@ -36,6 +36,8 @@ import {
   IGmxRegistryV1,
   IGmxRegistryV2,
   IGmxV2IsolationModeVaultFactory,
+  IsolationModeTraderProxy,
+  IsolationModeTraderProxy__factory,
   RegistryProxy,
   RegistryProxy__factory,
 } from '../../../src/types';
@@ -216,11 +218,17 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
 ): Promise<GmxV2IsolationModeWrapperTraderV2> {
-  return createContractWithAbi(
+  const implementation = await createContractWithAbi<GmxV2IsolationModeWrapperTraderV2>(
     GmxV2IsolationModeWrapperTraderV2__factory.abi,
     GmxV2IsolationModeWrapperTraderV2__factory.bytecode,
-    getGmxV2IsolationModeWrapperTraderV2ConstructorParams(core, dGM, gmxRegistryV2),
+    []
   );
+  const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
+    IsolationModeTraderProxy__factory.abi,
+    IsolationModeTraderProxy__factory.bytecode,
+    await getGmxV2IsolationModeWrapperTraderV2ConstructorParams(core, implementation, dGM, gmxRegistryV2),
+  );
+  return GmxV2IsolationModeWrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
 }
 
 export async function createGmxV2MarketTokenPriceOracle(
