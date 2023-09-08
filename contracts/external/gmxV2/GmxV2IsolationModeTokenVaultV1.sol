@@ -70,7 +70,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
-    ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen() {
+    ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
         uint256 len = _tradersPath.length;
         (uint256 accountNumber, uint256 executionFee) = abi.decode(_tradersPath[len-1].tradeData, (uint256, uint256));
         Require.that(
@@ -106,7 +106,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         );
     }
 
-    function initiateUnwrapping() external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen() {
+    function initiateUnwrapping() external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
         // @todo
     }
 
