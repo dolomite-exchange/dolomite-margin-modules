@@ -32,8 +32,6 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2MarketTokenPriceOracle } from "../interfaces/gmx/IGmxV2MarketTokenPriceOracle.sol";
 
 
-
-
 /**
  * @title   GmxV2MarketTokenPriceOracle
  * @author  Dolomite
@@ -47,7 +45,8 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     bytes32 private constant _FILE = "GmxV2MarketTokenPriceOracle";
     uint256 public constant ETH_USD_PRECISION = 1e18;
     uint256 public constant FEE_PRECISION = 10_000;
-    uint256 public constant DECIMAL_ADJUSTMENT = 6;
+    uint256 public constant GMX_DECIMAL_ADJUSTMENT = 6;
+    uint256 public constant RETURN_DECIMAL_ADJUSTMENT = 12;
 
     bytes32 public constant MAX_PNL_FACTOR_FOR_WITHDRAWALS = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS"));
 
@@ -131,18 +130,18 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
        // Dolomite returns price as 36 decimals - token decimals
        // GMX expects 30 decimals - token decimals so we divide by 10 ** 6
         GmxPrice.Props memory indexTokenPriceProps = GmxPrice.Props(
-            indexTokenPrice / 10 ** DECIMAL_ADJUSTMENT,
-            indexTokenPrice / 10 ** DECIMAL_ADJUSTMENT
+            indexTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
+            indexTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
         );
 
         GmxPrice.Props memory longTokenPriceProps = GmxPrice.Props(
-            longTokenPrice / 10 ** DECIMAL_ADJUSTMENT,
-            longTokenPrice / 10 ** DECIMAL_ADJUSTMENT
+            longTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
+            longTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
         );
 
         GmxPrice.Props memory shortTokenPriceProps = GmxPrice.Props(
-            shortTokenPrice / 10 ** DECIMAL_ADJUSTMENT,
-            shortTokenPrice / 10 ** DECIMAL_ADJUSTMENT
+            shortTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
+            shortTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
         );
        // @audit Are we worried about this precision loss?
 
@@ -161,6 +160,8 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             _FILE,
             "Invalid oracle response"
         );
-        return uint256(value / 10 ** 12);
+
+        // GMX returns the price in 30 decimals. We convert to 18 decimals (36 - GM token decimals)
+        return uint256(value) / 10 ** RETURN_DECIMAL_ADJUSTMENT;
     }
 }

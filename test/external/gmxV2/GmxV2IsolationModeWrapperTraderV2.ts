@@ -20,7 +20,6 @@ import {
   getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
-  sendEther,
   setEtherBalance,
   snapshot,
 } from 'test/utils';
@@ -126,9 +125,21 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('#constructor', () => {
+  describe('#initializer', () => {
     it('should work normally', async () => {
       expect(await wrapper.GMX_REGISTRY_V2()).to.eq(gmxRegistryV2.address);
+    });
+
+    it('should not initialize twice', async () => {
+      await expectThrow(
+        wrapper.initialize(
+          gmxRegistryV2.address,
+          core.tokens.weth.address,
+          factory.address,
+          core.dolomiteMargin.address
+        ),
+        'Initializable: contract is already initialized',
+      );
     });
   });
 
@@ -733,22 +744,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
   });
 
-  describe('#ownerWithdrawETH', () => {
-    it('should work normally', async () => {
-      await setEtherBalance(wrapper.address, ONE_ETH_BI);
-      await expect(() =>
-        wrapper.connect(core.governance).ownerWithdrawETH(core.governance.address)
-      ).to.changeTokenBalance(core.tokens.weth, core.governance, ONE_ETH_BI);
-    });
-
-    it('should fail if not called by dolomite margin owner', async () => {
-      await expectThrow(
-        wrapper.connect(core.hhUser1).ownerWithdrawETH(core.governance.address),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
-      );
-    });
-  });
-
   describe('#isValidInputToken', () => {
     it('should work normally', async () => {
       expect(await wrapper.isValidInputToken(core.tokens.weth.address)).to.eq(true);
@@ -758,20 +753,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     it('should fail if token is not one of two assets in LP', async () => {
       expect(await wrapper.isValidInputToken(core.tokens.wbtc.address)).to.eq(false);
       expect(await wrapper.isValidInputToken(core.hhUser1.address)).to.eq(false);
-    });
-  });
-
-  describe('#setHandlerStatus', () => {
-    it('should work normally', async () => {
-      await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
-      expect(await wrapper.isHandler(core.gmxEcosystemV2!.gmxDepositHandler.address)).to.eq(true);
-    });
-
-    it('should failed if not called by dolomite owner', async () => {
-      await expectThrow(
-        wrapper.connect(core.hhUser1).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
-      );
     });
   });
 

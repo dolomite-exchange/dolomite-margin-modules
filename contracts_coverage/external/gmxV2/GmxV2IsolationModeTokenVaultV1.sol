@@ -32,7 +32,6 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 
 
-
 /**
  * @title   GmxV2IsolationModeTokenVaultV1
  * @author  Dolomite
@@ -53,15 +52,14 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
     bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1); // solhint-disable max-line-length
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable max-line-length
 
-    // @todo make uppercase
-    IWETH public immutable weth;
+    IWETH public immutable WETH;
 
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
 
     constructor(address _weth) {
-        weth = IWETH(_weth);
+        WETH = IWETH(_weth);
     }
 
     function initiateWrapping(
@@ -91,8 +89,8 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
             "Invalid tradeData"
         );
 
-        weth.deposit{value: msg.value}();
-        weth.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
+        WETH.deposit{value: msg.value}();
+        WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
 
         // @audit Will this allow reentrancy in _swapExactInputForOutput. May have to requireNotFrozen on external functions instead of internal
         // @follow-up Can't freeze before this or internal call fails because frozen. Can't freeze after or executeDepositFails because it's not frozen

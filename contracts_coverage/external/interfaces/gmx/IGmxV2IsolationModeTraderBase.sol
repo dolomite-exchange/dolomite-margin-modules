@@ -28,6 +28,9 @@ pragma solidity ^0.8.9;
  */
 interface IGmxV2IsolationModeTraderBase {
 
+    event OwnerWithdrawETH(address _receiver, uint256 _bal);
+    event OwnerSetIsHandler(address _handler, bool _isTrusted);
+
     function ownerSetIsHandler(address _handler, bool _isTrusted) external;
 
     function ownerWithdrawETH(address _receiver) external;

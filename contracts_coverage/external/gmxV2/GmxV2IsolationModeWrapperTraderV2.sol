@@ -34,9 +34,7 @@ import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
-import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
-
-
+import { UpgradeableIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeWrapperTrader.sol";
 
 
 /**
@@ -45,9 +43,8 @@ import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeW
  *
  * @notice  Used for wrapping GMX GM tokens (via depositing into GMX)
  */
-
 contract GmxV2IsolationModeWrapperTraderV2 is
-    IsolationModeWrapperTraderV2,
+    UpgradeableIsolationModeWrapperTrader,
     GmxV2IsolationModeTraderBase,
     IGmxV2IsolationModeWrapperTraderV2,
     IGmxDepositCallbackReceiver
@@ -60,31 +57,30 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
     uint256 private constant _SLIPPAGE_BASE = 10_000;
 
-    IGmxRegistryV2 public immutable GMX_REGISTRY_V2; // solhint-disable-line var-name-mixedcase
+    bytes32 private constant _GMX_REGISTRY_V2_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxRegistryV2")) - 1);
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
     bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
     bytes32 private constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_MINIMUM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageMinimum")) - 1);
 
-    // ============ Constructor ============
+    receive() external payable {} // solhint-disable-line no-empty-blocks
 
-    constructor(
+    // ============ Initializer ============
+
+    function initialize(
         address _gmxRegistryV2,
         address _weth,
         address _dGM,
         address _dolomiteMargin
-    )
-        IsolationModeWrapperTraderV2(_dGM, _dolomiteMargin)
-        GmxV2IsolationModeTraderBase(_weth)
-    {
-        GMX_REGISTRY_V2 = IGmxRegistryV2(_gmxRegistryV2);
+    ) external initializer {
+        _initializeWrapperTrader(_dGM, _dolomiteMargin);
+        _initializeTraderBase(_weth);
+        _setAddress(_GMX_REGISTRY_V2_SLOT, _gmxRegistryV2);
     }
 
     // ============================================
     // ============= Public Functions =============
     // ============================================
-
-    receive() external payable {}
 
     function afterDepositExecution(
         bytes32 _key,
@@ -109,8 +105,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             "Unexpected return data"
         );
 
-        IERC20 underlyingToken = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN());
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY));
+        IERC20 underlyingToken = IERC20(VAULT_FACTORY().UNDERLYING_TOKEN());
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
 
         underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
         if (receivedMarketTokens.value > _deposit.numbers.minMarketTokens) {
@@ -143,7 +139,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             "Invalid deposit key"
         );
 
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY));
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         /*assert(_deposit.numbers.initialLongTokenAmount == 0 || _deposit.numbers.initialShortTokenAmount == 0);*/
 
         if (_deposit.numbers.initialLongTokenAmount > 0) {
@@ -182,7 +178,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             _FILE,
             "Only vault or handler can cancel"
         );
-        GMX_REGISTRY_V2.gmxExchangeRouter().cancelDeposit(_key);
+        GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
     }
 
     function setCallbackGasLimit(uint256 _callbackGasLimit) external onlyDolomiteMarginOwner(msg.sender) {
@@ -194,8 +190,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     }
 
     function isValidInputToken(address _inputToken) public view override returns (bool) {
-        address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).longToken();
-        address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).shortToken();
+        address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).longToken();
+        address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).shortToken();
         return _inputToken == longToken || _inputToken == shortToken;
     }
 
@@ -205,6 +201,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function callbackGasLimit() public view returns (uint256) {
         return _getUint256(_CALLBACK_GAS_LIMIT_SLOT);
+    }
+
+    function GMX_REGISTRY_V2() public view returns (IGmxRegistryV2) {
+        return IGmxRegistryV2(_getAddress(_GMX_REGISTRY_V2_SLOT));
     }
 
     // ============================================
@@ -228,14 +228,14 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
         address tradeOriginatorForStackTooDeep = _tradeOriginator;
         (uint256 accountNumber, uint256 ethExecutionFee) = abi.decode(_extraOrderData, (uint256, uint256));
-        IGmxExchangeRouter exchangeRouter = GMX_REGISTRY_V2.gmxExchangeRouter();
-        WETH.safeTransferFrom(tradeOriginatorForStackTooDeep, address(this), ethExecutionFee);
-        WETH.withdraw(ethExecutionFee);
+        IGmxExchangeRouter exchangeRouter = GMX_REGISTRY_V2().gmxExchangeRouter();
+        WETH().safeTransferFrom(tradeOriginatorForStackTooDeep, address(this), ethExecutionFee);
+        WETH().withdraw(ethExecutionFee);
 
         {
-            address depositVault = GMX_REGISTRY_V2.gmxDepositVault();
+            address depositVault = GMX_REGISTRY_V2().gmxDepositVault();
             exchangeRouter.sendWnt{value: ethExecutionFee}(depositVault, ethExecutionFee);
-            IERC20(_inputToken).safeApprove(address(GMX_REGISTRY_V2.gmxRouter()), _inputAmount);
+            IERC20(_inputToken).safeApprove(address(GMX_REGISTRY_V2().gmxRouter()), _inputAmount);
             exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
         }
 
@@ -245,8 +245,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                 /* callbackContract = */ address(this),
                 /* uiFeeReceiver = */ address(0),
                 /* market = */ _outputTokenUnderlying,
-                /* initialLongToken = */ IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).longToken(),
-                /* initialShortToken = */ IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).shortToken(),
+                /* initialLongToken = */ IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).longToken(),
+                /* initialShortToken = */ IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).shortToken(),
                 /* longTokenSwapPath = */ new address[](0),
                 /* shortTokenSwapPath = */ new address[](0),
                 /* minMarketTokens = */ _minOutputAmount,
@@ -260,8 +260,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             emit DepositCreated(depositKey);
         }
 
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setIsVaultFrozen(tradeOriginatorForStackTooDeep, true);
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY)).setShouldSkipTransfer(
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultFrozen(
+            tradeOriginatorForStackTooDeep,
+            true
+        );
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setShouldSkipTransfer(
             tradeOriginatorForStackTooDeep,
             true
         );
@@ -309,8 +312,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     )
     internal
     override {
-        VAULT_FACTORY.enqueueTransferIntoDolomiteMargin(_vault, _amount);
-        IERC20(address(VAULT_FACTORY)).safeApprove(_receiver, _amount);
+        VAULT_FACTORY().enqueueTransferIntoDolomiteMargin(_vault, _amount);
+        IERC20(address(VAULT_FACTORY())).safeApprove(_receiver, _amount);
     }
 
     function _checkSlippage(address _inputToken, uint256 _inputAmount, uint256 _minOutputAmount) internal view {
@@ -320,7 +323,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             dolomiteMargin.getMarketIdByTokenAddress(_inputToken)
         );
         IDolomiteStructs.MonetaryPrice memory outputPrice = dolomiteMargin.getMarketPrice(
-            dolomiteMargin.getMarketIdByTokenAddress(address(VAULT_FACTORY))
+            dolomiteMargin.getMarketIdByTokenAddress(address(VAULT_FACTORY()))
         );
         uint256 inputValue = _inputAmount * inputPrice.value;
         uint256 outputValue = _minOutputAmount * outputPrice.value;

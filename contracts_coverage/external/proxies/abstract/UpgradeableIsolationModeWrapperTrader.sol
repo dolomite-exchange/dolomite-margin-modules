@@ -26,14 +26,13 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../../helpers/OnlyDolomiteMarginForUpgradeable.sol";
-import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableIsolationModeWrapperTrader.sol";
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 
 
 /**
- * @title   IsolationModeWrapperTraderV2
+ * @title   UpgradeableIsolationModeWrapperTrader
  * @author  Dolomite
  *
  * @notice  Abstract contract for wrapping a token into an IsolationMode token. Must be set as a token converter
@@ -54,16 +53,6 @@ abstract contract UpgradeableIsolationModeWrapperTrader is
     // ======================== Field Variables ========================
 
     bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
-
-    // ======================== Initializer ========================
-
-    function initializeWrapperTrader(
-        address _vaultFactory,
-        address _dolomiteMargin
-    ) public initializer {
-        _setVaultFactory(_vaultFactory);
-        _setDolomiteMarginViaSlot(_dolomiteMargin);
-    }
 
     // ======================== External Functions ========================
 
@@ -220,6 +209,14 @@ abstract contract UpgradeableIsolationModeWrapperTrader is
     }
 
     // ============ Internal Functions ============
+
+    function _initializeWrapperTrader(
+        address _vaultFactory,
+        address _dolomiteMargin
+    ) internal initializer {
+        _setVaultFactory(_vaultFactory);
+        _setDolomiteMarginViaSlot(_dolomiteMargin);
+    }
 
     /**
      * @notice Performs the exchange from `_inputToken` into the factory's underlying token.

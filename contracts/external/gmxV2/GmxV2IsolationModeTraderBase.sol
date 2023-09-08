@@ -43,7 +43,7 @@ abstract contract GmxV2IsolationModeTraderBase is
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
+    bytes32 private constant _FILE = "GmxV2IsolationModeTraderBase";
     bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
     bytes32 private constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.weth")) - 1);
 
@@ -70,7 +70,7 @@ abstract contract GmxV2IsolationModeTraderBase is
         uint256 bal = address(this).balance;
         WETH().deposit{value: bal}();
         WETH().safeTransfer(_receiver, bal);
-        // TODO: emit event OwnerWithdrawETH(_receiver, bal);
+        emit OwnerWithdrawETH(_receiver, bal);
     }
 
     function isHandler(address _handler) public view returns (bool) {
@@ -91,6 +91,6 @@ abstract contract GmxV2IsolationModeTraderBase is
     function _ownerSetIsHandler(address _handler, bool _isTrusted) internal {
         bytes32 slot =  keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
         _setUint256(slot, _isTrusted ? 1 : 0);
-        // TODO: emit event OwnerSetIsHandler(_handler, _isTrusted);
+        emit OwnerSetIsHandler(_handler, _isTrusted);
     }
 }

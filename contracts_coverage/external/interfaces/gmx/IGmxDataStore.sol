@@ -29,5 +29,5 @@ pragma solidity ^0.8.9;
  */
 interface IGmxDataStore {
 
-    function getUint(bytes32 key) external view returns (uint256);
+    function getUint(bytes32 _key) external view returns (uint256);
 }

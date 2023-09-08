@@ -32,7 +32,6 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
 
 
-
 /**
  * @title   GmxV2IsolationModeVaultFactory
  * @author  Dolomite
