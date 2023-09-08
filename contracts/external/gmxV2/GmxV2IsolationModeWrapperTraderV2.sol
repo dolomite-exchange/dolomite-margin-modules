@@ -37,15 +37,12 @@ import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2Isol
 import { UpgradeableIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeWrapperTrader.sol";
 
 
-
-
 /**
  * @title   GmxV2IsolationModeWrapperTraderV2
  * @author  Dolomite
  *
  * @notice  Used for wrapping GMX GM tokens (via depositing into GMX)
  */
-
 contract GmxV2IsolationModeWrapperTraderV2 is
     UpgradeableIsolationModeWrapperTrader,
     GmxV2IsolationModeTraderBase,

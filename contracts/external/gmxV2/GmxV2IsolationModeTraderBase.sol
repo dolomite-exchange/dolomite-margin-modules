@@ -28,14 +28,12 @@ import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginF
 import { IGmxV2IsolationModeTraderBase } from "../interfaces/gmx/IGmxV2IsolationModeTraderBase.sol";
 
 
-
 /**
  * @title   GmxV2IsolationModeTraderBase
  * @author  Dolomite
  *
  * @notice  Base class for GMX V2 Wrappers and Unwrappers
  */
-
 abstract contract GmxV2IsolationModeTraderBase is 
     OnlyDolomiteMarginForUpgradeable,
     Initializable,

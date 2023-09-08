@@ -32,7 +32,6 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 
 
-
 /**
  * @title   GmxV2IsolationModeTokenVaultV1
  * @author  Dolomite
