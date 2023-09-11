@@ -106,8 +106,48 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         );
     }
 
-    function initiateUnwrapping() external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
-        // @todo
+    function initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
+        uint256 len = _tradersPath.length;
+        (uint256 accountNumber, uint256 executionFee) = abi.decode(_tradersPath[len-1].tradeData, (uint256, uint256));
+        Require.that(
+            msg.value > 0 && executionFee == msg.value,
+            _FILE,
+            "Invalid executionFee"
+        );
+        Require.that(
+            _tradersPath[len-1].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper,
+            _FILE,
+            "Invalid traderType"
+        );
+        Require.that(
+            accountNumber == _tradeAccountNumber,
+            _FILE,
+            "Invalid tradeData"
+        );
+
+        WETH.deposit{value: msg.value}();
+        WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
+
+        // @audit Will this allow reentrancy in _swapExactInputForOutput. May have to requireNotFrozen on external functions instead of internal
+        // @follow-up Can't freeze before this or internal call fails because frozen. Can't freeze after or executeDepositFails because it's not frozen
+        // So currently freezing in the wrapper
+        _swapExactInputForOutput(
+            _tradeAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
     }
 
     // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can

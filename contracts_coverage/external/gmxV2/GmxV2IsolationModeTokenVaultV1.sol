@@ -49,10 +49,10 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultV1";
     bytes32 private constant _VIRTUAL_BALANCE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.virtualBalance")) - 1);
-    bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1); // solhint-disable max-line-length
-    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable max-line-length
+    bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
 
-    IWETH public immutable WETH;
+    IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
 
     // ==================================================================
     // ======================== Public Functions ========================
@@ -70,7 +70,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
-    ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen() {
+    ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
         uint256 len = _tradersPath.length;
         (uint256 accountNumber, uint256 executionFee) = abi.decode(_tradersPath[len-1].tradeData, (uint256, uint256));
         if (msg.value > 0 && executionFee == msg.value) { /* FOR COVERAGE TESTING */ }
@@ -106,8 +106,48 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         );
     }
 
-    function initiateUnwrapping() external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen() {
-        // @todo
+    function initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
+        uint256 len = _tradersPath.length;
+        (uint256 accountNumber, uint256 executionFee) = abi.decode(_tradersPath[len-1].tradeData, (uint256, uint256));
+        if (msg.value > 0 && executionFee == msg.value) { /* FOR COVERAGE TESTING */ }
+        Require.that(msg.value > 0 && executionFee == msg.value,
+            _FILE,
+            "Invalid executionFee"
+        );
+        if (_tradersPath[len-1].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper) { /* FOR COVERAGE TESTING */ }
+        Require.that(_tradersPath[len-1].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper,
+            _FILE,
+            "Invalid traderType"
+        );
+        if (accountNumber == _tradeAccountNumber) { /* FOR COVERAGE TESTING */ }
+        Require.that(accountNumber == _tradeAccountNumber,
+            _FILE,
+            "Invalid tradeData"
+        );
+
+        WETH.deposit{value: msg.value}();
+        WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
+
+        // @audit Will this allow reentrancy in _swapExactInputForOutput. May have to requireNotFrozen on external functions instead of internal
+        // @follow-up Can't freeze before this or internal call fails because frozen. Can't freeze after or executeDepositFails because it's not frozen
+        // So currently freezing in the wrapper
+        _swapExactInputForOutput(
+            _tradeAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
     }
 
     // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can

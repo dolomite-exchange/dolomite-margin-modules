@@ -45,6 +45,10 @@ contract TestUpgradeableIsolationModeWrapperTrader is UpgradeableIsolationModeWr
 
     // ============ Public Functions ============
 
+    function initializeWrapperTrader(address _vaultFactory, address _dolomiteMargin) external {
+        super._initializeWrapperTrader(_vaultFactory, _dolomiteMargin);
+    }
+
     function isValidInputToken(address _inputToken) public override view returns (bool) {
         return _getAddress(_INPUT_TOKEN_SLOT) == _inputToken;
     }
