@@ -40,7 +40,7 @@ const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const TEN = BigNumber.from('10000000000000000000');
 
-describe.only('UpgradeableIsolationModeWrapperTrader', () => {
+describe('UpgradeableIsolationModeWrapperTrader', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;

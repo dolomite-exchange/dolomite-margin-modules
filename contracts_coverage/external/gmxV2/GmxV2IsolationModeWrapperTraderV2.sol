@@ -55,13 +55,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
-    uint256 private constant _SLIPPAGE_BASE = 10_000;
 
-    bytes32 private constant _GMX_REGISTRY_V2_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxRegistryV2")) - 1);
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
-    bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
-    bytes32 private constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _SLIPPAGE_MINIMUM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageMinimum")) - 1);
 
     receive() external payable {} // solhint-disable-line no-empty-blocks
 
@@ -74,8 +69,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         address _dolomiteMargin
     ) external initializer {
         _initializeWrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_weth);
-        _setAddress(_GMX_REGISTRY_V2_SLOT, _gmxRegistryV2);
+        _initializeTraderBase(_gmxRegistryV2, _weth);
     }
 
     // ============================================
@@ -181,30 +175,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
     }
 
-    function setCallbackGasLimit(uint256 _callbackGasLimit) external onlyDolomiteMarginOwner(msg.sender) {
-        _setCallbackGasLimit(_callbackGasLimit);
-    }
-
-    function setSlippageMinimum(uint256 _slippageMinimum) external onlyDolomiteMarginOwner(msg.sender) {
-        _setSlippageMinimum(_slippageMinimum);
-    }
-
     function isValidInputToken(address _inputToken) public view override returns (bool) {
         address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).longToken();
         address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).shortToken();
         return _inputToken == longToken || _inputToken == shortToken;
-    }
-
-    function slippageMinimum() public view returns (uint256) {
-        return _getUint256(_SLIPPAGE_MINIMUM_SLOT);
-    }
-
-    function callbackGasLimit() public view returns (uint256) {
-        return _getUint256(_CALLBACK_GAS_LIMIT_SLOT);
-    }
-
-    function GMX_REGISTRY_V2() public view returns (IGmxRegistryV2) {
-        return IGmxRegistryV2(_getAddress(_GMX_REGISTRY_V2_SLOT));
     }
 
     // ============================================
@@ -284,19 +258,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token),
             _amount
         );
-    }
-
-    function _setCallbackGasLimit(uint256 _callbackGasLimit) internal {
-        _setUint256(_CALLBACK_GAS_LIMIT_SLOT, _callbackGasLimit);
-    }
-
-    function _setSlippageMinimum(uint256 _slippageMinimum) internal {
-        if (_slippageMinimum < _SLIPPAGE_BASE && _slippageMinimum > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_slippageMinimum < _SLIPPAGE_BASE && _slippageMinimum > 0,
-            _FILE,
-            "Invalid slippageMinimum"
-        );
-        _setUint256(_SLIPPAGE_MINIMUM_SLOT, _slippageMinimum);
     }
 
     function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {

@@ -44,11 +44,29 @@ interface IGmxExchangeRouter {
         uint256 callbackGasLimit;
     }
 
+    struct CreateWithdrawalParams {
+        address receiver;
+        address callbackContract;
+        address uiFeeReceiver;
+        address market;
+        address[] longTokenSwapPath;
+        address[] shortTokenSwapPath;
+        uint256 minLongTokenAmount;
+        uint256 minShortTokenAmount;
+        bool shouldUnwrapNativeToken;
+        uint256 executionFee;
+        uint256 callbackGasLimit;
+    }
+
     function createDeposit(CreateDepositParams calldata _params) external returns (bytes32);
+
+    function createWithdrawal(CreateWithdrawalParams calldata _params) external returns (bytes32);
 
     function sendWnt(address _receiver, uint256 _amount) external payable;
 
     function sendTokens(address _token, address _receiver, uint256 _amount) external payable;
 
     function cancelDeposit(bytes32 _key) external payable;
+
+    function cancelWithdrawal(bytes32 _key) external payable;
 }

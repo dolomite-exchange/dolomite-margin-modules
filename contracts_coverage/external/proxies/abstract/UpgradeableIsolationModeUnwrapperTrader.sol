@@ -280,6 +280,10 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         VAULT_FACTORY().enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
     }
 
+    function _setVaultFactory(address _factory) internal {
+        _setAddress(_VAULT_FACTORY_SLOT, _factory);
+    }
+
     /**
      * @notice Performs the exchange from the Isolation Mode's underlying token to `_outputToken`.
      */
@@ -292,10 +296,6 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         uint256 _inputAmount,
         bytes memory _extraOrderData
     ) internal virtual returns (uint256);
-
-    function _setVaultFactory(address _factory) internal {
-        _setAddress(_VAULT_FACTORY_SLOT, _factory);
-    }
 
     function _getExchangeCost(
         address _inputToken,

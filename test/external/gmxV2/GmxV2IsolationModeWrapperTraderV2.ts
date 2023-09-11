@@ -116,7 +116,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
     await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
     await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
-    await wrapper.connect(core.governance).setCallbackGasLimit(CALLBACK_GAS_LIMIT);
+    await wrapper.connect(core.governance).ownerSetCallbackGasLimit(CALLBACK_GAS_LIMIT);
 
     snapshotId = await snapshot();
   });
@@ -753,52 +753,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     it('should fail if token is not one of two assets in LP', async () => {
       expect(await wrapper.isValidInputToken(core.tokens.wbtc.address)).to.eq(false);
       expect(await wrapper.isValidInputToken(core.hhUser1.address)).to.eq(false);
-    });
-  });
-
-  describe('#setCallbackGasLimit', () => {
-    it('should work normally', async () => {
-      await wrapper.connect(core.governance).setCallbackGasLimit(CALLBACK_GAS_LIMIT);
-      expect(await wrapper.callbackGasLimit()).to.eq(CALLBACK_GAS_LIMIT);
-    });
-
-    it('should failed if not called by dolomite owner', async () => {
-      await expectThrow(
-        wrapper.connect(core.hhUser1).setCallbackGasLimit(ZERO_BI),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
-      );
-    });
-  });
-
-  describe('#setSlippageMinimum', () => {
-    it('should work normally', async () => {
-      await wrapper.connect(core.governance).setSlippageMinimum(25);
-      expect(await wrapper.slippageMinimum()).to.eq(25);
-    });
-
-    it('should fail if slippageMinimum is 0', async () => {
-      await expectThrow(
-        wrapper.connect(core.governance).setSlippageMinimum(0),
-        'GmxV2IsolationModeWrapperV2: Invalid slippageMinimum'
-      );
-    });
-
-    it('should fail if slippage minimum is greater than  or equal to 10,000', async () => {
-      await expectThrow(
-        wrapper.connect(core.governance).setSlippageMinimum(10000),
-        'GmxV2IsolationModeWrapperV2: Invalid slippageMinimum'
-      );
-      await expectThrow(
-        wrapper.connect(core.governance).setSlippageMinimum(10001),
-        'GmxV2IsolationModeWrapperV2: Invalid slippageMinimum'
-      );
-    });
-
-    it('should failed if not called by dolomite owner', async () => {
-      await expectThrow(
-        wrapper.connect(core.hhUser1).setSlippageMinimum(ZERO_BI),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
-      );
     });
   });
 

@@ -41,14 +41,4 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is IGmxV2IsolationModeTraderBase 
     event WithdrawalCancelled(bytes32 indexed key);
 
     function cancelWithdrawal(bytes32 _key) external;
-
-    function setCallbackGasLimit(uint256 _callbackGasLimit) external;
-
-    function setSlippageMinimum(uint256 _slippageMinimum) external;
-
-    function callbackGasLimit() external view returns (uint256);
-
-    function slippageMinimum() external view returns (uint256);
-
-    function GMX_REGISTRY_V2() external view returns (IGmxRegistryV2);
 }

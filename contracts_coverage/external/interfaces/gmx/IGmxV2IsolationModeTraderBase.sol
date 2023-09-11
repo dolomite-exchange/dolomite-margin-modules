@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
+
 
 /**
  * @title   IGmxV2IsolationModeTraderBase
@@ -31,9 +33,19 @@ interface IGmxV2IsolationModeTraderBase {
     event OwnerWithdrawETH(address _receiver, uint256 _bal);
     event OwnerSetIsHandler(address _handler, bool _isTrusted);
 
+    function ownerSetCallbackGasLimit(uint256 _callbackGasLimit) external;
+
+    function ownerSetSlippageMinimum(uint256 _slippageMinimum) external;
+
     function ownerSetIsHandler(address _handler, bool _isTrusted) external;
 
     function ownerWithdrawETH(address _receiver) external;
 
+    function callbackGasLimit() external view returns (uint256);
+
+    function slippageMinimum() external view returns (uint256);
+
     function isHandler(address _handler) external view returns (bool);
+
+    function GMX_REGISTRY_V2() external view returns (IGmxRegistryV2);
 }
