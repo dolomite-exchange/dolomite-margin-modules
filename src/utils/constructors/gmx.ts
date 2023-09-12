@@ -7,6 +7,7 @@ import {
   GmxRegistryV1,
   GmxRegistryV2,
   GmxV2IsolationModeTokenVaultV1,
+  GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
   IGLPIsolationModeTokenVaultV1,
@@ -146,6 +147,7 @@ export async function getGmxRegistryV2ConstructorParams(
     core.gmxEcosystemV2!.gmxReader.address,
     core.gmxEcosystemV2!.gmxRouter.address,
     core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
+    core.gmxEcosystemV2!.gmxWithdrawalVault.address,
     core.dolomiteRegistry.address,
   );
 
@@ -184,19 +186,27 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   ];
 }
 
-export function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
+export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
   core: CoreProtocol,
+  implementation: GmxV2IsolationModeUnwrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
-): any[] {
+): Promise<any[]> {
   if (!core.gmxEcosystem) {
     throw new Error('Gmx ecosystem not initialized');
   }
 
-  return [
+  const calldata = await implementation.populateTransaction.initialize(
     gmxRegistryV2.address,
+    core.tokens.weth.address,
     dGM.address,
+    core.dolomiteMargin.address
+  );
+
+  return [
+    implementation.address,
     core.dolomiteMargin.address,
+    calldata.data,
   ];
 }
 

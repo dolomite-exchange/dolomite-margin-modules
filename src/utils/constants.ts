@@ -250,6 +250,11 @@ export const GMX_WITHDRAWAL_HANDLER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x0628d46b5d145f183adb6ef1f2c97ed1c4701c55',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const JONES_ECOSYSTEM_GOVERNOR_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xDD0556DDCFE7CdaB3540E7F09cB366f498d90774',
   [Network.ArbitrumGoerli]: undefined,

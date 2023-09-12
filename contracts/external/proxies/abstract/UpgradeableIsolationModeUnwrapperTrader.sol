@@ -78,6 +78,7 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         bytes calldata _orderData
     )
     external
+    virtual
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         Require.that(

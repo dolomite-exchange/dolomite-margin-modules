@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
+import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolationModeUnwrapperTrader.sol";
 
 
 /**
@@ -29,16 +30,17 @@ import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.s
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeUnwrapperTraderV2 is IGmxV2IsolationModeTraderBase {
+interface IGmxV2IsolationModeUnwrapperTraderV2 is IGmxV2IsolationModeTraderBase, IUpgradeableIsolationModeUnwrapperTrader {
 
     struct WithdrawalInfo {
         address vault;
         uint256 accountNumber;
+        address outputToken;
     }
 
     event WithdrawalCreated(bytes32 indexed key);
     event WithdrawalExecuted(bytes32 indexed key);
     event WithdrawalCancelled(bytes32 indexed key);
 
-    function cancelWithdrawal(bytes32 _key) external;
+    function vaultSetWithdrawalInfo(bytes32 _key, uint256 _accountNumber, address _outputToken) external;
 }

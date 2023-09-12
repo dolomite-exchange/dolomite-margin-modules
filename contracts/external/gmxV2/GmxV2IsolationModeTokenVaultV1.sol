@@ -27,9 +27,12 @@ import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
+import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
+
+import "hardhat/console.sol";
 
 
 /**
@@ -53,6 +56,15 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length 
 
     IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
+
+    // ===================================================
+    // ==================== Modifiers ====================
+    // ===================================================
+
+    modifier onlyVaultOwnerOrUnwrapper(address _from) {
+        _requireOnlyVaultOwnerOrUnwrapper(_from);
+        _;
+    }
 
     // ==================================================================
     // ======================== Public Functions ========================
@@ -108,46 +120,45 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
 
     function initiateUnwrapping(
         uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
     ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
-        uint256 len = _tradersPath.length;
-        (uint256 accountNumber, uint256 executionFee) = abi.decode(_tradersPath[len-1].tradeData, (uint256, uint256));
-        Require.that(
-            msg.value > 0 && executionFee == msg.value,
-            _FILE,
-            "Invalid executionFee"
-        );
-        Require.that(
-            _tradersPath[len-1].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper,
-            _FILE,
-            "Invalid traderType"
-        );
-        Require.that(
-            accountNumber == _tradeAccountNumber,
-            _FILE,
-            "Invalid tradeData"
-        );
+            Require.that(
+                registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken),
+                _FILE,
+                "Invalid output token"
+            );
+            _setIsVaultFrozen(true);
 
-        WETH.deposit{value: msg.value}();
-        WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
+            uint256 ethExecutionFee = msg.value;
+            IGmxExchangeRouter exchangeRouter = registry().gmxExchangeRouter();
+            address withdrawalVault = registry().gmxWithdrawalVault();
 
-        // @audit Will this allow reentrancy in _swapExactInputForOutput. May have to requireNotFrozen on external functions instead of internal
-        // @follow-up Can't freeze before this or internal call fails because frozen. Can't freeze after or executeDepositFails because it's not frozen
-        // So currently freezing in the wrapper
-        _swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
-        );
+            exchangeRouter.sendWnt{value: ethExecutionFee}(withdrawalVault, ethExecutionFee);
+            IERC20(UNDERLYING_TOKEN()).safeApprove(address(registry().gmxRouter()), _inputAmount);
+            exchangeRouter.sendTokens(UNDERLYING_TOKEN(), withdrawalVault, _inputAmount);
+
+            address[] memory swapPath = new address[](1);
+            swapPath[0] = UNDERLYING_TOKEN();
+
+            IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
+            IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
+                /* receiver = */ address(registry().gmxV2UnwrapperTrader()),
+                /* callbackContract = */ address(registry().gmxV2UnwrapperTrader()),
+                /* uiFeeReceiver = */ address(0),
+                /* market = */ UNDERLYING_TOKEN(),
+                /* longTokenSwapPath = */ _outputToken == factory.longToken() ? new address[](0) : swapPath,
+                /* shortTokenSwapPath = */ _outputToken == factory.shortToken() ? new address[](0) : swapPath,
+                /* minLongTokenAmount = */ _minOutputAmount,
+                /* minShortTokenAmount = */ _minOutputAmount,
+                /* shouldUnwrapNativeToken = */ false,
+                /* executionFee = */ ethExecutionFee,
+                /* callbackGasLimit = */ registry().gmxV2UnwrapperTrader().callbackGasLimit()
+            );
+
+            bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
+            registry().gmxV2UnwrapperTrader().vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _outputToken);
     }
 
     // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can
@@ -159,6 +170,40 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
     function cancelDeposit(bytes32 _key) external onlyVaultOwner(msg.sender) {
         registry().gmxV2WrapperTrader().cancelDeposit(_key);
         _setIsVaultFrozen(false);
+    }
+
+    /**
+     * 
+     * @param  _key Withdrawal key
+     * @dev    This calls the wrapper trader which will revert if given an invalid _key
+     */
+    function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
+        registry().gmxExchangeRouter().cancelWithdrawal(_key);
+        _setIsVaultFrozen(false);
+    }
+
+    function swapExactInputForOutput(
+        uint256 _tradeAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] calldata _tradersPath,
+        IDolomiteMargin.AccountInfo[] calldata _makerAccounts,
+        IGenericTraderProxyV1.UserConfig calldata _userConfig
+    )
+    external
+    override
+    onlyVaultOwnerOrUnwrapper(msg.sender)
+    {
+        _swapExactInputForOutput(
+            _tradeAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
     }
 
     // @follow-up Should these emit events? I think not but just want to ask
@@ -279,6 +324,14 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
             virtualBalance() == IERC20(UNDERLYING_TOKEN()).balanceOf(address(this)),
             _FILE,
             "Virtual vs real balance mismatch"
+        );
+    }
+
+    function _requireOnlyVaultOwnerOrUnwrapper(address _from) internal {
+        Require.that(
+            _from == address(_proxySelf().owner()) || _from == address(registry().gmxV2UnwrapperTrader()),
+            _FILE,
+            "Only owner or unwrapper can call"
         );
     }
 }

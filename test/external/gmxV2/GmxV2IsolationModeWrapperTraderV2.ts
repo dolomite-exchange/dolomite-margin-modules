@@ -86,8 +86,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation
     );
-    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
+    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
     priceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxRegistryV2);
@@ -453,7 +453,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           depositInfo.deposit,
           depositInfo.eventData
         ),
-        `GmxV2IsolationModeWrapperV2: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
+        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
       );
     });
 
@@ -598,7 +598,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           depositInfo.deposit,
           depositInfo.eventData
         ),
-        `GmxV2IsolationModeWrapperV2: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
+        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
       );
     });
 

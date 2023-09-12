@@ -192,6 +192,7 @@ import {
   GMX_ROUTER_MAP,
   GMX_VAULT_MAP,
   GMX_WITHDRAWAL_HANDLER_MAP,
+  GMX_WITHDRAWAL_VAULT_MAP,
   JONES_ECOSYSTEM_GOVERNOR_MAP,
   JONES_GLP_ADAPTER_MAP,
   JONES_GLP_VAULT_ROUTER_MAP,
@@ -293,6 +294,7 @@ export interface GmxEcosystemV2 {
   gmxReader: IGmxReader;
   gmxRouter: IGmxRouter;
   gmxWithdrawalHandler: IGmxWithdrawalHandler;
+  gmxWithdrawalVault: SignerWithAddress;
 }
 
 export interface JonesEcosystem {
@@ -987,6 +989,7 @@ async function createGmxEcosystemV2(network: Network, signer: SignerWithAddress)
       IGmxWithdrawalHandler__factory.connect,
       signer,
     ),
+    gmxWithdrawalVault: await impersonateOrFallback(GMX_WITHDRAWAL_VAULT_MAP[network] as string, true, signer),
   };
 }
 

@@ -23,6 +23,7 @@ import {
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
+  getInitiateUnwrappingParams,
   getInitiateWrappingParams,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import {
@@ -41,6 +42,7 @@ const borrowAccountNumber = '123';
 const amountWei = parseEther('1');
 const minAmountOut = parseEther('1800');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
+const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
 
 describe('GmxV2IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -136,6 +138,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     await otherToken2.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
     await otherToken2.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId2, amountWei);
+    await wrapper.connect(core.governance).ownerSetCallbackGasLimit(CALLBACK_GAS_LIMIT);
+    await unwrapper.connect(core.governance).ownerSetCallbackGasLimit(CALLBACK_GAS_LIMIT);
 
     snapshotId = await snapshot();
   });
@@ -325,7 +329,37 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
   });
 
-  xdescribe('#initiateUnwrapping', () => {});
+  describe.only('#initiateUnwrapping', () => {
+    it('should work normally', async () => {
+      await setupGMBalance(core, core.hhUser1.address, amountWei, vault);
+      await underlyingToken.connect(core.hhUser1).approve(vault.address, amountWei);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
+
+      const initiateUnwrappingParams = await getInitiateUnwrappingParams(
+        borrowAccountNumber,
+        marketId,
+        amountWei,
+        core.marketIds.weth,
+        minAmountOut,
+        unwrapper,
+        parseEther('.01'),
+      );
+      await expect(() => vault.connect(core.hhUser1).initiateUnwrapping(
+        borrowAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
+        ONE_BI,
+        {value: parseEther('.01')},
+      )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+    });
+  });
 
   describe('#cancelDeposit', () => {
     it('should work normally', async () => {

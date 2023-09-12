@@ -38,6 +38,7 @@ describe('GmxRegistryV2', () => {
       expect(await registry.gmxDepositHandler()).to.eq(core.gmxEcosystemV2!.gmxDepositHandler.address);
       expect(await registry.gmxDepositVault()).to.eq(core.gmxEcosystemV2!.gmxDepositVault.address);
       expect(await registry.gmxWithdrawalHandler()).to.eq(core.gmxEcosystemV2!.gmxWithdrawalHandler.address);
+      expect(await registry.gmxWithdrawalVault()).to.eq(core.gmxEcosystemV2!.gmxWithdrawalVault.address);
       expect(await registry.gmxV2UnwrapperTrader()).to.eq(ZERO_ADDRESS);
       expect(await registry.gmxV2WrapperTrader()).to.eq(ZERO_ADDRESS);
       expect(await registry.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
@@ -54,6 +55,7 @@ describe('GmxRegistryV2', () => {
           core.gmxEcosystemV2!.gmxReader.address,
           core.gmxEcosystemV2!.gmxRouter.address,
           core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
+          core.gmxEcosystemV2!.gmxWithdrawalVault.address,
           core.dolomiteRegistry.address,
         ),
         'Initializable: contract is already initialized',
@@ -256,6 +258,30 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxWithdrawalHandler(ZERO_ADDRESS),
+        'GmxRegistryV2: Invalid address'
+      );
+    });
+  });
+
+  describe('#ownerSetGmxWithdrawalVault', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetGmxWithdrawalVault(OTHER_ADDRESS_1);
+      await expectEvent(registry, result, 'GmxWithdrawalVaultSet', {
+        gmxWithdrawalVault: OTHER_ADDRESS_1,
+      });
+      expect(await registry.gmxWithdrawalVault()).to.eq(OTHER_ADDRESS_1);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetGmxWithdrawalVault(OTHER_ADDRESS_1),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetGmxWithdrawalVault(ZERO_ADDRESS),
         'GmxRegistryV2: Invalid address'
       );
     });

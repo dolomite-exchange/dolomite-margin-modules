@@ -36,9 +36,9 @@ import { IGmxV2IsolationModeTraderBase } from "../interfaces/gmx/IGmxV2Isolation
  * @notice  Base class for GMX V2 Wrappers and Unwrappers
  */
 abstract contract GmxV2IsolationModeTraderBase is 
+    IGmxV2IsolationModeTraderBase,
     OnlyDolomiteMarginForUpgradeable,
-    Initializable,
-    IGmxV2IsolationModeTraderBase 
+    Initializable
 {
     using SafeERC20 for IWETH;
 

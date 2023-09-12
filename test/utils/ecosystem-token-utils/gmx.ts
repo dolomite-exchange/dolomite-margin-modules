@@ -206,11 +206,19 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
-  return createContractWithAbi(
+  const implementation = await createContractWithAbi<GmxV2IsolationModeUnwrapperTraderV2>(
     GmxV2IsolationModeUnwrapperTraderV2__factory.abi,
     GmxV2IsolationModeUnwrapperTraderV2__factory.bytecode,
-    getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(core, dGM, gmxRegistryV2),
+    []
   );
+
+  const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
+    IsolationModeTraderProxy__factory.abi,
+    IsolationModeTraderProxy__factory.bytecode,
+    await getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(core, implementation, dGM, gmxRegistryV2),
+  );
+
+  return GmxV2IsolationModeUnwrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
 }
 
 export async function createGmxV2IsolationModeWrapperTraderV2(
@@ -258,6 +266,30 @@ export function getInitiateWrappingParams(
     traderParams: [{
       trader: wrapper.address,
       traderType: 3,
+      tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
+      makerAccountIndex: 0
+    }],
+    makerAccounts: [],
+    userConfig: { deadline: '123123123123123', balanceCheckFlag: 3 },
+  };
+}
+
+export function getInitiateUnwrappingParams(
+  accountNumber: BigNumberish,
+  marketId1: BigNumberish,
+  amountIn: BigNumberish,
+  marketId2: BigNumberish,
+  minAmountOut: BigNumberish,
+  unwrapper: GmxV2IsolationModeUnwrapperTraderV2,
+  executionFee: BigNumberish,
+): any {
+  return {
+    amountIn,
+    minAmountOut,
+    marketPath: [marketId1, marketId2],
+    traderParams: [{
+      trader: unwrapper.address,
+      traderType: 2,
       tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
       makerAccountIndex: 0
     }],

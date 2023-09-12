@@ -214,7 +214,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         }
 
         {
-            IGmxExchangeRouter.CreateDepositParams memory depositParamsTest = IGmxExchangeRouter.CreateDepositParams(
+            IGmxExchangeRouter.CreateDepositParams memory depositParams = IGmxExchangeRouter.CreateDepositParams(
                 /* receiver = */ address(this),
                 /* callbackContract = */ address(this),
                 /* uiFeeReceiver = */ address(0),
@@ -229,7 +229,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                 /* callbackGasLimit = */ _getUint256(_CALLBACK_GAS_LIMIT_SLOT)
             );
 
-            bytes32 depositKey = exchangeRouter.createDeposit(depositParamsTest);
+            bytes32 depositKey = exchangeRouter.createDeposit(depositParams);
             _setDepositInfo(depositKey, DepositInfo(tradeOriginatorForStackTooDeep, accountNumber));
             emit DepositCreated(depositKey);
         }
