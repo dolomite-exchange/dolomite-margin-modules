@@ -15,8 +15,8 @@
   },
   "ChainlinkPriceOracle": {
     "42161": {
-      "address": "0x8959a8d7D1B250531D6Fe94cB5d43Edc6d9aF663",
-      "transaction": "0xc4442e10b6977418ffa71d000255d4513eb47f46ab1726984655df172f9ee07c",
+      "address": "0xA07e80C08D8bae7fFA3e46534eaBdBb6Ca98da1D",
+      "transaction": "0xd7d3f02f9b7036a0e0e1c855db27f421370dc5fdfa0a8ec28dd2cd753a47ed59",
       "isVerified": true
     }
   },

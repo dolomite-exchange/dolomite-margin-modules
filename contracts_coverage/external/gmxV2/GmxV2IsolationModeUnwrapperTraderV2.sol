@@ -22,14 +22,18 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IWETH } from "../../protocol/interfaces/IWETH.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
+import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
+import { GmxWithdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawalCallbackReceiver.sol";
-import { EventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
-import { Withdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
-import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
+import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
+import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol";
+
 
 /**
  * @title   GmxV2IsolationModeUnwrapperTraderV2
@@ -37,35 +41,39 @@ import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationMod
  *
  * @notice  Used for unwrapping GMX GM (via withdrawing from GMX)
  */
-contract GmxV2IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2, IGmxWithdrawalCallbackReceiver {
+contract GmxV2IsolationModeUnwrapperTraderV2 is
+    UpgradeableIsolationModeUnwrapperTrader,
+    GmxV2IsolationModeTraderBase,
+    IGmxV2IsolationModeUnwrapperTraderV2,
+    IGmxWithdrawalCallbackReceiver
+{
     using SafeERC20 for IERC20;
+    using SafeERC20 for IWETH;
 
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeUnwrapperV2";
 
-    // ============ Constructor ============
+    receive() external payable {} // solhint-disable-line -no-empty-blocks
 
-    IGmxRegistryV2 public immutable GMX_REGISTRY_V2; // solhint-disable-line var-name-mixedcase
+    // ============ Initializer ============
 
-    // ============ Constructor ============
-
-    constructor(
+    function initialize(
         address _gmxRegistryV2,
-        address _dytGlp,
+        address _weth,
+        address _dGM,
         address _dolomiteMargin
-    )
-    IsolationModeUnwrapperTraderV2(
-        _dytGlp,
-        _dolomiteMargin
-    ) {
-        GMX_REGISTRY_V2 = IGmxRegistryV2(_gmxRegistryV2);
+    ) external initializer {
+        _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
+        _initializeTraderBase(_gmxRegistryV2, _weth);
+        _setAddress(_GMX_REGISTRY_V2_SLOT, _gmxRegistryV2);
     }
 
     // ============================================
     // ============= Public Functions =============
     // ============================================
 
+    // @audit Add some comment for guardian to check that we test it properly
     function createActionsForUnwrapping(
         uint256 _solidAccountId,
         uint256 _liquidAccountId,
@@ -88,18 +96,23 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2, 
     }
 
     function isValidOutputToken(address _outputToken) public view override returns (bool) {
-        // only return true if _outputToken is one of underlying tokens
-        return true;
+        address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).longToken();
+        address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).shortToken();
+        return _outputToken == longToken || _outputToken == shortToken;
     }
 
-    function afterWithdrawalExecution(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external {
+    function afterWithdrawalExecution(bytes32 key, GmxWithdrawal.Props memory withdrawal, GmxEventUtils.EventLogData memory eventData) external {
         // Burn the dolomite tokens
 
         // Create the rest of the actions
     }
 
-    function afterWithdrawalCancellation(bytes32 key, Withdrawal.Props memory withdrawal, EventUtils.EventLogData memory eventData) external {
+    function afterWithdrawalCancellation(bytes32 key, GmxWithdrawal.Props memory withdrawal, GmxEventUtils.EventLogData memory eventData) external {
 
+    }
+
+    function cancelWithdrawal(bytes32 _key) external {
+        GMX_REGISTRY_V2().gmxExchangeRouter().cancelWithdrawal(_key);
     }
 
     // ============================================

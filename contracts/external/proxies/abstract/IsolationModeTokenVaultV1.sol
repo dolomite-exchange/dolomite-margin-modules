@@ -299,6 +299,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
     external
+    virtual
     onlyVaultOwner(msg.sender) {
         _swapExactInputForOutput(
             _tradeAccountNumber,

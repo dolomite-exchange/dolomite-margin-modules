@@ -64,6 +64,8 @@ contract IsolationModeUpgradeableProxy is
 
     // ============ Functions ============
 
+    receive() external payable {} // solhint-disable-line no-empty-blocks
+
     // solhint-disable-next-line payable-fallback
     fallback() external payable requireIsInitialized {
         _callImplementation(implementation());

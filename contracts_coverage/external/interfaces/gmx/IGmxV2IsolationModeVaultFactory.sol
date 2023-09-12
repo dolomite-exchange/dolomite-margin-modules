@@ -31,6 +31,24 @@ import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for GM tokens.
  */
 interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
+
+    struct TokenAndMarketAddresses {
+        address marketToken;
+        address indexToken;
+        address shortToken;
+        address longToken;
+    }
+
+    struct TokenAndMarketParams {
+        address marketToken;
+        address indexToken;
+        uint256 indexTokenMarketId;
+        address shortToken;
+        uint256 shortTokenMarketId;
+        address longToken;
+        uint256 longTokenMarketId;
+    }
+
     // ================================================
     // ==================== Events ====================
     // ================================================
@@ -64,20 +82,28 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     function ownerSetGmxRegistryV2(address _gmxRegistryV2) external;
 
-    function setVaultFrozen(address _vault, bool _vaultFrozen) external;
+    function setIsVaultFrozen(address _vault, bool _isVaultFrozen) external;
 
-    function setSourceIsWrapper(address _vault, bool _sourceIsWrapper) external;
+    function setIsDepositSourceWrapper(address _vault, bool _isDepositSourceWrapper) external;
 
     function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
 
     function gmxRegistryV2() external view returns (IGmxRegistryV2);
 
-    function initialShortToken() external view returns (address);
+    function marketToken() external view returns (address);
 
-    function initialShortTokenMarketId() external view returns (uint256);
+    function indexToken() external view returns (address);
 
-    function initialLongToken() external view returns (address);
+    function indexTokenMarketId() external view returns (uint256);
 
-    function initialLongTokenMarketId() external view returns (uint256);
+    function shortToken() external view returns (address);
+
+    function shortTokenMarketId() external view returns (uint256);
+
+    function longToken() external view returns (address);
+
+    function longTokenMarketId() external view returns (uint256);
+
+    function getMarketInfo() external view returns (TokenAndMarketParams memory);
 
 }

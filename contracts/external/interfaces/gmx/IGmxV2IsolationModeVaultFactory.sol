@@ -33,6 +33,27 @@ import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
 interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     // ================================================
+    // ==================== Structs ===================
+    // ================================================
+
+    struct TokenAndMarketAddresses {
+        address marketToken;
+        address indexToken;
+        address shortToken;
+        address longToken;
+    }
+
+    struct TokenAndMarketParams {
+        address marketToken;
+        address indexToken;
+        uint256 indexTokenMarketId;
+        address shortToken;
+        uint256 shortTokenMarketId;
+        address longToken;
+        uint256 longTokenMarketId;
+    }
+
+    // ================================================
     // ==================== Events ====================
     // ================================================
 
@@ -65,13 +86,15 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     function ownerSetGmxRegistryV2(address _gmxRegistryV2) external;
 
-    function setVaultFrozen(address _vault, bool _vaultFrozen) external;
+    function setIsVaultFrozen(address _vault, bool _isVaultFrozen) external;
 
-    function setSourceIsWrapper(address _vault, bool _sourceIsWrapper) external;
+    function setIsDepositSourceWrapper(address _vault, bool _isDepositSourceWrapper) external;
 
     function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
 
     function gmxRegistryV2() external view returns (IGmxRegistryV2);
+
+    function marketToken() external view returns (address);
 
     function indexToken() external view returns (address);
 
@@ -84,4 +107,6 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
     function longToken() external view returns (address);
 
     function longTokenMarketId() external view returns (uint256);
+
+    function getMarketInfo() external view returns (TokenAndMarketParams memory);
 }

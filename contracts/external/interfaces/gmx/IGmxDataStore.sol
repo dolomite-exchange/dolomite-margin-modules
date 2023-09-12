@@ -22,10 +22,12 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   DataStore
+ * @title   IGmxDataStore
  * @author  Dolomite
  *
- * @notice  GMX DataStore
+ * @notice  GMX DataStore interface
  */
-contract DataStore {
+interface IGmxDataStore {
+
+    function getUint(bytes32 _key) external view returns (uint256);
 }
