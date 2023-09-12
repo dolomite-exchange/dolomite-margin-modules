@@ -113,18 +113,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         (uint256 minOutputAmount, bytes memory extraOrderData) = abi.decode(_orderData, (uint256, bytes));
 
-        // Removed this check because input token has already been transferred
-        // {
-        //     uint256 balance = IERC20(VAULT_FACTORY().UNDERLYING_TOKEN()).balanceOf(address(this));
-        //     Require.that(
-        //         balance >= _inputAmount,
-        //         _FILE,
-        //         "Insufficient input token",
-        //         balance,
-        //         _inputAmount
-        //     );
-        // }
-
         uint256 outputAmount = _exchangeUnderlyingTokenToOutputToken(
             _tradeOriginator,
             _receiver,
@@ -170,31 +158,27 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         GmxEventUtils.AddressKeyValue memory secondaryOutputTokenAddress = _eventData.addressItems.items[1];
         GmxEventUtils.UintKeyValue memory secondaryOutputTokenAmount = _eventData.uintItems.items[1];
         Require.that(
-            keccak256(abi.encodePacked(outputTokenAddress.key)) 
-                == keccak256(abi.encodePacked("outputToken")),
+            keccak256(abi.encodePacked(outputTokenAddress.key)) == keccak256(abi.encodePacked("outputToken")),
             _FILE,
             "Unexpected return data"
         );
         Require.that(
-            keccak256(abi.encodePacked(outputTokenAmount.key)) 
-                == keccak256(abi.encodePacked("outputAmount")),
+            keccak256(abi.encodePacked(outputTokenAmount.key)) == keccak256(abi.encodePacked("outputAmount")),
             _FILE,
             "Unexpected return data"
         );
         Require.that(
-            keccak256(abi.encodePacked(secondaryOutputTokenAddress.key)) 
-                == keccak256(abi.encodePacked("secondaryOutputToken")),
+            keccak256(abi.encodePacked(secondaryOutputTokenAddress.key)) == keccak256(abi.encodePacked("secondaryOutputToken")),
             _FILE,
             "Unexpected return data"
         );
         Require.that(
-            keccak256(abi.encodePacked(secondaryOutputTokenAmount.key)) 
-                == keccak256(abi.encodePacked("secondaryOutputAmount")),
+            keccak256(abi.encodePacked(secondaryOutputTokenAmount.key)) == keccak256(abi.encodePacked("secondaryOutputAmount")),
             _FILE,
             "Unexpected return data"
         );
         Require.that(
-            outputTokenAmount.value > 0 && secondaryOutputTokenAmount.value == 0,
+            outputTokenAmount.value == 0 || secondaryOutputTokenAmount.value == 0,
             _FILE,
             "Can only receive one token"
         );
@@ -330,15 +314,14 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             "Invalid transfer amount"
         );
 
-        // Removed this check because amount is already transferred
-        // uint256 underlyingBalanceOf = IIsolationModeTokenVaultV1(_accountInfo.owner).underlyingBalanceOf();
-        // Require.that(
-        //     underlyingBalanceOf >= transferAmount,
-        //     _FILE,
-        //     "Insufficient balance",
-        //     underlyingBalanceOf,
-        //     transferAmount
-        // );
+        uint256 underlyingVirtualBalance = IGmxV2IsolationModeTokenVaultV1(_accountInfo.owner).virtualBalance();
+        Require.that(
+            underlyingVirtualBalance >= transferAmount,
+            _FILE,
+            "Insufficient balance",
+            underlyingVirtualBalance,
+            transferAmount
+        );
 
         VAULT_FACTORY().enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
     }

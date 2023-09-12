@@ -30,6 +30,7 @@ import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 
@@ -143,23 +144,24 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
             swapPath[0] = UNDERLYING_TOKEN();
 
             IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
+            IGmxV2IsolationModeUnwrapperTraderV2 unwrapper = registry().gmxV2UnwrapperTrader();
             IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = 
                 IGmxExchangeRouter.CreateWithdrawalParams(
-                    /* receiver = */ address(registry().gmxV2UnwrapperTrader()),
-                    /* callbackContract = */ address(registry().gmxV2UnwrapperTrader()),
+                    /* receiver = */ address(unwrapper),
+                    /* callbackContract = */ address(unwrapper),
                     /* uiFeeReceiver = */ address(0),
                     /* market = */ UNDERLYING_TOKEN(),
                     /* longTokenSwapPath = */ _outputToken == factory.longToken() ? new address[](0) : swapPath,
                     /* shortTokenSwapPath = */ _outputToken == factory.shortToken() ? new address[](0) : swapPath,
-                    /* minLongTokenAmount = */ _minOutputAmount,
-                    /* minShortTokenAmount = */ _minOutputAmount,
+                    /* minLongTokenAmount = */ _outputToken == factory.longToken() ? _minOutputAmount : 0,
+                    /* minShortTokenAmount = */ _outputToken == factory.shortToken() ? _minOutputAmount : 0,
                     /* shouldUnwrapNativeToken = */ false,
                     /* executionFee = */ ethExecutionFee,
-                    /* callbackGasLimit = */ registry().gmxV2UnwrapperTrader().callbackGasLimit()
+                    /* callbackGasLimit = */ unwrapper.callbackGasLimit()
             );
 
             bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
-            registry().gmxV2UnwrapperTrader().vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _outputToken);
+            unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _outputToken);
     }
 
     // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can
