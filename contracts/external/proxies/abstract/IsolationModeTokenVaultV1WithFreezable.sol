@@ -270,7 +270,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
     )
     internal 
     virtual
-    // requireNotFrozen
+    requireNotFrozen
     override {
         super._swapExactInputForOutput(
             _tradeAccountNumber,

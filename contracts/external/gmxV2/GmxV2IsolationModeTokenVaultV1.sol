@@ -27,12 +27,11 @@ import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
-
-import "hardhat/console.sol";
 
 
 /**
@@ -104,9 +103,10 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         WETH.deposit{value: msg.value}();
         WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
 
-        // @audit Will this allow reentrancy in _swapExactInputForOutput. May have to requireNotFrozen on external functions instead of internal
-        // @follow-up Can't freeze before this or internal call fails because frozen. Can't freeze after or executeDepositFails because it's not frozen
-        // So currently freezing in the wrapper
+        // @audit Will this allow reentrancy in _swapExactInputForOutput. 
+        // May have to requireNotFrozen on external functions instead of internal
+        // @follow-up Can't freeze before this or internal call fails because frozen.
+        //  Can't freeze after or executeDepositFails because it's not frozen. So currently freezing in the wrapper
         _swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
@@ -143,18 +143,19 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
             swapPath[0] = UNDERLYING_TOKEN();
 
             IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
-            IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
-                /* receiver = */ address(registry().gmxV2UnwrapperTrader()),
-                /* callbackContract = */ address(registry().gmxV2UnwrapperTrader()),
-                /* uiFeeReceiver = */ address(0),
-                /* market = */ UNDERLYING_TOKEN(),
-                /* longTokenSwapPath = */ _outputToken == factory.longToken() ? new address[](0) : swapPath,
-                /* shortTokenSwapPath = */ _outputToken == factory.shortToken() ? new address[](0) : swapPath,
-                /* minLongTokenAmount = */ _minOutputAmount,
-                /* minShortTokenAmount = */ _minOutputAmount,
-                /* shouldUnwrapNativeToken = */ false,
-                /* executionFee = */ ethExecutionFee,
-                /* callbackGasLimit = */ registry().gmxV2UnwrapperTrader().callbackGasLimit()
+            IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = 
+                IGmxExchangeRouter.CreateWithdrawalParams(
+                    /* receiver = */ address(registry().gmxV2UnwrapperTrader()),
+                    /* callbackContract = */ address(registry().gmxV2UnwrapperTrader()),
+                    /* uiFeeReceiver = */ address(0),
+                    /* market = */ UNDERLYING_TOKEN(),
+                    /* longTokenSwapPath = */ _outputToken == factory.longToken() ? new address[](0) : swapPath,
+                    /* shortTokenSwapPath = */ _outputToken == factory.shortToken() ? new address[](0) : swapPath,
+                    /* minLongTokenAmount = */ _minOutputAmount,
+                    /* minShortTokenAmount = */ _minOutputAmount,
+                    /* shouldUnwrapNativeToken = */ false,
+                    /* executionFee = */ ethExecutionFee,
+                    /* callbackGasLimit = */ registry().gmxV2UnwrapperTrader().callbackGasLimit()
             );
 
             bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
@@ -195,6 +196,9 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
     override
     onlyVaultOwnerOrUnwrapper(msg.sender)
     {
+        if (isVaultFrozen()) {
+            _requireOnlyUnwrapper(msg.sender);
+        }
         _swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
@@ -307,6 +311,28 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
     // ======================== Internal Functions ========================
     // ==================================================================
 
+    function _swapExactInputForOutput(
+        uint256 _tradeAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    )
+    internal 
+    override {
+        IsolationModeTokenVaultV1._swapExactInputForOutput(
+            _tradeAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+    }
+
     function _setVirtualBalance(uint256 _bal) internal {
         _setUint256(_VIRTUAL_BALANCE_SLOT, _bal);
     }
@@ -327,11 +353,19 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         );
     }
 
-    function _requireOnlyVaultOwnerOrUnwrapper(address _from) internal {
+    function _requireOnlyVaultOwnerOrUnwrapper(address _from) internal view {
         Require.that(
             _from == address(_proxySelf().owner()) || _from == address(registry().gmxV2UnwrapperTrader()),
             _FILE,
             "Only owner or unwrapper can call"
+        );
+    }
+
+    function _requireOnlyUnwrapper(address _from) internal view {
+        Require.that(
+            _from == address(registry().gmxV2UnwrapperTrader()),
+            _FILE,
+            "Only unwrapper if frozen"
         );
     }
 }

@@ -24,7 +24,7 @@ import { GmxV2IsolationModeTraderBase } from "../external/gmxV2/GmxV2IsolationMo
 
 
 /**
- * @title   TestPendleYtGLP2024IsolationModeTokenVaultV1
+ * @title   TestGmxV2IsolationModeTraderBase
  * @author  Dolomite
  *
  * @notice  Test implementation for exposing areas for coverage testing

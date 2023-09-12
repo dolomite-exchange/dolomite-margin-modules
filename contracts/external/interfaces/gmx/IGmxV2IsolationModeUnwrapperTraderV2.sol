@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
 import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolationModeUnwrapperTrader.sol";
 
@@ -30,7 +29,10 @@ import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolati
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeUnwrapperTraderV2 is IGmxV2IsolationModeTraderBase, IUpgradeableIsolationModeUnwrapperTrader {
+interface IGmxV2IsolationModeUnwrapperTraderV2 is 
+    IGmxV2IsolationModeTraderBase,
+    IUpgradeableIsolationModeUnwrapperTrader 
+{
 
     struct WithdrawalInfo {
         address vault;

@@ -24,7 +24,7 @@ import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
 
 
 /**
- * @title   IGmxV2IsolationModeTokenVault
+ * @title   IGmxV2IsolationModeTokenVaultV1
  * @author  Dolomite
  *
  */

@@ -1,4 +1,3 @@
-import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
@@ -25,9 +24,8 @@ import {
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
   createGmxV2MarketTokenPriceOracle,
-  getInitiateUnwrappingParams,
 } from 'test/utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, disableInterestAccrual, getDefaultCoreProtocolConfig, setupCoreProtocol, setupGMBalance, setupNativeUSDCBalance, setupTestMarket, setupUSDCBalance, setupUserVaultProxy, setupWETHBalance } from 'test/utils/setup';
+import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupGMBalance, setupNativeUSDCBalance, setupTestMarket, setupUSDCBalance, setupUserVaultProxy, setupWETHBalance } from 'test/utils/setup';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';

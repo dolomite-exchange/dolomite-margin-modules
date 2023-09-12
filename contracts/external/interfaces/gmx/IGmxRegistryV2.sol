@@ -27,8 +27,8 @@ import { IGmxDepositHandler } from "./IGmxDepositHandler.sol";
 import { IGmxExchangeRouter } from "./IGmxExchangeRouter.sol";
 import { IGmxReader } from "./IGmxReader.sol";
 import { IGmxRouter } from "./IGmxRouter.sol";
-import { IGmxV2IsolationModeWrapperTraderV2 } from "./IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "./IGmxV2IsolationModeUnwrapperTraderV2.sol";
+import { IGmxV2IsolationModeWrapperTraderV2 } from "./IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxWithdrawalHandler } from "./IGmxWithdrawalHandler.sol";
 import { IBaseRegistry } from "../IBaseRegistry.sol";
 
