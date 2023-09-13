@@ -39,6 +39,7 @@ interface IDolomiteRegistry {
     event GenericTraderProxySet(address indexed _genericTraderProxy);
     event ExpirySet(address indexed _expiry);
     event SlippageToleranceForPauseSentinelSet(uint256 slippageTolerance);
+    event LiquidatorAssetRegistrySet(address indexed _liquidatorAssetRegistry);
 
     // ========================================================
     // =================== Admin Functions ====================
@@ -96,5 +97,5 @@ interface IDolomiteRegistry {
     /**
      * @return  The address of the liquidator asset registry contract
      */
-    function liquidatorRegistry() external view returns (ILiquidatorAssetRegistry);
+    function liquidatorAssetRegistry() external view returns (ILiquidatorAssetRegistry);
 }

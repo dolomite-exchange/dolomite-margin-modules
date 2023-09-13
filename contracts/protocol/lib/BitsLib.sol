@@ -32,44 +32,44 @@ library BitsLib {
 
     // ============ Constants ============
 
-    uint internal constant ONE = 1;
+    uint256 internal constant ONE = 1;
     uint256 internal constant MAX_UINT_BITS = 256;
 
     // ============ Functions ============
 
-    function createBitmaps(uint maxLength) internal pure returns (uint[] memory) {
+    function createBitmaps(uint256 maxLength) internal pure returns (uint[] memory) {
         return new uint[]((maxLength / MAX_UINT_BITS) + ONE);
     }
 
     function getMarketIdFromBit(
-        uint index,
-        uint bit
+        uint256 index,
+        uint256 bit
     ) internal pure returns (uint) {
         return (MAX_UINT_BITS * index) + bit;
     }
 
     function setBit(
         uint[] memory bitmaps,
-        uint marketId
+        uint256 marketId
     ) internal pure {
-        uint bucketIndex = marketId / MAX_UINT_BITS;
-        uint indexFromRight = marketId % MAX_UINT_BITS;
+        uint256 bucketIndex = marketId / MAX_UINT_BITS;
+        uint256 indexFromRight = marketId % MAX_UINT_BITS;
         bitmaps[bucketIndex] |= (ONE << indexFromRight);
     }
 
     function hasBit(
         uint[] memory bitmaps,
-        uint marketId
+        uint256 marketId
     ) internal pure returns (bool) {
-        uint bucketIndex = marketId / MAX_UINT_BITS;
-        uint indexFromRight = marketId % MAX_UINT_BITS;
-        uint bit = bitmaps[bucketIndex] & (ONE << indexFromRight);
+        uint256 bucketIndex = marketId / MAX_UINT_BITS;
+        uint256 indexFromRight = marketId % MAX_UINT_BITS;
+        uint256 bit = bitmaps[bucketIndex] & (ONE << indexFromRight);
         return bit > 0;
     }
 
     function unsetBit(
-        uint bitmap,
-        uint bit
+        uint256 bitmap,
+        uint256 bit
     ) internal pure returns (uint) {
         return bitmap & ~(ONE << bit);
     }
@@ -78,33 +78,33 @@ library BitsLib {
     function getLeastSignificantBit(uint256 x) internal pure returns (uint) {
         // gas usage peaks at 350 per call
 
-        uint lsb = 255;
+        uint256 lsb = 255;
 
-        if (x & uint128(-1) > 0) {
+        if (x & type(uint128).max > 0) {
             lsb -= 128;
         } else {
             x >>= 128;
         }
 
-        if (x & uint64(-1) > 0) {
+        if (x & type(uint64).max > 0) {
             lsb -= 64;
         } else {
             x >>= 64;
         }
 
-        if (x & uint32(-1) > 0) {
+        if (x & type(uint32).max > 0) {
             lsb -= 32;
         } else {
             x >>= 32;
         }
 
-        if (x & uint16(-1) > 0) {
+        if (x & type(uint16).max > 0) {
             lsb -= 16;
         } else {
             x >>= 16;
         }
 
-        if (x & uint8(-1) > 0) {
+        if (x & type(uint8).max > 0) {
             lsb -= 8;
         } else {
             x >>= 8;

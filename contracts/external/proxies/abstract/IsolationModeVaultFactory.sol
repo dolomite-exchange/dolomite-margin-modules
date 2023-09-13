@@ -488,7 +488,7 @@ abstract contract IsolationModeVaultFactory is
             "from/to must eq DolomiteMargin"
         );
 
-        uint _transferCursor = transferCursor;
+        uint256 _transferCursor = transferCursor;
         QueuedTransfer memory queuedTransfer = _cursorToQueuedTransferMap[_transferCursor];
         Require.that(
             queuedTransfer.from == _from

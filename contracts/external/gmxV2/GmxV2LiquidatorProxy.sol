@@ -25,7 +25,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
-import { LiquidatorProxyBase } from "../general/LiquidatorProxyBase.sol";
+import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
@@ -37,7 +37,7 @@ import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2Isolati
  *
  * @notice  Liquidator for handling the GMX V2 (GM) tokens.
  */
-contract GmxV2LiquidatorProxy is LiquidatorProxyBase {
+contract GmxV2LiquidatorProxy is BaseLiquidatorProxy {
 
     // ============================ Constants ============================
 
@@ -54,7 +54,7 @@ contract GmxV2LiquidatorProxy is LiquidatorProxyBase {
         address _dolomiteMargin,
         address _expiry
     )
-    LiquidatorProxyBase(
+    BaseLiquidatorProxy(
         _dolomiteMargin,
         _expiry
     ) {
@@ -65,27 +65,29 @@ contract GmxV2LiquidatorProxy is LiquidatorProxyBase {
         IDolomiteStructs.AccountInfo calldata _liquidAccount,
         uint256 _gmMarketId,
         uint256 _dGmTokenAmount,
-        address _outputMarketId,
+        uint256 _outputMarketId,
         uint256 _minOutputAmount,
         uint256 _expirationTimestamp
     ) external requireIsAssetWhitelistedForLiquidation(_gmMarketId) {
-        address gmToken = DOLOMITE_MARGIN.getMarketIdByTokenAddress(_gmMarketId);
+        address gmToken = DOLOMITE_MARGIN.getMarketTokenAddress(_gmMarketId);
         Require.that(
             IGmxV2IsolationModeVaultFactory(gmToken).getAccountByVault(_liquidAccount.owner) != address(0),
             _FILE,
             "Invalid liquid account",
             _liquidAccount.owner
         );
-        // TODO: check is under water
-        constants.markets = _getMarketInfos(
-            constants.dolomiteMargin,
+        MarketInfo[] memory marketInfos = _getMarketInfos(
             /* _solidMarketIds = */ new uint256[](0),
-            constants.dolomiteMargin.getAccountMarketsWithBalances(_liquidAccount)
+            DOLOMITE_MARGIN.getAccountMarketsWithBalances(_liquidAccount)
+        );
+        _checkIsLiquidatable(
+            _liquidAccount,
+            marketInfos,
+            _outputMarketId,
+            _expirationTimestamp
         );
 
-        _checkIsLiquidatable(_liquidAccount, constants.markets, _outputMarketId, _expirationTimestamp);
-
-        address outputToken = DOLOMITE_MARGIN.getMarketIdByTokenAddress(_outputMarketId);
+        address outputToken = DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarketId);
         IGmxV2IsolationModeTokenVaultV1(_liquidAccount.owner).initiateUnwrappingForLiquidation(
             _liquidAccount.number,
             _dGmTokenAmount,
@@ -106,7 +108,9 @@ contract GmxV2LiquidatorProxy is LiquidatorProxyBase {
     function _checkRequirements(
         IDolomiteStructs.AccountInfo calldata _solidAccount,
         IDolomiteStructs.AccountInfo calldata _liquidAccount,
-        MarketInfo memory _marketInfos
+        MarketInfo[] memory _marketInfos,
+        uint256 _outputMarketId,
+        uint256 _expirationTimestamp
     )
     private
     view
@@ -121,12 +125,17 @@ contract GmxV2LiquidatorProxy is LiquidatorProxyBase {
         );
 
         // require that the liquidAccount is liquidatable
-        _checkIsLiquidatable(_liquidAccount, _marketInfos);
+        _checkIsLiquidatable(
+            _liquidAccount,
+            _marketInfos,
+            _outputMarketId,
+            _expirationTimestamp
+        );
     }
 
     function _checkIsLiquidatable(
         IDolomiteStructs.AccountInfo calldata _liquidAccount,
-        MarketInfo memory _marketInfos,
+        MarketInfo[] memory _marketInfos,
         uint256 _outputMarketId,
         uint256 _expirationTimestamp
     ) internal view {

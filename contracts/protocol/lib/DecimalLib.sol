@@ -52,7 +52,7 @@ library DecimalLib {
         pure
         returns (IDolomiteStructs.Decimal memory)
     {
-        return IDolomiteStructs.Decimal({ value: d.value.add(BASE) });
+        return IDolomiteStructs.Decimal({ value: d.value + BASE });
     }
 
     function mul(

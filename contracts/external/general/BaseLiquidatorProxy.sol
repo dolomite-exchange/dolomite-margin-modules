@@ -34,20 +34,18 @@ import { HasLiquidatorRegistry } from "./HasLiquidatorRegistry.sol";
 
 
 /**
- * @title LiquidatorProxyBase
+ * @title BaseLiquidatorProxy
  * @author Dolomite
  *
  * Inheritable contract that allows sharing code across different liquidator proxy contracts
  */
-abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
+abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
     using DecimalLib for IDolomiteMargin.Decimal;
     using TypesLib for IDolomiteMargin.Par;
 
     // ============ Constants ============
 
-    bytes32 private constant FILE = "LiquidatorProxyBase";
-    uint256 private constant MAX_UINT_BITS = 256;
-    uint256 private constant ONE = 1;
+    bytes32 private constant _FILE = "BaseLiquidatorProxy";
 
     // ============ Structs ============
 
@@ -96,7 +94,13 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
 
     // ================ Constructor ===============
 
-    constructor(address _dolomiteMargin, address _expiry) internal {
+    constructor(
+        address _dolomiteMargin,
+        address _expiry,
+        address _liquidatorAssetRegistry
+    )
+        HasLiquidatorRegistry(_liquidatorAssetRegistry)
+    {
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         EXPIRY = IExpiry(_expiry);
     }
@@ -129,7 +133,7 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
                 _constants.heldMarket,
                 _constants.owedMarket
             );
-            owedPriceAdj = owedMarketInfo.price.value.add(DecimalLib.mul(owedMarketInfo.price.value, spread));
+            owedPriceAdj = owedMarketInfo.price.value + DecimalLib.mul(owedMarketInfo.price.value, spread);
         }
 
         return LiquidatorProxyCache({
@@ -177,35 +181,35 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
 
         Require.that(
             _constants.owedMarket != _constants.heldMarket,
-            FILE,
+            _FILE,
             "Owed market equals held market",
             _constants.owedMarket
         );
 
         Require.that(
             !DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive(),
-            FILE,
+            _FILE,
             "Owed market cannot be positive",
             _constants.owedMarket
         );
 
         Require.that(
             DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive(),
-            FILE,
+            _FILE,
             "Held market cannot be negative",
             _constants.heldMarket
         );
 
         Require.that(
             uint32(_expiry) == _expiry,
-            FILE,
+            _FILE,
             "Expiry overflows",
             _expiry
         );
 
         Require.that(
             _expiry <= block.timestamp,
-            FILE,
+            _FILE,
             "Borrow not yet expired",
             _expiry
         );
@@ -226,7 +230,7 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
         Require.that(
             _constants.solidAccount.owner == msg.sender
             || DOLOMITE_MARGIN.getIsLocalOperator(_constants.solidAccount.owner, msg.sender),
-            FILE,
+            _FILE,
             "Sender not operator",
             msg.sender
         );
@@ -236,7 +240,7 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
             uint32 expiry = EXPIRY.getExpiry(_constants.liquidAccount, _constants.owedMarket);
             Require.that(
                 expiry == _constants.expiry,
-                FILE,
+                _FILE,
                 "Expiry mismatch",
                 expiry,
                 _constants.expiry
@@ -253,8 +257,8 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
     internal
     pure
     {
-        uint256 liquidHeldValue = _cache.heldPrice.mul(_cache.liquidHeldWei.value);
-        uint256 liquidOwedValue = _cache.owedPriceAdj.mul(_cache.liquidOwedWei.value);
+        uint256 liquidHeldValue = _cache.heldPrice * _cache.liquidHeldWei.value;
+        uint256 liquidOwedValue = _cache.owedPriceAdj * _cache.liquidOwedWei.value;
         if (liquidHeldValue < liquidOwedValue) {
             // The held collateral is worth less than the adjusted debt
             _cache.solidHeldUpdateWithReward = _cache.liquidHeldWei.value;
@@ -289,7 +293,7 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
         uint256 desiredLiquidationOwedAmount = _minOutputAmountWei;
         if (
             desiredLiquidationOwedAmount < _cache.owedWeiToLiquidate
-            && desiredLiquidationOwedAmount.mul(_cache.owedPriceAdj) < _cache.heldPrice.mul(_cache.liquidHeldWei.value)
+            && desiredLiquidationOwedAmount * _cache.owedPriceAdj < _cache.heldPrice * _cache.liquidHeldWei.value
         ) {
             // The user wants to liquidate less than the max amount, and the held collateral is worth more than the
             // desired debt to liquidate
@@ -301,15 +305,15 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
             );
         }
 
-        if (_inputAmountWei == uint(-1)) {
+        if (_inputAmountWei == type(uint256).max) {
             // This is analogous to saying "sell all of the collateral I receive from the liquidation"
             _newInputAmountWei = _cache.solidHeldUpdateWithReward;
         } else {
             _newInputAmountWei = _inputAmountWei;
         }
 
-        if (_minOutputAmountWei == uint(-1)) {
-            // Setting the value to uint(-1) is analogous to saying "liquidate all"
+        if (_minOutputAmountWei == type(uint256).max) {
+            // Setting the value to max uint256 is analogous to saying "liquidate all"
             _newMinOutputAmountWei = _cache.owedWeiToLiquidate;
         } else {
             _newMinOutputAmountWei = _minOutputAmountWei;
@@ -329,7 +333,7 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
     returns (bool)
     {
         uint256 requiredMargin = DecimalLib.mul(_borrowValue, _ratio);
-        return _supplyValue >= _borrowValue.add(requiredMargin);
+        return _supplyValue >= _borrowValue + requiredMargin;
     }
 
     /**
@@ -448,15 +452,15 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
             IDolomiteMargin.Par memory par = DOLOMITE_MARGIN.getAccountPar(_account, _marketIds[i]);
             MarketInfo memory marketInfo = _binarySearch(_marketInfos, _marketIds[i]);
             IDolomiteMargin.Wei memory userWei = InterestIndexLib.parToWei(par, marketInfo.index);
-            uint256 assetValue = userWei.value.mul(marketInfo.price.value);
+            uint256 assetValue = userWei.value * marketInfo.price.value;
             IDolomiteMargin.Decimal memory marginPremium = DecimalLib.one();
             if (_adjustForMarginPremiums) {
                 marginPremium = DecimalLib.onePlus(DOLOMITE_MARGIN.getMarketMarginPremium(_marketIds[i]));
             }
             if (userWei.sign) {
-                supplyValue.value = supplyValue.value.add(DecimalLib.div(assetValue, marginPremium));
+                supplyValue.value = supplyValue.value + DecimalLib.div(assetValue, marginPremium);
             } else {
-                borrowValue.value = borrowValue.value.add(DecimalLib.mul(assetValue, marginPremium));
+                borrowValue.value = borrowValue.value + DecimalLib.mul(assetValue, marginPremium);
             }
         }
 
@@ -486,7 +490,7 @@ abstract contract LiquidatorProxyBase is HasLiquidatorRegistry {
     ) private pure returns (MarketInfo memory) {
         uint256 len = _endExclusive - _beginInclusive;
         if (len == 0 || (len == 1 && _markets[_beginInclusive].marketId != _marketId)) {
-            revert("LiquidatorProxyBase: Market not found");
+            revert("BaseLiquidatorProxy: Market not found");
         }
 
         uint256 mid = _beginInclusive + len / 2;

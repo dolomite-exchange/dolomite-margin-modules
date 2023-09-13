@@ -69,7 +69,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
 
     modifier onlyLiquidator(address _from) {
         Require.that(
-            registry().dolomiteRegistry().liquidatorRegistry().isAssetWhitelistedForLiquidation(
+            registry().dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(
                 IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).marketId(),
                 _from
             ),

@@ -23,6 +23,12 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 
 
+/**
+ * @title HasLiquidatorRegistry
+ * @author Dolomite
+ *
+ * Contract for storing and referring to the liquidator asset registry for whitelisting/handling liquidations
+ */
 contract HasLiquidatorRegistry {
 
     // ============ Constants ============

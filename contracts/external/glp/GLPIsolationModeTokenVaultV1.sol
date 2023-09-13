@@ -162,7 +162,7 @@ contract GLPIsolationModeTokenVaultV1 is
         _setIsAcceptingFullAccountTransfer(true);
 
         // the amount of fsGLP being deposited is the current balance of fsGLP, since we should have started at 0.
-        uint amountWei = underlyingBalanceOf();
+        uint256 amountWei = underlyingBalanceOf();
         IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(/* _toAccountNumber = */ 0, amountWei);
 
         // reset the flag back to false
