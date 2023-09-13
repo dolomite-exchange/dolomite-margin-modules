@@ -148,9 +148,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         bytes32 _key,
         GmxWithdrawal.Props memory _withdrawal,
         GmxEventUtils.EventLogData memory _eventData
-        )
-        external
-        onlyHandler(msg.sender) {
+    )
+    external
+    onlyHandler(msg.sender) {
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         Require.that(
             withdrawalInfo.vault != address(0),
@@ -211,7 +211,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _withdrawal.numbers.marketTokenAmount,
             outputTokenAmount.value,
             traderParams,
-            new IDolomiteMargin.AccountInfo[](0),
+            /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
         );
         factory.setIsVaultFrozen(withdrawalInfo.vault, false);
@@ -234,6 +234,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         IERC20 underlyingToken = IERC20(address(factory.UNDERLYING_TOKEN()));
         underlyingToken.safeTransfer(withdrawalInfo.vault, _withdrawal.numbers.marketTokenAmount);
+        // TODO: remove this. If we need to liquidate someone, the balances won't match up
         Require.that(
             IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).virtualBalance()
                 == underlyingToken.balanceOf(withdrawalInfo.vault),
@@ -355,5 +356,4 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     returns (uint256) {
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
-
 }

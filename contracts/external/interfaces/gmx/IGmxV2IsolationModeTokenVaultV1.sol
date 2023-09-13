@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
+import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
 
 
 /**
@@ -30,11 +31,31 @@ import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
  */
 interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
+    function initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    ) external payable;
+
+    function initiateUnwrappingForLiquidation(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    ) external payable;
+
     function setIsVaultFrozen(bool _isVaultFrozen) external;
 
     function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
 
+    function isDepositSourceWrapper() external view returns (bool);
+
+    function isShouldSkipTransfer() external view returns (bool);
+
     function virtualBalance() external view returns (uint256);
+
+    function registry() external view returns (IGmxRegistryV2);
 }

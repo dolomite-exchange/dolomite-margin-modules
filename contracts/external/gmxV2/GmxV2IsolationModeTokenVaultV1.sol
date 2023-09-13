@@ -30,6 +30,7 @@ import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
@@ -39,10 +40,10 @@ import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/Isol
  * @title   GmxV2IsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the 
+ * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the
  *          Eth-Usdc GMX Market token that can be used to credit a user's Dolomite balance.
  */
-contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezable {
+contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, IsolationModeTokenVaultV1WithFreezable {
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
 
@@ -52,8 +53,8 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultV1";
     bytes32 private constant _VIRTUAL_BALANCE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.virtualBalance")) - 1);
-    bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1); // solhint-disable-line max-line-length 
-    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length 
+    bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
 
     IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
 
@@ -63,6 +64,19 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
 
     modifier onlyVaultOwnerOrUnwrapper(address _from) {
         _requireOnlyVaultOwnerOrUnwrapper(_from);
+        _;
+    }
+
+    modifier onlyLiquidator(address _from) {
+        Require.that(
+            registry().dolomiteRegistry().liquidatorRegistry().isAssetWhitelistedForLiquidation(
+                IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).marketId(),
+                _from
+            ),
+            _FILE,
+            "Only liquidator can call",
+            _from
+        );
         _;
     }
 
@@ -104,7 +118,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         WETH.deposit{value: msg.value}();
         WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
 
-        // @audit Will this allow reentrancy in _swapExactInputForOutput. 
+        // @audit Will this allow reentrancy in _swapExactInputForOutput.
         // May have to requireNotFrozen on external functions instead of internal
         // @follow-up Can't freeze before this or internal call fails because frozen.
         //  Can't freeze after or executeDepositFails because it's not frozen. So currently freezing in the wrapper
@@ -124,49 +138,88 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount
-    ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
-            Require.that(
-                registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken),
-                _FILE,
-                "Invalid output token"
+    )
+        external
+        payable
+        nonReentrant
+        onlyVaultOwner(msg.sender)
+        requireNotFrozen
+    {
+        _initiateUnwrapping(
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount
+        );
+    }
+
+    function initiateUnwrappingForLiquidation(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    )
+        external
+        payable
+        nonReentrant
+        onlyLiquidator(msg.sender)
+    {
+        // TODO: check is liquidatable or delegate to liquidator?
+        _initiateUnwrapping(
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount
+        );
+    }
+
+    function _initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    ) internal {
+        Require.that(
+            registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken),
+            _FILE,
+            "Invalid output token"
+        );
+        _setIsVaultFrozen(true);
+
+        uint256 ethExecutionFee = msg.value;
+        IGmxExchangeRouter exchangeRouter = registry().gmxExchangeRouter();
+        address withdrawalVault = registry().gmxWithdrawalVault();
+
+        exchangeRouter.sendWnt{value: ethExecutionFee}(withdrawalVault, ethExecutionFee);
+        IERC20(UNDERLYING_TOKEN()).safeApprove(address(registry().gmxRouter()), _inputAmount);
+        exchangeRouter.sendTokens(UNDERLYING_TOKEN(), withdrawalVault, _inputAmount);
+
+        address[] memory swapPath = new address[](1);
+        swapPath[0] = UNDERLYING_TOKEN();
+
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
+        IGmxV2IsolationModeUnwrapperTraderV2 unwrapper = registry().gmxV2UnwrapperTrader();
+        IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
+                /* receiver = */ address(unwrapper),
+                /* callbackContract = */ address(unwrapper),
+                /* uiFeeReceiver = */ address(0),
+                /* market = */ UNDERLYING_TOKEN(),
+                /* longTokenSwapPath = */ _outputToken == factory.longToken() ? new address[](0) : swapPath,
+                /* shortTokenSwapPath = */ _outputToken == factory.shortToken() ? new address[](0) : swapPath,
+                /* minLongTokenAmount = */ _outputToken == factory.longToken() ? _minOutputAmount : 0,
+                /* minShortTokenAmount = */ _outputToken == factory.shortToken() ? _minOutputAmount : 0,
+                /* shouldUnwrapNativeToken = */ false,
+                /* executionFee = */ ethExecutionFee,
+                /* callbackGasLimit = */ unwrapper.callbackGasLimit()
             );
-            _setIsVaultFrozen(true);
 
-            uint256 ethExecutionFee = msg.value;
-            IGmxExchangeRouter exchangeRouter = registry().gmxExchangeRouter();
-            address withdrawalVault = registry().gmxWithdrawalVault();
-
-            exchangeRouter.sendWnt{value: ethExecutionFee}(withdrawalVault, ethExecutionFee);
-            IERC20(UNDERLYING_TOKEN()).safeApprove(address(registry().gmxRouter()), _inputAmount);
-            exchangeRouter.sendTokens(UNDERLYING_TOKEN(), withdrawalVault, _inputAmount);
-
-            address[] memory swapPath = new address[](1);
-            swapPath[0] = UNDERLYING_TOKEN();
-
-            IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
-            IGmxV2IsolationModeUnwrapperTraderV2 unwrapper = registry().gmxV2UnwrapperTrader();
-            IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = 
-                IGmxExchangeRouter.CreateWithdrawalParams(
-                    /* receiver = */ address(unwrapper),
-                    /* callbackContract = */ address(unwrapper),
-                    /* uiFeeReceiver = */ address(0),
-                    /* market = */ UNDERLYING_TOKEN(),
-                    /* longTokenSwapPath = */ _outputToken == factory.longToken() ? new address[](0) : swapPath,
-                    /* shortTokenSwapPath = */ _outputToken == factory.shortToken() ? new address[](0) : swapPath,
-                    /* minLongTokenAmount = */ _outputToken == factory.longToken() ? _minOutputAmount : 0,
-                    /* minShortTokenAmount = */ _outputToken == factory.shortToken() ? _minOutputAmount : 0,
-                    /* shouldUnwrapNativeToken = */ false,
-                    /* executionFee = */ ethExecutionFee,
-                    /* callbackGasLimit = */ unwrapper.callbackGasLimit()
-            );
-
-            bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
-            unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _outputToken);
+        bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
+        unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _outputToken);
     }
 
     // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can
     /**
-     * 
+     *
      * @param  _key Deposit key
      * @dev    This calls the wrapper trader which will revert if given an invalid _key
      */
@@ -176,7 +229,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
     }
 
     /**
-     * 
+     *
      * @param  _key Withdrawal key
      * @dev    This calls the wrapper trader which will revert if given an invalid _key
      */
@@ -250,7 +303,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
                 );
                 _setIsDepositSourceWrapper(false);
             }
-            _compareVirtualToRealBalance();
+            _requireVirtualBalanceMatchesRealBalance();
         } else {
             Require.that(
                 isVaultFrozen(),
@@ -273,7 +326,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
 
         if (!isShouldSkipTransfer()) {
             IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
-            _compareVirtualToRealBalance();
+            _requireVirtualBalanceMatchesRealBalance();
         } else {
             Require.that(
                 isVaultFrozen(),
@@ -322,7 +375,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
-    internal 
+    internal
     override {
         IsolationModeTokenVaultV1._swapExactInputForOutput(
             _tradeAccountNumber,
@@ -347,7 +400,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
     }
 
-    function _compareVirtualToRealBalance() internal view {
+    function _requireVirtualBalanceMatchesRealBalance() internal view {
         Require.that(
             virtualBalance() == IERC20(UNDERLYING_TOKEN()).balanceOf(address(this)),
             _FILE,

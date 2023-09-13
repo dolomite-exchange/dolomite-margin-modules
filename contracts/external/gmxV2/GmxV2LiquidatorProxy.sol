@@ -25,9 +25,10 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
-import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { ILiquidatorProxyV4WithGenericTrader } from "../interfaces/ILiquidatorProxyV4WithGenericTrader.sol";
+import { LiquidatorProxyBase } from "../general/LiquidatorProxyBase.sol";
+import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 
 
 /**
@@ -36,7 +37,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
  *
  * @notice  Liquidator for handling the GMX V2 (GM) tokens.
  */
-contract GmxV2LiquidatorProxy {
+contract GmxV2LiquidatorProxy is LiquidatorProxyBase {
 
     // ============================ Constants ============================
 
@@ -45,62 +46,127 @@ contract GmxV2LiquidatorProxy {
     // ============================ Public State Variables ============================
 
     IGmxRegistryV2 public immutable GMX_REGISTRY_V2; // solhint-disable-line var-name-mixedcase
-    ILiquidatorProxyV4WithGenericTrader public immutable LIQUIDATOR_PROXY_V4; // solhint-disable-line var-name-mixedcase
-    IDolomiteMargin public immutable DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
-
-    // ============================ Modifiers ============================
-
-    modifier onlyUnwrapper(address _sender) {
-        Require.that(
-            _sender == GMX_REGISTRY_V2.gmxV2UnwrapperTrader(),
-            _FILE,
-            "Only unwrapper can call",
-            _sender
-        );
-        _;
-    }
 
     // ============================ Constructor ============================
 
     constructor(
         address _gmxRegistryV2,
-        address _liquidatorProxyV4,
-        address _dolomiteMargin
+        address _dolomiteMargin,
+        address _expiry
+    )
+    LiquidatorProxyBase(
+        _dolomiteMargin,
+        _expiry
     ) {
         GMX_REGISTRY_V2 = IGmxRegistryV2(_gmxRegistryV2);
-        LIQUIDATOR_PROXY_V4 = ILiquidatorProxyV4WithGenericTrader(_liquidatorProxyV4);
-        DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
     }
 
     function prepareForLiquidation(
         IDolomiteStructs.AccountInfo calldata _liquidAccount,
-        address _token,
-        uint256 _amount
-    ) external onlyUnwrapper(msg.sender) {
+        uint256 _gmMarketId,
+        uint256 _dGmTokenAmount,
+        address _outputMarketId,
+        uint256 _minOutputAmount,
+        uint256 _expirationTimestamp
+    ) external requireIsAssetWhitelistedForLiquidation(_gmMarketId) {
+        address gmToken = DOLOMITE_MARGIN.getMarketIdByTokenAddress(_gmMarketId);
+        Require.that(
+            IGmxV2IsolationModeVaultFactory(gmToken).getAccountByVault(_liquidAccount.owner) != address(0),
+            _FILE,
+            "Invalid liquid account",
+            _liquidAccount.owner
+        );
+        // TODO: check is under water
+        constants.markets = _getMarketInfos(
+            constants.dolomiteMargin,
+            /* _solidMarketIds = */ new uint256[](0),
+            constants.dolomiteMargin.getAccountMarketsWithBalances(_liquidAccount)
+        );
 
+        _checkIsLiquidatable(_liquidAccount, constants.markets, _outputMarketId, _expirationTimestamp);
+
+        address outputToken = DOLOMITE_MARGIN.getMarketIdByTokenAddress(_outputMarketId);
+        IGmxV2IsolationModeTokenVaultV1(_liquidAccount.owner).initiateUnwrappingForLiquidation(
+            _liquidAccount.number,
+            _dGmTokenAmount,
+            outputToken,
+            _minOutputAmount
+        );
     }
 
-    function liquidate(
+    // ======================================================================
+    // ========================= Internal Functions =========================
+    // ======================================================================
+
+    /**
+     * Make some basic checks before attempting to liquidate an account.
+     *  - Require that the msg.sender has the permission to use the liquidator account
+     *  - Require that the liquid account is liquidatable
+     */
+    function _checkRequirements(
         IDolomiteStructs.AccountInfo calldata _solidAccount,
         IDolomiteStructs.AccountInfo calldata _liquidAccount,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderBase.TraderParam[] calldata _tradersPath,
-        IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
-        uint256 _expiry
-    ) external {
-        address inputToken = DOLOMITE_MARGIN.getMarketTokenAddress(_marketIdsPath[0]);
+        MarketInfo memory _marketInfos
+    )
+    private
+    view
+    {
+        // check credentials for msg.sender
+        Require.that(
+            _solidAccount.owner == msg.sender
+            || DOLOMITE_MARGIN.getIsLocalOperator(_solidAccount.owner, msg.sender),
+            _FILE,
+            "Sender not operator",
+            msg.sender
+        );
 
-        LIQUIDATOR_PROXY_V4.liquidate(
-            _solidAccount,
+        // require that the liquidAccount is liquidatable
+        _checkIsLiquidatable(_liquidAccount, _marketInfos);
+    }
+
+    function _checkIsLiquidatable(
+        IDolomiteStructs.AccountInfo calldata _liquidAccount,
+        MarketInfo memory _marketInfos,
+        uint256 _outputMarketId,
+        uint256 _expirationTimestamp
+    ) internal view {
+        if (_expirationTimestamp != 0) {
+            Require.that(
+                _expirationTimestamp <= block.timestamp,
+                _FILE,
+                "Account not expired",
+                _expirationTimestamp,
+                block.timestamp
+            );
+            Require.that(
+                EXPIRY.getExpiry(_liquidAccount, _outputMarketId) == uint32(_expirationTimestamp),
+                _FILE,
+                "Expiration mismatch"
+            );
+        }
+
+        (
+            IDolomiteStructs.MonetaryValue memory liquidSupplyValue,
+            IDolomiteStructs.MonetaryValue memory liquidBorrowValue
+        ) = _getAdjustedAccountValues(
+            _marketInfos,
             _liquidAccount,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _expiry
+            DOLOMITE_MARGIN.getAccountMarketsWithBalances(_liquidAccount)
+        );
+
+        Require.that(
+            liquidSupplyValue.value != 0,
+            _FILE,
+            "Liquid account no supply"
+        );
+
+        Require.that(
+            DOLOMITE_MARGIN.getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid ||
+                !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, DOLOMITE_MARGIN.getMarginRatio()),
+            _FILE,
+            "Liquid account not liquidatable",
+            liquidSupplyValue.value,
+            liquidBorrowValue.value
         );
     }
 }

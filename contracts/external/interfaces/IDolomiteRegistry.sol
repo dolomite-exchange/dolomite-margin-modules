@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
-
+import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 
 /**
  * @title   IDolomiteRegistry
@@ -55,12 +55,19 @@ interface IDolomiteRegistry {
      * @param  _expiry  The new address of the expiry contract
      */
     function ownerSetExpiry(address _expiry) external;
+
     /**
      *
      * @param  _slippageToleranceForPauseSentinel   The slippage tolerance (using 1e18 as the base) for zaps when pauses
      *                                              are enabled
      */
     function ownerSetSlippageToleranceForPauseSentinel(uint256 _slippageToleranceForPauseSentinel) external;
+
+    /**
+     *
+     * @param  _liquidatorRegistry  The new address of the liquidator registry
+     */
+    function ownerSetLiquidatorRegistry(address _liquidatorRegistry) external;
 
     // ========================================================
     // =================== Getter Functions ===================
@@ -85,4 +92,9 @@ interface IDolomiteRegistry {
      * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
      */
     function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
+
+    /**
+     * @return  The address of the liquidator asset registry contract
+     */
+    function liquidatorRegistry() external view returns (ILiquidatorAssetRegistry);
 }

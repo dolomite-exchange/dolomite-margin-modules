@@ -317,5 +317,4 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     {
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
-
 }
