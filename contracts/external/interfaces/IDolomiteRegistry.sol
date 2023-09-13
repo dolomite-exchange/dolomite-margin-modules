@@ -68,7 +68,7 @@ interface IDolomiteRegistry {
      *
      * @param  _liquidatorRegistry  The new address of the liquidator registry
      */
-    function ownerSetLiquidatorRegistry(address _liquidatorRegistry) external;
+    function ownerSetLiquidatorAssetRegistry(address _liquidatorRegistry) external;
 
     // ========================================================
     // =================== Getter Functions ===================

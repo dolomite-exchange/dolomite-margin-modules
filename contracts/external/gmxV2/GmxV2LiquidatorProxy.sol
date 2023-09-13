@@ -52,11 +52,13 @@ contract GmxV2LiquidatorProxy is BaseLiquidatorProxy {
     constructor(
         address _gmxRegistryV2,
         address _dolomiteMargin,
-        address _expiry
+        address _expiry,
+        address _liquidatorAssetRegistry
     )
     BaseLiquidatorProxy(
         _dolomiteMargin,
-        _expiry
+        _expiry,
+        _liquidatorAssetRegistry
     ) {
         GMX_REGISTRY_V2 = IGmxRegistryV2(_gmxRegistryV2);
     }
