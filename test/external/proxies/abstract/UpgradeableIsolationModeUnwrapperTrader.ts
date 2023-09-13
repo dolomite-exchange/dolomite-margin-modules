@@ -11,11 +11,8 @@ import {
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
-  TestIsolationModeUnwrapperTraderV2,
-  TestIsolationModeUnwrapperTraderV2__factory,
   TestUpgradeableIsolationModeUnwrapperTrader,
   TestUpgradeableIsolationModeUnwrapperTrader__factory,
-  TestUpgradeableIsolationModeWrapperTrader__factory,
 } from '../../../../src/types';
 import { AccountInfoStruct } from '../../../../src/utils';
 import { createContractWithAbi, createTestToken } from '../../../../src/utils/dolomite-utils';
@@ -80,18 +77,18 @@ describe('UpgradeableIsolationModeUnwrapperTrader', () => {
       [],
     );
     const calldata = await unwrapperImplementation.populateTransaction.initialize(
-        otherToken.address,
-        factory.address,
-        core.dolomiteMargin.address
+      otherToken.address,
+      factory.address,
+      core.dolomiteMargin.address,
     );
     const unwrapperProxy = await createContractWithAbi<IsolationModeTraderProxy>(
-        IsolationModeTraderProxy__factory.abi,
-        IsolationModeTraderProxy__factory.bytecode,
-        [
-            unwrapperImplementation.address,
-            core.dolomiteMargin.address,
-            calldata.data!,
-        ],
+      IsolationModeTraderProxy__factory.abi,
+      IsolationModeTraderProxy__factory.bytecode,
+      [
+        unwrapperImplementation.address,
+        core.dolomiteMargin.address,
+        calldata.data!,
+      ],
     );
     unwrapper = TestUpgradeableIsolationModeUnwrapperTrader__factory.connect(unwrapperProxy.address, core.hhUser1);
 

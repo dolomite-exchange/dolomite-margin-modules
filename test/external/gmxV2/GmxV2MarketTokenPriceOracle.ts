@@ -1,7 +1,6 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
-import { ethers } from 'hardhat';
 import {
   GmxRegistryV2,
   GmxV2IsolationModeUnwrapperTraderV2,
@@ -10,7 +9,7 @@ import {
   GmxV2MarketTokenPriceOracle,
 } from 'src/types';
 import { Network } from 'src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
@@ -20,7 +19,7 @@ import {
   createGmxV2IsolationModeWrapperTraderV2,
   createGmxV2MarketTokenPriceOracle,
 } from 'test/utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
 
 const GM_ETH_USD_PRICE = BigNumber.from('924171896095781105283809017999');
 const blockNumber = 128276157;
@@ -52,7 +51,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       allowableMarketIds,
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-      userVaultImplementation
+      userVaultImplementation,
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
@@ -90,11 +89,11 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     it('should fail when token sent is not a valid token', async () => {
       await expectThrow(
         gmPriceOracle.getPrice(ADDRESSES.ZERO),
-        `GmxV2MarketTokenPriceOracle: Invalid token <${ADDRESSES.ZERO}>`
+        `GmxV2MarketTokenPriceOracle: Invalid token <${ADDRESSES.ZERO}>`,
       );
       await expectThrow(
         gmPriceOracle.getPrice(core.tokens.usdc.address),
-        `GmxV2MarketTokenPriceOracle: Invalid token <${core.tokens.usdc.address.toLowerCase()}>`
+        `GmxV2MarketTokenPriceOracle: Invalid token <${core.tokens.usdc.address.toLowerCase()}>`,
       );
     });
 
@@ -102,7 +101,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       await core.dolomiteMargin.ownerSetIsClosing(marketId, false);
       await expectThrow(
         gmPriceOracle.getPrice(factory.address),
-        'GmxV2MarketTokenPriceOracle: gmToken cannot be borrowable'
+        'GmxV2MarketTokenPriceOracle: gmToken cannot be borrowable',
       );
     });
   });
@@ -120,14 +119,14 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         gmPriceOracle.connect(core.hhUser1).ownerSetMarketToken(core.tokens.weth.address, true),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if token does not have 18 decimals', async () => {
       await expectThrow(
         gmPriceOracle.connect(core.governance).ownerSetMarketToken(core.tokens.usdc.address, true),
-        'GmxV2MarketTokenPriceOracle: Invalid market token decimals'
+        'GmxV2MarketTokenPriceOracle: Invalid market token decimals',
       );
     });
   });

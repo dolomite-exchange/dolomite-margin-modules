@@ -29,9 +29,9 @@ import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
-import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 
@@ -164,57 +164,12 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         nonReentrant
         onlyLiquidator(msg.sender)
     {
-        // TODO: check is liquidatable or delegate to liquidator?
         _initiateUnwrapping(
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
             _minOutputAmount
         );
-    }
-
-    function _initiateUnwrapping(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount
-    ) internal {
-        Require.that(
-            registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken),
-            _FILE,
-            "Invalid output token"
-        );
-        _setIsVaultFrozen(true);
-
-        uint256 ethExecutionFee = msg.value;
-        IGmxExchangeRouter exchangeRouter = registry().gmxExchangeRouter();
-        address withdrawalVault = registry().gmxWithdrawalVault();
-
-        exchangeRouter.sendWnt{value: ethExecutionFee}(withdrawalVault, ethExecutionFee);
-        IERC20(UNDERLYING_TOKEN()).safeApprove(address(registry().gmxRouter()), _inputAmount);
-        exchangeRouter.sendTokens(UNDERLYING_TOKEN(), withdrawalVault, _inputAmount);
-
-        address[] memory swapPath = new address[](1);
-        swapPath[0] = UNDERLYING_TOKEN();
-
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
-        IGmxV2IsolationModeUnwrapperTraderV2 unwrapper = registry().gmxV2UnwrapperTrader();
-        IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
-                /* receiver = */ address(unwrapper),
-                /* callbackContract = */ address(unwrapper),
-                /* uiFeeReceiver = */ address(0),
-                /* market = */ UNDERLYING_TOKEN(),
-                /* longTokenSwapPath = */ _outputToken == factory.longToken() ? new address[](0) : swapPath,
-                /* shortTokenSwapPath = */ _outputToken == factory.shortToken() ? new address[](0) : swapPath,
-                /* minLongTokenAmount = */ _outputToken == factory.longToken() ? _minOutputAmount : 0,
-                /* minShortTokenAmount = */ _outputToken == factory.shortToken() ? _minOutputAmount : 0,
-                /* shouldUnwrapNativeToken = */ false,
-                /* executionFee = */ ethExecutionFee,
-                /* callbackGasLimit = */ unwrapper.callbackGasLimit()
-            );
-
-        bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
-        unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _outputToken);
     }
 
     // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can
@@ -386,6 +341,50 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
             _makerAccounts,
             _userConfig
         );
+    }
+
+    function _initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    ) internal {
+        Require.that(
+            registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken),
+            _FILE,
+            "Invalid output token"
+        );
+        _setIsVaultFrozen(true);
+
+        uint256 ethExecutionFee = msg.value;
+        IGmxExchangeRouter exchangeRouter = registry().gmxExchangeRouter();
+        address withdrawalVault = registry().gmxWithdrawalVault();
+
+        exchangeRouter.sendWnt{value: ethExecutionFee}(withdrawalVault, ethExecutionFee);
+        IERC20(UNDERLYING_TOKEN()).safeApprove(address(registry().gmxRouter()), _inputAmount);
+        exchangeRouter.sendTokens(UNDERLYING_TOKEN(), withdrawalVault, _inputAmount);
+
+        address[] memory swapPath = new address[](1);
+        swapPath[0] = UNDERLYING_TOKEN();
+
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
+        IGmxV2IsolationModeUnwrapperTraderV2 unwrapper = registry().gmxV2UnwrapperTrader();
+        IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
+            /* receiver = */ address(unwrapper),
+            /* callbackContract = */ address(unwrapper),
+            /* uiFeeReceiver = */ address(0),
+            /* market = */ UNDERLYING_TOKEN(),
+            /* longTokenSwapPath = */ _outputToken == factory.longToken() ? new address[](0) : swapPath,
+            /* shortTokenSwapPath = */ _outputToken == factory.shortToken() ? new address[](0) : swapPath,
+            /* minLongTokenAmount = */ _outputToken == factory.longToken() ? _minOutputAmount : 0,
+            /* minShortTokenAmount = */ _outputToken == factory.shortToken() ? _minOutputAmount : 0,
+            /* shouldUnwrapNativeToken = */ false,
+            /* executionFee = */ ethExecutionFee,
+            /* callbackGasLimit = */ unwrapper.callbackGasLimit()
+        );
+
+        bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
+        unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _outputToken);
     }
 
     function _setVirtualBalance(uint256 _bal) internal {

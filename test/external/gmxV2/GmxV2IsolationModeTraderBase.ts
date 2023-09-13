@@ -1,11 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import {
-  GmxRegistryV2,
-  IsolationModeTraderProxy,
-  TestGmxV2IsolationModeTraderBase,
-  TestGmxV2IsolationModeTraderBase__factory,
-} from 'src/types';
+import { GmxRegistryV2, TestGmxV2IsolationModeTraderBase, TestGmxV2IsolationModeTraderBase__factory } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
@@ -31,12 +26,12 @@ describe.only('GmxV2IsolationModeTraderBase', () => {
     const implementation = await createContractWithAbi(
       TestGmxV2IsolationModeTraderBase__factory.abi,
       TestGmxV2IsolationModeTraderBase__factory.bytecode,
-      []
+      [],
     );
     const calldata = await implementation.populateTransaction.initialize(
       gmxRegistryV2.address,
       core.tokens.weth.address,
-      core.dolomiteMargin.address
+      core.dolomiteMargin.address,
     );
     const proxy = await createIsolationModeTraderProxy(implementation.address, calldata.data!, core);
     trader = await TestGmxV2IsolationModeTraderBase__factory.connect(proxy.address, core.hhUser1);
@@ -69,7 +64,7 @@ describe.only('GmxV2IsolationModeTraderBase', () => {
     it('should work normally', async () => {
       const result = await trader.connect(core.governance).ownerSetIsHandler(
         core.gmxEcosystemV2!.gmxDepositHandler.address,
-        true
+        true,
       );
       await expectEvent(trader, result, 'OwnerSetIsHandler', {
         handler: core.gmxEcosystemV2!.gmxDepositHandler.address,
@@ -82,7 +77,7 @@ describe.only('GmxV2IsolationModeTraderBase', () => {
     it('should failed if not called by dolomite owner', async () => {
       await expectThrow(
         trader.connect(core.hhUser1).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -91,7 +86,7 @@ describe.only('GmxV2IsolationModeTraderBase', () => {
     it('should work normally', async () => {
       await setEtherBalance(trader.address, ONE_ETH_BI);
       await expect(() =>
-        trader.connect(core.governance).ownerWithdrawETH(core.governance.address)
+        trader.connect(core.governance).ownerWithdrawETH(core.governance.address),
       ).to.changeTokenBalance(core.tokens.weth, core.governance, ONE_ETH_BI);
     });
 
@@ -107,7 +102,7 @@ describe.only('GmxV2IsolationModeTraderBase', () => {
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         trader.connect(core.hhUser1).ownerWithdrawETH(core.governance.address),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -121,7 +116,7 @@ describe.only('GmxV2IsolationModeTraderBase', () => {
     it('should failed if not called by dolomite owner', async () => {
       await expectThrow(
         trader.connect(core.hhUser1).ownerSetCallbackGasLimit(ZERO_BI),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -135,25 +130,25 @@ describe.only('GmxV2IsolationModeTraderBase', () => {
     it('should fail if slippageMinimum is 0', async () => {
       await expectThrow(
         trader.connect(core.governance).ownerSetSlippageMinimum(0),
-        'GmxV2IsolationModeTraderBase: Invalid slippageMinimum'
+        'GmxV2IsolationModeTraderBase: Invalid slippageMinimum',
       );
     });
 
     it('should fail if slippage minimum is greater than  or equal to 10,000', async () => {
       await expectThrow(
         trader.connect(core.governance).ownerSetSlippageMinimum(10000),
-        'GmxV2IsolationModeTraderBase: Invalid slippageMinimum'
+        'GmxV2IsolationModeTraderBase: Invalid slippageMinimum',
       );
       await expectThrow(
         trader.connect(core.governance).ownerSetSlippageMinimum(10001),
-        'GmxV2IsolationModeTraderBase: Invalid slippageMinimum'
+        'GmxV2IsolationModeTraderBase: Invalid slippageMinimum',
       );
     });
 
     it('should failed if not called by dolomite owner', async () => {
       await expectThrow(
         trader.connect(core.hhUser1).ownerSetSlippageMinimum(ZERO_BI),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -167,7 +162,7 @@ describe.only('GmxV2IsolationModeTraderBase', () => {
     it('should fail if not called by valid handler', async () => {
       await expectThrow(
         trader.connect(core.hhUser1).testOnlyHandler(),
-        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
+        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

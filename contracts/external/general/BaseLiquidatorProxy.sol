@@ -19,33 +19,26 @@
 
 pragma solidity ^0.8.9;
 
+import { HasLiquidatorRegistry } from "./HasLiquidatorRegistry.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { BitsLib } from "../../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../../protocol/lib/DecimalLib.sol";
+import { DolomiteMarginMath } from "../../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
-import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
-
-import { DolomiteMarginMath } from "../../protocol/lib/DolomiteMarginMath.sol";
-
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
-import { HasLiquidatorRegistry } from "./HasLiquidatorRegistry.sol";
 
 
 /**
- * @title BaseLiquidatorProxy
- * @author Dolomite
+ * @title   BaseLiquidatorProxy
+ * @author  Dolomite
  *
  * Inheritable contract that allows sharing code across different liquidator proxy contracts
  */
 abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
     using DecimalLib for IDolomiteMargin.Decimal;
     using TypesLib for IDolomiteMargin.Par;
-
-    // ============ Constants ============
-
-    bytes32 private constant _FILE = "BaseLiquidatorProxy";
 
     // ============ Structs ============
 
@@ -86,6 +79,10 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
         uint256 owedPrice;
         uint256 owedPriceAdj;
     }
+
+    // ============ Constants ============
+
+    bytes32 private constant _FILE = "BaseLiquidatorProxy";
 
     // ============ Immutable Fields ============
 
@@ -249,94 +246,6 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
     }
 
     /**
-     * Calculate the maximum amount that can be liquidated on `liquidAccount`
-     */
-    function _calculateAndSetMaxLiquidationAmount(
-        LiquidatorProxyCache memory _cache
-    )
-    internal
-    pure
-    {
-        uint256 liquidHeldValue = _cache.heldPrice * _cache.liquidHeldWei.value;
-        uint256 liquidOwedValue = _cache.owedPriceAdj * _cache.liquidOwedWei.value;
-        if (liquidHeldValue < liquidOwedValue) {
-            // The held collateral is worth less than the adjusted debt
-            _cache.solidHeldUpdateWithReward = _cache.liquidHeldWei.value;
-            _cache.owedWeiToLiquidate = DolomiteMarginMath.getPartialRoundUp(
-                _cache.liquidHeldWei.value,
-                _cache.heldPrice,
-                _cache.owedPriceAdj
-            );
-            _cache.flipMarketsForExpiration = true;
-        } else {
-            _cache.solidHeldUpdateWithReward = DolomiteMarginMath.getPartial(
-                _cache.liquidOwedWei.value,
-                _cache.owedPriceAdj,
-                _cache.heldPrice
-            );
-            _cache.owedWeiToLiquidate = _cache.liquidOwedWei.value;
-        }
-    }
-
-    function _calculateAndSetActualLiquidationAmount(
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        LiquidatorProxyCache memory _cache
-    )
-    internal
-    pure
-    returns (uint256 _newInputAmountWei, uint256 _newMinOutputAmountWei)
-    {
-        // at this point, _cache.owedWeiToLiquidate should be the max amount that can be liquidated on the user.
-        assert(_cache.owedWeiToLiquidate > 0); // assert it was initialized
-
-        uint256 desiredLiquidationOwedAmount = _minOutputAmountWei;
-        if (
-            desiredLiquidationOwedAmount < _cache.owedWeiToLiquidate
-            && desiredLiquidationOwedAmount * _cache.owedPriceAdj < _cache.heldPrice * _cache.liquidHeldWei.value
-        ) {
-            // The user wants to liquidate less than the max amount, and the held collateral is worth more than the
-            // desired debt to liquidate
-            _cache.owedWeiToLiquidate = desiredLiquidationOwedAmount;
-            _cache.solidHeldUpdateWithReward = DolomiteMarginMath.getPartial(
-                desiredLiquidationOwedAmount,
-                _cache.owedPriceAdj,
-                _cache.heldPrice
-            );
-        }
-
-        if (_inputAmountWei == type(uint256).max) {
-            // This is analogous to saying "sell all of the collateral I receive from the liquidation"
-            _newInputAmountWei = _cache.solidHeldUpdateWithReward;
-        } else {
-            _newInputAmountWei = _inputAmountWei;
-        }
-
-        if (_minOutputAmountWei == type(uint256).max) {
-            // Setting the value to max uint256 is analogous to saying "liquidate all"
-            _newMinOutputAmountWei = _cache.owedWeiToLiquidate;
-        } else {
-            _newMinOutputAmountWei = _minOutputAmountWei;
-        }
-    }
-
-    /**
-     * Returns true if the supplyValue over-collateralizes the borrowValue by the ratio.
-     */
-    function _isCollateralized(
-        uint256 _supplyValue,
-        uint256 _borrowValue,
-        IDolomiteMargin.Decimal memory _ratio
-    )
-    internal
-    pure
-    returns (bool)
-    {
-        uint256 requiredMargin = DecimalLib.mul(_borrowValue, _ratio);
-        return _supplyValue >= _borrowValue + requiredMargin;
-    }
-
-    /**
      * Gets the current total supplyValue and borrowValue for some account. Takes into account what
      * the current index will be once updated.
      */
@@ -418,6 +327,94 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
         return marketInfos;
     }
 
+    /**
+     * Calculate the maximum amount that can be liquidated on `liquidAccount`
+     */
+    function _calculateAndSetMaxLiquidationAmount(
+        LiquidatorProxyCache memory _cache
+    )
+        internal
+        pure
+    {
+        uint256 liquidHeldValue = _cache.heldPrice * _cache.liquidHeldWei.value;
+        uint256 liquidOwedValue = _cache.owedPriceAdj * _cache.liquidOwedWei.value;
+        if (liquidHeldValue < liquidOwedValue) {
+            // The held collateral is worth less than the adjusted debt
+            _cache.solidHeldUpdateWithReward = _cache.liquidHeldWei.value;
+            _cache.owedWeiToLiquidate = DolomiteMarginMath.getPartialRoundUp(
+                _cache.liquidHeldWei.value,
+                _cache.heldPrice,
+                _cache.owedPriceAdj
+            );
+            _cache.flipMarketsForExpiration = true;
+        } else {
+            _cache.solidHeldUpdateWithReward = DolomiteMarginMath.getPartial(
+                _cache.liquidOwedWei.value,
+                _cache.owedPriceAdj,
+                _cache.heldPrice
+            );
+            _cache.owedWeiToLiquidate = _cache.liquidOwedWei.value;
+        }
+    }
+
+    function _calculateAndSetActualLiquidationAmount(
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        LiquidatorProxyCache memory _cache
+    )
+        internal
+        pure
+        returns (uint256 _newInputAmountWei, uint256 _newMinOutputAmountWei)
+    {
+        // at this point, _cache.owedWeiToLiquidate should be the max amount that can be liquidated on the user.
+        assert(_cache.owedWeiToLiquidate > 0); // assert it was initialized
+
+        uint256 desiredLiquidationOwedAmount = _minOutputAmountWei;
+        if (
+            desiredLiquidationOwedAmount < _cache.owedWeiToLiquidate
+            && desiredLiquidationOwedAmount * _cache.owedPriceAdj < _cache.heldPrice * _cache.liquidHeldWei.value
+        ) {
+            // The user wants to liquidate less than the max amount, and the held collateral is worth more than the
+            // desired debt to liquidate
+            _cache.owedWeiToLiquidate = desiredLiquidationOwedAmount;
+            _cache.solidHeldUpdateWithReward = DolomiteMarginMath.getPartial(
+                desiredLiquidationOwedAmount,
+                _cache.owedPriceAdj,
+                _cache.heldPrice
+            );
+        }
+
+        if (_inputAmountWei == type(uint256).max) {
+            // This is analogous to saying "sell all of the collateral I receive from the liquidation"
+            _newInputAmountWei = _cache.solidHeldUpdateWithReward;
+        } else {
+            _newInputAmountWei = _inputAmountWei;
+        }
+
+        if (_minOutputAmountWei == type(uint256).max) {
+            // Setting the value to max uint256 is analogous to saying "liquidate all"
+            _newMinOutputAmountWei = _cache.owedWeiToLiquidate;
+        } else {
+            _newMinOutputAmountWei = _minOutputAmountWei;
+        }
+    }
+
+    /**
+     * Returns true if the supplyValue over-collateralizes the borrowValue by the ratio.
+     */
+    function _isCollateralized(
+        uint256 _supplyValue,
+        uint256 _borrowValue,
+        IDolomiteMargin.Decimal memory _ratio
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        uint256 requiredMargin = DecimalLib.mul(_borrowValue, _ratio);
+        return _supplyValue >= _borrowValue + requiredMargin;
+    }
+
     function _binarySearch(
         MarketInfo[] memory _markets,
         uint256 _marketId
@@ -490,7 +487,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
     ) private pure returns (MarketInfo memory) {
         uint256 len = _endExclusive - _beginInclusive;
         if (len == 0 || (len == 1 && _markets[_beginInclusive].marketId != _marketId)) {
-            revert("BaseLiquidatorProxy: Market not found");
+            revert("BaseLiquidatorProxy: Market not found"); // solhint-disable-line reason-string
         }
 
         uint256 mid = _beginInclusive + len / 2;

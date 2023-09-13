@@ -56,17 +56,17 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
 
-    // ============ Constants ============
-
-    bytes32 private constant _FILE = "GmxV2IsolationModeUnwrapperV2";
-    bytes32 private constant _WITHDRAWAL_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalInfo")) - 1);
-
     // ============ Enums ============
 
     enum ExchangeType {
         Normal,
         Liquidation
     }
+
+    // ============ Constants ============
+
+    bytes32 private constant _FILE = "GmxV2IsolationModeUnwrapperV2";
+    bytes32 private constant _WITHDRAWAL_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalInfo")) - 1);
 
     // ============ Constructor ============
 
@@ -177,12 +177,14 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             "Unexpected return data"
         );
         Require.that(
-            keccak256(abi.encodePacked(secondaryOutputTokenAddress.key)) == keccak256(abi.encodePacked("secondaryOutputToken")),
+            keccak256(abi.encodePacked(secondaryOutputTokenAddress.key))
+                == keccak256(abi.encodePacked("secondaryOutputToken")),
             _FILE,
             "Unexpected return data"
         );
         Require.that(
-            keccak256(abi.encodePacked(secondaryOutputTokenAmount.key)) == keccak256(abi.encodePacked("secondaryOutputAmount")),
+            keccak256(abi.encodePacked(secondaryOutputTokenAmount.key))
+                == keccak256(abi.encodePacked("secondaryOutputAmount")),
             _FILE,
             "Unexpected return data"
         );

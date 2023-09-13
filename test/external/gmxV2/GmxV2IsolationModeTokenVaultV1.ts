@@ -79,7 +79,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       allowableMarketIds,
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-      userVaultImplementation
+      userVaultImplementation,
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
@@ -95,7 +95,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     otherToken1 = await createTestToken();
     await core.testEcosystem!.testPriceOracle.setPrice(
       otherToken1.address,
-      '1000000000000000000000000000000' // $1.00 in USDC
+      '1000000000000000000000000000000', // $1.00 in USDC
     );
     otherMarketId1 = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken1, false);
@@ -103,16 +103,16 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     otherToken2 = await createTestToken();
     await core.testEcosystem!.testPriceOracle.setPrice(
       otherToken2.address,
-      '1000000000000000000000000000000' // $1.00 in USDC
+      '1000000000000000000000000000000', // $1.00 in USDC
     );
     otherMarketId2 = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken2, false);
 
     await factory.connect(core.governance).ownerSetAllowableCollateralMarketIds(
-      [...allowableMarketIds, marketId, otherMarketId1, otherMarketId2]
+      [...allowableMarketIds, marketId, otherMarketId1, otherMarketId2],
     );
     await factory.connect(core.governance).ownerSetAllowableDebtMarketIds(
-      [...allowableMarketIds, otherMarketId1, otherMarketId2]
+      [...allowableMarketIds, otherMarketId1, otherMarketId2],
     );
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
@@ -123,7 +123,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     vault = setupUserVaultProxy<GmxV2IsolationModeTokenVaultV1>(
       vaultAddress,
       GmxV2IsolationModeTokenVaultV1__factory,
-      core.hhUser1
+      core.hhUser1,
     );
 
     await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
@@ -163,7 +163,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         core.marketIds.weth,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
 
@@ -184,7 +184,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') }
+        { value: parseEther('.01') },
       );
 
       expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
@@ -200,7 +200,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         core.marketIds.weth,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
 
@@ -220,7 +220,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         initiateWrappingParams.minAmountOut,
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
-        initiateWrappingParams.userConfig
+        initiateWrappingParams.userConfig,
       )).to.be.reverted;
     });
 
@@ -246,9 +246,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: amountWei }
+          { value: amountWei },
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
 
@@ -271,7 +271,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: parseEther('.01') }
+          { value: parseEther('.01') },
         ),
         'GmxV2IsolationModeVaultV1: Invalid tradeData',
       );
@@ -297,7 +297,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: parseEther('.01') }
+          { value: parseEther('.01') },
         ),
         'GmxV2IsolationModeVaultV1: Invalid traderType',
       );
@@ -322,9 +322,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: amountWei }
+          { value: amountWei },
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -350,7 +350,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        {value: parseEther('.01')},
+        { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
@@ -364,11 +364,11 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   describe('#cancelDeposit', () => {
     it('should work normally', async () => {
       await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
-          defaultAccountNumber,
-          borrowAccountNumber,
-          core.marketIds.weth,
-          amountWei,
-          BalanceCheckFlag.Both
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.Both,
       );
 
       const initiateWrappingParams = await getInitiateWrappingParams(
@@ -388,7 +388,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') }
+        { value: parseEther('.01') },
       );
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
@@ -403,7 +403,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     it('should fail if not called by vault owner', async () => {
       await expectThrow(
         vault.connect(core.hhUser2).cancelDeposit(DUMMY_DEPOSIT_KEY),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -448,7 +448,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     it('should fail if not called by factory', async () => {
       await expectThrow(
         vault.connect(core.hhUser1).executeDepositIntoVault(core.hhUser1.address, ONE_BI),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -496,7 +496,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     it('should fail if not called by factory', async () => {
       await expectThrow(
         vault.connect(core.hhUser1).executeWithdrawalFromVault(core.hhUser1.address, ONE_BI),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -507,7 +507,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -518,7 +518,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -536,7 +536,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -555,7 +555,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.closeBorrowPositionWithUnderlyingVaultToken(defaultAccountNumber, borrowAccountNumber),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -567,7 +567,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await vault.closeBorrowPositionWithOtherTokens(borrowAccountNumber, defaultAccountNumber, [otherMarketId1]);
     });
@@ -577,7 +577,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.closeBorrowPositionWithOtherTokens(defaultAccountNumber, borrowAccountNumber, []),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -595,7 +595,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -607,7 +607,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
     });
 
@@ -620,9 +620,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           borrowAccountNumber,
           0,
           amountWei,
-          BalanceCheckFlag.Both
+          BalanceCheckFlag.Both,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -641,7 +641,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         vault.transferFromPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -658,7 +658,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         amountWei.div(4),
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
     });
 
@@ -671,9 +671,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           borrowAccountNumber,
           0,
           amountWei,
-          BalanceCheckFlag.Both
+          BalanceCheckFlag.Both,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -689,13 +689,13 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         otherMarketId1,
         amountWei.div(2),
-        BalanceCheckFlag.To
+        BalanceCheckFlag.To,
       );
       await vault.repayAllForBorrowPosition(
         defaultAccountNumber,
         borrowAccountNumber,
         otherMarketId1,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
     });
 
@@ -707,9 +707,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           defaultAccountNumber,
           borrowAccountNumber,
           otherMarketId1,
-          BalanceCheckFlag.Both
+          BalanceCheckFlag.Both,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -726,7 +726,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         zapParams.minOutputAmountWei,
         zapParams.tradersPath,
         zapParams.makerAccounts,
-        zapParams.userConfig
+        zapParams.userConfig,
       );
     });
 
@@ -743,9 +743,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.minOutputAmountWei,
           zapParams.tradersPath,
           zapParams.makerAccounts,
-          zapParams.userConfig
+          zapParams.userConfig,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -761,7 +761,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
 
       const outputAmount = amountWei.div(2);
@@ -774,7 +774,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         zapParams.minOutputAmountWei,
         zapParams.tradersPath,
         zapParams.makerAccounts,
-        zapParams.userConfig
+        zapParams.userConfig,
       );
     });
 
@@ -791,9 +791,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.minOutputAmountWei,
           zapParams.tradersPath,
           zapParams.makerAccounts,
-          zapParams.userConfig
+          zapParams.userConfig,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -805,14 +805,14 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
         otherMarketId2,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
 
       const outputAmount = amountWei.div(2);
@@ -824,7 +824,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         zapParams.minOutputAmountWei,
         zapParams.tradersPath,
         zapParams.makerAccounts,
-        zapParams.userConfig
+        zapParams.userConfig,
       );
     });
 
@@ -840,9 +840,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.minOutputAmountWei,
           zapParams.tradersPath,
           zapParams.makerAccounts,
-          zapParams.userConfig
+          zapParams.userConfig,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -857,7 +857,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     it('should fail if not called by factory', async () => {
       await expectThrow(
         vault.connect(core.hhUser1).setIsVaultFrozen(true),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -872,7 +872,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     it('should fail if not called by factory', async () => {
       await expectThrow(
         vault.connect(core.hhUser1).setIsDepositSourceWrapper(true),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -887,7 +887,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     it('should fail if not called by factory', async () => {
       await expectThrow(
         vault.connect(core.hhUser1).setShouldSkipTransfer(true),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

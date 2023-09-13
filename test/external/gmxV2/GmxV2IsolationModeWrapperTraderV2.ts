@@ -16,13 +16,7 @@ import {
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
-import {
-  getRealLatestBlockNumber,
-  impersonate,
-  revertToSnapshotAndCapture,
-  setEtherBalance,
-  snapshot,
-} from 'test/utils';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
@@ -84,7 +78,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       allowableMarketIds,
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-      userVaultImplementation
+      userVaultImplementation,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
@@ -106,7 +100,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     vault = setupUserVaultProxy<GmxV2IsolationModeTokenVaultV1>(
       vaultAddress,
       GmxV2IsolationModeTokenVaultV1__factory,
-      core.hhUser1
+      core.hhUser1,
     );
 
     await setupWETHBalance(core, core.hhUser1, ONE_ETH_BI, core.dolomiteMargin);
@@ -136,7 +130,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           gmxRegistryV2.address,
           core.tokens.weth.address,
           factory.address,
-          core.dolomiteMargin.address
+          core.dolomiteMargin.address,
         ),
         'Initializable: contract is already initialized',
       );
@@ -150,7 +144,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.weth,
         ONE_ETH_BI,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
 
@@ -161,7 +155,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -171,7 +165,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee }
+        { value: executionFee },
       );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
@@ -187,7 +181,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.nativeUsdc!,
         usdcAmount,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
 
@@ -198,7 +192,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -208,7 +202,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee } // @follow-up How to calculate executionFee
+        { value: executionFee }, // @follow-up How to calculate executionFee
       );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
@@ -224,7 +218,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.weth,
         ONE_ETH_BI,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
 
@@ -235,7 +229,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         ONE_BI,
         wrapper,
-        executionFee
+        executionFee,
       );
       await expectThrow(
         vault.connect(core.hhUser1).initiateWrapping(
@@ -246,9 +240,9 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: executionFee }
+          { value: executionFee },
         ),
-        'GmxV2IsolationModeWrapperV2: Insufficient output amount'
+        'GmxV2IsolationModeWrapperV2: Insufficient output amount',
       );
     });
   });
@@ -260,7 +254,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.weth,
         ONE_ETH_BI,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
@@ -269,7 +263,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -279,7 +273,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee }
+        { value: executionFee },
       );
 
       expect(await vault.isVaultFrozen()).to.eq(true);
@@ -298,12 +292,12 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         ONE_ETH_BI,
         ZERO_BI,
         minAmountOut,
-        minAmountOut
+        minAmountOut,
       );
       await wrapper.connect(depositExecutor).afterDepositExecution(
         depositKey,
         depositInfo.deposit,
-        depositInfo.eventData
+        depositInfo.eventData,
       );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
@@ -321,7 +315,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.nativeUsdc!,
         usdcAmount,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
@@ -330,7 +324,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -340,7 +334,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee }
+        { value: executionFee },
       );
 
       expect(await vault.isVaultFrozen()).to.eq(true);
@@ -359,12 +353,12 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         ZERO_BI,
         usdcAmount,
         minAmountOut,
-        minAmountOut.mul(2)
+        minAmountOut.mul(2),
       );
       await wrapper.connect(depositExecutor).afterDepositExecution(
         depositKey,
         depositInfo.deposit,
-        depositInfo.eventData
+        depositInfo.eventData,
       );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut.mul(2));
@@ -382,7 +376,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.weth,
         ONE_ETH_BI,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
@@ -391,7 +385,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -401,7 +395,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee }
+        { value: executionFee },
       );
 
       expect(await vault.isVaultFrozen()).to.eq(true);
@@ -420,12 +414,12 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         ONE_ETH_BI,
         ZERO_BI,
         minAmountOut,
-        minAmountOut
+        minAmountOut,
       );
       await wrapper.connect(depositExecutor).afterDepositExecution(
         depositKey,
         depositInfo.deposit,
-        depositInfo.eventData
+        depositInfo.eventData,
       );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
@@ -445,15 +439,15 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         core.tokens.nativeUsdc!.address,
         ONE_ETH_BI,
         ZERO_BI,
-        ONE_BI
+        ONE_BI,
       );
       await expectThrow(
         wrapper.connect(core.hhUser1).afterDepositExecution(
           DUMMY_DEPOSIT_KEY,
           depositInfo.deposit,
-          depositInfo.eventData
+          depositInfo.eventData,
         ),
-        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
+        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -466,15 +460,15 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         core.tokens.nativeUsdc!.address,
         ONE_ETH_BI,
         ZERO_BI,
-        ONE_BI
+        ONE_BI,
       );
       await expectThrow(
         wrapper.connect(depositExecutor).afterDepositExecution(
           DUMMY_DEPOSIT_KEY,
           depositInfo.deposit,
-          depositInfo.eventData
+          depositInfo.eventData,
         ),
-        'GmxV2IsolationModeWrapperV2: Invalid deposit key'
+        'GmxV2IsolationModeWrapperV2: Invalid deposit key',
       );
     });
   });
@@ -486,7 +480,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.weth,
         ONE_ETH_BI,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
       const wethBalanceBefore = await core.tokens.weth.balanceOf(core.dolomiteMargin.address);
@@ -498,7 +492,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -508,7 +502,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee }
+        { value: executionFee },
       );
 
       const filter = wrapper.filters.DepositCreated();
@@ -537,7 +531,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.nativeUsdc!,
         usdcAmount,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
       const usdcBalanceBefore = await core.tokens.nativeUsdc!.balanceOf(core.dolomiteMargin.address);
@@ -549,7 +543,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -559,7 +553,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee }
+        { value: executionFee },
       );
 
       const filter = wrapper.filters.DepositCreated();
@@ -590,15 +584,15 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         core.tokens.nativeUsdc!.address,
         ONE_ETH_BI,
         ZERO_BI,
-        ONE_BI
+        ONE_BI,
       );
       await expectThrow(
         wrapper.connect(core.hhUser1).afterDepositCancellation(
           DUMMY_DEPOSIT_KEY,
           depositInfo.deposit,
-          depositInfo.eventData
+          depositInfo.eventData,
         ),
-        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
+        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -611,19 +605,20 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         core.tokens.nativeUsdc!.address,
         ONE_ETH_BI,
         ZERO_BI,
-        ONE_BI
+        ONE_BI,
       );
       await expectThrow(
         wrapper.connect(depositExecutor).afterDepositCancellation(
           DUMMY_DEPOSIT_KEY,
           depositInfo.deposit,
-          depositInfo.eventData
+          depositInfo.eventData,
         ),
-        'GmxV2IsolationModeWrapperV2: Invalid deposit key'
+        'GmxV2IsolationModeWrapperV2: Invalid deposit key',
       );
     });
 
-    xit('should handle case when we receive callback but our function fails', async () => {});
+    xit('should handle case when we receive callback but our function fails', async () => {
+    });
   });
 
   describe('#cancelDeposit', () => {
@@ -633,7 +628,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.weth,
         ONE_ETH_BI,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
 
       const initiateWrappingParams = await getInitiateWrappingParams(
@@ -643,7 +638,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -653,7 +648,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee }
+        { value: executionFee },
       );
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
@@ -673,7 +668,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.weth,
         ONE_ETH_BI,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
 
       const initiateWrappingParams = await getInitiateWrappingParams(
@@ -683,7 +678,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -693,7 +688,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee }
+        { value: executionFee },
       );
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
@@ -712,7 +707,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.weth,
         ONE_ETH_BI,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
 
       const initiateWrappingParams = await getInitiateWrappingParams(
@@ -722,7 +717,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -732,14 +727,14 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee }
+        { value: executionFee },
       );
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
       await expectThrow(
         wrapper.connect(core.hhUser1).cancelDeposit(depositKey),
-        'GmxV2IsolationModeWrapperV2: Only vault or handler can cancel'
+        'GmxV2IsolationModeWrapperV2: Only vault or handler can cancel',
       );
     });
   });
@@ -760,7 +755,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     it('should fail because it is not implemented', async () => {
       await expectThrow(
         wrapper.getExchangeCost(core.tokens.nativeUsdc!.address, factory.address, ONE_ETH_BI, BYTES_EMPTY),
-        'GmxV2IsolationModeWrapperV2: getExchangeCost is not implemented'
+        'GmxV2IsolationModeWrapperV2: getExchangeCost is not implemented',
       );
     });
   });
@@ -782,7 +777,7 @@ function getDepositObject(
   longAmount: BigNumber,
   shortAmount: BigNumber,
   minMarketTokens: BigNumber,
-  receivedMarketToken: BigNumber = BigNumber.from('0')
+  receivedMarketToken: BigNumber = BigNumber.from('0'),
 ) {
   const deposit = {
     addresses: {

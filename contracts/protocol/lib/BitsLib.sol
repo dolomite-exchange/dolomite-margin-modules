@@ -19,12 +19,10 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "./Require.sol";
-
 
 /**
- * @title Bits
- * @author Dolomite
+ * @title   BitsLib
+ * @author  Dolomite
  *
  * Library for caching information about markets
  */
@@ -32,38 +30,38 @@ library BitsLib {
 
     // ============ Constants ============
 
-    uint256 internal constant ONE = 1;
-    uint256 internal constant MAX_UINT_BITS = 256;
+    uint256 private constant _ONE = 1;
+    uint256 private constant _MAX_UINT_BITS = 256;
 
     // ============ Functions ============
 
     function createBitmaps(uint256 maxLength) internal pure returns (uint[] memory) {
-        return new uint[]((maxLength / MAX_UINT_BITS) + ONE);
+        return new uint[]((maxLength / _MAX_UINT_BITS) + _ONE);
     }
 
     function getMarketIdFromBit(
         uint256 index,
         uint256 bit
     ) internal pure returns (uint) {
-        return (MAX_UINT_BITS * index) + bit;
+        return (_MAX_UINT_BITS * index) + bit;
     }
 
     function setBit(
         uint[] memory bitmaps,
         uint256 marketId
     ) internal pure {
-        uint256 bucketIndex = marketId / MAX_UINT_BITS;
-        uint256 indexFromRight = marketId % MAX_UINT_BITS;
-        bitmaps[bucketIndex] |= (ONE << indexFromRight);
+        uint256 bucketIndex = marketId / _MAX_UINT_BITS;
+        uint256 indexFromRight = marketId % _MAX_UINT_BITS;
+        bitmaps[bucketIndex] |= (_ONE << indexFromRight);
     }
 
     function hasBit(
         uint[] memory bitmaps,
         uint256 marketId
     ) internal pure returns (bool) {
-        uint256 bucketIndex = marketId / MAX_UINT_BITS;
-        uint256 indexFromRight = marketId % MAX_UINT_BITS;
-        uint256 bit = bitmaps[bucketIndex] & (ONE << indexFromRight);
+        uint256 bucketIndex = marketId / _MAX_UINT_BITS;
+        uint256 indexFromRight = marketId % _MAX_UINT_BITS;
+        uint256 bit = bitmaps[bucketIndex] & (_ONE << indexFromRight);
         return bit > 0;
     }
 
@@ -71,7 +69,7 @@ library BitsLib {
         uint256 bitmap,
         uint256 bit
     ) internal pure returns (uint) {
-        return bitmap & ~(ONE << bit);
+        return bitmap & ~(_ONE << bit);
     }
 
     // solium-disable security/no-assign-params

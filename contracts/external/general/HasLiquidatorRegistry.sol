@@ -24,8 +24,8 @@ import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry
 
 
 /**
- * @title HasLiquidatorRegistry
- * @author Dolomite
+ * @title   HasLiquidatorRegistry
+ * @author  Dolomite
  *
  * Contract for storing and referring to the liquidator asset registry for whitelisting/handling liquidations
  */
@@ -37,7 +37,7 @@ contract HasLiquidatorRegistry {
 
     // ============ Storage ============
 
-    ILiquidatorAssetRegistry public immutable LIQUIDATOR_ASSET_REGISTRY;
+    ILiquidatorAssetRegistry public immutable LIQUIDATOR_ASSET_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============ Modifiers ============
 

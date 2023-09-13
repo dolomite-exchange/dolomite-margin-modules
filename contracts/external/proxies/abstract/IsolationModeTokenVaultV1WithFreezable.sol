@@ -25,8 +25,8 @@ import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.so
 import { Require } from "../../../protocol/lib/Require.sol";
 import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
+import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
-
 
 /**
  * @title   IsolationModeTokenVaultV1WithFreezable
@@ -35,7 +35,11 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  * @notice  Abstract implementation of IsolationModeTokenVaultV1 that disallows user actions
  *          if vault is frozen
  */
-abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1, ProxyContractHelpers {
+abstract contract IsolationModeTokenVaultV1WithFreezable is
+    IIsolationModeTokenVaultV1WithFreezable,
+    IsolationModeTokenVaultV1,
+    ProxyContractHelpers
+{
 
     // ===================================================
     // ==================== Constants ====================
@@ -64,7 +68,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
     function setIsVaultFrozen(
         bool _isVaultFrozen
     )
-    external 
+    external
     onlyVaultFactory(msg.sender) {
         _setIsVaultFrozen(_isVaultFrozen);
     }
@@ -88,9 +92,9 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
     function _depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
-    ) 
-    internal 
-    override 
+    )
+    internal
+    override
     requireNotFrozen {
         super._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
     }
@@ -98,9 +102,9 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
     function _withdrawFromVaultForDolomiteMargin(
         uint256 _fromAccountNumber,
         uint256 _amountWei
-    ) 
-    internal 
-    override 
+    )
+    internal
+    override
     requireNotFrozen {
         super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
     }
@@ -110,8 +114,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
-    internal 
-    override 
+    internal
+    override
     requireNotFrozen {
         super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
@@ -120,8 +124,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber
     )
-    internal 
-    override 
+    internal
+    override
     requireNotFrozen {
         super._closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
     }
@@ -131,8 +135,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         uint256 _toAccountNumber,
         uint256[] calldata _collateralMarketIds
     )
-    internal 
-    override 
+    internal
+    override
     requireNotFrozen {
         super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
     }
@@ -142,8 +146,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         uint256 _borrowAccountNumber,
         uint256 _amountWei
     )
-    internal 
-    override 
+    internal
+    override
     requireNotFrozen {
         super._transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
     }
@@ -155,8 +159,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
-    internal 
-    override 
+    internal
+    override
     requireNotFrozen {
         super._transferIntoPositionWithOtherToken(
             _fromAccountNumber,
@@ -172,8 +176,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
-    internal 
-    override 
+    internal
+    override
     requireNotFrozen {
         super._transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
     }
@@ -185,8 +189,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
-    internal 
-    override 
+    internal
+    override
     requireNotFrozen {
         super._transferFromPositionWithOtherToken(
             _borrowAccountNumber,
@@ -203,8 +207,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         uint256 _marketId,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
-    internal 
-    override 
+    internal
+    override
     requireNotFrozen {
         super._repayAllForBorrowPosition(_fromAccountNumber, _borrowAccountNumber, _marketId, _balanceCheckFlag);
     }
@@ -218,9 +222,9 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
-    ) 
-    internal 
-    override 
+    )
+    internal
+    override
     requireNotFrozen {
         super._addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
@@ -244,8 +248,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
-    internal 
-    override 
+    internal
+    override
     requireNotFrozen {
         super._swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,
@@ -268,7 +272,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
-    internal 
+    internal
     virtual
     requireNotFrozen
     override {

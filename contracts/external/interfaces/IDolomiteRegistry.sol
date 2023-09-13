@@ -90,12 +90,12 @@ interface IDolomiteRegistry {
     function slippageToleranceForPauseSentinel() external view returns (uint256);
 
     /**
-     * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
-     */
-    function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
-
-    /**
      * @return  The address of the liquidator asset registry contract
      */
     function liquidatorAssetRegistry() external view returns (ILiquidatorAssetRegistry);
+
+    /**
+     * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
+     */
+    function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
 }

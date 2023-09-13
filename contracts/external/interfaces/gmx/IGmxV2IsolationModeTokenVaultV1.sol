@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
 import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
+import { IIsolationModeTokenVaultV1WithFreezable } from "../IIsolationModeTokenVaultV1WithFreezable.sol";
 
 
 /**
@@ -29,7 +29,7 @@ import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
+interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezable {
 
     function initiateUnwrapping(
         uint256 _tradeAccountNumber,
@@ -44,8 +44,6 @@ interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         address _outputToken,
         uint256 _minOutputAmount
     ) external payable;
-
-    function setIsVaultFrozen(bool _isVaultFrozen) external;
 
     function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
 

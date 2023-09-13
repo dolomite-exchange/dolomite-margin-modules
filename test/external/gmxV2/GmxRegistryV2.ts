@@ -1,12 +1,11 @@
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { GmxRegistryV2 } from 'src/types';
-import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 import { Network } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { getGmxRegistryV2ConstructorParams } from 'src/utils/constructors/gmx';
+import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
 const OTHER_ADDRESS_2 = '0x1234567812345678123456781234567812345672';
@@ -107,14 +106,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGmxExchangeRouter(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxExchangeRouter(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address'
+        'GmxRegistryV2: Invalid address',
       );
     });
   });
@@ -131,14 +130,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGmxDataStore(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxDataStore(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address'
+        'GmxRegistryV2: Invalid address',
       );
     });
   });
@@ -155,14 +154,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGmxReader(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxReader(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address'
+        'GmxRegistryV2: Invalid address',
       );
     });
   });
@@ -179,14 +178,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGmxRouter(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxRouter(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address'
+        'GmxRegistryV2: Invalid address',
       );
     });
   });
@@ -203,14 +202,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGmxDepositHandler(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxDepositHandler(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address'
+        'GmxRegistryV2: Invalid address',
       );
     });
   });
@@ -227,14 +226,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGmxDepositVault(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxDepositVault(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address'
+        'GmxRegistryV2: Invalid address',
       );
     });
   });
@@ -251,14 +250,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGmxWithdrawalHandler(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxWithdrawalHandler(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address'
+        'GmxRegistryV2: Invalid address',
       );
     });
   });
@@ -275,14 +274,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGmxWithdrawalVault(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxWithdrawalVault(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address'
+        'GmxRegistryV2: Invalid address',
       );
     });
   });
@@ -299,14 +298,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGmxV2UnwrapperTrader(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address'
+        'GmxRegistryV2: Invalid address',
       );
     });
   });
@@ -323,14 +322,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGmxV2WrapperTrader(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxV2WrapperTrader(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address'
+        'GmxRegistryV2: Invalid address',
       );
     });
   });
@@ -347,14 +346,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetUnwrapperTraderForLiquidation(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetUnwrapperTraderForLiquidation(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid unwrapperTrader address'
+        'GmxRegistryV2: Invalid unwrapperTrader address',
       );
     });
   });
@@ -371,14 +370,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetUnwrapperTraderForZap(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetUnwrapperTraderForZap(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid unwrapperTrader address'
+        'GmxRegistryV2: Invalid unwrapperTrader address',
       );
     });
   });
@@ -395,14 +394,14 @@ describe('GmxRegistryV2', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetEthUsdMarketToken(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetEthUsdMarketToken(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address'
+        'GmxRegistryV2: Invalid address',
       );
     });
   });

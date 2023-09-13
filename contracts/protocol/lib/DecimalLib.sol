@@ -19,13 +19,13 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteStructs } from "../interfaces/IDolomiteStructs.sol";
 import { DolomiteMarginMath } from "./DolomiteMarginMath.sol";
+import { IDolomiteStructs } from "../interfaces/IDolomiteStructs.sol";
 
 
 /**
- * @title DecimalLib
- * @author dYdX
+ * @title   DecimalLib
+ * @author  dYdX
  *
  * Library that defines a fixed-point number with 18 decimal places.
  */
@@ -33,7 +33,7 @@ library DecimalLib {
 
     // ============ Constants ============
 
-    uint256 internal constant BASE = 10 ** 18;
+    uint256 private constant _BASE = 10 ** 18;
 
     // ============ Functions ============
 
@@ -42,7 +42,7 @@ library DecimalLib {
         pure
         returns (IDolomiteStructs.Decimal memory)
     {
-        return IDolomiteStructs.Decimal({ value: BASE });
+        return IDolomiteStructs.Decimal({ value: _BASE});
     }
 
     function onePlus(
@@ -52,7 +52,7 @@ library DecimalLib {
         pure
         returns (IDolomiteStructs.Decimal memory)
     {
-        return IDolomiteStructs.Decimal({ value: d.value + BASE });
+        return IDolomiteStructs.Decimal({ value: d.value + _BASE});
     }
 
     function mul(
@@ -63,7 +63,7 @@ library DecimalLib {
         pure
         returns (uint256)
     {
-        return DolomiteMarginMath.getPartial(target, d.value, BASE);
+        return DolomiteMarginMath.getPartial(target, d.value, _BASE);
     }
 
     function div(
@@ -74,6 +74,6 @@ library DecimalLib {
     pure
     returns (uint256)
     {
-        return DolomiteMarginMath.getPartial(target, BASE, d.value);
+        return DolomiteMarginMath.getPartial(target, _BASE, d.value);
     }
 }

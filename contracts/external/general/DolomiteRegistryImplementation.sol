@@ -26,8 +26,8 @@ import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginF
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
-import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 
 
@@ -110,12 +110,12 @@ contract DolomiteRegistryImplementation is
         return _getUint256(_SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT);
     }
 
-    function slippageToleranceForPauseSentinelBase() external pure returns (uint256) {
-        return 1e18;
-    }
-
     function liquidatorAssetRegistry() external view returns (ILiquidatorAssetRegistry) {
         return ILiquidatorAssetRegistry(_getAddress(_LIQUIDATOR_ASSET_REGISTRY_SLOT));
+    }
+
+    function slippageToleranceForPauseSentinelBase() external pure returns (uint256) {
+        return 1e18;
     }
 
     // ===================== Internal Functions =====================

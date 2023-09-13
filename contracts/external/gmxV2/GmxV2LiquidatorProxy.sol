@@ -20,15 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-
+import { Require } from "../../protocol/lib/Require.sol";
 import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
-import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 
 
 /**
@@ -113,10 +110,7 @@ contract GmxV2LiquidatorProxy is BaseLiquidatorProxy {
         MarketInfo[] memory _marketInfos,
         uint256 _outputMarketId,
         uint256 _expirationTimestamp
-    )
-    private
-    view
-    {
+    ) internal view {
         // check credentials for msg.sender
         Require.that(
             _solidAccount.owner == msg.sender

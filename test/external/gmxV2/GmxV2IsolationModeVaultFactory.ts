@@ -19,12 +19,7 @@ import {
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
 } from 'test/utils/ecosystem-token-utils/gmx';
-import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from 'test/utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from 'test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const amountWei = parseEther('1');
@@ -60,7 +55,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       allowableMarketIds,
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-      vaultImplementation
+      vaultImplementation,
     );
 
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
@@ -80,7 +75,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     vault = setupUserVaultProxy<GmxV2IsolationModeTokenVaultV1>(
       vaultAddress,
       GmxV2IsolationModeTokenVaultV1__factory,
-      core.hhUser1
+      core.hhUser1,
     );
 
     impersonatedWrapper = await impersonate(wrapper.address, true);
@@ -104,7 +99,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       expectArrayEq(await factory.allowableDebtMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth]);
       expectArrayEq(
         await factory.allowableCollateralMarketIds(),
-        [core.marketIds.nativeUsdc!, core.marketIds.weth, marketId]
+        [core.marketIds.nativeUsdc!, core.marketIds.weth, marketId],
       );
       expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystemV2!.gmxEthUsdMarketToken.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
@@ -119,7 +114,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         allowableMarketIds,
         allowableMarketIds,
         core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-        vaultImplementation
+        vaultImplementation,
       );
       await createGmxV2IsolationModeVaultFactory(
         core,
@@ -127,7 +122,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         [allowableMarketIds[1], allowableMarketIds[0]],
         [allowableMarketIds[1], allowableMarketIds[0]],
         core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-        vaultImplementation
+        vaultImplementation,
       );
     });
 
@@ -140,7 +135,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           badAllowableDebtMarketIds,
           allowableMarketIds,
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-          vaultImplementation
+          vaultImplementation,
         ),
         'GmxV2IsolationModeVaultFactory: Invalid debt market ids',
       );
@@ -155,7 +150,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           badAllowableDebtMarketIds,
           allowableMarketIds,
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-          vaultImplementation
+          vaultImplementation,
         ),
         'GmxV2IsolationModeVaultFactory: Invalid debt market ids',
       );
@@ -170,7 +165,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           allowableMarketIds,
           badAllowableCollateralMarketIds,
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-          vaultImplementation
+          vaultImplementation,
         ),
         'GmxV2IsolationModeVaultFactory: Invalid collateral market ids',
       );
@@ -185,7 +180,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           allowableMarketIds,
           badAllowableCollateralMarketIds,
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-          vaultImplementation
+          vaultImplementation,
         ),
         'GmxV2IsolationModeVaultFactory: Invalid collateral market ids',
       );
@@ -204,7 +199,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         factory.connect(core.hhUser1).ownerSetGmxRegistryV2(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -215,9 +210,9 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         factory.connect(core.hhUser1).depositIntoDolomiteMarginFromTokenConverter(
           vault.address,
           defaultAccountNumber,
-          amountWei
+          amountWei,
         ),
-        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -226,9 +221,9 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         factory.connect(impersonatedWrapper).depositIntoDolomiteMarginFromTokenConverter(
           core.hhUser1.address,
           defaultAccountNumber,
-          amountWei
+          amountWei,
         ),
-        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -240,9 +235,9 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           vault.address,
           defaultAccountNumber,
           ZERO_BI,
-          amountWei
+          amountWei,
         ),
-        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -252,9 +247,9 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           core.hhUser1.address,
           defaultAccountNumber,
           ZERO_BI,
-          amountWei
+          amountWei,
         ),
-        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -264,9 +259,9 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           vault.address,
           defaultAccountNumber,
           marketId,
-          amountWei
+          amountWei,
         ),
-        `GmxV2IsolationModeVaultFactory: Invalid market <${marketId.toString()}>`
+        `GmxV2IsolationModeVaultFactory: Invalid market <${marketId.toString()}>`,
       );
     });
   });
@@ -277,9 +272,9 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         factory.connect(core.hhUser1).withdrawFromDolomiteMarginFromTokenConverter(
           vault.address,
           defaultAccountNumber,
-          amountWei
+          amountWei,
         ),
-        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -288,9 +283,9 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         factory.connect(impersonatedWrapper).withdrawFromDolomiteMarginFromTokenConverter(
           core.hhUser1.address,
           defaultAccountNumber,
-          amountWei
+          amountWei,
         ),
-        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -305,14 +300,14 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     it('should fail if not token converter', async () => {
       await expectThrow(
         factory.connect(core.hhUser1).setIsVaultFrozen(vault.address, true),
-        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if invalid vault', async () => {
       await expectThrow(
         factory.connect(impersonatedWrapper).setIsVaultFrozen(core.hhUser1.address, false),
-        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -327,14 +322,14 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     it('should fail if not token converter', async () => {
       await expectThrow(
         factory.connect(core.hhUser1).setIsDepositSourceWrapper(vault.address, true),
-        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if invalid vault', async () => {
       await expectThrow(
         factory.connect(impersonatedWrapper).setIsDepositSourceWrapper(core.hhUser1.address, false),
-        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -349,14 +344,14 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     it('should fail if not token converter', async () => {
       await expectThrow(
         factory.connect(core.hhUser1).setShouldSkipTransfer(vault.address, true),
-        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if invalid vault', async () => {
       await expectThrow(
         factory.connect(impersonatedWrapper).setShouldSkipTransfer(core.hhUser1.address, false),
-        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

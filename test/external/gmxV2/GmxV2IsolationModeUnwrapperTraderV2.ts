@@ -25,7 +25,16 @@ import {
   createGmxV2IsolationModeWrapperTraderV2,
   createGmxV2MarketTokenPriceOracle,
 } from 'test/utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupGMBalance, setupNativeUSDCBalance, setupTestMarket, setupUSDCBalance, setupUserVaultProxy, setupWETHBalance } from 'test/utils/setup';
+import {
+  CoreProtocol,
+  disableInterestAccrual,
+  setupCoreProtocol,
+  setupGMBalance,
+  setupNativeUSDCBalance,
+  setupTestMarket,
+  setupUserVaultProxy,
+  setupWETHBalance,
+} from 'test/utils/setup';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -65,7 +74,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       allowableMarketIds,
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-      userVaultImplementation
+      userVaultImplementation,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
@@ -87,7 +96,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     vault = setupUserVaultProxy<GmxV2IsolationModeTokenVaultV1>(
       vaultAddress,
       GmxV2IsolationModeTokenVaultV1__factory,
-      core.hhUser1
+      core.hhUser1,
     );
 
     await setupWETHBalance(core, core.hhUser1, ONE_ETH_BI, core.dolomiteMargin);
@@ -124,7 +133,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        {value: parseEther('.01')},
+        { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       const filter = unwrapper.filters.WithdrawalCreated();
@@ -164,9 +173,9 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).afterWithdrawalCancellation(
           DUMMY_WITHDRAWAL_KEY,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
-        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
+        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -186,9 +195,9 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(withdrawalExecutor).afterWithdrawalCancellation(
           DUMMY_WITHDRAWAL_KEY,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
-        'GmxV2IsolationModeUnwrapperV2: Invalid withdrawal key'
+        'GmxV2IsolationModeUnwrapperV2: Invalid withdrawal key',
       );
     });
   });
@@ -210,7 +219,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.nativeUsdc!.address,
         ONE_BI,
-        {value: parseEther('.01')},
+        { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       const filter = unwrapper.filters.WithdrawalCreated();
@@ -240,7 +249,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
         withdrawalKey,
         withdrawalInfo.withdrawal,
-        withdrawalInfo.eventData
+        withdrawalInfo.eventData,
       );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
@@ -266,9 +275,9 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).afterWithdrawalExecution(
           DUMMY_WITHDRAWAL_KEY,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
-        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
+        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -288,9 +297,9 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
           DUMMY_WITHDRAWAL_KEY,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
-        'GmxV2IsolationModeUnwrapperV2: Invalid withdrawal key'
+        'GmxV2IsolationModeUnwrapperV2: Invalid withdrawal key',
       );
     });
   });
@@ -327,11 +336,11 @@ function getWithdrawalObject(
       shortTokenSwapPath: [],
     },
     numbers: {
+      executionFee,
       marketTokenAmount,
       minLongTokenAmount,
       minShortTokenAmount,
       updatedAtBlock: 123123123,
-      executionFee,
       callbackGasLimit: CALLBACK_GAS_LIMIT,
     },
     flags: {
