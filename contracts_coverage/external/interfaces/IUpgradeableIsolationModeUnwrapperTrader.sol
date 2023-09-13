@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
 import { IIsolationModeUnwrapperTrader } from "./IIsolationModeUnwrapperTrader.sol";
+import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
 
 
 /**

@@ -25,7 +25,7 @@ import { UpgradeableIsolationModeUnwrapperTrader } from "../external/proxies/abs
 
 
 /**
- * @title   TestIsolationModeUnwrapperTraderV2
+ * @title   TestUpgradeableIsolationModeUnwrapperTrader
  * @author  Dolomite
  *
  * @notice  A test contract for the IsolationModeUnwrapperTrader contract.

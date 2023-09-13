@@ -131,6 +131,8 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _inputAmount,
             extraOrderData
         );
+
+        // @follow-up How to test this since _exchangeUnderlying returns the minOutputAmount
         Require.that(
             outputAmount >= minOutputAmount,
             _FILE,
@@ -217,6 +219,8 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             userConfig
         );
         factory.setIsVaultFrozen(withdrawalInfo.vault, false);
+        _setWithdrawalInfo(_key, WithdrawalInfo(address(0), 0, address(0)));
+        emit WithdrawalExecuted(_key);
     }
 
     function afterWithdrawalCancellation(
@@ -235,7 +239,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         IERC20 underlyingToken = IERC20(address(factory.UNDERLYING_TOKEN()));
-        underlyingToken.safeTransfer(withdrawalInfo.vault, _withdrawal.numbers.marketTokenAmount);
+        // console.log(underlyingToken.balanceOf(address(this)));
+        // console.log(underlyingToken.balanceOf(withdrawalInfo.vault));
+        // underlyingToken.safeTransfer(withdrawalInfo.vault, _withdrawal.numbers.marketTokenAmount);
         // TODO: remove this. If we need to liquidate someone, the balances won't match up
         Require.that(
             IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).virtualBalance()

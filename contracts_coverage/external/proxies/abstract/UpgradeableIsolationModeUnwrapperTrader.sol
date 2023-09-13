@@ -24,12 +24,12 @@ import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
-import { Require } from "../../../protocol/lib/Require.sol";
-import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
-import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
-import { IUpgradeableIsolationModeUnwrapperTrader } from "../../interfaces/IUpgradeableIsolationModeUnwrapperTrader.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../../helpers/OnlyDolomiteMarginForUpgradeable.sol";
+import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
+import { IUpgradeableIsolationModeUnwrapperTrader } from "../../interfaces/IUpgradeableIsolationModeUnwrapperTrader.sol"; //solhint-disable-line max-line-length
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 
 /**
@@ -78,6 +78,7 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         bytes calldata _orderData
     )
     external
+    virtual
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         if (_inputToken == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }

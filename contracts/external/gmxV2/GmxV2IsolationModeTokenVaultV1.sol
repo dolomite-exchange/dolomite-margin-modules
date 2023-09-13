@@ -35,6 +35,8 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 
+import "hardhat/console.sol";
+
 
 /**
  * @title   GmxV2IsolationModeTokenVaultV1
@@ -190,7 +192,6 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
      */
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
         registry().gmxExchangeRouter().cancelWithdrawal(_key);
-        _setIsVaultFrozen(false);
     }
 
     function swapExactInputForOutput(

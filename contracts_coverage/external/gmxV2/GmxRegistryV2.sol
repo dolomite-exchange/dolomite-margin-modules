@@ -29,6 +29,7 @@ import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxReader } from "../interfaces/gmx/IGmxReader.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxRouter } from "../interfaces/gmx/IGmxRouter.sol";
+import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxWithdrawalHandler } from "../interfaces/gmx/IGmxWithdrawalHandler.sol";
 
@@ -57,6 +58,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     bytes32 private constant _GMX_READER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxReader")) - 1);
     bytes32 private constant _GMX_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxRouter")) - 1);
     bytes32 private constant _GMX_WITHDRAWAL_HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxWithdrawalHandler")) - 1);
+    bytes32 private constant _GMX_WITHDRAWAL_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxWithdrawalVault")) - 1);
     bytes32 private constant _GMX_V2_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2UnwrapperTrader")) - 1);
     bytes32 private constant _GMX_V2_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2WrapperTrader")) - 1);
     bytes32 private constant _UNWRAPPER_TRADER_FOR_LIQUIDATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperTraderForLiquidation")) - 1);
@@ -74,6 +76,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         address _gmxReader,
         address _gmxRouter,
         address _gmxWithdrawalHandler,
+        address _gmxWithdrawalVault,
         address _dolomiteRegistry
     ) external initializer {
         _ownerSetEthUsdMarketToken(_ethUsdMarketToken);
@@ -84,6 +87,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         _ownerSetGmxReader(_gmxReader);
         _ownerSetGmxRouter(_gmxRouter);
         _ownerSetGmxWithdrawalHandler(_gmxWithdrawalHandler);
+        _ownerSetGmxWithdrawalVault(_gmxWithdrawalVault);
 
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
     }
@@ -167,6 +171,14 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         _ownerSetGmxWithdrawalHandler(_gmxWithdrawalHandler);
     }
 
+    function ownerSetGmxWithdrawalVault(
+        address _gmxWithdrawalVault
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetGmxWithdrawalVault(_gmxWithdrawalVault);
+    }
+
     function ownerSetGmxV2UnwrapperTrader(
         address _gmxV2UnwrapperTrader
     )
@@ -233,8 +245,12 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         return IGmxWithdrawalHandler(_getAddress(_GMX_WITHDRAWAL_HANDLER_SLOT));
     }
 
-    function gmxV2UnwrapperTrader() external view returns (address) {
-        return _getAddress(_GMX_V2_UNWRAPPER_TRADER_SLOT);
+    function gmxWithdrawalVault() external view returns (address) {
+        return _getAddress(_GMX_WITHDRAWAL_VAULT_SLOT);
+    }
+
+    function gmxV2UnwrapperTrader() external view returns (IGmxV2IsolationModeUnwrapperTraderV2) {
+        return IGmxV2IsolationModeUnwrapperTraderV2(_getAddress(_GMX_V2_UNWRAPPER_TRADER_SLOT));
     }
 
     function gmxV2WrapperTrader() external view returns (IGmxV2IsolationModeWrapperTraderV2) {
@@ -331,6 +347,16 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         );
         _setAddress(_GMX_WITHDRAWAL_HANDLER_SLOT, _gmxWithdrawalHandler);
         emit GmxWithdrawalHandlerSet(_gmxWithdrawalHandler);
+    }
+
+    function _ownerSetGmxWithdrawalVault(address _gmxWithdrawalVault) internal {
+        if (_gmxWithdrawalVault != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_gmxWithdrawalVault != address(0),
+            _FILE,
+            "Invalid address"
+        );
+        _setAddress(_GMX_WITHDRAWAL_VAULT_SLOT, _gmxWithdrawalVault);
+        emit GmxWithdrawalVaultSet(_gmxWithdrawalVault);
     }
 
     function _ownerSetGmxV2UnwrapperTrader(address _gmxV2UnwrapperTrader) internal {

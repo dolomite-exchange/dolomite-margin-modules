@@ -431,6 +431,63 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       expect(await underlyingToken.allowance(wrapper.address, vault.address)).to.eq(0);
     });
 
+    it('should fail if eventData is not crafted properly', async () => {
+      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ONE_ETH_BI,
+        BalanceCheckFlag.Both
+      );
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ONE_ETH_BI,
+        marketId,
+        minAmountOut,
+        wrapper,
+        executionFee
+      );
+      await vault.connect(core.hhUser1).initiateWrapping(
+        borrowAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+        { value: executionFee }
+      );
+
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      const filter = wrapper.filters.DepositCreated();
+      const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
+
+      await setupGMBalance(core, wrapper.address, minAmountOut, vault);
+      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
+      const depositInfo = getDepositObject(
+        wrapper.address,
+        underlyingToken.address,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        ONE_ETH_BI,
+        ZERO_BI,
+        minAmountOut,
+        minAmountOut
+      );
+      depositInfo.eventData.uintItems.items[2].key = 'receivedBadTokens';
+      await expectThrow(
+        wrapper.connect(depositExecutor).afterDepositExecution(
+          depositKey,
+          depositInfo.deposit,
+          depositInfo.eventData
+        ),
+        'GmxV2IsolationModeWrapperV2: Unexpected return data'
+      );
+    });
+
     it('should fail when not called by deposit handler', async () => {
       const depositInfo = getDepositObject(
         wrapper.address,
