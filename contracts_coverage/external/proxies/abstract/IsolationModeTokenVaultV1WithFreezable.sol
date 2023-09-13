@@ -269,8 +269,9 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
     internal
-    override
-    requireNotFrozen {
+    virtual
+    requireNotFrozen
+    override {
         super._swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,

@@ -20,17 +20,21 @@
 
 pragma solidity ^0.8.9;
 
+import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
+
 
 /**
- * @title   IGmxV2IsolationModeTokenVault
+ * @title   IGmxV2IsolationModeTokenVaultV1
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeTokenVault {
+interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     function setIsVaultFrozen(bool _isVaultFrozen) external;
 
     function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
+
+    function virtualBalance() external view returns (uint256);
 }

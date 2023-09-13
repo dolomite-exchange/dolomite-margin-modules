@@ -25,6 +25,8 @@ import { GmxMarket } from "./GmxMarket.sol";
 import { GmxMarketPoolValueInfo } from "./GmxMarketPoolValueInfo.sol";
 import { GmxPrice } from "./GmxPrice.sol";
 import { IGmxDataStore } from "./IGmxDataStore.sol";
+import { GmxDeposit } from "./GmxDeposit.sol";
+import { GmxWithdrawal } from "./GmxWithdrawal.sol";
 
 
 /**
@@ -44,4 +46,8 @@ interface IGmxReader {
         bytes32 _pnlFactorType,
         bool _maximize
     ) external view returns (int256, GmxMarketPoolValueInfo.Props memory);
+
+    function getDeposit(IGmxDataStore dataStore, bytes32 key) external view returns (GmxDeposit.Props memory);
+
+    function getWithdrawal(IGmxDataStore dataStore, bytes32 key) external view returns (GmxWithdrawal.Props memory);
 }

@@ -25,7 +25,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
-import { IGmxV2IsolationModeTokenVault } from "../interfaces/gmx/IGmxV2IsolationModeTokenVault.sol"; // solhint-disable-line max-line-length
+import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
@@ -129,7 +129,7 @@ contract GmxV2IsolationModeVaultFactory is
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVault(_vault).setIsDepositSourceWrapper(true);
+        IGmxV2IsolationModeTokenVaultV1(_vault).setIsDepositSourceWrapper(true);
         _enqueueTransfer(
             _vault,
             address(DOLOMITE_MARGIN()),
@@ -239,7 +239,7 @@ contract GmxV2IsolationModeVaultFactory is
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVault(_vault).setIsVaultFrozen(_isVaultFrozen);
+        IGmxV2IsolationModeTokenVaultV1(_vault).setIsVaultFrozen(_isVaultFrozen);
     }
 
     function setIsDepositSourceWrapper(
@@ -249,7 +249,7 @@ contract GmxV2IsolationModeVaultFactory is
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVault(_vault).setIsDepositSourceWrapper(_isDepositSourceWrapper);
+        IGmxV2IsolationModeTokenVaultV1(_vault).setIsDepositSourceWrapper(_isDepositSourceWrapper);
     }
 
     function setShouldSkipTransfer(
@@ -259,7 +259,7 @@ contract GmxV2IsolationModeVaultFactory is
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVault(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
+        IGmxV2IsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
     // @follow-up Should we add a view function to return all market info?

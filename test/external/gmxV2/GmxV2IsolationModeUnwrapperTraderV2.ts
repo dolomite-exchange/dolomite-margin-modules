@@ -1,7 +1,7 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
+import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import {
   GmxRegistryV2,
@@ -14,7 +14,7 @@ import {
   IGmxMarketToken,
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
-import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectProtocolBalance, expectThrow } from 'test/utils/assertions';
 import {
@@ -34,7 +34,7 @@ const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const amountWei = parseEther('1');
 
-describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
+describe.only('GmxV2IsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
@@ -109,6 +109,79 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   describe('#initializer', () => {
     it('should work normally', async () => {
       expect(await unwrapper.GMX_REGISTRY_V2()).to.eq(gmxRegistryV2.address);
+    });
+
+    it('should not initialize twice', async () => {
+      await expectThrow(
+        unwrapper.initialize(
+          gmxRegistryV2.address,
+          core.tokens.weth.address,
+          factory.address,
+          core.dolomiteMargin.address
+        ),
+        'Initializable: contract is already initialized'
+      );
+    });
+  });
+
+  describe('#exchange', () => {
+    it('should fail if not called by DolomiteMargin', async () => {
+      await expectThrow(
+        unwrapper.connect(core.hhUser1).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          factory.address,
+          core.tokens.weth.address,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if input token is incorrect', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          factory.address,
+          core.tokens.weth.address,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `GmxV2IsolationModeUnwrapperV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if output token is incorrect', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          core.tokens.wbtc.address,
+          factory.address,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `GmxV2IsolationModeUnwrapperV2: Invalid output token <${core.tokens.wbtc.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if input amount is insufficient', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          core.tokens.weth.address,
+          factory.address,
+          ZERO_BI,
+          BYTES_EMPTY,
+        ),
+        'GmxV2IsolationModeUnwrapperV2: Invalid input amount',
+      );
     });
   });
 
@@ -193,7 +266,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     });
   });
 
-  describe.only('afterWithdrawalExecution', () => {
+  describe('afterWithdrawalExecution', () => {
     it('should work normally', async () => {
       await setupGMBalance(core, core.hhUser1.address, amountWei.mul(2), vault);
       await underlyingToken.connect(core.hhUser1).approve(vault.address, amountWei.mul(2));
@@ -294,6 +367,69 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       );
     });
   });
+
+  describe('#callFunction', () => {
+    it('should fail if account owner is not a vault', async () => {
+      const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginCaller).callFunction(
+          core.hhUser5.address,
+          { owner: core.hhUser2.address, number: defaultAccountNumber },
+          defaultAbiCoder.encode(['uint256'], [amountWei]),
+        ),
+        `GmxV2IsolationModeUnwrapperV2: Account owner is not a vault <${core.hhUser2.address.toLowerCase()}>`
+      );
+    });
+
+    it('should fail if transfer amount is zero', async () => {
+      const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginCaller).callFunction(
+          core.hhUser5.address,
+          { owner: vault.address, number: defaultAccountNumber },
+          defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
+        ),
+        'GmxV2IsolationModeUnwrapperV2: Invalid transfer amount'
+      );
+    });
+
+    it('should fail if virtual underlying balance is insufficient', async () => {
+      const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginCaller).callFunction(
+          core.hhUser5.address,
+          { owner: vault.address, number: defaultAccountNumber },
+          defaultAbiCoder.encode(['uint256'], [amountWei]),
+        ),
+        `GmxV2IsolationModeUnwrapperV2: Insufficient balance <${ZERO_BI}, ${amountWei.toString()}>`,
+      );
+    });
+  });
+
+  describe('#vaultSetWithdrawalInfo', () => {
+    it('should fail if not called by vault', async () => {
+      await expectThrow(
+        unwrapper.connect(core.hhUser1).vaultSetWithdrawalInfo(
+          DUMMY_WITHDRAWAL_KEY,
+          defaultAccountNumber,
+          core.tokens.weth.address
+        ),
+        'GmxV2IsolationModeUnwrapperV2: Invalid vault',
+      );
+    });
+  });
+
+  describe('#getExchangeCost', () => {
+    it('should revert', async () => {
+      await expectThrow(
+        unwrapper.getExchangeCost(factory.address, core.tokens.weth.address, ONE_ETH_BI, BYTES_EMPTY),
+        'GmxV2IsolationModeUnwrapperV2: getExchangeCost is not implemented'
+      );
+    });
+  })
 });
 
 async function mineBlocks(blockNumber: number) {

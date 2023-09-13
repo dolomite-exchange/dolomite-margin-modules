@@ -17,7 +17,7 @@ import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 't
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
 const SLIPPAGE_MINIMUM = 3;
 
-describe.only('GmxV2IsolationModeTraderBase', () => {
+describe('GmxV2IsolationModeTraderBase', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;

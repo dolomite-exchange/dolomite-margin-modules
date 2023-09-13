@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
 
 

@@ -31,7 +31,6 @@ import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { IGmxDepositCallbackReceiver } from "../interfaces/gmx/IGmxDepositCallbackReceiver.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { UpgradeableIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeWrapperTrader.sol";
@@ -214,7 +213,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         }
 
         {
-            IGmxExchangeRouter.CreateDepositParams memory depositParamsTest = IGmxExchangeRouter.CreateDepositParams(
+            IGmxExchangeRouter.CreateDepositParams memory depositParams = IGmxExchangeRouter.CreateDepositParams(
                 /* receiver = */ address(this),
                 /* callbackContract = */ address(this),
                 /* uiFeeReceiver = */ address(0),
@@ -229,7 +228,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                 /* callbackGasLimit = */ _getUint256(_CALLBACK_GAS_LIMIT_SLOT)
             );
 
-            bytes32 depositKey = exchangeRouter.createDeposit(depositParamsTest);
+            bytes32 depositKey = exchangeRouter.createDeposit(depositParams);
             _setDepositInfo(depositKey, DepositInfo(tradeOriginatorForStackTooDeep, accountNumber));
             emit DepositCreated(depositKey);
         }
