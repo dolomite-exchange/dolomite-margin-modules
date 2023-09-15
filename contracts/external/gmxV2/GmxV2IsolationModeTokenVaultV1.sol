@@ -383,7 +383,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         );
 
         bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
-        unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _outputToken);
+        unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _inputAmount, _outputToken);
     }
 
     function _setVirtualBalance(uint256 _bal) internal {

@@ -37,6 +37,7 @@ import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawalCallbackReceiver.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
@@ -55,13 +56,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
-
-    // ============ Enums ============
-
-    enum ExchangeType {
-        Normal,
-        Liquidation
-    }
 
     // ============ Constants ============
 
@@ -89,62 +83,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // ============================================
     // ============= Public Functions =============
     // ============================================
-
-    function exchange(
-        address _tradeOriginator,
-        address _receiver,
-        address _outputToken,
-        address _inputToken,
-        uint256 _inputAmount,
-        bytes calldata _orderData
-    )
-    external
-    override(IDolomiteMarginExchangeWrapper, UpgradeableIsolationModeUnwrapperTrader)
-    onlyDolomiteMargin(msg.sender)
-    returns (uint256) {
-        Require.that(
-            _inputToken == address(VAULT_FACTORY()),
-            _FILE,
-            "Invalid input token",
-            _inputToken
-        );
-        Require.that(
-            isValidOutputToken(_outputToken),
-            _FILE,
-            "Invalid output token",
-            _outputToken
-        );
-        Require.that(
-            _inputAmount > 0,
-            _FILE,
-            "Invalid input amount"
-        );
-
-        (uint256 minOutputAmount, bytes memory extraOrderData) = abi.decode(_orderData, (uint256, bytes));
-
-        uint256 outputAmount = _exchangeUnderlyingTokenToOutputToken(
-            _tradeOriginator,
-            _receiver,
-            _outputToken,
-            minOutputAmount,
-            address(VAULT_FACTORY()),
-            _inputAmount,
-            extraOrderData
-        );
-
-        // @follow-up How to test this since _exchangeUnderlying returns the minOutputAmount
-        Require.that(
-            outputAmount >= minOutputAmount,
-            _FILE,
-            "Insufficient output amount",
-            outputAmount,
-            minOutputAmount
-        );
-
-        IERC20(_outputToken).safeApprove(_receiver, outputAmount);
-
-        return outputAmount;
-    }
 
     function afterWithdrawalExecution(
         bytes32 _key,
@@ -269,6 +207,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     function vaultSetWithdrawalInfo(
         bytes32 _key,
         uint256 _accountNumber,
+        uint256 _inputAmount,
         address _outputToken
     ) external {
         Require.that(
@@ -283,10 +222,150 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             key: _key,
             vault: msg.sender,
             accountNumber: _accountNumber,
+            inputAmount: _inputAmount,
             outputToken: _outputToken,
             outputAmount: 0
         }));
         emit WithdrawalCreated(_key);
+    }
+
+    function exchange(
+        address _tradeOriginator,
+        address _receiver,
+        address _outputToken,
+        address _inputToken,
+        uint256 _inputAmount,
+        bytes calldata _orderData
+    )
+    external
+    override(IDolomiteMarginExchangeWrapper, UpgradeableIsolationModeUnwrapperTrader)
+    onlyDolomiteMargin(msg.sender)
+    returns (uint256) {
+        Require.that(
+            _inputToken == address(VAULT_FACTORY()),
+            _FILE,
+            "Invalid input token",
+            _inputToken
+        );
+        Require.that(
+            isValidOutputToken(_outputToken),
+            _FILE,
+            "Invalid output token",
+            _outputToken
+        );
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
+        );
+
+        (uint256 minOutputAmount, bytes memory extraOrderData) = abi.decode(_orderData, (uint256, bytes));
+
+        uint256 outputAmount = _exchangeUnderlyingTokenToOutputToken(
+            _tradeOriginator,
+            _receiver,
+            _outputToken,
+            minOutputAmount,
+            address(VAULT_FACTORY()),
+            _inputAmount,
+            extraOrderData
+        );
+
+        // @follow-up How to test this since _exchangeUnderlying returns the minOutputAmount
+        Require.that(
+            outputAmount >= minOutputAmount,
+            _FILE,
+            "Insufficient output amount",
+            outputAmount,
+            minOutputAmount
+        );
+
+        IERC20(_outputToken).safeApprove(_receiver, outputAmount);
+
+        return outputAmount;
+    }
+
+    function createActionsForUnwrapping(
+        uint256 _solidAccountId,
+        uint256 _liquidAccountId,
+        address,
+        address,
+        uint256 _outputMarket,
+        uint256 _inputMarket,
+        uint256 _minAmountOut,
+        uint256 _inputAmount,
+        bytes calldata _orderData
+    )
+    external
+    virtual
+    override(UpgradeableIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTrader)
+    view
+    returns (IDolomiteMargin.ActionArgs[] memory) {
+        Require.that(
+            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY()),
+            _FILE,
+            "Invalid input market",
+            _inputMarket
+        );
+        Require.that(
+            isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
+            _FILE,
+            "Invalid output market",
+            _outputMarket
+        );
+
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(abi.decode(_orderData, (bytes32)));
+        // The vault address being correct is checked later
+        Require.that(
+            withdrawalInfo.vault != address(0),
+            _FILE,
+            "Invalid withdrawal"
+        );
+        Require.that(
+            withdrawalInfo.inputAmount >= _inputAmount,
+            _FILE,
+            "Invalid input amount"
+        );
+
+        // If the input amount doesn't match, we need to add 2 actions to settle the difference
+        uint256 actionsLength = _inputAmount < withdrawalInfo.inputAmount ? 4 : 2;
+        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength);
+
+        // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
+        // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
+        actions[0] = AccountActionLib.encodeCallAction(
+            _liquidAccountId,
+            /* _callee */ address(this),
+            /* (_transferAmount, _key)[encoded] = */ abi.encode(_inputAmount, withdrawalInfo.key)
+        );
+        actions[1] = AccountActionLib.encodeExternalSellAction(
+            _solidAccountId,
+            _inputMarket,
+            _outputMarket,
+            /* _trader = */ address(this),
+            /* _amountInWei = */ _inputAmount,
+            /* _amountOutMinWei = */ _minAmountOut,
+            _orderData
+        );
+        if (actionsLength == 4) {
+            _inputAmount -= withdrawalInfo.inputAmount;
+            actions[2] = AccountActionLib.encodeCallAction(
+                _liquidAccountId,
+                /* _callee */ address(this),
+                /* (_transferAmount, _key)[encoded] = */ abi.encode(_inputAmount, withdrawalInfo.key)
+            );
+            actions[3] = AccountActionLib.encodeExternalSellAction(
+                _liquidAccountId,
+                _inputMarket,
+                _outputMarket,
+                /* _trader = */ address(this),
+                /* _amountInWei = */ _inputAmount,
+                /* _amountOutMinWei = */ 1,
+                _orderData
+            );
+        }
+
+        return actions;
     }
 
     function isValidOutputToken(
@@ -320,24 +399,26 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     }
 
     function _exchangeUnderlyingTokenToOutputToken(
-        address _tradeOriginator,
-        address /* receiver */,
+        address /* _tradeOriginator */,
+        address /* _receiver */,
         address _outputToken,
         uint256 _minOutputAmount,
         address /* _inputToken */,
-        uint256 /* _inputAmount */,
+        uint256 _inputAmount,
         bytes memory _extraOrderData
     )
         internal
         override
         returns (uint256)
     {
+        // We don't need to validate _tradeOriginator here because it is validated in _callFunction via the transfer
+        // being enqueued (without it being enqueued, we'd never reach this point)
         (bytes32 key) = abi.decode(_extraOrderData, (bytes32));
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
         Require.that(
-            withdrawalInfo.vault == _tradeOriginator,
+            withdrawalInfo.inputAmount >= _inputAmount,
             _FILE,
-            "Invalid withdrawal"
+            "Invalid input amount"
         );
         Require.that(
             withdrawalInfo.outputToken == _outputToken,
@@ -349,7 +430,14 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _FILE,
             "Invalid output amount"
         );
-        return withdrawalInfo.outputAmount;
+        // Reduce output amount by the size of the ratio of the input amount. Almost always the ratio will be 100%.
+        // During liquidations, there will be a non-100% ratio because the user may not lose all collateral to the
+        // liquidator.
+        uint256 outputAmount = withdrawalInfo.outputAmount * _inputAmount / withdrawalInfo.inputAmount;
+        withdrawalInfo.inputAmount -= _inputAmount;
+        withdrawalInfo.outputAmount -= outputAmount;
+        _setWithdrawalInfo(key, withdrawalInfo);
+        return outputAmount;
     }
 
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
@@ -357,7 +445,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         storageInfo.key = _key;
         storageInfo.vault = _info.vault;
         storageInfo.accountNumber = _info.accountNumber;
+        storageInfo.inputAmount = _info.inputAmount;
         storageInfo.outputToken = _info.outputToken;
+        storageInfo.outputAmount = _info.outputAmount;
     }
 
     function _callFunction(
@@ -376,9 +466,15 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
         // designated recipient
-        (uint256 transferAmount) = abi.decode(_data, (uint256));
+        (uint256 transferAmount, bytes32 key) = abi.decode(_data, (uint256, bytes32));
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
         Require.that(
-            transferAmount > 0,
+            withdrawalInfo.vault == _accountInfo.owner,
+            _FILE,
+            "Invalid account owner"
+        );
+        Require.that(
+            transferAmount > 0 && transferAmount <= withdrawalInfo.inputAmount,
             _FILE,
             "Invalid transfer amount"
         );
@@ -421,6 +517,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             key: bytes32(0),
             vault: address(0),
             accountNumber: 0,
+            inputAmount: 0,
             outputToken: address(0),
             outputAmount: 0
         });

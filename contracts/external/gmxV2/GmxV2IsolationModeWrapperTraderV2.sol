@@ -102,6 +102,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
 
         if (receivedMarketTokens.value > depositInfo.outputAmount) {
+            // We need to send the diff into the vault via `operate` and blind transfer the min token amount
             uint256 diff = receivedMarketTokens.value - _deposit.numbers.minMarketTokens;
 
             underlyingToken.safeApprove(depositInfo.vault, diff);
@@ -124,6 +125,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                 emit DepositFailed(_key, "");
             }
         } else {
+            // We just need to blind transfer the min amount to the vault
             underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
             factory.setIsVaultFrozen(depositInfo.vault, false);
             _setDepositInfo(_key, _emptyDepositInfo());

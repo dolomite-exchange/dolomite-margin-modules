@@ -38,8 +38,11 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
         bytes32 key;
         address vault;
         uint256 accountNumber;
+        // @dev The amount of GM tokens that is being sold
+        uint256 inputAmount;
         address outputToken;
-        uint256 outputAmount; // initially 0 until the withdrawal is executed
+        // @dev initially 0 until the withdrawal is executed
+        uint256 outputAmount;
     }
 
     event WithdrawalCreated(bytes32 indexed key);
@@ -47,5 +50,10 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
     event WithdrawalFailed(bytes32 indexed key, string reason);
     event WithdrawalCancelled(bytes32 indexed key);
 
-    function vaultSetWithdrawalInfo(bytes32 _key, uint256 _accountNumber, address _outputToken) external;
+    function vaultSetWithdrawalInfo(
+        bytes32 _key,
+        uint256 _accountNumber,
+        uint256 _inputAmount,
+        address _outputToken
+    ) external;
 }
