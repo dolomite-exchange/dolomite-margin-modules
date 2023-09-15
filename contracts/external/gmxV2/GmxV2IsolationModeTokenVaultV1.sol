@@ -121,6 +121,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         );
     }
 
+    // @todo add comment that it is automatically sent back to vault upon cancellation
     function initiateUnwrapping(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
@@ -159,7 +160,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
                     /* minShortTokenAmount = */ _outputToken == factory.shortToken() ? _minOutputAmount : 0,
                     /* shouldUnwrapNativeToken = */ false,
                     /* executionFee = */ ethExecutionFee,
-                    /* callbackGasLimit = */ unwrapper.callbackGasLimit()
+                    /* callbackGasLimit = */ 2000000
             );
 
             bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);

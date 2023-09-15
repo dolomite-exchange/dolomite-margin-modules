@@ -186,6 +186,7 @@ import {
   GMX_DEPOSIT_VAULT_MAP,
   GMX_ETH_USD_MARKET_TOKEN_MAP,
   GMX_EXCHANGE_ROUTER_MAP,
+  GMX_EXECUTOR_MAP,
   GMX_MAP,
   GMX_READER_MAP,
   GMX_REWARD_ROUTER_MAP,
@@ -291,6 +292,7 @@ export interface GmxEcosystemV2 {
   gmxDepositVault: SignerWithAddress;
   gmxEthUsdMarketToken: IGmxMarketToken;
   gmxExchangeRouter: IGmxExchangeRouter;
+  gmxExecutor: SignerWithAddress;
   gmxReader: IGmxReader;
   gmxRouter: IGmxRouter;
   gmxWithdrawalHandler: IGmxWithdrawalHandler;
@@ -982,6 +984,7 @@ async function createGmxEcosystemV2(network: Network, signer: SignerWithAddress)
       IGmxExchangeRouter__factory.connect,
       signer,
     ),
+    gmxExecutor: await impersonateOrFallback(GMX_EXECUTOR_MAP[network] as string, true, signer),
     gmxReader: getContract(GMX_READER_MAP[network] as string, IGmxReader__factory.connect, signer),
     gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, IGmxRouter__factory.connect, signer),
     gmxWithdrawalHandler: getContract(

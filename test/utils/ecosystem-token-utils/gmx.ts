@@ -1,4 +1,4 @@
-import { BigNumberish, ethers } from 'ethers';
+import { BigNumber, BigNumberish, ethers } from 'ethers';
 import {
   ERC20,
   GLPIsolationModeTokenVaultV1,
@@ -59,6 +59,7 @@ import {
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
 import { BYTES_EMPTY } from 'src/utils/no-deps-constants';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
 export async function createGLPPriceOracleV1(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
@@ -296,4 +297,272 @@ export function getInitiateUnwrappingParams(
     makerAccounts: [],
     userConfig: { deadline: '123123123123123', balanceCheckFlag: 3 },
   };
+}
+
+export function getOracleParams(token1: string, token2: string) {
+  return {
+    signerInfo: "1",
+    tokens:[
+    ],
+    compactedMinOracleBlockNumbers:[
+    ],
+    compactedMaxOracleBlockNumbers:[
+    ],
+    compactedOracleTimestamps:[
+    ],
+    compactedDecimals:[
+    ],
+    compactedMinPrices:[
+    ],
+    compactedMinPricesIndexes:[
+    ],
+    compactedMaxPrices:[
+    ],
+    compactedMaxPricesIndexes:[
+    ],
+    signatures:[
+    ],
+    priceFeedTokens:[
+      token1,
+      token2
+    ]
+  }
+}
+
+export function getWithdrawalObject(
+  unwrapper: string,
+  marketToken: string,
+  minLongTokenAmount: BigNumber,
+  minShortTokenAmount: BigNumber,
+  marketTokenAmount: BigNumber,
+  executionFee: BigNumber,
+  outputToken: string,
+  secondaryOutputToken: string,
+  outputAmount: BigNumber = BigNumber.from('0'),
+  secondaryOutputAmount: BigNumber = BigNumber.from('0'),
+  callbackGasLimit: BigNumber = BigNumber.from('1500000'),
+) {
+  const withdrawal = {
+    addresses: {
+      account: unwrapper,
+      receiver: unwrapper,
+      callbackContract: unwrapper,
+      uiFeeReceiver: ZERO_ADDRESS,
+      market: marketToken,
+      longTokenSwapPath: [],
+      shortTokenSwapPath: [],
+    },
+    numbers: {
+      marketTokenAmount,
+      minLongTokenAmount,
+      minShortTokenAmount,
+      updatedAtBlock: 123123123,
+      executionFee,
+      callbackGasLimit: callbackGasLimit,
+    },
+    flags: {
+      shouldUnwrapNativeToken: false,
+    },
+  };
+
+  let eventData;
+  if (outputAmount.eq(0) && secondaryOutputAmount.eq(0)) {
+    eventData = {
+      addressItems: {
+        items: [],
+        arrayItems: [],
+      },
+      uintItems: {
+        items: [],
+        arrayItems: [],
+      },
+      intItems: {
+        items: [],
+        arrayItems: [],
+      },
+      boolItems: {
+        items: [],
+        arrayItems: [],
+      },
+      bytes32Items: {
+        items: [],
+        arrayItems: [],
+      },
+      bytesItems: {
+        items: [],
+        arrayItems: [],
+      },
+      stringItems: {
+        items: [],
+        arrayItems: [],
+      },
+    };
+  } else {
+    eventData = {
+      addressItems: {
+        items: [
+          {
+            key: 'outputToken',
+            value: outputToken,
+          },
+          {
+            key: 'secondaryOutputToken',
+            value: secondaryOutputToken,
+          },
+        ],
+        arrayItems: [],
+      },
+      uintItems: {
+        items: [
+          {
+            key: 'outputAmount',
+            value: outputAmount,
+          },
+          {
+            key: 'secondaryOutputAmount',
+            value: secondaryOutputAmount,
+          },
+        ],
+        arrayItems: [],
+      },
+      intItems: {
+        items: [],
+        arrayItems: [],
+      },
+      boolItems: {
+        items: [],
+        arrayItems: [],
+      },
+      bytes32Items: {
+        items: [],
+        arrayItems: [],
+      },
+      bytesItems: {
+        items: [],
+        arrayItems: [],
+      },
+      stringItems: {
+        items: [],
+        arrayItems: [],
+      },
+    };
+  }
+  return { withdrawal, eventData };
+}
+
+export function getDepositObject(
+  wrapper: string,
+  marketToken: string,
+  longToken: string,
+  shortToken: string,
+  longAmount: BigNumber,
+  shortAmount: BigNumber,
+  minMarketTokens: BigNumber,
+  executionFee: BigNumber,
+  receivedMarketToken: BigNumber = BigNumber.from('0'),
+  callbackGasLimit: BigNumber = BigNumber.from('1500000'),
+) {
+  const deposit = {
+    addresses: {
+      account: wrapper,
+      receiver: wrapper,
+      callbackContract: wrapper,
+      uiFeeReceiver: ZERO_ADDRESS,
+      market: marketToken,
+      initialLongToken: longToken,
+      initialShortToken: shortToken,
+      longTokenSwapPath: [],
+      shortTokenSwapPath: [],
+    },
+    numbers: {
+      minMarketTokens,
+      executionFee,
+      initialLongTokenAmount: longAmount,
+      initialShortTokenAmount: shortAmount,
+      updatedAtBlock: 123123123,
+      callbackGasLimit: callbackGasLimit,
+    },
+    flags: {
+      shouldUnwrapNativeToken: false,
+    },
+  };
+
+  let eventData;
+  if (receivedMarketToken.eq(0)) {
+    eventData = {
+      addressItems: {
+        items: [],
+        arrayItems: [],
+      },
+      uintItems: {
+        items: [],
+        arrayItems: [],
+      },
+      intItems: {
+        items: [],
+        arrayItems: [],
+      },
+      boolItems: {
+        items: [],
+        arrayItems: [],
+      },
+      bytes32Items: {
+        items: [],
+        arrayItems: [],
+      },
+      bytesItems: {
+        items: [],
+        arrayItems: [],
+      },
+      stringItems: {
+        items: [],
+        arrayItems: [],
+      },
+    };
+  } else {
+    eventData = {
+      addressItems: {
+        items: [],
+        arrayItems: [],
+      },
+      uintItems: {
+        items: [
+          {
+            key: 'longTokenAmount',
+            value: longAmount,
+          },
+          {
+            key: 'shortTokenAmount',
+            value: shortAmount,
+          },
+          {
+            key: 'receivedMarketTokens',
+            value: receivedMarketToken,
+          },
+        ],
+        arrayItems: [],
+      },
+      intItems: {
+        items: [],
+        arrayItems: [],
+      },
+      boolItems: {
+        items: [],
+        arrayItems: [],
+      },
+      bytes32Items: {
+        items: [],
+        arrayItems: [],
+      },
+      bytesItems: {
+        items: [],
+        arrayItems: [],
+      },
+      stringItems: {
+        items: [],
+        arrayItems: [],
+      },
+    };
+  }
+  return { deposit, eventData };
 }

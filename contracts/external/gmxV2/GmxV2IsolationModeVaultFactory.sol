@@ -262,7 +262,6 @@ contract GmxV2IsolationModeVaultFactory is
         IGmxV2IsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
-    // @follow-up Should we add a view function to return all market info?
     function getMarketInfo() external view returns (TokenAndMarketParams memory) {
         return TokenAndMarketParams({
             marketToken: UNDERLYING_TOKEN,

@@ -35,6 +35,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { UpgradeableIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeWrapperTrader.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   GmxV2IsolationModeWrapperTraderV2
@@ -93,7 +94,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         uint256 len = _eventData.uintItems.items.length;
         GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[len-1];
         Require.that(
-            keccak256(abi.encodePacked(receivedMarketTokens.key)) == keccak256(abi.encodePacked("receivedMarketToken")),
+            keccak256(abi.encodePacked(receivedMarketTokens.key)) == keccak256(abi.encodePacked("receivedMarketTokens")),
             _FILE,
             "Unexpected return data"
         );

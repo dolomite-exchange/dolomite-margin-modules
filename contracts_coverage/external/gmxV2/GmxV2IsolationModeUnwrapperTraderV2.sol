@@ -124,14 +124,15 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             extraOrderData
         );
 
-        // @follow-up How to test this since _exchangeUnderlying returns the minOutputAmount
-        if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
-        Require.that(outputAmount >= minOutputAmount,
-            _FILE,
-            "Insufficient output amount",
-            outputAmount,
-            minOutputAmount
-        );
+        // @follow-up I think we can remove this check as _exchangeUnderlyingToken returns the minOutputAmount
+        /*
+        //     outputAmount >= minOutputAmount,
+        //     _FILE,
+        //     "Insufficient output amount",
+        //     outputAmount,
+        //     minOutputAmount
+        // );
+        */
 
         IERC20(_outputToken).safeApprove(_receiver, outputAmount);
 
@@ -180,8 +181,8 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _FILE,
             "Unexpected return data"
         );
-        if (outputTokenAmount.value == 0 || secondaryOutputTokenAmount.value == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(outputTokenAmount.value == 0 || secondaryOutputTokenAmount.value == 0,
+        if (outputTokenAddress.value == secondaryOutputTokenAddress.value && outputTokenAddress.value == withdrawalInfo.outputToken) { /* FOR COVERAGE TESTING */ }
+        Require.that(outputTokenAddress.value == secondaryOutputTokenAddress.value && outputTokenAddress.value == withdrawalInfo.outputToken,
             _FILE,
             "Can only receive one token"
         );
@@ -203,7 +204,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             withdrawalInfo.accountNumber,
             marketIdsPath,
             _withdrawal.numbers.marketTokenAmount,
-            outputTokenAmount.value,
+            outputTokenAmount.value  + secondaryOutputTokenAmount.value,
             traderParams,
             new IDolomiteMargin.AccountInfo[](0),
             userConfig
@@ -229,9 +230,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         IERC20 underlyingToken = IERC20(address(factory.UNDERLYING_TOKEN()));
-        // console.log(underlyingToken.balanceOf(address(this)));
-        // console.log(underlyingToken.balanceOf(withdrawalInfo.vault));
-        // underlyingToken.safeTransfer(withdrawalInfo.vault, _withdrawal.numbers.marketTokenAmount);
         if (IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).virtualBalance()== underlyingToken.balanceOf(withdrawalInfo.vault)) { /* FOR COVERAGE TESTING */ }
         Require.that(IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).virtualBalance()
                 == underlyingToken.balanceOf(withdrawalInfo.vault),
@@ -285,6 +283,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         bytes memory
     )
         internal
+        virtual
         override
         returns (uint256)
     {

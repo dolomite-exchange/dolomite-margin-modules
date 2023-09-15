@@ -1,9 +1,7 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { ethers } from 'hardhat';
 import {
   GmxRegistryV2,
   GmxV2IsolationModeTokenVaultV1,
@@ -19,7 +17,9 @@ import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-
 import {
   getRealLatestBlockNumber,
   impersonate,
+  mineBlocks,
   revertToSnapshotAndCapture,
+  setEtherBalance,
   snapshot,
 } from 'test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
@@ -30,7 +30,9 @@ import {
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
   createGmxV2MarketTokenPriceOracle,
+  getDepositObject,
   getInitiateWrappingParams,
+  getOracleParams,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
@@ -49,7 +51,7 @@ const executionFee = parseEther('.01');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
-const SLIPPAGE_MINIMUM = 3;
+const SLIPPAGE_MINIMUM = 500;
 const minAmountOut = parseEther('1800');
 
 describe('GmxV2IsolationModeWrapperTraderV2', () => {
@@ -116,6 +118,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
     await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
     await wrapper.connect(core.governance).ownerSetCallbackGasLimit(CALLBACK_GAS_LIMIT);
+    await wrapper.connect(core.governance).ownerSetSlippageMinimum(SLIPPAGE_MINIMUM);
+    await setEtherBalance(core.gmxEcosystemV2!.gmxExecutor.address, parseEther("100"));
 
     snapshotId = await snapshot();
   });
@@ -266,7 +270,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         core.marketIds.weth,
         ONE_ETH_BI,
         marketId,
-        minAmountOut,
+        parseEther('1700'),
         wrapper,
         executionFee
       );
@@ -287,27 +291,11 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
-      await setupGMBalance(core, wrapper.address, minAmountOut, vault);
-      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
-      const depositInfo = getDepositObject(
-        wrapper.address,
-        underlyingToken.address,
-        core.tokens.weth.address,
-        core.tokens.nativeUsdc!.address,
-        ONE_ETH_BI,
-        ZERO_BI,
-        minAmountOut,
-        minAmountOut
-      );
-      await wrapper.connect(depositExecutor).afterDepositExecution(
-        depositKey,
-        depositInfo.deposit,
-        depositInfo.eventData
-      );
+      await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor).executeDeposit(depositKey, getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address))
 
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
-      await expectWalletBalance(vault.address, underlyingToken, minAmountOut);
+      expect((await core.dolomiteMargin.getAccountWei({ owner: vault.address, number: borrowAccountNumber}, marketId)).value).to.be.gte(parseEther('1700'));
+      expect(await underlyingToken.balanceOf(vault.address)).to.be.gte(parseEther('1700'));
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -327,7 +315,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         core.marketIds.nativeUsdc!,
         usdcAmount,
         marketId,
-        minAmountOut,
+        parseEther('1060'),
         wrapper,
         executionFee
       );
@@ -348,27 +336,11 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
-      await setupGMBalance(core, wrapper.address, minAmountOut.mul(2), vault);
-      const depositExecutor = await impersonate(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
-      const depositInfo = getDepositObject(
-        wrapper.address,
-        underlyingToken.address,
-        core.tokens.weth.address,
-        core.tokens.nativeUsdc!.address,
-        ZERO_BI,
-        usdcAmount,
-        minAmountOut,
-        minAmountOut.mul(2)
-      );
-      await wrapper.connect(depositExecutor).afterDepositExecution(
-        depositKey,
-        depositInfo.deposit,
-        depositInfo.eventData
-      );
+      await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor).executeDeposit(depositKey, getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address))
 
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut.mul(2));
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, 0);
-      await expectWalletBalance(vault.address, underlyingToken, minAmountOut.mul(2));
+      expect((await core.dolomiteMargin.getAccountWei({ owner: vault.address, number: borrowAccountNumber}, marketId)).value).to.be.gte(parseEther('1000'));
+      expect(await underlyingToken.balanceOf(vault.address)).to.be.gte(parseEther('1000'));
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -419,6 +391,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         ONE_ETH_BI,
         ZERO_BI,
         minAmountOut,
+        executionFee,
         minAmountOut
       );
       await wrapper.connect(depositExecutor).afterDepositExecution(
@@ -480,6 +453,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         ONE_ETH_BI,
         ZERO_BI,
         minAmountOut,
+        executionFee,
         minAmountOut
       );
       depositInfo.eventData.uintItems.items[2].key = 'receivedBadTokens';
@@ -501,7 +475,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         core.tokens.nativeUsdc!.address,
         ONE_ETH_BI,
         ZERO_BI,
-        ONE_BI
+        ONE_BI,
+        executionFee,
       );
       await expectThrow(
         wrapper.connect(core.hhUser1).afterDepositExecution(
@@ -522,7 +497,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         core.tokens.nativeUsdc!.address,
         ONE_ETH_BI,
         ZERO_BI,
-        ONE_BI
+        ONE_BI,
+        executionFee,
       );
       await expectThrow(
         wrapper.connect(depositExecutor).afterDepositExecution(
@@ -646,7 +622,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         core.tokens.nativeUsdc!.address,
         ONE_ETH_BI,
         ZERO_BI,
-        ONE_BI
+        ONE_BI,
+        executionFee,
       );
       await expectThrow(
         wrapper.connect(core.hhUser1).afterDepositCancellation(
@@ -667,7 +644,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         core.tokens.nativeUsdc!.address,
         ONE_ETH_BI,
         ZERO_BI,
-        ONE_BI
+        ONE_BI,
+        executionFee,
       );
       await expectThrow(
         wrapper.connect(depositExecutor).afterDepositCancellation(
@@ -821,126 +799,3 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
   });
 });
-
-async function mineBlocks(blockNumber: number) {
-  let i = blockNumber;
-  while (i > 0) {
-    await ethers.provider.send('evm_mine', []);
-    i--;
-  }
-}
-
-function getDepositObject(
-  wrapper: string,
-  marketToken: string,
-  longToken: string,
-  shortToken: string,
-  longAmount: BigNumber,
-  shortAmount: BigNumber,
-  minMarketTokens: BigNumber,
-  receivedMarketToken: BigNumber = BigNumber.from('0')
-) {
-  const deposit = {
-    addresses: {
-      account: wrapper,
-      receiver: wrapper,
-      callbackContract: wrapper,
-      uiFeeReceiver: ZERO_ADDRESS,
-      market: marketToken,
-      initialLongToken: longToken,
-      initialShortToken: shortToken,
-      longTokenSwapPath: [],
-      shortTokenSwapPath: [],
-    },
-    numbers: {
-      minMarketTokens,
-      executionFee,
-      initialLongTokenAmount: longAmount,
-      initialShortTokenAmount: shortAmount,
-      updatedAtBlock: 123123123,
-      callbackGasLimit: CALLBACK_GAS_LIMIT,
-    },
-    flags: {
-      shouldUnwrapNativeToken: false,
-    },
-  };
-
-  let eventData;
-  if (receivedMarketToken.eq(0)) {
-    eventData = {
-      addressItems: {
-        items: [],
-        arrayItems: [],
-      },
-      uintItems: {
-        items: [],
-        arrayItems: [],
-      },
-      intItems: {
-        items: [],
-        arrayItems: [],
-      },
-      boolItems: {
-        items: [],
-        arrayItems: [],
-      },
-      bytes32Items: {
-        items: [],
-        arrayItems: [],
-      },
-      bytesItems: {
-        items: [],
-        arrayItems: [],
-      },
-      stringItems: {
-        items: [],
-        arrayItems: [],
-      },
-    };
-  } else {
-    eventData = {
-      addressItems: {
-        items: [],
-        arrayItems: [],
-      },
-      uintItems: {
-        items: [
-          {
-            key: 'longTokenAmount',
-            value: longAmount,
-          },
-          {
-            key: 'shortTokenAmount',
-            value: shortAmount,
-          },
-          {
-            key: 'receivedMarketToken',
-            value: receivedMarketToken,
-          },
-        ],
-        arrayItems: [],
-      },
-      intItems: {
-        items: [],
-        arrayItems: [],
-      },
-      boolItems: {
-        items: [],
-        arrayItems: [],
-      },
-      bytes32Items: {
-        items: [],
-        arrayItems: [],
-      },
-      bytesItems: {
-        items: [],
-        arrayItems: [],
-      },
-      stringItems: {
-        items: [],
-        arrayItems: [],
-      },
-    };
-  }
-  return { deposit, eventData };
-}
