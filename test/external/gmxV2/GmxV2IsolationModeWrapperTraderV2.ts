@@ -119,7 +119,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
     await wrapper.connect(core.governance).ownerSetCallbackGasLimit(CALLBACK_GAS_LIMIT);
     await wrapper.connect(core.governance).ownerSetSlippageMinimum(SLIPPAGE_MINIMUM);
-    await setEtherBalance(core.gmxEcosystemV2!.gmxExecutor.address, parseEther("100"));
+    await setEtherBalance(core.gmxEcosystemV2!.gmxExecutor.address, parseEther('100'));
 
     snapshotId = await snapshot();
   });
@@ -291,10 +291,16 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
-      await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor).executeDeposit(depositKey, getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address))
+      await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor).executeDeposit(
+        depositKey,
+        getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address)
+      );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
-      expect((await core.dolomiteMargin.getAccountWei({ owner: vault.address, number: borrowAccountNumber}, marketId)).value).to.be.gte(parseEther('1700'));
+      expect((await core.dolomiteMargin.getAccountWei(
+        { owner: vault.address, number: borrowAccountNumber },
+        marketId
+      )).value).to.be.gte(parseEther('1700'));
       expect(await underlyingToken.balanceOf(vault.address)).to.be.gte(parseEther('1700'));
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
@@ -336,10 +342,16 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
-      await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor).executeDeposit(depositKey, getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address))
+      await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor).executeDeposit(
+        depositKey,
+        getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address)
+      );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, 0);
-      expect((await core.dolomiteMargin.getAccountWei({ owner: vault.address, number: borrowAccountNumber}, marketId)).value).to.be.gte(parseEther('1000'));
+      expect((await core.dolomiteMargin.getAccountWei(
+        { owner: vault.address, number: borrowAccountNumber },
+        marketId
+      )).value).to.be.gte(parseEther('1000'));
       expect(await underlyingToken.balanceOf(vault.address)).to.be.gte(parseEther('1000'));
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);

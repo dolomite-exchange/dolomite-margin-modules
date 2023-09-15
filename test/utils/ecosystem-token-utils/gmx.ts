@@ -301,7 +301,7 @@ export function getInitiateUnwrappingParams(
 
 export function getOracleParams(token1: string, token2: string) {
   return {
-    signerInfo: "1",
+    signerInfo: '1',
     tokens:[
     ],
     compactedMinOracleBlockNumbers:[
@@ -326,7 +326,7 @@ export function getOracleParams(token1: string, token2: string) {
       token1,
       token2
     ]
-  }
+  };
 }
 
 export function getWithdrawalObject(
@@ -356,9 +356,9 @@ export function getWithdrawalObject(
       marketTokenAmount,
       minLongTokenAmount,
       minShortTokenAmount,
-      updatedAtBlock: 123123123,
       executionFee,
-      callbackGasLimit: callbackGasLimit,
+      callbackGasLimit,
+      updatedAtBlock: 123123123,
     },
     flags: {
       shouldUnwrapNativeToken: false,
@@ -477,10 +477,10 @@ export function getDepositObject(
     numbers: {
       minMarketTokens,
       executionFee,
+      callbackGasLimit,
       initialLongTokenAmount: longAmount,
       initialShortTokenAmount: shortAmount,
       updatedAtBlock: 123123123,
-      callbackGasLimit: callbackGasLimit,
     },
     flags: {
       shouldUnwrapNativeToken: false,

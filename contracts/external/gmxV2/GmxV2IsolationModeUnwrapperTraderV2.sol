@@ -40,7 +40,6 @@ import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawal
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
-import "hardhat/console.sol";
 
 /**
  * @title   GmxV2IsolationModeUnwrapperTraderV2
@@ -162,27 +161,32 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         GmxEventUtils.AddressKeyValue memory secondaryOutputTokenAddress = _eventData.addressItems.items[1];
         GmxEventUtils.UintKeyValue memory secondaryOutputTokenAmount = _eventData.uintItems.items[1];
         Require.that(
-            keccak256(abi.encodePacked(outputTokenAddress.key)) == keccak256(abi.encodePacked("outputToken")),
+            keccak256(abi.encodePacked(outputTokenAddress.key)) 
+                == keccak256(abi.encodePacked("outputToken")),
             _FILE,
             "Unexpected return data"
         );
         Require.that(
-            keccak256(abi.encodePacked(outputTokenAmount.key)) == keccak256(abi.encodePacked("outputAmount")),
+            keccak256(abi.encodePacked(outputTokenAmount.key)) 
+                == keccak256(abi.encodePacked("outputAmount")),
             _FILE,
             "Unexpected return data"
         );
         Require.that(
-            keccak256(abi.encodePacked(secondaryOutputTokenAddress.key)) == keccak256(abi.encodePacked("secondaryOutputToken")),
+            keccak256(abi.encodePacked(secondaryOutputTokenAddress.key)) 
+                == keccak256(abi.encodePacked("secondaryOutputToken")),
             _FILE,
             "Unexpected return data"
         );
         Require.that(
-            keccak256(abi.encodePacked(secondaryOutputTokenAmount.key)) == keccak256(abi.encodePacked("secondaryOutputAmount")),
+            keccak256(abi.encodePacked(secondaryOutputTokenAmount.key)) 
+                == keccak256(abi.encodePacked("secondaryOutputAmount")),
             _FILE,
             "Unexpected return data"
         );
         Require.that(
-            outputTokenAddress.value == secondaryOutputTokenAddress.value && outputTokenAddress.value == withdrawalInfo.outputToken,
+            outputTokenAddress.value == secondaryOutputTokenAddress.value 
+                && outputTokenAddress.value == withdrawalInfo.outputToken,
             _FILE,
             "Can only receive one token"
         );
@@ -216,7 +220,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
     function afterWithdrawalCancellation(
         bytes32 _key,
-        GmxWithdrawal.Props memory _withdrawal,
+        GmxWithdrawal.Props memory /* _withdrawal */,
         GmxEventUtils.EventLogData memory /* _eventData */
     ) 
     external 

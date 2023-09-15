@@ -85,13 +85,13 @@ describe('UpgradeableIsolationModeUnwrapperTrader', () => {
         core.dolomiteMargin.address
     );
     const unwrapperProxy = await createContractWithAbi<IsolationModeTraderProxy>(
-        IsolationModeTraderProxy__factory.abi,
-        IsolationModeTraderProxy__factory.bytecode,
-        [
-            unwrapperImplementation.address,
-            core.dolomiteMargin.address,
-            calldata.data!,
-        ],
+      IsolationModeTraderProxy__factory.abi,
+      IsolationModeTraderProxy__factory.bytecode,
+      [
+        unwrapperImplementation.address,
+        core.dolomiteMargin.address,
+        calldata.data!,
+      ],
     );
     unwrapper = TestUpgradeableIsolationModeUnwrapperTrader__factory.connect(unwrapperProxy.address, core.hhUser1);
 

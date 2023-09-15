@@ -23,7 +23,6 @@ pragma solidity ^0.8.9;
 import { GmxV2IsolationModeTokenVaultV1 } from "../external/gmxV2/GmxV2IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IGenericTraderProxyV1 } from "../external/interfaces/IGenericTraderProxyV1.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-import { IGmxV2IsolationModeTokenVaultV1 } from "../external/interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -36,7 +35,7 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
 
     bytes32 private constant _FILE = "TestGmxV2IsolationModeVaultV1";
 
-    constructor(address _weth) GmxV2IsolationModeTokenVaultV1(_weth) {}
+    constructor(address _weth) GmxV2IsolationModeTokenVaultV1(_weth) {} // solhint-disable-line no-empty-blocks
 
     function callInitiateWrappingAndTriggerReentrancy(
         uint256 _tradeAccountNumber,

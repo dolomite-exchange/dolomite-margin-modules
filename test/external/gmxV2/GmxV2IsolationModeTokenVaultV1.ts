@@ -374,7 +374,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        {value: parseEther('.01')},
+        { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
@@ -391,7 +391,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
-          {value: parseEther('.01')},
+          { value: parseEther('.01') },
         ),
         'GmxV2IsolationModeVaultV1: Invalid output token',
       );
@@ -405,7 +405,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
-          {value: parseEther('.01')},
+          { value: parseEther('.01') },
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
       );
@@ -419,7 +419,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
-          {value: parseEther('.01')},
+          { value: parseEther('.01') },
         ),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
       );
@@ -433,7 +433,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
-          {value: parseEther('.01')},
+          { value: parseEther('.01') },
         ),
         'IsolationModeTokenVaultV1: Reentrant call',
       );
@@ -499,7 +499,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        {value: parseEther('.01')},
+        { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       const filter = unwrapper.filters.WithdrawalCreated();
