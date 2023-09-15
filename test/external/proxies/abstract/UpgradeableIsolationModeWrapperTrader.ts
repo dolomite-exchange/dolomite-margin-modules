@@ -11,8 +11,6 @@ import {
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
-  TestIsolationModeWrapperTraderV2,
-  TestIsolationModeWrapperTraderV2__factory,
   TestUpgradeableIsolationModeWrapperTrader,
   TestUpgradeableIsolationModeWrapperTrader__factory,
 } from '../../../../src/types';
@@ -82,7 +80,7 @@ describe('UpgradeableIsolationModeWrapperTrader', () => {
     const calldata = await wrapperImplementation.populateTransaction.initialize(
       otherToken.address,
       factory.address,
-      core.dolomiteMargin.address
+      core.dolomiteMargin.address,
     );
     const wrapperProxy = await createContractWithAbi<IsolationModeTraderProxy>(
       IsolationModeTraderProxy__factory.abi,
@@ -90,7 +88,7 @@ describe('UpgradeableIsolationModeWrapperTrader', () => {
       [
         wrapperImplementation.address,
         core.dolomiteMargin.address,
-        calldata.data!
+        calldata.data!,
       ],
     );
     wrapper = TestUpgradeableIsolationModeWrapperTrader__factory.connect(wrapperProxy.address, core.hhUser1);

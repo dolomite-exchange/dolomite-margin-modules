@@ -16,11 +16,7 @@ import {
 } from '../../utils/assertions';
 import { createMagicGLPUnwrapperTraderV2 } from '../../utils/ecosystem-token-utils/abracadabra';
 import { setExpiry } from '../../utils/expiry-utils';
-import {
-  getLastZapAmountToBigNumber,
-  liquidateV4WithZap,
-  toZapBigNumber,
-} from '../../utils/liquidation-utils';
+import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 import { checkForParaswapSuccess } from '../../utils/trader-utils';
 

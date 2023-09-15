@@ -33,9 +33,7 @@ import {
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
 import { setExpiry } from '../../utils/expiry-utils';
-import {
-  liquidateV4WithIsolationMode,
-} from '../../utils/liquidation-utils';
+import { liquidateV4WithIsolationMode } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
 import {
   checkForParaswapSuccess,

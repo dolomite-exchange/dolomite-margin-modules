@@ -18,10 +18,10 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV2__factory,
   PlutusVaultGLPPriceOracle,
   PlutusVaultGLPPriceOracle__factory,
-  PlutusVaultRegistry,
-  PlutusVaultRegistry__factory,
   PlutusVaultGLPWithChainlinkAutomationPriceOracle,
   PlutusVaultGLPWithChainlinkAutomationPriceOracle__factory,
+  PlutusVaultRegistry,
+  PlutusVaultRegistry__factory,
   RegistryProxy,
   RegistryProxy__factory,
 } from '../../../src/types';
@@ -33,8 +33,8 @@ import {
   getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
   getPlutusVaultGLPPriceOracleConstructorParams,
-  getPlutusVaultRegistryConstructorParams,
   getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
+  getPlutusVaultRegistryConstructorParams,
 } from '../../../src/utils/constructors/plutus';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';

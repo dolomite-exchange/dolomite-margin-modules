@@ -30,9 +30,7 @@ import {
 } from '../../utils/assertions';
 import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from '../../utils/ecosystem-token-utils/gmx';
 import { setExpiry } from '../../utils/expiry-utils';
-import {
-  liquidateV4WithIsolationMode,
-} from '../../utils/liquidation-utils';
+import { liquidateV4WithIsolationMode } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
 import {
   checkForParaswapSuccess,

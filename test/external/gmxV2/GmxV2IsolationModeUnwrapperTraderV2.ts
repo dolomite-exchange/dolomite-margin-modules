@@ -33,7 +33,7 @@ import {
   setupNativeUSDCBalance,
   setupTestMarket,
   setupUserVaultProxy,
-  setupWETHBalance
+  setupWETHBalance,
 } from 'test/utils/setup';
 
 const defaultAccountNumber = '0';
@@ -75,7 +75,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       allowableMarketIds,
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
-      userVaultImplementation
+      userVaultImplementation,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
@@ -97,7 +97,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     vault = setupUserVaultProxy<GmxV2IsolationModeTokenVaultV1>(
       vaultAddress,
       GmxV2IsolationModeTokenVaultV1__factory,
-      core.hhUser1
+      core.hhUser1,
     );
 
     await setupWETHBalance(core, core.hhUser1, ONE_ETH_BI, core.dolomiteMargin);
@@ -128,9 +128,9 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           gmxRegistryV2.address,
           core.tokens.weth.address,
           factory.address,
-          core.dolomiteMargin.address
+          core.dolomiteMargin.address,
         ),
-        'Initializable: contract is already initialized'
+        'Initializable: contract is already initialized',
       );
     });
   });
@@ -248,9 +248,9 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).afterWithdrawalCancellation(
           DUMMY_WITHDRAWAL_KEY,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
-        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
+        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -270,7 +270,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(withdrawalExecutor).afterWithdrawalCancellation(
           DUMMY_WITHDRAWAL_KEY,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
         'GmxV2IsolationModeUnwrapperV2: Invalid withdrawal key',
       );
@@ -309,7 +309,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(withdrawalExecutor).afterWithdrawalCancellation(
           withdrawalKey,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
         'GmxV2IsolationModeUnwrapperV2: Virtual vs real balance mismatch',
       );
@@ -355,7 +355,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
       expect((await core.dolomiteMargin.getAccountWei(
         { owner: vault.address, number: borrowAccountNumber },
-        core.marketIds.weth
+        core.marketIds.weth,
       )).value).to.be.gte(ONE_BI);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, ZERO_BI);
       expect(await vault.isVaultFrozen()).to.eq(false);
@@ -402,7 +402,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
       expect((await core.dolomiteMargin.getAccountWei(
         { owner: vault.address, number: borrowAccountNumber },
-        core.marketIds.nativeUsdc!
+        core.marketIds.nativeUsdc!,
       )).value).to.be.gte(ONE_BI);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
       expect(await vault.isVaultFrozen()).to.eq(false);
@@ -460,7 +460,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
           withdrawalKey,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
         'GmxV2IsolationModeUnwrapperV2: Unexpected return data',
       );
@@ -471,7 +471,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
           withdrawalKey,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
         'GmxV2IsolationModeUnwrapperV2: Unexpected return data',
       );
@@ -482,7 +482,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
           withdrawalKey,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
         'GmxV2IsolationModeUnwrapperV2: Unexpected return data',
       );
@@ -493,7 +493,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
           withdrawalKey,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
         'GmxV2IsolationModeUnwrapperV2: Unexpected return data',
       );
@@ -547,7 +547,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
           withdrawalKey,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
         'GmxV2IsolationModeUnwrapperV2: Can only receive one token',
       );
@@ -568,9 +568,9 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).afterWithdrawalExecution(
           DUMMY_WITHDRAWAL_KEY,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
-        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`
+        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -590,9 +590,9 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
           DUMMY_WITHDRAWAL_KEY,
           withdrawalInfo.withdrawal,
-          withdrawalInfo.eventData
+          withdrawalInfo.eventData,
         ),
-        'GmxV2IsolationModeUnwrapperV2: Invalid withdrawal key'
+        'GmxV2IsolationModeUnwrapperV2: Invalid withdrawal key',
       );
     });
   });
@@ -607,7 +607,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           { owner: core.hhUser2.address, number: defaultAccountNumber },
           defaultAbiCoder.encode(['uint256'], [amountWei]),
         ),
-        `GmxV2IsolationModeUnwrapperV2: Account owner is not a vault <${core.hhUser2.address.toLowerCase()}>`
+        `GmxV2IsolationModeUnwrapperV2: Account owner is not a vault <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -620,7 +620,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           { owner: vault.address, number: defaultAccountNumber },
           defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
         ),
-        'GmxV2IsolationModeUnwrapperV2: Invalid transfer amount'
+        'GmxV2IsolationModeUnwrapperV2: Invalid transfer amount',
       );
     });
 
@@ -644,7 +644,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).vaultSetWithdrawalInfo(
           DUMMY_WITHDRAWAL_KEY,
           defaultAccountNumber,
-          core.tokens.weth.address
+          core.tokens.weth.address,
         ),
         'GmxV2IsolationModeUnwrapperV2: Invalid vault',
       );
@@ -655,7 +655,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should revert', async () => {
       await expectThrow(
         unwrapper.getExchangeCost(factory.address, core.tokens.weth.address, ONE_ETH_BI, BYTES_EMPTY),
-        'GmxV2IsolationModeUnwrapperV2: getExchangeCost is not implemented'
+        'GmxV2IsolationModeUnwrapperV2: getExchangeCost is not implemented',
       );
     });
   });

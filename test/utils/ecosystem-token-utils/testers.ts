@@ -1,4 +1,3 @@
-import { testIsolationModeTokenVaultWithFreezableSol } from 'src/types/contracts/test';
 import {
   CustomTestToken,
   TestIsolationModeFactory,

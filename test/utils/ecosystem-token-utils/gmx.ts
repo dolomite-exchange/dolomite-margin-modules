@@ -1,6 +1,6 @@
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import {
-  ERC20,
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV1__factory,
   GLPIsolationModeUnwrapperTraderV1,
@@ -29,7 +29,6 @@ import {
   GmxV2IsolationModeWrapperTraderV2__factory,
   GmxV2MarketTokenPriceOracle,
   GmxV2MarketTokenPriceOracle__factory,
-  IERC20,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
   IGmxMarketToken,
@@ -58,8 +57,6 @@ import {
 } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
-import { BYTES_EMPTY } from 'src/utils/no-deps-constants';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
 export async function createGLPPriceOracleV1(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
@@ -175,7 +172,7 @@ export async function createGmxV2IsolationModeTokenVaultV1(
     GmxV2IsolationModeTokenVaultV1__factory.abi,
     GmxV2IsolationModeTokenVaultV1__factory.bytecode,
     [
-      core.tokens.weth.address
+      core.tokens.weth.address,
     ],
   );
 }
@@ -197,7 +194,7 @@ export async function createGmxV2IsolationModeVaultFactory(
       debtMarketIds,
       collateralMarketIds,
       gmToken,
-      userVaultImplementation
+      userVaultImplementation,
     ),
   );
 }
@@ -210,7 +207,7 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
   const implementation = await createContractWithAbi<GmxV2IsolationModeUnwrapperTraderV2>(
     GmxV2IsolationModeUnwrapperTraderV2__factory.abi,
     GmxV2IsolationModeUnwrapperTraderV2__factory.bytecode,
-    []
+    [],
   );
 
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
@@ -230,7 +227,7 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
   const implementation = await createContractWithAbi<GmxV2IsolationModeWrapperTraderV2>(
     GmxV2IsolationModeWrapperTraderV2__factory.abi,
     GmxV2IsolationModeWrapperTraderV2__factory.bytecode,
-    []
+    [],
   );
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
     IsolationModeTraderProxy__factory.abi,
@@ -264,12 +261,14 @@ export function getInitiateWrappingParams(
     amountIn,
     minAmountOut,
     marketPath: [marketId1, marketId2],
-    traderParams: [{
-      trader: wrapper.address,
-      traderType: 3,
-      tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
-      makerAccountIndex: 0
-    }],
+    traderParams: [
+      {
+        trader: wrapper.address,
+        traderType: 3,
+        tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
+        makerAccountIndex: 0,
+      },
+    ],
     makerAccounts: [],
     userConfig: { deadline: '123123123123123', balanceCheckFlag: 3 },
   };
@@ -288,12 +287,14 @@ export function getInitiateUnwrappingParams(
     amountIn,
     minAmountOut,
     marketPath: [marketId1, marketId2],
-    traderParams: [{
-      trader: unwrapper.address,
-      traderType: 2,
-      tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
-      makerAccountIndex: 0
-    }],
+    traderParams: [
+      {
+        trader: unwrapper.address,
+        traderType: 2,
+        tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
+        makerAccountIndex: 0,
+      },
+    ],
     makerAccounts: [],
     userConfig: { deadline: '123123123123123', balanceCheckFlag: 3 },
   };
@@ -302,30 +303,20 @@ export function getInitiateUnwrappingParams(
 export function getOracleParams(token1: string, token2: string) {
   return {
     signerInfo: '1',
-    tokens:[
-    ],
-    compactedMinOracleBlockNumbers:[
-    ],
-    compactedMaxOracleBlockNumbers:[
-    ],
-    compactedOracleTimestamps:[
-    ],
-    compactedDecimals:[
-    ],
-    compactedMinPrices:[
-    ],
-    compactedMinPricesIndexes:[
-    ],
-    compactedMaxPrices:[
-    ],
-    compactedMaxPricesIndexes:[
-    ],
-    signatures:[
-    ],
-    priceFeedTokens:[
+    tokens: [],
+    compactedMinOracleBlockNumbers: [],
+    compactedMaxOracleBlockNumbers: [],
+    compactedOracleTimestamps: [],
+    compactedDecimals: [],
+    compactedMinPrices: [],
+    compactedMinPricesIndexes: [],
+    compactedMaxPrices: [],
+    compactedMaxPricesIndexes: [],
+    signatures: [],
+    priceFeedTokens: [
       token1,
-      token2
-    ]
+      token2,
+    ],
   };
 }
 

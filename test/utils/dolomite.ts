@@ -6,7 +6,10 @@ import {
   RegistryProxy,
   RegistryProxy__factory,
 } from '../../src/types';
-import { getIsolationModeTraderProxyConstructorParams, getRegistryProxyConstructorParams } from '../../src/utils/constructors/dolomite';
+import {
+  getIsolationModeTraderProxyConstructorParams,
+  getRegistryProxyConstructorParams,
+} from '../../src/utils/constructors/dolomite';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { CoreProtocol } from './setup';
 

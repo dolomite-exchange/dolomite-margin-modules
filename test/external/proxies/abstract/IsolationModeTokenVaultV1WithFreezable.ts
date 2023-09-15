@@ -208,7 +208,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -246,7 +246,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -287,7 +287,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -330,7 +330,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.closeBorrowPositionWithUnderlyingVaultToken(defaultAccountNumber, borrowAccountNumber),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -387,7 +387,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.closeBorrowPositionWithOtherTokens(defaultAccountNumber, borrowAccountNumber, []),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -429,7 +429,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -570,9 +570,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           borrowAccountNumber,
           0,
           amountWei,
-          BalanceCheckFlag.Both
+          BalanceCheckFlag.Both,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -615,7 +615,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.transferFromPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -743,9 +743,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           borrowAccountNumber,
           0,
           amountWei,
-          BalanceCheckFlag.Both
+          BalanceCheckFlag.Both,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -822,9 +822,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           defaultAccountNumber,
           borrowAccountNumber,
           otherMarketId1,
-          BalanceCheckFlag.Both
+          BalanceCheckFlag.Both,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -990,9 +990,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           zapParams.minOutputAmountWei,
           zapParams.tradersPath,
           zapParams.makerAccounts,
-          zapParams.userConfig
+          zapParams.userConfig,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -1240,9 +1240,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           zapParams.minOutputAmountWei,
           zapParams.tradersPath,
           zapParams.makerAccounts,
-          zapParams.userConfig
+          zapParams.userConfig,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
   });
@@ -1454,9 +1454,9 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           zapParams.minOutputAmountWei,
           zapParams.tradersPath,
           zapParams.makerAccounts,
-          zapParams.userConfig
+          zapParams.userConfig,
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
 
@@ -1489,7 +1489,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     it('should fail if not called by factory', async () => {
       await expectThrow(
         userVault.connect(core.hhUser1).setIsVaultFrozen(true),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

@@ -28,11 +28,7 @@ import {
   expectWalletBalance,
 } from '../../utils/assertions';
 import { setExpiry } from '../../utils/expiry-utils';
-import {
-  getLastZapAmountToBigNumber,
-  liquidateV4WithZap,
-  toZapBigNumber,
-} from '../../utils/liquidation-utils';
+import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '../../utils/liquidation-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,
