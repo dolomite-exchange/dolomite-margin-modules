@@ -38,6 +38,8 @@ export const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
+      gas: 50_000_000,
+      blockGasLimit: 100000000429720,
       forking: {
         url: arbitrumOneWeb3Url,
         blockNumber: DEFAULT_BLOCK_NUMBER,

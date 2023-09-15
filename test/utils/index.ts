@@ -210,3 +210,11 @@ export function encodeExternalSellActionData(
     ],
   );
 }
+
+export async function mineBlocks(numBlocks: number) {
+  let i = numBlocks;
+  while (i > 0) {
+    await ethers.provider.send('evm_mine', []);
+    i--;
+  }
+}

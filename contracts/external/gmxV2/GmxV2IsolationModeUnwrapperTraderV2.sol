@@ -107,12 +107,14 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         GmxEventUtils.AddressKeyValue memory secondaryOutputTokenAddress = _eventData.addressItems.items[1];
         GmxEventUtils.UintKeyValue memory secondaryOutputTokenAmount = _eventData.uintItems.items[1];
         Require.that(
-            keccak256(abi.encodePacked(outputTokenAddress.key)) == keccak256(abi.encodePacked("outputToken")),
+            keccak256(abi.encodePacked(outputTokenAddress.key))
+                == keccak256(abi.encodePacked("outputToken")),
             _FILE,
             "Unexpected return data"
         );
         Require.that(
-            keccak256(abi.encodePacked(outputTokenAmount.key)) == keccak256(abi.encodePacked("outputAmount")),
+            keccak256(abi.encodePacked(outputTokenAmount.key))
+                == keccak256(abi.encodePacked("outputAmount")),
             _FILE,
             "Unexpected return data"
         );
@@ -129,7 +131,8 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             "Unexpected return data"
         );
         Require.that(
-            outputTokenAmount.value == 0 || secondaryOutputTokenAmount.value == 0,
+            outputTokenAddress.value == secondaryOutputTokenAddress.value
+                && outputTokenAddress.value == withdrawalInfo.outputToken,
             _FILE,
             "Can only receive one token"
         );
@@ -156,7 +159,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             withdrawalInfo.accountNumber,
             marketIdsPath,
             _withdrawal.numbers.marketTokenAmount,
-            outputTokenAmount.value,
+            outputTokenAmount.value  + secondaryOutputTokenAmount.value,
             traderParams,
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
@@ -407,10 +410,10 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         uint256 _inputAmount,
         bytes memory _extraOrderData
     )
-        internal
-        override
-        returns (uint256)
-    {
+    internal
+    virtual
+    override
+    returns (uint256) {
         // We don't need to validate _tradeOriginator here because it is validated in _callFunction via the transfer
         // being enqueued (without it being enqueued, we'd never reach this point)
         (bytes32 key) = abi.decode(_extraOrderData, (bytes32));

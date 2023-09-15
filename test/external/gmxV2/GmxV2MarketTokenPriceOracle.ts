@@ -1,6 +1,8 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
+import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
+import { ethers } from 'hardhat';
 import {
   GmxRegistryV2,
   GmxV2IsolationModeUnwrapperTraderV2,
@@ -9,7 +11,7 @@ import {
   GmxV2MarketTokenPriceOracle,
 } from 'src/types';
 import { Network } from 'src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
@@ -83,6 +85,9 @@ describe('GmxV2MarketTokenPriceOracle', () => {
   describe('#getPrice', () => {
     // @follow-up This one fails sometimes. Price seems to always be one of two
     it('returns the correct value under normal conditions', async () => {
+      // @follow-up try with specific block timestamp
+      console.log(await getBlockTimestamp(await ethers.provider.getBlockNumber()));
+      await setNextBlockTimestamp(1693923100);
       expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE);
     });
 

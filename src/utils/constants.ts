@@ -215,6 +215,11 @@ export const GMX_EXCHANGE_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const GMX_EXECUTOR_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xC539cB358a58aC67185BaAD4d5E3f7fCfc903700',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const GMX_ETH_USD_MARKET_TOKEN_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x70d95587d40A2caf56bd97485aB3Eec10Bee6336',
   [Network.ArbitrumGoerli]: undefined,

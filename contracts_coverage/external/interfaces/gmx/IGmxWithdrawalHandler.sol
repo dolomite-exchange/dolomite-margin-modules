@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { GmxOracleUtils } from "./GmxOracleUtils.sol";
 
 /**
  * @title   IGmxWithdrawalHandler
@@ -68,4 +69,9 @@ interface IGmxWithdrawalHandler {
     function cancelWithdrawal(bytes32 _key) external;
 
     function simulateExecuteWithdrawal(bytes32 _key, SimulatePricesParams memory _params) external;
+
+    function executeWithdrawal(
+        bytes32 key,
+        GmxOracleUtils.SetPricesParams calldata oracleParams
+    ) external;
 }

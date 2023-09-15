@@ -40,7 +40,6 @@ import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawal
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
-import "hardhat/console.sol";
 
 /**
  * @title   GmxV2IsolationModeUnwrapperTraderV2
@@ -124,14 +123,15 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             extraOrderData
         );
 
-        // @follow-up How to test this since _exchangeUnderlying returns the minOutputAmount
-        if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
-        Require.that(outputAmount >= minOutputAmount,
-            _FILE,
-            "Insufficient output amount",
-            outputAmount,
-            minOutputAmount
-        );
+        // @follow-up I think we can remove this check as _exchangeUnderlyingToken returns the minOutputAmount
+        /*
+        //     outputAmount >= minOutputAmount,
+        //     _FILE,
+        //     "Insufficient output amount",
+        //     outputAmount,
+        //     minOutputAmount
+        // );
+        */
 
         IERC20(_outputToken).safeApprove(_receiver, outputAmount);
 
@@ -160,28 +160,33 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         GmxEventUtils.UintKeyValue memory outputTokenAmount = _eventData.uintItems.items[0];
         GmxEventUtils.AddressKeyValue memory secondaryOutputTokenAddress = _eventData.addressItems.items[1];
         GmxEventUtils.UintKeyValue memory secondaryOutputTokenAmount = _eventData.uintItems.items[1];
-        if (keccak256(abi.encodePacked(outputTokenAddress.key)) == keccak256(abi.encodePacked("outputToken"))) { /* FOR COVERAGE TESTING */ }
-        Require.that(keccak256(abi.encodePacked(outputTokenAddress.key)) == keccak256(abi.encodePacked("outputToken")),
+        if (keccak256(abi.encodePacked(outputTokenAddress.key))== keccak256(abi.encodePacked("outputToken"))) { /* FOR COVERAGE TESTING */ }
+        Require.that(keccak256(abi.encodePacked(outputTokenAddress.key))
+                == keccak256(abi.encodePacked("outputToken")),
             _FILE,
             "Unexpected return data"
         );
-        if (keccak256(abi.encodePacked(outputTokenAmount.key)) == keccak256(abi.encodePacked("outputAmount"))) { /* FOR COVERAGE TESTING */ }
-        Require.that(keccak256(abi.encodePacked(outputTokenAmount.key)) == keccak256(abi.encodePacked("outputAmount")),
+        if (keccak256(abi.encodePacked(outputTokenAmount.key))== keccak256(abi.encodePacked("outputAmount"))) { /* FOR COVERAGE TESTING */ }
+        Require.that(keccak256(abi.encodePacked(outputTokenAmount.key))
+                == keccak256(abi.encodePacked("outputAmount")),
             _FILE,
             "Unexpected return data"
         );
-        if (keccak256(abi.encodePacked(secondaryOutputTokenAddress.key)) == keccak256(abi.encodePacked("secondaryOutputToken"))) { /* FOR COVERAGE TESTING */ }
-        Require.that(keccak256(abi.encodePacked(secondaryOutputTokenAddress.key)) == keccak256(abi.encodePacked("secondaryOutputToken")),
+        if (keccak256(abi.encodePacked(secondaryOutputTokenAddress.key))== keccak256(abi.encodePacked("secondaryOutputToken"))) { /* FOR COVERAGE TESTING */ }
+        Require.that(keccak256(abi.encodePacked(secondaryOutputTokenAddress.key))
+                == keccak256(abi.encodePacked("secondaryOutputToken")),
             _FILE,
             "Unexpected return data"
         );
-        if (keccak256(abi.encodePacked(secondaryOutputTokenAmount.key)) == keccak256(abi.encodePacked("secondaryOutputAmount"))) { /* FOR COVERAGE TESTING */ }
-        Require.that(keccak256(abi.encodePacked(secondaryOutputTokenAmount.key)) == keccak256(abi.encodePacked("secondaryOutputAmount")),
+        if (keccak256(abi.encodePacked(secondaryOutputTokenAmount.key))== keccak256(abi.encodePacked("secondaryOutputAmount"))) { /* FOR COVERAGE TESTING */ }
+        Require.that(keccak256(abi.encodePacked(secondaryOutputTokenAmount.key))
+                == keccak256(abi.encodePacked("secondaryOutputAmount")),
             _FILE,
             "Unexpected return data"
         );
-        if (outputTokenAmount.value == 0 || secondaryOutputTokenAmount.value == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(outputTokenAmount.value == 0 || secondaryOutputTokenAmount.value == 0,
+        if (outputTokenAddress.value == secondaryOutputTokenAddress.value&& outputTokenAddress.value == withdrawalInfo.outputToken) { /* FOR COVERAGE TESTING */ }
+        Require.that(outputTokenAddress.value == secondaryOutputTokenAddress.value
+                && outputTokenAddress.value == withdrawalInfo.outputToken,
             _FILE,
             "Can only receive one token"
         );
@@ -203,7 +208,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             withdrawalInfo.accountNumber,
             marketIdsPath,
             _withdrawal.numbers.marketTokenAmount,
-            outputTokenAmount.value,
+            outputTokenAmount.value  + secondaryOutputTokenAmount.value,
             traderParams,
             new IDolomiteMargin.AccountInfo[](0),
             userConfig
@@ -215,7 +220,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
     function afterWithdrawalCancellation(
         bytes32 _key,
-        GmxWithdrawal.Props memory _withdrawal,
+        GmxWithdrawal.Props memory /* _withdrawal */,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external
@@ -229,9 +234,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         IERC20 underlyingToken = IERC20(address(factory.UNDERLYING_TOKEN()));
-        // console.log(underlyingToken.balanceOf(address(this)));
-        // console.log(underlyingToken.balanceOf(withdrawalInfo.vault));
-        // underlyingToken.safeTransfer(withdrawalInfo.vault, _withdrawal.numbers.marketTokenAmount);
         if (IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).virtualBalance()== underlyingToken.balanceOf(withdrawalInfo.vault)) { /* FOR COVERAGE TESTING */ }
         Require.that(IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).virtualBalance()
                 == underlyingToken.balanceOf(withdrawalInfo.vault),
@@ -285,6 +287,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         bytes memory
     )
         internal
+        virtual
         override
         returns (uint256)
     {

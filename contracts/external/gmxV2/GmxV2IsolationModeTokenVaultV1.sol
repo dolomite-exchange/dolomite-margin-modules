@@ -133,6 +133,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         );
     }
 
+    // @todo add comment that it is automatically sent back to vault upon cancellation
     function initiateUnwrapping(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,

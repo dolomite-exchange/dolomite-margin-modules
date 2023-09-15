@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { GmxOracleUtils } from "./GmxOracleUtils.sol";
+
 
 /**
  * @title   IGmxDepositHandler
@@ -60,31 +62,11 @@ interface IGmxDepositHandler {
         uint256 max;
     }
 
-    struct SimulatePricesParams {
-        address[] primaryTokens;
-        Props[] primaryPrices;
-    }
-
-    struct SetPricesParams {
-        uint256 signerInfo;
-        address[] tokens;
-        uint256[] compactedMinOracleBlockNumbers;
-        uint256[] compactedMaxOracleBlockNumbers;
-        uint256[] compactedOracleTimestamps;
-        uint256[] compactedDecimals;
-        uint256[] compactedMinPrices;
-        uint256[] compactedMinPricesIndexes;
-        uint256[] compactedMaxPrices;
-        uint256[] compactedMaxPricesIndexes;
-        bytes[] signatures;
-        address[] priceFeedTokens;
-    }
-
     function createDeposit(address _account, CreateDepositParams calldata _params) external returns (bytes32);
 
     function cancelDeposit(bytes32 _key) external;
 
-    function simulateExecuteDeposit(bytes32 _key, SimulatePricesParams memory _params) external;
+    function simulateExecuteDeposit(bytes32 _key, GmxOracleUtils.SimulatePricesParams memory _params) external;
 
-    function executeDeposit(bytes32 _key, SetPricesParams calldata _oracleParams) external;
+    function executeDeposit(bytes32 _key, GmxOracleUtils.SetPricesParams calldata _oracleParams) external;
 }

@@ -92,8 +92,9 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         // @follow-up EventData is weird so we should discuss
         uint256 len = _eventData.uintItems.items.length;
         GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[len-1];
-        if (keccak256(abi.encodePacked(receivedMarketTokens.key)) == keccak256(abi.encodePacked("receivedMarketToken"))) { /* FOR COVERAGE TESTING */ }
-        Require.that(keccak256(abi.encodePacked(receivedMarketTokens.key)) == keccak256(abi.encodePacked("receivedMarketToken")),
+        if (keccak256(abi.encodePacked(receivedMarketTokens.key))== keccak256(abi.encodePacked("receivedMarketTokens"))) { /* FOR COVERAGE TESTING */ }
+        Require.that(keccak256(abi.encodePacked(receivedMarketTokens.key))
+                == keccak256(abi.encodePacked("receivedMarketTokens")),
             _FILE,
             "Unexpected return data"
         );
