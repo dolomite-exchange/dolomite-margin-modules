@@ -148,7 +148,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
     function afterWithdrawalExecution(
         bytes32 _key,
-        GmxWithdrawal.Props memory _withdrawal,
+        GmxWithdrawal.WithdrawalProps memory _withdrawal,
         GmxEventUtils.EventLogData memory _eventData
     )
     external
@@ -196,11 +196,16 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             "Can only receive one token"
         );
 
+        // @audit:  If GMX changes the keys OR if the data sent back is malformed (causing the above requires to
+        //          fail), this will fail. This will result in us receiving tokens from GMX and not knowing who they
+        //          are for, nor the amount.
+
+
         IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
         traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
         traderParams[0].makerAccountIndex = 0;
         traderParams[0].trader = address(this);
-        traderParams[0].tradeData = bytes("");
+        traderParams[0].tradeData = abi.encode((_key));
 
         IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig(
             block.timestamp,
@@ -209,7 +214,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         factory.setShouldSkipTransfer(withdrawalInfo.vault, true);
-        IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
+        try IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
             withdrawalInfo.accountNumber,
             marketIdsPath,
             _withdrawal.numbers.marketTokenAmount,
@@ -217,15 +222,31 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             traderParams,
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
-        );
-        factory.setIsVaultFrozen(withdrawalInfo.vault, false);
-        _setWithdrawalInfo(_key, WithdrawalInfo(address(0), 0, address(0)));
-        emit WithdrawalExecuted(_key);
+        ) {
+            _setWithdrawalInfo(_key, _emptyWithdrawalInfo());
+            emit WithdrawalExecuted(_key);
+        } catch Error(string memory reason) {
+            _handleCallbackError(
+                _key,
+                factory,
+                withdrawalInfo,
+                outputTokenAmount,
+                reason
+            );
+        } catch (bytes memory /* reason */) {
+            _handleCallbackError(
+                _key,
+                factory,
+                withdrawalInfo,
+                outputTokenAmount,
+                /* _reason = */ ""
+            );
+        }
     }
 
     function afterWithdrawalCancellation(
         bytes32 _key,
-        GmxWithdrawal.Props memory _withdrawal,
+        GmxWithdrawal.WithdrawalProps memory /* _withdrawal */,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external
@@ -237,21 +258,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             "Invalid withdrawal key"
         );
 
+        // @audit - Is there a way for us to verify the tokens were sent back to the vault?
+        // The GM tokens are sent back to the vault
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        IERC20 underlyingToken = IERC20(address(factory.UNDERLYING_TOKEN()));
-        // console.log(underlyingToken.balanceOf(address(this)));
-        // console.log(underlyingToken.balanceOf(withdrawalInfo.vault));
-        // underlyingToken.safeTransfer(withdrawalInfo.vault, _withdrawal.numbers.marketTokenAmount);
-        // TODO: remove this. If we need to liquidate someone, the balances won't match up
-        Require.that(
-            IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).virtualBalance()
-                == underlyingToken.balanceOf(withdrawalInfo.vault),
-            _FILE,
-            "Virtual vs real balance mismatch"
-        );
-
         factory.setIsVaultFrozen(withdrawalInfo.vault, false);
-        _setWithdrawalInfo(_key, WithdrawalInfo(address(0), 0, address(0)));
+        _setWithdrawalInfo(_key, _emptyWithdrawalInfo());
         emit WithdrawalCancelled(_key);
     }
 
@@ -266,7 +277,15 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             "Invalid vault"
         );
 
-        _setWithdrawalInfo(_key, WithdrawalInfo(msg.sender, _accountNumber, _outputToken));
+        assert(_getWithdrawalSlot(_key).vault == address(0)); // panic if the key is used
+
+        _setWithdrawalInfo(_key, WithdrawalInfo({
+            key: _key,
+            vault: msg.sender,
+            accountNumber: _accountNumber,
+            outputToken: _outputToken,
+            outputAmount: 0
+        }));
         emit WithdrawalCreated(_key);
     }
 
@@ -277,8 +296,8 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     view
     override(UpgradeableIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTrader)
     returns (bool) {
-        address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).longToken();
-        address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).shortToken();
+        address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).LONG_TOKEN();
+        address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).SHORT_TOKEN();
         return _outputToken == longToken || _outputToken == shortToken;
     }
 
@@ -286,24 +305,56 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // =========== Internal Functions =============
     // ============================================
 
+    function _handleCallbackError(
+        bytes32 _key,
+        IGmxV2IsolationModeVaultFactory _factory,
+        WithdrawalInfo memory _withdrawalInfo,
+        GmxEventUtils.UintKeyValue memory _outputTokenAmount,
+        string memory _reason
+    ) internal {
+        // The swap couldn't happen. Save the output amount so we can refer to it later
+        _withdrawalInfo.outputAmount = _outputTokenAmount.value;
+        _setWithdrawalInfo(_key, _withdrawalInfo);
+        _factory.setShouldSkipTransfer(_withdrawalInfo.vault, false);
+        emit WithdrawalFailed(_key, _reason);
+    }
+
     function _exchangeUnderlyingTokenToOutputToken(
-        address,
-        address,
-        address,
+        address _tradeOriginator,
+        address /* receiver */,
+        address _outputToken,
         uint256 _minOutputAmount,
-        address,
-        uint256,
-        bytes memory
+        address /* _inputToken */,
+        uint256 /* _inputAmount */,
+        bytes memory _extraOrderData
     )
         internal
         override
         returns (uint256)
     {
-        return _minOutputAmount;
+        (bytes32 key) = abi.decode(_extraOrderData, (bytes32));
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
+        Require.that(
+            withdrawalInfo.vault == _tradeOriginator,
+            _FILE,
+            "Invalid withdrawal"
+        );
+        Require.that(
+            withdrawalInfo.outputToken == _outputToken,
+            _FILE,
+            "Invalid output token"
+        );
+        Require.that(
+            withdrawalInfo.outputAmount >= _minOutputAmount,
+            _FILE,
+            "Invalid output amount"
+        );
+        return withdrawalInfo.outputAmount;
     }
 
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
         WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
+        storageInfo.key = _key;
         storageInfo.vault = _info.vault;
         storageInfo.accountNumber = _info.accountNumber;
         storageInfo.outputToken = _info.outputToken;
@@ -363,5 +414,15 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     pure
     returns (uint256) {
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
+    }
+
+    function _emptyWithdrawalInfo() internal pure returns (WithdrawalInfo memory) {
+        return WithdrawalInfo({
+            key: bytes32(0),
+            vault: address(0),
+            accountNumber: 0,
+            outputToken: address(0),
+            outputAmount: 0
+        });
     }
 }

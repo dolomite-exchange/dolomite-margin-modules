@@ -35,8 +35,6 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 
-import "hardhat/console.sol";
-
 
 /**
  * @title   GmxV2IsolationModeTokenVaultV1
@@ -375,10 +373,10 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
             /* callbackContract = */ address(unwrapper),
             /* uiFeeReceiver = */ address(0),
             /* market = */ UNDERLYING_TOKEN(),
-            /* longTokenSwapPath = */ _outputToken == factory.longToken() ? new address[](0) : swapPath,
-            /* shortTokenSwapPath = */ _outputToken == factory.shortToken() ? new address[](0) : swapPath,
-            /* minLongTokenAmount = */ _outputToken == factory.longToken() ? _minOutputAmount : 0,
-            /* minShortTokenAmount = */ _outputToken == factory.shortToken() ? _minOutputAmount : 0,
+            /* longTokenSwapPath = */ _outputToken == factory.LONG_TOKEN() ? new address[](0) : swapPath,
+            /* shortTokenSwapPath = */ _outputToken == factory.SHORT_TOKEN() ? new address[](0) : swapPath,
+            /* minLongTokenAmount = */ _outputToken == factory.LONG_TOKEN() ? _minOutputAmount : 0,
+            /* minShortTokenAmount = */ _outputToken == factory.SHORT_TOKEN() ? _minOutputAmount : 0,
             /* shouldUnwrapNativeToken = */ false,
             /* executionFee = */ ethExecutionFee,
             /* callbackGasLimit = */ unwrapper.callbackGasLimit()

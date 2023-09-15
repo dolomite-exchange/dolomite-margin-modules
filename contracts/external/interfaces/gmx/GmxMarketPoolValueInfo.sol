@@ -41,7 +41,7 @@ library GmxMarketPoolValueInfo {
     // @param  longPnl the pending pnl of long positions
     // @param  shortPnl the pending pnl of short positions
     // @param  netPnl the net pnl of long and short positions
-    struct Props {
+    struct PoolValueInfoProps {
         int256 poolValue;
         int256 longPnl;
         int256 shortPnl;

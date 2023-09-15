@@ -36,7 +36,7 @@ interface IGmxWithdrawalCallbackReceiver {
     // @param  withdrawal the withdrawal that was executed
     function afterWithdrawalExecution(
         bytes32 _key,
-        GmxWithdrawal.Props memory _withdrawal,
+        GmxWithdrawal.WithdrawalProps memory _withdrawal,
         GmxEventUtils.EventLogData memory _eventData
     ) external;
 
@@ -45,7 +45,7 @@ interface IGmxWithdrawalCallbackReceiver {
     // @param  withdrawal the withdrawal that was cancelled
     function afterWithdrawalCancellation(
         bytes32 _key,
-        GmxWithdrawal.Props memory _withdrawal,
+        GmxWithdrawal.WithdrawalProps memory _withdrawal,
         GmxEventUtils.EventLogData memory _eventData
     ) external;
 }

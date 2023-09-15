@@ -31,8 +31,10 @@ import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.s
 interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase {
 
     struct DepositInfo {
+        bytes32 key;
         address vault;
         uint256 accountNumber;
+        uint256 outputAmount; // initially minOutputAmount until the deposit is executed
     }
 
     event DepositCreated(bytes32 indexed key);

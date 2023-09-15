@@ -67,7 +67,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
 
     function ownerSetMarketToken(
         address _token,
-        bool _status    
+        bool _status
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
@@ -120,7 +120,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         uint256 shortTokenPrice = dolomiteMargin.getMarketPrice(info.shortTokenMarketId).value;
         uint256 longTokenPrice = dolomiteMargin.getMarketPrice(info.longTokenMarketId).value;
 
-        GmxMarket.Props memory marketProps = GmxMarket.Props(
+        GmxMarket.MarketProps memory marketProps = GmxMarket.MarketProps(
             info.marketToken,
             info.indexToken,
             info.longToken,
@@ -129,17 +129,17 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
 
        // Dolomite returns price as 36 decimals - token decimals
        // GMX expects 30 decimals - token decimals so we divide by 10 ** 6
-        GmxPrice.Props memory indexTokenPriceProps = GmxPrice.Props(
+        GmxPrice.PriceProps memory indexTokenPriceProps = GmxPrice.PriceProps(
             indexTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
             indexTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
         );
 
-        GmxPrice.Props memory longTokenPriceProps = GmxPrice.Props(
+        GmxPrice.PriceProps memory longTokenPriceProps = GmxPrice.PriceProps(
             longTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
             longTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
         );
 
-        GmxPrice.Props memory shortTokenPriceProps = GmxPrice.Props(
+        GmxPrice.PriceProps memory shortTokenPriceProps = GmxPrice.PriceProps(
             shortTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
             shortTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
         );

@@ -437,7 +437,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         borrowAccountNumber,
         core.marketIds.weth,
         ONE_ETH_BI,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
@@ -446,7 +446,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        executionFee
+        executionFee,
       );
       await vault.connect(core.hhUser1).initiateWrapping(
         borrowAccountNumber,
@@ -456,7 +456,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee }
+        { value: executionFee },
       );
 
       expect(await vault.isVaultFrozen()).to.eq(true);
@@ -475,16 +475,16 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         ONE_ETH_BI,
         ZERO_BI,
         minAmountOut,
-        minAmountOut
+        minAmountOut,
       );
       depositInfo.eventData.uintItems.items[2].key = 'receivedBadTokens';
       await expectThrow(
         wrapper.connect(depositExecutor).afterDepositExecution(
           depositKey,
           depositInfo.deposit,
-          depositInfo.eventData
+          depositInfo.eventData,
         ),
-        'GmxV2IsolationModeWrapperV2: Unexpected return data'
+        'GmxV2IsolationModeWrapperV2: Unexpected return data',
       );
     });
 

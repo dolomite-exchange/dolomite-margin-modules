@@ -62,7 +62,7 @@ export const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 10000,
+            runs: 200,
             details: {
               yul: false, // To fix some extraneous "stack too deep" errors that don't make sense, set this to false.
             },

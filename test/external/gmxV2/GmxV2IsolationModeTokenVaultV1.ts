@@ -364,7 +364,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
-          {value: parseEther('.01')},
+          { value: parseEther('.01') },
         ),
         'GmxV2IsolationModeVaultV1: Invalid output token',
       );
@@ -378,7 +378,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
-          {value: parseEther('.01')},
+          { value: parseEther('.01') },
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
       );
@@ -392,13 +392,14 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
-          {value: parseEther('.01')},
+          { value: parseEther('.01') },
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
-    it('should fail if reentered', async () => {});
+    it('should fail if reentered', async () => {
+    });
   });
 
   describe('#cancelDeposit', () => {
@@ -460,7 +461,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        {value: parseEther('.01')},
+        { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
       const filter = unwrapper.filters.WithdrawalCreated();
@@ -488,7 +489,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     it('should fail if not called by vault owner', async () => {
       await expectThrow(
         vault.connect(core.hhUser2).cancelWithdrawal(DUMMY_WITHDRAWAL_KEY),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
   });
@@ -903,14 +904,14 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
         otherMarketId2,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
 
       const outputAmount = amountWei.div(2);
@@ -923,7 +924,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         zapParams.minOutputAmountWei,
         zapParams.tradersPath,
         zapParams.makerAccounts,
-        zapParams.userConfig
+        zapParams.userConfig,
       );
     });
 
@@ -938,9 +939,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.minOutputAmountWei,
           zapParams.tradersPath,
           zapParams.makerAccounts,
-          zapParams.userConfig
+          zapParams.userConfig,
         ),
-      'GmxV2IsolationModeVaultV1: Only owner or unwrapper can call',
+        'GmxV2IsolationModeVaultV1: Only owner or unwrapper can call',
       );
     });
 
@@ -957,7 +958,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        'GmxV2IsolationModeVaultV1: Only unwrapper if frozen'
+        'GmxV2IsolationModeVaultV1: Only unwrapper if frozen',
       );
     });
 
@@ -967,14 +968,14 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId1,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
         otherMarketId2,
         amountWei,
-        BalanceCheckFlag.Both
+        BalanceCheckFlag.Both,
       );
 
       const outputAmount = amountWei.div(2);
@@ -988,7 +989,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         zapParams.minOutputAmountWei,
         zapParams.tradersPath,
         zapParams.makerAccounts,
-        zapParams.userConfig
+        zapParams.userConfig,
       );
     });
   });

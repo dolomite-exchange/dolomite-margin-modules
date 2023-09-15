@@ -36,7 +36,7 @@ interface IGmxDepositCallbackReceiver {
     // @param  deposit the deposit that was executed
     function afterDepositExecution(
         bytes32 _key,
-        GmxDeposit.Props memory _deposit,
+        GmxDeposit.DepositProps memory _deposit,
         GmxEventUtils.EventLogData memory _eventData
     ) external;
 
@@ -45,7 +45,7 @@ interface IGmxDepositCallbackReceiver {
     // @param  deposit the deposit that was cancelled
     function afterDepositCancellation(
         bytes32 _key,
-        GmxDeposit.Props memory _deposit,
+        GmxDeposit.DepositProps memory _deposit,
         GmxEventUtils.EventLogData memory _eventData
     ) external;
 }

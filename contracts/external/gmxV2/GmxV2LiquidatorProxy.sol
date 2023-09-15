@@ -113,8 +113,7 @@ contract GmxV2LiquidatorProxy is BaseLiquidatorProxy {
     ) internal view {
         // check credentials for msg.sender
         Require.that(
-            _solidAccount.owner == msg.sender
-            || DOLOMITE_MARGIN.getIsLocalOperator(_solidAccount.owner, msg.sender),
+            _solidAccount.owner == msg.sender || DOLOMITE_MARGIN.getIsLocalOperator(_solidAccount.owner, msg.sender),
             _FILE,
             "Sender not operator",
             msg.sender
@@ -137,6 +136,11 @@ contract GmxV2LiquidatorProxy is BaseLiquidatorProxy {
     ) internal view {
         if (_expirationTimestamp != 0) {
             Require.that(
+                _expirationTimestamp == uint32(_expirationTimestamp),
+                _FILE,
+                "Invalid expiration timestamp"
+            );
+            Require.that(
                 _expirationTimestamp <= block.timestamp,
                 _FILE,
                 "Account not expired",
@@ -148,30 +152,31 @@ contract GmxV2LiquidatorProxy is BaseLiquidatorProxy {
                 _FILE,
                 "Expiration mismatch"
             );
-        }
+        } else {
+            // Check the account is under water
+            (
+                IDolomiteStructs.MonetaryValue memory liquidSupplyValue,
+                IDolomiteStructs.MonetaryValue memory liquidBorrowValue
+            ) = _getAdjustedAccountValues(
+                _marketInfos,
+                _liquidAccount,
+                DOLOMITE_MARGIN.getAccountMarketsWithBalances(_liquidAccount)
+            );
 
-        (
-            IDolomiteStructs.MonetaryValue memory liquidSupplyValue,
-            IDolomiteStructs.MonetaryValue memory liquidBorrowValue
-        ) = _getAdjustedAccountValues(
-            _marketInfos,
-            _liquidAccount,
-            DOLOMITE_MARGIN.getAccountMarketsWithBalances(_liquidAccount)
-        );
+            Require.that(
+                liquidSupplyValue.value != 0,
+                _FILE,
+                "Liquid account no supply"
+            );
 
-        Require.that(
-            liquidSupplyValue.value != 0,
-            _FILE,
-            "Liquid account no supply"
-        );
-
-        Require.that(
-            DOLOMITE_MARGIN.getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid ||
+            Require.that(
+                DOLOMITE_MARGIN.getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid ||
                 !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, DOLOMITE_MARGIN.getMarginRatio()),
-            _FILE,
-            "Liquid account not liquidatable",
-            liquidSupplyValue.value,
-            liquidBorrowValue.value
-        );
+                _FILE,
+                "Liquid account not liquidatable",
+                liquidSupplyValue.value,
+                liquidBorrowValue.value
+            );
+        }
     }
 }

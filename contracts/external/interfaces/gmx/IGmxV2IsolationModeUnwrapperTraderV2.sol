@@ -29,19 +29,22 @@ import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolati
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeUnwrapperTraderV2 is 
+interface IGmxV2IsolationModeUnwrapperTraderV2 is
     IGmxV2IsolationModeTraderBase,
-    IUpgradeableIsolationModeUnwrapperTrader 
+    IUpgradeableIsolationModeUnwrapperTrader
 {
 
     struct WithdrawalInfo {
+        bytes32 key;
         address vault;
         uint256 accountNumber;
         address outputToken;
+        uint256 outputAmount; // initially 0 until the withdrawal is executed
     }
 
     event WithdrawalCreated(bytes32 indexed key);
     event WithdrawalExecuted(bytes32 indexed key);
+    event WithdrawalFailed(bytes32 indexed key, string reason);
     event WithdrawalCancelled(bytes32 indexed key);
 
     function vaultSetWithdrawalInfo(bytes32 _key, uint256 _accountNumber, address _outputToken) external;

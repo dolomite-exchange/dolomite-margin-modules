@@ -126,9 +126,9 @@ describe.only('GmxV2IsolationModeUnwrapperTraderV2', () => {
           gmxRegistryV2.address,
           core.tokens.weth.address,
           factory.address,
-          core.dolomiteMargin.address
+          core.dolomiteMargin.address,
         ),
-        'Initializable: contract is already initialized'
+        'Initializable: contract is already initialized',
       );
     });
   });
@@ -387,7 +387,7 @@ describe.only('GmxV2IsolationModeUnwrapperTraderV2', () => {
           { owner: core.hhUser2.address, number: defaultAccountNumber },
           defaultAbiCoder.encode(['uint256'], [amountWei]),
         ),
-        `GmxV2IsolationModeUnwrapperV2: Account owner is not a vault <${core.hhUser2.address.toLowerCase()}>`
+        `GmxV2IsolationModeUnwrapperV2: Account owner is not a vault <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -400,7 +400,7 @@ describe.only('GmxV2IsolationModeUnwrapperTraderV2', () => {
           { owner: vault.address, number: defaultAccountNumber },
           defaultAbiCoder.encode(['uint256'], [ZERO_BI]),
         ),
-        'GmxV2IsolationModeUnwrapperV2: Invalid transfer amount'
+        'GmxV2IsolationModeUnwrapperV2: Invalid transfer amount',
       );
     });
 
@@ -424,7 +424,7 @@ describe.only('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).vaultSetWithdrawalInfo(
           DUMMY_WITHDRAWAL_KEY,
           defaultAccountNumber,
-          core.tokens.weth.address
+          core.tokens.weth.address,
         ),
         'GmxV2IsolationModeUnwrapperV2: Invalid vault',
       );
@@ -435,10 +435,10 @@ describe.only('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should revert', async () => {
       await expectThrow(
         unwrapper.getExchangeCost(factory.address, core.tokens.weth.address, ONE_ETH_BI, BYTES_EMPTY),
-        'GmxV2IsolationModeUnwrapperV2: getExchangeCost is not implemented'
+        'GmxV2IsolationModeUnwrapperV2: getExchangeCost is not implemented',
       );
     });
-  })
+  });
 });
 
 async function mineBlocks(blockNumber: number) {

@@ -49,16 +49,18 @@ contract GmxV2IsolationModeVaultFactory is
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultFactory"; // needed to be shortened to fit into 32 bytes
 
+    // ============ Immutable Variables ============
+
+    address public immutable override SHORT_TOKEN; // solhint-disable-line var-name-mixedcase
+    address public immutable override LONG_TOKEN; // solhint-disable-line var-name-mixedcase
+    address private immutable _INDEX_TOKEN; // solhint-disable-line var-name-mixedcase
+    uint256 private immutable _INDEX_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    uint256 private immutable _SHORT_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    uint256 private immutable _LONG_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
+
     // ============ Field Variables ============
 
     IGmxRegistryV2 public override gmxRegistryV2;
-    address public immutable marketToken;
-    address public immutable indexToken;
-    uint256 public immutable indexTokenMarketId;
-    address public immutable shortToken;
-    uint256 public immutable shortTokenMarketId;
-    address public immutable longToken;
-    uint256 public immutable longTokenMarketId;
 
     // ============ Constructor ============
 
@@ -80,13 +82,12 @@ contract GmxV2IsolationModeVaultFactory is
         _dolomiteMargin
     ) {
         gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
-        marketToken = _tokenAndMarketAddresses.marketToken;
-        indexToken = _tokenAndMarketAddresses.indexToken;
-        indexTokenMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(indexToken);
-        shortToken = _tokenAndMarketAddresses.shortToken;
-        shortTokenMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(shortToken);
-        longToken = _tokenAndMarketAddresses.longToken;
-        longTokenMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(longToken);
+        _INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
+        _INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_INDEX_TOKEN);
+        SHORT_TOKEN = _tokenAndMarketAddresses.shortToken;
+        _SHORT_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(SHORT_TOKEN);
+        LONG_TOKEN = _tokenAndMarketAddresses.longToken;
+        _LONG_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN);
 
         Require.that(
             _initialAllowableDebtMarketIds.length == 2,
@@ -94,10 +95,10 @@ contract GmxV2IsolationModeVaultFactory is
             "Invalid debt market ids"
         );
         Require.that(
-            (_initialAllowableDebtMarketIds[0] == longTokenMarketId 
-                && _initialAllowableDebtMarketIds[1] == shortTokenMarketId) 
-            || (_initialAllowableDebtMarketIds[0] == shortTokenMarketId 
-                && _initialAllowableDebtMarketIds[1] == longTokenMarketId),
+            (_initialAllowableDebtMarketIds[0] == _LONG_TOKEN_MARKET_ID
+                && _initialAllowableDebtMarketIds[1] == _SHORT_TOKEN_MARKET_ID)
+            || (_initialAllowableDebtMarketIds[0] == _SHORT_TOKEN_MARKET_ID
+                && _initialAllowableDebtMarketIds[1] == _LONG_TOKEN_MARKET_ID),
             _FILE,
             "Invalid debt market ids"
         );
@@ -108,10 +109,10 @@ contract GmxV2IsolationModeVaultFactory is
             "Invalid collateral market ids"
         );
         Require.that(
-            (_initialAllowableCollateralMarketIds[0] == longTokenMarketId 
-                && _initialAllowableCollateralMarketIds[1] == shortTokenMarketId) 
-            || (_initialAllowableCollateralMarketIds[0] == shortTokenMarketId 
-                && _initialAllowableCollateralMarketIds[1] == longTokenMarketId),
+            (_initialAllowableCollateralMarketIds[0] == _LONG_TOKEN_MARKET_ID
+                && _initialAllowableCollateralMarketIds[1] == _SHORT_TOKEN_MARKET_ID)
+            || (_initialAllowableCollateralMarketIds[0] == _SHORT_TOKEN_MARKET_ID
+                && _initialAllowableCollateralMarketIds[1] == _LONG_TOKEN_MARKET_ID),
             _FILE,
             "Invalid collateral market ids"
         );
@@ -125,8 +126,8 @@ contract GmxV2IsolationModeVaultFactory is
         address _vault,
         uint256 _vaultAccountNumber,
         uint256 _amountWei
-    ) 
-    external 
+    )
+    external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
         IGmxV2IsolationModeTokenVaultV1(_vault).setIsDepositSourceWrapper(true);
@@ -196,7 +197,7 @@ contract GmxV2IsolationModeVaultFactory is
         address _vault,
         uint256 _vaultAccountNumber,
         uint256 _amountWei
-    ) 
+    )
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
@@ -224,9 +225,9 @@ contract GmxV2IsolationModeVaultFactory is
 
     function ownerSetGmxRegistryV2(
         address _gmxRegistryV2
-    ) 
-    external 
-    override 
+    )
+    external
+    override
     onlyDolomiteMarginOwner(msg.sender) {
         gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
         emit GmxRegistryV2Set(_gmxRegistryV2);
@@ -236,7 +237,7 @@ contract GmxV2IsolationModeVaultFactory is
         address _vault,
         bool _isVaultFrozen
     )
-    external 
+    external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
         IGmxV2IsolationModeTokenVaultV1(_vault).setIsVaultFrozen(_isVaultFrozen);
@@ -245,8 +246,8 @@ contract GmxV2IsolationModeVaultFactory is
     function setIsDepositSourceWrapper(
         address _vault,
         bool _isDepositSourceWrapper
-    ) 
-    external 
+    )
+    external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
         IGmxV2IsolationModeTokenVaultV1(_vault).setIsDepositSourceWrapper(_isDepositSourceWrapper);
@@ -255,8 +256,8 @@ contract GmxV2IsolationModeVaultFactory is
     function setShouldSkipTransfer(
         address _vault,
         bool _shouldSkipTransfer
-    ) 
-    external 
+    )
+    external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
         IGmxV2IsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
@@ -266,12 +267,12 @@ contract GmxV2IsolationModeVaultFactory is
     function getMarketInfo() external view returns (TokenAndMarketParams memory) {
         return TokenAndMarketParams({
             marketToken: UNDERLYING_TOKEN,
-            indexToken: indexToken,
-            indexTokenMarketId: indexTokenMarketId,
-            shortToken: shortToken,
-            shortTokenMarketId: shortTokenMarketId,
-            longToken: longToken,
-            longTokenMarketId: longTokenMarketId
+            indexToken: _INDEX_TOKEN,
+            indexTokenMarketId: _INDEX_TOKEN_MARKET_ID,
+            shortToken: SHORT_TOKEN,
+            shortTokenMarketId: _SHORT_TOKEN_MARKET_ID,
+            longToken: LONG_TOKEN,
+            longTokenMarketId: _LONG_TOKEN_MARKET_ID
         });
     }
 
