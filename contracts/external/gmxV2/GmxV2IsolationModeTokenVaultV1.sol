@@ -164,7 +164,11 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
             );
 
             bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
-            unwrapper.vaultSetWithdrawalInfo(withdrawalKey, tradeAccountNumberForStackTooDeep, outputTokenForStackTooDeep);
+            unwrapper.vaultSetWithdrawalInfo(
+                withdrawalKey,
+                tradeAccountNumberForStackTooDeep,
+                outputTokenForStackTooDeep
+            );
     }
 
     // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can
