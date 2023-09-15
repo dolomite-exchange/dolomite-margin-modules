@@ -77,7 +77,8 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minLongTokenAmount,
+        uint256 _minShortTokenAmount
     ) external payable nonReentrant {
         // solhint-disable-next-line avoid-low-level-calls
         (bool isSuccessful, bytes memory result) = address(this).delegatecall(
@@ -86,7 +87,8 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
                 _tradeAccountNumber,
                 _inputAmount,
                 _outputToken,
-                _minOutputAmount
+                _minLongTokenAmount,
+                _minShortTokenAmount
             )
         );
         if (!isSuccessful) {

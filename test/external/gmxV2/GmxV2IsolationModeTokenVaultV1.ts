@@ -7,8 +7,6 @@ import { ethers } from 'hardhat';
 import {
   CustomTestToken,
   GmxRegistryV2,
-  GmxV2IsolationModeTokenVaultV1,
-  GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
@@ -22,7 +20,6 @@ import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snap
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
-  createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
@@ -374,6 +371,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -391,6 +389,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
+          ONE_BI,
           { value: parseEther('.01') },
         ),
         'GmxV2IsolationModeVaultV1: Invalid output token',
@@ -404,6 +403,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           borrowAccountNumber,
           amountWei,
           core.tokens.wbtc.address,
+          ONE_BI,
           ONE_BI,
           { value: parseEther('.01') },
         ),
@@ -419,6 +419,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
+          ONE_BI,
           { value: parseEther('.01') },
         ),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`
@@ -432,6 +433,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           borrowAccountNumber,
           amountWei,
           core.tokens.wbtc.address,
+          ONE_BI,
           ONE_BI,
           { value: parseEther('.01') },
         ),
@@ -498,6 +500,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         amountWei,
         core.tokens.weth.address,
+        ONE_BI,
         ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));

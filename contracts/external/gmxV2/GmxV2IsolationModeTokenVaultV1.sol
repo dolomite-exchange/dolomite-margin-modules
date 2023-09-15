@@ -119,12 +119,12 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         );
     }
 
-    // @todo add comment that it is automatically sent back to vault upon cancellation
     function initiateUnwrapping(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minLongTokenAmount,
+        uint256 _minShortTokenAmount
     ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
             Require.that(
                 registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken),
@@ -133,6 +133,8 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
             );
             _setIsVaultFrozen(true);
 
+            uint256 tradeAccountNumberForStackTooDeep = _tradeAccountNumber;
+            address outputTokenForStackTooDeep = _outputToken;
             uint256 ethExecutionFee = msg.value;
             IGmxExchangeRouter exchangeRouter = registry().gmxExchangeRouter();
             address withdrawalVault = registry().gmxWithdrawalVault();
@@ -154,15 +156,15 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
                     /* market = */ UNDERLYING_TOKEN(),
                     /* longTokenSwapPath = */ _outputToken == factory.longToken() ? new address[](0) : swapPath,
                     /* shortTokenSwapPath = */ _outputToken == factory.shortToken() ? new address[](0) : swapPath,
-                    /* minLongTokenAmount = */ _outputToken == factory.longToken() ? _minOutputAmount : 0,
-                    /* minShortTokenAmount = */ _outputToken == factory.shortToken() ? _minOutputAmount : 0,
+                    /* minLongTokenAmount = */ _minLongTokenAmount,
+                    /* minShortTokenAmount = */ _minShortTokenAmount,
                     /* shouldUnwrapNativeToken = */ false,
                     /* executionFee = */ ethExecutionFee,
-                    /* callbackGasLimit = */ 2000000
+                    /* callbackGasLimit = */ unwrapper.callbackGasLimit()
             );
 
             bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
-            unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _outputToken);
+            unwrapper.vaultSetWithdrawalInfo(withdrawalKey, tradeAccountNumberForStackTooDeep, outputTokenForStackTooDeep);
     }
 
     // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can
@@ -179,9 +181,9 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
     /**
      * 
      * @param  _key Withdrawal key
-     * @dev    This calls the wrapper trader which will revert if given an invalid _key
      */
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
+        // @follow-up This would revert in the callback though where we check the key
         registry().gmxExchangeRouter().cancelWithdrawal(_key);
     }
 
