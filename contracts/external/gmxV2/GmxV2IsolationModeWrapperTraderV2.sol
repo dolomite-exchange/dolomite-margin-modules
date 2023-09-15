@@ -194,10 +194,9 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         uint256 _inputAmount,
         bytes memory _extraOrderData
     )
-        internal
-        override
-        returns (uint256)
-    {
+    internal
+    override
+    returns (uint256) {
         _checkSlippage(_inputToken, _inputAmount, _minOutputAmount);
 
         address tradeOriginatorForStackTooDeep = _tradeOriginator;

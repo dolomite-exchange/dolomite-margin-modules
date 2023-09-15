@@ -142,9 +142,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         bytes32 _key,
         GmxWithdrawal.Props memory _withdrawal,
         GmxEventUtils.EventLogData memory _eventData
-        ) 
-        external 
-        onlyHandler(msg.sender) {
+    ) 
+    external 
+    onlyHandler(msg.sender) {
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         Require.that(
             withdrawalInfo.vault != address(0),
@@ -286,11 +286,10 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         uint256,
         bytes memory
     ) 
-        internal
-        virtual
-        override
-        returns (uint256)
-    {
+    internal
+    virtual
+    override
+    returns (uint256) {
         return _minOutputAmount;
     }
 

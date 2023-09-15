@@ -21,8 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { GmxV2IsolationModeUnwrapperTraderV2 } from "../external/gmxV2/GmxV2IsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
-import { IGenericTraderProxyV1 } from "../external/interfaces/IGenericTraderProxyV1.sol";
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**

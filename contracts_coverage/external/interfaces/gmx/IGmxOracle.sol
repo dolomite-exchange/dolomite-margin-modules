@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { GmxPrice } from "./GmxPrice.sol";
 
+
 /**
  * @title   IGmxOracle
  * @author  Dolomite
@@ -30,7 +31,7 @@ import { GmxPrice } from "./GmxPrice.sol";
  */
 interface IGmxOracle {
 
-    function getUint(bytes32 _key) external view returns (uint256);
-
     function setPrimaryPrice(address token, GmxPrice.Props memory price) external;
+
+    function getUint(bytes32 _key) external view returns (uint256);
 }
