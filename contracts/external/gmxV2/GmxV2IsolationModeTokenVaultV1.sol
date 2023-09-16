@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
@@ -32,6 +32,7 @@ import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 
@@ -55,6 +56,9 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
     bytes32 private constant _VIRTUAL_BALANCE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.virtualBalance")) - 1);
     bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _POSITION_TO_EXECUTION_FEE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.positionToExecutionFee")) - 1); // solhint-disable-line max-line-length
+
+    uint256 public constant EXECUTION_FEE = 0.0005 ether;
 
     IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
 
@@ -88,13 +92,34 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         WETH = IWETH(_weth);
     }
 
+    function openBorrowPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+    external
+    override
+    payable
+    onlyVaultOwner(msg.sender) {
+        _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+        Require.that(
+            msg.value == EXECUTION_FEE,
+            _FILE,
+            "Invalid msg.value"
+        );
+        _setExecutionFeeForAccountNumber(
+            _toAccountNumber,
+            getExecutionFeeForAccountNumber(_toAccountNumber) + msg.value
+        );
+    }
+
     function initiateWrapping(
         uint256 _tradeAccountNumber,
         uint256[] calldata _marketIdsPath,
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
         IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
         uint256 len = _tradersPath.length;
@@ -199,7 +224,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
         IGenericTraderProxyV1.TraderParam[] calldata _tradersPath,
-        IDolomiteMargin.AccountInfo[] calldata _makerAccounts,
+        IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
     external
@@ -317,9 +342,28 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         return registry().dolomiteRegistry();
     }
 
+    function getExecutionFeeForAccountNumber(uint256 _accountNumber) public view returns (uint256) {
+        return _getUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)));
+    }
+
     // ==================================================================
     // ======================== Internal Functions ========================
     // ==================================================================
+
+    function _transferIntoPositionWithUnderlyingToken(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256 _amountWei
+    )
+    internal
+    override {
+        Require.that(
+            getExecutionFeeForAccountNumber(_borrowAccountNumber) != 0,
+            _FILE,
+            "Missing execution fee"
+        );
+        super._transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
+    }
 
     function _swapExactInputForOutput(
         uint256 _tradeAccountNumber,
@@ -327,7 +371,7 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
         IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
     internal
@@ -341,6 +385,57 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
             _makerAccounts,
             _userConfig
         );
+    }
+
+    function _transferFromPositionWithUnderlyingToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+    internal
+    override {
+        super._transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
+    }
+
+    function _transferFromPositionWithOtherToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _marketId,
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    )
+    internal
+    override {
+        super._transferFromPositionWithOtherToken(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _marketId,
+            _amountWei,
+            _balanceCheckFlag
+        );
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
+    }
+
+    function _closeBorrowPositionWithUnderlyingVaultToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber
+    )
+    internal
+    override {
+        super._closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
+    }
+
+    function _closeBorrowPositionWithOtherTokens(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256[] calldata _collateralMarketIds
+    )
+    internal
+    override {
+        super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
     function _initiateUnwrapping(
@@ -399,6 +494,13 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
     }
 
+    function _setExecutionFeeForAccountNumber(
+        uint256 _accountNumber,
+        uint256 _executionFee
+    ) internal {
+        _setUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)), _executionFee);
+    }
+
     function _requireVirtualBalanceMatchesRealBalance() internal view {
         Require.that(
             virtualBalance() == IERC20(UNDERLYING_TOKEN()).balanceOf(address(this)),
@@ -421,5 +523,20 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
             _FILE,
             "Only unwrapper if frozen"
         );
+    }
+
+    function _refundExecutionFeeIfNecessary(uint256 _borrowAccountNumber) private {
+        IDolomiteStructs.AccountInfo memory borrowAccountInfo = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _borrowAccountNumber
+        });
+        if (DOLOMITE_MARGIN().getAccountNumberOfMarketsWithBalances(borrowAccountInfo) == 0) {
+            // There's no assets left in the position. Issue a refund for the execution fee
+            // The refund is sent as WETH to eliminate reentrancy concerns
+            uint256 executionFee = getExecutionFeeForAccountNumber(_borrowAccountNumber);
+            _setExecutionFeeForAccountNumber(_borrowAccountNumber, /* _executionFee = */ 0);
+            WETH.deposit{value: executionFee}();
+            WETH.safeTransfer(msg.sender, executionFee);
+        }
     }
 }

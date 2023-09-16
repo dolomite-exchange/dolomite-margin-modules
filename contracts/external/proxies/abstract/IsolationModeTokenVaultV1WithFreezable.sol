@@ -125,6 +125,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _toAccountNumber
     )
     internal
+    virtual
     override
     requireNotFrozen {
         super._closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
@@ -136,6 +137,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256[] calldata _collateralMarketIds
     )
     internal
+    virtual
     override
     requireNotFrozen {
         super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
@@ -147,6 +149,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _amountWei
     )
     internal
+    virtual
     override
     requireNotFrozen {
         super._transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
@@ -177,6 +180,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _amountWei
     )
     internal
+    virtual
     override
     requireNotFrozen {
         super._transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
@@ -190,6 +194,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     internal
+    virtual
     override
     requireNotFrozen {
         super._transferFromPositionWithOtherToken(

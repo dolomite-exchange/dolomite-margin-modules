@@ -60,7 +60,7 @@ interface IIsolationModeTokenVaultV1 {
         uint256 _fromAccountNumber,
         uint256 _toAccountNumber,
         uint256 _amountWei
-    ) external;
+    ) external payable;
 
     /**
      * @notice  End-user function for closing a borrow position involving the vault factory's underlying token. Should

@@ -38,10 +38,10 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
         bytes32 key;
         address vault;
         uint256 accountNumber;
-        // @dev The amount of GM tokens that is being sold
+        /// @dev The amount of GM tokens that is being sold
         uint256 inputAmount;
         address outputToken;
-        // @dev initially 0 until the withdrawal is executed
+        /// @dev initially 0 until the withdrawal is executed
         uint256 outputAmount;
     }
 

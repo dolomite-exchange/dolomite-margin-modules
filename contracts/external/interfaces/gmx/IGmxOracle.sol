@@ -31,7 +31,7 @@ import { GmxPrice } from "./GmxPrice.sol";
  */
 interface IGmxOracle {
 
-    function setPrimaryPrice(address token, GmxPrice.Props memory price) external;
+    function setPrimaryPrice(address token, GmxPrice.PriceProps memory price) external;
 
     function getUint(bytes32 _key) external view returns (uint256);
 }

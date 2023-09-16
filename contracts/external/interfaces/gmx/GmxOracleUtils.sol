@@ -60,6 +60,6 @@ library GmxOracleUtils {
 
     struct SimulatePricesParams {
         address[] primaryTokens;
-        GmxPrice.Props[] primaryPrices;
+        GmxPrice.PriceProps[] primaryPrices;
     }
 }

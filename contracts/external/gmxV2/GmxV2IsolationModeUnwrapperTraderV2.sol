@@ -97,6 +97,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _FILE,
             "Invalid withdrawal key"
         );
+        Require.that(
+            withdrawalInfo.inputAmount == _withdrawal.numbers.marketTokenAmount,
+            _FILE,
+            "Invalid market token amount"
+        );
 
         uint256[] memory marketIdsPath = new uint256[](2);
         marketIdsPath[0] = VAULT_FACTORY().marketId();
@@ -139,7 +144,8 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         // @audit:  If GMX changes the keys OR if the data sent back is malformed (causing the above requires to
         //          fail), this will fail. This will result in us receiving tokens from GMX and not knowing who they
-        //          are for, nor the amount.
+        //          are for, nor the amount. The only solution will be to upgrade this contract and have an admin
+        //          unstuck the funds for users by sending them to the appropriate vaults.
 
 
         IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
