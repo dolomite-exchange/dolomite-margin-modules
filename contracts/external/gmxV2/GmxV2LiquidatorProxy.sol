@@ -99,35 +99,6 @@ contract GmxV2LiquidatorProxy is BaseLiquidatorProxy {
     // ========================= Internal Functions =========================
     // ======================================================================
 
-    /**
-     * Make some basic checks before attempting to liquidate an account.
-     *  - Require that the msg.sender has the permission to use the liquidator account
-     *  - Require that the liquid account is liquidatable
-     */
-    function _checkRequirements(
-        IDolomiteStructs.AccountInfo calldata _solidAccount,
-        IDolomiteStructs.AccountInfo calldata _liquidAccount,
-        MarketInfo[] memory _marketInfos,
-        uint256 _outputMarketId,
-        uint256 _expirationTimestamp
-    ) internal view {
-        // check credentials for msg.sender
-        Require.that(
-            _solidAccount.owner == msg.sender || DOLOMITE_MARGIN.getIsLocalOperator(_solidAccount.owner, msg.sender),
-            _FILE,
-            "Sender not operator",
-            msg.sender
-        );
-
-        // require that the liquidAccount is liquidatable
-        _checkIsLiquidatable(
-            _liquidAccount,
-            _marketInfos,
-            _outputMarketId,
-            _expirationTimestamp
-        );
-    }
-
     function _checkIsLiquidatable(
         IDolomiteStructs.AccountInfo calldata _liquidAccount,
         MarketInfo[] memory _marketInfos,

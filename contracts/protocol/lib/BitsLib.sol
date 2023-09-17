@@ -35,96 +35,96 @@ library BitsLib {
 
     // ============ Functions ============
 
-    function createBitmaps(uint256 maxLength) internal pure returns (uint[] memory) {
-        return new uint[]((maxLength / _MAX_UINT_BITS) + _ONE);
+    function createBitmaps(uint256 _maxLength) internal pure returns (uint256[] memory) {
+        return new uint256[]((_maxLength / _MAX_UINT_BITS) + _ONE);
     }
 
     function getMarketIdFromBit(
-        uint256 index,
-        uint256 bit
-    ) internal pure returns (uint) {
-        return (_MAX_UINT_BITS * index) + bit;
+        uint256 _indexIntoBitmapsArray,
+        uint256 _bit
+    ) internal pure returns (uint256) {
+        return (_MAX_UINT_BITS * _indexIntoBitmapsArray) + _bit;
     }
 
     function setBit(
-        uint[] memory bitmaps,
-        uint256 marketId
+        uint256[] memory _bitmaps,
+        uint256 _marketId
     ) internal pure {
-        uint256 bucketIndex = marketId / _MAX_UINT_BITS;
-        uint256 indexFromRight = marketId % _MAX_UINT_BITS;
-        bitmaps[bucketIndex] |= (_ONE << indexFromRight);
+        uint256 bucketIndex = _marketId / _MAX_UINT_BITS;
+        uint256 indexFromRight = _marketId % _MAX_UINT_BITS;
+        _bitmaps[bucketIndex] |= (_ONE << indexFromRight);
     }
 
     function hasBit(
-        uint[] memory bitmaps,
-        uint256 marketId
+        uint256[] memory _bitmaps,
+        uint256 _marketId
     ) internal pure returns (bool) {
-        uint256 bucketIndex = marketId / _MAX_UINT_BITS;
-        uint256 indexFromRight = marketId % _MAX_UINT_BITS;
-        uint256 bit = bitmaps[bucketIndex] & (_ONE << indexFromRight);
+        uint256 bucketIndex = _marketId / _MAX_UINT_BITS;
+        uint256 indexFromRight = _marketId % _MAX_UINT_BITS;
+        uint256 bit = _bitmaps[bucketIndex] & (_ONE << indexFromRight);
         return bit > 0;
     }
 
     function unsetBit(
-        uint256 bitmap,
-        uint256 bit
-    ) internal pure returns (uint) {
-        return bitmap & ~(_ONE << bit);
+        uint256 _bitmap,
+        uint256 _bit
+    ) internal pure returns (uint256) {
+        return _bitmap & ~(_ONE << _bit);
     }
 
     // solium-disable security/no-assign-params
-    function getLeastSignificantBit(uint256 x) internal pure returns (uint) {
+    function getLeastSignificantBit(uint256 _value) internal pure returns (uint256) {
         // gas usage peaks at 350 per call
 
-        uint256 lsb = 255;
+        uint256 leastSignificantBit = 255;
 
-        if (x & type(uint128).max > 0) {
-            lsb -= 128;
+        if (_value & type(uint128).max > 0) {
+            leastSignificantBit -= 128;
         } else {
-            x >>= 128;
+            _value >>= 128;
         }
 
-        if (x & type(uint64).max > 0) {
-            lsb -= 64;
+        if (_value & type(uint64).max > 0) {
+            leastSignificantBit -= 64;
         } else {
-            x >>= 64;
+            _value >>= 64;
         }
 
-        if (x & type(uint32).max > 0) {
-            lsb -= 32;
+        if (_value & type(uint32).max > 0) {
+            leastSignificantBit -= 32;
         } else {
-            x >>= 32;
+            _value >>= 32;
         }
 
-        if (x & type(uint16).max > 0) {
-            lsb -= 16;
+        if (_value & type(uint16).max > 0) {
+            leastSignificantBit -= 16;
         } else {
-            x >>= 16;
+            _value >>= 16;
         }
 
-        if (x & type(uint8).max > 0) {
-            lsb -= 8;
+        if (_value & type(uint8).max > 0) {
+            leastSignificantBit -= 8;
         } else {
-            x >>= 8;
+            _value >>= 8;
         }
 
-        if (x & 0xf > 0) {
-            lsb -= 4;
+        if (_value & 0xf > 0) {
+            leastSignificantBit -= 4;
         } else {
-            x >>= 4;
+            _value >>= 4;
         }
 
-        if (x & 0x3 > 0) {
-            lsb -= 2;
+        if (_value & 0x3 > 0) {
+            leastSignificantBit -= 2;
         } else {
-            x >>= 2;
-            // solium-enable security/no-assign-params
+            _value >>= 2;
+        }
+        // solium-enable security/no-assign-params
+
+        if (_value & 0x1 > 0) {
+            leastSignificantBit -= 1;
         }
 
-        if (x & 0x1 > 0) {
-            lsb -= 1;
-        }
-
-        return lsb;
+        return leastSignificantBit;
     }
 }

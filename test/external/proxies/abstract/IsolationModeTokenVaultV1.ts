@@ -265,6 +265,13 @@ describe('IsolationModeTokenVaultV1', () => {
       );
     });
 
+    it('should fail when msg.value is not 0', async () => {
+      await expectThrow(
+        userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: 1 }),
+        'IsolationModeTokenVaultV1: Cannot send ETH',
+      );
+    });
+
     it('should fail when fromAccountNumber != 0', async () => {
       await expectThrow(
         userVault.openBorrowPosition(borrowAccountNumber, defaultAccountNumber, amountWei),

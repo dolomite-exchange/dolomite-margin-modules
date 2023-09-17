@@ -644,6 +644,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(core.hhUser1).vaultSetWithdrawalInfo(
           DUMMY_WITHDRAWAL_KEY,
           defaultAccountNumber,
+          amountWei,
           core.tokens.weth.address,
         ),
         'GmxV2IsolationModeUnwrapperV2: Invalid vault',
