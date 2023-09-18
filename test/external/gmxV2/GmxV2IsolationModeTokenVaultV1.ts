@@ -11,6 +11,8 @@ import {
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
   IGmxMarketToken,
+  TestGmxReader,
+  TestGmxReader__factory,
   TestGmxV2IsolationModeTokenVaultV1,
   TestGmxV2IsolationModeTokenVaultV1__factory,
 } from 'src/types';
@@ -43,6 +45,8 @@ const minAmountOut = parseEther('1800');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
+const INVALID_POOL_FACTOR = BigNumber.from('900000000000000000000000000000'); // 9e29
+const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
 
 describe('GmxV2IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -57,6 +61,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   let vault: TestGmxV2IsolationModeTokenVaultV1;
   let marketId: BigNumber;
   let impersonatedFactory: SignerWithAddress;
+  let testReader: TestGmxReader;
 
   let otherToken1: CustomTestToken;
   let otherToken2: CustomTestToken;
@@ -130,6 +135,12 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       vaultAddress,
       TestGmxV2IsolationModeTokenVaultV1__factory,
       core.hhUser1,
+    );
+
+    testReader = await createContractWithAbi(
+      TestGmxReader__factory.abi,
+      TestGmxReader__factory.bytecode,
+      [],
     );
 
     await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
@@ -253,7 +264,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.userConfig,
           { value: amountWei }
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
       );
     });
 
@@ -407,7 +418,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           ONE_BI,
           { value: parseEther('.01') },
         ),
-        'IsolationModeVaultV1Freezable: Vault is frozen',
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
 
@@ -747,6 +758,32 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         zapParams.makerAccounts,
         zapParams.userConfig
       );
+    });
+  });
+
+  describe('#isExternalRedemptionPaused', () => {
+    it('should return false if short and long are outside pnl range', async () => {
+      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await testReader.setPnlToPoolFactors(VALID_POOL_FACTOR, VALID_POOL_FACTOR);
+      expect(await vault.isExternalRedemptionPaused()).to.be.false;
+    });
+
+    it('should return true if short is within pnl range', async () => {
+      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await testReader.setPnlToPoolFactors(INVALID_POOL_FACTOR, VALID_POOL_FACTOR);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
+    });
+
+    it('should return true if long is within pnl range', async () => {
+      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await testReader.setPnlToPoolFactors(VALID_POOL_FACTOR, INVALID_POOL_FACTOR);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
+    });
+
+    it('should return false if both are within pnl range', async () => {
+      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await testReader.setPnlToPoolFactors(INVALID_POOL_FACTOR, INVALID_POOL_FACTOR);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
   });
 

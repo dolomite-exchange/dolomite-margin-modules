@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { GmxPrice } from "./GmxPrice.sol";
+
 
 /**
  * @title   GmxMarket
@@ -34,5 +36,11 @@ library GmxMarket {
         address indexToken;
         address longToken;
         address shortToken;
+    }
+
+    struct MarketPrices {
+        GmxPrice.Props indexTokenPrice;
+        GmxPrice.Props longTokenPrice;
+        GmxPrice.Props shortTokenPrice;
     }
 }
