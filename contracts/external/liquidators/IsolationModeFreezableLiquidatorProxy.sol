@@ -23,31 +23,36 @@ pragma solidity ^0.8.9;
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
-import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
-import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 
 
 /**
- * @title   GmxV2LiquidatorProxy
+ * @title   IsolationModeFreezableLiquidatorProxy
  * @author  Dolomite
  *
- * @notice  Liquidator for handling the GMX V2 (GM) tokens.
+ * @notice  Liquidator for handling the GMX V2 (GM) tokens and other freezable vaults.
  */
-contract GmxV2LiquidatorProxy is BaseLiquidatorProxy {
+contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
+
+    // ============================ Events ============================
+
+    event LiquidationEnqueued(
+        address indexed liquidAccountOwner,
+        uint256 indexed liquidAccountNumber,
+        uint256 heldMarketId,
+        uint256 heldAmount,
+        uint256 owedMarketId,
+        uint256 minOutputAmount
+    );
 
     // ============================ Constants ============================
 
-    bytes32 private constant _FILE = "GmxV2LiquidatorProxy";
-
-    // ============================ Public State Variables ============================
-
-    IGmxRegistryV2 public immutable GMX_REGISTRY_V2; // solhint-disable-line var-name-mixedcase
+    bytes32 private constant _FILE = "FreezableVaultLiquidatorProxy";
 
     // ============================ Constructor ============================
 
     constructor(
-        address _gmxRegistryV2,
         address _dolomiteMargin,
         address _expiry,
         address _liquidatorAssetRegistry
@@ -56,21 +61,19 @@ contract GmxV2LiquidatorProxy is BaseLiquidatorProxy {
         _dolomiteMargin,
         _expiry,
         _liquidatorAssetRegistry
-    ) {
-        GMX_REGISTRY_V2 = IGmxRegistryV2(_gmxRegistryV2);
-    }
+    ) { /* solhint-disable-line no-empty-blocks */ }
 
     function prepareForLiquidation(
         IDolomiteStructs.AccountInfo calldata _liquidAccount,
-        uint256 _gmMarketId,
-        uint256 _dGmTokenAmount,
+        uint256 _freezableMarketId,
+        uint256 _inputTokenAmount,
         uint256 _outputMarketId,
         uint256 _minOutputAmount,
         uint256 _expirationTimestamp
-    ) external requireIsAssetWhitelistedForLiquidation(_gmMarketId) {
-        address gmToken = DOLOMITE_MARGIN.getMarketTokenAddress(_gmMarketId);
+    ) external requireIsAssetWhitelistedForLiquidation(_freezableMarketId) {
+        address freezableToken = DOLOMITE_MARGIN.getMarketTokenAddress(_freezableMarketId);
         Require.that(
-            IGmxV2IsolationModeVaultFactory(gmToken).getAccountByVault(_liquidAccount.owner) != address(0),
+            IIsolationModeVaultFactory(freezableToken).getAccountByVault(_liquidAccount.owner) != address(0),
             _FILE,
             "Invalid liquid account",
             _liquidAccount.owner
@@ -87,10 +90,18 @@ contract GmxV2LiquidatorProxy is BaseLiquidatorProxy {
         );
 
         address outputToken = DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarketId);
-        IGmxV2IsolationModeTokenVaultV1(_liquidAccount.owner).initiateUnwrappingForLiquidation(
+        IIsolationModeTokenVaultV1WithFreezable(_liquidAccount.owner).initiateUnwrappingForLiquidation(
             _liquidAccount.number,
-            _dGmTokenAmount,
+            _inputTokenAmount,
             outputToken,
+            _minOutputAmount
+        );
+        emit LiquidationEnqueued(
+            _liquidAccount.owner,
+            _liquidAccount.number,
+            _freezableMarketId,
+            _inputTokenAmount,
+            _outputMarketId,
             _minOutputAmount
         );
     }

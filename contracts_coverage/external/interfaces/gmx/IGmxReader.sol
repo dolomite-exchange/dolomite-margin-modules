@@ -39,15 +39,30 @@ interface IGmxReader {
 
     function getMarketTokenPrice(
         IGmxDataStore _dataStore,
-        GmxMarket.Props memory _market,
-        GmxPrice.Props memory _indexTokenPrice,
-        GmxPrice.Props memory _longTokenPrice,
-        GmxPrice.Props memory _shortTokenPrice,
+        GmxMarket.MarketProps memory _market,
+        GmxPrice.PriceProps memory _indexTokenPrice,
+        GmxPrice.PriceProps memory _longTokenPrice,
+        GmxPrice.PriceProps memory _shortTokenPrice,
         bytes32 _pnlFactorType,
         bool _maximize
-    ) external view returns (int256, GmxMarketPoolValueInfo.Props memory);
+    )
+        external
+        view
+        returns (int256, GmxMarketPoolValueInfo.PoolValueInfoProps memory);
 
-    function getDeposit(IGmxDataStore dataStore, bytes32 key) external view returns (GmxDeposit.Props memory);
+    function getDeposit(
+        IGmxDataStore dataStore,
+        bytes32 key
+    )
+        external
+        view
+        returns (GmxDeposit.DepositProps memory);
 
-    function getWithdrawal(IGmxDataStore dataStore, bytes32 key) external view returns (GmxWithdrawal.Props memory);
+    function getWithdrawal(
+        IGmxDataStore dataStore,
+        bytes32 key
+    )
+        external
+        view
+        returns (GmxWithdrawal.WithdrawalProps memory);
 }

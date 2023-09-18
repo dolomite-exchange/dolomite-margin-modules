@@ -20,12 +20,11 @@
 
 pragma solidity ^0.8.9;
 
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { IsolationModeUpgradeableProxy } from "../IsolationModeUpgradeableProxy.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
+import { MinimalERC20 } from "../../general/MinimalERC20.sol";
 import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
@@ -45,8 +44,7 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 abstract contract IsolationModeVaultFactory is
     IIsolationModeVaultFactory,
     OnlyDolomiteMargin,
-    ReentrancyGuard,
-    ERC20
+    MinimalERC20
 {
 
     // ===================================================
@@ -115,9 +113,10 @@ abstract contract IsolationModeVaultFactory is
         address _userVaultImplementation,
         address _dolomiteMargin
     )
-    ERC20(
-        /* name_ = */ string(abi.encodePacked("Dolomite Isolation: ", ERC20(_underlyingToken).name())),
-        /* symbol_ = */ string(abi.encodePacked("d", ERC20(_underlyingToken).symbol()))
+    MinimalERC20(
+        /* name_ = */ string(abi.encodePacked("Dolomite Isolation: ", MinimalERC20(_underlyingToken).name())),
+        /* symbol_ = */ string(abi.encodePacked("d", MinimalERC20(_underlyingToken).symbol())),
+        /* decimals_ = */ MinimalERC20(_underlyingToken).decimals()
     )
     OnlyDolomiteMargin(_dolomiteMargin)
     {
@@ -488,7 +487,7 @@ abstract contract IsolationModeVaultFactory is
             "from/to must eq DolomiteMargin"
         );
 
-        uint _transferCursor = transferCursor;
+        uint256 _transferCursor = transferCursor;
         QueuedTransfer memory queuedTransfer = _cursorToQueuedTransferMap[_transferCursor];
         if (queuedTransfer.from == _from&& queuedTransfer.to == _to&& queuedTransfer.amount == _amount&& _vaultToUserMap[queuedTransfer.vault] != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(queuedTransfer.from == _from

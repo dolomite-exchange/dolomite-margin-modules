@@ -33,6 +33,16 @@ import { IsolationModeTokenVaultV1WithFreezable } from "../external/proxies/abst
  */
 contract TestIsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1WithFreezable {
 
+    function initiateUnwrappingForLiquidation(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    ) external payable {
+        _setIsVaultFrozen(true);
+        // TODO; set anything else needed for testing
+    }
+
     function dolomiteRegistry() public override view returns (IDolomiteRegistry) {
         return TestSimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
     }

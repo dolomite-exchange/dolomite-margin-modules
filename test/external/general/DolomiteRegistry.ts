@@ -22,6 +22,7 @@ describe('DolomiteRegistryImplementation', () => {
     const calldata = await implementation.populateTransaction.initialize(
       core.genericTraderProxy!.address,
       core.expiry!.address,
+      core.liquidatorAssetRegistry.address,
     );
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
     registry = DolomiteRegistryImplementation__factory.connect(registryProxy.address, core.governance);
@@ -44,6 +45,7 @@ describe('DolomiteRegistryImplementation', () => {
         registry.initialize(
           core.genericTraderProxy!.address,
           core.expiry!.address,
+          core.liquidatorAssetRegistry.address,
         ),
         'Initializable: contract is already initialized',
       );
@@ -53,6 +55,38 @@ describe('DolomiteRegistryImplementation', () => {
   describe('#slippageToleranceForPauseSentinelBase', () => {
     it('should return 1e18', async () => {
       expect(await registry.slippageToleranceForPauseSentinelBase()).to.equal('1000000000000000000');
+    });
+  });
+
+  describe('#ownerSetExpiry', () => {
+    it('should work normally', async () => {
+      const expiryAddress = core.expiry!.address;
+      const result = await registry.connect(core.governance).ownerSetExpiry(expiryAddress);
+      await expectEvent(registry, result, 'ExpirySet', {
+        expiryAddress,
+      });
+      expect(await registry.expiry()).to.equal(expiryAddress);
+    });
+
+    it('should fail if expiry is not valid', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetExpiry(OTHER_ADDRESS),
+        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetExpiry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetExpiry(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid expiry',
+      );
     });
   });
 
@@ -88,34 +122,34 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
-  describe('#ownerSetExpiry', () => {
+  describe('#ownerSetLiquidatorAssetRegistry', () => {
     it('should work normally', async () => {
-      const expiryAddress = core.expiry!.address;
-      const result = await registry.connect(core.governance).ownerSetExpiry(expiryAddress);
-      await expectEvent(registry, result, 'ExpirySet', {
-        expiryAddress,
+      const liquidatorAssetRegistry = core.liquidatorAssetRegistry!.address;
+      const result = await registry.connect(core.governance).ownerSetLiquidatorAssetRegistry(liquidatorAssetRegistry);
+      await expectEvent(registry, result, 'LiquidatorAssetRegistrySet', {
+        liquidatorAssetRegistry,
       });
-      expect(await registry.expiry()).to.equal(expiryAddress);
+      expect(await registry.liquidatorAssetRegistry()).to.equal(liquidatorAssetRegistry);
     });
 
-    it('should fail if expiry is not valid', async () => {
+    it('should fail if liquidatorAssetRegistry is invalid', async () => {
       await expectThrow(
-        registry.connect(core.governance).ownerSetExpiry(OTHER_ADDRESS),
+        registry.connect(core.governance).ownerSetLiquidatorAssetRegistry(OTHER_ADDRESS),
         `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
       );
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).ownerSetExpiry(OTHER_ADDRESS),
+        registry.connect(core.hhUser1).ownerSetLiquidatorAssetRegistry(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
-        registry.connect(core.governance).ownerSetExpiry(ZERO_ADDRESS),
-        'DolomiteRegistryImplementation: Invalid expiry',
+        registry.connect(core.governance).ownerSetLiquidatorAssetRegistry(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid liquidatorAssetRegistry',
       );
     });
   });

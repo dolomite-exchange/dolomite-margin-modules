@@ -17,7 +17,9 @@ import { DEFAULT_BLOCK_NUMBER, NetworkName } from './src/utils/no-deps-constants
 
 chai.use(solidity);
 require('dotenv').config();
-require('hardhat-tracer');
+if (process.env.COVERAGE !== 'true') {
+  require('hardhat-tracer');
+}
 
 const arbitrumOneWeb3Url = process.env.ARBITRUM_ONE_WEB3_PROVIDER_URL;
 if (!arbitrumOneWeb3Url) {

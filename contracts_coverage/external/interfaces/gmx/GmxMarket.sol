@@ -28,7 +28,8 @@ pragma solidity ^0.8.9;
  * @notice  GMX Market Library
  */
 library GmxMarket {
-    struct Props {
+
+    struct MarketProps {
         address marketToken;
         address indexToken;
         address longToken;

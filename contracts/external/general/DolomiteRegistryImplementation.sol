@@ -182,7 +182,7 @@ contract DolomiteRegistryImplementation is
         bytes memory returnData = ValidationLib.callAndCheckSuccess(
             _liquidatorAssetRegistry,
             ILiquidatorAssetRegistry(_liquidatorAssetRegistry).getLiquidatorsForAsset.selector,
-            bytes("")
+            abi.encode(uint256(0))
         );
         abi.decode(returnData, (uint256[]));
 

@@ -85,4 +85,53 @@ library InterestIndexLib {
             });
         }
     }
+
+    /*
+     * Convert a principal amount to a token amount given an index.
+     */
+    function parToWei(
+        IDolomiteStructs.Par memory input,
+        IDolomiteStructs.InterestIndex memory index
+    )
+    internal
+    pure
+    returns (IDolomiteStructs.Wei memory)
+    {
+        uint256 inputValue = uint256(input.value);
+        if (input.sign) {
+            return IDolomiteStructs.Wei({
+                sign: true,
+                value: inputValue.getPartialRoundHalfUp(index.supply, _BASE)
+            });
+        } else {
+            return IDolomiteStructs.Wei({
+                sign: false,
+                value: inputValue.getPartialRoundHalfUp(index.borrow, _BASE)
+            });
+        }
+    }
+
+    /*
+     * Convert a token amount to a principal amount given an index.
+     */
+    function weiToPar(
+        IDolomiteStructs.Wei memory input,
+        IDolomiteStructs.InterestIndex memory index
+    )
+    internal
+    pure
+    returns (IDolomiteStructs.Par memory)
+    {
+        if (input.sign) {
+            return IDolomiteStructs.Par({
+                sign: true,
+                value: input.value.getPartialRoundHalfUp(_BASE, index.supply).to128()
+            });
+        } else {
+            return IDolomiteStructs.Par({
+                sign: false,
+                value: input.value.getPartialRoundHalfUp(_BASE, index.borrow).to128()
+            });
+        }
+    }
 }

@@ -27,6 +27,7 @@ import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 
 
@@ -49,15 +50,18 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _GENERIC_TRADER_PROXY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.genericTraderProxy")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _LIQUIDATOR_ASSET_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidatorAssetRegistry")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Constructor ====================
 
     function initialize(
         address _genericTraderProxy,
-        address _expiry
+        address _expiry,
+        address _liquidatorAssetRegistry
     ) external initializer {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
+        _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
     }
 
     // ===================== Functions =====================
@@ -86,6 +90,14 @@ contract DolomiteRegistryImplementation is
         _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
     }
 
+    function ownerSetLiquidatorAssetRegistry(
+        address _liquidatorAssetRegistry
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
+    }
+
     function genericTraderProxy() external view returns (IGenericTraderProxyV1) {
         return IGenericTraderProxyV1(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
     }
@@ -96,6 +108,10 @@ contract DolomiteRegistryImplementation is
 
     function slippageToleranceForPauseSentinel() external view returns (uint256) {
         return _getUint256(_SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT);
+    }
+
+    function liquidatorAssetRegistry() external view returns (ILiquidatorAssetRegistry) {
+        return ILiquidatorAssetRegistry(_getAddress(_LIQUIDATOR_ASSET_REGISTRY_SLOT));
     }
 
     function slippageToleranceForPauseSentinelBase() external pure returns (uint256) {
@@ -153,5 +169,24 @@ contract DolomiteRegistryImplementation is
 
         _setUint256(_SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT, _slippageToleranceForPauseSentinel);
         emit SlippageToleranceForPauseSentinelSet(_slippageToleranceForPauseSentinel);
+    }
+
+    function _ownerSetLiquidatorAssetRegistry(
+        address _liquidatorAssetRegistry
+    ) internal {
+        if (_liquidatorAssetRegistry != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_liquidatorAssetRegistry != address(0),
+            _FILE,
+            "Invalid liquidatorAssetRegistry"
+        );
+        bytes memory returnData = ValidationLib.callAndCheckSuccess(
+            _liquidatorAssetRegistry,
+            ILiquidatorAssetRegistry(_liquidatorAssetRegistry).getLiquidatorsForAsset.selector,
+            abi.encode(uint256(0))
+        );
+        abi.decode(returnData, (uint256[]));
+
+        _setAddress(_LIQUIDATOR_ASSET_REGISTRY_SLOT, _liquidatorAssetRegistry);
+        emit LiquidatorAssetRegistrySet(_liquidatorAssetRegistry);
     }
 }

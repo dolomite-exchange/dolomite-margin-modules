@@ -145,7 +145,14 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     )
     external
+    payable
+    virtual
     onlyVaultOwner(msg.sender) {
+        if (msg.value == 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(msg.value == 0,
+            _FILE,
+            "Cannot send ETH"
+        );
         _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
 

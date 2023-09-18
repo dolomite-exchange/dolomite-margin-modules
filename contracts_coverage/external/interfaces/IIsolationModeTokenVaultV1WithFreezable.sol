@@ -20,27 +20,22 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
+import { IIsolationModeTokenVaultV1 } from "./IIsolationModeTokenVaultV1.sol";
 
 
 /**
- * @title   IGmxV2IsolationModeWrapperTraderV2
+ * @title   IIsolationModeTokenVaultV1WithFreezable
  * @author  Dolomite
  *
+ * @notice Interface for the implementation contract used by proxy user vault contracts.
  */
-interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase {
+interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 {
 
-    struct DepositInfo {
-        bytes32 key;
-        address vault;
-        uint256 accountNumber;
-        uint256 outputAmount;
-    }
+    // ===========================================================
+    // ======================== Functions ========================
+    // ===========================================================
 
-    event DepositCreated(bytes32 indexed key);
-    event DepositExecuted(bytes32 indexed key);
-    event DepositFailed(bytes32 indexed key, string reason);
-    event DepositCancelled(bytes32 indexed key);
+    function setIsVaultFrozen(bool _isVaultFrozen) external;
 
-    function cancelDeposit(bytes32 _key) external;
+    function isVaultFrozen() external view returns (bool);
 }
