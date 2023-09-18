@@ -27,6 +27,7 @@ pragma solidity ^0.8.9;
  *
  */
 library GmxEventUtils {
+
     struct EmitPositionDecreaseParams {
         bytes32 key;
         address account;

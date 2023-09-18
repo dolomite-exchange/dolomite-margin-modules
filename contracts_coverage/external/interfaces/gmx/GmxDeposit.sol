@@ -28,8 +28,8 @@ pragma solidity ^0.8.9;
  */
 library GmxDeposit {
     // @dev there is a limit on the number of fields a struct can have when being passed
-    // or returned as a memory variable which can cause "Stack too deep" errors
-    // use sub-structs to avoid this issue
+    //      or returned as a memory variable which can cause "Stack too deep" errors
+    //      use sub-structs to avoid this issue
     // @param  addresses address values
     // @param  numbers number values
     // @param  flags boolean values
@@ -60,7 +60,7 @@ library GmxDeposit {
     // @param  initialShortTokenAmount the amount of short tokens to deposit
     // @param  minMarketTokens the minimum acceptable number of liquidity tokens
     // @param  updatedAtBlock the block that the deposit was last updated at
-    //        sending funds back to the user in case the deposit gets cancelled
+    //         sending funds back to the user in case the deposit gets cancelled
     // @param  executionFee the execution fee for keepers
     // @param  callbackGasLimit the gas limit for the callbackContract
     struct Numbers {

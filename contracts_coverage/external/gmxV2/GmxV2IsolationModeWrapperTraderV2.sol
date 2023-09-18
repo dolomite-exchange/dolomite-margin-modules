@@ -91,6 +91,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
         // @follow-up EventData is weird so we should discuss
         uint256 len = _eventData.uintItems.items.length;
+        // @audit Don't use len-1 but use index value
         GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[len-1];
         if (keccak256(abi.encodePacked(receivedMarketTokens.key))== keccak256(abi.encodePacked("receivedMarketTokens"))) { /* FOR COVERAGE TESTING */ }
         Require.that(keccak256(abi.encodePacked(receivedMarketTokens.key))
@@ -194,10 +195,9 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         uint256 _inputAmount,
         bytes memory _extraOrderData
     )
-        internal
-        override
-        returns (uint256)
-    {
+    internal
+    override
+    returns (uint256) {
         _checkSlippage(_inputToken, _inputAmount, _minOutputAmount);
 
         address tradeOriginatorForStackTooDeep = _tradeOriginator;

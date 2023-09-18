@@ -18,7 +18,7 @@ import {
 } from 'src/types';
 import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { getRealLatestBlockNumber, impersonate, mineBlocks, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
@@ -815,11 +815,3 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
   });
 });
-
-async function mineBlocks(blockNumber: number) {
-  let i = blockNumber;
-  while (i > 0) {
-    await ethers.provider.send('evm_mine', []);
-    i--;
-  }
-}
