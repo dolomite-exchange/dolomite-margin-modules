@@ -65,4 +65,12 @@ interface IGmxReader {
         external
         view
         returns (GmxWithdrawal.WithdrawalProps memory);
+
+    function getPnlToPoolFactor(
+        IGmxDataStore dataStore,
+        address marketAddress,
+        GmxMarket.MarketPrices memory prices,
+        bool isLong,
+        bool maximize
+    ) external view returns (int256);
 }

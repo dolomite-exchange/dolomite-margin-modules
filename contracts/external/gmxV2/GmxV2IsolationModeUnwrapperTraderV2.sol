@@ -191,6 +191,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         }
     }
 
+    /**
+     * @dev Funds will automatically be sent back to the vault by GMX
+     */
     function afterWithdrawalCancellation(
         bytes32 _key,
         GmxWithdrawal.WithdrawalProps memory /* _withdrawal */,

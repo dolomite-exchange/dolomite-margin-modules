@@ -28,13 +28,16 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
+import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
+import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
-import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
+import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -44,7 +47,7 @@ import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/Isol
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the
  *          Eth-Usdc GMX Market token that can be used to credit a user's Dolomite balance.
  */
-contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, IsolationModeTokenVaultV1WithFreezable {
+contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, IsolationModeTokenVaultV1WithFreezableAndPausable {
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
 
@@ -59,6 +62,11 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
     bytes32 private constant _POSITION_TO_EXECUTION_FEE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.positionToExecutionFee")) - 1); // solhint-disable-line max-line-length
 
     uint256 public constant EXECUTION_FEE = 0.0005 ether;
+
+    bytes32 public constant MAX_PNL_FACTOR = keccak256(abi.encode("MAX_PNL_FACTOR"));
+    bytes32 public constant MAX_PNL_FACTOR_FOR_ADL = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_ADL"));
+    bytes32 public constant MAX_PNL_FACTOR_FOR_WITHDRAWALS = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS"));
+    uint256 public constant GMX_DECIMAL_ADJUSTMENT = 6;
 
     IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
 
@@ -158,7 +166,6 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         );
     }
 
-    // @todo add comment that it is automatically sent back to vault upon cancellation
     function initiateUnwrapping(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
@@ -212,9 +219,9 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
     /**
      *
      * @param  _key Withdrawal key
-     * @dev    This calls the wrapper trader which will revert if given an invalid _key
      */
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
+        // @follow-up This would revert in the callback where we check the key
         registry().gmxExchangeRouter().cancelWithdrawal(_key);
     }
 
@@ -315,6 +322,60 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
             );
             _setShouldSkipTransfer(false);
         }
+    }
+
+    function isExternalRedemptionPaused() public override view returns (bool) {
+        IGmxDataStore dataStore = registry().gmxDataStore();
+        uint256 maxPnlForAdl = dataStore.getUint(_maxPnlFactorKey(MAX_PNL_FACTOR_FOR_ADL, UNDERLYING_TOKEN(), true));
+        uint256 maxPnlForWithdrawals = dataStore.getUint(
+            _maxPnlFactorKey(MAX_PNL_FACTOR_FOR_WITHDRAWALS,UNDERLYING_TOKEN(),true)
+        );
+
+        IGmxV2IsolationModeVaultFactory.TokenAndMarketParams memory info =
+            IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).getMarketInfo();
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        uint256 indexTokenPrice = dolomiteMargin.getMarketPrice(info.indexTokenMarketId).value;
+        uint256 shortTokenPrice = dolomiteMargin.getMarketPrice(info.shortTokenMarketId).value;
+        uint256 longTokenPrice = dolomiteMargin.getMarketPrice(info.longTokenMarketId).value;
+
+        GmxPrice.Props memory indexTokenPriceProps = GmxPrice.Props(
+            indexTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
+            indexTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
+        );
+
+        GmxPrice.Props memory longTokenPriceProps = GmxPrice.Props(
+            longTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
+            longTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
+        );
+
+        GmxPrice.Props memory shortTokenPriceProps = GmxPrice.Props(
+            shortTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
+            shortTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
+        );
+
+        GmxMarket.MarketPrices memory marketPrices = GmxMarket.MarketPrices(
+            indexTokenPriceProps,
+            longTokenPriceProps,
+            shortTokenPriceProps
+        );
+
+        int256 shortPnlToPoolFactor = registry().gmxReader().getPnlToPoolFactor(
+            dataStore,
+            UNDERLYING_TOKEN(),
+            marketPrices,
+            false,
+            true
+        );
+        int256 longPnlToPoolFactor = registry().gmxReader().getPnlToPoolFactor(
+            dataStore,
+            UNDERLYING_TOKEN(),
+            marketPrices,
+            true,
+            true
+        );
+
+        return (shortPnlToPoolFactor <= int(maxPnlForAdl) && shortPnlToPoolFactor >= int(maxPnlForWithdrawals))
+            || (longPnlToPoolFactor <= int(maxPnlForAdl) && longPnlToPoolFactor >= int(maxPnlForWithdrawals));
     }
 
     function virtualBalance() public view returns (uint256) {
@@ -523,6 +584,15 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
             _FILE,
             "Only unwrapper if frozen"
         );
+    }
+
+    function _maxPnlFactorKey(bytes32 pnlFactorType, address market, bool isLong) internal pure returns (bytes32) {
+        return keccak256(abi.encode(
+            MAX_PNL_FACTOR,
+            pnlFactorType,
+            market,
+            isLong
+        ));
     }
 
     function _refundExecutionFeeIfNecessary(uint256 _borrowAccountNumber) private {

@@ -208,6 +208,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -231,6 +232,51 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
+    });
+
+    it('should work normally when execution fails because minAmountOut', async () => {
+      await setupGMBalance(core, core.hhUser1.address, amountWei, vault);
+      await underlyingToken.connect(core.hhUser1).approve(vault.address, amountWei);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+
+      await expect(() => vault.connect(core.hhUser1).initiateUnwrapping(
+        borrowAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
+        ONE_BI,
+        parseEther('100000'),
+        { value: parseEther('.01') },
+      )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+
+      await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor).executeWithdrawal(
+        withdrawalKey,
+        getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
+        { gasLimit: 1000000000 },
+      );
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
+      expect(await vault.isVaultFrozen()).to.eq(false);
+      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
+
     });
 
     it('should fail when not called by valid handler', async () => {
@@ -287,6 +333,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -332,6 +379,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.weth.address,
+        ONE_BI,
         ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
@@ -380,6 +428,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.nativeUsdc!.address,
         ONE_BI,
+        ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -426,6 +475,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.nativeUsdc!.address,
+        ONE_BI,
         ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
@@ -514,6 +564,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.nativeUsdc!.address,
+        ONE_BI,
         ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
