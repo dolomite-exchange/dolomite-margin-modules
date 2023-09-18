@@ -312,6 +312,8 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         uint256 shortTokenPrice = dolomiteMargin.getMarketPrice(info.shortTokenMarketId).value;
         uint256 longTokenPrice = dolomiteMargin.getMarketPrice(info.longTokenMarketId).value;
 
+       // Dolomite returns price as 36 decimals - token decimals
+       // GMX expects 30 decimals - token decimals so we divide by 10 ** 6
         GmxPrice.Props memory indexTokenPriceProps = GmxPrice.Props(
             indexTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
             indexTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT

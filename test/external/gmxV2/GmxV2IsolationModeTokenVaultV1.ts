@@ -762,6 +762,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   });
 
   describe('#isExternalRedemptionPaused', () => {
+    it('should return false with real gmx reader', async () => {
+      expect(await vault.isExternalRedemptionPaused()).to.be.false;
+    });
+
     it('should return false if short and long are outside pnl range', async () => {
       await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
       await testReader.setPnlToPoolFactors(VALID_POOL_FACTOR, VALID_POOL_FACTOR);
