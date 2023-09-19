@@ -133,5 +133,4 @@ abstract contract GmxV2IsolationModeTraderBase is
         );
         _setUint256(_SLIPPAGE_MINIMUM_SLOT, _slippageMinimum);
     }
-
 }

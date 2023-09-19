@@ -379,11 +379,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
     }
 
     function dolomiteRegistry()
-        public
-        override
-        view
-        returns (IDolomiteRegistry)
-    {
+    public
+    override
+    view
+    returns (IDolomiteRegistry) {
         return registry().dolomiteRegistry();
     }
 

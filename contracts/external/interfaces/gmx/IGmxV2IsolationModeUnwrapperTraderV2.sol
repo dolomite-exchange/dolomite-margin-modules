@@ -40,9 +40,17 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
         address outputToken;
     }
 
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
+
     event WithdrawalCreated(bytes32 indexed key);
     event WithdrawalExecuted(bytes32 indexed key);
     event WithdrawalCancelled(bytes32 indexed key);
+
+    // ===================================================
+    // ==================== Functions ====================
+    // ===================================================
 
     function vaultSetWithdrawalInfo(bytes32 _key, uint256 _accountNumber, address _outputToken) external;
 }
