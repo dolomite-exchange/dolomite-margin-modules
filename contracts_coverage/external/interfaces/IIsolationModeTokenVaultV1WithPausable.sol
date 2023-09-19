@@ -20,31 +20,25 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../IIsolationModeTokenVaultV1WithFreezableAndPausable.sol";
+import { IIsolationModeTokenVaultV1 } from "./IIsolationModeTokenVaultV1.sol";
 
 
 /**
- * @title   IGmxV2IsolationModeTokenVaultV1
+ * @title   IIsolationModeTokenVaultV1WithPausable
  * @author  Dolomite
  *
+ * @notice Interface for the implementation contract used by proxy user vault contracts.
  */
-interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezableAndPausable {
-
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-    
-    event IsDepositSourceWrapperSet(bool _isDepositSourceWrapper);
-
-    event ShouldSkipTransferSet(bool _shouldSkipTransfer);
+interface IIsolationModeTokenVaultV1WithPausable is IIsolationModeTokenVaultV1 {
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
-
-    function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
-
-    function virtualBalance() external view returns (uint256);
+    /**
+     * @return  true if redemptions (conversion) from this isolated token to its underlying are paused or are in a
+     *          distressed state. Resolving this function to true actives the Pause Sentinel, which prevents further
+     *          contamination of this market across Dolomite.
+     */
+    function isExternalRedemptionPaused() external view returns (bool);
 }

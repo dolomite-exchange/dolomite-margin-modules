@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
+import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../IIsolationModeTokenVaultV1WithFreezableAndPausable.sol";
 
 
 /**
@@ -28,9 +28,19 @@ import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
+interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezableAndPausable {
 
-    function setIsVaultFrozen(bool _isVaultFrozen) external;
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
+
+    event IsDepositSourceWrapperSet(bool _isDepositSourceWrapper);
+
+    event ShouldSkipTransferSet(bool _shouldSkipTransfer);
+
+    // ===================================================
+    // ==================== Functions ====================
+    // ===================================================
 
     function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
 

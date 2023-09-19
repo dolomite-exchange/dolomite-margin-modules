@@ -25,6 +25,7 @@ import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.so
 import { Require } from "../../../protocol/lib/Require.sol";
 import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
+import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
 
@@ -35,7 +36,7 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  * @notice  Abstract implementation of IsolationModeTokenVaultV1 that disallows user actions
  *          if vault is frozen
  */
-abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1, ProxyContractHelpers {
+abstract contract IsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1, ProxyContractHelpers {
 
     // ===================================================
     // ==================== Constants ====================
@@ -79,6 +80,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVa
 
     function _setIsVaultFrozen(bool _isVaultFrozen) internal {
         _setUint256(_IS_VAULT_FROZEN_SLOT, _isVaultFrozen ? 1 : 0);
+        emit IsVaultFrozenSet(_isVaultFrozen);
     }
 
     // ==================================================================

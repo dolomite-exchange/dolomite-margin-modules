@@ -20,31 +20,28 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../IIsolationModeTokenVaultV1WithFreezableAndPausable.sol";
+import { IIsolationModeTokenVaultV1 } from "./IIsolationModeTokenVaultV1.sol";
 
 
 /**
- * @title   IGmxV2IsolationModeTokenVaultV1
+ * @title   IIsolationModeTokenVaultV1WithFreezable
  * @author  Dolomite
  *
+ * @notice Interface for the implementation contract used by proxy user vault contracts.
  */
-interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezableAndPausable {
+interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 {
 
     // ================================================
     // ==================== Events ====================
     // ================================================
-    
-    event IsDepositSourceWrapperSet(bool _isDepositSourceWrapper);
 
-    event ShouldSkipTransferSet(bool _shouldSkipTransfer);
+    event IsVaultFrozenSet(bool _isVaultFrozen);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
+    function setIsVaultFrozen(bool _isVaultFrozen) external;
 
-    function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
-
-    function virtualBalance() external view returns (uint256);
+    function isVaultFrozen() external view returns (bool);
 }

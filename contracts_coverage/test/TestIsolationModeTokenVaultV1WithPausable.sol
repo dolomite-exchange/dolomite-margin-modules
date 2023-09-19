@@ -44,7 +44,7 @@ contract TestIsolationModeTokenVaultV1WithPausable is IsolationModeTokenVaultV1W
 
     function dolomiteRegistry()
         public
-        override(IsolationModeTokenVaultV1)
+        override
         view
         returns (IDolomiteRegistry)
     {

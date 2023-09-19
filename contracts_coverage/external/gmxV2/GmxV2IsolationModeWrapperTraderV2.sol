@@ -89,10 +89,9 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             "Invalid deposit key"
         );
 
-        // @follow-up EventData is weird so we should discuss
-        uint256 len = _eventData.uintItems.items.length;
+        // @follow-up Switched to use 2 instead of len-1
         // @audit Don't use len-1 but use index value
-        GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[len-1];
+        GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[0];
         if (keccak256(abi.encodePacked(receivedMarketTokens.key))== keccak256(abi.encodePacked("receivedMarketTokens"))) { /* FOR COVERAGE TESTING */ }
         Require.that(keccak256(abi.encodePacked(receivedMarketTokens.key))
                 == keccak256(abi.encodePacked("receivedMarketTokens")),
