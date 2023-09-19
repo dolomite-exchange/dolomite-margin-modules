@@ -27,7 +27,7 @@ import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
 import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
-import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezableAndPausable.sol";
+import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
 
@@ -38,7 +38,11 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  * @notice  Abstract implementation of IsolationModeTokenVaultV1 that disallows user actions
  *          if vault is frozen and borrows if the ecosystem integration is paused
  */
-abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is IIsolationModeTokenVaultV1WithFreezableAndPausable, IsolationModeTokenVaultV1, ProxyContractHelpers {
+abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is 
+    IIsolationModeTokenVaultV1WithFreezableAndPausable,
+    IsolationModeTokenVaultV1,
+    ProxyContractHelpers 
+{
     using TypesLib for IDolomiteMargin.Par;
     using TypesLib for IDolomiteMargin.Wei;
 

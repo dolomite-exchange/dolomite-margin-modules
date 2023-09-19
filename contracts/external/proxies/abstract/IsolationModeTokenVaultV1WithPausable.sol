@@ -36,7 +36,10 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  * @notice  An abstract implementation of IsolationModeTokenVaultV1 that disallows borrows if the ecosystem integration
  *          is paused.
  */
-abstract contract IsolationModeTokenVaultV1WithPausable is IIsolationModeTokenVaultV1WithPausable, IsolationModeTokenVaultV1 {
+abstract contract IsolationModeTokenVaultV1WithPausable is 
+    IIsolationModeTokenVaultV1WithPausable,
+    IsolationModeTokenVaultV1 
+{
     using TypesLib for IDolomiteMargin.Par;
     using TypesLib for IDolomiteMargin.Wei;
 

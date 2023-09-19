@@ -34,9 +34,9 @@ import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
 import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
+import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
-import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length 
 
@@ -302,7 +302,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
         }
     }
 
-    function isExternalRedemptionPaused() public override(IIsolationModeTokenVaultV1WithPausable, IsolationModeTokenVaultV1WithFreezableAndPausable) view returns (bool) {
+    function isExternalRedemptionPaused() 
+    public 
+    override(IIsolationModeTokenVaultV1WithPausable, IsolationModeTokenVaultV1WithFreezableAndPausable) 
+    view 
+    returns (bool) {
         IGmxDataStore dataStore = registry().gmxDataStore();
         uint256 maxPnlForAdl = dataStore.getUint(_maxPnlFactorKey(MAX_PNL_FACTOR_FOR_ADL, UNDERLYING_TOKEN(), true));
         uint256 maxPnlForWithdrawals = dataStore.getUint(

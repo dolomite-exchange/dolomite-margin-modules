@@ -30,4 +30,7 @@ import { IIsolationModeTokenVaultV1WithPausable } from "./IIsolationModeTokenVau
  *
  * @notice Interface for the implementation contract used by proxy user vault contracts.
  */
-interface IIsolationModeTokenVaultV1WithFreezableAndPausable is IIsolationModeTokenVaultV1WithFreezable, IIsolationModeTokenVaultV1WithPausable {}
+interface IIsolationModeTokenVaultV1WithFreezableAndPausable is // solhint-disable-line no-empty-blocks
+    IIsolationModeTokenVaultV1WithFreezable,
+    IIsolationModeTokenVaultV1WithPausable 
+{} 
