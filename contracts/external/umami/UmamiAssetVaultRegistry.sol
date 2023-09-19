@@ -24,6 +24,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
 import { IUmamiAssetVaultStorageViewer } from "../interfaces/umami/IUmamiAssetVaultStorageViewer.sol";
+import { IUmamiWithdrawalQueuer } from "../interfaces/umami/IUmamiWithdrawalQueuer.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 
 /**
@@ -41,15 +42,18 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
 
     bytes32 private constant _FILE = "UmamiAssetVaultRegistry";
     bytes32 private constant _STORAGE_VIEWER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.storageViewer")) - 1);
+    bytes32 private constant _WITHDRAWAL_QUEUER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalQueuer")) - 1);
 
     // ==================== Initializer ====================
 
     function initialize(
         address _storageViewer,
+        address _withdrawalQueuer,
         address _dolomiteRegistry
     ) external initializer {
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
         _ownerSetStorageViewer(_storageViewer);
+        _ownerSetWithdrawalQueuer(_withdrawalQueuer);
     }
 
     // ==================== Functions ====================
@@ -62,8 +66,20 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         _ownerSetStorageViewer(_storageViewer);
     }
 
+    function ownerSetWithdrawalQueuer(
+        address _withdrawalQueuer
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetWithdrawalQueuer(_withdrawalQueuer);
+    }
+
     function storageViewer() external view returns (IUmamiAssetVaultStorageViewer) {
         return IUmamiAssetVaultStorageViewer(_getAddress(_STORAGE_VIEWER_SLOT));
+    }
+
+    function withdrawalQueuer() external view returns (IUmamiWithdrawalQueuer) {
+        return IUmamiWithdrawalQueuer(_getAddress(_WITHDRAWAL_QUEUER_SLOT));
     }
 
     // ============================================================
@@ -86,5 +102,16 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
 
         _setAddress(_STORAGE_VIEWER_SLOT, _storageViewer);
         emit StorageViewerSet(_storageViewer);
+    }
+
+    function _ownerSetWithdrawalQueuer(address _withdrawalQueuer) internal {
+        Require.that(
+            _withdrawalQueuer != address(0),
+            _FILE,
+            "Invalid storageViewer address"
+        );
+
+        _setAddress(_WITHDRAWAL_QUEUER_SLOT, _withdrawalQueuer);
+        emit WithdrawalQueuerSet(_withdrawalQueuer);
     }
 }

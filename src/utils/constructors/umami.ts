@@ -46,6 +46,7 @@ export async function getUmamiAssetVaultRegistryConstructorParams(
 
   const calldata = await implementation.populateTransaction.initialize(
     core.umamiEcosystem.storageViewer.address,
+    core.umamiEcosystem.storageViewer.address,
     core.dolomiteRegistry.address,
   );
   return [

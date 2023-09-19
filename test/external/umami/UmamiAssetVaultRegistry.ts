@@ -14,6 +14,7 @@ import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '.
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
+// @todo Use real withdrawal queuer
 describe('UmamiAssetVaultRegistry', () => {
   let snapshotId: string;
 
@@ -43,12 +44,14 @@ describe('UmamiAssetVaultRegistry', () => {
   describe('#initializer', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.storageViewer()).to.equal(core.umamiEcosystem!.storageViewer.address);
+      expect(await registry.withdrawalQueuer()).to.equal(core.umamiEcosystem!.storageViewer.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
 
     it('should fail if already initialized', async () => {
       await expectThrow(
         registry.initialize(
+          core.umamiEcosystem!.storageViewer.address,
           core.umamiEcosystem!.storageViewer.address,
           core.dolomiteRegistry.address,
         ),
@@ -85,6 +88,39 @@ describe('UmamiAssetVaultRegistry', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetStorageViewer(ZERO_ADDRESS),
+        'UmamiAssetVaultRegistry: Invalid storageViewer address',
+      );
+    });
+  });
+
+  describe('#ownerSetWithdrawalQueuer', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetWithdrawalQueuer(
+        core.umamiEcosystem!.storageViewer.address,
+      );
+      await expectEvent(registry, result, 'WithdrawalQueuerSet', {
+        withdrawalQueuer: core.umamiEcosystem!.storageViewer.address,
+      });
+      expect(await registry.withdrawalQueuer()).to.equal(core.umamiEcosystem!.storageViewer.address);
+    });
+
+    // it('should fail if withdrawal queuer is invalid', async () => {
+    //   await expectThrow(
+    //     registry.connect(core.governance).ownerSetWithdrawalQueuer(OTHER_ADDRESS),
+    //     `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
+    //   );
+    // });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetWithdrawalQueuer(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetWithdrawalQueuer(ZERO_ADDRESS),
         'UmamiAssetVaultRegistry: Invalid storageViewer address',
       );
     });

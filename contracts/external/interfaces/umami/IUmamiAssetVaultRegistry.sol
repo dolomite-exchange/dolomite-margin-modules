@@ -36,12 +36,14 @@ interface IUmamiAssetVaultRegistry is IBaseRegistry {
     // ========================================================
 
     event StorageViewerSet(address indexed _storageViewer);
+    event WithdrawalQueuerSet(address indexed _withdrawalQueuer);
 
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================
 
     function ownerSetStorageViewer(address _storageViewer) external;
+    function ownerSetWithdrawalQueuer(address _withdrawalQueuer) external;
 
     // ========================================================
     // =================== Getter Functions ===================
