@@ -39,8 +39,8 @@ library GmxMarket {
     }
 
     struct MarketPrices {
-        GmxPrice.Props indexTokenPrice;
-        GmxPrice.Props longTokenPrice;
-        GmxPrice.Props shortTokenPrice;
+        GmxPrice.PriceProps indexTokenPrice;
+        GmxPrice.PriceProps longTokenPrice;
+        GmxPrice.PriceProps shortTokenPrice;
     }
 }

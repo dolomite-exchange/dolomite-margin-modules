@@ -21,11 +21,10 @@
 pragma solidity ^0.8.9;
 
 import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
+import { IsolationModeTokenVaultV1WithFreezable } from "./IsolationModeTokenVaultV1WithFreezable.sol";
+import { IsolationModeTokenVaultV1WithPausable } from "./IsolationModeTokenVaultV1WithPausable.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../../protocol/lib/Require.sol";
-import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
-import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
@@ -35,132 +34,100 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  * @author  Dolomite
  *
  * @notice  Abstract implementation of IsolationModeTokenVaultV1 that disallows user actions
- *          if vault is frozen and borrows if the ecosystem integration is paused
+ *          if vault is frozen or borrows if the ecosystem integration is paused
  */
-abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeTokenVaultV1, ProxyContractHelpers {
-    using TypesLib for IDolomiteMargin.Par;
-    using TypesLib for IDolomiteMargin.Wei;
-
-    // ===================================================
-    // ==================== Constants ====================
-    // ===================================================
-
-    bytes32 private constant _FILE = "IsolationModeVaultV1Freeze&Pause"; // shortened to fit in 32 bytes
-    bytes32 private constant _IS_VAULT_FROZEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isVaultFrozen")) - 1);
-
-    // ===================================================
-    // ==================== Modifiers ====================
-    // ===================================================
-
-    modifier requireNotFrozen() {
-        Require.that(
-            !isVaultFrozen(),
-            _FILE,
-            "Vault is frozen"
-        );
-        _;
-    }
-
-    modifier requireNotPaused() {
-        Require.that(
-            !isExternalRedemptionPaused(),
-            _FILE,
-            "Cannot execute when paused"
-        );
-        _;
-    }
-
-    // ==================================================================
-    // ======================== Public Functions ========================
-    // ==================================================================
-
-    function setIsVaultFrozen(
-        bool _isVaultFrozen
-    )
-    external 
-    onlyVaultFactory(msg.sender) {
-        _setIsVaultFrozen(_isVaultFrozen);
-    }
-
-    /**
-     * @return  true if redemptions (conversion) from this isolated token to its underlying are paused or are in a
-     *          distressed state. Resolving this function to true actives the Pause Sentinel, which prevents further
-     *          contamination of this market across Dolomite.
-     */
-    function isExternalRedemptionPaused() public virtual view returns (bool);
-
-    function isVaultFrozen() public view returns (bool) {
-        return _getUint256(_IS_VAULT_FROZEN_SLOT) == 1;
-    }
-
-    // ==================================================================
-    // ======================== Internal Functions ========================
-    // ==================================================================
-
-    function _setIsVaultFrozen(bool _isVaultFrozen) internal {
-        _setUint256(_IS_VAULT_FROZEN_SLOT, _isVaultFrozen ? 1 : 0);
-    }
-
-    // ==================================================================
-    // ======================== Overrides ===============================
-    // ==================================================================
+abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is
+    IsolationModeTokenVaultV1WithFreezable,
+    IsolationModeTokenVaultV1WithPausable
+{
 
     function _depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
-    ) 
-    internal 
-    override 
-    requireNotFrozen {
-        super._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
+    )
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
+        _depositIntoVaultForDolomiteMarginFreezableValidator
+    {
+        IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(
+            _toAccountNumber,
+            _amountWei
+        );
     }
 
     function _withdrawFromVaultForDolomiteMargin(
         uint256 _fromAccountNumber,
         uint256 _amountWei
-    ) 
-    internal 
-    override 
-    requireNotFrozen {
-        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+    )
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
+        _withdrawFromVaultForDolomiteMarginFreezableValidator
+    {
+        IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(
+            _fromAccountNumber,
+            _amountWei
+        );
     }
 
-    /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
     function _openBorrowPosition(
         uint256 _fromAccountNumber,
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
-    internal 
-    override 
-    requireNotFrozen 
-    requireNotPaused {
-        super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _openBorrowPositionFreezableValidator
+        _openBorrowPositionPausableValidator(
+            _fromAccountNumber,
+            _toAccountNumber,
+            _amountWei
+        )
+    {
+        IsolationModeTokenVaultV1._openBorrowPosition(
+            _fromAccountNumber,
+            _toAccountNumber,
+            _amountWei
+        );
     }
 
     function _closeBorrowPositionWithUnderlyingVaultToken(
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber
     )
-    internal 
-    override 
-    requireNotFrozen {
-        super._closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
+        _closeBorrowPositionWithUnderlyingVaultTokenFreezableValidator
+    {
+        IsolationModeTokenVaultV1._closeBorrowPositionWithUnderlyingVaultToken(
+            _borrowAccountNumber,
+            _toAccountNumber
+        );
     }
 
-    /// @dev   Cannot reduce collateralization of a position when underlying is paused
     function _closeBorrowPositionWithOtherTokens(
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber,
         uint256[] calldata _collateralMarketIds
     )
-    internal 
-    override 
-    requireNotFrozen {
-        super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
-        if (isExternalRedemptionPaused()) {
-            _requireNumberOfMarketsWithDebtIsZero(_borrowAccountNumber);
-        }
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _closeBorrowPositionWithOtherTokensFreezableValidator
+        _closeBorrowPositionWithOtherTokensPausableValidator(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _collateralMarketIds
+        )
+    {
+        IsolationModeTokenVaultV1._closeBorrowPositionWithOtherTokens(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _collateralMarketIds
+        );
     }
 
     function _transferIntoPositionWithUnderlyingToken(
@@ -168,11 +135,21 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is Isolation
         uint256 _borrowAccountNumber,
         uint256 _amountWei
     )
-    internal 
-    override 
-    requireNotFrozen 
-    requireNotPaused {
-        super._transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _transferIntoPositionWithUnderlyingTokenFreezableValidator
+        _transferIntoPositionWithUnderlyingTokenPausableValidator(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _amountWei
+        )
+    {
+        IsolationModeTokenVaultV1._transferIntoPositionWithUnderlyingToken(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _amountWei
+        );
     }
 
     function _transferIntoPositionWithOtherToken(
@@ -182,10 +159,12 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is Isolation
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
-    internal 
-    override 
-    requireNotFrozen {
-        super._transferIntoPositionWithOtherToken(
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
+        _transferIntoPositionWithOtherTokenFreezableValidator
+    {
+        IsolationModeTokenVaultV1._transferIntoPositionWithOtherToken(
             _fromAccountNumber,
             _borrowAccountNumber,
             _marketId,
@@ -199,10 +178,16 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is Isolation
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
-    internal 
-    override 
-    requireNotFrozen {
-        super._transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
+        _transferFromPositionWithUnderlyingTokenFreezableValidator
+    {
+        IsolationModeTokenVaultV1._transferFromPositionWithUnderlyingToken(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _amountWei
+        );
     }
 
     function _transferFromPositionWithOtherToken(
@@ -212,37 +197,25 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is Isolation
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
-    internal 
-    override 
-    requireNotFrozen {
-        IDolomiteMargin.Par memory valueBefore = DOLOMITE_MARGIN().getAccountPar(
-            IDolomiteStructs.AccountInfo({
-                owner: address(this),
-                number: _borrowAccountNumber
-            }),
-            _marketId
-        );
-
-        super._transferFromPositionWithOtherToken(
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _transferFromPositionWithOtherTokenFreezableValidator
+        _transferFromPositionWithOtherTokenPausableValidator(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _marketId,
+            _amountWei,
+            _balanceCheckFlag
+        )
+    {
+        IsolationModeTokenVaultV1._transferFromPositionWithOtherToken(
             _borrowAccountNumber,
             _toAccountNumber,
             _marketId,
             _amountWei,
             _balanceCheckFlag
         );
-
-        if (isExternalRedemptionPaused()) {
-            Require.that(
-                valueBefore.isPositive(),
-                _FILE,
-                "Cannot lever up when paused",
-                _marketId
-            );
-
-            // If redemptions are paused (preventing liquidations), the user cannot decrease collateralization.
-            // If there is no debt markets, the user can can withdraw without affecting collateralization (it's ∞)
-            _requireNumberOfMarketsWithDebtIsZero(_borrowAccountNumber);
-        }
     }
 
     function _repayAllForBorrowPosition(
@@ -251,10 +224,17 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is Isolation
         uint256 _marketId,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
-    internal 
-    override 
-    requireNotFrozen {
-        super._repayAllForBorrowPosition(_fromAccountNumber, _borrowAccountNumber, _marketId, _balanceCheckFlag);
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
+        _repayAllForBorrowPositionFreezableValidator
+    {
+        IsolationModeTokenVaultV1._repayAllForBorrowPosition(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _marketId,
+            _balanceCheckFlag
+        );
     }
 
     function _addCollateralAndSwapExactInputForOutput(
@@ -266,11 +246,13 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is Isolation
         IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
-    ) 
-    internal 
-    override 
-    requireNotFrozen {
-        super._addCollateralAndSwapExactInputForOutput(
+    )
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
+        _addCollateralAndSwapExactInputForOutputFreezableValidator
+    {
+        IsolationModeTokenVaultV1._addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
             _borrowAccountNumber,
             _marketIdsPath,
@@ -292,10 +274,12 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is Isolation
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
-    internal 
-    override 
-    requireNotFrozen {
-        super._swapExactInputForOutputAndRemoveCollateral(
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
+        _swapExactInputForOutputAndRemoveCollateralFreezableValidator
+    {
+        IsolationModeTokenVaultV1._swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,
             _borrowAccountNumber,
             _marketIdsPath,
@@ -313,38 +297,20 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is Isolation
         uint256 _inputAmountWei,
         uint256 _minOutputAmountWei,
         IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
-    internal 
-    virtual
-    requireNotFrozen
-    override {
-        bool isPaused = isExternalRedemptionPaused();
-
-        IDolomiteStructs.AccountInfo memory tradeAccount = IDolomiteStructs.AccountInfo({
-            owner: address(this),
-            number: _tradeAccountNumber
-        });
-        IDolomiteMargin.Wei memory outputBalanceBefore;
-        if (isPaused) {
-            uint256 outputMarket = _marketIdsPath[_marketIdsPath.length - 1];
-            // If the ecosystem is paused, we cannot swap into more of the irredeemable asset
-            Require.that(
-                outputMarket != marketId(),
-                _FILE,
-                "Cannot zap to market when paused",
-                outputMarket
-            );
-            outputBalanceBefore = DOLOMITE_MARGIN().getAccountWei(tradeAccount, outputMarket);
-            Require.that(
-                outputBalanceBefore.isNegative(),
-                _FILE,
-                "Zaps can only repay when paused"
-            );
-        }
-
-        super._swapExactInputForOutput(
+        internal
+        virtual
+        override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
+        _swapExactInputForOutputFreezableValidator
+        _swapExactInputForOutputPausableValidator(
+            _tradeAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei
+        )
+    {
+        IsolationModeTokenVaultV1._swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
             _inputAmountWei,
@@ -352,56 +318,6 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is Isolation
             _tradersPath,
             _makerAccounts,
             _userConfig
-        );
-
-        if (isPaused) {
-            IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-            uint256 inputMarket = _marketIdsPath[0];
-            uint256 outputMarket = _marketIdsPath[_marketIdsPath.length - 1];
-            // we don't need Wei here, and using Par saves gas costs
-            IDolomiteMargin.Par memory inputBalanceAfter = dolomiteMargin.getAccountPar(
-                tradeAccount,
-                inputMarket
-            );
-            Require.that(
-                inputBalanceAfter.isPositive() || inputBalanceAfter.value == 0,
-                _FILE,
-                "Cannot lever up when paused",
-                inputMarket
-            );
-
-            IDolomiteMargin.Wei memory outputBalanceAfter = dolomiteMargin.getAccountWei(tradeAccount, outputMarket);
-            IDolomiteMargin.Wei memory outputDelta = outputBalanceAfter.sub(outputBalanceBefore);
-
-            uint256 inputValue = _inputAmountWei * dolomiteMargin.getMarketPrice(inputMarket).value;
-            uint256 outputDeltaValue = outputDelta.value * dolomiteMargin.getMarketPrice(outputMarket).value;
-            uint256 slippageNumerator = dolomiteRegistry().slippageToleranceForPauseSentinel();
-            uint256 slippageDenominator = dolomiteRegistry().slippageToleranceForPauseSentinelBase();
-            // Confirm the user is doing a fair trade and there is not more than the acceptable slippage while paused
-            Require.that(
-                outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenominator),
-                _FILE,
-                "Unacceptable trade when paused"
-            );
-        }
-    }
-
-    // ===================================================
-    // =============== Private Functions =================
-    // ===================================================
-
-    function _requireNumberOfMarketsWithDebtIsZero(uint256 _borrowAccountNumber) private view {
-        uint256 numberOfMarketsWithDebt = DOLOMITE_MARGIN().getAccountNumberOfMarketsWithDebt(
-            IDolomiteStructs.AccountInfo({
-                owner: address(this),
-                number: _borrowAccountNumber
-            })
-        );
-        // If the user has debt, withdrawing collateral decreases their collateralization
-        Require.that(
-            numberOfMarketsWithDebt == 0,
-            _FILE,
-            "Cannot lever up when paused"
         );
     }
 }

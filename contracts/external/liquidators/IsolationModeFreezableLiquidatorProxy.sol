@@ -35,6 +35,10 @@ import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFac
  */
 contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
 
+    // ============================ Constants ============================
+
+    bytes32 private constant _FILE = "FreezableVaultLiquidatorProxy";
+
     // ============================ Events ============================
 
     event LiquidationEnqueued(
@@ -45,10 +49,6 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
         uint256 owedMarketId,
         uint256 minOutputAmount
     );
-
-    // ============================ Constants ============================
-
-    bytes32 private constant _FILE = "FreezableVaultLiquidatorProxy";
 
     // ============================ Constructor ============================
 

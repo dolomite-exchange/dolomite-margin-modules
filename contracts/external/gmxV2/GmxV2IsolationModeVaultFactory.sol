@@ -66,7 +66,7 @@ contract GmxV2IsolationModeVaultFactory is
 
     constructor(
         address _gmxRegistryV2,
-        TokenAndMarketAddresses memory _tokenAndMarketAddresses,
+        MarketInfoConstructorParams memory _tokenAndMarketAddresses,
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
         address _borrowPositionProxyV2,
@@ -263,8 +263,8 @@ contract GmxV2IsolationModeVaultFactory is
         IGmxV2IsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
-    function getMarketInfo() external view returns (TokenAndMarketParams memory) {
-        return TokenAndMarketParams({
+    function getMarketInfo() external view returns (MarketInfoParams memory) {
+        return MarketInfoParams({
             marketToken: UNDERLYING_TOKEN,
             indexToken: _INDEX_TOKEN,
             indexTokenMarketId: _INDEX_TOKEN_MARKET_ID,

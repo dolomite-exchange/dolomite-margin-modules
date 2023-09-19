@@ -51,26 +51,26 @@ interface IGmxReader {
         returns (int256, GmxMarketPoolValueInfo.PoolValueInfoProps memory);
 
     function getDeposit(
-        IGmxDataStore dataStore,
-        bytes32 key
+        IGmxDataStore _dataStore,
+        bytes32 _key
     )
         external
         view
         returns (GmxDeposit.DepositProps memory);
 
     function getWithdrawal(
-        IGmxDataStore dataStore,
-        bytes32 key
+        IGmxDataStore _dataStore,
+        bytes32 _key
     )
         external
         view
         returns (GmxWithdrawal.WithdrawalProps memory);
 
     function getPnlToPoolFactor(
-        IGmxDataStore dataStore,
-        address marketAddress,
-        GmxMarket.MarketPrices memory prices,
-        bool isLong,
-        bool maximize
+        IGmxDataStore _dataStore,
+        address _marketAddress,
+        GmxMarket.MarketPrices memory _prices,
+        bool _isLong,
+        bool _maximize
     ) external view returns (int256);
 }

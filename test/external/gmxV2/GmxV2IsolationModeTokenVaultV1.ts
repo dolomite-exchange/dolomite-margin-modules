@@ -6,7 +6,8 @@ import { parseEther } from 'ethers/lib/utils';
 import {
   CustomTestToken,
   GmxRegistryV2,
-  GmxV2IsolationModeTokenVaultV1,
+  GmxV2IsolationModeTokenVaultV1Library,
+  GmxV2IsolationModeTokenVaultV1Library__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
@@ -16,7 +17,12 @@ import {
   TestGmxV2IsolationModeTokenVaultV1,
   TestGmxV2IsolationModeTokenVaultV1__factory,
 } from 'src/types';
-import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+  createTestToken,
+  depositIntoDolomiteMargin,
+} from 'src/utils/dolomite-utils';
 import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, mineBlocks, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from 'test/utils/assertions';
@@ -75,9 +81,14 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const userVaultImplementation = await createContractWithAbi<TestGmxV2IsolationModeTokenVaultV1>(
-      TestGmxV2IsolationModeTokenVaultV1__factory.abi,
-      TestGmxV2IsolationModeTokenVaultV1__factory.bytecode,
+    const library = await createContractWithAbi<GmxV2IsolationModeTokenVaultV1Library>(
+      GmxV2IsolationModeTokenVaultV1Library__factory.abi,
+      GmxV2IsolationModeTokenVaultV1Library__factory.bytecode,
+      [],
+    );
+    const userVaultImplementation = await createContractWithLibrary<TestGmxV2IsolationModeTokenVaultV1>(
+      'TestGmxV2IsolationModeTokenVaultV1',
+      { GmxV2IsolationModeTokenVaultV1Library: library.address },
       [core.tokens.weth.address],
     );
     gmxRegistryV2 = await createGmxRegistryV2(core);
@@ -264,7 +275,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.userConfig,
           { value: amountWei },
         ),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
 
@@ -382,7 +393,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -400,7 +410,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
-          ONE_BI,
           { value: parseEther('.01') },
         ),
         'GmxV2IsolationModeVaultV1: Invalid output token',
@@ -415,10 +424,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
-          ONE_BI,
           { value: parseEther('.01') },
         ),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
+        'IsolationModeVaultV1Freezable: Vault is frozen',
       );
     });
 
@@ -429,7 +437,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           borrowAccountNumber,
           amountWei,
           core.tokens.wbtc.address,
-          ONE_BI,
           ONE_BI,
           { value: parseEther('.01') },
         ),
@@ -511,7 +518,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         amountWei,
         core.tokens.weth.address,
-        ONE_BI,
         ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));

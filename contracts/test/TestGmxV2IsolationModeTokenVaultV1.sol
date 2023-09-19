@@ -35,7 +35,7 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
 
     bytes32 private constant _FILE = "TestGmxV2IsolationModeVaultV1";
 
-    constructor(address _weth) GmxV2IsolationModeTokenVaultV1(_weth) {} // solhint-disable-line no-empty-blocks
+    constructor(address _weth) GmxV2IsolationModeTokenVaultV1(_weth) { /* solhint-disable-line no-empty-blocks */ }
 
     function callInitiateWrappingAndTriggerReentrancy(
         uint256 _tradeAccountNumber,

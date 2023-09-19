@@ -53,11 +53,72 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ===================================================
 
     modifier requireNotFrozen() {
-        Require.that(
-            !isVaultFrozen(),
-            _FILE,
-            "Vault is frozen"
-        );
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _depositIntoVaultForDolomiteMarginFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _withdrawFromVaultForDolomiteMarginFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _openBorrowPositionFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _closeBorrowPositionWithUnderlyingVaultTokenFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _closeBorrowPositionWithOtherTokensFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _transferIntoPositionWithUnderlyingTokenFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _transferIntoPositionWithOtherTokenFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _transferFromPositionWithUnderlyingTokenFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _transferFromPositionWithOtherTokenFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _repayAllForBorrowPositionFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _addCollateralAndSwapExactInputForOutputFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _swapExactInputForOutputAndRemoveCollateralFreezableValidator() {
+        _requireNotFrozen();
+        _;
+    }
+
+    modifier _swapExactInputForOutputFreezableValidator() {
+        _requireNotFrozen();
         _;
     }
 
@@ -93,9 +154,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
-    internal
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _depositIntoVaultForDolomiteMarginFreezableValidator
+    {
         super._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
     }
 
@@ -103,9 +166,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _fromAccountNumber,
         uint256 _amountWei
     )
-    internal
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _withdrawFromVaultForDolomiteMarginFreezableValidator
+    {
         super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
     }
 
@@ -114,9 +179,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
-    internal
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _openBorrowPositionFreezableValidator
+    {
         super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
 
@@ -124,10 +191,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber
     )
-    internal
-    virtual
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _closeBorrowPositionWithUnderlyingVaultTokenFreezableValidator
+    {
         super._closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
     }
 
@@ -136,10 +204,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _toAccountNumber,
         uint256[] calldata _collateralMarketIds
     )
-    internal
-    virtual
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _closeBorrowPositionWithOtherTokensFreezableValidator
+    {
         super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
     }
 
@@ -148,10 +217,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _borrowAccountNumber,
         uint256 _amountWei
     )
-    internal
-    virtual
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _transferIntoPositionWithUnderlyingTokenFreezableValidator
+    {
         super._transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
     }
 
@@ -162,9 +232,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
-    internal
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _transferIntoPositionWithOtherTokenFreezableValidator
+    {
         super._transferIntoPositionWithOtherToken(
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -179,10 +251,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
-    internal
-    virtual
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _transferFromPositionWithUnderlyingTokenFreezableValidator
+    {
         super._transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
     }
 
@@ -193,10 +266,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
-    internal
-    virtual
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _transferFromPositionWithOtherTokenFreezableValidator
+    {
         super._transferFromPositionWithOtherToken(
             _borrowAccountNumber,
             _toAccountNumber,
@@ -212,9 +286,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _marketId,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
-    internal
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _repayAllForBorrowPositionFreezableValidator
+    {
         super._repayAllForBorrowPosition(_fromAccountNumber, _borrowAccountNumber, _marketId, _balanceCheckFlag);
     }
 
@@ -228,9 +304,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
-    internal
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _addCollateralAndSwapExactInputForOutputFreezableValidator
+    {
         super._addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -253,9 +331,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
-    internal
-    override
-    requireNotFrozen {
+        internal
+        virtual
+        override
+        _swapExactInputForOutputAndRemoveCollateralFreezableValidator
+    {
         super._swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,
             _borrowAccountNumber,
@@ -277,10 +357,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
-    internal
-    virtual
-    requireNotFrozen
-    override {
+        internal
+        virtual
+        override
+        _swapExactInputForOutputFreezableValidator
+    {
         super._swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
@@ -289,6 +370,18 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             _tradersPath,
             _makerAccounts,
             _userConfig
+        );
+    }
+
+    // ==================================================================
+    // ======================== Private Functions =======================
+    // ==================================================================
+
+    function _requireNotFrozen() private view {
+        Require.that(
+            !isVaultFrozen(),
+            _FILE,
+            "Vault is frozen"
         );
     }
 }
