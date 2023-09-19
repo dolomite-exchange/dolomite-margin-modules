@@ -21,6 +21,8 @@
 pragma solidity ^0.8.9;
 
 import { GmxMarket } from "../external/interfaces/gmx/GmxMarket.sol";
+import { GmxMarketPoolValueInfo } from "../external/interfaces/gmx/GmxMarketPoolValueInfo.sol";
+import { GmxPrice } from "../external/interfaces/gmx/GmxPrice.sol";
 import { IGmxDataStore } from "../external/interfaces/gmx/IGmxDataStore.sol";
 
 /**
@@ -35,10 +37,15 @@ contract TestGmxReader {
 
     int256 public shortPnlToPoolFactor;
     int256 public longPnlToPoolFactor;
+    int256 public marketPrice;
 
     function setPnlToPoolFactors(int256 _shortPnlToPoolFactor, int256 _longPnlToPoolFactor) external {
         shortPnlToPoolFactor = _shortPnlToPoolFactor;
         longPnlToPoolFactor = _longPnlToPoolFactor;
+    }
+
+    function setMarketPrice(int256 _marketPrice) external {
+        marketPrice = _marketPrice;
     }
 
     function getPnlToPoolFactor(
@@ -49,5 +56,31 @@ contract TestGmxReader {
         bool /* maximize */
     ) external view returns (int256) {
         return isLong ? longPnlToPoolFactor : shortPnlToPoolFactor;
+    }
+
+    function getMarketTokenPrice(
+        IGmxDataStore /* _dataStore */,
+        GmxMarket.Props memory /* _market */,
+        GmxPrice.Props memory /* _indexTokenPrice */,
+        GmxPrice.Props memory /* _longTokenPrice */,
+        GmxPrice.Props memory /* _shortTokenPrice */,
+        bytes32 /* _pnlFactorType */,
+        bool /* _maximize */
+    ) external view returns (int256, GmxMarketPoolValueInfo.Props memory) {
+        GmxMarketPoolValueInfo.Props memory props = GmxMarketPoolValueInfo.Props(
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        );
+
+        return (marketPrice, props);
     }
 }

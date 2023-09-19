@@ -1,4 +1,5 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -17,7 +18,6 @@ import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-
 import {
   getRealLatestBlockNumber,
   impersonate,
-  mineBlocks,
   revertToSnapshotAndCapture,
   setEtherBalance,
   snapshot,
@@ -468,7 +468,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         executionFee,
         minAmountOut
       );
-      depositInfo.eventData.uintItems.items[2].key = 'receivedBadTokens';
+      depositInfo.eventData.uintItems.items[0].key = 'receivedBadTokens';
       await expectThrow(
         wrapper.connect(depositExecutor).afterDepositExecution(
           depositKey,
@@ -564,7 +564,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       await vault.connect(core.hhUser1).cancelDeposit(depositKey);
 
       expect(await core.tokens.weth.balanceOf(core.dolomiteMargin.address)).to.eq(wethBalanceBefore);
@@ -615,7 +615,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       await vault.connect(core.hhUser1).cancelDeposit(depositKey);
 
       expect(await core.tokens.nativeUsdc!.balanceOf(core.dolomiteMargin.address)).to.eq(usdcBalanceBefore);
@@ -705,7 +705,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       const result = await vault.connect(core.hhUser1).cancelDeposit(depositKey);
       await expectEvent(wrapper, result, 'DepositCancelled', {
         key: depositKey,
@@ -745,7 +745,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       const result = await wrapper.connect(depositExecutor).cancelDeposit(depositKey);
       await expectEvent(wrapper, result, 'DepositCancelled', {
         key: depositKey,

@@ -20,7 +20,7 @@ import {
 } from '../../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
-import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../../utils/assertions';
+import { expectEvent, expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../../utils/assertions';
 import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
@@ -2060,7 +2060,11 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
 
   describe('#setIsVaultFrozen', () => {
     it('should work normally', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      expect(await userVault.isVaultFrozen()).to.eq(false);
+      const result = await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await expectEvent(userVault, result, 'IsVaultFrozenSet', {
+        isVaultFrozen: true,
+      });
       expect(await userVault.isVaultFrozen()).to.eq(true);
     });
 

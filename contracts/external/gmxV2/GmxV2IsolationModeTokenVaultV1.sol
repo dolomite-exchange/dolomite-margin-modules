@@ -28,12 +28,15 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IIsolationModeTokenVaultV1WithPausable } from "../interfaces/IIsolationModeTokenVaultV1WithPausable.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
 import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length 
 
@@ -45,7 +48,10 @@ import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/ab
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the 
  *          Eth-Usdc GMX Market token that can be used to credit a user's Dolomite balance.
  */
-contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezableAndPausable {
+contract GmxV2IsolationModeTokenVaultV1 is 
+    IsolationModeTokenVaultV1WithFreezableAndPausable, 
+    IGmxV2IsolationModeTokenVaultV1 
+{
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
 
@@ -243,7 +249,6 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         _setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
-    // @audit Does this need to be requireNotFrozen? I don't think so but want to confirm
     function executeDepositIntoVault(
         address _from,
         uint256 _amount
@@ -269,13 +274,12 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
             Require.that(
                 isVaultFrozen(),
                 _FILE,
-                "Vault should be frozen" // @follow-up Revisit this message
+                "Vault should be frozen"
             );
             _setShouldSkipTransfer(false);
         }
     }
 
-    // @audit Does this need to be requireNotFrozen? I don't think so but want to confirm
     function executeWithdrawalFromVault(
         address _recipient,
         uint256 _amount
@@ -292,13 +296,13 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
             Require.that(
                 isVaultFrozen(),
                 _FILE,
-                "Vault should be frozen" // @follow-up Revisit this message
+                "Vault should be frozen"
             );
             _setShouldSkipTransfer(false);
         }
     }
 
-    function isExternalRedemptionPaused() public override view returns (bool) {
+    function isExternalRedemptionPaused() public override(IIsolationModeTokenVaultV1WithPausable, IsolationModeTokenVaultV1WithFreezableAndPausable) view returns (bool) {
         IGmxDataStore dataStore = registry().gmxDataStore();
         uint256 maxPnlForAdl = dataStore.getUint(_maxPnlFactorKey(MAX_PNL_FACTOR_FOR_ADL, UNDERLYING_TOKEN(), true));
         uint256 maxPnlForWithdrawals = dataStore.getUint(
@@ -409,12 +413,14 @@ contract GmxV2IsolationModeTokenVaultV1 is IsolationModeTokenVaultV1WithFreezabl
         _setUint256(_VIRTUAL_BALANCE_SLOT, _bal);
     }
 
-    function _setIsDepositSourceWrapper(bool _sourceIsWrapper) internal {
-        _setUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT, _sourceIsWrapper ? 1 : 0);
+    function _setIsDepositSourceWrapper(bool _isDepositSourceWrapper) internal {
+        _setUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT, _isDepositSourceWrapper ? 1 : 0);
+        emit IsDepositSourceWrapperSet(_isDepositSourceWrapper);
     }
 
     function _setShouldSkipTransfer(bool _shouldSkipTransfer) internal {
         _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
+        emit ShouldSkipTransferSet(_shouldSkipTransfer);
     }
 
     function _compareVirtualToRealBalance() internal view {

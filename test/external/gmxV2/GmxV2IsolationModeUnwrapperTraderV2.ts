@@ -1,3 +1,4 @@
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
@@ -13,7 +14,7 @@ import {
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
-import { impersonate, mineBlocks, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import { expectProtocolBalance, expectThrow } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
@@ -223,7 +224,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       await vault.connect(core.hhUser1).cancelWithdrawal(withdrawalKey);
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
