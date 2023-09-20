@@ -64,32 +64,32 @@ describe('GmxRegistryV2', () => {
 
   describe('#initializeUnwrapperTrader', () => {
     it('should work normally', async () => {
-      const result = await registry.connect(core.hhUser1).initializeUnwrapperTraders(
+      const result = await registry.connect(core.hhUser1).initializeTraders(
         OTHER_ADDRESS_1,
         OTHER_ADDRESS_2,
       );
-      await expectEvent(registry, result, 'UnwrapperTraderForLiquidationSet', {
-        unwrapperForLiquidation: OTHER_ADDRESS_1,
+      await expectEvent(registry, result, 'GmxV2UnwrapperTraderSet', {
+        unwrapper: OTHER_ADDRESS_1,
       });
-      await expectEvent(registry, result, 'UnwrapperTraderForZapSet', {
-        unwrapperForZp: OTHER_ADDRESS_2,
+      await expectEvent(registry, result, 'GmxV2WrapperTraderSet', {
+        wrapper: OTHER_ADDRESS_2,
       });
-      expect(await registry.unwrapperTraderForLiquidation()).to.equal(OTHER_ADDRESS_1);
-      expect(await registry.unwrapperTraderForZap()).to.equal(OTHER_ADDRESS_2);
+      expect(await registry.gmxV2UnwrapperTrader()).to.equal(OTHER_ADDRESS_1);
+      expect(await registry.gmxV2WrapperTrader()).to.equal(OTHER_ADDRESS_2);
     });
 
     it('should fail when already initialized', async () => {
-      await registry.connect(core.hhUser1).initializeUnwrapperTraders(OTHER_ADDRESS_1, OTHER_ADDRESS_2);
+      await registry.connect(core.hhUser1).initializeTraders(OTHER_ADDRESS_1, OTHER_ADDRESS_2);
       await expectThrow(
-        registry.connect(core.hhUser1).initializeUnwrapperTraders(OTHER_ADDRESS_1, OTHER_ADDRESS_2),
+        registry.connect(core.hhUser1).initializeTraders(OTHER_ADDRESS_1, OTHER_ADDRESS_2),
         'GmxRegistryV2: Already initialized',
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
-        registry.connect(core.hhUser1).initializeUnwrapperTraders(ZERO_ADDRESS, ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid unwrapperTrader address',
+        registry.connect(core.hhUser1).initializeTraders(ZERO_ADDRESS, ZERO_ADDRESS),
+        'GmxRegistryV2: Invalid address',
       );
     });
   });
@@ -334,54 +334,6 @@ describe('GmxRegistryV2', () => {
     });
   });
 
-  describe('#ownerSetUnwrapperTraderForLiquidation', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetUnwrapperTraderForLiquidation(OTHER_ADDRESS_1);
-      await expectEvent(registry, result, 'UnwrapperTraderForLiquidationSet', {
-        unwrapperTraderForLiquidation: OTHER_ADDRESS_1,
-      });
-      expect(await registry.unwrapperTraderForLiquidation()).to.eq(OTHER_ADDRESS_1);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetUnwrapperTraderForLiquidation(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetUnwrapperTraderForLiquidation(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid unwrapperTrader address',
-      );
-    });
-  });
-
-  describe('#ownerSetUnwrapperTraderForZap', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetUnwrapperTraderForZap(OTHER_ADDRESS_1);
-      await expectEvent(registry, result, 'UnwrapperTraderForZapSet', {
-        unwrapperTraderForZap: OTHER_ADDRESS_1,
-      });
-      expect(await registry.unwrapperTraderForZap()).to.eq(OTHER_ADDRESS_1);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetUnwrapperTraderForZap(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetUnwrapperTraderForZap(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid unwrapperTrader address',
-      );
-    });
-  });
-
   describe('#ownerSetEthUsdMarketToken', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetEthUsdMarketToken(OTHER_ADDRESS_1);
@@ -402,6 +354,31 @@ describe('GmxRegistryV2', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetEthUsdMarketToken(ZERO_ADDRESS),
         'GmxRegistryV2: Invalid address',
+      );
+    });
+  });
+
+  describe('#setIsVaultWaitingForCallback', () => {
+    it('should work normally', async () => {
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.governance.address, true);
+      const accountNumber = 123;
+      expect(await registry.isVaultWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(false);
+
+      const result = await registry.connect(core.governance)
+        .setIsVaultWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true);
+      await expectEvent(registry, result, 'VaultWaitingForCallbackSet', {
+        _vault: OTHER_ADDRESS_1,
+        _accountNumber: accountNumber,
+        _isWaiting: true,
+      });
+      expect(await registry.isVaultWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(true);
+    });
+
+    it('should fail when not called by a global operator', async () => {
+      const accountNumber = 123;
+      await expectThrow(
+        registry.connect(core.hhUser1).setIsVaultWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true),
+        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

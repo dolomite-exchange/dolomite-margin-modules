@@ -61,8 +61,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     bytes32 private constant _GMX_WITHDRAWAL_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxWithdrawalVault")) - 1);
     bytes32 private constant _GMX_V2_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2UnwrapperTrader")) - 1);
     bytes32 private constant _GMX_V2_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2WrapperTrader")) - 1);
-    bytes32 private constant _UNWRAPPER_TRADER_FOR_LIQUIDATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperTraderForLiquidation")) - 1);
-    bytes32 private constant _UNWRAPPER_TRADER_FOR_ZAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperTraderForZap")) - 1);
+    bytes32 private constant _IS_WAITING_FOR_CALLBACK_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isWaitingForCallback")) - 1);
     // solhint-enable max-line-length
 
     // ==================== Initializer ====================
@@ -92,17 +91,17 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
     }
 
-    function initializeUnwrapperTraders(
-        address _unwrapperTraderForLiquidation,
-        address _unwrapperTraderForZap
+    function initializeTraders(
+        address _unwrapperTrader,
+        address _wrapperTrader
     ) external {
         Require.that(
-            unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0),
+            address(gmxV2UnwrapperTrader()) == address(0) && address(gmxV2WrapperTrader()) == address(0),
             _FILE,
             "Already initialized"
         );
-        _setUnwrapperTraderForLiquidation(_unwrapperTraderForLiquidation);
-        _setUnwrapperTraderForZap(_unwrapperTraderForZap);
+        _ownerSetGmxV2UnwrapperTrader(_unwrapperTrader);
+        _ownerSetGmxV2WrapperTrader(_wrapperTrader);
     }
 
     // ==================== Functions ====================
@@ -195,20 +194,18 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         _ownerSetGmxV2WrapperTrader(_gmxV2WrapperTrader);
     }
 
-    function ownerSetUnwrapperTraderForLiquidation(
-        address _unwrapperTraderForLiquidation
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _setUnwrapperTraderForLiquidation(_unwrapperTraderForLiquidation);
-    }
+    // ==================== Non-Admin Functions ====================
 
-    function ownerSetUnwrapperTraderForZap(
-        address _unwrapperTraderForZap
+    function setIsVaultWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber,
+        bool _isWaiting
     )
     external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _setUnwrapperTraderForZap(_unwrapperTraderForZap);
+    onlyDolomiteMarginGlobalOperator(msg.sender) {
+        bytes32 slot = keccak256(abi.encodePacked(_IS_WAITING_FOR_CALLBACK_SLOT, _vault, _accountNumber));
+        _setUint256(slot, _isWaiting ? 1 : 0);
+        emit VaultWaitingForCallbackSet(_vault, _accountNumber, _isWaiting);
     }
 
     // ==================== Views ====================
@@ -249,20 +246,20 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         return _getAddress(_GMX_WITHDRAWAL_VAULT_SLOT);
     }
 
-    function gmxV2UnwrapperTrader() external view returns (IGmxV2IsolationModeUnwrapperTraderV2) {
+    function isVaultWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber
+    ) external view returns (bool) {
+        bytes32 slot = keccak256(abi.encodePacked(_IS_WAITING_FOR_CALLBACK_SLOT, _vault, _accountNumber));
+        return _getUint256(slot) == 1;
+    }
+
+    function gmxV2UnwrapperTrader() public view returns (IGmxV2IsolationModeUnwrapperTraderV2) {
         return IGmxV2IsolationModeUnwrapperTraderV2(_getAddress(_GMX_V2_UNWRAPPER_TRADER_SLOT));
     }
 
-    function gmxV2WrapperTrader() external view returns (IGmxV2IsolationModeWrapperTraderV2) {
+    function gmxV2WrapperTrader() public view returns (IGmxV2IsolationModeWrapperTraderV2) {
         return IGmxV2IsolationModeWrapperTraderV2(_getAddress(_GMX_V2_WRAPPER_TRADER_SLOT));
-    }
-
-    function unwrapperTraderForLiquidation() public view returns (address) {
-        return _getAddress(_UNWRAPPER_TRADER_FOR_LIQUIDATION_SLOT);
-    }
-
-    function unwrapperTraderForZap() public view returns (address) {
-        return _getAddress(_UNWRAPPER_TRADER_FOR_ZAP_SLOT);
     }
 
     // ============================================================
@@ -377,25 +374,5 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         );
         _setAddress(_GMX_V2_WRAPPER_TRADER_SLOT, _gmxV2WrapperTrader);
         emit GmxV2WrapperTraderSet(_gmxV2WrapperTrader);
-    }
-
-    function _setUnwrapperTraderForLiquidation(address _unwrapperTraderForLiquidation) internal {
-        Require.that(
-            _unwrapperTraderForLiquidation != address(0),
-            _FILE,
-            "Invalid unwrapperTrader address"
-        );
-        _setAddress(_UNWRAPPER_TRADER_FOR_LIQUIDATION_SLOT, _unwrapperTraderForLiquidation);
-        emit UnwrapperTraderForLiquidationSet(_unwrapperTraderForLiquidation);
-    }
-
-    function _setUnwrapperTraderForZap(address _unwrapperTraderForZap) internal {
-        Require.that(
-            _unwrapperTraderForZap != address(0),
-            _FILE,
-            "Invalid unwrapperTrader address"
-        );
-        _setAddress(_UNWRAPPER_TRADER_FOR_ZAP_SLOT, _unwrapperTraderForZap);
-        emit UnwrapperTraderForZapSet(_unwrapperTraderForZap);
     }
 }

@@ -41,8 +41,9 @@ contract TestGmxV2IsolationModeUnwrapperTraderV2 is GmxV2IsolationModeUnwrapperT
         address,
         uint256,
         bytes memory
-    ) 
+    )
         internal
+        pure
         override
         returns (uint256)
     {

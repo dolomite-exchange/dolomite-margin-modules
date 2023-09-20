@@ -56,12 +56,17 @@ interface IGmxRegistryV2 is IBaseRegistry {
     event EthUsdMarketTokenSet(address _ethUsdMarketToken);
     event GmxV2UnwrapperTraderSet(address _gmxV2UnwrapperTrader);
     event GmxV2WrapperTraderSet(address _gmxV2WrapperTrader);
-    event UnwrapperTraderForLiquidationSet(address indexed _unwrapperTraderForLiquidation);
-    event UnwrapperTraderForZapSet(address indexed _unwrapperTraderForZap);
+
+    event VaultWaitingForCallbackSet(address _vault, uint256 _accountNumber, bool _isWaiting);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
+
+    function initializeTraders(
+        address _unwrapperTrader,
+        address _wrapperTrader
+    ) external;
 
     function ownerSetGmxExchangeRouter(address _gmxExchangeRouter) external;
 
@@ -85,6 +90,12 @@ interface IGmxRegistryV2 is IBaseRegistry {
 
     function ownerSetGmxV2WrapperTrader(address _gmxV2UnwrapperTrader) external;
 
+    function setIsVaultWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber,
+        bool _isWaiting
+    ) external;
+
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter);
 
     function gmxDataStore() external view returns (IGmxDataStore);
@@ -106,4 +117,9 @@ interface IGmxRegistryV2 is IBaseRegistry {
     function gmxV2UnwrapperTrader() external view returns (IGmxV2IsolationModeUnwrapperTraderV2);
 
     function gmxV2WrapperTrader() external view returns (IGmxV2IsolationModeWrapperTraderV2);
+
+    function isVaultWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber
+    ) external view returns (bool);
 }

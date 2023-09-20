@@ -35,7 +35,7 @@ import { IGmxV2IsolationModeTraderBase } from "../interfaces/gmx/IGmxV2Isolation
  *
  * @notice  Base class for GMX V2 Wrappers and Unwrappers
  */
-abstract contract GmxV2IsolationModeTraderBase is 
+abstract contract GmxV2IsolationModeTraderBase is
     IGmxV2IsolationModeTraderBase,
     OnlyDolomiteMarginForUpgradeable,
     Initializable
@@ -134,4 +134,13 @@ abstract contract GmxV2IsolationModeTraderBase is
         _setUint256(_SLIPPAGE_MINIMUM_SLOT, _slippageMinimum);
     }
 
+    function _checkVaultIsNotActive(address _vault,  uint256 _accountNumber) internal view {
+        Require.that(
+            !GMX_REGISTRY_V2().isVaultWaitingForCallback(_vault, _accountNumber),
+            _FILE,
+            "Account has callback waiting",
+            _vault,
+            _accountNumber
+        );
+    }
 }

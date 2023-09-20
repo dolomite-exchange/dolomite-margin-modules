@@ -42,6 +42,15 @@ interface IDolomiteRegistry {
     event SlippageToleranceForPauseSentinelSet(uint256 slippageTolerance);
     event LiquidatorAssetRegistrySet(address indexed _liquidatorAssetRegistry);
 
+    event LiquidationEnqueued(
+        address indexed liquidAccountOwner,
+        uint256 indexed liquidAccountNumber,
+        uint256 heldMarketId,
+        uint256 heldAmount,
+        uint256 owedMarketId,
+        uint256 minOutputAmount
+    );
+
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================
@@ -70,6 +79,22 @@ interface IDolomiteRegistry {
      * @param  _liquidatorRegistry  The new address of the liquidator registry
      */
     function ownerSetLiquidatorAssetRegistry(address _liquidatorRegistry) external;
+
+    // ========================================================
+    // ==================== Event Functions ===================
+    // ========================================================
+
+    /**
+     * Emits the `LiquidationEnqueued` event. Can only be called by a global operator.
+     */
+    function emitLiquidationEnqueued(
+        address _liquidAccountOwner,
+        uint256 _liquidAccountNumber,
+        uint256 _heldMarketId,
+        uint256 _heldAmount,
+        uint256 _owedMarketId,
+        uint256 _minOutputAmount
+    ) external;
 
     // ========================================================
     // =================== Getter Functions ===================

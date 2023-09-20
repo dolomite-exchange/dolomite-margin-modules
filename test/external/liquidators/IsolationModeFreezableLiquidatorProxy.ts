@@ -1,6 +1,7 @@
-import { INTEGERS } from '@dolomite-exchange/dolomite-margin';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
   GmxRegistryV2,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
@@ -20,7 +21,7 @@ import {
   depositIntoDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
 import { Network, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { increaseByTimeDelta, increaseToTimestamp, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { increaseByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   createGmxRegistryV2,
   createGmxV2IsolationModeUnwrapperTraderV2,
@@ -64,10 +65,18 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+
+    const newImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
+      DolomiteRegistryImplementation__factory.abi,
+      DolomiteRegistryImplementation__factory.bytecode,
+      [],
+    );
+    await core.dolomiteRegistryProxy.upgradeTo(newImplementation.address);
+
     liquidator = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      [core.dolomiteMargin.address, core.expiry.address, core.liquidatorAssetRegistry.address],
+      [core.dolomiteRegistry, core.dolomiteMargin.address, core.expiry.address, core.liquidatorAssetRegistry.address],
     );
 
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
@@ -138,7 +147,6 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
 
   describe('#prepareForLiquidation', () => {
     it('should work normally for underwater account', async () => {
-      await setExpiry(core, liquidAccount, core.marketIds.usdc, 123);
       await liquidator.prepareForLiquidation(
         liquidAccount,
         marketId,
@@ -147,6 +155,8 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         ONE_BI,
         NO_EXPIRY,
       );
+      // TODO: check vault is frozen
+      // TODO: check liquidation enqueued event
     });
 
     it('should work normally for expired account', async () => {
@@ -162,6 +172,20 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         ONE_BI,
         expiry,
       );
+      // TODO: check vault is frozen
+      // TODO: check liquidation enqueued event
     });
+
+    it('should fail when liquid account is not a valid vault', async () => {});
+
+    it('should fail when expiration overflows', async () => {});
+
+    it('should fail when position is not expired', async () => {});
+
+    it('should fail when position expiration does not match input', async () => {});
+
+    it('should fail when liquid account has no supply (should be vaporized)', async () => {});
+
+    it('should fail when liquid account is not underwater', async () => {});
   });
 });

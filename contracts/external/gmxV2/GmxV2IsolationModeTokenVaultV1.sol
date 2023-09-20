@@ -64,6 +64,12 @@ contract GmxV2IsolationModeTokenVaultV1 is
 
     uint256 public constant EXECUTION_FEE = 0.0005 ether;
 
+    // ==================================================================
+    // ====================== Immutable Variables =======================
+    // ==================================================================
+
+    IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
+
     // ===================================================
     // ==================== Modifiers ====================
     // ===================================================
@@ -85,13 +91,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
         _;
     }
-
-    // ==================================================================
-    // ====================== Immutable Variables =======================
-    // ==================================================================
-
-    IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
-
 
     // ==================================================================
     // ========================== Constructors ==========================
@@ -136,22 +135,22 @@ contract GmxV2IsolationModeTokenVaultV1 is
         IGenericTraderProxyV1.UserConfig memory _userConfig
     ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
         uint256 len = _tradersPath.length;
-        (uint256 accountNumber, uint256 executionFee) = abi.decode(_tradersPath[len-1].tradeData, (uint256, uint256));
         Require.that(
-            msg.value > 0 && executionFee == msg.value,
+            msg.value > 0,
             _FILE,
             "Invalid executionFee"
         );
         Require.that(
-            _tradersPath[len-1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper,
+            _tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper,
             _FILE,
             "Invalid traderType"
         );
         Require.that(
-            accountNumber == _tradeAccountNumber,
+            _tradersPath[len - 1].trader == registry().gmxV2WrapperTrader(),
             _FILE,
-            "Invalid tradeData"
+            "Invalid trader"
         );
+        _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, msg.value);
 
         WETH.deposit{value: msg.value}();
         WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
@@ -366,6 +365,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
 
     function getExecutionFeeForAccountNumber(uint256 _accountNumber) public view returns (uint256) {
         return _getUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)));
+    }
+
+    function isWaitingForCallback(uint256 _accountNumber) public view returns (bool) {
+        return registry().isVaultWaitingForCallback(/* _vault = */ address(this), _accountNumber);
     }
 
     // ==================================================================

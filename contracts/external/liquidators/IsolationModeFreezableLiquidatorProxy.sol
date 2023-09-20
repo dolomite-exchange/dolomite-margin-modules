@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 
@@ -39,20 +40,14 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
 
     bytes32 private constant _FILE = "FreezableVaultLiquidatorProxy";
 
-    // ============================ Events ============================
+    // ========================= Immutable Fields ==========================
 
-    event LiquidationEnqueued(
-        address indexed liquidAccountOwner,
-        uint256 indexed liquidAccountNumber,
-        uint256 heldMarketId,
-        uint256 heldAmount,
-        uint256 owedMarketId,
-        uint256 minOutputAmount
-    );
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
 
     constructor(
+        address _dolomiteRegistry,
         address _dolomiteMargin,
         address _expiry,
         address _liquidatorAssetRegistry
@@ -61,7 +56,9 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
         _dolomiteMargin,
         _expiry,
         _liquidatorAssetRegistry
-    ) { /* solhint-disable-line no-empty-blocks */ }
+    ) {
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
+    }
 
     function prepareForLiquidation(
         IDolomiteStructs.AccountInfo calldata _liquidAccount,
@@ -96,8 +93,8 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
             outputToken,
             _minOutputAmount
         );
-        // TODO: emit from registry contract
-        emit LiquidationEnqueued(
+
+        DOLOMITE_REGISTRY.emitLiquidationEnqueued(
             _liquidAccount.owner,
             _liquidAccount.number,
             _freezableMarketId,
@@ -152,9 +149,10 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
                 "Liquid account no supply"
             );
 
+            IDolomiteStructs.Decimal memory marginRatio = DOLOMITE_MARGIN.getMarginRatio();
             Require.that(
-                DOLOMITE_MARGIN.getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid ||
-                !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, DOLOMITE_MARGIN.getMarginRatio()),
+                DOLOMITE_MARGIN.getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
+                    || !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio),
                 _FILE,
                 "Liquid account not liquidatable",
                 liquidSupplyValue.value,

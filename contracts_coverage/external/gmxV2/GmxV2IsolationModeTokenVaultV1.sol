@@ -131,14 +131,14 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         IGenericTraderProxyV1.UserConfig memory _userConfig
     ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
         uint256 len = _tradersPath.length;
-        (uint256 accountNumber, uint256 executionFee) = abi.decode(_tradersPath[len-1].tradeData, (uint256, uint256));
+        (uint256 accountNumber, uint256 executionFee) = abi.decode(_tradersPath[len - 1].tradeData, (uint256, uint256));
         if (msg.value > 0 && executionFee == msg.value) { /* FOR COVERAGE TESTING */ }
         Require.that(msg.value > 0 && executionFee == msg.value,
             _FILE,
             "Invalid executionFee"
         );
-        if (_tradersPath[len-1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) { /* FOR COVERAGE TESTING */ }
-        Require.that(_tradersPath[len-1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper,
+        if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) { /* FOR COVERAGE TESTING */ }
+        Require.that(_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper,
             _FILE,
             "Invalid traderType"
         );
