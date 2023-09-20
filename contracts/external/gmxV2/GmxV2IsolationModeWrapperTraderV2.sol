@@ -89,7 +89,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             "Invalid deposit key"
         );
 
-        // @follow-up Switched to use 2 instead of len-1
+        // @follow-up Switched to use 0 instead of len-1
         // @audit Don't use len-1 but use index value
         GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[0];
         Require.that(
@@ -105,7 +105,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
         if (receivedMarketTokens.value > _deposit.numbers.minMarketTokens) {
             uint256 diff = receivedMarketTokens.value - _deposit.numbers.minMarketTokens;
-            underlyingToken.approve(depositInfo.vault, diff);
+            underlyingToken.safeApprove(depositInfo.vault, diff);
 
             factory.depositIntoDolomiteMarginFromTokenConverter(
                 depositInfo.vault,
