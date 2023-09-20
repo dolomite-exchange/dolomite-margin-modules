@@ -20,22 +20,20 @@
 
 pragma solidity ^0.8.9;
 
-import { IUmamiAssetVaultRegistry } from "./IUmamiAssetVaultRegistry.sol";
-import { IIsolationModeTokenVaultV1WithFreezable } from "../IIsolationModeTokenVaultV1WithFreezable.sol";
-
-
+import { IUmamiWithdrawalQueuer } from "../external/interfaces/umami/IUmamiWithdrawalQueuer.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * @title   IUmamiAssetVaultIsolationModeTokenVaultV1
+ * @title   TestUmamiWithdrawalQueuer
  * @author  Dolomite
  *
- * @notice  Interface for the user vault implementation that holds each user's Umami Delta Neutral asset vault tokens.
+ * @notice  Test implementation for exposing areas for coverage testing
  */
-interface IUmamiAssetVaultIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezable {
+contract TestUmamiWithdrawalQueuer is IUmamiWithdrawalQueuer {
 
-    function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
+    bytes32 private constant _FILE = "TestUmamiWithdrawalQueuer";
 
-    function registry() external view returns (IUmamiAssetVaultRegistry);
-
-    function virtualBalance() external view returns (uint256);
+    function queueRedeem(address vault, uint256 amount) external {
+        IERC20(vault).transferFrom(msg.sender, address(this), amount);
+    } 
 }

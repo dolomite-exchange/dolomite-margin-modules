@@ -21,6 +21,8 @@
 pragma solidity ^0.8.9;
 
 import { IUmamiAssetVaultStorageViewer } from "./IUmamiAssetVaultStorageViewer.sol";
+import { IUmamiWithdrawalQueuer } from "./IUmamiWithdrawalQueuer.sol";
+import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "./IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol";
 import { IBaseRegistry } from "../IBaseRegistry.sol";
 
 /**
@@ -37,6 +39,7 @@ interface IUmamiAssetVaultRegistry is IBaseRegistry {
 
     event StorageViewerSet(address indexed _storageViewer);
     event WithdrawalQueuerSet(address indexed _withdrawalQueuer);
+    event UmamiUnwrapperTraderSet(address indexed _umamiUnwrapperTrader);
 
     // ========================================================
     // =================== Admin Functions ====================
@@ -44,10 +47,13 @@ interface IUmamiAssetVaultRegistry is IBaseRegistry {
 
     function ownerSetStorageViewer(address _storageViewer) external;
     function ownerSetWithdrawalQueuer(address _withdrawalQueuer) external;
+    function ownerSetUmamiUnwrapperTrader(address _umamiUnwrapperTrader) external;
 
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
 
     function storageViewer() external view returns (IUmamiAssetVaultStorageViewer);
+    function withdrawalQueuer() external view returns (IUmamiWithdrawalQueuer);
+    function umamiUnwrapperTrader() external view returns (IUmamiAssetVaultIsolationModeUnwrapperTraderV2);
 }

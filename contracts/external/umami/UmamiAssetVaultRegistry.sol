@@ -24,6 +24,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
 import { IUmamiAssetVaultStorageViewer } from "../interfaces/umami/IUmamiAssetVaultStorageViewer.sol";
+import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol";
 import { IUmamiWithdrawalQueuer } from "../interfaces/umami/IUmamiWithdrawalQueuer.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 
@@ -43,6 +44,7 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
     bytes32 private constant _FILE = "UmamiAssetVaultRegistry";
     bytes32 private constant _STORAGE_VIEWER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.storageViewer")) - 1);
     bytes32 private constant _WITHDRAWAL_QUEUER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalQueuer")) - 1);
+    bytes32 private constant _UMAMI_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.umamiUnwrapperTrader")) - 1);
 
     // ==================== Initializer ====================
 
@@ -74,12 +76,25 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         _ownerSetWithdrawalQueuer(_withdrawalQueuer);
     }
 
+    function ownerSetUmamiUnwrapperTrader(
+        address _gmxV2UnwrapperTrader
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetUmamiUnwrapperTrader(_gmxV2UnwrapperTrader);
+    }
+
+
     function storageViewer() external view returns (IUmamiAssetVaultStorageViewer) {
         return IUmamiAssetVaultStorageViewer(_getAddress(_STORAGE_VIEWER_SLOT));
     }
 
     function withdrawalQueuer() external view returns (IUmamiWithdrawalQueuer) {
         return IUmamiWithdrawalQueuer(_getAddress(_WITHDRAWAL_QUEUER_SLOT));
+    }
+
+    function umamiUnwrapperTrader() external view returns (IUmamiAssetVaultIsolationModeUnwrapperTraderV2) {
+        return IUmamiAssetVaultIsolationModeUnwrapperTraderV2(_getAddress(_UMAMI_UNWRAPPER_TRADER_SLOT));
     }
 
     // ============================================================
@@ -113,5 +128,15 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
 
         _setAddress(_WITHDRAWAL_QUEUER_SLOT, _withdrawalQueuer);
         emit WithdrawalQueuerSet(_withdrawalQueuer);
+    }
+
+    function _ownerSetUmamiUnwrapperTrader(address _umamiUnwrapperTrader) internal {
+        Require.that(
+            _umamiUnwrapperTrader != address(0),
+            _FILE,
+            "Invalid address"
+        );
+        _setAddress(_UMAMI_UNWRAPPER_TRADER_SLOT, _umamiUnwrapperTrader);
+        emit UmamiUnwrapperTraderSet(_umamiUnwrapperTrader);
     }
 }
