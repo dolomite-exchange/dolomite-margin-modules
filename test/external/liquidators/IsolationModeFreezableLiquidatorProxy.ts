@@ -150,15 +150,17 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     });
 
     it('should work normally for expired account', async () => {
-      await setExpiry(core, liquidAccount, core.marketIds.usdc, 123);
+      const owedMarket = core.marketIds.usdc;
+      await setExpiry(core, liquidAccount, owedMarket, 123);
+      const expiry = await core.expiry.getExpiry(liquidAccount, owedMarket);
       await increaseByTimeDelta(1234);
       await liquidator.prepareForLiquidation(
         liquidAccount,
         marketId,
         amountWei,
-        core.marketIds.usdc,
+        owedMarket,
         ONE_BI,
-        NO_EXPIRY,
+        expiry,
       );
     });
   });

@@ -96,6 +96,7 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
             outputToken,
             _minOutputAmount
         );
+        // TODO: emit from registry contract
         emit LiquidationEnqueued(
             _liquidAccount.owner,
             _liquidAccount.number,
