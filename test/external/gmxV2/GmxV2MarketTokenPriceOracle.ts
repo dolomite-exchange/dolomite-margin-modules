@@ -12,8 +12,6 @@ import {
   TestGmxReader,
   TestGmxReader__factory,
 } from 'src/types';
-import { Network } from 'src/utils/no-deps-constants';
-import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';

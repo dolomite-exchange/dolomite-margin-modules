@@ -20,7 +20,13 @@ import {
 } from '../../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../../utils/assertions';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectThrow,
+  expectTotalSupply,
+  expectWalletBalance,
+} from '../../../utils/assertions';
 import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
@@ -208,7 +214,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
   });
@@ -246,7 +252,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
   });
@@ -277,7 +283,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
 
@@ -341,7 +347,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.closeBorrowPositionWithUnderlyingVaultToken(defaultAccountNumber, borrowAccountNumber),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
   });
@@ -449,7 +455,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.closeBorrowPositionWithOtherTokens(defaultAccountNumber, borrowAccountNumber, []),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
   });
@@ -502,7 +508,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
   });
@@ -643,9 +649,9 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
           borrowAccountNumber,
           0,
           amountWei,
-          BalanceCheckFlag.Both
+          BalanceCheckFlag.Both,
         ),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
   });
@@ -688,7 +694,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
         userVault.transferFromPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
   });
@@ -994,9 +1000,9 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
           borrowAccountNumber,
           0,
           amountWei,
-          BalanceCheckFlag.Both
+          BalanceCheckFlag.Both,
         ),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
   });
@@ -1073,9 +1079,9 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
           defaultAccountNumber,
           borrowAccountNumber,
           otherMarketId1,
-          BalanceCheckFlag.Both
+          BalanceCheckFlag.Both,
         ),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
   });
@@ -1241,9 +1247,9 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
           zapParams.minOutputAmountWei,
           zapParams.tradersPath,
           zapParams.makerAccounts,
-          zapParams.userConfig
+          zapParams.userConfig,
         ),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
   });
@@ -1491,9 +1497,9 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
           zapParams.minOutputAmountWei,
           zapParams.tradersPath,
           zapParams.makerAccounts,
-          zapParams.userConfig
+          zapParams.userConfig,
         ),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
   });
@@ -2032,9 +2038,9 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
           zapParams.minOutputAmountWei,
           zapParams.tradersPath,
           zapParams.makerAccounts,
-          zapParams.userConfig
+          zapParams.userConfig,
         ),
-        'IsolationModeVaultV1Freeze&Pause: Vault is frozen'
+        'IsolationModeVaultV1Freeze&Pause: Vault is frozen',
       );
     });
 
@@ -2071,7 +2077,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
     it('should fail if not called by factory', async () => {
       await expectThrow(
         userVault.connect(core.hhUser1).setIsVaultFrozen(true),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

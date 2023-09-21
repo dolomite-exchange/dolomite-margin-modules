@@ -176,16 +176,22 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       // TODO: check liquidation enqueued event
     });
 
-    it('should fail when liquid account is not a valid vault', async () => {});
+    it('should fail when liquid account is not a valid vault', async () => {
+    });
 
-    it('should fail when expiration overflows', async () => {});
+    it('should fail when expiration overflows', async () => {
+    });
 
-    it('should fail when position is not expired', async () => {});
+    it('should fail when position is not expired', async () => {
+    });
 
-    it('should fail when position expiration does not match input', async () => {});
+    it('should fail when position expiration does not match input', async () => {
+    });
 
-    it('should fail when liquid account has no supply (should be vaporized)', async () => {});
+    it('should fail when liquid account has no supply (should be vaporized)', async () => {
+    });
 
-    it('should fail when liquid account is not underwater', async () => {});
+    it('should fail when liquid account is not underwater', async () => {
+    });
   });
 });

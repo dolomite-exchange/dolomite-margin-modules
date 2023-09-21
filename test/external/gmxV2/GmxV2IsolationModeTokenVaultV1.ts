@@ -26,7 +26,13 @@ import {
 } from 'src/utils/dolomite-utils';
 import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from 'test/utils/assertions';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectThrow,
+  expectTotalSupply,
+  expectWalletBalance,
+} from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
   createGmxV2IsolationModeUnwrapperTraderV2,

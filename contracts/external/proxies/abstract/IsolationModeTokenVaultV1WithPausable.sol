@@ -322,7 +322,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         );
     }
 
-    function _requireNumberOfMarketsWithDebtIsZero(uint256 _borrowAccountNumber) internal view {
+    function _requireNumberOfMarketsWithDebtIsZero(uint256 _borrowAccountNumber) private view {
         uint256 numberOfMarketsWithDebt = DOLOMITE_MARGIN().getAccountNumberOfMarketsWithDebt(
             IDolomiteStructs.AccountInfo({
                 owner: address(this),

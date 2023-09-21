@@ -29,11 +29,6 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
-import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
-import { IIsolationModeTokenVaultV1WithPausable } from "../interfaces/IIsolationModeTokenVaultV1WithPausable.sol";
-import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
-import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
-import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
@@ -53,8 +48,6 @@ import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/ab
 contract GmxV2IsolationModeTokenVaultV1 is
     IGmxV2IsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithFreezableAndPausable
-,
-    IGmxV2IsolationModeTokenVaultV1
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
@@ -153,7 +146,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
             "Invalid traderType"
         );
         Require.that(
-            _tradersPath[len - 1].trader == registry().gmxV2WrapperTrader(),
+            _tradersPath[len - 1].trader == address(registry().gmxV2WrapperTrader()),
             _FILE,
             "Invalid trader"
         );
@@ -337,7 +330,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
 
     function isExternalRedemptionPaused()
     public
-    override(IIsolationModeTokenVaultV1WithPausable, IsolationModeTokenVaultV1WithFreezableAndPausable)
+    override
     view
     returns (bool) {
         return GmxV2IsolationModeTokenVaultV1Library.isExternalRedemptionPaused(
