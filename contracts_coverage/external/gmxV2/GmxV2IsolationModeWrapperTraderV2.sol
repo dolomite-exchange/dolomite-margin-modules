@@ -77,7 +77,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function afterDepositExecution(
         bytes32 _key,
-        GmxDeposit.DepositProps memory _deposit,
+        GmxDeposit.Props memory _deposit,
         GmxEventUtils.EventLogData memory _eventData
     )
     external
@@ -89,10 +89,9 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             "Invalid deposit key"
         );
 
-        // @follow-up EventData is weird so we should discuss
-        uint256 len = _eventData.uintItems.items.length;
-        // @audit Don't use len - 1 but use index value
-        GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[len - 1];
+        // @follow-up Switched to use 2 instead of len-1
+        // @audit Don't use len-1 but use index value
+        GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[0];
         if (keccak256(abi.encodePacked(receivedMarketTokens.key))== keccak256(abi.encodePacked("receivedMarketTokens"))) { /* FOR COVERAGE TESTING */ }
         Require.that(keccak256(abi.encodePacked(receivedMarketTokens.key))
                 == keccak256(abi.encodePacked("receivedMarketTokens")),
@@ -103,41 +102,26 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         IERC20 underlyingToken = IERC20(VAULT_FACTORY().UNDERLYING_TOKEN());
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
 
-        if (receivedMarketTokens.value > depositInfo.outputAmount) {
-            // We need to send the diff into the vault via `operate` and blind transfer the min token amount
+        underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
+        if (receivedMarketTokens.value > _deposit.numbers.minMarketTokens) {
             uint256 diff = receivedMarketTokens.value - _deposit.numbers.minMarketTokens;
+            underlyingToken.approve(depositInfo.vault, diff);
 
-            underlyingToken.safeApprove(depositInfo.vault, diff);
-            try
-                factory.depositIntoDolomiteMarginFromTokenConverter(depositInfo.vault, depositInfo.accountNumber, diff)
-            {
-                underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
-                factory.setIsVaultFrozen(depositInfo.vault, false);
-                _setDepositInfo(_key, _emptyDepositInfo());
-                emit DepositExecuted(_key);
-            } catch Error(string memory reason) {
-                underlyingToken.safeApprove(depositInfo.vault, 0);
-                depositInfo.outputAmount = receivedMarketTokens.value;
-                _setDepositInfo(_key, depositInfo);
-                emit DepositFailed(_key, reason);
-            } catch (bytes memory /* reason */) {
-                underlyingToken.safeApprove(depositInfo.vault, 0);
-                depositInfo.outputAmount = receivedMarketTokens.value;
-                _setDepositInfo(_key, depositInfo);
-                emit DepositFailed(_key, "");
-            }
-        } else {
-            // We just need to blind transfer the min amount to the vault
-            underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
-            factory.setIsVaultFrozen(depositInfo.vault, false);
-            _setDepositInfo(_key, _emptyDepositInfo());
-            emit DepositExecuted(_key);
+            factory.depositIntoDolomiteMarginFromTokenConverter(
+                depositInfo.vault,
+                depositInfo.accountNumber,
+                diff
+            );
         }
+
+        factory.setIsVaultFrozen(depositInfo.vault, false);
+        _setDepositInfo(_key, DepositInfo(address(0), 0));
+        emit DepositExecuted(_key);
     }
 
     function afterDepositCancellation(
         bytes32 _key,
-        GmxDeposit.DepositProps memory _deposit,
+        GmxDeposit.Props memory _deposit,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external
@@ -177,7 +161,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         );
 
         factory.setIsVaultFrozen(depositInfo.vault, false);
-        _setDepositInfo(_key, _emptyDepositInfo());
+        _setDepositInfo(_key, DepositInfo(address(0), 0));
         emit DepositCancelled(_key);
     }
 
@@ -192,8 +176,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     }
 
     function isValidInputToken(address _inputToken) public view override returns (bool) {
-        address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).LONG_TOKEN();
-        address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).SHORT_TOKEN();
+        address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).longToken();
+        address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).shortToken();
         return _inputToken == longToken || _inputToken == shortToken;
     }
 
@@ -234,8 +218,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                 /* callbackContract = */ address(this),
                 /* uiFeeReceiver = */ address(0),
                 /* market = */ _outputTokenUnderlying,
-                /* initialLongToken = */ IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).LONG_TOKEN(),
-                /* initialShortToken = */ IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).SHORT_TOKEN(),
+                /* initialLongToken = */ IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).longToken(),
+                /* initialShortToken = */ IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).shortToken(),
                 /* longTokenSwapPath = */ new address[](0),
                 /* shortTokenSwapPath = */ new address[](0),
                 /* minMarketTokens = */ _minOutputAmount,
@@ -245,12 +229,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             );
 
             bytes32 depositKey = exchangeRouter.createDeposit(depositParams);
-            _setDepositInfo(depositKey, DepositInfo({
-                key: depositKey,
-                vault: tradeOriginatorForStackTooDeep,
-                accountNumber: accountNumber,
-                outputAmount: _minOutputAmount
-            }));
+            _setDepositInfo(depositKey, DepositInfo(tradeOriginatorForStackTooDeep, accountNumber));
             emit DepositCreated(depositKey);
         }
 
@@ -282,10 +261,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
         DepositInfo storage storageInfo = _getDepositSlot(_key);
-        storageInfo.key = _key;
         storageInfo.vault = _info.vault;
         storageInfo.accountNumber = _info.accountNumber;
-        storageInfo.outputAmount = _info.outputAmount;
     }
 
     function _approveIsolationModeTokenForTransfer(
@@ -326,6 +303,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         }
     }
 
+
     function _getExchangeCost(
         address,
         address,
@@ -340,12 +318,4 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
 
-    function _emptyDepositInfo() internal pure returns (DepositInfo memory) {
-        return DepositInfo({
-            key: bytes32(0),
-            vault: address(0),
-            accountNumber: 0,
-            outputAmount: 0
-        });
-    }
 }

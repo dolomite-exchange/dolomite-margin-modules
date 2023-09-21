@@ -45,10 +45,18 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
         uint256 outputAmount;
     }
 
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
+
     event WithdrawalCreated(bytes32 indexed key);
     event WithdrawalExecuted(bytes32 indexed key);
     event WithdrawalFailed(bytes32 indexed key, string reason);
     event WithdrawalCancelled(bytes32 indexed key);
+
+    // ===================================================
+    // ==================== Functions ====================
+    // ===================================================
 
     function vaultSetWithdrawalInfo(
         bytes32 _key,

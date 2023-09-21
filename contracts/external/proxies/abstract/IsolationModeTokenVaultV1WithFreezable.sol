@@ -144,6 +144,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
 
     function _setIsVaultFrozen(bool _isVaultFrozen) internal {
         _setUint256(_IS_VAULT_FROZEN_SLOT, _isVaultFrozen ? 1 : 0);
+        emit IsVaultFrozenSet(_isVaultFrozen);
     }
 
     // ==================================================================

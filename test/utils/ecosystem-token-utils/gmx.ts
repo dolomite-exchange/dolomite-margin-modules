@@ -519,14 +519,6 @@ export function getDepositObject(
       uintItems: {
         items: [
           {
-            key: 'longTokenAmount',
-            value: longAmount,
-          },
-          {
-            key: 'shortTokenAmount',
-            value: shortAmount,
-          },
-          {
             key: 'receivedMarketTokens',
             value: receivedMarketToken,
           },

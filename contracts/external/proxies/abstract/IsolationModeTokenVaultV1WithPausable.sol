@@ -26,6 +26,7 @@ import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
+import { IIsolationModeTokenVaultV1WithPausable } from "../../interfaces/IIsolationModeTokenVaultV1WithPausable.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
 /**
@@ -35,7 +36,10 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  * @notice  An abstract implementation of IsolationModeTokenVaultV1 that disallows borrows if the ecosystem integration
  *          is paused.
  */
-abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVaultV1 {
+abstract contract IsolationModeTokenVaultV1WithPausable is
+    IIsolationModeTokenVaultV1WithPausable,
+    IsolationModeTokenVaultV1
+{
     using TypesLib for IDolomiteMargin.Par;
     using TypesLib for IDolomiteMargin.Wei;
 
@@ -318,7 +322,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is IsolationModeTokenVau
         );
     }
 
-    function _requireNumberOfMarketsWithDebtIsZero(uint256 _borrowAccountNumber) private view {
+    function _requireNumberOfMarketsWithDebtIsZero(uint256 _borrowAccountNumber) internal view {
         uint256 numberOfMarketsWithDebt = DOLOMITE_MARGIN().getAccountNumberOfMarketsWithDebt(
             IDolomiteStructs.AccountInfo({
                 owner: address(this),

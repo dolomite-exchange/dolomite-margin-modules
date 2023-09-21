@@ -20,28 +20,17 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1 } from "./IIsolationModeTokenVaultV1.sol";
+import { IIsolationModeTokenVaultV1WithFreezable } from "./IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IIsolationModeTokenVaultV1WithPausable } from "./IIsolationModeTokenVaultV1WithPausable.sol";
 
 
 /**
- * @title   IIsolationModeTokenVaultV1WithFreezable
+ * @title   IIsolationModeTokenVaultV1WithFreezableAndPausable
  * @author  Dolomite
  *
  * @notice Interface for the implementation contract used by proxy user vault contracts.
  */
-interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 {
-
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event IsVaultFrozenSet(bool _isVaultFrozen);
-
-    // ===================================================
-    // ==================== Functions ====================
-    // ===================================================
-
-    function setIsVaultFrozen(bool _isVaultFrozen) external;
-
-    function isVaultFrozen() external view returns (bool);
-}
+interface IIsolationModeTokenVaultV1WithFreezableAndPausable is // solhint-disable-line no-empty-blocks
+    IIsolationModeTokenVaultV1WithFreezable,
+    IIsolationModeTokenVaultV1WithPausable 
+{} 

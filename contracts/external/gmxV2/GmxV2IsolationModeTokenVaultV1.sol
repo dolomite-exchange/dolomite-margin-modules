@@ -29,6 +29,11 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IIsolationModeTokenVaultV1WithPausable } from "../interfaces/IIsolationModeTokenVaultV1WithPausable.sol";
+import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
+import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
+import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
@@ -48,6 +53,8 @@ import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/ab
 contract GmxV2IsolationModeTokenVaultV1 is
     IGmxV2IsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithFreezableAndPausable
+,
+    IGmxV2IsolationModeTokenVaultV1
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
@@ -275,7 +282,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
         _setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
-    // @audit Does this need to be requireNotFrozen? I don't think so but want to confirm
     function executeDepositIntoVault(
         address _from,
         uint256 _amount
@@ -301,13 +307,12 @@ contract GmxV2IsolationModeTokenVaultV1 is
             Require.that(
                 isVaultFrozen(),
                 _FILE,
-                "Vault should be frozen" // @follow-up Revisit this message
+                "Vault should be frozen"
             );
             _setShouldSkipTransfer(false);
         }
     }
 
-    // @audit Does this need to be requireNotFrozen? I don't think so but want to confirm
     function executeWithdrawalFromVault(
         address _recipient,
         uint256 _amount
@@ -324,13 +329,17 @@ contract GmxV2IsolationModeTokenVaultV1 is
             Require.that(
                 isVaultFrozen(),
                 _FILE,
-                "Vault should be frozen" // @follow-up Revisit this message
+                "Vault should be frozen"
             );
             _setShouldSkipTransfer(false);
         }
     }
 
-    function isExternalRedemptionPaused() public override view returns (bool) {
+    function isExternalRedemptionPaused()
+    public
+    override(IIsolationModeTokenVaultV1WithPausable, IsolationModeTokenVaultV1WithFreezableAndPausable)
+    view
+    returns (bool) {
         return GmxV2IsolationModeTokenVaultV1Library.isExternalRedemptionPaused(
             registry(),
             DOLOMITE_MARGIN(),
@@ -355,11 +364,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
     }
 
     function dolomiteRegistry()
-        public
-        override
-        view
-        returns (IDolomiteRegistry)
-    {
+    public
+    override
+    view
+    returns (IDolomiteRegistry) {
         return registry().dolomiteRegistry();
     }
 
@@ -521,12 +529,14 @@ contract GmxV2IsolationModeTokenVaultV1 is
         _setUint256(_VIRTUAL_BALANCE_SLOT, _bal);
     }
 
-    function _setIsDepositSourceWrapper(bool _sourceIsWrapper) internal {
-        _setUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT, _sourceIsWrapper ? 1 : 0);
+    function _setIsDepositSourceWrapper(bool _isDepositSourceWrapper) internal {
+        _setUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT, _isDepositSourceWrapper ? 1 : 0);
+        emit IsDepositSourceWrapperSet(_isDepositSourceWrapper);
     }
 
     function _setShouldSkipTransfer(bool _shouldSkipTransfer) internal {
         _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
+        emit ShouldSkipTransferSet(_shouldSkipTransfer);
     }
 
     function _setExecutionFeeForAccountNumber(

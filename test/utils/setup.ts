@@ -492,7 +492,6 @@ export async function setupUSDCBalance(
   await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-// @follow-up this doesn't match other setups. Is that ok?
 export async function setupGMBalance(
   core: CoreProtocol,
   signer: address,

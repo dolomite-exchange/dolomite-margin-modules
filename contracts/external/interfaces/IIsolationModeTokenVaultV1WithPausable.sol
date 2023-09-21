@@ -24,24 +24,21 @@ import { IIsolationModeTokenVaultV1 } from "./IIsolationModeTokenVaultV1.sol";
 
 
 /**
- * @title   IIsolationModeTokenVaultV1WithFreezable
+ * @title   IIsolationModeTokenVaultV1WithPausable
  * @author  Dolomite
  *
  * @notice Interface for the implementation contract used by proxy user vault contracts.
  */
-interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 {
-
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event IsVaultFrozenSet(bool _isVaultFrozen);
+interface IIsolationModeTokenVaultV1WithPausable is IIsolationModeTokenVaultV1 {
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function setIsVaultFrozen(bool _isVaultFrozen) external;
-
-    function isVaultFrozen() external view returns (bool);
+    /**
+     * @return  true if redemptions (conversion) from this isolated token to its underlying are paused or are in a
+     *          distressed state. Resolving this function to true actives the Pause Sentinel, which prevents further
+     *          contamination of this market across Dolomite.
+     */
+    function isExternalRedemptionPaused() external view returns (bool);
 }

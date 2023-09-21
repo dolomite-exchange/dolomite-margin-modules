@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
-import { IIsolationModeTokenVaultV1WithFreezable } from "../IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -29,7 +29,19 @@ import { IIsolationModeTokenVaultV1WithFreezable } from "../IIsolationModeTokenV
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezable {
+interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezableAndPausable {
+
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
+
+    event IsDepositSourceWrapperSet(bool _isDepositSourceWrapper);
+
+    event ShouldSkipTransferSet(bool _shouldSkipTransfer);
+
+    // ===================================================
+    // ==================== Functions ====================
+    // ===================================================
 
     function initiateUnwrapping(
         uint256 _tradeAccountNumber,

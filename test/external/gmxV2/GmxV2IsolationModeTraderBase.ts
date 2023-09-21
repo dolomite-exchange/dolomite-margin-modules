@@ -10,7 +10,6 @@ import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
 
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
-const SLIPPAGE_MINIMUM = 3;
 
 describe('GmxV2IsolationModeTraderBase', () => {
   let snapshotId: string;
@@ -134,7 +133,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
       );
     });
 
-    it('should fail if slippage minimum is greater than  or equal to 10,000', async () => {
+    it('should fail if slippage minimum is greater than or equal to 10,000', async () => {
       await expectThrow(
         trader.connect(core.governance).ownerSetSlippageMinimum(10000),
         'GmxV2IsolationModeTraderBase: Invalid slippageMinimum',

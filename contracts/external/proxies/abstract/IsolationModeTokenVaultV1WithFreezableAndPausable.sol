@@ -26,6 +26,7 @@ import { IsolationModeTokenVaultV1WithPausable } from "./IsolationModeTokenVault
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
+import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
 
@@ -37,6 +38,7 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  *          if vault is frozen or borrows if the ecosystem integration is paused
  */
 abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is
+    IIsolationModeTokenVaultV1WithFreezableAndPausable,
     IsolationModeTokenVaultV1WithFreezable,
     IsolationModeTokenVaultV1WithPausable
 {

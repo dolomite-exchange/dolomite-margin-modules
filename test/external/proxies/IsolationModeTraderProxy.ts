@@ -56,6 +56,13 @@ describe('IsolationModeTraderProxy', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
+  describe('#fallback', () => {
+    it('should work normally', async () => {
+      const trader = TestUpgradeableIsolationModeWrapperTrader__factory.connect(proxy.address, core.hhUser1);
+      expect(await trader.VAULT_FACTORY()).to.eq(factory.address);
+    });
+  });
+
   describe('#upgradeTo', () => {
     it('should work normally', async () => {
       const newImplementation = await createDolomiteRegistryImplementation();
