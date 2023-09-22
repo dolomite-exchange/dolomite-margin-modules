@@ -3,6 +3,8 @@ import {
   IUmamiAssetVault,
   IUmamiAssetVaultIsolationModeTokenVaultV1,
   IUmamiAssetVaultRegistry,
+  IsolationModeTraderProxy,
+  IsolationModeTraderProxy__factory,
   RegistryProxy,
   RegistryProxy__factory,
   UmamiAssetVaultIsolationModeTokenVaultV1,
@@ -70,20 +72,29 @@ export function createUmamiAssetVaultPriceOracle(
   );
 }
 
-export function createUmamiAssetVaultIsolationModeUnwrapperTraderV2(
+export async function createUmamiAssetVaultIsolationModeUnwrapperTraderV2(
   core: CoreProtocol,
   umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,
   dUmamiAssetVaultToken: { address: address },
 ): Promise<UmamiAssetVaultIsolationModeUnwrapperTraderV2> {
-  return createContractWithAbi<UmamiAssetVaultIsolationModeUnwrapperTraderV2>(
+  const implementation = await createContractWithAbi<UmamiAssetVaultIsolationModeUnwrapperTraderV2>(
     UmamiAssetVaultIsolationModeUnwrapperTraderV2__factory.abi,
     UmamiAssetVaultIsolationModeUnwrapperTraderV2__factory.bytecode,
-    getUmamiAssetVaultIsolationModeUnwrapperTraderV2ConstructorParams(
+    [],
+  );
+
+  const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
+    IsolationModeTraderProxy__factory.abi,
+    IsolationModeTraderProxy__factory.bytecode,
+    await getUmamiAssetVaultIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
+      implementation,
       umamiAssetVaultRegistry,
       dUmamiAssetVaultToken,
     ),
   );
+
+  return UmamiAssetVaultIsolationModeUnwrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
 }
 
 export async function createUmamiAssetVaultRegistry(

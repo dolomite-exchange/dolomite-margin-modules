@@ -20,43 +20,35 @@
 
 pragma solidity ^0.8.9;
 
-import { GmxV2IsolationModeTokenVaultV1 } from "../external/gmxV2/GmxV2IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IGenericTraderProxyV1 } from "../external/interfaces/IGenericTraderProxyV1.sol";
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { UmamiAssetVaultIsolationModeTokenVaultV1 } from "../external/umami/UmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 
 
 /**
- * @title   TestGmxV2IsolationModeTokenVaultV1
+ * @title   TestUmamiAssetVaultIsolationModeTokenVaultV1
  * @author  Dolomite
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
+contract TestUmamiAssetVaultIsolationModeTokenVaultV1 is UmamiAssetVaultIsolationModeTokenVaultV1 {
 
-    bytes32 private constant _FILE = "TestGmxV2IsolationModeVaultV1";
+    bytes32 private constant _FILE = "TestUmamiIsolationModeVaultV1";
 
-    constructor(address _weth) GmxV2IsolationModeTokenVaultV1(_weth) { /* solhint-disable-line no-empty-blocks */ }
+    constructor() { /* solhint-disable-line no-empty-blocks */ }
 
-    function callInitiateWrappingAndTriggerReentrancy(
+    function callInitiateUnwrappingAndTriggerReentrancy(
         uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
     ) external payable nonReentrant {
         // solhint-disable-next-line avoid-low-level-calls
         (bool isSuccessful, bytes memory result) = address(this).delegatecall(
             abi.encodeWithSelector(
-                this.initiateWrapping.selector,
+                this.initiateUnwrapping.selector,
                 _tradeAccountNumber,
-                _marketIdsPath,
-                _inputAmountWei,
-                _minOutputAmountWei,
-                _tradersPath,
-                _makerAccounts,
-                _userConfig
+                _inputAmount,
+                _outputToken,
+                _minOutputAmount
             )
         );
         if (!isSuccessful) {
@@ -73,22 +65,20 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
         }
     }
 
-    function callInitiateUnwrappingAndTriggerReentrancy(
+    function callInitiateUnwrappingForLiquidationAndTriggerReentrancy(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minLongTokenAmount,
-        uint256 _minShortTokenAmount
+        uint256 _minOutputAmount
     ) external payable nonReentrant {
         // solhint-disable-next-line avoid-low-level-calls
         (bool isSuccessful, bytes memory result) = address(this).delegatecall(
             abi.encodeWithSelector(
-                this.initiateUnwrapping.selector,
+                this.initiateUnwrappingForLiquidation.selector,
                 _tradeAccountNumber,
                 _inputAmount,
                 _outputToken,
-                _minLongTokenAmount,
-                _minShortTokenAmount
+                _minOutputAmount
             )
         );
         if (!isSuccessful) {

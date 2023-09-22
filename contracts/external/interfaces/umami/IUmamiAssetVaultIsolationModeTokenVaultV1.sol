@@ -24,7 +24,6 @@ import { IUmamiAssetVaultRegistry } from "./IUmamiAssetVaultRegistry.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../IIsolationModeTokenVaultV1WithFreezable.sol";
 
 
-
 /**
  * @title   IUmamiAssetVaultIsolationModeTokenVaultV1
  * @author  Dolomite
@@ -33,9 +32,19 @@ import { IIsolationModeTokenVaultV1WithFreezable } from "../IIsolationModeTokenV
  */
 interface IUmamiAssetVaultIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezable {
 
+    function initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    )
+    external;
+
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
 
     function registry() external view returns (IUmamiAssetVaultRegistry);
 
     function virtualBalance() external view returns (uint256);
+
+    function isShouldSkipTransfer() external view returns (bool);
 }

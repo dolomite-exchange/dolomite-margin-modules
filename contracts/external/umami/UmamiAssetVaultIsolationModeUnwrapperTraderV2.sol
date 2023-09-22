@@ -22,21 +22,21 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { IERC4626 } from "../interfaces/IERC4626.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
-import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
-import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol";
-import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol";
-import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol";
 import { IIsolationModeUnwrapperTrader } from "../interfaces/IIsolationModeUnwrapperTrader.sol";
+import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
+import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
-import "hardhat/console.sol";
 
 /**
  * @title   UmamiAssetVaultIsolationModeUnwrapperTraderV2
@@ -48,17 +48,17 @@ import "hardhat/console.sol";
  */
 contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is 
     IUmamiAssetVaultIsolationModeUnwrapperTraderV2,
-    IsolationModeUnwrapperTraderV2 
+    UpgradeableIsolationModeUnwrapperTrader 
 {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
 
     bytes32 private constant _FILE = "UmamiAssetVaultUnwrapperV2";
-    bytes32 internal constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
+    uint256 private constant _ACTIONS_LENGTH = 2;
+    bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
     bytes32 private constant _WITHDRAWAL_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalInfo")) - 1);
 
-    
     // ===================================================
     // ==================== Modifiers ====================
     // ===================================================
@@ -73,22 +73,66 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
         _;
     }
 
-    // ============ Constructor ============
+    // ============ Initializer ============
 
-    constructor(
+    function initialize(
         address _dUmamiAssetVault,
         address _dolomiteMargin
     )
-    IsolationModeUnwrapperTraderV2(
-        _dUmamiAssetVault,
-        _dolomiteMargin
-    ) {
-        // solhint-disable-previous-line no-empty-blocks
+    external initializer {
+        _initializeUnwrapperTrader(_dUmamiAssetVault, _dolomiteMargin);
     }
 
     // ==========================================
     // ============ Public Functions ============
     // ==========================================
+
+    function afterWithdrawalExecution(
+        bytes32 _key,
+        uint256 _outputAmount
+    )
+    external
+    onlyHandler(msg.sender) {
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
+        Require.that(
+            withdrawalInfo.vault != address(0),
+            _FILE,
+            "Invalid withdrawal key"
+        );
+
+        uint256[] memory marketIdsPath = new uint256[](2);
+        marketIdsPath[0] = VAULT_FACTORY().marketId();
+        marketIdsPath[1] = DOLOMITE_MARGIN().getMarketIdByTokenAddress(withdrawalInfo.outputToken);
+
+        IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
+        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
+        traderParams[0].makerAccountIndex = 0;
+        traderParams[0].trader = address(this);
+        traderParams[0].tradeData = abi.encode((_key));
+
+        IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig(
+            block.timestamp,
+            AccountBalanceLib.BalanceCheckFlag.None
+        );
+
+        IUmamiAssetVaultIsolationModeVaultFactory factory = IUmamiAssetVaultIsolationModeVaultFactory(
+            address(VAULT_FACTORY())
+        );
+        factory.setShouldSkipTransfer(withdrawalInfo.vault, true);
+        IUmamiAssetVaultIsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
+            withdrawalInfo.accountNumber,
+            marketIdsPath,
+            withdrawalInfo.inputAmount,
+            _outputAmount,
+            traderParams,
+            /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
+            userConfig
+        );
+
+        factory.setIsVaultFrozen(withdrawalInfo.vault, false);
+        _setWithdrawalInfo(_key, _emptyWithdrawalInfo());
+        emit WithdrawalExecuted(_key);
+    }
 
     function exchange(
         address _tradeOriginator,
@@ -99,11 +143,11 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
         bytes calldata _orderData
     )
     external
-    override(IDolomiteMarginExchangeWrapper, IsolationModeUnwrapperTraderV2)
+    override(IDolomiteMarginExchangeWrapper, UpgradeableIsolationModeUnwrapperTrader)
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         Require.that(
-            _inputToken == address(VAULT_FACTORY),
+            _inputToken == address(VAULT_FACTORY()),
             _FILE,
             "Invalid input token",
             _inputToken
@@ -127,7 +171,7 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
             _receiver,
             _outputToken,
             minOutputAmount,
-            address(VAULT_FACTORY),
+            address(VAULT_FACTORY()),
             _inputAmount,
             extraOrderData
         );
@@ -146,82 +190,108 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
         return outputAmount;
     }
 
-    function afterWithdrawalExecution(
-        address _account,
-        uint256 _amountIn,
-        uint256 _outputAmount
-    )
-    external
-    onlyHandler(msg.sender) {
-        // Validate inputs
-        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_account);
-
-        // swap
-
-        uint256[] memory marketIdsPath = new uint256[](2);
-        marketIdsPath[0] = VAULT_FACTORY.marketId();
-        marketIdsPath[1] = DOLOMITE_MARGIN().getMarketIdByTokenAddress(withdrawalInfo.outputToken);
-
-        IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
-        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
-        traderParams[0].makerAccountIndex = 0;
-        traderParams[0].trader = address(this);
-        traderParams[0].tradeData = bytes('');
-
-        IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig(
-            block.timestamp,
-            AccountBalanceLib.BalanceCheckFlag.None
-        );
-
-        IUmamiAssetVaultIsolationModeVaultFactory factory = IUmamiAssetVaultIsolationModeVaultFactory(address(VAULT_FACTORY));
-        factory.setShouldSkipTransfer(_account, true);
-        IUmamiAssetVaultIsolationModeTokenVaultV1(_account).swapExactInputForOutput(
-            withdrawalInfo.accountNumber,
-            marketIdsPath,
-            withdrawalInfo.inputAmount,
-            _outputAmount,
-            traderParams,
-            /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
-            userConfig
-        );
-        _setWithdrawalInfo(_account, _emptyWithdrawalInfo());
-        factory.setIsVaultFrozen(_account, false);
-    }
-
     function vaultSetWithdrawalInfo(
+        bytes32 _key,
         uint256 _accountNumber,
         uint256 _inputAmount,
         address _outputToken
     ) external {
         Require.that(
-            address(VAULT_FACTORY.getAccountByVault(msg.sender)) != address(0),
+            address(VAULT_FACTORY().getAccountByVault(msg.sender)) != address(0),
             _FILE,
             "Invalid vault"
         );
 
-        assert(_getWithdrawalSlot(msg.sender).vault == address(0)); // panic if the key is used
+        assert(_getWithdrawalSlot(_key).vault == address(0)); // panic if the key is used
 
-        _setWithdrawalInfo(msg.sender, WithdrawalInfo({
+        _setWithdrawalInfo(_key, WithdrawalInfo({
+            key: _key,
             vault: msg.sender,
             accountNumber: _accountNumber,
             inputAmount: _inputAmount,
             outputToken: _outputToken,
             outputAmount: 0
         }));
+        emit WithdrawalCreated(_key);
     }
 
     function ownerSetIsHandler(address _handler, bool _isTrusted) external onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetIsHandler(_handler, _isTrusted);
     }
 
+    function createActionsForUnwrapping(
+        uint256 _solidAccountId,
+        uint256 _liquidAccountId,
+        address,
+        address,
+        uint256 _outputMarket,
+        uint256 _inputMarket,
+        uint256 _minAmountOut,
+        uint256 _inputAmount,
+        bytes calldata _orderData
+    )
+    external
+    virtual
+    override(UpgradeableIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTrader)
+    view
+    returns (IDolomiteMargin.ActionArgs[] memory) {
+        Require.that(
+            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY()),
+            _FILE,
+            "Invalid input market",
+            _inputMarket
+        );
+        Require.that(
+            isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
+            _FILE,
+            "Invalid output market",
+            _outputMarket
+        );
+
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(abi.decode(_orderData, (bytes32)));
+        // The vault address being correct is checked later
+        Require.that(
+            withdrawalInfo.vault != address(0),
+            _FILE,
+            "Invalid withdrawal"
+        );
+        Require.that(
+            withdrawalInfo.inputAmount >= _inputAmount,
+            _FILE,
+            "Invalid input amount"
+        );
+
+        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
+
+        // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
+        // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
+        actions[0] = AccountActionLib.encodeCallAction(
+            _liquidAccountId,
+            /* _callee */ address(this),
+            /* (_transferAmount, _key)[encoded] = */ abi.encode(_inputAmount, withdrawalInfo.key)
+        );
+
+        actions[1] = AccountActionLib.encodeExternalSellAction(
+            _solidAccountId,
+            _inputMarket,
+            _outputMarket,
+            /* _trader = */ address(this),
+            /* _amountInWei = */ _inputAmount,
+            /* _amountOutMinWei = */ _minAmountOut,
+            _orderData
+        );
+
+        return actions;
+    }
+
     function isValidOutputToken(
         address _outputToken
     )
     public 
-    override(IIsolationModeUnwrapperTrader, IsolationModeUnwrapperTraderV2)
+    override(IIsolationModeUnwrapperTrader, UpgradeableIsolationModeUnwrapperTrader)
     view 
     returns (bool) {
-        return IERC4626(VAULT_FACTORY.UNDERLYING_TOKEN()).asset() == _outputToken;
+        return IERC4626(VAULT_FACTORY().UNDERLYING_TOKEN()).asset() == _outputToken;
     }
 
     function isHandler(address _handler) public view returns (bool) {
@@ -234,18 +304,19 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
     // ============================================
 
     function _exchangeUnderlyingTokenToOutputToken(
-        address _tradeOriginator,
+        address /* _tradeOriginator */,
         address /* _receiver */,
         address _outputToken,
         uint256 _minOutputAmount,
         address /* _inputToken */,
         uint256 _inputAmount,
-        bytes memory /* _extraOrderData */
+        bytes memory _extraOrderData
     )
     internal
     override
     returns (uint256) {
-        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_tradeOriginator);
+        (bytes32 key) = abi.decode(_extraOrderData, (bytes32));
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
         Require.that(
             withdrawalInfo.inputAmount >= _inputAmount,
             _FILE,
@@ -256,20 +327,79 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
             _FILE,
             "Invalid output token"
         );
-        // Require.that(
         //     withdrawalInfo.outputAmount >= _minOutputAmount,
         //     _FILE,
         //     "Invalid output amount"
         // );
+
         // Reduce output amount by the size of the ratio of the input amount. Almost always the ratio will be 100%.
         // During liquidations, there will be a non-100% ratio because the user may not lose all collateral to the
         // liquidator.
+
+        // @follow-up Do we need these lines. I don't think so, but what to return
         // uint256 outputAmount = withdrawalInfo.outputAmount * _inputAmount / withdrawalInfo.inputAmount;
         // withdrawalInfo.inputAmount -= _inputAmount;
         // withdrawalInfo.outputAmount -= outputAmount;
         // _setWithdrawalInfo(_tradeOriginator, withdrawalInfo);
-        console.log(_minOutputAmount);
         return _minOutputAmount;
+    }
+
+    function _callFunction(
+        address /* _sender */,
+        IDolomiteStructs.AccountInfo calldata _accountInfo,
+        bytes calldata _data
+    )
+    internal
+    override {
+        Require.that(
+            VAULT_FACTORY().getAccountByVault(_accountInfo.owner) != address(0),
+            _FILE,
+            "Account owner is not a vault",
+            _accountInfo.owner
+        );
+
+        // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
+        // designated recipient
+        (uint256 transferAmount, bytes32 key) = abi.decode(_data, (uint256, bytes32));
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
+        Require.that(
+            withdrawalInfo.vault == _accountInfo.owner,
+            _FILE,
+            "Invalid account owner"
+        );
+        Require.that(
+            transferAmount > 0,
+            _FILE,
+            "Invalid transfer amount"
+        );
+
+        uint256 underlyingVirtualBalance = 
+            IUmamiAssetVaultIsolationModeTokenVaultV1(_accountInfo.owner).virtualBalance();
+        Require.that(
+            underlyingVirtualBalance >= transferAmount,
+            _FILE,
+            "Insufficient balance",
+            underlyingVirtualBalance,
+            transferAmount
+        );
+
+        VAULT_FACTORY().enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
+    }
+
+    function _ownerSetIsHandler(address _handler, bool _isTrusted) internal {
+        bytes32 slot =  keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
+        _setUint256(slot, _isTrusted ? 1 : 0);
+        emit OwnerSetIsHandler(_handler, _isTrusted);
+    }
+
+    function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
+        WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
+        storageInfo.key = _key;
+        storageInfo.vault = _info.vault;
+        storageInfo.accountNumber = _info.accountNumber;
+        storageInfo.inputAmount = _info.inputAmount;
+        storageInfo.outputToken = _info.outputToken;
+        storageInfo.outputAmount = _info.outputAmount;
     }
 
     function _getExchangeCost(
@@ -282,69 +412,11 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
     override
     view
     returns (uint256) {
-        return IERC4626(VAULT_FACTORY.UNDERLYING_TOKEN()).previewRedeem(_desiredInputAmount);
+        return IERC4626(VAULT_FACTORY().UNDERLYING_TOKEN()).previewRedeem(_desiredInputAmount);
     }
 
-    function _callFunction(
-        address /* _sender */,
-        IDolomiteStructs.AccountInfo calldata _accountInfo,
-        bytes calldata _data
-    )
-    internal
-    override {
-        Require.that(
-            VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0),
-            _FILE,
-            "Account owner is not a vault",
-            _accountInfo.owner
-        );
-
-        // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
-        // designated recipient
-        (uint256 transferAmount) = abi.decode(_data, (uint256));
-        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_accountInfo.owner);
-        Require.that(
-            withdrawalInfo.vault == _accountInfo.owner,
-            _FILE,
-            "Invalid account owner"
-        );
-        Require.that(
-            transferAmount > 0,
-            _FILE,
-            "Invalid transfer amount"
-        );
-
-        uint256 underlyingVirtualBalance = IUmamiAssetVaultIsolationModeTokenVaultV1(_accountInfo.owner).virtualBalance();
-        console.log(underlyingVirtualBalance);
-        console.log(transferAmount);
-        Require.that(
-            underlyingVirtualBalance >= transferAmount,
-            _FILE,
-            "Insufficient balance",
-            underlyingVirtualBalance,
-            transferAmount
-        );
-
-        VAULT_FACTORY.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
-    }
-
-    function _ownerSetIsHandler(address _handler, bool _isTrusted) internal {
-        bytes32 slot =  keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
-        _setUint256(slot, _isTrusted ? 1 : 0);
-        emit OwnerSetIsHandler(_handler, _isTrusted);
-    }
-
-    function _setWithdrawalInfo(address _vault, WithdrawalInfo memory _info) internal {
-        WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_vault);
-        storageInfo.vault = _info.vault;
-        storageInfo.accountNumber = _info.accountNumber;
-        storageInfo.inputAmount = _info.inputAmount;
-        storageInfo.outputToken = _info.outputToken;
-        storageInfo.outputAmount = _info.outputAmount;
-    }
-
-    function _getWithdrawalSlot(address _vault) internal pure returns (WithdrawalInfo storage info) {
-        bytes32 slot = keccak256(abi.encodePacked(_WITHDRAWAL_INFO_SLOT, _vault));
+    function _getWithdrawalSlot(bytes32 _key) internal pure returns (WithdrawalInfo storage info) {
+        bytes32 slot = keccak256(abi.encodePacked(_WITHDRAWAL_INFO_SLOT, _key));
         // solhint-disable-next-line no-inline-assembly
         assembly {
             info.slot := slot
@@ -353,6 +425,7 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
 
     function _emptyWithdrawalInfo() internal pure returns (WithdrawalInfo memory) {
         return WithdrawalInfo({
+            key: bytes32(0),
             vault: address(0),
             accountNumber: 0,
             inputAmount: 0,

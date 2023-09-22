@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IUmamiAssetVaultRegistry } from "./IUmamiAssetVaultRegistry.sol";
 import { IIsolationModeUnwrapperTrader } from "../IIsolationModeUnwrapperTrader.sol";
 
 

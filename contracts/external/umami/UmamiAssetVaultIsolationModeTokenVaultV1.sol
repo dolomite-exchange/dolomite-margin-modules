@@ -20,22 +20,19 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IUmamiAssetVault } from "../interfaces/umami/IUmamiAssetVault.sol";
 import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
-import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
-import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol";
-import { Require } from "../../protocol/lib/Require.sol";
+import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -52,6 +49,7 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
     IsolationModeTokenVaultV1WithFreezableAndPausable
 {
     using SafeERC20 for IERC20;
+
     // ==================================================================
     // =========================== Constants ============================
     // ==================================================================
@@ -96,10 +94,15 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
     nonReentrant
     onlyVaultOwner(msg.sender)
     requireNotFrozen {
-        _initiateUnwrapping(_tradeAccountNumber, _inputAmount, _outputToken, _minOutputAmount);
+        _initiateUnwrapping(
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount
+        );
     }
 
-
+    // @follow-up Should this be requireNotFrozen
     function initiateUnwrappingForLiquidation(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
@@ -145,6 +148,14 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         );
     }
 
+    function setShouldSkipTransfer(
+        bool _shouldSkipTransfer
+    )
+    external
+    onlyVaultFactory(msg.sender) {
+        _setShouldSkipTransfer(_shouldSkipTransfer);
+    }
+
     function executeDepositIntoVault(
         address _from,
         uint256 _amount
@@ -155,7 +166,6 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         _setVirtualBalance(virtualBalance() + _amount);
         IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
     }
-    
 
     function executeWithdrawalFromVault(
         address _recipient,
@@ -173,18 +183,10 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
             Require.that(
                 isVaultFrozen(),
                 _FILE,
-                "Vault should be frozen" // @follow-up Revisit this message
+                "Vault should be frozen"
             );
             _setShouldSkipTransfer(false);
         }
-    }
-
-    function setShouldSkipTransfer(
-        bool _shouldSkipTransfer
-    )
-    external
-    onlyVaultFactory(msg.sender) {
-        _setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
     function registry() public view returns (IUmamiAssetVaultRegistry) {
@@ -200,13 +202,13 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         return registry().dolomiteRegistry();
     }
 
+    function virtualBalance() public view returns (uint256) {
+        return _getUint256(_VIRTUAL_BALANCE_SLOT);
+    }
+
     function isExternalRedemptionPaused() public override view returns (bool) {
         address underlyingToken = IUmamiAssetVaultIsolationModeVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN();
         return IUmamiAssetVault(underlyingToken).withdrawalPaused();
-    }
-
-    function virtualBalance() public view returns (uint256) {
-        return _getUint256(_VIRTUAL_BALANCE_SLOT);
     }
 
     function isShouldSkipTransfer() public view returns (bool) {
@@ -225,15 +227,17 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
     ) internal {
         _setIsVaultFrozen(true);
 
+        // @follow-up Should we add some checks for the _outputToken to make sure user doens't DOS
         address underlyingToken = IUmamiAssetVaultIsolationModeVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN();
         IERC20(underlyingToken).safeApprove(address(registry().withdrawalQueuer()), _inputAmount);
-        registry().withdrawalQueuer().queueRedeem(underlyingToken, _inputAmount);
+        bytes32 key = registry().withdrawalQueuer().queueRedeem(underlyingToken, _inputAmount);
 
         IUmamiAssetVaultIsolationModeUnwrapperTraderV2(registry().umamiUnwrapperTrader()).vaultSetWithdrawalInfo(
-            _tradeAccountNumber, _inputAmount, _outputToken
+            key, _tradeAccountNumber, _inputAmount, _outputToken
         );
     }
 
+    // @follow-up This might be adjusted based on Corey's changes to the FreezableAndPausable
     function _swapExactInputForOutput(
         uint256 _tradeAccountNumber,
         uint256[] calldata _marketIdsPath,
@@ -254,6 +258,14 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
             _makerAccounts,
             _userConfig
         );
+    }
+
+    function _setVirtualBalance(uint256 _bal) internal {
+        _setUint256(_VIRTUAL_BALANCE_SLOT, _bal);
+    }
+
+    function _setShouldSkipTransfer(bool _shouldSkipTransfer) internal {
+        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
     }
 
     function _requireOnlyVaultOwnerOrUnwrapper(address _from) internal view {
@@ -279,13 +291,4 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
             "Virtual vs real balance mismatch"
         );
     }
-
-    function _setVirtualBalance(uint256 _bal) internal {
-        _setUint256(_VIRTUAL_BALANCE_SLOT, _bal);
-    }
-
-    function _setShouldSkipTransfer(bool _shouldSkipTransfer) internal {
-        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
-    }
-
 }

@@ -38,13 +38,6 @@ interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreez
         uint256 _minOutputAmount
     ) external payable;
 
-    function initiateUnwrappingForLiquidation(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount
-    ) external payable;
-
     function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external;

@@ -41,9 +41,3 @@ export async function setupWhitelistAndAggregateVault(
   );
   await whitelist.updateWhitelistEnabled(false);
 }
-
-export async function getInitiateUnwrappingParamsUmami(
-
-) {
-
-}

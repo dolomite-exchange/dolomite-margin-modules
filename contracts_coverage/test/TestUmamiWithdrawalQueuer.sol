@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IUmamiWithdrawalQueuer } from "../external/interfaces/umami/IUmamiWithdrawalQueuer.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title   TestUmamiWithdrawalQueuer
@@ -39,11 +39,11 @@ contract TestUmamiWithdrawalQueuer is IUmamiWithdrawalQueuer {
         IERC20(vault).transferFrom(msg.sender, address(this), amount);
         nonce++;
         return keccak256(abi.encode(msg.sender, nonce));
-    } 
+    }
 
     function queueRedeemImmediate(address vault, uint256 amount) external returns (bytes32) {
         IERC20(vault).transferFrom(msg.sender, address(this), amount);
         nonce++;
         return keccak256(abi.encode(msg.sender, nonce));
-    } 
+    }
 }

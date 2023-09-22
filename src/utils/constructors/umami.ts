@@ -6,6 +6,7 @@ import {
   IUmamiAssetVaultIsolationModeTokenVaultV1,
   IUmamiAssetVaultRegistry,
   UmamiAssetVaultIsolationModeTokenVaultV1,
+  UmamiAssetVaultIsolationModeUnwrapperTraderV2,
   UmamiAssetVaultRegistry,
 } from '../../types';
 
@@ -72,18 +73,25 @@ export function getUmamiAssetVaultPriceOracleConstructorParams(
   ];
 }
 
-export function getUmamiAssetVaultIsolationModeUnwrapperTraderV2ConstructorParams(
+export async function getUmamiAssetVaultIsolationModeUnwrapperTraderV2ConstructorParams(
   core: CoreProtocol,
+  implementation: UmamiAssetVaultIsolationModeUnwrapperTraderV2,
   umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,
   umamiVaultIsolationModeToken: { address: address },
-): any[] {
+): Promise<any[]> {
   if (!core.umamiEcosystem) {
     throw new Error('Umami ecosystem not initialized');
   }
 
-  return [
+  const calldata = await implementation.populateTransaction.initialize(
     umamiVaultIsolationModeToken.address,
     core.dolomiteMargin.address,
+  );
+
+  return [
+    implementation.address,
+    core.dolomiteMargin.address,
+    calldata.data,
   ];
 }
 

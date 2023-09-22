@@ -36,14 +36,14 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ==================== Structs ===================
     // ================================================
 
-    struct TokenAndMarketAddresses {
+    struct MarketInfoConstructorParams {
         address marketToken;
         address indexToken;
         address shortToken;
         address longToken;
     }
 
-    struct TokenAndMarketParams {
+    struct MarketInfoParams {
         address marketToken;
         address indexToken;
         uint256 indexTokenMarketId;
@@ -98,5 +98,5 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     function gmxRegistryV2() external view returns (IGmxRegistryV2);
 
-    function getMarketInfo() external view returns (TokenAndMarketParams memory);
+    function getMarketInfo() external view returns (MarketInfoParams memory);
 }

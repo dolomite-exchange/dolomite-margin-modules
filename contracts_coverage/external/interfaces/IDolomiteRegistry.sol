@@ -24,6 +24,7 @@ import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 
+
 /**
  * @title   IDolomiteRegistry
  * @author  Dolomite

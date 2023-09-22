@@ -35,6 +35,13 @@ interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 
     // ======================== Functions ========================
     // ===========================================================
 
+    function initiateUnwrappingForLiquidation(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    ) external payable;
+
     function setIsVaultFrozen(bool _isVaultFrozen) external;
 
     function isVaultFrozen() external view returns (bool);

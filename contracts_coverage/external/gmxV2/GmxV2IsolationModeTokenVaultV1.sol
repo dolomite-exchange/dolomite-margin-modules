@@ -22,15 +22,13 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
+import { GmxV2IsolationModeTokenVaultV1Library } from "./GmxV2IsolationModeTokenVaultV1Library.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
-import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
-import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
-import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
@@ -47,7 +45,10 @@ import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/ab
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the
  *          Eth-Usdc GMX Market token that can be used to credit a user's Dolomite balance.
  */
-contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, IsolationModeTokenVaultV1WithFreezableAndPausable {
+contract GmxV2IsolationModeTokenVaultV1 is
+    IGmxV2IsolationModeTokenVaultV1,
+    IsolationModeTokenVaultV1WithFreezableAndPausable
+{
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
 
@@ -62,13 +63,6 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
     bytes32 private constant _POSITION_TO_EXECUTION_FEE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.positionToExecutionFee")) - 1); // solhint-disable-line max-line-length
 
     uint256 public constant EXECUTION_FEE = 0.0005 ether;
-
-    bytes32 public constant MAX_PNL_FACTOR = keccak256(abi.encode("MAX_PNL_FACTOR"));
-    bytes32 public constant MAX_PNL_FACTOR_FOR_ADL = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_ADL"));
-    bytes32 public constant MAX_PNL_FACTOR_FOR_WITHDRAWALS = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS"));
-    uint256 public constant GMX_DECIMAL_ADJUSTMENT = 6;
-
-    IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -93,12 +87,23 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
     }
 
     // ==================================================================
-    // ======================== Public Functions ========================
+    // ====================== Immutable Variables =======================
+    // ==================================================================
+
+    IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
+
+
+    // ==================================================================
+    // ========================== Constructors ==========================
     // ==================================================================
 
     constructor(address _weth) {
         WETH = IWETH(_weth);
     }
+
+    // ==================================================================
+    // ======================== Public Functions ========================
+    // ==================================================================
 
     function openBorrowPosition(
         uint256 _fromAccountNumber,
@@ -182,7 +187,8 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
-            _minOutputAmount
+            _minOutputAmount,
+            /* _spendExecutionFee = */ false
         );
     }
 
@@ -201,7 +207,8 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
-            _minOutputAmount
+            _minOutputAmount,
+            /* _spendExecutionFee = */ true
         );
     }
 
@@ -325,57 +332,11 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
     }
 
     function isExternalRedemptionPaused() public override view returns (bool) {
-        IGmxDataStore dataStore = registry().gmxDataStore();
-        uint256 maxPnlForAdl = dataStore.getUint(_maxPnlFactorKey(MAX_PNL_FACTOR_FOR_ADL, UNDERLYING_TOKEN(), true));
-        uint256 maxPnlForWithdrawals = dataStore.getUint(
-            _maxPnlFactorKey(MAX_PNL_FACTOR_FOR_WITHDRAWALS,UNDERLYING_TOKEN(),true)
+        return GmxV2IsolationModeTokenVaultV1Library.isExternalRedemptionPaused(
+            registry(),
+            DOLOMITE_MARGIN(),
+            IGmxV2IsolationModeVaultFactory(VAULT_FACTORY())
         );
-
-        IGmxV2IsolationModeVaultFactory.TokenAndMarketParams memory info =
-            IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).getMarketInfo();
-        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        uint256 indexTokenPrice = dolomiteMargin.getMarketPrice(info.indexTokenMarketId).value;
-        uint256 shortTokenPrice = dolomiteMargin.getMarketPrice(info.shortTokenMarketId).value;
-        uint256 longTokenPrice = dolomiteMargin.getMarketPrice(info.longTokenMarketId).value;
-
-        GmxPrice.Props memory indexTokenPriceProps = GmxPrice.Props(
-            indexTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
-            indexTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
-        );
-
-        GmxPrice.Props memory longTokenPriceProps = GmxPrice.Props(
-            longTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
-            longTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
-        );
-
-        GmxPrice.Props memory shortTokenPriceProps = GmxPrice.Props(
-            shortTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT,
-            shortTokenPrice / 10 ** GMX_DECIMAL_ADJUSTMENT
-        );
-
-        GmxMarket.MarketPrices memory marketPrices = GmxMarket.MarketPrices(
-            indexTokenPriceProps,
-            longTokenPriceProps,
-            shortTokenPriceProps
-        );
-
-        int256 shortPnlToPoolFactor = registry().gmxReader().getPnlToPoolFactor(
-            dataStore,
-            UNDERLYING_TOKEN(),
-            marketPrices,
-            false,
-            true
-        );
-        int256 longPnlToPoolFactor = registry().gmxReader().getPnlToPoolFactor(
-            dataStore,
-            UNDERLYING_TOKEN(),
-            marketPrices,
-            true,
-            true
-        );
-
-        return (shortPnlToPoolFactor <= int(maxPnlForAdl) && shortPnlToPoolFactor >= int(maxPnlForWithdrawals))
-            || (longPnlToPoolFactor <= int(maxPnlForAdl) && longPnlToPoolFactor >= int(maxPnlForWithdrawals));
     }
 
     function virtualBalance() public view returns (uint256) {
@@ -423,7 +384,11 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
             _FILE,
             "Missing execution fee"
         );
-        super._transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
+        super._transferIntoPositionWithUnderlyingToken(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _amountWei
+        );
     }
 
     function _swapExactInputForOutput(
@@ -503,7 +468,8 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bool _spendExecutionFee
     ) internal {
         if (registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken),
@@ -513,6 +479,11 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
         _setIsVaultFrozen(true);
 
         uint256 ethExecutionFee = msg.value;
+        if (_spendExecutionFee) {
+            ethExecutionFee += getExecutionFeeForAccountNumber(_tradeAccountNumber);
+            _setExecutionFeeForAccountNumber(_tradeAccountNumber, 0); // reset it to 0
+        }
+
         IGmxExchangeRouter exchangeRouter = registry().gmxExchangeRouter();
         address withdrawalVault = registry().gmxWithdrawalVault();
 
@@ -584,15 +555,6 @@ contract GmxV2IsolationModeTokenVaultV1 is IGmxV2IsolationModeTokenVaultV1, Isol
             _FILE,
             "Only unwrapper if frozen"
         );
-    }
-
-    function _maxPnlFactorKey(bytes32 pnlFactorType, address market, bool isLong) internal pure returns (bytes32) {
-        return keccak256(abi.encode(
-            MAX_PNL_FACTOR,
-            pnlFactorType,
-            market,
-            isLong
-        ));
     }
 
     function _refundExecutionFeeIfNecessary(uint256 _borrowAccountNumber) private {

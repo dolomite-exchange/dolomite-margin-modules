@@ -37,13 +37,23 @@ contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeT
     // solhint-disable-next-line max-line-length
     bytes32 private constant _IS_EXTERNAL_REDEMPTION_PAUSED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isExternalRedemptionPaused")) - 1);
 
+    function initiateUnwrappingForLiquidation(
+        uint256 /* _tradeAccountNumber */,
+        uint256 /* _inputAmount */,
+        address /* _outputToken */,
+        uint256 /* _minOutputAmount */
+    ) external payable {
+        _setIsVaultFrozen(true);
+        // TODO; set anything else needed for testing
+    }
+
     function setIsExternalRedemptionPaused(bool _newIsExternalRedemptionPaused) public {
         _setUint256(_IS_EXTERNAL_REDEMPTION_PAUSED_SLOT, _newIsExternalRedemptionPaused ? 1 : 0);
     }
 
     function dolomiteRegistry()
         public
-        override(IsolationModeTokenVaultV1)
+        override
         view
         returns (IDolomiteRegistry)
     {

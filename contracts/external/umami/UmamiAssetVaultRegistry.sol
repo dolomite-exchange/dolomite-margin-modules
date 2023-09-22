@@ -22,11 +22,12 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
+import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
 import { IUmamiAssetVaultStorageViewer } from "../interfaces/umami/IUmamiAssetVaultStorageViewer.sol";
-import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol";
 import { IUmamiWithdrawalQueuer } from "../interfaces/umami/IUmamiWithdrawalQueuer.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
+
 
 /**
  * @title   UmamiAssetVaultRegistry
@@ -43,8 +44,8 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
 
     bytes32 private constant _FILE = "UmamiAssetVaultRegistry";
     bytes32 private constant _STORAGE_VIEWER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.storageViewer")) - 1);
-    bytes32 private constant _WITHDRAWAL_QUEUER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalQueuer")) - 1);
-    bytes32 private constant _UMAMI_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.umamiUnwrapperTrader")) - 1);
+    bytes32 private constant _WITHDRAWAL_QUEUER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalQueuer")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _UMAMI_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.umamiUnwrapperTrader")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Initializer ====================
 
@@ -125,6 +126,8 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
             _FILE,
             "Invalid storageViewer address"
         );
+        // @follow-up Do we want some kind of callAndCheckSuccess here?
+        // Can't see live contract right now
 
         _setAddress(_WITHDRAWAL_QUEUER_SLOT, _withdrawalQueuer);
         emit WithdrawalQueuerSet(_withdrawalQueuer);

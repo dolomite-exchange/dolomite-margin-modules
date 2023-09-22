@@ -113,7 +113,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
 
     function _getCurrentPrice(address _token) internal view returns (uint256) {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(_token);
-        IGmxV2IsolationModeVaultFactory.TokenAndMarketParams memory info = factory.getMarketInfo();
+        IGmxV2IsolationModeVaultFactory.MarketInfoParams memory info = factory.getMarketInfo();
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         uint256 indexTokenPrice = dolomiteMargin.getMarketPrice(info.indexTokenMarketId).value;

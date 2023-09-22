@@ -4,6 +4,7 @@ import { BigNumber } from 'ethers';
 import {
   IGmxRegistryV1,
   IUmamiAssetVault,
+  TestUmamiWithdrawalQueuer__factory,
   UmamiAssetVaultIsolationModeTokenVaultV1,
   UmamiAssetVaultIsolationModeTokenVaultV1__factory,
   UmamiAssetVaultIsolationModeUnwrapperTraderV2,
@@ -13,9 +14,9 @@ import {
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { expectEvent, expectProtocolBalance, expectThrow } from '../../utils/assertions';
 import {
   createUmamiAssetVaultIsolationModeTokenVaultV1,
   createUmamiAssetVaultIsolationModeUnwrapperTraderV2,
@@ -34,8 +35,11 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { setupWhitelistAndAggregateVault } from './umami-utils';
+import { createContractWithAbi } from 'src/utils/dolomite-utils';
+import { defaultAbiCoder } from '@ethersproject/abi';
 
 const defaultAccountNumber = '0';
+const borrowAccountNumber = '123';
 const amountWei = BigNumber.from('200000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const usdcAmount = amountWei.mul(8);
@@ -43,6 +47,7 @@ const usableUsdcAmount = usdcAmount.div(2);
 
 const withdrawalFeeNumerator = BigNumber.from('750000000000000000');
 const withdrawalFeeDenominator = BigNumber.from('100000000000000000000');
+const DUMMY_KEY = '0x9e2ef28b28a4b61d21c05647c2c54527def0400f13c327446d11c777f5eabcde';
 
 describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
@@ -78,11 +83,23 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
     wrapper = await createUmamiAssetVaultIsolationModeWrapperTraderV2(core, umamiRegistry, factory);
     priceOracle = await createUmamiAssetVaultPriceOracle(core, umamiRegistry, factory);
 
+    const TestUmamiWithdrawalQueuer = await createContractWithAbi(
+      TestUmamiWithdrawalQueuer__factory.abi,
+      TestUmamiWithdrawalQueuer__factory.bytecode,
+      []
+    );
+    await umamiRegistry.connect(core.governance).ownerSetWithdrawalQueuer(TestUmamiWithdrawalQueuer.address);
+    await umamiRegistry.connect(core.governance).ownerSetUmamiUnwrapperTrader(unwrapper.address);
+    await unwrapper.connect(core.governance).ownerSetIsHandler(core.hhUser2.address, true);
+
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
+    await factory.connect(core.governance).ownerSetAllowableCollateralMarketIds(
+      [underlyingMarketId, core.marketIds.usdc]
+    );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
     await disableInterestAccrual(core, core.marketIds.usdc);
 
@@ -114,42 +131,183 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('Actions.Call and Actions.Sell for non-liquidation', () => {
-    it('should work when called with the normal conditions', async () => {
-      const solidAccountId = 0;
-      const liquidAccountId = 0;
-      const actions = await unwrapper.createActionsForUnwrapping(
-        solidAccountId,
-        liquidAccountId,
-        vault.address,
-        vault.address,
-        core.marketIds.usdc,
-        underlyingMarketId,
-        ZERO_BI,
-        amountWei,
-        BYTES_EMPTY,
-      );
+  describe('#initializer', () => {
+    it('should work normally', async () => {
+      expect(await unwrapper.VAULT_FACTORY()).to.eq(factory.address);
+    });
 
-      const amountOut = await unwrapper.getExchangeCost(
-        factory.address,
+    it('should not initialize twice', async () => {
+      await expectThrow(
+        unwrapper.initialize(
+          factory.address,
+          core.dolomiteMargin.address,
+        ),
+        'Initializable: contract is already initialized',
+      );
+    });
+  });
+
+  describe('#afterWithdrawalExecution', () => {
+    it('should work normally', async () => {
+      await vault.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+      await vault.connect(core.hhUser1).initiateUnwrapping(
+        borrowAccountNumber,
+        amountWei,
         core.tokens.usdc.address,
-        amountWei,
-        BYTES_EMPTY,
+        ONE_BI
       );
 
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      expect(await vault.isVaultFrozen()).to.be.true;
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expectProtocolBalance(core, vault.address, borrowAccountNumber, underlyingMarketId, amountWei);
+
+      const impersonatedUnwrapper = await impersonate(unwrapper.address, true);
+      await setupUSDCBalance(core, impersonatedUnwrapper, 100e6, core.hhUser5);
+      await unwrapper.connect(core.hhUser2).afterWithdrawalExecution(withdrawalKey, 100e6);
+
+      expect(await vault.isVaultFrozen()).to.be.false;
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expectProtocolBalance(core, vault.address, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+      expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.usdc, 100e6);
+    });
+
+    it('should fail if given an invalid key', async () => {
+      await expectThrow(
+        unwrapper.connect(core.hhUser2).afterWithdrawalExecution(DUMMY_KEY, 100e6),
+        'UmamiAssetVaultUnwrapperV2: Invalid withdrawal key',
+      );
+    });
+
+    it('should fail if not called by handler', async () => {
+      await expectThrow(
+        unwrapper.connect(core.hhUser1).afterWithdrawalExecution(DUMMY_KEY, 100e6),
+        `UmamiAssetVaultUnwrapperV2: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#callFunction', () => {
+    it('should fail if account owner is not a vault', async () => {
+      const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await core.dolomiteMargin.connect(core.hhUser5).operate(
-        [defaultAccount],
-        actions,
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginCaller).callFunction(
+          core.hhUser5.address,
+          { owner: core.hhUser2.address, number: defaultAccountNumber },
+          defaultAbiCoder.encode(['uint256', 'bytes32'], [amountWei, DUMMY_KEY]),
+        ),
+        `UmamiAssetVaultUnwrapperV2: Account owner is not a vault <${core.hhUser2.address.toLowerCase()}>`,
       );
+    });
 
-      const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
-      expect(underlyingBalanceWei.value).to.eq(ZERO_BI);
-      expect(await vault.underlyingBalanceOf()).to.eq(ZERO_BI);
+    it('should fail if invalid account owner (withdrawal does not exist)', async () => {
+      const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginCaller).callFunction(
+          core.hhUser5.address,
+          { owner: vault.address, number: defaultAccountNumber },
+          defaultAbiCoder.encode(['uint256', 'bytes32'], [ZERO_BI, DUMMY_KEY]),
+        ),
+        'UmamiAssetVaultUnwrapperV2: Invalid account owner',
+      );
+    });
 
-      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, core.marketIds.usdc);
-      expect(otherBalanceWei.sign).to.eq(true);
-      expect(otherBalanceWei.value).to.eq(amountOut);
+    it('should fail if transfer amount is zero', async () => {
+      await vault.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+      await vault.connect(core.hhUser1).initiateUnwrapping(
+        borrowAccountNumber,
+        amountWei,
+        core.tokens.usdc.address,
+        ONE_BI
+      );
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginCaller).callFunction(
+          core.hhUser5.address,
+          { owner: vault.address, number: defaultAccountNumber },
+          defaultAbiCoder.encode(['uint256', 'bytes32'], [ZERO_BI, withdrawalKey]),
+        ),
+        'UmamiAssetVaultUnwrapperV2: Invalid transfer amount',
+      );
+    });
+
+    it('should fail if virtual underlying balance is insufficient', async () => {
+      await vault.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+      await vault.connect(core.hhUser1).initiateUnwrapping(
+        borrowAccountNumber,
+        amountWei,
+        core.tokens.usdc.address,
+        ONE_BI
+      );
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginCaller).callFunction(
+          core.hhUser5.address,
+          { owner: vault.address, number: defaultAccountNumber },
+          defaultAbiCoder.encode(['uint256', 'bytes32'], [amountWei.mul(2), withdrawalKey]),
+        ),
+        `UmamiAssetVaultUnwrapperV2: Insufficient balance <${amountWei.toString()}, ${amountWei.mul(2).toString()}>`,
+      );
+    });
+  });
+
+  describe('#vaultSetWithdrawalInfo', () => {
+    it('should fail if not called by vault', async () => {
+      await expectThrow(
+        unwrapper.connect(core.hhUser1).vaultSetWithdrawalInfo(
+          DUMMY_KEY,
+          defaultAccountNumber,
+          amountWei,
+          core.tokens.weth.address,
+        ),
+        'UmamiAssetVaultUnwrapperV2: Invalid vault',
+      );
+    });
+  });
+
+  describe('#ownerSetIsHandler', () => {
+    it('should work normally', async () => {
+      const result = await unwrapper.connect(core.governance).ownerSetIsHandler(
+        core.hhUser4.address,
+        true,
+      );
+      await expectEvent(unwrapper, result, 'OwnerSetIsHandler', {
+        handler: core.hhUser4.address,
+        isTrusted: true,
+      });
+
+      expect(await unwrapper.isHandler(core.hhUser4.address)).to.eq(true);
+    });
+
+    it('should failed if not called by dolomite owner', async () => {
+      await expectThrow(
+        unwrapper.connect(core.hhUser1).ownerSetIsHandler(core.hhUser4.address, true),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
     });
   });
 
@@ -179,7 +337,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
+        `UmamiAssetVaultUnwrapperV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -195,7 +353,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
           amountWei,
           encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
-        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
+        `UmamiAssetVaultUnwrapperV2: Invalid output token <${core.tokens.dfsGlp!.address.toLowerCase()}>`,
       );
     });
 
@@ -211,7 +369,149 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
           ZERO_BI,
           encodeExternalSellActionDataWithNoData(otherAmountWei),
         ),
-        'IsolationModeUnwrapperTraderV2: Invalid input amount',
+        'UmamiAssetVaultUnwrapperV2: Invalid input amount',
+      );
+    });
+
+    it('should fail if input amount is more than withdrawal input amount', async () => {
+      await vault.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+      await vault.connect(core.hhUser1).initiateUnwrapping(
+        borrowAccountNumber,
+        ONE_BI,
+        core.tokens.usdc.address,
+        ONE_BI
+      );
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          vault.address,
+          core.dolomiteMargin.address,
+          core.tokens.usdc.address,
+          factory.address,
+          amountWei,
+          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, defaultAbiCoder.encode(['bytes32'], [withdrawalKey])]),
+        ),
+        'UmamiAssetVaultUnwrapperV2: Invalid input amount',
+      );
+    });
+
+    it('should fail if withdrawal output token does not match output token', async () => {
+      await vault.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+      await vault.connect(core.hhUser1).initiateUnwrapping(
+        borrowAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
+        ONE_BI
+      );
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          vault.address,
+          core.dolomiteMargin.address,
+          core.tokens.usdc.address,
+          factory.address,
+          amountWei,
+          defaultAbiCoder.encode(['uint256', 'bytes'], [ONE_BI, defaultAbiCoder.encode(['bytes32'], [withdrawalKey])]),
+        ),
+        'UmamiAssetVaultUnwrapperV2: Invalid output token',
+      );
+    });
+  });
+
+  describe('#createActionsForUnwrapping', () => {
+    it('should fail if invalid input token is passed', async () => {
+      await expectThrow(
+        unwrapper.createActionsForUnwrapping(
+          0,
+          0,
+          solidUser.address,
+          core.hhUser1.address,
+          core.marketIds.usdc,
+          core.marketIds.weth,
+          otherAmountWei,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `UmamiAssetVaultUnwrapperV2: Invalid input market <${core.marketIds.weth.toString()}>`,
+      );
+    });
+
+    it('should fail if invalid output token is passed', async () => {
+      await expectThrow(
+        unwrapper.createActionsForUnwrapping(
+          0,
+          0,
+          solidUser.address,
+          core.hhUser1.address,
+          core.marketIds.weth,
+          underlyingMarketId,
+          otherAmountWei,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `UmamiAssetVaultUnwrapperV2: Invalid output market <${core.marketIds.weth.toString()}>`,
+      );
+    });
+
+    it('should fail if invalid withdrawal key is passed', async () => {
+      await expectThrow(
+        unwrapper.createActionsForUnwrapping(
+          0,
+          0,
+          solidUser.address,
+          core.hhUser1.address,
+          core.marketIds.usdc,
+          underlyingMarketId,
+          otherAmountWei,
+          amountWei,
+          DUMMY_KEY,
+        ),
+        'UmamiAssetVaultUnwrapperV2: Invalid withdrawal',
+      );
+    });
+
+    it('should fail if invalid input amount is passed', async () => {
+      await vault.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+      await vault.connect(core.hhUser1).initiateUnwrapping(
+        borrowAccountNumber,
+        amountWei,
+        core.tokens.usdc.address,
+        ONE_BI
+      );
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      await expectThrow(
+        unwrapper.createActionsForUnwrapping(
+          0,
+          0,
+          solidUser.address,
+          core.hhUser1.address,
+          core.marketIds.usdc,
+          underlyingMarketId,
+          otherAmountWei,
+          amountWei.mul(2),
+          withdrawalKey,
+        ),
+        'UmamiAssetVaultUnwrapperV2: Invalid input amount',
       );
     });
   });
@@ -219,6 +519,12 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
   describe('#token', () => {
     it('should work', async () => {
       expect(await unwrapper.token()).to.eq(factory.address);
+    });
+  });
+
+  describe('#isValidOutputToken', () => {
+    it('should work', async () => {
+
     });
   });
 
