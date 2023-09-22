@@ -213,7 +213,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             _accountInfo.owner
         );
 
-        (uint256 accountNumber, uint256 executionFee) = abi.decode(_data, (uint256, uint256));
+        (uint256 accountNumber,) = abi.decode(_data, (uint256, uint256));
         Require.that(
             accountNumber == _accountInfo.number,
             _FILE,

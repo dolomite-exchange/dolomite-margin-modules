@@ -36,7 +36,6 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
-import { console } from "hardhat/console.sol";
 
 
 /**
@@ -487,7 +486,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         uint256 ethExecutionFee = msg.value;
         if (_spendExecutionFee) {
             ethExecutionFee += getExecutionFeeForAccountNumber(_tradeAccountNumber);
-            _setExecutionFeeForAccountNumber(_tradeAccountNumber, 0); // reset it to 0
+            _setExecutionFeeForAccountNumber(_tradeAccountNumber, /* _executionFee = */ 0); // reset it to 0
         }
 
         IGmxExchangeRouter exchangeRouter = registry().gmxExchangeRouter();

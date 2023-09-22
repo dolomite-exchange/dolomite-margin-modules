@@ -232,8 +232,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: parseEther('.01') },
       );
 
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -247,7 +247,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         BalanceCheckFlag.Both,
       );
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
