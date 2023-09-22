@@ -93,6 +93,32 @@ describe('UmamiAssetVaultRegistry', () => {
     });
   });
 
+  describe('#ownerSetUmamiUnwrapperTrader', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetUmamiUnwrapperTrader(
+        unwrapper.address
+      );
+      await expectEvent(registry, result, 'UmamiUnwrapperTraderSet', {
+        umamiUnwrapperTrader: unwrapper.address
+      });
+      expect(await registry.umamiUnwrapperTrader()).to.equal(unwrapper.address);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetUmamiUnwrapperTrader(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetUmamiUnwrapperTrader(ZERO_ADDRESS),
+        'UmamiAssetVaultRegistry: Invalid unwrapperTrader address',
+      );
+    });
+  });
+
   describe('#ownerSetWithdrawalQueuer', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetWithdrawalQueuer(
@@ -121,7 +147,7 @@ describe('UmamiAssetVaultRegistry', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetWithdrawalQueuer(ZERO_ADDRESS),
-        'UmamiAssetVaultRegistry: Invalid storageViewer address',
+        'UmamiAssetVaultRegistry: Invalid withdrawalQueuer address',
       );
     });
   });

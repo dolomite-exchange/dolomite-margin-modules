@@ -247,6 +247,33 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
       );
     });
 
+    it('should fail if transfer amount is greater than withdrawal amount', async () => {
+      await vault.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+      await vault.connect(core.hhUser1).initiateUnwrapping(
+        borrowAccountNumber,
+        amountWei,
+        core.tokens.usdc.address,
+        ONE_BI
+      );
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginCaller).callFunction(
+          core.hhUser5.address,
+          { owner: vault.address, number: defaultAccountNumber },
+          defaultAbiCoder.encode(['uint256', 'bytes32'], [amountWei.add(1), withdrawalKey]),
+        ),
+        'UmamiAssetVaultUnwrapperV2: Invalid transfer amount',
+      );
+    });
+
     it('should fail if virtual underlying balance is insufficient', async () => {
       await vault.transferIntoPositionWithUnderlyingToken(
         defaultAccountNumber,

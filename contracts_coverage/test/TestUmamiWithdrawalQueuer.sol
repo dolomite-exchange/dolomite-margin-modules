@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IUmamiWithdrawalQueuer } from "../external/interfaces/umami/IUmamiWithdrawalQueuer.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IUmamiWithdrawalQueuer } from "../external/interfaces/umami/IUmamiWithdrawalQueuer.sol";
 
 /**
  * @title   TestUmamiWithdrawalQueuer

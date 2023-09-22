@@ -20,22 +20,19 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IUmamiAssetVault } from "../interfaces/umami/IUmamiAssetVault.sol";
 import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
-import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
-import { Require } from "../../protocol/lib/Require.sol";
 
 
 /**
@@ -105,6 +102,7 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         );
     }
 
+    // @follow-up Should this be requireNotFrozen
     function initiateUnwrappingForLiquidation(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
@@ -230,6 +228,7 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         _setIsVaultFrozen(true);
 
         // @follow-up Should we add some checks for the _outputToken to make sure user doens't DOS
+        // @follow-up Do we want to queueRedeem immediate?
         address underlyingToken = IUmamiAssetVaultIsolationModeVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN();
         IERC20(underlyingToken).safeApprove(address(registry().withdrawalQueuer()), _inputAmount);
         bytes32 key = registry().withdrawalQueuer().queueRedeem(underlyingToken, _inputAmount);
@@ -239,6 +238,7 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         );
     }
 
+    // @follow-up This might be adjusted based on Corey's changes to the FreezableAndPausable
     function _swapExactInputForOutput(
         uint256 _tradeAccountNumber,
         uint256[] calldata _marketIdsPath,

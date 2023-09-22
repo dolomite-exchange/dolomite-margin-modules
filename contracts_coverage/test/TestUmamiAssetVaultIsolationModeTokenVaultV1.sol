@@ -21,8 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { UmamiAssetVaultIsolationModeTokenVaultV1 } from "../external/umami/UmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IGenericTraderProxyV1 } from "../external/interfaces/IGenericTraderProxyV1.sol";
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**

@@ -22,20 +22,20 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IERC4626 } from "../interfaces/IERC4626.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
-import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeUnwrapperTrader } from "../interfaces/IIsolationModeUnwrapperTrader.sol";
+import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IIsolationModeUnwrapperTrader } from "../interfaces/IIsolationModeUnwrapperTrader.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -263,6 +263,7 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
 
+        // @follow-up GMX has 2 extra actions sometimes. I don't think we need it but want to confirm
         // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
         // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
         actions[0] = AccountActionLib.encodeCallAction(
@@ -315,6 +316,8 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
     internal
     override
     returns (uint256) {
+        // We don't need to validate _tradeOriginator here because it is validated in _callFunction via the transfer
+        // being enqueued (without it being enqueued, we'd never reach this point)
         (bytes32 key) = abi.decode(_extraOrderData, (bytes32));
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
         if (withdrawalInfo.inputAmount >= _inputAmount) { /* FOR COVERAGE TESTING */ }
@@ -327,6 +330,8 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
             _FILE,
             "Invalid output token"
         );
+
+        // @follow-up We never set outputAmount. Should I get rid of this?
         //     withdrawalInfo.outputAmount >= _minOutputAmount,
         //     _FILE,
         //     "Invalid output amount"

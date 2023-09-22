@@ -263,6 +263,7 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
 
+        // @follow-up GMX has 2 extra actions sometimes. I don't think we need it but want to confirm
         // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
         // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
         actions[0] = AccountActionLib.encodeCallAction(
@@ -315,6 +316,8 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
     internal
     override
     returns (uint256) {
+        // We don't need to validate _tradeOriginator here because it is validated in _callFunction via the transfer
+        // being enqueued (without it being enqueued, we'd never reach this point)
         (bytes32 key) = abi.decode(_extraOrderData, (bytes32));
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
         Require.that(
@@ -327,6 +330,8 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
             _FILE,
             "Invalid output token"
         );
+
+        // @follow-up We never set outputAmount. Should I get rid of this?
         //     withdrawalInfo.outputAmount >= _minOutputAmount,
         //     _FILE,
         //     "Invalid output amount"
@@ -368,7 +373,7 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
             "Invalid account owner"
         );
         Require.that(
-            transferAmount > 0,
+            transferAmount > 0 && transferAmount <= withdrawalInfo.inputAmount,
             _FILE,
             "Invalid transfer amount"
         );

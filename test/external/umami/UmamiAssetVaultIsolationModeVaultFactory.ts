@@ -11,7 +11,7 @@ import {
 } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
 import {
   createUmamiAssetVaultIsolationModeUnwrapperTraderV2,
@@ -20,9 +20,12 @@ import {
   createUmamiAssetVaultPriceOracle,
   createUmamiAssetVaultRegistry,
 } from '../../utils/ecosystem-token-utils/umami';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../utils/setup';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 const underlyingMarketIds: BigNumber[] = [];
+const vaults: UmamiAssetVaultIsolationModeTokenVaultV1[] = [];
+const impersonatedWrappers: SignerWithAddress[] = [];
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
@@ -62,12 +65,22 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
       const factory = factories[i];
       const unwrapper = await createUmamiAssetVaultIsolationModeUnwrapperTraderV2(core, umamiRegistry, factory);
       const wrapper = await createUmamiAssetVaultIsolationModeWrapperTraderV2(core, umamiRegistry, factory);
+      impersonatedWrappers.push(await impersonate(wrapper.address, true));
       const priceOracle = await createUmamiAssetVaultPriceOracle(core, umamiRegistry, factory);
 
       underlyingMarketIds.push(await core.dolomiteMargin.getNumMarkets());
       await setupTestMarket(core, factory, true, priceOracle);
 
       await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
+      await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+
+      await factory.createVault(core.hhUser1.address);
+      const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
+      vaults.push(setupUserVaultProxy<UmamiAssetVaultIsolationModeTokenVaultV1>(
+        vaultAddress,
+        UmamiAssetVaultIsolationModeTokenVaultV1__factory,
+        core.hhUser1
+      ));
     }
 
     snapshotId = await snapshot();
@@ -105,6 +118,62 @@ describe('UmamiAssetVaultIsolationModeVaultFactory', () => {
         await expectThrow(
           factories[i].connect(core.hhUser1).ownerSetUmamiAssetVaultRegistry(OTHER_ADDRESS),
           `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+        );
+      }
+    });
+  });
+
+  describe('#setIsVaultFrozen', () => {
+    it('should work normally', async () => {
+      for (let i = 0; i < factories.length; i++) {
+        expect(await vaults[i].isVaultFrozen()).to.eq(false);
+        await factories[i].connect(impersonatedWrappers[i]).setIsVaultFrozen(vaults[i].address, true);
+        expect(await vaults[i].isVaultFrozen()).to.eq(true);
+      }
+    });
+
+    it('should fail if not token converter', async () => {
+      for (let i = 0; i < factories.length; i++) {
+        await expectThrow(
+          factories[i].connect(core.hhUser1).setIsVaultFrozen(vaults[i].address, true),
+          `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
+        );
+      }
+    });
+
+    it('should fail if invalid vault', async () => {
+      for (let i = 0; i < factories.length; i++) {
+        await expectThrow(
+          factories[i].connect(impersonatedWrappers[i]).setIsVaultFrozen(core.hhUser1.address, false),
+          `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
+        );
+      }
+    });
+  });
+
+  describe('#setShouldSkipTransfer', () => {
+    it('should work normally', async () => {
+      for (let i = 0; i < factories.length; i++) {
+        expect(await vaults[i].isShouldSkipTransfer()).to.eq(false);
+        await factories[i].connect(impersonatedWrappers[i]).setShouldSkipTransfer(vaults[i].address, true);
+        expect(await vaults[i].isShouldSkipTransfer()).to.eq(true);
+      }
+    });
+
+    it('should fail if not token converter', async () => {
+      for (let i = 0; i < factories.length; i++) {
+        await expectThrow(
+          factories[i].connect(core.hhUser1).setShouldSkipTransfer(vaults[i].address, true),
+          `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
+        );
+      }
+    });
+
+    it('should fail if invalid vault', async () => {
+      for (let i = 0; i < factories.length; i++) {
+        await expectThrow(
+          factories[i].connect(impersonatedWrappers[i]).setShouldSkipTransfer(core.hhUser1.address, false),
+          `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
         );
       }
     });

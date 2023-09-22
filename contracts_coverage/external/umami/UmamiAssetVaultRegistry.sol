@@ -22,11 +22,12 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
+import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
 import { IUmamiAssetVaultStorageViewer } from "../interfaces/umami/IUmamiAssetVaultStorageViewer.sol";
-import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IUmamiWithdrawalQueuer } from "../interfaces/umami/IUmamiWithdrawalQueuer.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
+
 
 /**
  * @title   UmamiAssetVaultRegistry
@@ -68,14 +69,6 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         _ownerSetStorageViewer(_storageViewer);
     }
 
-    function ownerSetWithdrawalQueuer(
-        address _withdrawalQueuer
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetWithdrawalQueuer(_withdrawalQueuer);
-    }
-
     function ownerSetUmamiUnwrapperTrader(
         address _gmxV2UnwrapperTrader
     )
@@ -84,17 +77,24 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         _ownerSetUmamiUnwrapperTrader(_gmxV2UnwrapperTrader);
     }
 
+    function ownerSetWithdrawalQueuer(
+        address _withdrawalQueuer
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetWithdrawalQueuer(_withdrawalQueuer);
+    }
 
     function storageViewer() external view returns (IUmamiAssetVaultStorageViewer) {
         return IUmamiAssetVaultStorageViewer(_getAddress(_STORAGE_VIEWER_SLOT));
     }
 
-    function withdrawalQueuer() external view returns (IUmamiWithdrawalQueuer) {
-        return IUmamiWithdrawalQueuer(_getAddress(_WITHDRAWAL_QUEUER_SLOT));
-    }
-
     function umamiUnwrapperTrader() external view returns (IUmamiAssetVaultIsolationModeUnwrapperTraderV2) {
         return IUmamiAssetVaultIsolationModeUnwrapperTraderV2(_getAddress(_UMAMI_UNWRAPPER_TRADER_SLOT));
+    }
+
+    function withdrawalQueuer() external view returns (IUmamiWithdrawalQueuer) {
+        return IUmamiWithdrawalQueuer(_getAddress(_WITHDRAWAL_QUEUER_SLOT));
     }
 
     // ============================================================
@@ -119,24 +119,26 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         emit StorageViewerSet(_storageViewer);
     }
 
-    function _ownerSetWithdrawalQueuer(address _withdrawalQueuer) internal {
-        if (_withdrawalQueuer != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_withdrawalQueuer != address(0),
-            _FILE,
-            "Invalid storageViewer address"
-        );
-
-        _setAddress(_WITHDRAWAL_QUEUER_SLOT, _withdrawalQueuer);
-        emit WithdrawalQueuerSet(_withdrawalQueuer);
-    }
-
     function _ownerSetUmamiUnwrapperTrader(address _umamiUnwrapperTrader) internal {
         if (_umamiUnwrapperTrader != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(_umamiUnwrapperTrader != address(0),
             _FILE,
-            "Invalid address"
+            "Invalid unwrapperTrader address"
         );
         _setAddress(_UMAMI_UNWRAPPER_TRADER_SLOT, _umamiUnwrapperTrader);
         emit UmamiUnwrapperTraderSet(_umamiUnwrapperTrader);
+    }
+
+    function _ownerSetWithdrawalQueuer(address _withdrawalQueuer) internal {
+        if (_withdrawalQueuer != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(_withdrawalQueuer != address(0),
+            _FILE,
+            "Invalid withdrawalQueuer address"
+        );
+        // @follow-up Do we want some kind of callAndCheckSuccess here?
+        // Can't see live contract right now
+
+        _setAddress(_WITHDRAWAL_QUEUER_SLOT, _withdrawalQueuer);
+        emit WithdrawalQueuerSet(_withdrawalQueuer);
     }
 }

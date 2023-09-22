@@ -69,14 +69,6 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         _ownerSetStorageViewer(_storageViewer);
     }
 
-    function ownerSetWithdrawalQueuer(
-        address _withdrawalQueuer
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetWithdrawalQueuer(_withdrawalQueuer);
-    }
-
     function ownerSetUmamiUnwrapperTrader(
         address _gmxV2UnwrapperTrader
     )
@@ -85,17 +77,24 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         _ownerSetUmamiUnwrapperTrader(_gmxV2UnwrapperTrader);
     }
 
+    function ownerSetWithdrawalQueuer(
+        address _withdrawalQueuer
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetWithdrawalQueuer(_withdrawalQueuer);
+    }
 
     function storageViewer() external view returns (IUmamiAssetVaultStorageViewer) {
         return IUmamiAssetVaultStorageViewer(_getAddress(_STORAGE_VIEWER_SLOT));
     }
 
-    function withdrawalQueuer() external view returns (IUmamiWithdrawalQueuer) {
-        return IUmamiWithdrawalQueuer(_getAddress(_WITHDRAWAL_QUEUER_SLOT));
-    }
-
     function umamiUnwrapperTrader() external view returns (IUmamiAssetVaultIsolationModeUnwrapperTraderV2) {
         return IUmamiAssetVaultIsolationModeUnwrapperTraderV2(_getAddress(_UMAMI_UNWRAPPER_TRADER_SLOT));
+    }
+
+    function withdrawalQueuer() external view returns (IUmamiWithdrawalQueuer) {
+        return IUmamiWithdrawalQueuer(_getAddress(_WITHDRAWAL_QUEUER_SLOT));
     }
 
     // ============================================================
@@ -120,26 +119,26 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         emit StorageViewerSet(_storageViewer);
     }
 
+    function _ownerSetUmamiUnwrapperTrader(address _umamiUnwrapperTrader) internal {
+        Require.that(
+            _umamiUnwrapperTrader != address(0),
+            _FILE,
+            "Invalid unwrapperTrader address"
+        );
+        _setAddress(_UMAMI_UNWRAPPER_TRADER_SLOT, _umamiUnwrapperTrader);
+        emit UmamiUnwrapperTraderSet(_umamiUnwrapperTrader);
+    }
+
     function _ownerSetWithdrawalQueuer(address _withdrawalQueuer) internal {
         Require.that(
             _withdrawalQueuer != address(0),
             _FILE,
-            "Invalid storageViewer address"
+            "Invalid withdrawalQueuer address"
         );
         // @follow-up Do we want some kind of callAndCheckSuccess here?
         // Can't see live contract right now
 
         _setAddress(_WITHDRAWAL_QUEUER_SLOT, _withdrawalQueuer);
         emit WithdrawalQueuerSet(_withdrawalQueuer);
-    }
-
-    function _ownerSetUmamiUnwrapperTrader(address _umamiUnwrapperTrader) internal {
-        Require.that(
-            _umamiUnwrapperTrader != address(0),
-            _FILE,
-            "Invalid address"
-        );
-        _setAddress(_UMAMI_UNWRAPPER_TRADER_SLOT, _umamiUnwrapperTrader);
-        emit UmamiUnwrapperTraderSet(_umamiUnwrapperTrader);
     }
 }

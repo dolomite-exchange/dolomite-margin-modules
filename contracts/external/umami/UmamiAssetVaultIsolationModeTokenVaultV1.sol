@@ -228,6 +228,7 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         _setIsVaultFrozen(true);
 
         // @follow-up Should we add some checks for the _outputToken to make sure user doens't DOS
+        // @follow-up Do we want to queueRedeem immediate?
         address underlyingToken = IUmamiAssetVaultIsolationModeVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN();
         IERC20(underlyingToken).safeApprove(address(registry().withdrawalQueuer()), _inputAmount);
         bytes32 key = registry().withdrawalQueuer().queueRedeem(underlyingToken, _inputAmount);
