@@ -57,7 +57,7 @@ interface IGmxRegistryV2 is IBaseRegistry {
     event GmxV2UnwrapperTraderSet(address _gmxV2UnwrapperTrader);
     event GmxV2WrapperTraderSet(address _gmxV2WrapperTrader);
 
-    event VaultWaitingForCallbackSet(address _vault, uint256 _accountNumber, bool _isWaiting);
+    event AccountWaitingForCallbackSet(address _vault, uint256 _accountNumber, bool _isWaiting);
 
     // ===================================================
     // ==================== Functions ====================
@@ -90,7 +90,7 @@ interface IGmxRegistryV2 is IBaseRegistry {
 
     function ownerSetGmxV2WrapperTrader(address _gmxV2UnwrapperTrader) external;
 
-    function setIsVaultWaitingForCallback(
+    function setIsAccountWaitingForCallback(
         address _vault,
         uint256 _accountNumber,
         bool _isWaiting
@@ -118,7 +118,7 @@ interface IGmxRegistryV2 is IBaseRegistry {
 
     function gmxV2WrapperTrader() external view returns (IGmxV2IsolationModeWrapperTraderV2);
 
-    function isVaultWaitingForCallback(
+    function isAccountWaitingForCallback(
         address _vault,
         uint256 _accountNumber
     ) external view returns (bool);

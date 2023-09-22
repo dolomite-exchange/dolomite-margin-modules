@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginCallee } from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
@@ -66,13 +67,15 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // ============ Initializer ============
 
     function initialize(
+        address _dGM,
+        address _dolomiteMargin,
         address _gmxRegistryV2,
         address _weth,
-        address _dGM,
-        address _dolomiteMargin
+        uint256 _callbackGasLimit,
+        uint256 _slippageMinimum
     ) external initializer {
         _initializeWrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxRegistryV2, _weth);
+        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit, _slippageMinimum);
     }
 
     // ============================================
@@ -132,7 +135,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         } else {
             // We just need to blind transfer the min amount to the vault
             underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
-            factory.setIsVaultFrozen(depositInfo.vault, false);
+            factory.setIsVaultFrozen(depositInfo.vault, /* _isVaultFrozen = */ false);
             _setDepositInfo(_key, _emptyDepositInfo());
             emit DepositExecuted(_key);
         }
@@ -210,11 +213,13 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             _accountInfo.owner
         );
 
-        (uint256 accountNumber,) = abi.decode(_data, (uint256, uint256));
+        (uint256 accountNumber, uint256 executionFee) = abi.decode(_data, (uint256, uint256));
         Require.that(
             accountNumber == _accountInfo.number,
             _FILE,
-            "Account numbers do not match"
+            "Account numbers do not match",
+            accountNumber,
+            _accountInfo.number
         );
     }
 
@@ -254,8 +259,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             _inputAmount,
             _orderData
         );
-        assert(superActions.length == 1); // panic if the number of actions is not 1
-        assert(superActions[0].actionType == IDolomiteStructs.ActionType.Sell); // panic if the Action is not `Sell`
+        // panic if the number of actions is not 1 and if the action is not a Sell action
+        assert(superActions.length == 1 && superActions[0].actionType == IDolomiteStructs.ActionType.Sell);
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
         actions[0] = AccountActionLib.encodeCallAction(_primaryAccountId, /* _callee = */ address(this), _orderData);
@@ -285,7 +290,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         (uint256 accountNumber, uint256 ethExecutionFee) = abi.decode(_extraOrderData, (uint256, uint256));
 
         // Disallow the withdrawal if there's already an action waiting for it
-        _checkVaultIsNotActive(_tradeOriginator, accountNumber);
+        GmxV2Library.checkVaultIsNotActive(GMX_REGISTRY_V2(), _tradeOriginator, accountNumber);
 
         address tradeOriginatorForStackTooDeep = _tradeOriginator;
         IGmxExchangeRouter exchangeRouter = GMX_REGISTRY_V2().gmxExchangeRouter();
@@ -327,11 +332,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultFrozen(
             tradeOriginatorForStackTooDeep,
-            true
+            /* _isVaultFrozen = */ true
         );
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setShouldSkipTransfer(
             tradeOriginatorForStackTooDeep,
-            true
+            /* _shouldSkipTransfer = */ true
         );
         return _minOutputAmount;
     }
@@ -353,7 +358,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
         DepositInfo storage storageInfo = _getDepositSlot(_key);
-        GMX_REGISTRY_V2().setIsVaultWaitingForCallback(
+        GMX_REGISTRY_V2().setIsAccountWaitingForCallback(
             storageInfo.vault,
             storageInfo.accountNumber,
             _info.vault != address(0)

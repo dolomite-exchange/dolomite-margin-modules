@@ -110,9 +110,16 @@ abstract contract GmxV2IsolationModeTraderBase is
 
     // ========================= Internal Functions =========================
 
-    function _initializeTraderBase(address _gmxRegistryV2, address _weth) internal initializer {
-        _setAddress(_WETH_SLOT, _weth);
+    function _initializeTraderBase(
+        address _gmxRegistryV2,
+        address _weth,
+        uint256 _callbackGasLimit,
+        uint256 _slippageMinimum
+    ) internal initializer {
         _setAddress(_GMX_REGISTRY_V2_SLOT, _gmxRegistryV2);
+        _setAddress(_WETH_SLOT, _weth);
+        _ownerSetCallbackGasLimit(_callbackGasLimit);
+        _ownerSetSlippageMinimum(_slippageMinimum);
     }
 
     function _ownerSetIsHandler(address _handler, bool _isTrusted) internal {
@@ -122,7 +129,9 @@ abstract contract GmxV2IsolationModeTraderBase is
     }
 
     function _ownerSetCallbackGasLimit(uint256 _callbackGasLimit) internal {
+        // We don't want to enforce a minimum. That way, we can disable callbacks (if needed) by setting this to 0.
         _setUint256(_CALLBACK_GAS_LIMIT_SLOT, _callbackGasLimit);
+        emit OwnerSetCallbackGasLimit(_callbackGasLimit);
     }
 
     function _ownerSetSlippageMinimum(uint256 _slippageMinimum) internal {
@@ -132,15 +141,6 @@ abstract contract GmxV2IsolationModeTraderBase is
             "Invalid slippageMinimum"
         );
         _setUint256(_SLIPPAGE_MINIMUM_SLOT, _slippageMinimum);
-    }
-
-    function _checkVaultIsNotActive(address _vault,  uint256 _accountNumber) internal view {
-        Require.that(
-            !GMX_REGISTRY_V2().isVaultWaitingForCallback(_vault, _accountNumber),
-            _FILE,
-            "Account has callback waiting",
-            _vault,
-            _accountNumber
-        );
+        emit OwnerSetSlippageMinimum(_slippageMinimum);
     }
 }

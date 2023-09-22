@@ -358,26 +358,26 @@ describe('GmxRegistryV2', () => {
     });
   });
 
-  describe('#setIsVaultWaitingForCallback', () => {
+  describe('#setIsAccountWaitingForCallback', () => {
     it('should work normally', async () => {
       await core.dolomiteMargin.ownerSetGlobalOperator(core.governance.address, true);
       const accountNumber = 123;
-      expect(await registry.isVaultWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(false);
+      expect(await registry.isAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(false);
 
       const result = await registry.connect(core.governance)
-        .setIsVaultWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true);
-      await expectEvent(registry, result, 'VaultWaitingForCallbackSet', {
+        .setIsAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true);
+      await expectEvent(registry, result, 'AccountWaitingForCallbackSet', {
         _vault: OTHER_ADDRESS_1,
         _accountNumber: accountNumber,
         _isWaiting: true,
       });
-      expect(await registry.isVaultWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(true);
+      expect(await registry.isAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(true);
     });
 
     it('should fail when not called by a global operator', async () => {
       const accountNumber = 123;
       await expectThrow(
-        registry.connect(core.hhUser1).setIsVaultWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true),
+        registry.connect(core.hhUser1).setIsAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true),
         `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

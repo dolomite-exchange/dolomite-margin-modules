@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
@@ -69,15 +70,16 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // ============ Initializer ============
 
     function initialize(
+        address _dGM,
+        address _dolomiteMargin,
         address _gmxRegistryV2,
         address _weth,
-        address _dGM,
-        address _dolomiteMargin
+        uint256 _callbackGasLimit,
+        uint256 _slippageMinimum
     )
     external initializer {
         _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxRegistryV2, _weth);
-        _setAddress(_GMX_REGISTRY_V2_SLOT, _gmxRegistryV2);
+        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit, _slippageMinimum);
     }
 
     // ============================================
@@ -232,7 +234,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         assert(_getWithdrawalSlot(_key).vault == address(0)); // panic if the key is already used
         // Disallow the withdrawal if there's already an action waiting for it
-        _checkVaultIsNotActive(msg.sender, _accountNumber);
+        GmxV2Library.checkVaultIsNotActive(GMX_REGISTRY_V2(), msg.sender, _accountNumber);
 
         _setWithdrawalInfo(_key, WithdrawalInfo({
             key: _key,
@@ -455,7 +457,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
         WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
-        GMX_REGISTRY_V2().setIsVaultWaitingForCallback(
+        GMX_REGISTRY_V2().setIsAccountWaitingForCallback(
             storageInfo.vault,
             storageInfo.accountNumber,
             _info.vault != address(0)
