@@ -3,6 +3,9 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   IUmamiAssetVault,
+  IsolationModeFreezableLiquidatorProxy,
+  IsolationModeFreezableLiquidatorProxy__factory,
+  TestUmamiWithdrawalQueuer__factory,
   UmamiAssetVaultIsolationModeTokenVaultV1,
   UmamiAssetVaultIsolationModeTokenVaultV1__factory,
   UmamiAssetVaultIsolationModeUnwrapperTraderV2,
@@ -13,17 +16,18 @@ import {
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
 import { getUmamiTokenCollateralization } from '../../../src/utils/constructors/umami';
-import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import {
   BYTES_EMPTY,
   LIQUIDATE_ALL,
   Network,
+  NO_EXPIRY,
   NO_PARASWAP_TRADER_PARAM,
   ONE_BI,
   SELL_ALL,
   ZERO_BI,
 } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../utils';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
@@ -38,7 +42,6 @@ import {
   createUmamiAssetVaultRegistry,
 } from '../../utils/ecosystem-token-utils/umami';
 import { setExpiry } from '../../utils/expiry-utils';
-import { liquidateV4WithIsolationMode } from '../../utils/liquidation-utils';
 import {
   CoreProtocol,
   setupCoreProtocol,
@@ -75,6 +78,7 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
   let solidAccountStruct: AccountInfoStruct;
   let minCollateralizationNumerator: BigNumber;
   let liquidationSpreadNumerator: BigNumber;
+  let liquidator: IsolationModeFreezableLiquidatorProxy;
 
   before(async () => {
     const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
@@ -82,6 +86,12 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
       blockNumber,
       network: Network.ArbitrumOne,
     });
+    liquidator = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
+      IsolationModeFreezableLiquidatorProxy__factory.abi,
+      IsolationModeFreezableLiquidatorProxy__factory.bytecode,
+      [core.dolomiteMargin.address, core.expiry.address, core.liquidatorAssetRegistry.address],
+    );
+
     underlyingToken = core.umamiEcosystem!.glpUsdc.connect(core.hhUser1);
     const userVaultImplementation = await createUmamiAssetVaultIsolationModeTokenVaultV1();
     umamiRegistry = await createUmamiAssetVaultRegistry(core);
@@ -94,6 +104,18 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
     unwrapper = await createUmamiAssetVaultIsolationModeUnwrapperTraderV2(core, umamiRegistry, factory);
     wrapper = await createUmamiAssetVaultIsolationModeWrapperTraderV2(core, umamiRegistry, factory);
     priceOracle = await createUmamiAssetVaultPriceOracle(core, umamiRegistry, factory);
+    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdc.address, '1000000000000000000000000000000');
+    await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.usdc, core.testEcosystem!.testPriceOracle.address);
+    await core.dolomiteRegistry.ownerSetLiquidatorAssetRegistry(core.liquidatorAssetRegistry.address);
+
+    const TestUmamiWithdrawalQueuer = await createContractWithAbi(
+      TestUmamiWithdrawalQueuer__factory.abi,
+      TestUmamiWithdrawalQueuer__factory.bytecode,
+      []
+    );
+    await umamiRegistry.connect(core.governance).ownerSetWithdrawalQueuer(TestUmamiWithdrawalQueuer.address);
+    await umamiRegistry.connect(core.governance).ownerSetUmamiUnwrapperTrader(unwrapper.address);
+    await unwrapper.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     const collateralizationData = getUmamiTokenCollateralization(core.umamiEcosystem!.glpUsdc, core);
@@ -111,10 +133,7 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
     // admin setup
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await core.liquidatorAssetRegistry.connect(core.governance).ownerAddLiquidatorToAssetWhitelist(
-      underlyingMarketId,
-      core.liquidatorProxyV4.address,
-    );
+    await factory.connect(core.governance).ownerSetAllowableCollateralMarketIds([underlyingMarketId, core.marketIds.usdc])
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -164,6 +183,7 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
         usdcDebtAmountBefore,
         BalanceCheckFlag.To,
       );
+
       await core.testEcosystem!.testInterestSetter.setInterestRate(
         core.tokens.usdc.address,
         { value: '33295281582' }, // 100% APR
@@ -187,14 +207,25 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
         .div(liquidationSpreadDenominator)
         .div(glpUsdcPrice.value);
 
-      const txResult = await liquidateV4WithIsolationMode(
-        core,
-        solidAccountStruct,
+      const amountOut = await underlyingToken.previewRedeem(heldAmountWei);
+      await liquidator.connect(core.hhUser5).prepareForLiquidation(
         liquidAccountStruct,
-        [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
-        unwrapper,
+        underlyingMarketId,
+        heldAmountWei,
+        core.marketIds.usdc,
+        ONE_BI,
+        NO_EXPIRY,
       );
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await vault.virtualBalance()).to.eq(heldAmountWei);
+      expect(await vault.isVaultFrozen()).to.be.true;
+
+      const impersonatedUnwrapper = await impersonate(unwrapper.address, true);
+      await setupUSDCBalance(core, impersonatedUnwrapper, amountOut, liquidator);
+      const txResult = await unwrapper.connect(core.hhUser5).afterWithdrawalExecution(withdrawalKey, amountOut);
       const receipt = await txResult.wait();
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
 
@@ -217,26 +248,26 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
         underlyingMarketId,
         ZERO_BI,
       );
-      await expectProtocolBalanceIsGreaterThan(
+      await expectProtocolBalance(
         core,
-        solidAccountStruct,
+        solidAccountStruct.owner,
+        solidAccountStruct.number,
         core.marketIds.usdc,
-        heldUsdcAfter.sub(usdcOutputAmount),
-        '5',
-      );
-      await expectProtocolBalanceIsGreaterThan(
-        core,
-        liquidAccountStruct,
-        underlyingMarketId,
-        heldAmountWei.sub(heldUpdatedWithReward),
-        '5',
+        ZERO_BI,
       );
       await expectProtocolBalance(
         core,
         liquidAccountStruct.owner,
         liquidAccountStruct.number,
+        underlyingMarketId,
+        ZERO_BI
+      );
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        liquidAccountStruct,
         core.marketIds.usdc,
         ZERO_BI,
+        '5',
       );
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);
@@ -284,24 +315,32 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
 
       const heldUpdatedWithReward = usdcDebtAmount.mul(owedPriceAdj.value).div(heldPrice.value);
 
-      const txResult = await liquidateV4WithIsolationMode(
-        core,
-        solidAccountStruct,
+      const amountOut = await underlyingToken.previewRedeem(heldAmountWei);
+      await liquidator.connect(core.hhUser5).prepareForLiquidation(
         liquidAccountStruct,
-        [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
-        unwrapper,
-        BYTES_EMPTY,
-        NO_PARASWAP_TRADER_PARAM,
+        underlyingMarketId,
+        heldAmountWei,
+        core.marketIds.usdc,
+        ONE_BI,
         expiry,
       );
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await vault.virtualBalance()).to.eq(heldAmountWei);
+      expect(await vault.isVaultFrozen()).to.be.true;
+
+      const impersonatedUnwrapper = await impersonate(unwrapper.address, true);
+      await setupUSDCBalance(core, impersonatedUnwrapper, amountOut, liquidator);
+      const txResult = await unwrapper.connect(core.hhUser5).afterWithdrawalExecution(withdrawalKey, amountOut);
       const receipt = await txResult.wait();
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
 
       const usdcOutputAmount = await unwrapper.getExchangeCost(
         factory.address,
         core.tokens.usdc.address,
-        heldUpdatedWithReward,
+        heldAmountWei,
         BYTES_EMPTY,
         { blockTag: txResult.blockNumber },
       );
@@ -313,26 +352,26 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
         underlyingMarketId,
         ZERO_BI,
       );
-      await expectProtocolBalanceIsGreaterThan(
+      await expectProtocolBalance(
         core,
-        solidAccountStruct,
+        solidAccountStruct.owner,
+        solidAccountStruct.number,
         core.marketIds.usdc,
-        usdcOutputAmount.sub(usdcDebtAmount),
-        '5',
-      );
-      await expectProtocolBalanceIsGreaterThan(
-        core,
-        liquidAccountStruct,
-        underlyingMarketId,
-        heldAmountWei.sub(heldUpdatedWithReward),
-        '5',
+        ZERO_BI,
       );
       await expectProtocolBalance(
         core,
         liquidAccountStruct.owner,
         liquidAccountStruct.number,
+        underlyingMarketId,
+        ZERO_BI,
+      );
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        liquidAccountStruct,
         core.marketIds.usdc,
         ZERO_BI,
+        '5',
       );
 
       await expectWalletBalanceOrDustyIfZero(core, core.liquidatorProxyV4!.address, factory.address, ZERO_BI);

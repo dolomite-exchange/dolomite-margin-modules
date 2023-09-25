@@ -33,6 +33,8 @@ import {
   GLPIsolationModeWrapperTraderV1__factory,
   IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
+  IChainlinkPriceOracle,
+  IChainlinkPriceOracle__factory,
   IChainlinkPriceOracleOld,
   IChainlinkPriceOracleOld__factory,
   IChainlinkRegistry,
@@ -167,6 +169,7 @@ import {
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
   ATLAS_SI_TOKEN_MAP,
+  CHAINLINK_PRICE_ORACLE_MAP,
   CHAINLINK_PRICE_ORACLE_OLD_MAP,
   CHAINLINK_REGISTRY_MAP,
   DAI_MAP,
@@ -391,6 +394,7 @@ export interface CoreProtocol {
   atlasEcosystem: AtlasEcosystem | undefined;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
   chainlinkPriceOracleOld: IChainlinkPriceOracleOld | undefined;
+  chainlinkPriceOracle: IChainlinkPriceOracle | undefined;
   chainlinkRegistry: IChainlinkRegistry | undefined;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteAmmFactory: IDolomiteAmmFactory;
@@ -571,6 +575,12 @@ export async function setupCoreProtocol(
     governance,
   );
 
+  const chainlinkPriceOracle = getContractOpt(
+    CHAINLINK_PRICE_ORACLE_MAP[config.network],
+    IChainlinkPriceOracle__factory.connect,
+    governance,
+  );
+
   const chainlinkRegistry = getContractOpt(
     CHAINLINK_REGISTRY_MAP[config.network],
     IChainlinkRegistry__factory.connect,
@@ -684,6 +694,7 @@ export async function setupCoreProtocol(
     borrowPositionProxyV2,
     chainlinkRegistry,
     chainlinkPriceOracleOld,
+    chainlinkPriceOracle,
     depositWithdrawalProxy,
     dolomiteAmmFactory,
     dolomiteAmmRouterProxy,
