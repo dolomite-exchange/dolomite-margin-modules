@@ -92,6 +92,8 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
 
+    function INDEX_TOKEN() external view returns (address);
+
     function SHORT_TOKEN() external view returns (address);
 
     function LONG_TOKEN() external view returns (address);

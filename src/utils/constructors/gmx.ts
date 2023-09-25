@@ -1,7 +1,6 @@
 import { BigNumberish } from 'ethers';
 import { CoreProtocol } from '../../../test/utils/setup';
 import {
-  ERC20,
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeVaultFactory,
   GmxRegistryV1,
@@ -19,7 +18,6 @@ import {
   IGmxV2IsolationModeVaultFactory,
   TestGLPIsolationModeTokenVaultV1,
 } from '../../types';
-import { IERC20 } from '@dolomite-exchange/dolomite-margin/dist/build/wrappers/IERC20';
 
 export function getGLPPriceOracleV1ConstructorParams(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
@@ -191,16 +189,16 @@ export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
   implementation: GmxV2IsolationModeUnwrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+  callbackGasLimit: BigNumberish,
+  slippageMinimum: BigNumberish,
 ): Promise<any[]> {
-  if (!core.gmxEcosystem) {
-    throw new Error('Gmx ecosystem not initialized');
-  }
-
   const calldata = await implementation.populateTransaction.initialize(
+    dGM.address,
+    core.dolomiteMargin.address,
     gmxRegistryV2.address,
     core.tokens.weth.address,
-    dGM.address,
-    core.dolomiteMargin.address
+    callbackGasLimit,
+    slippageMinimum,
   );
 
   return [
@@ -215,16 +213,16 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
   implementation: GmxV2IsolationModeWrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+  callbackGasLimit: BigNumberish,
+  slippageMinimum: BigNumberish,
 ): Promise<any[]> {
-  if (!core.gmxEcosystem) {
-    throw new Error('Gmx ecosystem not initialized');
-  }
-
   const calldata = await implementation.populateTransaction.initialize(
+    dGM.address,
+    core.dolomiteMargin.address,
     gmxRegistryV2.address,
     core.tokens.weth.address,
-    dGM.address,
-    core.dolomiteMargin.address
+    callbackGasLimit,
+    slippageMinimum,
   );
 
   return [

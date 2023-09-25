@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
@@ -56,20 +57,21 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
 
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
-    uint256 private constant _ACTIONS_LENGTH = 2;
 
     receive() external payable {} // solhint-disable-line no-empty-blocks
 
     // ============ Initializer ============
 
     function initialize(
+        address _dGM,
+        address _dolomiteMargin,
         address _gmxRegistryV2,
         address _weth,
-        address _dGM,
-        address _dolomiteMargin
+        uint256 _callbackGasLimit,
+        uint256 _slippageMinimum
     ) external initializer {
         _initializeWrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxRegistryV2, _weth);
+        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit, _slippageMinimum);
     }
 
     // ============================================
@@ -129,7 +131,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         } else {
             // We just need to blind transfer the min amount to the vault
             underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
-            factory.setIsVaultFrozen(depositInfo.vault, false);
+            factory.setIsVaultFrozen(depositInfo.vault, /* _isVaultFrozen = */ false);
             _setDepositInfo(_key, _emptyDepositInfo());
             emit DepositExecuted(_key);
         }
@@ -191,10 +193,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
     }
 
-    function actionsLength() external override pure returns (uint256) {
-        return _ACTIONS_LENGTH;
-    }
-
     function isValidInputToken(address _inputToken) public view override returns (bool) {
         address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).LONG_TOKEN();
         address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).SHORT_TOKEN();
@@ -223,7 +221,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         (uint256 accountNumber, uint256 ethExecutionFee) = abi.decode(_extraOrderData, (uint256, uint256));
 
         // Disallow the withdrawal if there's already an action waiting for it
-        _checkVaultIsNotActive(_tradeOriginator, accountNumber);
+        GmxV2Library.checkVaultIsNotActive(GMX_REGISTRY_V2(), _tradeOriginator, accountNumber);
 
         address tradeOriginatorForStackTooDeep = _tradeOriginator;
         IGmxExchangeRouter exchangeRouter = GMX_REGISTRY_V2().gmxExchangeRouter();
@@ -291,7 +289,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
         DepositInfo storage storageInfo = _getDepositSlot(_key);
-        GMX_REGISTRY_V2().setIsVaultWaitingForCallback(
+        GMX_REGISTRY_V2().setIsAccountWaitingForCallback(
             storageInfo.vault,
             storageInfo.accountNumber,
             _info.vault != address(0)

@@ -1,3 +1,5 @@
+import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import {
@@ -20,13 +22,13 @@ import {
   GmxRegistryV2,
   GmxRegistryV2__factory,
   GmxV2IsolationModeTokenVaultV1,
-  GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeUnwrapperTraderV2__factory,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeVaultFactory__factory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2IsolationModeWrapperTraderV2__factory,
+  GmxV2Library, GmxV2Library__factory,
   GmxV2MarketTokenPriceOracle,
   GmxV2MarketTokenPriceOracle__factory,
   IGLPIsolationModeVaultFactory,
@@ -55,7 +57,7 @@ import {
   getGmxV2MarketTokenPriceOracleConstructorParams,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
 
 export async function createGLPPriceOracleV1(
@@ -165,15 +167,22 @@ export async function createGmxRegistryV2(core: CoreProtocol): Promise<GmxRegist
   return GmxRegistryV2__factory.connect(proxy.address, core.hhUser1);
 }
 
+export async function createGmxV2Library(): Promise<GmxV2Library> {
+  return createContractWithAbi<GmxV2Library>(
+    GmxV2Library__factory.abi,
+    GmxV2Library__factory.bytecode,
+    [],
+  );
+}
+
 export async function createGmxV2IsolationModeTokenVaultV1(
   core: CoreProtocol,
+  library: GmxV2Library,
 ): Promise<GmxV2IsolationModeTokenVaultV1> {
-  return createContractWithAbi(
-    GmxV2IsolationModeTokenVaultV1__factory.abi,
-    GmxV2IsolationModeTokenVaultV1__factory.bytecode,
-    [
-      core.tokens.weth.address,
-    ],
+  return createContractWithLibrary<GmxV2IsolationModeTokenVaultV1>(
+    'GmxV2IsolationModeTokenVaultV1',
+    { GmxV2Library: library.address },
+    [core.tokens.weth.address],
   );
 }
 
@@ -202,18 +211,28 @@ export async function createGmxV2IsolationModeVaultFactory(
 export async function createGmxV2IsolationModeUnwrapperTraderV2(
   core: CoreProtocol,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
+  library: GmxV2Library,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+  callbackGasLimit: BigNumberish,
+  slippageMinimum: BigNumberish,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
-  const implementation = await createContractWithAbi<GmxV2IsolationModeUnwrapperTraderV2>(
-    GmxV2IsolationModeUnwrapperTraderV2__factory.abi,
-    GmxV2IsolationModeUnwrapperTraderV2__factory.bytecode,
+  const implementation = await createContractWithLibrary<GmxV2IsolationModeUnwrapperTraderV2>(
+    'GmxV2IsolationModeUnwrapperTraderV2',
+    { GmxV2Library: library.address },
     [],
   );
 
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
     IsolationModeTraderProxy__factory.abi,
     IsolationModeTraderProxy__factory.bytecode,
-    await getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(core, implementation, dGM, gmxRegistryV2),
+    await getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
+      core,
+      implementation,
+      dGM,
+      gmxRegistryV2,
+      callbackGasLimit,
+      slippageMinimum,
+    ),
   );
 
   return GmxV2IsolationModeUnwrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
@@ -222,17 +241,27 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
 export async function createGmxV2IsolationModeWrapperTraderV2(
   core: CoreProtocol,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
+  library: GmxV2Library,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+  callbackGasLimit: BigNumberish,
+  slippageMinimum: BigNumberish,
 ): Promise<GmxV2IsolationModeWrapperTraderV2> {
-  const implementation = await createContractWithAbi<GmxV2IsolationModeWrapperTraderV2>(
-    GmxV2IsolationModeWrapperTraderV2__factory.abi,
-    GmxV2IsolationModeWrapperTraderV2__factory.bytecode,
+  const implementation = await createContractWithLibrary<GmxV2IsolationModeWrapperTraderV2>(
+    'GmxV2IsolationModeWrapperTraderV2',
+    { GmxV2Library: library.address },
     [],
   );
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
     IsolationModeTraderProxy__factory.abi,
     IsolationModeTraderProxy__factory.bytecode,
-    await getGmxV2IsolationModeWrapperTraderV2ConstructorParams(core, implementation, dGM, gmxRegistryV2),
+    await getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
+      core,
+      implementation,
+      dGM,
+      gmxRegistryV2,
+      callbackGasLimit,
+      slippageMinimum,
+    ),
   );
   return GmxV2IsolationModeWrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
 }
@@ -264,13 +293,13 @@ export function getInitiateWrappingParams(
     traderParams: [
       {
         trader: wrapper.address,
-        traderType: 3,
+        traderType: GenericTraderType.IsolationModeWrapper,
         tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
         makerAccountIndex: 0,
       },
     ],
     makerAccounts: [],
-    userConfig: { deadline: '123123123123123', balanceCheckFlag: 3 },
+    userConfig: { deadline: '123123123123123', balanceCheckFlag: BalanceCheckFlag.None },
   };
 }
 
@@ -290,13 +319,13 @@ export function getInitiateUnwrappingParams(
     traderParams: [
       {
         trader: unwrapper.address,
-        traderType: 2,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
         tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
         makerAccountIndex: 0,
       },
     ],
     makerAccounts: [],
-    userConfig: { deadline: '123123123123123', balanceCheckFlag: 3 },
+    userConfig: { deadline: '123123123123123', balanceCheckFlag: BalanceCheckFlag.None },
   };
 }
 

@@ -20,6 +20,7 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
 import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
@@ -27,17 +28,18 @@ import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 
 /**
- * @title   GmxV2IsolationModeTokenVaultV1Library
+ * @title   GmxV2Library.sol
  * @author  Dolomite
  *
  * @notice  Library contract for the GmxV2IsolationModeTokenVaultV1 contract to reduce code size
  */
-library GmxV2IsolationModeTokenVaultV1Library {
+library GmxV2Library {
 
     // ==================================================================
     // ============================ Constants ===========================
     // ==================================================================
 
+    bytes32 private constant _FILE = "GmxV2Library";
     bytes32 private constant _MAX_PNL_FACTOR = keccak256(abi.encode("MAX_PNL_FACTOR"));
     bytes32 private constant _MAX_PNL_FACTOR_FOR_ADL = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_ADL"));
     bytes32 private constant _MAX_PNL_FACTOR_FOR_WITHDRAWALS = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS"));
@@ -47,6 +49,20 @@ library GmxV2IsolationModeTokenVaultV1Library {
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
+
+    function checkVaultIsNotActive(
+        IGmxRegistryV2 _registry,
+        address _vault,
+        uint256 _accountNumber
+    ) public view {
+        Require.that(
+            !_registry.isAccountWaitingForCallback(_vault, _accountNumber),
+            _FILE,
+            "Account has callback waiting",
+            _vault,
+            _accountNumber
+        );
+    }
 
     function isExternalRedemptionPaused(
         IGmxRegistryV2 _registry,

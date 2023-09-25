@@ -10,6 +10,7 @@ import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
 
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
+const SLIPPAGE_MINIMUM = BigNumber.from('25');
 
 describe('GmxV2IsolationModeTraderBase', () => {
   let snapshotId: string;
@@ -22,7 +23,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     gmxRegistryV2 = await createGmxRegistryV2(core);
 
-    const implementation = await createContractWithAbi(
+    const implementation = await createContractWithAbi<TestGmxV2IsolationModeTraderBase>(
       TestGmxV2IsolationModeTraderBase__factory.abi,
       TestGmxV2IsolationModeTraderBase__factory.bytecode,
       [],
@@ -30,6 +31,8 @@ describe('GmxV2IsolationModeTraderBase', () => {
     const calldata = await implementation.populateTransaction.initialize(
       gmxRegistryV2.address,
       core.tokens.weth.address,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
       core.dolomiteMargin.address,
     );
     const proxy = await createIsolationModeTraderProxy(implementation.address, calldata.data!, core);
@@ -45,15 +48,20 @@ describe('GmxV2IsolationModeTraderBase', () => {
   describe('#initialize', () => {
     it('should initialize correctly', async () => {
       expect(await trader.WETH()).to.eq(core.tokens.weth.address);
-      expect(await trader.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await trader.GMX_REGISTRY_V2()).to.eq(gmxRegistryV2.address);
-      expect(await trader.callbackGasLimit()).to.eq(ZERO_BI);
-      expect(await trader.slippageMinimum()).to.eq(ZERO_BI);
+      expect(await trader.callbackGasLimit()).to.eq(CALLBACK_GAS_LIMIT);
+      expect(await trader.slippageMinimum()).to.eq(SLIPPAGE_MINIMUM);
+      expect(await trader.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
     });
 
     it('should not initialize twice', async () => {
       await expectThrow(
-        trader.triggerInternalInitializer(gmxRegistryV2.address, core.tokens.weth.address),
+        trader.triggerInternalInitializer(
+          gmxRegistryV2.address,
+          core.tokens.weth.address,
+          CALLBACK_GAS_LIMIT,
+          SLIPPAGE_MINIMUM,
+        ),
         'Initializable: contract is already initialized',
       );
     });
@@ -135,11 +143,11 @@ describe('GmxV2IsolationModeTraderBase', () => {
 
     it('should fail if slippage minimum is greater than or equal to 10,000', async () => {
       await expectThrow(
-        trader.connect(core.governance).ownerSetSlippageMinimum(10000),
+        trader.connect(core.governance).ownerSetSlippageMinimum(10_000),
         'GmxV2IsolationModeTraderBase: Invalid slippageMinimum',
       );
       await expectThrow(
-        trader.connect(core.governance).ownerSetSlippageMinimum(10001),
+        trader.connect(core.governance).ownerSetSlippageMinimum(10_001),
         'GmxV2IsolationModeTraderBase: Invalid slippageMinimum',
       );
     });

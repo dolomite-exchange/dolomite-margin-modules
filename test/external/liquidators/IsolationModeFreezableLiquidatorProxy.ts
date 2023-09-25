@@ -5,8 +5,6 @@ import {
   GmxRegistryV2,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
-  GmxV2IsolationModeTokenVaultV1Library,
-  GmxV2IsolationModeTokenVaultV1Library__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
@@ -15,18 +13,16 @@ import {
   IsolationModeFreezableLiquidatorProxy__factory,
 } from '../../../src/types';
 import { AccountStruct } from '../../../src/utils/constants';
-import {
-  createContractWithAbi,
-  createContractWithLibrary,
-  depositIntoDolomiteMargin,
-} from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { Network, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { increaseByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   createGmxRegistryV2,
+  createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
+  createGmxV2Library,
 } from '../../utils/ecosystem-token-utils/gmx';
 import { setExpiry } from '../../utils/expiry-utils';
 import {
@@ -41,7 +37,8 @@ import {
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
-const callbackGasLimit = BigNumber.from('1500000');
+const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
+const SLIPPAGE_MINIMUM = BigNumber.from('500');
 
 const wethAmount = ONE_ETH_BI; // 1 ETH
 const usdcAmount = BigNumber.from('1888000000'); // 1,888
@@ -79,17 +76,8 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       [core.dolomiteRegistry, core.dolomiteMargin.address, core.expiry.address, core.liquidatorAssetRegistry.address],
     );
 
-    underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const library = await createContractWithAbi<GmxV2IsolationModeTokenVaultV1Library>(
-      GmxV2IsolationModeTokenVaultV1Library__factory.abi,
-      GmxV2IsolationModeTokenVaultV1Library__factory.bytecode,
-      [],
-    );
-    const userVaultImplementation = await createContractWithLibrary<GmxV2IsolationModeTokenVaultV1>(
-      'GmxV2IsolationModeTokenVaultV1',
-      { GmxV2IsolationModeTokenVaultV1Library: library.address },
-      [core.tokens.weth.address],
-    );
+    const library = await createGmxV2Library();
+    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
     gmxRegistryV2 = await createGmxRegistryV2(core);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
@@ -101,8 +89,22 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
     );
-    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
-    wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
+    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
+    wrapper = await createGmxV2IsolationModeWrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
@@ -131,9 +133,6 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
     await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
     await unwrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
-
-    await wrapper.connect(core.governance).ownerSetCallbackGasLimit(callbackGasLimit);
-    await unwrapper.connect(core.governance).ownerSetCallbackGasLimit(callbackGasLimit);
 
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
 

@@ -196,7 +196,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
 
     // ==================== Non-Admin Functions ====================
 
-    function setIsVaultWaitingForCallback(
+    function setIsAccountWaitingForCallback(
         address _vault,
         uint256 _accountNumber,
         bool _isWaiting
@@ -205,7 +205,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     onlyDolomiteMarginGlobalOperator(msg.sender) {
         bytes32 slot = keccak256(abi.encodePacked(_IS_WAITING_FOR_CALLBACK_SLOT, _vault, _accountNumber));
         _setUint256(slot, _isWaiting ? 1 : 0);
-        emit VaultWaitingForCallbackSet(_vault, _accountNumber, _isWaiting);
+        emit AccountWaitingForCallbackSet(_vault, _accountNumber, _isWaiting);
     }
 
     // ==================== Views ====================
@@ -246,7 +246,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         return _getAddress(_GMX_WITHDRAWAL_VAULT_SLOT);
     }
 
-    function isVaultWaitingForCallback(
+    function isAccountWaitingForCallback(
         address _vault,
         uint256 _accountNumber
     ) external view returns (bool) {

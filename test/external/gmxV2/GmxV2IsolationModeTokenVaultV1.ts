@@ -7,8 +7,6 @@ import { parseEther } from 'ethers/lib/utils';
 import {
   CustomTestToken,
   GmxRegistryV2,
-  GmxV2IsolationModeTokenVaultV1Library,
-  GmxV2IsolationModeTokenVaultV1Library__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
@@ -38,6 +36,7 @@ import {
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
+  createGmxV2Library,
   getInitiateWrappingParams,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import {
@@ -58,6 +57,7 @@ const minAmountOut = parseEther('1800');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
+const SLIPPAGE_MINIMUM = BigNumber.from('500');
 const INVALID_POOL_FACTOR = BigNumber.from('900000000000000000000000000000'); // 9e29
 const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
 
@@ -88,14 +88,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const library = await createContractWithAbi<GmxV2IsolationModeTokenVaultV1Library>(
-      GmxV2IsolationModeTokenVaultV1Library__factory.abi,
-      GmxV2IsolationModeTokenVaultV1Library__factory.bytecode,
-      [],
-    );
+    const library = await createGmxV2Library();
     const userVaultImplementation = await createContractWithLibrary<TestGmxV2IsolationModeTokenVaultV1>(
       'TestGmxV2IsolationModeTokenVaultV1',
-      { GmxV2IsolationModeTokenVaultV1Library: library.address },
+      { GmxV2Library: library.address },
       [core.tokens.weth.address],
     );
     gmxRegistryV2 = await createGmxRegistryV2(core);
@@ -110,8 +106,22 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       userVaultImplementation,
     );
     impersonatedFactory = await impersonate(factory.address, true);
-    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
-    wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
+    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
+    wrapper = await createGmxV2IsolationModeWrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
@@ -200,7 +210,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         BalanceCheckFlag.Both,
       );
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
@@ -222,8 +232,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: parseEther('.01') },
       );
 
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -237,7 +247,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         BalanceCheckFlag.Both,
       );
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,

@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
-import { GmxV2IsolationModeTokenVaultV1Library } from "./GmxV2IsolationModeTokenVaultV1Library.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
@@ -339,7 +339,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     override
     view
     returns (bool) {
-        return GmxV2IsolationModeTokenVaultV1Library.isExternalRedemptionPaused(
+        return GmxV2Library.isExternalRedemptionPaused(
             registry(),
             DOLOMITE_MARGIN(),
             IGmxV2IsolationModeVaultFactory(VAULT_FACTORY())
@@ -375,7 +375,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     }
 
     function isWaitingForCallback(uint256 _accountNumber) public view returns (bool) {
-        return registry().isVaultWaitingForCallback(/* _vault = */ address(this), _accountNumber);
+        return registry().isAccountWaitingForCallback(/* _vault = */ address(this), _accountNumber);
     }
 
     // ==================================================================
