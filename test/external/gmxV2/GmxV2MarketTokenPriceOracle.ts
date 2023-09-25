@@ -1,17 +1,20 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
-import { ethers } from 'hardhat';
 import {
   GmxRegistryV2,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2MarketTokenPriceOracle,
+  TestGmxReader,
+  TestGmxReader__factory,
 } from 'src/types';
-import { Network } from 'src/utils/no-deps-constants';
-import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { createContractWithAbi } from 'src/utils/dolomite-utils';
+import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
@@ -19,11 +22,15 @@ import {
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
+  createGmxV2Library,
   createGmxV2MarketTokenPriceOracle,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
 
-const GM_ETH_USD_PRICE = BigNumber.from('924171896095781105283809017999');
+const GM_ETH_USD_PRICE = BigNumber.from('924171934216256043');
+const NEGATIVE_PRICE = BigNumber.from('-5');
+const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
+const SLIPPAGE_MINIMUM = BigNumber.from('500');
 const blockNumber = 128276157;
 
 describe('GmxV2MarketTokenPriceOracle', () => {
@@ -37,6 +44,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
   let wrapper: GmxV2IsolationModeWrapperTraderV2;
   let unwrapper: GmxV2IsolationModeUnwrapperTraderV2;
   let marketId: BigNumberish;
+  let testReader: TestGmxReader;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -44,7 +52,8 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       network: Network.ArbitrumOne,
     });
     gmxRegistryV2 = await createGmxRegistryV2(core);
-    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core);
+    const library = await createGmxV2Library();
+    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
@@ -55,8 +64,22 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
     );
-    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
-    wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
+    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
+    wrapper = await createGmxV2IsolationModeWrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
@@ -66,6 +89,12 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     await setupTestMarket(core, factory, true, gmPriceOracle);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
+
+    testReader = await createContractWithAbi(
+      TestGmxReader__factory.abi,
+      TestGmxReader__factory.bytecode,
+      [],
+    );
 
     snapshotId = await snapshot();
   });
@@ -83,11 +112,11 @@ describe('GmxV2MarketTokenPriceOracle', () => {
   });
 
   describe('#getPrice', () => {
-    // @follow-up This one fails sometimes. Price seems to always be one of two
     it('returns the correct value under normal conditions', async () => {
-      // @follow-up try with specific block timestamp
-      console.log(await getBlockTimestamp(await ethers.provider.getBlockNumber()));
+      // Have to be at specific timestamp to get consistent price
+      // Setup core protocol sometimes ends at different timestamps which threw off the test
       await setNextBlockTimestamp(1693923100);
+      await mine();
       expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE);
     });
 
@@ -107,6 +136,21 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       await expectThrow(
         gmPriceOracle.getPrice(factory.address),
         'GmxV2MarketTokenPriceOracle: gmToken cannot be borrowable',
+      );
+    });
+
+    it('should fail if GMX Reader returns a negative number or zero', async () => {
+      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await testReader.setMarketPrice(NEGATIVE_PRICE);
+      await expectThrow(
+        gmPriceOracle.getPrice(factory.address),
+        'GmxV2MarketTokenPriceOracle: Invalid oracle response',
+      );
+
+      await testReader.setMarketPrice(ZERO_BI);
+      await expectThrow(
+        gmPriceOracle.getPrice(factory.address),
+        'GmxV2MarketTokenPriceOracle: Invalid oracle response',
       );
     });
   });

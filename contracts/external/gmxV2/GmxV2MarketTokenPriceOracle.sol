@@ -155,6 +155,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             true
         );
 
+        // @audit Is there a better way to handle this? When could the reader return negative here?
         Require.that(
             value > 0,
             _FILE,

@@ -37,10 +37,18 @@ interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase {
         uint256 outputAmount;
     }
 
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
+
     event DepositCreated(bytes32 indexed key);
     event DepositExecuted(bytes32 indexed key);
     event DepositFailed(bytes32 indexed key, string reason);
     event DepositCancelled(bytes32 indexed key);
+
+    // ===================================================
+    // ==================== Functions ====================
+    // ===================================================
 
     function cancelDeposit(bytes32 _key) external;
 }

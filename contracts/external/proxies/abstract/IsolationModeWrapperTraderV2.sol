@@ -124,10 +124,10 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, O
     }
 
     function createActionsForWrapping(
-        uint256 _solidAccountId,
-        uint256,
-        address,
-        address,
+        uint256 _primaryAccountId,
+        uint256 /* _otherAccountId */,
+        address /* _primaryAccountOwner */,
+        address /* _otherAccountOwner */,
         uint256 _outputMarket,
         uint256 _inputMarket,
         uint256 _minAmountOut,
@@ -154,7 +154,7 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, O
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
 
         actions[0] = AccountActionLib.encodeExternalSellAction(
-            _solidAccountId,
+            _primaryAccountId,
             _inputMarket,
             _outputMarket,
             /* _trader = */ address(this),

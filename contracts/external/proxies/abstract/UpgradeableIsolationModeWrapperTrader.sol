@@ -38,10 +38,10 @@ import { AccountActionLib } from "../../lib/AccountActionLib.sol";
  * @notice  Abstract contract for wrapping a token into an IsolationMode token. Must be set as a token converter
  *          for the VaultWrapperFactory token.
  */
-abstract contract UpgradeableIsolationModeWrapperTrader is 
+abstract contract UpgradeableIsolationModeWrapperTrader is
     IUpgradeableIsolationModeWrapperTrader,
     OnlyDolomiteMarginForUpgradeable,
-    Initializable 
+    Initializable
 {
     using SafeERC20 for IERC20;
 
@@ -119,18 +119,23 @@ abstract contract UpgradeableIsolationModeWrapperTrader is
         return address(VAULT_FACTORY());
     }
 
+    function actionsLength() external virtual override pure returns (uint256) {
+        return _ACTIONS_LENGTH;
+    }
+
     function createActionsForWrapping(
-        uint256 _solidAccountId,
-        uint256,
-        address,
-        address,
+        uint256 _primaryAccountId,
+        uint256 /* _otherAccountId */,
+        address /* _primaryAccountOwner */,
+        address /* _otherAccountOwner */,
         uint256 _outputMarket,
         uint256 _inputMarket,
         uint256 _minAmountOut,
         uint256 _inputAmount,
         bytes calldata _orderData
     )
-    external
+    public
+    virtual
     override
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
@@ -150,7 +155,7 @@ abstract contract UpgradeableIsolationModeWrapperTrader is
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
 
         actions[0] = AccountActionLib.encodeExternalSellAction(
-            _solidAccountId,
+            _primaryAccountId,
             _inputMarket,
             _outputMarket,
             /* _trader = */ address(this),
@@ -160,10 +165,6 @@ abstract contract UpgradeableIsolationModeWrapperTrader is
         );
 
         return actions;
-    }
-
-    function actionsLength() external override pure returns (uint256) {
-        return _ACTIONS_LENGTH;
     }
 
     function getExchangeCost(

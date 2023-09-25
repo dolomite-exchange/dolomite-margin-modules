@@ -20,33 +20,17 @@
 
 pragma solidity ^0.8.9;
 
-import { GmxV2IsolationModeUnwrapperTraderV2 } from "../external/gmxV2/GmxV2IsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeTokenVaultV1WithFreezable } from "./IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IIsolationModeTokenVaultV1WithPausable } from "./IIsolationModeTokenVaultV1WithPausable.sol";
 
 
 /**
- * @title   TestGmxV2IsolationModeUnwrapperTraderV2
+ * @title   IIsolationModeTokenVaultV1WithFreezableAndPausable
  * @author  Dolomite
  *
- * @notice  Test implementation for exposing areas for coverage testing
+ * @notice Interface for the implementation contract used by proxy user vault contracts.
  */
-contract TestGmxV2IsolationModeUnwrapperTraderV2 is GmxV2IsolationModeUnwrapperTraderV2 {
-
-    bytes32 private constant _FILE = "TestGmxV2IsolationModeUnwrapper";
-
-    function _exchangeUnderlyingTokenToOutputToken(
-        address,
-        address,
-        address,
-        uint256 _minOutputAmount,
-        address,
-        uint256,
-        bytes memory
-    )
-        internal
-        pure
-        override
-        returns (uint256)
-    {
-        return _minOutputAmount - 1;
-    }
-}
+interface IIsolationModeTokenVaultV1WithFreezableAndPausable is // solhint-disable-line no-empty-blocks
+    IIsolationModeTokenVaultV1WithFreezable,
+    IIsolationModeTokenVaultV1WithPausable 
+{} 

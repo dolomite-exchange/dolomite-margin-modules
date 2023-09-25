@@ -1,4 +1,5 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -17,7 +18,6 @@ import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-
 import {
   getRealLatestBlockNumber,
   impersonate,
-  mineBlocks,
   revertToSnapshotAndCapture,
   setEtherBalance,
   snapshot,
@@ -29,6 +29,7 @@ import {
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
+  createGmxV2Library,
   createGmxV2MarketTokenPriceOracle,
   getDepositObject,
   getInitiateWrappingParams,
@@ -75,7 +76,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core);
+    const library = await createGmxV2Library();
+    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
     gmxRegistryV2 = await createGmxRegistryV2(core);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
@@ -87,8 +89,22 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
     );
-    wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
-    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
+    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
+    wrapper = await createGmxV2IsolationModeWrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
     priceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxRegistryV2);
@@ -117,8 +133,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
     await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
     await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
-    await wrapper.connect(core.governance).ownerSetCallbackGasLimit(CALLBACK_GAS_LIMIT);
-    await wrapper.connect(core.governance).ownerSetSlippageMinimum(SLIPPAGE_MINIMUM);
     await setEtherBalance(core.gmxEcosystemV2!.gmxExecutor.address, parseEther('100'));
 
     snapshotId = await snapshot();
@@ -136,10 +150,12 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     it('should not initialize twice', async () => {
       await expectThrow(
         wrapper.initialize(
-          gmxRegistryV2.address,
-          core.tokens.weth.address,
           factory.address,
           core.dolomiteMargin.address,
+          gmxRegistryV2.address,
+          core.tokens.weth.address,
+          CALLBACK_GAS_LIMIT,
+          SLIPPAGE_MINIMUM,
         ),
         'Initializable: contract is already initialized',
       );
@@ -468,7 +484,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         executionFee,
         minAmountOut,
       );
-      depositInfo.eventData.uintItems.items[2].key = 'receivedBadTokens';
+      depositInfo.eventData.uintItems.items[0].key = 'receivedBadTokens';
       await expectThrow(
         wrapper.connect(depositExecutor).afterDepositExecution(
           depositKey,
@@ -564,7 +580,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       await vault.connect(core.hhUser1).cancelDeposit(depositKey);
 
       expect(await core.tokens.weth.balanceOf(core.dolomiteMargin.address)).to.eq(wethBalanceBefore);
@@ -615,7 +631,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       await vault.connect(core.hhUser1).cancelDeposit(depositKey);
 
       expect(await core.tokens.nativeUsdc!.balanceOf(core.dolomiteMargin.address)).to.eq(usdcBalanceBefore);
@@ -706,7 +722,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       const result = await vault.connect(core.hhUser1).cancelDeposit(depositKey);
       await expectEvent(wrapper, result, 'DepositCancelled', {
         key: depositKey,
@@ -746,7 +762,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       const result = await wrapper.connect(depositExecutor).cancelDeposit(depositKey);
       await expectEvent(wrapper, result, 'DepositCancelled', {
         key: depositKey,

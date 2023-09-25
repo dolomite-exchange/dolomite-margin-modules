@@ -21,6 +21,8 @@
 pragma solidity ^0.8.9;
 
 import { GmxMarket } from "../external/interfaces/gmx/GmxMarket.sol";
+import { GmxMarketPoolValueInfo } from "../external/interfaces/gmx/GmxMarketPoolValueInfo.sol";
+import { GmxPrice } from "../external/interfaces/gmx/GmxPrice.sol";
 import { IGmxDataStore } from "../external/interfaces/gmx/IGmxDataStore.sol";
 
 /**
@@ -35,10 +37,15 @@ contract TestGmxReader {
 
     int256 public shortPnlToPoolFactor;
     int256 public longPnlToPoolFactor;
+    int256 public marketPrice;
 
     function setPnlToPoolFactors(int256 _shortPnlToPoolFactor, int256 _longPnlToPoolFactor) external {
         shortPnlToPoolFactor = _shortPnlToPoolFactor;
         longPnlToPoolFactor = _longPnlToPoolFactor;
+    }
+
+    function setMarketPrice(int256 _marketPrice) external {
+        marketPrice = _marketPrice;
     }
 
     function getPnlToPoolFactor(
@@ -49,5 +56,31 @@ contract TestGmxReader {
         bool /* maximize */
     ) external view returns (int256) {
         return isLong ? longPnlToPoolFactor : shortPnlToPoolFactor;
+    }
+
+    function getMarketTokenPrice(
+        IGmxDataStore /* _dataStore */,
+        GmxMarket.MarketProps memory /* _market */,
+        GmxPrice.PriceProps memory /* _indexTokenPrice */,
+        GmxPrice.PriceProps memory /* _longTokenPrice */,
+        GmxPrice.PriceProps memory /* _shortTokenPrice */,
+        bytes32 /* _pnlFactorType */,
+        bool /* _maximize */
+    ) external view returns (int256, GmxMarketPoolValueInfo.PoolValueInfoProps memory) {
+        GmxMarketPoolValueInfo.PoolValueInfoProps memory props = GmxMarketPoolValueInfo.PoolValueInfoProps({
+            poolValue: 0,
+            longPnl: 0,
+            shortPnl: 0,
+            netPnl: 0,
+            longTokenAmount: 0,
+            shortTokenAmount: 0,
+            longTokenUsd: 0,
+            shortTokenUsd: 0,
+            totalBorrowingFees: 0,
+            borrowingFeePoolFactor: 0,
+            impactPoolAmount: 0
+        });
+
+        return (marketPrice, props);
     }
 }

@@ -20,35 +20,25 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
+import { IIsolationModeTokenVaultV1 } from "./IIsolationModeTokenVaultV1.sol";
 
 
 /**
- * @title   IGmxV2IsolationModeWrapperTraderV2
+ * @title   IIsolationModeTokenVaultV1WithPausable
  * @author  Dolomite
  *
+ * @notice Interface for the implementation contract used by proxy user vault contracts.
  */
-interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase {
-
-    struct DepositInfo {
-        bytes32 key;
-        address vault;
-        uint256 accountNumber;
-        uint256 outputAmount;
-    }
-
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event DepositCreated(bytes32 indexed key);
-    event DepositExecuted(bytes32 indexed key);
-    event DepositFailed(bytes32 indexed key, string reason);
-    event DepositCancelled(bytes32 indexed key);
+interface IIsolationModeTokenVaultV1WithPausable is IIsolationModeTokenVaultV1 {
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function cancelDeposit(bytes32 _key) external;
+    /**
+     * @return  true if redemptions (conversion) from this isolated token to its underlying are paused or are in a
+     *          distressed state. Resolving this function to true actives the Pause Sentinel, which prevents further
+     *          contamination of this market across Dolomite.
+     */
+    function isExternalRedemptionPaused() external view returns (bool);
 }

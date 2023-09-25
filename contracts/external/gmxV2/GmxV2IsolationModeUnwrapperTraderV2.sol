@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
@@ -69,15 +70,16 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // ============ Initializer ============
 
     function initialize(
+        address _dGM,
+        address _dolomiteMargin,
         address _gmxRegistryV2,
         address _weth,
-        address _dGM,
-        address _dolomiteMargin
+        uint256 _callbackGasLimit,
+        uint256 _slippageMinimum
     )
     external initializer {
         _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxRegistryV2, _weth);
-        _setAddress(_GMX_REGISTRY_V2_SLOT, _gmxRegistryV2);
+        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit, _slippageMinimum);
     }
 
     // ============================================
@@ -145,7 +147,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         // @audit:  If GMX changes the keys OR if the data sent back is malformed (causing the above requires to
         //          fail), this will fail. This will result in us receiving tokens from GMX and not knowing who they
         //          are for, nor the amount. The only solution will be to upgrade this contract and have an admin
-        //          unstuck the funds for users by sending them to the appropriate vaults.
+        //          "unstuck" the funds for users by sending them to the appropriate vaults.
 
 
         IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
@@ -159,13 +161,17 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             AccountBalanceLib.BalanceCheckFlag.None
         );
 
+        // Save the output amount so we can refer to it later
+        withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
+        _setWithdrawalInfo(_key, withdrawalInfo);
+
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        factory.setShouldSkipTransfer(withdrawalInfo.vault, true);
+        factory.setShouldSkipTransfer(withdrawalInfo.vault, /* _shouldSkipTransfer = */ true);
         try IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
             withdrawalInfo.accountNumber,
             marketIdsPath,
             _withdrawal.numbers.marketTokenAmount,
-            outputTokenAmount.value  + secondaryOutputTokenAmount.value,
+            withdrawalInfo.outputAmount,
             traderParams,
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
@@ -177,7 +183,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
                 _key,
                 factory,
                 withdrawalInfo,
-                outputTokenAmount,
                 reason
             );
         } catch (bytes memory /* reason */) {
@@ -185,7 +190,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
                 _key,
                 factory,
                 withdrawalInfo,
-                outputTokenAmount,
                 /* _reason = */ ""
             );
         }
@@ -228,7 +232,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             "Invalid vault"
         );
 
-        assert(_getWithdrawalSlot(_key).vault == address(0)); // panic if the key is used
+        assert(_getWithdrawalSlot(_key).vault == address(0)); // panic if the key is already used
+        // Disallow the withdrawal if there's already an action waiting for it
+        GmxV2Library.checkVaultIsNotActive(GMX_REGISTRY_V2(), msg.sender, _accountNumber);
 
         _setWithdrawalInfo(_key, WithdrawalInfo({
             key: _key,
@@ -400,13 +406,10 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         bytes32 _key,
         IGmxV2IsolationModeVaultFactory _factory,
         WithdrawalInfo memory _withdrawalInfo,
-        GmxEventUtils.UintKeyValue memory _outputTokenAmount,
         string memory _reason
     ) internal {
-        // The swap couldn't happen. Save the output amount so we can refer to it later
-        _withdrawalInfo.outputAmount = _outputTokenAmount.value;
-        _setWithdrawalInfo(_key, _withdrawalInfo);
-        _factory.setShouldSkipTransfer(_withdrawalInfo.vault, false);
+        // Reset this value back to `false` since the transfer did not occur
+        _factory.setShouldSkipTransfer(_withdrawalInfo.vault, /* _shouldSkipTransfer = */ false);
         emit WithdrawalFailed(_key, _reason);
     }
 
@@ -454,6 +457,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
         WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
+        GMX_REGISTRY_V2().setIsAccountWaitingForCallback(
+            storageInfo.vault,
+            storageInfo.accountNumber,
+            _info.vault != address(0)
+        );
         storageInfo.key = _key;
         storageInfo.vault = _info.vault;
         storageInfo.accountNumber = _info.accountNumber;
@@ -476,14 +484,17 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _accountInfo.owner
         );
 
-        // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
-        // designated recipient
         (uint256 transferAmount, bytes32 key) = abi.decode(_data, (uint256, bytes32));
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
         Require.that(
             withdrawalInfo.vault == _accountInfo.owner,
             _FILE,
             "Invalid account owner"
+        );
+        Require.that(
+            withdrawalInfo.accountNumber == _accountInfo.number,
+            _FILE,
+            "Invalid account number"
         );
         Require.that(
             transferAmount > 0 && transferAmount <= withdrawalInfo.inputAmount,

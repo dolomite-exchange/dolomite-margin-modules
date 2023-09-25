@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
-import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IJonesUSDCIsolationModeTokenVaultV1 } from "../../interfaces/jones/IJonesUSDCIsolationModeTokenVaultV1.sol";
 import { IJonesUSDCIsolationModeVaultFactory } from "../../interfaces/jones/IJonesUSDCIsolationModeVaultFactory.sol";
 import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
@@ -59,7 +58,7 @@ contract JonesUSDCIsolationModeTokenVaultV1 is
 
     function dolomiteRegistry()
         public
-        override(IsolationModeTokenVaultV1, IIsolationModeTokenVaultV1)
+        override
         view
         returns (IDolomiteRegistry)
     {

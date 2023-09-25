@@ -30,8 +30,18 @@ import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
  */
 interface IGmxV2IsolationModeTraderBase {
 
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
+
     event OwnerWithdrawETH(address _receiver, uint256 _bal);
     event OwnerSetIsHandler(address _handler, bool _isTrusted);
+    event OwnerSetCallbackGasLimit(uint256 _callbackGasLimit);
+    event OwnerSetSlippageMinimum(uint256 _slippageMinimum);
+
+    // ===================================================
+    // ==================== Functions ====================
+    // ===================================================
 
     function ownerSetCallbackGasLimit(uint256 _callbackGasLimit) external;
 

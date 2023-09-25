@@ -98,6 +98,28 @@ contract DolomiteRegistryImplementation is
         _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
     }
 
+    // ===================== Event Emitter Functions =====================
+
+    function emitLiquidationEnqueued(
+        address _liquidAccountOwner,
+        uint256 _liquidAccountNumber,
+        uint256 _heldMarketId,
+        uint256 _heldAmount,
+        uint256 _owedMarketId,
+        uint256 _minOutputAmount
+    ) external onlyDolomiteMarginGlobalOperator(msg.sender) {
+        emit LiquidationEnqueued(
+            _liquidAccountOwner,
+            _liquidAccountNumber,
+            _heldMarketId,
+            _heldAmount,
+            _owedMarketId,
+            _minOutputAmount
+        );
+    }
+
+    // ========================== View Functions =========================
+
     function genericTraderProxy() external view returns (IGenericTraderProxyV1) {
         return IGenericTraderProxyV1(_getAddress(_GENERIC_TRADER_PROXY_SLOT));
     }

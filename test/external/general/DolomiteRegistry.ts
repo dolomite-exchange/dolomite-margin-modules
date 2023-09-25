@@ -1,5 +1,6 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
+import { BigNumber } from 'ethers';
 import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -177,6 +178,41 @@ describe('DolomiteRegistryImplementation', () => {
     });
 
     it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetSlippageToleranceForPauseSentinel(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#emitLiquidationEnqueued', () => {
+    it('should work normally', async () => {
+      const liquidOwner = core.hhUser1.address;
+      const liquidNumber = BigNumber.from(1);
+      const heldMarketId = BigNumber.from(2);
+      const heldAmount = BigNumber.from(3);
+      const owedMarketId = BigNumber.from(4);
+      const minOutputAmount = BigNumber.from(5);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.governance.address, true);
+      const result = await registry.connect(core.governance).emitLiquidationEnqueued(
+        liquidOwner,
+        liquidNumber,
+        heldMarketId,
+        heldAmount,
+        owedMarketId,
+        minOutputAmount,
+      );
+      await expectEvent(registry, result, 'LiquidationEnqueued', {
+        liquidOwner,
+        liquidNumber,
+        heldMarketId,
+        heldAmount,
+        owedMarketId,
+        minOutputAmount,
+      });
+    });
+
+    it('should fail when not called by global operator', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetSlippageToleranceForPauseSentinel(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,

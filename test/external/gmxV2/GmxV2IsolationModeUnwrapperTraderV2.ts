@@ -1,3 +1,4 @@
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
@@ -13,7 +14,7 @@ import {
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
-import { impersonate, mineBlocks, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import { expectProtocolBalance, expectThrow } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
@@ -21,6 +22,7 @@ import {
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
+  createGmxV2Library,
   createGmxV2MarketTokenPriceOracle,
   getOracleParams,
   getWithdrawalObject,
@@ -40,6 +42,7 @@ const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
+const SLIPPAGE_MINIMUM = BigNumber.from('500');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const amountWei = parseEther('10');
 
@@ -65,7 +68,8 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core);
+    const library = await createGmxV2Library();
+    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
     gmxRegistryV2 = await createGmxRegistryV2(core);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
@@ -77,8 +81,22 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
     );
-    wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
-    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
+    wrapper = await createGmxV2IsolationModeWrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
+    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
     priceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxRegistryV2);
@@ -107,7 +125,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
     await unwrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
     await unwrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
-    await unwrapper.connect(core.governance).ownerSetCallbackGasLimit(CALLBACK_GAS_LIMIT);
     await setEtherBalance(core.gmxEcosystemV2!.gmxExecutor.address, parseEther('100'));
 
     snapshotId = await snapshot();
@@ -125,10 +142,12 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should not initialize twice', async () => {
       await expectThrow(
         unwrapper.initialize(
-          gmxRegistryV2.address,
-          core.tokens.weth.address,
           factory.address,
           core.dolomiteMargin.address,
+          gmxRegistryV2.address,
+          core.tokens.weth.address,
+          CALLBACK_GAS_LIMIT,
+          SLIPPAGE_MINIMUM,
         ),
         'Initializable: contract is already initialized',
       );
@@ -208,7 +227,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -223,7 +241,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       await vault.connect(core.hhUser1).cancelWithdrawal(withdrawalKey);
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
@@ -250,7 +268,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        parseEther('100000'),
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -333,7 +350,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -379,7 +395,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.weth.address,
-        ONE_BI,
         ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
@@ -428,7 +443,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.nativeUsdc!.address,
         ONE_BI,
-        ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -475,7 +489,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.nativeUsdc!.address,
-        ONE_BI,
         ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
@@ -564,7 +577,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         borrowAccountNumber,
         amountWei,
         core.tokens.nativeUsdc!.address,
-        ONE_BI,
         ONE_BI,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));

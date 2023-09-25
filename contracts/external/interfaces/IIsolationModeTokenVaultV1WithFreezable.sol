@@ -31,6 +31,12 @@ import { IIsolationModeTokenVaultV1 } from "./IIsolationModeTokenVaultV1.sol";
  */
 interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 {
 
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
+
+    event IsVaultFrozenSet(bool _isVaultFrozen);
+
     // ===========================================================
     // ======================== Functions ========================
     // ===========================================================

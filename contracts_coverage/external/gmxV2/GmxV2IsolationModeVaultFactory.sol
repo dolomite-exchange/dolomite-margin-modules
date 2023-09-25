@@ -53,7 +53,7 @@ contract GmxV2IsolationModeVaultFactory is
 
     address public immutable override SHORT_TOKEN; // solhint-disable-line var-name-mixedcase
     address public immutable override LONG_TOKEN; // solhint-disable-line var-name-mixedcase
-    address private immutable _INDEX_TOKEN; // solhint-disable-line var-name-mixedcase
+    address public immutable override INDEX_TOKEN; // solhint-disable-line var-name-mixedcase
     uint256 private immutable _INDEX_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
     uint256 private immutable _SHORT_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
     uint256 private immutable _LONG_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
@@ -82,8 +82,8 @@ contract GmxV2IsolationModeVaultFactory is
         _dolomiteMargin
     ) {
         gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
-        _INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
-        _INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_INDEX_TOKEN);
+        INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
+        _INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
         SHORT_TOKEN = _tokenAndMarketAddresses.shortToken;
         _SHORT_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(SHORT_TOKEN);
         LONG_TOKEN = _tokenAndMarketAddresses.longToken;
@@ -266,7 +266,7 @@ contract GmxV2IsolationModeVaultFactory is
     function getMarketInfo() external view returns (MarketInfoParams memory) {
         return MarketInfoParams({
             marketToken: UNDERLYING_TOKEN,
-            indexToken: _INDEX_TOKEN,
+            indexToken: INDEX_TOKEN,
             indexTokenMarketId: _INDEX_TOKEN_MARKET_ID,
             shortToken: SHORT_TOKEN,
             shortTokenMarketId: _SHORT_TOKEN_MARKET_ID,

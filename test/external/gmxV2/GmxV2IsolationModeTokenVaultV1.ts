@@ -1,4 +1,5 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
@@ -6,8 +7,6 @@ import { parseEther } from 'ethers/lib/utils';
 import {
   CustomTestToken,
   GmxRegistryV2,
-  GmxV2IsolationModeTokenVaultV1Library,
-  GmxV2IsolationModeTokenVaultV1Library__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
@@ -24,13 +23,20 @@ import {
   depositIntoDolomiteMargin,
 } from 'src/utils/dolomite-utils';
 import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, mineBlocks, revertToSnapshotAndCapture, snapshot } from 'test/utils';
-import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from 'test/utils/assertions';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectThrow,
+  expectTotalSupply,
+  expectWalletBalance,
+} from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
+  createGmxV2Library,
   getInitiateWrappingParams,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import {
@@ -51,6 +57,7 @@ const minAmountOut = parseEther('1800');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
+const SLIPPAGE_MINIMUM = BigNumber.from('500');
 const INVALID_POOL_FACTOR = BigNumber.from('900000000000000000000000000000'); // 9e29
 const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
 
@@ -81,14 +88,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const library = await createContractWithAbi<GmxV2IsolationModeTokenVaultV1Library>(
-      GmxV2IsolationModeTokenVaultV1Library__factory.abi,
-      GmxV2IsolationModeTokenVaultV1Library__factory.bytecode,
-      [],
-    );
+    const library = await createGmxV2Library();
     const userVaultImplementation = await createContractWithLibrary<TestGmxV2IsolationModeTokenVaultV1>(
       'TestGmxV2IsolationModeTokenVaultV1',
-      { GmxV2IsolationModeTokenVaultV1Library: library.address },
+      { GmxV2Library: library.address },
       [core.tokens.weth.address],
     );
     gmxRegistryV2 = await createGmxRegistryV2(core);
@@ -103,8 +106,22 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       userVaultImplementation,
     );
     impersonatedFactory = await impersonate(factory.address, true);
-    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
-    wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
+    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
+    wrapper = await createGmxV2IsolationModeWrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
@@ -193,7 +210,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         BalanceCheckFlag.Both,
       );
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
@@ -215,8 +232,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: parseEther('.01') },
       );
 
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.isShouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -230,7 +247,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         BalanceCheckFlag.Both,
       );
-      expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
 
       const initiateWrappingParams = await getInitiateWrappingParams(
         borrowAccountNumber,
@@ -494,7 +511,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(await vault.isVaultFrozen()).to.eq(true);
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       await vault.connect(core.hhUser1).cancelDeposit(depositKey);
       expect(await vault.isVaultFrozen()).to.eq(false);
     });
@@ -533,7 +550,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
 
       // Mine blocks so we can cancel deposit
-      await mineBlocks(1200);
+      await mine(1200);
       await vault.connect(core.hhUser1).cancelWithdrawal(withdrawalKey);
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
@@ -799,7 +816,11 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
   describe('#setIsDepositSourceWrapper', () => {
     it('should work normally', async () => {
-      await vault.connect(impersonatedFactory).setIsDepositSourceWrapper(true);
+      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      const result = await vault.connect(impersonatedFactory).setIsDepositSourceWrapper(true);
+      await expectEvent(vault, result, 'IsDepositSourceWrapperSet', {
+        isDepositSourceWrapper: true,
+      });
       expect(await vault.isDepositSourceWrapper()).to.eq(true);
     });
 
@@ -813,7 +834,11 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
   describe('#setShouldSkipTransfer', () => {
     it('should work normally', async () => {
-      await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
+      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      const result = await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
+      await expectEvent(vault, result, 'ShouldSkipTransferSet', {
+        shouldSkipTransfer: true,
+      });
       expect(await vault.isShouldSkipTransfer()).to.eq(true);
     });
 

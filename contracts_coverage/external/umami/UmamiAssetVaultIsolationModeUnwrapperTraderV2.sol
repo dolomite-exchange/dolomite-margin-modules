@@ -372,8 +372,8 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
             _FILE,
             "Invalid account owner"
         );
-        if (transferAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(transferAmount > 0,
+        if (transferAmount > 0 && transferAmount <= withdrawalInfo.inputAmount) { /* FOR COVERAGE TESTING */ }
+        Require.that(transferAmount > 0 && transferAmount <= withdrawalInfo.inputAmount,
             _FILE,
             "Invalid transfer amount"
         );

@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
@@ -62,13 +63,15 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // ============ Initializer ============
 
     function initialize(
+        address _dGM,
+        address _dolomiteMargin,
         address _gmxRegistryV2,
         address _weth,
-        address _dGM,
-        address _dolomiteMargin
+        uint256 _callbackGasLimit,
+        uint256 _slippageMinimum
     ) external initializer {
         _initializeWrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxRegistryV2, _weth);
+        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit, _slippageMinimum);
     }
 
     // ============================================
@@ -89,12 +92,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             "Invalid deposit key"
         );
 
-        // @follow-up EventData is weird so we should discuss
-        uint256 len = _eventData.uintItems.items.length;
-        // @audit Don't use len-1 but use index value
-        GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[len-1];
+        // @follow-up Switched to use 0 instead of len-1
+        // @audit Don't use len - 1 but use index value
+        GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[0];
         Require.that(
-            keccak256(abi.encodePacked(receivedMarketTokens.key)) 
+            keccak256(abi.encodePacked(receivedMarketTokens.key))
                 == keccak256(abi.encodePacked("receivedMarketTokens")),
             _FILE,
             "Unexpected return data"
@@ -129,7 +131,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         } else {
             // We just need to blind transfer the min amount to the vault
             underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
-            factory.setIsVaultFrozen(depositInfo.vault, false);
+            factory.setIsVaultFrozen(depositInfo.vault, /* _isVaultFrozen = */ false);
             _setDepositInfo(_key, _emptyDepositInfo());
             emit DepositExecuted(_key);
         }
@@ -169,14 +171,14 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         }
 
         // Burn the GM tokens that were virtually minted to the vault, since the deposit was cancelled
-        factory.setShouldSkipTransfer(depositInfo.vault, true);
+        factory.setShouldSkipTransfer(depositInfo.vault, /* _shouldSkipTransfer = */ true);
         factory.withdrawFromDolomiteMarginFromTokenConverter(
             depositInfo.vault,
             depositInfo.accountNumber,
             _deposit.numbers.minMarketTokens
         );
 
-        factory.setIsVaultFrozen(depositInfo.vault, false);
+        factory.setIsVaultFrozen(depositInfo.vault, /* _isVaultFrozen = */ false);
         _setDepositInfo(_key, _emptyDepositInfo());
         emit DepositCancelled(_key);
     }
@@ -215,8 +217,13 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     returns (uint256) {
         _checkSlippage(_inputToken, _inputAmount, _minOutputAmount);
 
-        address tradeOriginatorForStackTooDeep = _tradeOriginator;
+        // Account number is set by the Token Vault so we know it's safe to use
         (uint256 accountNumber, uint256 ethExecutionFee) = abi.decode(_extraOrderData, (uint256, uint256));
+
+        // Disallow the withdrawal if there's already an action waiting for it
+        GmxV2Library.checkVaultIsNotActive(GMX_REGISTRY_V2(), _tradeOriginator, accountNumber);
+
+        address tradeOriginatorForStackTooDeep = _tradeOriginator;
         IGmxExchangeRouter exchangeRouter = GMX_REGISTRY_V2().gmxExchangeRouter();
         WETH().safeTransferFrom(tradeOriginatorForStackTooDeep, address(this), ethExecutionFee);
         WETH().withdraw(ethExecutionFee);
@@ -256,11 +263,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultFrozen(
             tradeOriginatorForStackTooDeep,
-            true
+            /* _isVaultFrozen = */ true
         );
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setShouldSkipTransfer(
             tradeOriginatorForStackTooDeep,
-            true
+            /* _shouldSkipTransfer = */ true
         );
         return _minOutputAmount;
     }
@@ -282,6 +289,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
         DepositInfo storage storageInfo = _getDepositSlot(_key);
+        GMX_REGISTRY_V2().setIsAccountWaitingForCallback(
+            storageInfo.vault,
+            storageInfo.accountNumber,
+            _info.vault != address(0)
+        );
         storageInfo.key = _key;
         storageInfo.vault = _info.vault;
         storageInfo.accountNumber = _info.accountNumber;

@@ -18,10 +18,13 @@ import {
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
+  createGmxV2Library,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from 'test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
+const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
+const SLIPPAGE_MINIMUM = BigNumber.from('500');
 const amountWei = parseEther('1');
 const defaultAccountNumber = 0;
 
@@ -46,7 +49,8 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       network: Network.ArbitrumOne,
     });
     gmxRegistryV2 = await createGmxRegistryV2(core);
-    vaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core);
+    const library = await createGmxV2Library();
+    vaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
@@ -58,8 +62,22 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       vaultImplementation,
     );
 
-    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(core, factory, gmxRegistryV2);
-    wrapper = await createGmxV2IsolationModeWrapperTraderV2(core, factory, gmxRegistryV2);
+    unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
+    wrapper = await createGmxV2IsolationModeWrapperTraderV2(
+      core,
+      factory,
+      library,
+      gmxRegistryV2,
+      CALLBACK_GAS_LIMIT,
+      SLIPPAGE_MINIMUM,
+    );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
@@ -90,12 +108,9 @@ describe('GmxV2IsolationModeVaultFactory', () => {
   describe('#constructor', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.gmxRegistryV2()).to.equal(gmxRegistryV2.address);
-      expect(await factory.indexToken()).to.equal(core.tokens.weth.address);
-      expect(await factory.indexTokenMarketId()).to.equal(core.marketIds.weth);
-      expect(await factory.shortToken()).to.equal(core.tokens.nativeUsdc!.address);
-      expect(await factory.shortTokenMarketId()).to.equal(core.marketIds.nativeUsdc!);
-      expect(await factory.longToken()).to.equal(core.tokens.weth.address);
-      expect(await factory.longTokenMarketId()).to.equal(core.marketIds.weth);
+      expect(await factory.SHORT_TOKEN()).to.equal(core.tokens.nativeUsdc!.address);
+      expect(await factory.LONG_TOKEN()).to.equal(core.tokens.weth.address);
+      expect(await factory.INDEX_TOKEN()).to.equal(core.tokens.weth.address);
       expectArrayEq(await factory.allowableDebtMarketIds(), [core.marketIds.nativeUsdc!, core.marketIds.weth]);
       expectArrayEq(
         await factory.allowableCollateralMarketIds(),
