@@ -24,7 +24,6 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteMarginCallee } from "../../protocol/interfaces/IDolomiteMarginCallee.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
@@ -34,7 +33,6 @@ import { IGmxDepositCallbackReceiver } from "../interfaces/gmx/IGmxDepositCallba
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { UpgradeableIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeWrapperTrader.sol";
 
 
@@ -48,8 +46,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     UpgradeableIsolationModeWrapperTrader,
     GmxV2IsolationModeTraderBase,
     IGmxV2IsolationModeWrapperTraderV2,
-    IGmxDepositCallbackReceiver,
-    IDolomiteMarginCallee
+    IGmxDepositCallbackReceiver
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
@@ -194,30 +191,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
     }
 
-    function callFunction(
-        address _sender,
-        IDolomiteMargin.AccountInfo calldata _accountInfo,
-        bytes calldata _data
-    )
-    external
-    view
-    onlyDolomiteMargin(msg.sender)
-    onlyDolomiteMarginGlobalOperator(_sender) {
-        Require.that(
-            VAULT_FACTORY().getAccountByVault(_accountInfo.owner) != address(0),
-            _FILE,
-            "Account owner is not a vault",
-            _accountInfo.owner
-        );
-
-        (uint256 accountNumber,) = abi.decode(_data, (uint256, uint256));
-        Require.that(
-            accountNumber == _accountInfo.number,
-            _FILE,
-            "Account numbers do not match"
-        );
-    }
-
     function actionsLength() external override pure returns (uint256) {
         return _ACTIONS_LENGTH;
     }
@@ -226,41 +199,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).LONG_TOKEN();
         address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).SHORT_TOKEN();
         return _inputToken == longToken || _inputToken == shortToken;
-    }
-
-    function createActionsForWrapping(
-        uint256 _primaryAccountId,
-        uint256 _otherAccountId,
-        address _primaryAccountOwner,
-        address _otherAccountOwner,
-        uint256 _outputMarket,
-        uint256 _inputMarket,
-        uint256 _minAmountOut,
-        uint256 _inputAmount,
-        bytes calldata _orderData
-    )
-    public
-    override
-    view
-    returns (IDolomiteMargin.ActionArgs[] memory) {
-        IDolomiteMargin.ActionArgs[] memory superActions = super.createActionsForWrapping(
-            _primaryAccountId,
-            _otherAccountId,
-            _primaryAccountOwner,
-            _otherAccountOwner,
-            _outputMarket,
-            _inputMarket,
-            _minAmountOut,
-            _inputAmount,
-            _orderData
-        );
-        assert(superActions.length == 1); // panic if the number of actions is not 1
-        assert(superActions[0].actionType == IDolomiteStructs.ActionType.Sell); // panic if the Action is not `Sell`
-
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
-        actions[0] = AccountActionLib.encodeCallAction(_primaryAccountId, /* _callee = */ address(this), _orderData);
-        actions[1] = superActions[0]; // append the Sell action to the end
-        return actions;
     }
 
     // ============================================
@@ -281,7 +219,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     returns (uint256) {
         _checkSlippage(_inputToken, _inputAmount, _minOutputAmount);
 
-        // Account number is validated at this point by `callFunction`
+        // Account number is set by the Token Vault so we know it's safe to use
         (uint256 accountNumber, uint256 ethExecutionFee) = abi.decode(_extraOrderData, (uint256, uint256));
 
         // Disallow the withdrawal if there's already an action waiting for it
@@ -327,11 +265,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultFrozen(
             tradeOriginatorForStackTooDeep,
-            true
+            /* _isVaultFrozen = */ true
         );
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setShouldSkipTransfer(
             tradeOriginatorForStackTooDeep,
-            true
+            /* _shouldSkipTransfer = */ true
         );
         return _minOutputAmount;
     }

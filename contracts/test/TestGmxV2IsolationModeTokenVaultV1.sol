@@ -37,41 +37,41 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
 
     constructor(address _weth) GmxV2IsolationModeTokenVaultV1(_weth) { /* solhint-disable-line no-empty-blocks */ }
 
-    function callInitiateWrappingAndTriggerReentrancy(
-        uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
-    ) external payable nonReentrant {
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool isSuccessful, bytes memory result) = address(this).delegatecall(
-            abi.encodeWithSelector(
-                this.initiateWrapping.selector,
-                _tradeAccountNumber,
-                _marketIdsPath,
-                _inputAmountWei,
-                _minOutputAmountWei,
-                _tradersPath,
-                _makerAccounts,
-                _userConfig
-            )
-        );
-        if (!isSuccessful) {
-            if (result.length < 68) {
-                revert("No reversion message!");
-            } else {
-                // solhint-disable-next-line no-inline-assembly
-                assembly {
-                    result := add(result, 0x04) // Slice the sighash.
-                }
-            }
-            (string memory errorMessage) = abi.decode(result, (string));
-            revert(errorMessage);
-        }
-    }
+//    function callInitiateWrappingAndTriggerReentrancy(
+//        uint256 _tradeAccountNumber,
+//        uint256[] calldata _marketIdsPath,
+//        uint256 _inputAmountWei,
+//        uint256 _minOutputAmountWei,
+//        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+//        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+//        IGenericTraderProxyV1.UserConfig memory _userConfig
+//    ) external payable nonReentrant {
+//        // solhint-disable-next-line avoid-low-level-calls
+//        (bool isSuccessful, bytes memory result) = address(this).delegatecall(
+//            abi.encodeWithSelector(
+//                this.initiateWrapping.selector,
+//                _tradeAccountNumber,
+//                _marketIdsPath,
+//                _inputAmountWei,
+//                _minOutputAmountWei,
+//                _tradersPath,
+//                _makerAccounts,
+//                _userConfig
+//            )
+//        );
+//        if (!isSuccessful) {
+//            if (result.length < 68) {
+//                revert("No reversion message!");
+//            } else {
+//                // solhint-disable-next-line no-inline-assembly
+//                assembly {
+//                    result := add(result, 0x04) // Slice the sighash.
+//                }
+//            }
+//            (string memory errorMessage) = abi.decode(result, (string));
+//            revert(errorMessage);
+//        }
+//    }
 
     function callInitiateUnwrappingAndTriggerReentrancy(
         uint256 _tradeAccountNumber,
