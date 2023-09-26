@@ -30,6 +30,7 @@ import { IERC4626 } from "../interfaces/IERC4626.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeUnwrapperTrader } from "../interfaces/IIsolationModeUnwrapperTrader.sol";
+import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
@@ -37,6 +38,7 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
+import "hardhat/console.sol";
 
 /**
  * @title   UmamiAssetVaultIsolationModeUnwrapperTraderV2
@@ -58,6 +60,7 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
     uint256 private constant _ACTIONS_LENGTH = 2;
     bytes32 private constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
     bytes32 private constant _WITHDRAWAL_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalInfo")) - 1);
+    bytes32 private constant _UMAMI_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.umamiRegistry")) - 1);
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -77,10 +80,12 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
 
     function initialize(
         address _dUmamiAssetVault,
-        address _dolomiteMargin
+        address _dolomiteMargin,
+        address _umamiRegistry
     )
     external initializer {
         _initializeUnwrapperTrader(_dUmamiAssetVault, _dolomiteMargin);
+        _setAddress(_UMAMI_REGISTRY_SLOT, _umamiRegistry);
     }
 
     // ==========================================
@@ -115,10 +120,14 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
             AccountBalanceLib.BalanceCheckFlag.None
         );
 
+        // Save the output amount so we can refer to it later
+        withdrawalInfo.outputAmount = _outputAmount;
+        _setWithdrawalInfo(_key, withdrawalInfo);
+
         IUmamiAssetVaultIsolationModeVaultFactory factory = IUmamiAssetVaultIsolationModeVaultFactory(
             address(VAULT_FACTORY())
         );
-        factory.setShouldSkipTransfer(withdrawalInfo.vault, true);
+        factory.setShouldSkipTransfer(withdrawalInfo.vault, /* _shouldSkipTransfer = */ true);
         IUmamiAssetVaultIsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
             withdrawalInfo.accountNumber,
             marketIdsPath,
@@ -203,6 +212,7 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
         );
 
         assert(_getWithdrawalSlot(_key).vault == address(0)); // panic if the key is used
+        // @todo check if vault is not active
 
         _setWithdrawalInfo(_key, WithdrawalInfo({
             key: _key,
@@ -261,9 +271,10 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
             "Invalid input amount"
         );
 
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
+        // If the input amount doesn't match, we need to add 2 actions to settle the difference
+        uint256 actionsLength = _inputAmount < withdrawalInfo.inputAmount ? 4 : 2;
+        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength);
 
-        // @follow-up GMX has 2 extra actions sometimes. I don't think we need it but want to confirm
         // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
         // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
         actions[0] = AccountActionLib.encodeCallAction(
@@ -281,6 +292,23 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
             /* _amountOutMinWei = */ _minAmountOut,
             _orderData
         );
+        if (actionsLength == 4) {
+            _inputAmount -= withdrawalInfo.inputAmount;
+            actions[2] = AccountActionLib.encodeCallAction(
+                _liquidAccountId,
+                /* _callee */ address(this),
+                /* (_transferAmount, _key)[encoded] = */ abi.encode(_inputAmount, withdrawalInfo.key)
+            );
+            actions[3] = AccountActionLib.encodeExternalSellAction(
+                _liquidAccountId,
+                _inputMarket,
+                _outputMarket,
+                /* _trader = */ address(this),
+                /* _amountInWei = */ _inputAmount,
+                /* _amountOutMinWei = */ 1,
+                _orderData
+            );
+        }
 
         return actions;
     }
@@ -298,6 +326,10 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
     function isHandler(address _handler) public view returns (bool) {
         bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
         return _getUint256(slot) == 1;
+    }
+
+    function UMAMI_REGISTRY() public view returns (IUmamiAssetVaultRegistry) {
+        return IUmamiAssetVaultRegistry(_getAddress(_UMAMI_REGISTRY_SLOT));
     }
 
     // ============================================
@@ -330,23 +362,20 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
             _FILE,
             "Invalid output token"
         );
-
-        // @follow-up We never set outputAmount. Should I get rid of this?
-        //     withdrawalInfo.outputAmount >= _minOutputAmount,
-        //     _FILE,
-        //     "Invalid output amount"
-        // );
+        Require.that(
+            withdrawalInfo.outputAmount >= _minOutputAmount,
+            _FILE,
+            "Invalid output amount"
+        );
 
         // Reduce output amount by the size of the ratio of the input amount. Almost always the ratio will be 100%.
         // During liquidations, there will be a non-100% ratio because the user may not lose all collateral to the
         // liquidator.
-
-        // @follow-up Do we need these lines. I don't think so, but what to return
-        // uint256 outputAmount = withdrawalInfo.outputAmount * _inputAmount / withdrawalInfo.inputAmount;
-        // withdrawalInfo.inputAmount -= _inputAmount;
-        // withdrawalInfo.outputAmount -= outputAmount;
-        // _setWithdrawalInfo(_tradeOriginator, withdrawalInfo);
-        return _minOutputAmount;
+        uint256 outputAmount = withdrawalInfo.outputAmount * _inputAmount / withdrawalInfo.inputAmount;
+        withdrawalInfo.inputAmount -= _inputAmount;
+        withdrawalInfo.outputAmount -= outputAmount;
+        _setWithdrawalInfo(key, withdrawalInfo);
+        return outputAmount;
     }
 
     function _callFunction(
@@ -399,6 +428,11 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
 
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
         WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
+        UMAMI_REGISTRY().setIsAccountWaitingForCallback(
+            storageInfo.vault,
+            storageInfo.accountNumber,
+            _info.vault != address(0)
+        );
         storageInfo.key = _key;
         storageInfo.vault = _info.vault;
         storageInfo.accountNumber = _info.accountNumber;

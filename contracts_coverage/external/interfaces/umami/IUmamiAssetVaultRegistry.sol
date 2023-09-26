@@ -42,6 +42,8 @@ interface IUmamiAssetVaultRegistry is IBaseRegistry {
     event WithdrawalQueuerSet(address indexed _withdrawalQueuer);
     event UmamiUnwrapperTraderSet(address indexed _umamiUnwrapperTrader);
 
+    event AccountWaitingForCallbackSet(address _vault, uint256 _accountNumber, bool _isWaiting);
+
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================
@@ -50,11 +52,24 @@ interface IUmamiAssetVaultRegistry is IBaseRegistry {
     function ownerSetWithdrawalQueuer(address _withdrawalQueuer) external;
     function ownerSetUmamiUnwrapperTrader(address _umamiUnwrapperTrader) external;
 
+    function setIsAccountWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber,
+        bool _isWaiting
+    ) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
 
     function storageViewer() external view returns (IUmamiAssetVaultStorageViewer);
+
     function withdrawalQueuer() external view returns (IUmamiWithdrawalQueuer);
+
     function umamiUnwrapperTrader() external view returns (IUmamiAssetVaultIsolationModeUnwrapperTraderV2);
+
+    function isAccountWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber
+    ) external view returns (bool);
 }

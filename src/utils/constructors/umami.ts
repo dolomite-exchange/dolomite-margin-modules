@@ -86,6 +86,7 @@ export async function getUmamiAssetVaultIsolationModeUnwrapperTraderV2Constructo
   const calldata = await implementation.populateTransaction.initialize(
     umamiVaultIsolationModeToken.address,
     core.dolomiteMargin.address,
+    umamiAssetVaultRegistry.address,
   );
 
   return [

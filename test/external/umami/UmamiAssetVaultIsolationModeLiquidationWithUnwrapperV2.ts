@@ -89,7 +89,7 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
     liquidator = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      [core.dolomiteMargin.address, core.expiry.address, core.liquidatorAssetRegistry.address],
+      [core.dolomiteRegistry.address, core.dolomiteMargin.address, core.expiry.address, core.liquidatorAssetRegistry.address],
     );
 
     underlyingToken = core.umamiEcosystem!.glpUsdc.connect(core.hhUser1);

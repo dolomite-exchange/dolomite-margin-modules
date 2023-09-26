@@ -42,10 +42,13 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
 
     // ==================== Constants ====================
 
+    // solhint-disable max-line-length
     bytes32 private constant _FILE = "UmamiAssetVaultRegistry";
     bytes32 private constant _STORAGE_VIEWER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.storageViewer")) - 1);
-    bytes32 private constant _WITHDRAWAL_QUEUER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalQueuer")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _UMAMI_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.umamiUnwrapperTrader")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _WITHDRAWAL_QUEUER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalQueuer")) - 1);
+    bytes32 private constant _UMAMI_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.umamiUnwrapperTrader")) - 1);
+    bytes32 private constant _IS_WAITING_FOR_CALLBACK_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isWaitingForCallback")) - 1);
+    // solhint-enable max-line-length
 
     // ==================== Initializer ====================
 
@@ -85,6 +88,16 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         _ownerSetWithdrawalQueuer(_withdrawalQueuer);
     }
 
+    // ==================== Views ====================
+
+    function isAccountWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber
+    ) external view returns (bool) {
+        bytes32 slot = keccak256(abi.encodePacked(_IS_WAITING_FOR_CALLBACK_SLOT, _vault, _accountNumber));
+        return _getUint256(slot) == 1;
+    }
+
     function storageViewer() external view returns (IUmamiAssetVaultStorageViewer) {
         return IUmamiAssetVaultStorageViewer(_getAddress(_STORAGE_VIEWER_SLOT));
     }
@@ -95,6 +108,20 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
 
     function withdrawalQueuer() external view returns (IUmamiWithdrawalQueuer) {
         return IUmamiWithdrawalQueuer(_getAddress(_WITHDRAWAL_QUEUER_SLOT));
+    }
+
+    // ==================== Non-Admin Functions ====================
+
+    function setIsAccountWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber,
+        bool _isWaiting
+    )
+    external
+    onlyDolomiteMarginGlobalOperator(msg.sender) {
+        bytes32 slot = keccak256(abi.encodePacked(_IS_WAITING_FOR_CALLBACK_SLOT, _vault, _accountNumber));
+        _setUint256(slot, _isWaiting ? 1 : 0);
+        emit AccountWaitingForCallbackSet(_vault, _accountNumber, _isWaiting);
     }
 
     // ============================================================

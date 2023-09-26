@@ -37,6 +37,7 @@ import {
 import { setupWhitelistAndAggregateVault } from './umami-utils';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { defaultAbiCoder } from '@ethersproject/abi';
+import { ethers } from 'hardhat';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -101,6 +102,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
       [underlyingMarketId, core.marketIds.usdc]
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(unwrapper.address, true);
     await disableInterestAccrual(core, core.marketIds.usdc);
 
     solidUser = core.hhUser5;
@@ -141,6 +143,7 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
         unwrapper.initialize(
           factory.address,
           core.dolomiteMargin.address,
+          umamiRegistry.address,
         ),
         'Initializable: contract is already initialized',
       );
