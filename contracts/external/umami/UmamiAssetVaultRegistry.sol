@@ -102,12 +102,12 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         return IUmamiAssetVaultStorageViewer(_getAddress(_STORAGE_VIEWER_SLOT));
     }
 
-    function umamiUnwrapperTrader() external view returns (IUmamiAssetVaultIsolationModeUnwrapperTraderV2) {
-        return IUmamiAssetVaultIsolationModeUnwrapperTraderV2(_getAddress(_UMAMI_UNWRAPPER_TRADER_SLOT));
-    }
-
     function withdrawalQueuer() external view returns (IUmamiWithdrawalQueuer) {
         return IUmamiWithdrawalQueuer(_getAddress(_WITHDRAWAL_QUEUER_SLOT));
+    }
+
+    function umamiUnwrapperTrader() public view returns (IUmamiAssetVaultIsolationModeUnwrapperTraderV2) {
+        return IUmamiAssetVaultIsolationModeUnwrapperTraderV2(_getAddress(_UMAMI_UNWRAPPER_TRADER_SLOT));
     }
 
     // ==================== Non-Admin Functions ====================
@@ -117,8 +117,13 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         uint256 _accountNumber,
         bool _isWaiting
     )
-    external
-    onlyDolomiteMarginGlobalOperator(msg.sender) {
+    external {
+        Require.that(
+            msg.sender == address(umamiUnwrapperTrader()),
+            _FILE,
+            "Sender must be Umami unwrapper",
+            msg.sender
+        );
         bytes32 slot = keccak256(abi.encodePacked(_IS_WAITING_FOR_CALLBACK_SLOT, _vault, _accountNumber));
         _setUint256(slot, _isWaiting ? 1 : 0);
         emit AccountWaitingForCallbackSet(_vault, _accountNumber, _isWaiting);

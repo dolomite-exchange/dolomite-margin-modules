@@ -69,7 +69,7 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
     const userVaultImplementation = await createContractWithAbi<TestUmamiAssetVaultIsolationModeTokenVaultV1>(
       TestUmamiAssetVaultIsolationModeTokenVaultV1__factory.abi,
       TestUmamiAssetVaultIsolationModeTokenVaultV1__factory.bytecode,
-      [],
+      [core.tokens.weth.address],
     );
 
     umamiRegistry = await createUmamiAssetVaultRegistry(core);
@@ -146,14 +146,21 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
+  describe('#constructor', () => {
+    it('should work', async () => {
+      expect(await vault.WETH()).to.eq(core.tokens.weth);
+    });
+  });
+
   describe('#initiateUnwrapping', () => {
     it('should work', async () => {
       await underlyingToken.connect(core.hhUser1).approve(vault.address, underlyingAmount);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, underlyingAmount);
-      await vault.transferIntoPositionWithUnderlyingToken(
+      await vault.openBorrowPosition(
         defaultAccountNumber,
         borrowAccountNumber,
         underlyingAmount,
+        { value: parseEther('.0005') },
       );
       await vault.connect(core.hhUser1).initiateUnwrapping(
         borrowAccountNumber,
@@ -221,10 +228,11 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
     it('should work normally', async () => {
       await underlyingToken.connect(core.hhUser1).approve(vault.address, underlyingAmount);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, underlyingAmount);
-      await vault.transferIntoPositionWithUnderlyingToken(
+      await vault.openBorrowPosition(
         defaultAccountNumber,
         borrowAccountNumber,
         underlyingAmount,
+        { value: parseEther('.0005') },
       );
       await vault.connect(core.hhUser5).initiateUnwrappingForLiquidation(
         borrowAccountNumber,
@@ -354,7 +362,7 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        'UmamiVaultIsolationModeVaultV1: Only unwrapper if frozen',
+        `UmamiVaultIsolationModeVaultV1: Only unwrapper can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -461,7 +469,7 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
   describe('#setShouldSkipTransfer', () => {
     it('should work normally', async () => {
       await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
-      expect(await vault.isShouldSkipTransfer()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(true);
     });
 
     it('should fail if not called by factory', async () => {

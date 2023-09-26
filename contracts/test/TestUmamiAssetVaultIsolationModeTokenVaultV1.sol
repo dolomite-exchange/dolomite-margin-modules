@@ -33,7 +33,7 @@ contract TestUmamiAssetVaultIsolationModeTokenVaultV1 is UmamiAssetVaultIsolatio
 
     bytes32 private constant _FILE = "TestUmamiIsolationModeVaultV1";
 
-    constructor() { /* solhint-disable-line no-empty-blocks */ }
+    constructor(address _weth) UmamiAssetVaultIsolationModeTokenVaultV1(_weth) { /* solhint-disable-line no-empty-blocks */ }
 
     function callInitiateUnwrappingAndTriggerReentrancy(
         uint256 _tradeAccountNumber,

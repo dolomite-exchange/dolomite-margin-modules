@@ -20,18 +20,22 @@
 
 pragma solidity ^0.8.9;
 
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IUmamiAssetVault } from "../interfaces/umami/IUmamiAssetVault.sol";
 import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
+import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 
 
@@ -49,6 +53,7 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
     IsolationModeTokenVaultV1WithFreezableAndPausable
 {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IWETH;
 
     // ==================================================================
     // =========================== Constants ============================
@@ -57,6 +62,15 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
     bytes32 private constant _FILE = "UmamiVaultIsolationModeVaultV1"; // shortened to fit into 32 bytes
     bytes32 private constant _VIRTUAL_BALANCE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.virtualBalance")) - 1);
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _POSITION_TO_EXECUTION_FEE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.positionToExecutionFee")) - 1); // solhint-disable-line max-line-length
+
+    uint256 public constant EXECUTION_FEE = 0.0005 ether;
+
+    // ==================================================================
+    // ====================== Immutable Variables =======================
+    // ==================================================================
+
+    IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -81,6 +95,14 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
     }
 
     // ==================================================================
+    // ======================== Constructor ========================
+    // ==================================================================
+
+    constructor(address _weth) {
+        WETH = IWETH(_weth);
+    }
+
+    // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
 
@@ -91,6 +113,7 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         uint256 _minOutputAmount
     )
     external
+    payable
     nonReentrant
     onlyVaultOwner(msg.sender)
     requireNotFrozen {
@@ -98,11 +121,11 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
-            _minOutputAmount
+            _minOutputAmount,
+            /* _isLiquidation = */ false
         );
     }
 
-    // @follow-up Should this be requireNotFrozen
     function initiateUnwrappingForLiquidation(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
@@ -113,11 +136,21 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
     payable 
     nonReentrant
     onlyLiquidator(msg.sender) {
+        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _tradeAccountNumber
+        });
+        Require.that(
+            _inputAmount == DOLOMITE_MARGIN().getAccountWei(account, marketId()).value,
+            _FILE,
+            "Invalid inputAmount"
+        );
         _initiateUnwrapping(
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
-            _minOutputAmount
+            _minOutputAmount,
+            /* _isLiquidation = */ true
         );
     }
 
@@ -131,12 +164,10 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
     external
+    payable
     override
     onlyVaultOwnerOrUnwrapper(msg.sender)
     {
-        if (isVaultFrozen()) {
-            _requireOnlyUnwrapper(msg.sender);
-        }
         _swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
@@ -176,7 +207,7 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
     onlyVaultFactory(msg.sender) {
         _setVirtualBalance(virtualBalance() - _amount);
 
-        if (!isShouldSkipTransfer()) {
+        if (!shouldSkipTransfer()) {
             IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
             _requireVirtualBalanceMatchesRealBalance();
         } else {
@@ -211,34 +242,60 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         return IUmamiAssetVault(underlyingToken).withdrawalPaused();
     }
 
-    function isShouldSkipTransfer() public view returns (bool) {
+    function shouldSkipTransfer() public view returns (bool) {
         return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
+    }
+
+    function getExecutionFeeForAccountNumber(uint256 _accountNumber) public view returns (uint256) {
+        return _getUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)));
+    }
+
+    function isWaitingForCallback(uint256 _accountNumber) public view returns (bool) {
+        return registry().isAccountWaitingForCallback(/* _vault = */ address(this), _accountNumber);
     }
 
     // ==================================================================
     // ======================== Internal Functions ========================
     // ==================================================================
 
-    function _initiateUnwrapping(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 /* _minOutputAmount */
-    ) internal {
-        _setIsVaultFrozen(true);
-
-        // @follow-up Should we add some checks for the _outputToken to make sure user doens't DOS
-        // @follow-up Do we want to queueRedeem immediate?
-        address underlyingToken = IUmamiAssetVaultIsolationModeVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN();
-        IERC20(underlyingToken).safeApprove(address(registry().withdrawalQueuer()), _inputAmount);
-        bytes32 key = registry().withdrawalQueuer().queueRedeem(underlyingToken, _inputAmount);
-
-        IUmamiAssetVaultIsolationModeUnwrapperTraderV2(registry().umamiUnwrapperTrader()).vaultSetWithdrawalInfo(
-            key, _tradeAccountNumber, _inputAmount, _outputToken
+    function _openBorrowPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+    internal
+    override {
+        Require.that(
+            msg.value == EXECUTION_FEE,
+            _FILE,
+            "Invalid execution fee"
+        );
+        super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+        _setExecutionFeeForAccountNumber(
+            _toAccountNumber,
+            getExecutionFeeForAccountNumber(_toAccountNumber) + msg.value
         );
     }
 
-    // @follow-up This might be adjusted based on Corey's changes to the FreezableAndPausable
+    function _transferIntoPositionWithUnderlyingToken(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256 _amountWei
+    )
+    internal
+    override {
+        Require.that(
+            getExecutionFeeForAccountNumber(_borrowAccountNumber) != 0,
+            _FILE,
+            "Missing execution fee"
+        );
+        super._transferIntoPositionWithUnderlyingToken(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _amountWei
+        );
+    }
+
     function _swapExactInputForOutput(
         uint256 _tradeAccountNumber,
         uint256[] calldata _marketIdsPath,
@@ -250,7 +307,36 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
     )
     internal
     override {
-        IsolationModeTokenVaultV1._swapExactInputForOutput(
+        // uint256 len = _tradersPath.length;
+        // if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
+        //     Require.that(
+        //         msg.value > 0,
+        //         _FILE,
+        //         "Invalid execution fee"
+        //     );
+        //     _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, msg.value);
+        //     WETH.deposit{value: msg.value}();
+        //     WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
+        // } else {
+            // @follow-up Since umami wrapping is one step, do we need this
+            Require.that(
+                msg.value == 0,
+                _FILE,
+                "Cannot send ETH for non-wrapper"
+            );
+        // }
+
+        if (_tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper) {
+            // Only the unwrapper can initiate unwraps (via the callback)
+            _requireOnlyUnwrapper(msg.sender);
+        }
+
+        if (isVaultFrozen()) {
+            // This guarantees only a handler is executing the swap
+            _requireOnlyUnwrapper(msg.sender);
+        }
+
+        IsolationModeTokenVaultV1WithPausable._swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
             _inputAmountWei,
@@ -258,6 +344,87 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
             _tradersPath,
             _makerAccounts,
             _userConfig
+        );
+    }
+
+     function _transferFromPositionWithUnderlyingToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+    internal
+    override {
+        super._transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
+    }
+
+    function _transferFromPositionWithOtherToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _marketId,
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    )
+    internal
+    override {
+        super._transferFromPositionWithOtherToken(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _marketId,
+            _amountWei,
+            _balanceCheckFlag
+        );
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
+    }
+
+    function _closeBorrowPositionWithUnderlyingVaultToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber
+    )
+    internal
+    override {
+        super._closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
+    }
+
+    function _closeBorrowPositionWithOtherTokens(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256[] calldata _collateralMarketIds
+    )
+    internal
+    override {
+        super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
+    }
+
+    function _initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        // @follow-up Do we want to do something with this?
+        uint256 /* _minOutputAmount */,
+        bool _isLiquidation
+    ) internal {
+        Require.that(
+            registry().umamiUnwrapperTrader().isValidOutputToken(_outputToken),
+            _FILE,
+            "Invalid output token"
+        );
+        _setIsVaultFrozen(/* _isVaultFrozen = */ true);
+
+        uint256 ethExecutionFee = msg.value;
+        if (_isLiquidation) {
+            ethExecutionFee += getExecutionFeeForAccountNumber(_tradeAccountNumber);
+            _setExecutionFeeForAccountNumber(_tradeAccountNumber, /* _executionFee = */ 0); // reset it to 0
+        }
+
+        address underlyingToken = IUmamiAssetVaultIsolationModeVaultFactory(VAULT_FACTORY()).UNDERLYING_TOKEN();
+        IERC20(underlyingToken).safeApprove(address(registry().withdrawalQueuer()), _inputAmount);
+
+        bytes32 key = registry().withdrawalQueuer().queueRedeem(underlyingToken, _inputAmount);
+        IUmamiAssetVaultIsolationModeUnwrapperTraderV2(registry().umamiUnwrapperTrader()).vaultSetWithdrawalInfo(
+            key, _tradeAccountNumber, _inputAmount, _outputToken
         );
     }
 
@@ -269,19 +436,19 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
     }
 
+    function _setExecutionFeeForAccountNumber(
+        uint256 _accountNumber,
+        uint256 _executionFee
+    ) internal {
+        _setUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)), _executionFee);
+        emit ExecutionFeeSet(_accountNumber, _executionFee);
+    }
+
     function _requireOnlyVaultOwnerOrUnwrapper(address _from) internal view {
         Require.that(
             _from == address(_proxySelf().owner()) || _from == address(registry().umamiUnwrapperTrader()),
             _FILE,
             "Only owner or unwrapper can call"
-        );
-    }
-
-    function _requireOnlyUnwrapper(address _from) internal view {
-        Require.that(
-            _from == address(registry().umamiUnwrapperTrader()),
-            _FILE,
-            "Only unwrapper if frozen"
         );
     }
 
@@ -291,5 +458,35 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
             _FILE,
             "Virtual vs real balance mismatch"
         );
+    }
+
+    function _requireOnlyUnwrapper(address _from) internal view {
+        Require.that(
+            _from == address(registry().umamiUnwrapperTrader()),
+            _FILE,
+            "Only unwrapper can call",
+            _from
+        );
+    }
+
+    function _checkMsgValue() internal override view {
+        // solhint-disable-previous-line no-empty-blocks
+        // Don't do any validation here. We check the msg.value conditionally in the `swapExactInputForOutput`
+        // implementation
+    }
+
+    function _refundExecutionFeeIfNecessary(uint256 _borrowAccountNumber) private {
+        IDolomiteStructs.AccountInfo memory borrowAccountInfo = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _borrowAccountNumber
+        });
+        if (DOLOMITE_MARGIN().getAccountNumberOfMarketsWithBalances(borrowAccountInfo) == 0) {
+            // There's no assets left in the position. Issue a refund for the execution fee
+            // The refund is sent as WETH to eliminate reentrancy concerns
+            uint256 executionFee = getExecutionFeeForAccountNumber(_borrowAccountNumber);
+            _setExecutionFeeForAccountNumber(_borrowAccountNumber, /* _executionFee = */ 0);
+            WETH.deposit{value: executionFee}();
+            WETH.safeTransfer(msg.sender, executionFee);
+        }
     }
 }

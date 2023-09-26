@@ -143,6 +143,38 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
         emit WithdrawalExecuted(_key);
     }
 
+    function vaultSetWithdrawalInfo(
+        bytes32 _key,
+        uint256 _accountNumber,
+        uint256 _inputAmount,
+        address _outputToken
+    ) external {
+        Require.that(
+            address(VAULT_FACTORY().getAccountByVault(msg.sender)) != address(0),
+            _FILE,
+            "Invalid vault"
+        );
+
+        assert(_getWithdrawalSlot(_key).vault == address(0)); // panic if the key is used
+        Require.that(
+            !UMAMI_REGISTRY().isAccountWaitingForCallback(msg.sender, _accountNumber),
+            _FILE,
+            "Account has callback waiting",
+            msg.sender,
+            _accountNumber
+        );
+
+        _setWithdrawalInfo(_key, WithdrawalInfo({
+            key: _key,
+            vault: msg.sender,
+            accountNumber: _accountNumber,
+            inputAmount: _inputAmount,
+            outputToken: _outputToken,
+            outputAmount: 0
+        }));
+        emit WithdrawalCreated(_key);
+    }
+
     function exchange(
         address _tradeOriginator,
         address _receiver,
@@ -197,32 +229,6 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
         IERC20(_outputToken).safeApprove(_receiver, outputAmount);
 
         return outputAmount;
-    }
-
-    function vaultSetWithdrawalInfo(
-        bytes32 _key,
-        uint256 _accountNumber,
-        uint256 _inputAmount,
-        address _outputToken
-    ) external {
-        Require.that(
-            address(VAULT_FACTORY().getAccountByVault(msg.sender)) != address(0),
-            _FILE,
-            "Invalid vault"
-        );
-
-        assert(_getWithdrawalSlot(_key).vault == address(0)); // panic if the key is used
-        // @todo check if vault is not active
-
-        _setWithdrawalInfo(_key, WithdrawalInfo({
-            key: _key,
-            vault: msg.sender,
-            accountNumber: _accountNumber,
-            inputAmount: _inputAmount,
-            outputToken: _outputToken,
-            outputAmount: 0
-        }));
-        emit WithdrawalCreated(_key);
     }
 
     function ownerSetIsHandler(address _handler, bool _isTrusted) external onlyDolomiteMarginOwner(msg.sender) {
@@ -330,6 +336,10 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
 
     function UMAMI_REGISTRY() public view returns (IUmamiAssetVaultRegistry) {
         return IUmamiAssetVaultRegistry(_getAddress(_UMAMI_REGISTRY_SLOT));
+    }
+
+    function getWithdrawalInfo(bytes32 _key) public pure returns (WithdrawalInfo memory) {
+        return _getWithdrawalSlot(_key);
     }
 
     // ============================================
