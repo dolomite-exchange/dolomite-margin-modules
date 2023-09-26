@@ -37,20 +37,18 @@ contract TestGmxV2IsolationModeTraderBase is GmxV2IsolationModeTraderBase {
         address _gmxRegistryV2,
         address _weth,
         uint256 _callbackGasLimit,
-        uint256 _slippageMinimum,
         address _dolomiteMargin
     ) external initializer {
-        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit, _slippageMinimum);
+        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
     }
 
     function triggerInternalInitializer(
         address _gmxRegistryV2,
         address _weth,
-        uint256 _callbackGasLimit,
-        uint256 _slippageMinimum
+        uint256 _callbackGasLimit
     ) external {
-        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit, _slippageMinimum);
+        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit);
     }
 
     function testOnlyHandler() external onlyHandler(msg.sender) {} // solhint-disable-line no-empty-blocks

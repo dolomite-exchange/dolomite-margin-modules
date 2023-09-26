@@ -37,7 +37,6 @@ interface IGmxV2IsolationModeTraderBase {
     event OwnerWithdrawETH(address _receiver, uint256 _bal);
     event OwnerSetIsHandler(address _handler, bool _isTrusted);
     event OwnerSetCallbackGasLimit(uint256 _callbackGasLimit);
-    event OwnerSetSlippageMinimum(uint256 _slippageMinimum);
 
     // ===================================================
     // ==================== Functions ====================
@@ -45,15 +44,11 @@ interface IGmxV2IsolationModeTraderBase {
 
     function ownerSetCallbackGasLimit(uint256 _callbackGasLimit) external;
 
-    function ownerSetSlippageMinimum(uint256 _slippageMinimum) external;
-
     function ownerSetIsHandler(address _handler, bool _isTrusted) external;
 
     function ownerWithdrawETH(address _receiver) external;
 
     function callbackGasLimit() external view returns (uint256);
-
-    function slippageMinimum() external view returns (uint256);
 
     function isHandler(address _handler) external view returns (bool);
 

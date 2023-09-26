@@ -20,6 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { IGmxDepositHandler } from "./IGmxDepositHandler.sol";
+import { IGmxWithdrawalHandler } from "./IGmxWithdrawalHandler.sol";
+
 
 /**
  * @title   IGmxExchangeRouter
@@ -69,4 +72,8 @@ interface IGmxExchangeRouter {
     function cancelDeposit(bytes32 _key) external payable;
 
     function cancelWithdrawal(bytes32 _key) external payable;
+
+    function depositHandler() external view returns (IGmxDepositHandler);
+
+    function withdrawalHandler() external view returns (IGmxWithdrawalHandler);
 }

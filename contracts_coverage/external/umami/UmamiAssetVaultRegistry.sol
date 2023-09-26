@@ -22,12 +22,9 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
-import { IUmamiAssetVaultIsolationModeUnwrapperTraderV2 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
 import { IUmamiAssetVaultStorageViewer } from "../interfaces/umami/IUmamiAssetVaultStorageViewer.sol";
-import { IUmamiWithdrawalQueuer } from "../interfaces/umami/IUmamiWithdrawalQueuer.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
-
 
 /**
  * @title   UmamiAssetVaultRegistry
@@ -42,24 +39,17 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
 
     // ==================== Constants ====================
 
-    // solhint-disable max-line-length
     bytes32 private constant _FILE = "UmamiAssetVaultRegistry";
     bytes32 private constant _STORAGE_VIEWER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.storageViewer")) - 1);
-    bytes32 private constant _WITHDRAWAL_QUEUER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalQueuer")) - 1);
-    bytes32 private constant _UMAMI_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.umamiUnwrapperTrader")) - 1);
-    bytes32 private constant _IS_WAITING_FOR_CALLBACK_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isWaitingForCallback")) - 1);
-    // solhint-enable max-line-length
 
     // ==================== Initializer ====================
 
     function initialize(
         address _storageViewer,
-        address _withdrawalQueuer,
         address _dolomiteRegistry
     ) external initializer {
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
         _ownerSetStorageViewer(_storageViewer);
-        _ownerSetWithdrawalQueuer(_withdrawalQueuer);
     }
 
     // ==================== Functions ====================
@@ -72,56 +62,8 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
         _ownerSetStorageViewer(_storageViewer);
     }
 
-    function ownerSetUmamiUnwrapperTrader(
-        address _gmxV2UnwrapperTrader
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetUmamiUnwrapperTrader(_gmxV2UnwrapperTrader);
-    }
-
-    function ownerSetWithdrawalQueuer(
-        address _withdrawalQueuer
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetWithdrawalQueuer(_withdrawalQueuer);
-    }
-
-    // ==================== Views ====================
-
-    function isAccountWaitingForCallback(
-        address _vault,
-        uint256 _accountNumber
-    ) external view returns (bool) {
-        bytes32 slot = keccak256(abi.encodePacked(_IS_WAITING_FOR_CALLBACK_SLOT, _vault, _accountNumber));
-        return _getUint256(slot) == 1;
-    }
-
     function storageViewer() external view returns (IUmamiAssetVaultStorageViewer) {
         return IUmamiAssetVaultStorageViewer(_getAddress(_STORAGE_VIEWER_SLOT));
-    }
-
-    function umamiUnwrapperTrader() external view returns (IUmamiAssetVaultIsolationModeUnwrapperTraderV2) {
-        return IUmamiAssetVaultIsolationModeUnwrapperTraderV2(_getAddress(_UMAMI_UNWRAPPER_TRADER_SLOT));
-    }
-
-    function withdrawalQueuer() external view returns (IUmamiWithdrawalQueuer) {
-        return IUmamiWithdrawalQueuer(_getAddress(_WITHDRAWAL_QUEUER_SLOT));
-    }
-
-    // ==================== Non-Admin Functions ====================
-
-    function setIsAccountWaitingForCallback(
-        address _vault,
-        uint256 _accountNumber,
-        bool _isWaiting
-    )
-    external
-    onlyDolomiteMarginGlobalOperator(msg.sender) {
-        bytes32 slot = keccak256(abi.encodePacked(_IS_WAITING_FOR_CALLBACK_SLOT, _vault, _accountNumber));
-        _setUint256(slot, _isWaiting ? 1 : 0);
-        emit AccountWaitingForCallbackSet(_vault, _accountNumber, _isWaiting);
     }
 
     // ============================================================
@@ -144,28 +86,5 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
 
         _setAddress(_STORAGE_VIEWER_SLOT, _storageViewer);
         emit StorageViewerSet(_storageViewer);
-    }
-
-    function _ownerSetUmamiUnwrapperTrader(address _umamiUnwrapperTrader) internal {
-        if (_umamiUnwrapperTrader != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_umamiUnwrapperTrader != address(0),
-            _FILE,
-            "Invalid unwrapperTrader address"
-        );
-        _setAddress(_UMAMI_UNWRAPPER_TRADER_SLOT, _umamiUnwrapperTrader);
-        emit UmamiUnwrapperTraderSet(_umamiUnwrapperTrader);
-    }
-
-    function _ownerSetWithdrawalQueuer(address _withdrawalQueuer) internal {
-        if (_withdrawalQueuer != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_withdrawalQueuer != address(0),
-            _FILE,
-            "Invalid withdrawalQueuer address"
-        );
-        // @follow-up Do we want some kind of callAndCheckSuccess here?
-        // Can't see live contract right now
-
-        _setAddress(_WITHDRAWAL_QUEUER_SLOT, _withdrawalQueuer);
-        emit WithdrawalQueuerSet(_withdrawalQueuer);
     }
 }

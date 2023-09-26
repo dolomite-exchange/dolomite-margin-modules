@@ -52,12 +52,10 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     // solhint-disable max-line-length
     bytes32 private constant _ETH_USD_MARKET_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ethUsdMarketToken")) - 1);
     bytes32 private constant _GMX_DATASTORE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDataStore")) - 1);
-    bytes32 private constant _GMX_DEPOSIT_HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDepositHandler")) - 1);
     bytes32 private constant _GMX_DEPOSIT_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDepositVault")) - 1);
     bytes32 private constant _GMX_EXCHANGE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxExchangeRouter")) - 1);
     bytes32 private constant _GMX_READER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxReader")) - 1);
     bytes32 private constant _GMX_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxRouter")) - 1);
-    bytes32 private constant _GMX_WITHDRAWAL_HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxWithdrawalHandler")) - 1);
     bytes32 private constant _GMX_WITHDRAWAL_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxWithdrawalVault")) - 1);
     bytes32 private constant _GMX_V2_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2UnwrapperTrader")) - 1);
     bytes32 private constant _GMX_V2_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2WrapperTrader")) - 1);
@@ -69,23 +67,19 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     function initialize(
         address _ethUsdMarketToken,
         address _gmxDataStore,
-        address _gmxDepositHandler,
         address _gmxDepositVault,
         address _gmxExchangeRouter,
         address _gmxReader,
         address _gmxRouter,
-        address _gmxWithdrawalHandler,
         address _gmxWithdrawalVault,
         address _dolomiteRegistry
     ) external initializer {
         _ownerSetEthUsdMarketToken(_ethUsdMarketToken);
         _ownerSetGmxDataStore(_gmxDataStore);
-        _ownerSetGmxDepositHandler(_gmxDepositHandler);
         _ownerSetGmxDepositVault(_gmxDepositVault);
         _ownerSetGmxExchangeRouter(_gmxExchangeRouter);
         _ownerSetGmxReader(_gmxReader);
         _ownerSetGmxRouter(_gmxRouter);
-        _ownerSetGmxWithdrawalHandler(_gmxWithdrawalHandler);
         _ownerSetGmxWithdrawalVault(_gmxWithdrawalVault);
 
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
@@ -122,14 +116,6 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         _ownerSetGmxDataStore(_gmxDataStore);
     }
 
-    function ownerSetGmxDepositHandler(
-        address _gmxDepositHandler
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetGmxDepositHandler(_gmxDepositHandler);
-    }
-
     function ownerSetGmxDepositVault(
         address _gmxDepositVault
     )
@@ -160,14 +146,6 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetGmxRouter(_gmxRouter);
-    }
-
-    function ownerSetGmxWithdrawalHandler(
-        address _gmxWithdrawalHandler
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetGmxWithdrawalHandler(_gmxWithdrawalHandler);
     }
 
     function ownerSetGmxWithdrawalVault(
@@ -201,8 +179,13 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         uint256 _accountNumber,
         bool _isWaiting
     )
-    external
-    onlyDolomiteMarginGlobalOperator(msg.sender) {
+    external {
+        Require.that(
+            msg.sender == address(gmxV2UnwrapperTrader()) || msg.sender == address(gmxV2WrapperTrader()),
+            _FILE,
+            "Sender must be GMX V2 trader",
+            msg.sender
+        );
         bytes32 slot = keccak256(abi.encodePacked(_IS_WAITING_FOR_CALLBACK_SLOT, _vault, _accountNumber));
         _setUint256(slot, _isWaiting ? 1 : 0);
         emit AccountWaitingForCallbackSet(_vault, _accountNumber, _isWaiting);
@@ -219,7 +202,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     }
 
     function gmxDepositHandler() external view returns (IGmxDepositHandler) {
-        return IGmxDepositHandler(_getAddress(_GMX_DEPOSIT_HANDLER_SLOT));
+        return IGmxExchangeRouter(_getAddress(_GMX_EXCHANGE_ROUTER_SLOT)).depositHandler();
     }
 
     function gmxDepositVault() external view returns (address) {
@@ -239,7 +222,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     }
 
     function gmxWithdrawalHandler() external view returns (IGmxWithdrawalHandler) {
-        return IGmxWithdrawalHandler(_getAddress(_GMX_WITHDRAWAL_HANDLER_SLOT));
+        return IGmxExchangeRouter(_getAddress(_GMX_EXCHANGE_ROUTER_SLOT)).withdrawalHandler();
     }
 
     function gmxWithdrawalVault() external view returns (address) {
@@ -286,16 +269,6 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         emit GmxDataStoreSet(_gmxDataStore);
     }
 
-    function _ownerSetGmxDepositHandler(address _gmxDepositHandler) internal {
-        Require.that(
-            _gmxDepositHandler != address(0),
-            _FILE,
-            "Invalid address"
-        );
-        _setAddress(_GMX_DEPOSIT_HANDLER_SLOT, _gmxDepositHandler);
-        emit GmxDepositHandlerSet(_gmxDepositHandler);
-    }
-
     function _ownerSetGmxDepositVault(address _gmxDepositVault) internal {
         Require.that(
             _gmxDepositVault != address(0),
@@ -334,16 +307,6 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         );
         _setAddress(_GMX_ROUTER_SLOT, _gmxRouter);
         emit GmxRouterSet(_gmxRouter);
-    }
-
-    function _ownerSetGmxWithdrawalHandler(address _gmxWithdrawalHandler) internal {
-        Require.that(
-            _gmxWithdrawalHandler != address(0),
-            _FILE,
-            "Invalid address"
-        );
-        _setAddress(_GMX_WITHDRAWAL_HANDLER_SLOT, _gmxWithdrawalHandler);
-        emit GmxWithdrawalHandlerSet(_gmxWithdrawalHandler);
     }
 
     function _ownerSetGmxWithdrawalVault(address _gmxWithdrawalVault) internal {

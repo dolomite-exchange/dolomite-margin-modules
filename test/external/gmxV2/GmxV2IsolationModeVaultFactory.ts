@@ -24,7 +24,6 @@ import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy }
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
-const SLIPPAGE_MINIMUM = BigNumber.from('500');
 const amountWei = parseEther('1');
 const defaultAccountNumber = 0;
 
@@ -68,7 +67,6 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
-      SLIPPAGE_MINIMUM,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
@@ -76,7 +74,6 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
-      SLIPPAGE_MINIMUM,
     );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
@@ -351,9 +348,9 @@ describe('GmxV2IsolationModeVaultFactory', () => {
 
   describe('#setShouldSkipTransfer', () => {
     it('should work normally', async () => {
-      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
       await factory.connect(impersonatedWrapper).setShouldSkipTransfer(vault.address, true);
-      expect(await vault.isShouldSkipTransfer()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(true);
     });
 
     it('should fail if not token converter', async () => {

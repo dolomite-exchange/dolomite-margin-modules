@@ -148,11 +148,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     payable
     virtual
     onlyVaultOwner(msg.sender) {
-        Require.that(
-            msg.value == 0,
-            _FILE,
-            "Cannot send ETH"
-        );
+        _checkMsgValue();
         _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
 
@@ -258,6 +254,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
     external
+    payable
     onlyVaultOwner(msg.sender) {
         _addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
@@ -282,6 +279,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
     external
+    payable
     onlyVaultOwner(msg.sender) {
         _swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,
@@ -306,6 +304,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
     external
+    payable
     virtual
     onlyVaultOwner(msg.sender) {
         _swapExactInputForOutput(
@@ -768,6 +767,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
             "Invalid tradeAccountNumber",
             _tradeAccountNumber
         );
+        _checkMsgValue();
 
         dolomiteRegistry().genericTraderProxy().swapExactInputForOutput(
             _tradeAccountNumber,
@@ -846,6 +846,18 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     function _proxySelf() internal view returns (IIsolationModeUpgradeableProxy) {
         return IIsolationModeUpgradeableProxy(address(this));
+    }
+
+    /**
+     *  Called within `swapExactInputForOutput` to check that the caller send the right amount of ETH with the
+     *  transaction.
+     */
+    function _checkMsgValue() internal virtual view {
+        Require.that(
+            msg.value == 0,
+            _FILE,
+            "Cannot send ETH"
+        );
     }
 
     function _checkAllowableDebtMarket(

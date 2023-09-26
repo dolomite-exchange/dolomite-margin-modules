@@ -21,7 +21,8 @@
 pragma solidity ^0.8.9;
 
 import { IUmamiAssetVaultRegistry } from "./IUmamiAssetVaultRegistry.sol";
-import { IIsolationModeTokenVaultV1WithFreezable } from "../IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
+
 
 
 /**
@@ -30,21 +31,7 @@ import { IIsolationModeTokenVaultV1WithFreezable } from "../IIsolationModeTokenV
  *
  * @notice  Interface for the user vault implementation that holds each user's Umami Delta Neutral asset vault tokens.
  */
-interface IUmamiAssetVaultIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezable {
-
-    function initiateUnwrapping(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount
-    )
-    external;
-
-    function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
+interface IUmamiAssetVaultIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     function registry() external view returns (IUmamiAssetVaultRegistry);
-
-    function virtualBalance() external view returns (uint256);
-
-    function isShouldSkipTransfer() external view returns (bool);
 }

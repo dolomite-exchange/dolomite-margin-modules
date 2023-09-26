@@ -36,8 +36,8 @@ interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreez
     // ================================================
 
     event IsDepositSourceWrapperSet(bool _isDepositSourceWrapper);
-
     event ShouldSkipTransferSet(bool _shouldSkipTransfer);
+    event ExecutionFeeSet(uint256 _accountNumber, uint256 _executionFee);
 
     // ===================================================
     // ==================== Functions ====================
@@ -56,7 +56,7 @@ interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreez
 
     function isDepositSourceWrapper() external view returns (bool);
 
-    function isShouldSkipTransfer() external view returns (bool);
+    function shouldSkipTransfer() external view returns (bool);
 
     function virtualBalance() external view returns (uint256);
 

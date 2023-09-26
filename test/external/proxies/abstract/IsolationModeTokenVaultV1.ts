@@ -4,7 +4,6 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   CustomTestToken,
-  IsolationModeTokenVaultV1,
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
@@ -866,6 +865,24 @@ describe('IsolationModeTokenVaultV1', () => {
       );
     });
 
+    it('should fail when msg.value is not 0', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
+      await expectThrow(
+        userVault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+          { value: 1 },
+        ),
+        'IsolationModeTokenVaultV1: Cannot send ETH',
+      );
+    });
+
     it('should fail if transferred asset (from input) is negative', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
@@ -1131,6 +1148,24 @@ describe('IsolationModeTokenVaultV1', () => {
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
+
+    it('should fail when not msg.value is not zero', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
+      await expectThrow(
+        userVault.swapExactInputForOutputAndRemoveCollateral(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+          { value: 1 },
+        ),
+        'IsolationModeTokenVaultV1: Cannot send ETH',
+      );
+    });
   });
 
   describe('#swapExactInputForOutput', () => {
@@ -1198,6 +1233,23 @@ describe('IsolationModeTokenVaultV1', () => {
           zapParams.userConfig,
         ),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when msg.value is not zero', async () => {
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
+      await expectThrow(
+        userVault.swapExactInputForOutput(
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+          { value: 1 },
+        ),
+        'IsolationModeTokenVaultV1: Cannot send ETH',
       );
     });
 

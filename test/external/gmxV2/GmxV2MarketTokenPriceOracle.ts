@@ -30,7 +30,6 @@ import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'test/utils/set
 const GM_ETH_USD_PRICE = BigNumber.from('924171934216256043');
 const NEGATIVE_PRICE = BigNumber.from('-5');
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
-const SLIPPAGE_MINIMUM = BigNumber.from('500');
 const blockNumber = 128276157;
 
 describe('GmxV2MarketTokenPriceOracle', () => {
@@ -70,7 +69,6 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
-      SLIPPAGE_MINIMUM,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
@@ -78,7 +76,6 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
-      SLIPPAGE_MINIMUM,
     );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);

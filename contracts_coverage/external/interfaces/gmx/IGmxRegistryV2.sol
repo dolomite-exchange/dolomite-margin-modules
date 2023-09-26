@@ -49,9 +49,7 @@ interface IGmxRegistryV2 is IBaseRegistry {
     event GmxDataStoreSet(address _gmxDataStore);
     event GmxReaderSet(address _gmxReader);
     event GmxRouterSet(address _gmxRouter);
-    event GmxDepositHandlerSet(address _gmxDepositHandler);
     event GmxDepositVaultSet(address _gmxDepositVault);
-    event GmxWithdrawalHandlerSet(address _gmxWithdrawalHandler);
     event GmxWithdrawalVaultSet(address _gmxDepositVault);
     event EthUsdMarketTokenSet(address _ethUsdMarketToken);
     event GmxV2UnwrapperTraderSet(address _gmxV2UnwrapperTrader);
@@ -76,11 +74,7 @@ interface IGmxRegistryV2 is IBaseRegistry {
 
     function ownerSetGmxRouter(address _gmxRouter) external;
 
-    function ownerSetGmxDepositHandler(address _gmxDepositHandler) external;
-
     function ownerSetGmxDepositVault(address _gmxDepositVault) external;
-
-    function ownerSetGmxWithdrawalHandler(address _gmxWithdrawalHandler) external;
 
     function ownerSetGmxWithdrawalVault(address _gmxWithdrawalVault) external;
 

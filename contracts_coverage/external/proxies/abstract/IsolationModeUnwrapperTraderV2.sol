@@ -91,7 +91,6 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         bytes calldata _orderData
     )
     external
-    virtual
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         if (_inputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }

@@ -175,7 +175,7 @@ interface IIsolationModeTokenVaultV1 {
         IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
-    external;
+    external payable;
 
     /**
      * @dev     End-user function for removing collateral from the vault (in the case where `_marketIdsPath[last]` is
@@ -210,7 +210,7 @@ interface IIsolationModeTokenVaultV1 {
         IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
-    external;
+    external payable;
 
     /**
      * @dev     End-user function for swapping an exact amount of input for a minimum amount of output. Reverts if
@@ -240,7 +240,7 @@ interface IIsolationModeTokenVaultV1 {
         IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
-    external;
+    external payable;
 
 
     /**

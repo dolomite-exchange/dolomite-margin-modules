@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { GmxV2Library } from "./GmxV2Library.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginExchangeWrapper } from "../../protocol/interfaces/IDolomiteMarginExchangeWrapper.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
@@ -74,12 +74,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         address _dolomiteMargin,
         address _gmxRegistryV2,
         address _weth,
-        uint256 _callbackGasLimit,
-        uint256 _slippageMinimum
+        uint256 _callbackGasLimit
     )
     external initializer {
         _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit, _slippageMinimum);
+        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit);
     }
 
     // ============================================
@@ -117,25 +116,25 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             keccak256(abi.encodePacked(outputTokenAddress.key))
                 == keccak256(abi.encodePacked("outputToken")),
             _FILE,
-            "Unexpected return data"
+            "Unexpected outputToken"
         );
         Require.that(
             keccak256(abi.encodePacked(outputTokenAmount.key))
                 == keccak256(abi.encodePacked("outputAmount")),
             _FILE,
-            "Unexpected return data"
+            "Unexpected outputAmount"
         );
         Require.that(
             keccak256(abi.encodePacked(secondaryOutputTokenAddress.key))
                 == keccak256(abi.encodePacked("secondaryOutputToken")),
             _FILE,
-            "Unexpected return data"
+            "Unexpected secondaryOutputToken"
         );
         Require.that(
             keccak256(abi.encodePacked(secondaryOutputTokenAmount.key))
                 == keccak256(abi.encodePacked("secondaryOutputAmount")),
             _FILE,
-            "Unexpected return data"
+            "Unexpected secondaryOutputAmount"
         );
         Require.that(
             outputTokenAddress.value == secondaryOutputTokenAddress.value
@@ -170,12 +169,13 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         try IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
             withdrawalInfo.accountNumber,
             marketIdsPath,
-            _withdrawal.numbers.marketTokenAmount,
+            withdrawalInfo.inputAmount,
             withdrawalInfo.outputAmount,
             traderParams,
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
         ) {
+            factory.setIsVaultFrozen(withdrawalInfo.vault, /* _isVaultFrozen = */ false);
             _setWithdrawalInfo(_key, _emptyWithdrawalInfo());
             emit WithdrawalExecuted(_key);
         } catch Error(string memory reason) {
@@ -215,7 +215,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         // @audit - Is there a way for us to verify the tokens were sent back to the vault?
         // The GM tokens are sent back to the vault
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        factory.setIsVaultFrozen(withdrawalInfo.vault, false);
+        factory.setIsVaultFrozen(withdrawalInfo.vault, /* _isVaultFrozen = */ false);
         _setWithdrawalInfo(_key, _emptyWithdrawalInfo());
         emit WithdrawalCancelled(_key);
     }
@@ -398,6 +398,10 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         return _outputToken == longToken || _outputToken == shortToken;
     }
 
+    function getWithdrawalInfo(bytes32 _key) public pure returns (WithdrawalInfo memory) {
+        return _getWithdrawalSlot(_key);
+    }
+
     // ============================================
     // =========== Internal Functions =============
     // ============================================
@@ -490,11 +494,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             withdrawalInfo.vault == _accountInfo.owner,
             _FILE,
             "Invalid account owner"
-        );
-        Require.that(
-            withdrawalInfo.accountNumber == _accountInfo.number,
-            _FILE,
-            "Invalid account number"
         );
         Require.that(
             transferAmount > 0 && transferAmount <= withdrawalInfo.inputAmount,

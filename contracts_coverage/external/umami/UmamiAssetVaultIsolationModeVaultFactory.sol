@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultRegistry } from "../interfaces/umami/IUmamiAssetVaultRegistry.sol";
 import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
@@ -77,26 +76,6 @@ contract UmamiAssetVaultIsolationModeVaultFactory is
     onlyDolomiteMarginOwner(msg.sender) {
         umamiAssetVaultRegistry = IUmamiAssetVaultRegistry(_umamiAssetVaultRegistry);
         emit UmamiAssetVaultRegistrySet(_umamiAssetVaultRegistry);
-    }
-
-    function setIsVaultFrozen(
-        address _vault,
-        bool _isVaultFrozen
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        IUmamiAssetVaultIsolationModeTokenVaultV1(_vault).setIsVaultFrozen(_isVaultFrozen);
-    }
-
-    function setShouldSkipTransfer(
-        address _vault,
-        bool _shouldSkipTransfer
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        IUmamiAssetVaultIsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
     // ============ Internal Functions ============

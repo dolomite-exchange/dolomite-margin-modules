@@ -28,7 +28,8 @@ import {
   GmxV2IsolationModeVaultFactory__factory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2IsolationModeWrapperTraderV2__factory,
-  GmxV2Library, GmxV2Library__factory,
+  GmxV2Library,
+  GmxV2Library__factory,
   GmxV2MarketTokenPriceOracle,
   GmxV2MarketTokenPriceOracle__factory,
   IGLPIsolationModeVaultFactory,
@@ -41,6 +42,9 @@ import {
   IsolationModeTraderProxy__factory,
   RegistryProxy,
   RegistryProxy__factory,
+  TestGmxV2IsolationModeTokenVaultV1,
+  TestGmxV2IsolationModeVaultFactory,
+  TestGmxV2IsolationModeVaultFactory__factory,
 } from '../../../src/types';
 import {
   getGLPIsolationModeVaultFactoryConstructorParams,
@@ -186,6 +190,17 @@ export async function createGmxV2IsolationModeTokenVaultV1(
   );
 }
 
+export async function createTestGmxV2IsolationModeTokenVaultV1(
+  core: CoreProtocol,
+  library: GmxV2Library,
+): Promise<TestGmxV2IsolationModeTokenVaultV1> {
+  return createContractWithLibrary<TestGmxV2IsolationModeTokenVaultV1>(
+    'TestGmxV2IsolationModeTokenVaultV1',
+    { GmxV2Library: library.address },
+    [core.tokens.weth.address],
+  );
+}
+
 export async function createGmxV2IsolationModeVaultFactory(
   core: CoreProtocol,
   gmxRegistry: IGmxRegistryV2,
@@ -208,13 +223,34 @@ export async function createGmxV2IsolationModeVaultFactory(
   );
 }
 
+export async function createTestGmxV2IsolationModeVaultFactory(
+  core: CoreProtocol,
+  gmxRegistry: IGmxRegistryV2,
+  debtMarketIds: BigNumberish[],
+  collateralMarketIds: BigNumberish[],
+  gmToken: IGmxMarketToken,
+  userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
+): Promise<TestGmxV2IsolationModeVaultFactory> {
+  return createContractWithAbi<TestGmxV2IsolationModeVaultFactory>(
+    TestGmxV2IsolationModeVaultFactory__factory.abi,
+    TestGmxV2IsolationModeVaultFactory__factory.bytecode,
+    getGmxV2IsolationModeVaultFactoryConstructorParams(
+      core,
+      gmxRegistry,
+      debtMarketIds,
+      collateralMarketIds,
+      gmToken,
+      userVaultImplementation,
+    ),
+  );
+}
+
 export async function createGmxV2IsolationModeUnwrapperTraderV2(
   core: CoreProtocol,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   library: GmxV2Library,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
   callbackGasLimit: BigNumberish,
-  slippageMinimum: BigNumberish,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
   const implementation = await createContractWithLibrary<GmxV2IsolationModeUnwrapperTraderV2>(
     'GmxV2IsolationModeUnwrapperTraderV2',
@@ -231,7 +267,6 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
       dGM,
       gmxRegistryV2,
       callbackGasLimit,
-      slippageMinimum,
     ),
   );
 
@@ -244,7 +279,6 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
   library: GmxV2Library,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
   callbackGasLimit: BigNumberish,
-  slippageMinimum: BigNumberish,
 ): Promise<GmxV2IsolationModeWrapperTraderV2> {
   const implementation = await createContractWithLibrary<GmxV2IsolationModeWrapperTraderV2>(
     'GmxV2IsolationModeWrapperTraderV2',
@@ -260,7 +294,6 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
       dGM,
       gmxRegistryV2,
       callbackGasLimit,
-      slippageMinimum,
     ),
   );
   return GmxV2IsolationModeWrapperTraderV2__factory.connect(proxy.address, core.hhUser1);

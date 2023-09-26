@@ -139,12 +139,10 @@ export async function getGmxRegistryV2ConstructorParams(
   const calldata = await implementation.populateTransaction.initialize(
     core.gmxEcosystemV2!.gmxEthUsdMarketToken.address,
     core.gmxEcosystemV2!.gmxDataStore.address,
-    core.gmxEcosystemV2!.gmxDepositHandler.address,
     core.gmxEcosystemV2!.gmxDepositVault.address,
     core.gmxEcosystemV2!.gmxExchangeRouter.address,
     core.gmxEcosystemV2!.gmxReader.address,
     core.gmxEcosystemV2!.gmxRouter.address,
-    core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
     core.gmxEcosystemV2!.gmxWithdrawalVault.address,
     core.dolomiteRegistry.address,
   );
@@ -190,7 +188,6 @@ export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
   callbackGasLimit: BigNumberish,
-  slippageMinimum: BigNumberish,
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     dGM.address,
@@ -198,7 +195,6 @@ export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
     gmxRegistryV2.address,
     core.tokens.weth.address,
     callbackGasLimit,
-    slippageMinimum,
   );
 
   return [
@@ -214,7 +210,6 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
   callbackGasLimit: BigNumberish,
-  slippageMinimum: BigNumberish,
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     dGM.address,
@@ -222,7 +217,6 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
     gmxRegistryV2.address,
     core.tokens.weth.address,
     callbackGasLimit,
-    slippageMinimum,
   );
 
   return [

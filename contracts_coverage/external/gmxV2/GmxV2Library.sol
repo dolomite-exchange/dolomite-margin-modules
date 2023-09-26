@@ -28,7 +28,7 @@ import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 
 /**
- * @title   GmxV2Library.sol
+ * @title   GmxV2Library
  * @author  Dolomite
  *
  * @notice  Library contract for the GmxV2IsolationModeTokenVaultV1 contract to reduce code size

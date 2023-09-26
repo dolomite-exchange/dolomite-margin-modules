@@ -37,6 +37,7 @@ import {
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
   createGmxV2Library,
+  getInitiateUnwrappingParams,
   getInitiateWrappingParams,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import {
@@ -53,11 +54,12 @@ import { getSimpleZapParams } from 'test/utils/zap-utils';
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
 const amountWei = parseEther('1');
+const otherAmountWei = parseEther('0.33');
 const minAmountOut = parseEther('1800');
+const EXECUTION_FEE = parseEther('0.0005');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
-const SLIPPAGE_MINIMUM = BigNumber.from('500');
 const INVALID_POOL_FACTOR = BigNumber.from('900000000000000000000000000000'); // 9e29
 const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
 
@@ -112,7 +114,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
-      SLIPPAGE_MINIMUM,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
@@ -120,7 +121,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
-      SLIPPAGE_MINIMUM,
     );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
@@ -197,211 +197,13 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     it('should work normally', async () => {
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
-      expect(await vault.isShouldSkipTransfer()).to.eq(false);
-    });
-  });
-
-  describe('#initiateWrapping', () => {
-    it('should work normally', async () => {
-      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        core.marketIds.weth,
-        amountWei,
-        BalanceCheckFlag.Both,
-      );
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
-
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        core.marketIds.weth,
-        amountWei,
-        marketId,
-        minAmountOut,
-        wrapper,
-        parseEther('.01'),
-      );
-      await vault.connect(core.hhUser1).initiateWrapping(
-        borrowAccountNumber,
-        initiateWrappingParams.marketPath,
-        initiateWrappingParams.amountIn,
-        initiateWrappingParams.minAmountOut,
-        initiateWrappingParams.traderParams,
-        initiateWrappingParams.makerAccounts,
-        initiateWrappingParams.userConfig,
-        { value: parseEther('.01') },
-      );
-
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
-      expect(await vault.isVaultFrozen()).to.eq(true);
-      expect(await vault.isShouldSkipTransfer()).to.eq(false);
-      expect(await vault.isDepositSourceWrapper()).to.eq(false);
-    });
-
-    it('should fail if no funds are send with transaction', async () => {
-      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        core.marketIds.weth,
-        amountWei,
-        BalanceCheckFlag.Both,
-      );
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
-
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        core.marketIds.weth,
-        amountWei,
-        marketId,
-        minAmountOut,
-        wrapper,
-        parseEther('.01'),
-      );
-      await expect(vault.connect(core.hhUser1).initiateWrapping(
-        borrowAccountNumber,
-        initiateWrappingParams.marketPath,
-        initiateWrappingParams.amountIn,
-        initiateWrappingParams.minAmountOut,
-        initiateWrappingParams.traderParams,
-        initiateWrappingParams.makerAccounts,
-        initiateWrappingParams.userConfig,
-      )).to.be.reverted;
-    });
-
-    it('should fail when vault is frozen', async () => {
-      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
-
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        core.marketIds.usdc,
-        1000e6,
-        marketId,
-        minAmountOut,
-        wrapper,
-        parseEther('.01'),
-      );
-      await expectThrow(
-        vault.connect(core.hhUser1).initiateWrapping(
-          borrowAccountNumber,
-          initiateWrappingParams.marketPath,
-          initiateWrappingParams.amountIn,
-          initiateWrappingParams.minAmountOut,
-          initiateWrappingParams.traderParams,
-          initiateWrappingParams.makerAccounts,
-          initiateWrappingParams.userConfig,
-          { value: amountWei },
-        ),
-        'IsolationModeVaultV1Freezable: Vault is frozen',
-      );
-    });
-
-    it('should fail if _tradeAccountNumber does not match tradeData account number', async () => {
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        core.marketIds.usdc,
-        1000e6,
-        marketId,
-        minAmountOut,
-        wrapper,
-        parseEther('.01'),
-      );
-      await expectThrow(
-        vault.connect(core.hhUser1).initiateWrapping(
-          ZERO_BI,
-          initiateWrappingParams.marketPath,
-          initiateWrappingParams.amountIn,
-          initiateWrappingParams.minAmountOut,
-          initiateWrappingParams.traderParams,
-          initiateWrappingParams.makerAccounts,
-          initiateWrappingParams.userConfig,
-          { value: parseEther('.01') },
-        ),
-        'GmxV2IsolationModeVaultV1: Invalid tradeData',
-      );
-    });
-
-    it('should fail if TraderType is not IsolationModeWrapper', async () => {
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        core.marketIds.usdc,
-        1000e6,
-        marketId,
-        minAmountOut,
-        wrapper,
-        parseEther('.01'),
-      );
-      initiateWrappingParams.traderParams[0].traderType = 0;
-      await expectThrow(
-        vault.connect(core.hhUser1).initiateWrapping(
-          borrowAccountNumber,
-          initiateWrappingParams.marketPath,
-          initiateWrappingParams.amountIn,
-          initiateWrappingParams.minAmountOut,
-          initiateWrappingParams.traderParams,
-          initiateWrappingParams.makerAccounts,
-          initiateWrappingParams.userConfig,
-          { value: parseEther('.01') },
-        ),
-        'GmxV2IsolationModeVaultV1: Invalid traderType',
-      );
-    });
-
-    it('should fail if not vault owner', async () => {
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        core.marketIds.usdc,
-        1000e6,
-        marketId,
-        minAmountOut,
-        wrapper,
-        parseEther('.01'),
-      );
-      await expectThrow(
-        vault.connect(core.hhUser2).initiateWrapping(
-          borrowAccountNumber,
-          initiateWrappingParams.marketPath,
-          initiateWrappingParams.amountIn,
-          initiateWrappingParams.minAmountOut,
-          initiateWrappingParams.traderParams,
-          initiateWrappingParams.makerAccounts,
-          initiateWrappingParams.userConfig,
-          { value: amountWei },
-        ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if reentrant', async () => {
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        core.marketIds.usdc,
-        1000e6,
-        marketId,
-        minAmountOut,
-        wrapper,
-        parseEther('.01'),
-      );
-      await expectThrow(
-        vault.connect(core.hhUser1).callInitiateWrappingAndTriggerReentrancy(
-          borrowAccountNumber,
-          initiateWrappingParams.marketPath,
-          initiateWrappingParams.amountIn,
-          initiateWrappingParams.minAmountOut,
-          initiateWrappingParams.traderParams,
-          initiateWrappingParams.makerAccounts,
-          initiateWrappingParams.userConfig,
-          { value: amountWei },
-        ),
-        'IsolationModeTokenVaultV1: Reentrant call',
-      );
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
     });
   });
 
   describe('#initiateUnwrapping', () => {
     it('should work normally', async () => {
-      await setupGMBalance(core, core.hhUser1.address, amountWei, vault);
-      await underlyingToken.connect(core.hhUser1).approve(vault.address, amountWei);
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
@@ -416,7 +218,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
-      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
 
@@ -479,7 +281,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
   describe('#cancelDeposit', () => {
     it('should work normally', async () => {
-      await vault.connect(core.hhUser1).transferIntoPositionWithOtherToken(
+      await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
         core.marketIds.weth,
@@ -496,7 +298,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         wrapper,
         parseEther('.01'),
       );
-      await vault.connect(core.hhUser1).initiateWrapping(
+      await vault.swapExactInputForOutput(
         borrowAccountNumber,
         initiateWrappingParams.marketPath,
         initiateWrappingParams.amountIn,
@@ -512,7 +314,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      await vault.connect(core.hhUser1).cancelDeposit(depositKey);
+      await vault.cancelDeposit(depositKey);
       expect(await vault.isVaultFrozen()).to.eq(false);
     });
 
@@ -526,8 +328,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
   describe('#cancelWithdrawal', () => {
     it('should work normally', async () => {
-      await setupGMBalance(core, core.hhUser1.address, amountWei, vault);
-      await underlyingToken.connect(core.hhUser1).approve(vault.address, amountWei);
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
@@ -545,19 +346,19 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
       expect(await vault.isVaultFrozen()).to.eq(true);
-      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      await vault.connect(core.hhUser1).cancelWithdrawal(withdrawalKey);
+      await vault.cancelWithdrawal(withdrawalKey);
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
       expect(await vault.isVaultFrozen()).to.eq(false);
-      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
 
@@ -571,8 +372,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
   describe('#executeDepositIntoVault', () => {
     it('should work normally', async () => {
-      await setupGMBalance(core, core.hhUser1.address, amountWei, vault);
-      await underlyingToken.connect(core.hhUser1).approve(vault.address, amountWei);
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, marketId, ZERO_BI);
@@ -593,10 +393,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if virtual balance does not equal real balance', async () => {
-      const impersonatedWrapper = await impersonate(wrapper.address, true);
-      await setupGMBalance(core, wrapper.address, ONE_ETH_BI, vault);
-      await setupGMBalance(core, vault.address, ONE_BI, wrapper);
-      await underlyingToken.connect(impersonatedWrapper).approve(vault.address, ONE_ETH_BI);
+      await setupGMBalance(core, await impersonate(wrapper.address, true), ONE_ETH_BI, vault);
+      await setupGMBalance(core, await impersonate(vault.address, true), ONE_BI, wrapper);
 
       await expectThrow(
         vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI),
@@ -614,8 +412,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
   describe('#executeWithdrawalFromVault', () => {
     it('should work normally', async () => {
-      await setupGMBalance(core, core.hhUser1.address, amountWei, vault);
-      await underlyingToken.connect(core.hhUser1).approve(vault.address, amountWei);
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await vault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
@@ -642,7 +439,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI);
       await vault.connect(impersonatedFactory).setIsVaultFrozen(false);
-      await setupGMBalance(core, vault.address, parseEther('.5'), vault);
+      await setupGMBalance(core, await impersonate(vault.address, true), parseEther('.5'), vault);
 
       await expectThrow(
         vault.connect(impersonatedFactory).executeWithdrawalFromVault(core.hhUser1.address, parseEther('.5')),
@@ -658,8 +455,112 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
   });
 
-  describe('#swapExactInputForOutput', () => {
+  describe('#openBorrowPosition', () => {
     it('should work normally', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei.div(2),
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei.div(2));
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei.div(2),
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE.mul(2));
+    });
+
+    it('should fail if execution fee does not match', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser1).openBorrowPosition(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          amountWei.div(2),
+          { value: EXECUTION_FEE.add(1) },
+        ),
+        'GmxV2IsolationModeVaultV1: Invalid execution fee',
+      );
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(0);
+    });
+  });
+
+  describe('#transferIntoPositionWithUnderlyingToken', () => {
+    it('should work normally once position is open', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei.div(2),
+        { value: EXECUTION_FEE },
+      );
+      await vault.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei.div(2),
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+    });
+
+    it('should fail if position is not yet open', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser1).transferIntoPositionWithUnderlyingToken(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          amountWei,
+        ),
+        'GmxV2IsolationModeVaultV1: Missing execution fee',
+      );
+    });
+  });
+
+  describe('#swapExactInputForOutput', () => {
+    it('should work normally for wrapping', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut,
+        wrapper,
+        parseEther('.01'),
+      );
+      await vault.swapExactInputForOutput(
+        borrowAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+        { value: parseEther('.01') },
+      );
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+    });
+
+    it('should work normally when not frozen', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -688,7 +589,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       );
     });
 
-    it('should not fail if called by unwrapper', async () => {
+    it('should work if called by unwrapper', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -718,20 +619,116 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       );
     });
 
+    it('should fail if no ETH is sent with transaction for wrapping', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut,
+        wrapper,
+        parseEther('.01'),
+      );
+      await expectThrow(
+        vault.connect(core.hhUser1).swapExactInputForOutput(
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+        ),
+        'GmxV2IsolationModeVaultV1: Invalid execution fee',
+      );
+    });
+
+    it('should fail when caller is not unwrapper for unwrapping is frozen', async () => {
+      await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
+
+      const unwrappingParams = await getInitiateUnwrappingParams(
+        borrowAccountNumber,
+        marketId,
+        amountWei,
+        core.marketIds.usdc,
+        1000e6,
+        unwrapper,
+        parseEther('.01'),
+      );
+      await expectThrow(
+        vault.connect(core.hhUser1).swapExactInputForOutput(
+          borrowAccountNumber,
+          unwrappingParams.marketPath,
+          unwrappingParams.amountIn,
+          unwrappingParams.minAmountOut,
+          unwrappingParams.traderParams,
+          unwrappingParams.makerAccounts,
+          unwrappingParams.userConfig,
+        ),
+        `GmxV2IsolationModeVaultV1: Only unwrapper can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when redemptions are paused', async () => {
+      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await testReader.setPnlToPoolFactors(INVALID_POOL_FACTOR, VALID_POOL_FACTOR);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        1000e6,
+        marketId,
+        minAmountOut,
+        wrapper,
+        parseEther('.01'),
+      );
+      await expectThrow(
+        vault.connect(core.hhUser1).swapExactInputForOutput(
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: amountWei },
+        ),
+        `IsolationModeVaultV1Pausable: Cannot zap to market when paused <${marketId.toString()}>`,
+      );
+    });
+
     it('should fail if not vault owner or unwrapper', async () => {
-      const outputAmount = amountWei.div(2);
-      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.usdc,
+        1000e6,
+        marketId,
+        minAmountOut,
+        wrapper,
+        parseEther('.01'),
+      );
       await expectThrow(
         vault.connect(core.hhUser2).swapExactInputForOutput(
           borrowAccountNumber,
-          zapParams.marketIdsPath,
-          zapParams.inputAmountWei,
-          zapParams.minOutputAmountWei,
-          zapParams.tradersPath,
-          zapParams.makerAccounts,
-          zapParams.userConfig,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: amountWei },
         ),
-        'GmxV2IsolationModeVaultV1: Only owner or unwrapper can call',
+        `GmxV2IsolationModeVaultV1: Only owner or unwrapper can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -748,7 +745,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        'GmxV2IsolationModeVaultV1: Only unwrapper if frozen',
+        `GmxV2IsolationModeVaultV1: Only unwrapper can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -784,6 +781,217 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
   });
 
+  describe('#transferFromPositionWithUnderlyingToken', () => {
+    it('should refund execution fee when position is closed', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.transferFromPositionWithUnderlyingToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        amountWei,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
+    });
+
+    it('should not refund execution fee when position is not closed', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.transferFromPositionWithUnderlyingToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        amountWei.div(2),
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei.div(2));
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+    });
+  });
+
+  describe('#transferFromPositionWithOtherToken', () => {
+    it('should refund execution fee when position is closed', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei.div(2),
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei.div(2));
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.None,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, otherAmountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.None,
+      );
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
+    });
+
+    it('should not refund execution fee when position is not closed', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.None,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, otherAmountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.None,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+    });
+  });
+
+  describe('#closeBorrowPositionWithUnderlyingVaultToken', () => {
+    it('should refund execution fee when position is closed', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
+    });
+
+    it('should not refund execution fee when position is not closed', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.None,
+      );
+      await vault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+    });
+  });
+
+  describe('#closeBorrowPositionWithOtherTokens', () => {
+    it('should refund execution fee when position is closed', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.None,
+      );
+
+      await vault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.closeBorrowPositionWithOtherTokens(borrowAccountNumber, defaultAccountNumber, [otherMarketId1]);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
+    });
+
+    it('should not refund execution fee when position is not closed', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.None,
+      );
+
+      await vault.closeBorrowPositionWithOtherTokens(borrowAccountNumber, defaultAccountNumber, [otherMarketId1]);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+    });
+  });
+
   describe('#isExternalRedemptionPaused', () => {
     it('should return false with real gmx reader', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
@@ -816,7 +1024,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
   describe('#setIsDepositSourceWrapper', () => {
     it('should work normally', async () => {
-      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
       const result = await vault.connect(impersonatedFactory).setIsDepositSourceWrapper(true);
       await expectEvent(vault, result, 'IsDepositSourceWrapperSet', {
         isDepositSourceWrapper: true,
@@ -834,12 +1042,12 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
   describe('#setShouldSkipTransfer', () => {
     it('should work normally', async () => {
-      expect(await vault.isShouldSkipTransfer()).to.eq(false);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
       const result = await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
       await expectEvent(vault, result, 'ShouldSkipTransferSet', {
         shouldSkipTransfer: true,
       });
-      expect(await vault.isShouldSkipTransfer()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(true);
     });
 
     it('should fail if not called by factory', async () => {
