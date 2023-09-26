@@ -130,25 +130,10 @@ contract GmxV2IsolationModeVaultFactory is
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setIsDepositSourceWrapper(true);
-        _enqueueTransfer(
+        _depositIntoDolomiteMarginFromTokenConverter(
             _vault,
-            address(DOLOMITE_MARGIN()),
-            _amountWei,
-            _vault
-        );
-        AccountActionLib.deposit(
-            DOLOMITE_MARGIN(),
-            /* _accountOwner = */ _vault,
-            /* _fromAccount = */ _vault,
             _vaultAccountNumber,
-            marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            })
+            _amountWei
         );
     }
 
@@ -161,36 +146,12 @@ contract GmxV2IsolationModeVaultFactory is
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        Require.that(
-            _otherMarketId != marketId,
-            _FILE,
-            "Invalid market",
-            _otherMarketId
-        );
-
-        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
-        accounts[0] = IDolomiteStructs.AccountInfo({
-            owner: _vault,
-            number: _vaultAccountNumber
-        });
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
-
-        address token = DOLOMITE_MARGIN().getMarketTokenAddress(_otherMarketId);
-        IERC20(token).safeTransferFrom(msg.sender, address(this), _amountWei);
-        IERC20(token).safeApprove(address(DOLOMITE_MARGIN()), _amountWei);
-
-        actions[0] = AccountActionLib.encodeDepositAction(
-            /* _accountId = */ 0,
+        _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
+            _vault,
+            _vaultAccountNumber,
             _otherMarketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            }),
-            /* _fromAccount = */ address(this)
+            _amountWei
         );
-        DOLOMITE_MARGIN().operate(accounts, actions);
     }
 
     function withdrawFromDolomiteMarginFromTokenConverter(
@@ -201,25 +162,10 @@ contract GmxV2IsolationModeVaultFactory is
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        _enqueueTransfer(
-            address(DOLOMITE_MARGIN()),
-            _vault,
-            _amountWei,
-            _vault
-        );
-        AccountActionLib.withdraw(
-            DOLOMITE_MARGIN(),
+        _withdrawFromDolomiteMarginFromTokenConverter(
             _vault,
             _vaultAccountNumber,
-            _vault,
-            marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            }),
-            AccountBalanceLib.BalanceCheckFlag.From
+            _amountWei
         );
     }
 
@@ -278,6 +224,98 @@ contract GmxV2IsolationModeVaultFactory is
     // ====================================================
     // ================ Internal Functions ================
     // ====================================================
+
+    function _depositIntoDolomiteMarginFromTokenConverter(
+        address _vault,
+        uint256 _vaultAccountNumber,
+        uint256 _amountWei
+    ) internal virtual {
+        IGmxV2IsolationModeTokenVaultV1(_vault).setIsDepositSourceWrapper(/* _isDepositSourceWrapper = */ true);
+        _enqueueTransfer(
+            _vault,
+            address(DOLOMITE_MARGIN()),
+            _amountWei,
+            _vault
+        );
+        AccountActionLib.deposit(
+            DOLOMITE_MARGIN(),
+            /* _accountOwner = */ _vault,
+            /* _fromAccount = */ _vault,
+            _vaultAccountNumber,
+            marketId,
+            IDolomiteStructs.AssetAmount({
+                sign: true,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: _amountWei
+            })
+        );
+    }
+
+    function _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
+        address _vault,
+        uint256 _vaultAccountNumber,
+        uint256 _otherMarketId,
+        uint256 _amountWei
+    ) internal {
+        Require.that(
+            _otherMarketId != marketId,
+            _FILE,
+            "Invalid market",
+            _otherMarketId
+        );
+
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
+        accounts[0] = IDolomiteStructs.AccountInfo({
+            owner: _vault,
+            number: _vaultAccountNumber
+        });
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
+
+        address token = DOLOMITE_MARGIN().getMarketTokenAddress(_otherMarketId);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), _amountWei);
+        IERC20(token).safeApprove(address(DOLOMITE_MARGIN()), _amountWei);
+
+        actions[0] = AccountActionLib.encodeDepositAction(
+        /* _accountId = */ 0,
+            _otherMarketId,
+            IDolomiteStructs.AssetAmount({
+                sign: true,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: _amountWei
+            }),
+            /* _fromAccount = */ address(this)
+        );
+        DOLOMITE_MARGIN().operate(accounts, actions);
+    }
+
+    function _withdrawFromDolomiteMarginFromTokenConverter(
+        address _vault,
+        uint256 _vaultAccountNumber,
+        uint256 _amountWei
+    ) internal {
+        _enqueueTransfer(
+            address(DOLOMITE_MARGIN()),
+            _vault,
+            _amountWei,
+            _vault
+        );
+        AccountActionLib.withdraw(
+            DOLOMITE_MARGIN(),
+            _vault,
+            _vaultAccountNumber,
+            _vault,
+            marketId,
+            IDolomiteStructs.AssetAmount({
+                sign: false,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: _amountWei
+            }),
+            AccountBalanceLib.BalanceCheckFlag.From
+        );
+    }
 
     function _afterInitialize() internal override {
         _allowableCollateralMarketIds.push(marketId);

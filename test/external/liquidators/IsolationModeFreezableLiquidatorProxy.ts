@@ -38,7 +38,6 @@ import {
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
-const SLIPPAGE_MINIMUM = BigNumber.from('500');
 
 const wethAmount = ONE_ETH_BI; // 1 ETH
 const usdcAmount = BigNumber.from('1888000000'); // 1,888
@@ -95,7 +94,6 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
-      SLIPPAGE_MINIMUM,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
@@ -103,7 +101,6 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
-      SLIPPAGE_MINIMUM,
     );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);

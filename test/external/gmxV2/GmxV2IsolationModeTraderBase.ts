@@ -10,7 +10,6 @@ import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
 
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
-const SLIPPAGE_MINIMUM = BigNumber.from('25');
 
 describe('GmxV2IsolationModeTraderBase', () => {
   let snapshotId: string;
@@ -32,7 +31,6 @@ describe('GmxV2IsolationModeTraderBase', () => {
       gmxRegistryV2.address,
       core.tokens.weth.address,
       CALLBACK_GAS_LIMIT,
-      SLIPPAGE_MINIMUM,
       core.dolomiteMargin.address,
     );
     const proxy = await createIsolationModeTraderProxy(implementation.address, calldata.data!, core);
@@ -50,7 +48,6 @@ describe('GmxV2IsolationModeTraderBase', () => {
       expect(await trader.WETH()).to.eq(core.tokens.weth.address);
       expect(await trader.GMX_REGISTRY_V2()).to.eq(gmxRegistryV2.address);
       expect(await trader.callbackGasLimit()).to.eq(CALLBACK_GAS_LIMIT);
-      expect(await trader.slippageMinimum()).to.eq(SLIPPAGE_MINIMUM);
       expect(await trader.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
     });
 
@@ -60,7 +57,6 @@ describe('GmxV2IsolationModeTraderBase', () => {
           gmxRegistryV2.address,
           core.tokens.weth.address,
           CALLBACK_GAS_LIMIT,
-          SLIPPAGE_MINIMUM,
         ),
         'Initializable: contract is already initialized',
       );
@@ -123,38 +119,6 @@ describe('GmxV2IsolationModeTraderBase', () => {
     it('should failed if not called by dolomite owner', async () => {
       await expectThrow(
         trader.connect(core.hhUser1).ownerSetCallbackGasLimit(ZERO_BI),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#ownerSetSlippageMinimum', () => {
-    it('should work normally', async () => {
-      await trader.connect(core.governance).ownerSetSlippageMinimum(25);
-      expect(await trader.slippageMinimum()).to.eq(25);
-    });
-
-    it('should fail if slippageMinimum is 0', async () => {
-      await expectThrow(
-        trader.connect(core.governance).ownerSetSlippageMinimum(0),
-        'GmxV2IsolationModeTraderBase: Invalid slippageMinimum',
-      );
-    });
-
-    it('should fail if slippage minimum is greater than or equal to 10,000', async () => {
-      await expectThrow(
-        trader.connect(core.governance).ownerSetSlippageMinimum(10_000),
-        'GmxV2IsolationModeTraderBase: Invalid slippageMinimum',
-      );
-      await expectThrow(
-        trader.connect(core.governance).ownerSetSlippageMinimum(10_001),
-        'GmxV2IsolationModeTraderBase: Invalid slippageMinimum',
-      );
-    });
-
-    it('should failed if not called by dolomite owner', async () => {
-      await expectThrow(
-        trader.connect(core.hhUser1).ownerSetSlippageMinimum(ZERO_BI),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

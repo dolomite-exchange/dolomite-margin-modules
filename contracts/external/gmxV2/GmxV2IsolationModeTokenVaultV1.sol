@@ -34,8 +34,8 @@ import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
 
 /**
@@ -104,72 +104,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function openBorrowPosition(
-        uint256 _fromAccountNumber,
-        uint256 _toAccountNumber,
-        uint256 _amountWei
-    )
-    external
-    override
-    payable
-    onlyVaultOwner(msg.sender) {
-        _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
-        Require.that(
-            msg.value == EXECUTION_FEE,
-            _FILE,
-            "Invalid msg.value"
-        );
-        _setExecutionFeeForAccountNumber(
-            _toAccountNumber,
-            getExecutionFeeForAccountNumber(_toAccountNumber) + msg.value
-        );
-    }
-
-//    function initiateWrapping(
-//        uint256 _tradeAccountNumber,
-//        uint256[] calldata _marketIdsPath,
-//        uint256 _inputAmountWei,
-//        uint256 _minOutputAmountWei,
-//        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-//        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
-//        IGenericTraderProxyV1.UserConfig memory _userConfig
-//    ) external payable nonReentrant onlyVaultOwner(msg.sender) requireNotFrozen {
-//        uint256 len = _tradersPath.length;
-//        Require.that(
-//            msg.value > 0,
-//            _FILE,
-//            "Invalid executionFee"
-//        );
-//        Require.that(
-//            _tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper,
-//            _FILE,
-//            "Invalid traderType"
-//        );
-//        Require.that(
-//            _tradersPath[len - 1].trader == address(registry().gmxV2WrapperTrader()),
-//            _FILE,
-//            "Invalid trader"
-//        );
-//        _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, msg.value);
-//
-//        WETH.deposit{value: msg.value}();
-//        WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
-//
-//        // @audit Will this allow reentrancy in _swapExactInputForOutput.
-//        // May have to requireNotFrozen on external functions instead of internal
-//        // @follow-up Can't freeze before this or internal call fails because frozen.
-//        //  Can't freeze after or executeDepositFails because it's not frozen. So currently freezing in the wrapper
-//        _swapExactInputForOutput(
-//            _tradeAccountNumber,
-//            _marketIdsPath,
-//            _inputAmountWei,
-//            _minOutputAmountWei,
-//            _tradersPath,
-//            _makerAccounts,
-//            _userConfig
-//        );
-//    }
-
     function initiateUnwrapping(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
@@ -187,7 +121,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _inputAmount,
             _outputToken,
             _minOutputAmount,
-            /* _spendExecutionFee = */ false
+            /* _isLiquidation = */ false
         );
     }
 
@@ -216,7 +150,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _inputAmount,
             _outputToken,
             _minOutputAmount,
-            /* _spendExecutionFee = */ true
+            /* _isLiquidation = */ true
         );
     }
 
@@ -249,9 +183,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
         IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
-    external
-    override
-    onlyVaultOwnerOrUnwrapper(msg.sender)
+        external
+        payable
+        override
+        onlyVaultOwnerOrUnwrapper(msg.sender)
     {
         _swapExactInputForOutput(
             _tradeAccountNumber,
@@ -290,7 +225,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     onlyVaultFactory(msg.sender) {
         _setVirtualBalance(virtualBalance() + _amount);
 
-        if (!isShouldSkipTransfer()) {
+        if (!shouldSkipTransfer()) {
             if (!isDepositSourceWrapper()) {
                 IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
             } else {
@@ -321,7 +256,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     onlyVaultFactory(msg.sender) {
         _setVirtualBalance(virtualBalance() - _amount);
 
-        if (!isShouldSkipTransfer()) {
+        if (!shouldSkipTransfer()) {
             IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
             _requireVirtualBalanceMatchesRealBalance();
         } else {
@@ -354,7 +289,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         return _getUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT) == 1;
     }
 
-    function isShouldSkipTransfer() public view returns (bool) {
+    function shouldSkipTransfer() public view returns (bool) {
         return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
     }
 
@@ -381,6 +316,25 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ==================================================================
     // ======================== Internal Functions ========================
     // ==================================================================
+
+    function _openBorrowPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+    internal
+    override {
+        Require.that(
+            msg.value == EXECUTION_FEE,
+            _FILE,
+            "Invalid execution fee"
+        );
+        super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+        _setExecutionFeeForAccountNumber(
+            _toAccountNumber,
+            getExecutionFeeForAccountNumber(_toAccountNumber) + msg.value
+        );
+    }
 
     function _transferIntoPositionWithUnderlyingToken(
         uint256 _fromAccountNumber,
@@ -411,30 +365,37 @@ contract GmxV2IsolationModeTokenVaultV1 is
         IGenericTraderProxyV1.UserConfig memory _userConfig
     )
     internal
+    virtual
     override {
         uint256 len = _tradersPath.length;
         if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             Require.that(
                 msg.value > 0,
                 _FILE,
-                "Invalid executionFee"
-            );
-            Require.that(
-                _tradersPath[len - 1].trader == address(registry().gmxV2WrapperTrader()),
-                _FILE,
-                "Invalid trader"
+                "Invalid execution fee"
             );
             _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, msg.value);
             WETH.deposit{value: msg.value}();
             WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
-        } else if (_tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper) {
-            if (isVaultFrozen()) {
-                // This guarantees only a handler is executing the swap
-                _requireOnlyUnwrapper(msg.sender);
-            }
+        } else {
+            Require.that(
+                msg.value == 0,
+                _FILE,
+                "Cannot send ETH for non-wrapper"
+            );
         }
 
-        super._swapExactInputForOutput(
+        if (_tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper) {
+            // Only the unwrapper can initiate unwraps (via the callback)
+            _requireOnlyUnwrapper(msg.sender);
+        }
+
+        if (isVaultFrozen()) {
+            // This guarantees only a handler is executing the swap
+            _requireOnlyUnwrapper(msg.sender);
+        }
+
+        IsolationModeTokenVaultV1WithPausable._swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
             _inputAmountWei,
@@ -501,7 +462,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
-        bool _spendExecutionFee
+        bool _isLiquidation
     ) internal {
         Require.that(
             registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken),
@@ -511,7 +472,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         _setIsVaultFrozen(/* _isVaultFrozen = */ true);
 
         uint256 ethExecutionFee = msg.value;
-        if (_spendExecutionFee) {
+        if (_isLiquidation) {
             ethExecutionFee += getExecutionFeeForAccountNumber(_tradeAccountNumber);
             _setExecutionFeeForAccountNumber(_tradeAccountNumber, /* _executionFee = */ 0); // reset it to 0
         }
@@ -565,6 +526,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         uint256 _executionFee
     ) internal {
         _setUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)), _executionFee);
+        emit ExecutionFeeSet(_accountNumber, _executionFee);
     }
 
     function _requireVirtualBalanceMatchesRealBalance() internal view {
@@ -579,7 +541,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
         Require.that(
             _from == address(_proxySelf().owner()) || _from == address(registry().gmxV2UnwrapperTrader()),
             _FILE,
-            "Only owner or unwrapper can call"
+            "Only owner or unwrapper can call",
+            _from
         );
     }
 
@@ -587,8 +550,15 @@ contract GmxV2IsolationModeTokenVaultV1 is
         Require.that(
             _from == address(registry().gmxV2UnwrapperTrader()),
             _FILE,
-            "Only unwrapper if frozen"
+            "Only unwrapper can call",
+            _from
         );
+    }
+
+    function _checkMsgValue() internal override view {
+        // solhint-disable-previous-line no-empty-blocks
+        // Don't do any validation here. We check the msg.value conditionally in the `swapExactInputForOutput`
+        // implementation
     }
 
     function _refundExecutionFeeIfNecessary(uint256 _borrowAccountNumber) private {

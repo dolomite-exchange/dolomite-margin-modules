@@ -22,10 +22,8 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { GmxV2Library } from "./GmxV2Library.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
@@ -55,6 +53,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
+    uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
 
@@ -67,11 +66,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         address _dolomiteMargin,
         address _gmxRegistryV2,
         address _weth,
-        uint256 _callbackGasLimit,
-        uint256 _slippageMinimum
+        uint256 _callbackGasLimit
     ) external initializer {
         _initializeWrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit, _slippageMinimum);
+        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit);
     }
 
     // ============================================
@@ -99,41 +97,46 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             keccak256(abi.encodePacked(receivedMarketTokens.key))
                 == keccak256(abi.encodePacked("receivedMarketTokens")),
             _FILE,
-            "Unexpected return data"
+            "Unexpected receivedMarketTokens"
         );
 
         IERC20 underlyingToken = IERC20(VAULT_FACTORY().UNDERLYING_TOKEN());
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
+        // We just need to blind transfer the min amount to the vault
+        underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
 
-        if (receivedMarketTokens.value > depositInfo.outputAmount) {
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
+        if (receivedMarketTokens.value > _deposit.numbers.minMarketTokens) {
             // We need to send the diff into the vault via `operate` and blind transfer the min token amount
             uint256 diff = receivedMarketTokens.value - _deposit.numbers.minMarketTokens;
 
+            // The allowance is entirely spent in the call to `factory.depositIntoDolomiteMarginFromTokenConverter` or
+            // `_depositIntoDefaultPositionAndClearDeposit`
             underlyingToken.safeApprove(depositInfo.vault, diff);
+
+            // @audit   The only way this try-catch should throw is if there wasn't enough gas passed into the callback
+            //          gas limit or if the user is underwater (after the deposit settles). We should always pass enough
+            //          gas, though. If the user goes underwater, we'll want to recover as reasonably as possible. The
+            //          way we do this is by initiating an unwrapping & then a liquidation via
+            //          `IsolationModeFreezableLiquidatorProxy.sol`
+            // @audit   Are there any other "reasons" that the try-catch can fail that I'm missing here?
             try
-                factory.depositIntoDolomiteMarginFromTokenConverter(depositInfo.vault, depositInfo.accountNumber, diff)
+                factory.depositIntoDolomiteMarginFromTokenConverter(
+                    depositInfo.vault,
+                    depositInfo.accountNumber,
+                    diff
+                )
             {
-                underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
-                factory.setIsVaultFrozen(depositInfo.vault, false);
-                _setDepositInfo(_key, _emptyDepositInfo());
-                emit DepositExecuted(_key);
+                _clearDeposit(factory, depositInfo);
             } catch Error(string memory reason) {
-                underlyingToken.safeApprove(depositInfo.vault, 0);
-                depositInfo.outputAmount = receivedMarketTokens.value;
-                _setDepositInfo(_key, depositInfo);
                 emit DepositFailed(_key, reason);
+                _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
             } catch (bytes memory /* reason */) {
-                underlyingToken.safeApprove(depositInfo.vault, 0);
-                depositInfo.outputAmount = receivedMarketTokens.value;
-                _setDepositInfo(_key, depositInfo);
                 emit DepositFailed(_key, "");
+                _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
             }
         } else {
-            // We just need to blind transfer the min amount to the vault
-            underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
-            factory.setIsVaultFrozen(depositInfo.vault, /* _isVaultFrozen = */ false);
-            _setDepositInfo(_key, _emptyDepositInfo());
-            emit DepositExecuted(_key);
+            // There's nothing additional to send to the vault; clear out the deposit
+            _clearDeposit(factory, depositInfo);
         }
     }
 
@@ -199,6 +202,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         return _inputToken == longToken || _inputToken == shortToken;
     }
 
+    function getDepositInfo(bytes32 _key) public pure returns (DepositInfo memory) {
+        return _getDepositSlot(_key);
+    }
+
     // ============================================
     // ============ Internal Functions ============
     // ============================================
@@ -215,8 +222,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     internal
     override
     returns (uint256) {
-        _checkSlippage(_inputToken, _inputAmount, _minOutputAmount);
-
         // Account number is set by the Token Vault so we know it's safe to use
         (uint256 accountNumber, uint256 ethExecutionFee) = abi.decode(_extraOrderData, (uint256, uint256));
 
@@ -272,6 +277,28 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         return _minOutputAmount;
     }
 
+    function _depositIntoDefaultPositionAndClearDeposit(
+        IGmxV2IsolationModeVaultFactory _factory,
+        DepositInfo memory _depositInfo,
+        uint256 _depositAmountWei
+    ) internal {
+        _factory.depositIntoDolomiteMarginFromTokenConverter(
+            _depositInfo.vault,
+            _DEFAULT_ACCOUNT_NUMBER,
+            _depositAmountWei
+        );
+        _clearDeposit(_factory, _depositInfo);
+    }
+
+    function _clearDeposit(
+        IGmxV2IsolationModeVaultFactory _factory,
+        DepositInfo memory _depositInfo
+    ) internal {
+        _factory.setIsVaultFrozen(_depositInfo.vault, /* _isVaultFrozen = */ false);
+        _setDepositInfo(_depositInfo.key, _emptyDepositInfo());
+        emit DepositExecuted(_depositInfo.key);
+    }
+
     function _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
         address _token,
         uint256 _amount,
@@ -309,25 +336,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     override {
         VAULT_FACTORY().enqueueTransferIntoDolomiteMargin(_vault, _amount);
         IERC20(address(VAULT_FACTORY())).safeApprove(_receiver, _amount);
-    }
-
-    function _checkSlippage(address _inputToken, uint256 _inputAmount, uint256 _minOutputAmount) internal view {
-        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-
-        IDolomiteStructs.MonetaryPrice memory inputPrice = dolomiteMargin.getMarketPrice(
-            dolomiteMargin.getMarketIdByTokenAddress(_inputToken)
-        );
-        IDolomiteStructs.MonetaryPrice memory outputPrice = dolomiteMargin.getMarketPrice(
-            dolomiteMargin.getMarketIdByTokenAddress(address(VAULT_FACTORY()))
-        );
-        uint256 inputValue = _inputAmount * inputPrice.value;
-        uint256 outputValue = _minOutputAmount * outputPrice.value;
-
-        Require.that(
-            outputValue > inputValue - (inputValue * slippageMinimum() / _SLIPPAGE_BASE),
-            _FILE,
-            "Insufficient output amount"
-        );
     }
 
     function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {

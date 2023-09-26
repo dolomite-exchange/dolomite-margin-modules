@@ -299,7 +299,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _inputAmountWei
         )
     {
-        super._swapExactInputForOutput(
+        IsolationModeTokenVaultV1._swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
             _inputAmountWei,

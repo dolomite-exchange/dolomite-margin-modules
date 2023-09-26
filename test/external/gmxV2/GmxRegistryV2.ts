@@ -2,7 +2,7 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { GmxRegistryV2 } from 'src/types';
 import { Network } from 'src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
@@ -43,17 +43,15 @@ describe('GmxRegistryV2', () => {
       expect(await registry.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
     });
 
-    it('should not initalize twice', async () => {
+    it('should not initialize twice', async () => {
       await expectThrow(
         registry.initialize(
           core.gmxEcosystemV2!.gmxEthUsdMarketToken.address,
           core.gmxEcosystemV2!.gmxDataStore.address,
-          core.gmxEcosystemV2!.gmxDepositHandler.address,
           core.gmxEcosystemV2!.gmxDepositVault.address,
           core.gmxEcosystemV2!.gmxExchangeRouter.address,
           core.gmxEcosystemV2!.gmxReader.address,
           core.gmxEcosystemV2!.gmxRouter.address,
-          core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
           core.gmxEcosystemV2!.gmxWithdrawalVault.address,
           core.dolomiteRegistry.address,
         ),
@@ -190,30 +188,6 @@ describe('GmxRegistryV2', () => {
     });
   });
 
-  describe('#ownerSetGmxDepositHandler', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGmxDepositHandler(OTHER_ADDRESS_1);
-      await expectEvent(registry, result, 'GmxDepositHandlerSet', {
-        gmxDepositHandler: OTHER_ADDRESS_1,
-      });
-      expect(await registry.gmxDepositHandler()).to.eq(OTHER_ADDRESS_1);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGmxDepositHandler(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetGmxDepositHandler(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
-      );
-    });
-  });
-
   describe('#ownerSetGmxDepositVault', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetGmxDepositVault(OTHER_ADDRESS_1);
@@ -233,30 +207,6 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxDepositVault(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
-      );
-    });
-  });
-
-  describe('#ownerSetGmxWithdrawalHandler', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetGmxWithdrawalHandler(OTHER_ADDRESS_1);
-      await expectEvent(registry, result, 'GmxWithdrawalHandlerSet', {
-        gmxWithdrawalHandler: OTHER_ADDRESS_1,
-      });
-      expect(await registry.gmxWithdrawalHandler()).to.eq(OTHER_ADDRESS_1);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGmxWithdrawalHandler(OTHER_ADDRESS_1),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetGmxWithdrawalHandler(ZERO_ADDRESS),
         'GmxRegistryV2: Invalid address',
       );
     });
@@ -359,12 +309,12 @@ describe('GmxRegistryV2', () => {
   });
 
   describe('#setIsAccountWaitingForCallback', () => {
-    it('should work normally', async () => {
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.governance.address, true);
+    it('should work normally for unwrapper', async () => {
+      const unwrapper = await impersonate(await registry.gmxV2UnwrapperTrader(), true);
       const accountNumber = 123;
       expect(await registry.isAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(false);
 
-      const result = await registry.connect(core.governance)
+      const result = await registry.connect(unwrapper)
         .setIsAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true);
       await expectEvent(registry, result, 'AccountWaitingForCallbackSet', {
         _vault: OTHER_ADDRESS_1,
@@ -374,11 +324,26 @@ describe('GmxRegistryV2', () => {
       expect(await registry.isAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(true);
     });
 
-    it('should fail when not called by a global operator', async () => {
+    it('should work normally for wrapper', async () => {
+      const wrapper = await impersonate(await registry.gmxV2WrapperTrader(), true);
+      const accountNumber = 123;
+      expect(await registry.isAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(false);
+
+      const result = await registry.connect(wrapper)
+        .setIsAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true);
+      await expectEvent(registry, result, 'AccountWaitingForCallbackSet', {
+        _vault: OTHER_ADDRESS_1,
+        _accountNumber: accountNumber,
+        _isWaiting: true,
+      });
+      expect(await registry.isAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(true);
+    });
+
+    it('should fail when not called by a wrapper or unwrapper operator', async () => {
       const accountNumber = 123;
       await expectThrow(
         registry.connect(core.hhUser1).setIsAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true),
-        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser1.address.toLowerCase()}>`,
+        `GmxRegistryV2: Sender must be GMX V2 trader <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

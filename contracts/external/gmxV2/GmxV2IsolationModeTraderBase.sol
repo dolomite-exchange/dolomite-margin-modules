@@ -45,12 +45,10 @@ abstract contract GmxV2IsolationModeTraderBase is
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeTraderBase";
-    uint256 internal constant _SLIPPAGE_BASE = 10_000;
 
     bytes32 internal constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
     bytes32 internal constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.weth")) - 1);
     bytes32 internal constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1); // solhint-disable-line max-line-length
-    bytes32 internal constant _SLIPPAGE_MINIMUM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageMinimum")) - 1);
     bytes32 internal constant _GMX_REGISTRY_V2_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxRegistryV2")) - 1);
 
 
@@ -83,13 +81,11 @@ abstract contract GmxV2IsolationModeTraderBase is
         _ownerSetCallbackGasLimit(_callbackGasLimit);
     }
 
-    function ownerSetSlippageMinimum(uint256 _slippageMinimum) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetSlippageMinimum(_slippageMinimum);
-    }
-
     function isHandler(address _handler) public view returns (bool) {
         bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
-        return _getUint256(slot) == 1;
+        return _getUint256(slot) == 1
+            || _handler == address(GMX_REGISTRY_V2().gmxDepositHandler())
+            || _handler == address(GMX_REGISTRY_V2().gmxWithdrawalHandler());
     }
 
     function WETH() public view returns (IWETH) {
@@ -98,10 +94,6 @@ abstract contract GmxV2IsolationModeTraderBase is
 
     function GMX_REGISTRY_V2() public view returns (IGmxRegistryV2) {
         return IGmxRegistryV2(_getAddress(_GMX_REGISTRY_V2_SLOT));
-    }
-
-    function slippageMinimum() public view returns (uint256) {
-        return _getUint256(_SLIPPAGE_MINIMUM_SLOT);
     }
 
     function callbackGasLimit() public view returns (uint256) {
@@ -113,13 +105,11 @@ abstract contract GmxV2IsolationModeTraderBase is
     function _initializeTraderBase(
         address _gmxRegistryV2,
         address _weth,
-        uint256 _callbackGasLimit,
-        uint256 _slippageMinimum
+        uint256 _callbackGasLimit
     ) internal initializer {
         _setAddress(_GMX_REGISTRY_V2_SLOT, _gmxRegistryV2);
         _setAddress(_WETH_SLOT, _weth);
         _ownerSetCallbackGasLimit(_callbackGasLimit);
-        _ownerSetSlippageMinimum(_slippageMinimum);
     }
 
     function _ownerSetIsHandler(address _handler, bool _isTrusted) internal {
@@ -132,15 +122,5 @@ abstract contract GmxV2IsolationModeTraderBase is
         // We don't want to enforce a minimum. That way, we can disable callbacks (if needed) by setting this to 0.
         _setUint256(_CALLBACK_GAS_LIMIT_SLOT, _callbackGasLimit);
         emit OwnerSetCallbackGasLimit(_callbackGasLimit);
-    }
-
-    function _ownerSetSlippageMinimum(uint256 _slippageMinimum) internal {
-        Require.that(
-            _slippageMinimum < _SLIPPAGE_BASE && _slippageMinimum > 0,
-            _FILE,
-            "Invalid slippageMinimum"
-        );
-        _setUint256(_SLIPPAGE_MINIMUM_SLOT, _slippageMinimum);
-        emit OwnerSetSlippageMinimum(_slippageMinimum);
     }
 }
