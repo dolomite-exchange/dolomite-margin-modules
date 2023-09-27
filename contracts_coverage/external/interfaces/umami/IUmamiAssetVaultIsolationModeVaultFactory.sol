@@ -24,7 +24,6 @@ import { IUmamiAssetVaultRegistry } from "./IUmamiAssetVaultRegistry.sol";
 import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
 
 
-
 /**
  * @title   IUmamiAssetVaultIsolationModeVaultFactory
  * @author  Dolomite
@@ -36,6 +35,10 @@ interface IUmamiAssetVaultIsolationModeVaultFactory is IIsolationModeVaultFactor
     event UmamiAssetVaultRegistrySet(address _jonesUSDCRegistry);
 
     function ownerSetUmamiAssetVaultRegistry(address _jonesUSDCRegistry) external;
+
+    function setIsVaultFrozen(address _vault, bool _isVaultFrozen) external;
+
+    function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
 
     function umamiAssetVaultRegistry() external view returns (IUmamiAssetVaultRegistry);
 }

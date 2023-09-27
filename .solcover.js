@@ -8,7 +8,7 @@ module.exports = {
     'external/abracadabra',
     'external/general',
     'external/glp',
-    // 'external/gmxV2',
+    'external/gmxV2',
     'external/helpers',
     'external/interestsetters',
     'external/interfaces',
@@ -20,7 +20,7 @@ module.exports = {
     'external/plutus',
     'external/proxies',
     'external/traders',
-    'external/umami',
+    // 'external/umami',
     'protocol/',
   ],
 };

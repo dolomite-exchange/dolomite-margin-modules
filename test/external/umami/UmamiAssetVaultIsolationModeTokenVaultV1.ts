@@ -148,7 +148,7 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
 
   describe('#constructor', () => {
     it('should work', async () => {
-      expect(await vault.WETH()).to.eq(core.tokens.weth);
+      expect(await vault.WETH()).to.eq(core.tokens.weth.address);
     });
   });
 
@@ -211,6 +211,18 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
       );
     });
 
+    it('should fail if invalid output token', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser1).initiateUnwrapping(
+          borrowAccountNumber,
+          underlyingAmount,
+          core.tokens.weth.address,
+          ONE_BI
+        ),
+        'UmamiVaultIsolationModeVaultV1: Invalid output token',
+      );
+    });
+
     it('should fail if reentrant', async () => {
       await expectThrow(
         vault.connect(core.hhUser2).callInitiateUnwrappingAndTriggerReentrancy(
@@ -256,6 +268,26 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
           ONE_BI
         ),
         `UmamiVaultIsolationModeVaultV1: Only liquidator can call <${core.hhUser5.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if inputAmount does not equal underlying amount', async () => {
+      await underlyingToken.connect(core.hhUser1).approve(vault.address, underlyingAmount);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, underlyingAmount);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        underlyingAmount,
+        { value: parseEther('.0005') },
+      );
+      await expectThrow(
+        vault.connect(core.hhUser5).initiateUnwrappingForLiquidation(
+          borrowAccountNumber,
+          underlyingAmount.sub(1),
+          core.tokens.usdc.address,
+          ONE_BI
+        ),
+        'UmamiVaultIsolationModeVaultV1: Invalid inputAmount',
       );
     });
 
@@ -397,6 +429,41 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
       );
     });
   });
+  describe('#transferIntoPositionWithUnderlyingToken', () => {
+    it('should work normally', async () => {});
+  });
+
+  describe('#transferFromPositionWithUnderlyingToken', () => {
+    it('should work normally', async () => {});
+  });
+
+  describe('#transferFromPositionWithOtherToken', () => {
+    it('should work normally', async () => {});
+  });
+
+  describe('#openBorrowPosition', () => {
+    it('should work normally', async () => {});
+
+    it('should fail if invalid execution fee', async () => {
+      await expectThrow(
+        vault.openBorrowPosition(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          underlyingAmount,
+          { value: parseEther('.0004') },
+        ),
+        'UmamiVaultIsolationModeVaultV1: Invalid execution fee',
+      );
+    });
+  });
+
+  describe('#closeBorrowPositionWithUnderlyingVaultToken', () => {
+    it('should work normally', async () => {});
+  });
+
+  describe('#closeBorrowPositionWithOtherTokens', () => {
+    it('should work normally', async () => {});
+  });
 
   describe('#executeDepositIntoVault', () => {
     it('should work normally', async () => {
@@ -518,5 +585,33 @@ describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
       await core.umamiEcosystem!.glpUsdc.connect(admin).unpauseDepositWithdraw();
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
     });
+  });
+
+  describe('#isWaitingForCallback', () => {
+    it('should return true if waiting for callback', async () => {
+      await underlyingToken.connect(core.hhUser1).approve(vault.address, underlyingAmount);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, underlyingAmount);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        underlyingAmount,
+        { value: parseEther('.0005') },
+      );
+      await vault.connect(core.hhUser1).initiateUnwrapping(
+        borrowAccountNumber,
+        underlyingAmount,
+        core.tokens.usdc.address,
+        ONE_BI
+      );
+      expect(await vault.isWaitingForCallback(borrowAccountNumber)).to.be.true;
+    });
+
+    it('should return false if not waiting for callback', async () => {
+      expect(await vault.isWaitingForCallback(defaultAccountNumber)).to.be.false;
+    });
+  });
+
+  describe('#refundExecutionFeeIfNecessary', () => {
+    it('should work normally', async () => {});
   });
 });

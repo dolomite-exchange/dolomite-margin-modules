@@ -439,8 +439,8 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
         WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
         UMAMI_REGISTRY().setIsAccountWaitingForCallback(
-            storageInfo.vault,
-            storageInfo.accountNumber,
+            _info.vault,
+            _info.accountNumber,
             _info.vault != address(0)
         );
         storageInfo.key = _key;

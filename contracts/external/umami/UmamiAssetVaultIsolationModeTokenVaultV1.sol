@@ -309,7 +309,6 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
     override {
         // uint256 len = _tradersPath.length;
         // if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
-        //     Require.that(
         //         msg.value > 0,
         //         _FILE,
         //         "Invalid execution fee"
@@ -318,7 +317,7 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
         //     WETH.deposit{value: msg.value}();
         //     WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
         // } else {
-            // @follow-up Since umami wrapping is one step, do we need this
+            // @follow-up Since umami wrapping is one step, do we need this. I think so but we will have to adjust the wrapper trader
             Require.that(
                 msg.value == 0,
                 _FILE,
