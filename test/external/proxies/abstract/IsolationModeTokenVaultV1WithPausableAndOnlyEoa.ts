@@ -28,6 +28,7 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from '../../../utils/setup';
+import { getSimpleZapParams } from '../../../utils/zap-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -49,8 +50,10 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
   let doAnything: TestDoAnything;
 
   let solidUser: SignerWithAddress;
-  let otherToken: CustomTestToken;
-  let otherMarketId: BigNumber;
+  let otherToken1: CustomTestToken;
+  let otherMarketId1: BigNumber;
+  let otherToken2: CustomTestToken;
+  let otherMarketId2: BigNumber;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -104,24 +107,40 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
     await eoaVault.initialize();
     await contractVault.connect(core.hhUser1).initialize();
 
-    otherToken = await createTestToken();
+    otherToken1 = await createTestToken();
     await core.testEcosystem!.testPriceOracle.setPrice(
-      otherToken.address,
+      otherToken1.address,
       '1000000000000000000000000000000', // $1.00 in USDC
     );
-    otherMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, otherToken, false);
+    otherMarketId1 = await core.dolomiteMargin.getNumMarkets();
+    await setupTestMarket(core, otherToken1, false);
+
+    otherToken2 = await createTestToken();
+    await core.testEcosystem!.testPriceOracle.setPrice(
+      otherToken2.address,
+      '1000000000000000000000000000000', // $1.00 in USDC
+    );
+    otherMarketId2 = await core.dolomiteMargin.getNumMarkets();
+    await setupTestMarket(core, otherToken2, false);
 
     await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
     await underlyingToken.connect(core.hhUser1).approve(eoaVaultAddress, amountWei);
 
-    await otherToken.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
-    await otherToken.connect(core.hhUser1).approve(core.dolomiteMargin.address, otherAmountWei);
-    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId, otherAmountWei);
+    await otherToken1.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
+    await otherToken1.connect(core.hhUser1).approve(core.dolomiteMargin.address, otherAmountWei);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId1, otherAmountWei);
 
-    await otherToken.connect(solidUser).addBalance(solidUser.address, bigOtherAmountWei);
-    await otherToken.connect(solidUser).approve(core.dolomiteMargin.address, bigOtherAmountWei);
-    await depositIntoDolomiteMargin(core, solidUser, defaultAccountNumber, otherMarketId, bigOtherAmountWei);
+    await otherToken1.connect(solidUser).addBalance(solidUser.address, bigOtherAmountWei);
+    await otherToken1.connect(solidUser).approve(core.dolomiteMargin.address, bigOtherAmountWei);
+    await depositIntoDolomiteMargin(core, solidUser, defaultAccountNumber, otherMarketId1, bigOtherAmountWei);
+
+    await otherToken2.connect(core.hhUser1).addBalance(core.hhUser1.address, otherAmountWei);
+    await otherToken2.connect(core.hhUser1).approve(core.dolomiteMargin.address, otherAmountWei);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
+
+    await otherToken2.connect(solidUser).addBalance(solidUser.address, bigOtherAmountWei);
+    await otherToken2.connect(solidUser).approve(core.dolomiteMargin.address, bigOtherAmountWei);
+    await depositIntoDolomiteMargin(core, solidUser, defaultAccountNumber, otherMarketId2, bigOtherAmountWei);
 
     snapshotId = await snapshot();
   });
@@ -255,23 +274,23 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       await eoaVault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
-        otherMarketId,
+        otherMarketId1,
         otherAmountWei,
         BalanceCheckFlag.Both,
       );
-      await eoaVault.closeBorrowPositionWithOtherTokens(borrowAccountNumber, defaultAccountNumber, [otherMarketId]);
+      await eoaVault.closeBorrowPositionWithOtherTokens(borrowAccountNumber, defaultAccountNumber, [otherMarketId1]);
 
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId, otherAmountWei);
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId, ZERO_BI);
-      await expectProtocolBalance(core, eoaVault, defaultAccountNumber, otherMarketId, ZERO_BI);
-      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
     });
 
     it('should fail when called by a contract', async () => {
       const transaction = await contractVault.populateTransaction.closeBorrowPositionWithOtherTokens(
         borrowAccountNumber,
         defaultAccountNumber,
-        [otherMarketId],
+        [otherMarketId1],
       );
       await expectThrow(
         doAnything.callAnything(transaction.to!, transaction.data!),
@@ -310,22 +329,22 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       await eoaVault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
-        otherMarketId,
+        otherMarketId1,
         otherAmountWei,
         BalanceCheckFlag.Both,
       );
 
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId, ZERO_BI);
-      await expectProtocolBalance(core, eoaVault, defaultAccountNumber, otherMarketId, ZERO_BI);
-      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, otherAmountWei);
     });
 
     it('should fail when called by a contract', async () => {
       const transaction = await contractVault.populateTransaction.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
-        otherMarketId,
+        otherMarketId1,
         otherAmountWei,
         BalanceCheckFlag.Both,
       );
@@ -369,38 +388,406 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       await eoaVault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
-        otherMarketId,
+        otherMarketId1,
         otherAmountWei,
         BalanceCheckFlag.To,
       );
-      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId, otherAmountWei);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
 
       await eoaVault.setIsExternalRedemptionPaused(true);
 
       await eoaVault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
-        otherMarketId,
+        otherMarketId1,
         otherAmountWei,
         BalanceCheckFlag.To,
       );
 
-      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId, otherAmountWei);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, otherAmountWei);
     });
 
     it('should fail when called by a contract', async () => {
       const transaction = await contractVault.populateTransaction.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
-        otherMarketId,
+        otherMarketId1,
         otherAmountWei,
         BalanceCheckFlag.To,
       );
       await expectThrow(
         doAnything.callAnything(transaction.to!, transaction.data!),
         `IsolationModeVaultV1Pausable&Eoa: Only EOA can call <${doAnything.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#repayAllForBorrowPosition', () => {
+    it('should work normally', async () => {
+      await eoaVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await eoaVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await eoaVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei.div(2),
+        BalanceCheckFlag.To,
+      );
+      await eoaVault.repayAllForBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, underlyingMarketId, amountWei);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+    });
+
+    it('should fail when called by a contract', async () => {
+      const transaction = await contractVault.populateTransaction.repayAllForBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        BalanceCheckFlag.To,
+      );
+      await expectThrow(
+        doAnything.callAnything(transaction.to!, transaction.data!),
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA can call <${doAnything.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#addCollateralAndSwapExactInputForOutput', () => {
+    it('should work normally', async () => {
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      await eoaVault.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId2, outputAmount);
+    });
+
+    it('should work when called by a trusted converter', async () => {
+      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(doAnything.address, true);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      const transaction = await eoaVault.populateTransaction.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await doAnything.callAnything(transaction.to!, transaction.data!);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId2, outputAmount);
+    });
+
+    it('should fail when not called by a trusted converter nor an EOA', async () => {
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      const transaction = await contractVault.populateTransaction.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectThrow(
+        doAnything.callAnything(transaction.to!, transaction.data!),
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA or converter can call <${doAnything.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#swapExactInputForOutputAndRemoveCollateral', () => {
+    it('should work normally', async () => {
+      await eoaVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await eoaVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await eoaVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, eoaVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      await eoaVault.swapExactInputForOutputAndRemoveCollateral(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+
+      await expectProtocolBalance(core, eoaVault, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        eoaVault,
+        borrowAccountNumber,
+        otherMarketId1,
+        ZERO_BI,
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        otherMarketId2,
+        otherAmountWei.add(outputAmount),
+      );
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
+    });
+
+    it('should work normally when called a trusted converter', async () => {
+      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(doAnything.address, true);
+
+      await eoaVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await eoaVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
+      await eoaVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, eoaVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      const transaction = await eoaVault.populateTransaction.swapExactInputForOutputAndRemoveCollateral(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await doAnything.callAnything(transaction.to!, transaction.data!);
+
+      await expectProtocolBalance(core, eoaVault, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        eoaVault,
+        borrowAccountNumber,
+        otherMarketId1,
+        ZERO_BI,
+      );
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        otherMarketId2,
+        otherAmountWei.add(outputAmount),
+      );
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
+    });
+
+    it('should fail when not called by a trusted converter nor an EOA', async () => {
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      const transaction = await contractVault.populateTransaction.swapExactInputForOutputAndRemoveCollateral(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectThrow(
+        doAnything.callAnything(transaction.to!, transaction.data!),
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA or converter can call <${doAnything.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#swapExactInputForOutput', () => {
+    it('should work normally', async () => {
+      await eoaVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+      await eoaVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId2,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId2, otherAmountWei);
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      await eoaVault.swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        eoaVault,
+        borrowAccountNumber,
+        otherMarketId1,
+        ZERO_BI,
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        eoaVault,
+        borrowAccountNumber,
+        otherMarketId2,
+        otherAmountWei.add(outputAmount),
+      );
+    });
+
+    it('should work normally when called by a trusted converter', async () => {
+      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(doAnything.address, true);
+
+      await eoaVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+      await eoaVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId2,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(core, eoaVault, borrowAccountNumber, otherMarketId2, otherAmountWei);
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      const transaction = await eoaVault.populateTransaction.swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await doAnything.callAnything(transaction.to!, transaction.data!);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        eoaVault,
+        borrowAccountNumber,
+        otherMarketId1,
+        ZERO_BI,
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        eoaVault,
+        borrowAccountNumber,
+        otherMarketId2,
+        otherAmountWei.add(outputAmount),
+      );
+    });
+
+    it('should fail when not called by a trusted converter nor an EOA', async () => {
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      const transaction = await contractVault.populateTransaction.swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectThrow(
+        doAnything.callAnything(transaction.to!, transaction.data!),
+        `IsolationModeVaultV1Pausable&Eoa: Only EOA or converter can call <${doAnything.address.toLowerCase()}>`,
       );
     });
   });

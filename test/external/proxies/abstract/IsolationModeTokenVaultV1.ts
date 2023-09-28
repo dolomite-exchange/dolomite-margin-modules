@@ -201,6 +201,14 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectTotalSupply(factory, amountWei);
     });
 
+    it('should fail when reentrancy is triggered', async () => {
+      const tx = await userVault.populateTransaction.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
+    });
+
     it('should fail when toAccountNumber is not 0', async () => {
       await expectThrow(
         userVault.depositIntoVaultForDolomiteMargin('1', amountWei),
@@ -231,6 +239,17 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectTotalSupply(factory, ZERO_BI);
     });
 
+    it('should fail when reentrancy is triggered', async () => {
+      const tx = await userVault.populateTransaction.withdrawFromVaultForDolomiteMargin(
+        defaultAccountNumber,
+        amountWei,
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
+    });
+
     it('should fail when fromAccountNumber is not 0', async () => {
       await expectThrow(
         userVault.withdrawFromVaultForDolomiteMargin('1', amountWei),
@@ -255,6 +274,18 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, amountWei);
+    });
+
+    it('should fail when reentrancy is triggered', async () => {
+      const tx = await userVault.populateTransaction.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
     });
 
     it('should fail when not called by owner', async () => {
@@ -298,6 +329,17 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
     });
 
+    it('should fail when reentrancy is triggered', async () => {
+      const tx = await userVault.populateTransaction.closeBorrowPositionWithUnderlyingVaultToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
+    });
+
     it('should fail when not called by owner', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2)
@@ -336,6 +378,18 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+    });
+
+    it('should fail when reentrancy is triggered', async () => {
+      const tx = await userVault.populateTransaction.closeBorrowPositionWithOtherTokens(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        [otherMarketId1],
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
     });
 
     it('should fail when underlying is requested to be withdrawn', async () => {
@@ -379,6 +433,18 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, amountWei);
+    });
+
+    it('should fail when reentrancy is triggered', async () => {
+      const tx = await userVault.populateTransaction.transferIntoPositionWithUnderlyingToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
     });
 
     it('should fail when not called by owner', async () => {
@@ -479,6 +545,20 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, otherAmountWei);
     });
 
+    it('should fail when reentrancy is triggered', async () => {
+      const tx = await userVault.populateTransaction.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
+    });
+
     it('should fail when not called by owner', async () => {
       await expectThrow(
         userVault.connect(core.hhUser2).transferIntoPositionWithOtherToken(
@@ -543,6 +623,18 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+    });
+
+    it('should fail when reentrancy is triggered', async () => {
+      const tx = await userVault.populateTransaction.transferFromPositionWithUnderlyingToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        amountWei,
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
     });
 
     it('should fail when not called by owner', async () => {
@@ -625,6 +717,20 @@ describe('IsolationModeTokenVaultV1', () => {
         otherMarketId1,
         otherAmountWei.div(2),
         BalanceCheckFlag.None,
+      );
+    });
+
+    it('should fail when reentrancy is triggered', async () => {
+      const tx = await userVault.populateTransaction.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.To,
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
       );
     });
 
@@ -711,6 +817,19 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(core, userVault, defaultAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, ZERO_BI);
+    });
+
+    it('should fail when reentrancy is triggered', async () => {
+      const tx = await userVault.populateTransaction.repayAllForBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        BalanceCheckFlag.Both,
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
     });
 
     it('should fail when not called by owner', async () => {
@@ -848,7 +967,26 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
     });
 
-    it('should fail when not called by vault owner', async () => {
+    it('should fail when reentrancy is triggered', async () => {
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      const tx = await userVault.populateTransaction.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
+    });
+
+    it('should fail when not called by vault owner or converter', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
       await expectThrow(
         userVault.connect(core.hhUser2).addCollateralAndSwapExactInputForOutput(
@@ -861,7 +999,7 @@ describe('IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -1132,7 +1270,26 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, borrowAmount.mul(-1));
     });
 
-    it('should fail when not called by vault owner', async () => {
+    it('should fail when reentrancy is triggered', async () => {
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      const tx = await userVault.populateTransaction.swapExactInputForOutputAndRemoveCollateral(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
+    });
+
+    it('should fail when not called by vault owner or converter', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
       await expectThrow(
         userVault.connect(core.hhUser2).swapExactInputForOutputAndRemoveCollateral(
@@ -1145,7 +1302,7 @@ describe('IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -1220,7 +1377,77 @@ describe('IsolationModeTokenVaultV1', () => {
       );
     });
 
-    it('should fail when not called by vault owner', async () => {
+    it('should work normally if converter calls', async () => {
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId2,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, otherAmountWei);
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      await factory.connect(core.governance).ownerSetIsTokenConverterTrusted(core.hhUser5.address, true);
+      await userVault.connect(core.hhUser5).swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        userVault,
+        borrowAccountNumber,
+        otherMarketId1,
+        ZERO_BI,
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        userVault,
+        borrowAccountNumber,
+        otherMarketId2,
+        otherAmountWei.add(outputAmount),
+      );
+    });
+
+    it('should fail when reentrancy is triggered', async () => {
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      const tx = await userVault.populateTransaction.swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectThrow(
+        userVault.testReentrancyOnOtherFunction(tx.data!),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
+    });
+
+    it('should fail when not called by vault owner or converter', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
       await expectThrow(
         userVault.connect(core.hhUser2).swapExactInputForOutput(
@@ -1232,7 +1459,7 @@ describe('IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 

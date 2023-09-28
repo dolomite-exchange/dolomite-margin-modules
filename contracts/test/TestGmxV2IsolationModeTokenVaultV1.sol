@@ -37,7 +37,7 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
 
     enum ReversionType {
         None,
-        Revert,
+        Error,
         Require
     }
 
@@ -45,6 +45,10 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
 
     bytes32 private constant _FILE = "TestGmxV2IsolationModeVaultV1";
     bytes32 private constant _REVERSION_TYPE = bytes32(uint256(keccak256("eip1967.proxy.reversionType")) - 1);
+
+    // ============ Errors ============
+
+    error RevertError(string message);
 
     // ======== Constructor =========
 
@@ -88,6 +92,10 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
         }
     }
 
+    function reversionType() public view returns (ReversionType) {
+        return ReversionType(_getUint256(_REVERSION_TYPE));
+    }
+
     function _swapExactInputForOutput(
         uint256 _tradeAccountNumber,
         uint256[] calldata _marketIdsPath,
@@ -110,14 +118,14 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
             _userConfig
         );
 
-        // Revert after so we can consume the gas and emulate real conditions as best as we can
-        ReversionType reversionType = ReversionType(_getUint256(_REVERSION_TYPE));
-        if (reversionType == ReversionType.Revert) {
-            assert(false);
-        } else if (reversionType == ReversionType.Require) {
+        // Error after so we can consume the gas and emulate real conditions as best as we can
+        ReversionType _reversionType = reversionType();
+        if (_reversionType == ReversionType.Error) {
+            revert RevertError("Reverting");
+        } else if (_reversionType == ReversionType.Require) {
             require(false, "Reverting");
         } else {
-            assert(reversionType == ReversionType.None);
+            assert(_reversionType == ReversionType.None);
         }
     }
 }

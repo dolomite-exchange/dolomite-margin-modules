@@ -80,6 +80,11 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         _;
     }
 
+    modifier onlyVaultOwnerOrConverter(address _from) {
+        _requireOnlyVaultOwnerOrConverter(_from);
+        _;
+    }
+
     modifier onlyVaultOwnerOrVaultFactory(address _from) {
         _requireOnlyVaultOwnerOrVaultFactory(_from);
         _;
@@ -126,6 +131,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     )
     external
+    nonReentrant
     onlyVaultOwnerOrVaultFactory(msg.sender) {
         _depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
     }
@@ -135,6 +141,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
     }
@@ -147,6 +154,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     external
     payable
     virtual
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _checkMsgValue();
         _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
@@ -157,6 +165,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _toAccountNumber
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
     }
@@ -167,6 +176,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256[] calldata _collateralMarketIds
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
     }
@@ -177,6 +187,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
     }
@@ -189,6 +200,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _transferIntoPositionWithOtherToken(
             _fromAccountNumber,
@@ -205,6 +217,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
     }
@@ -217,6 +230,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _transferFromPositionWithOtherToken(
             _borrowAccountNumber,
@@ -234,6 +248,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _repayAllForBorrowPosition(
             _fromAccountNumber,
@@ -255,7 +270,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     )
     external
     payable
-    onlyVaultOwner(msg.sender) {
+    nonReentrant
+    onlyVaultOwnerOrConverter(msg.sender) {
         _addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -280,7 +296,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     )
     external
     payable
-    onlyVaultOwner(msg.sender) {
+    nonReentrant
+    onlyVaultOwnerOrConverter(msg.sender) {
         _swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,
             _borrowAccountNumber,
@@ -306,7 +323,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     external
     payable
     virtual
-    onlyVaultOwner(msg.sender) {
+    nonReentrant
+    onlyVaultOwnerOrConverter(msg.sender) {
         _swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
@@ -486,7 +504,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         BORROW_POSITION_PROXY().closeBorrowPositionWithDifferentAccounts(
             /* _borrowAccountOwner = */ address(this),
             _borrowAccountNumber,
-            /* _toAccountOwner = */ msg.sender,
+            /* _toAccountOwner = */ _proxySelf().owner(),
             _toAccountNumber,
             _collateralMarketIds
         );
@@ -546,7 +564,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         );
 
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-            /* _fromAccountOwner = */ msg.sender,
+            /* _fromAccountOwner = */ _proxySelf().owner(),
             _fromAccountNumber,
             /* _toAccountOwner = */ address(this),
             _borrowAccountNumber,
@@ -614,7 +632,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
             /* _fromAccountOwner = */ address(this),
             _borrowAccountNumber,
-            /* _toAccountOwner = */ msg.sender,
+            /* _toAccountOwner = */ _proxySelf().owner(),
             _toAccountNumber,
             _marketId,
             _amountWei,
@@ -646,7 +664,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
             _marketId
         );
         BORROW_POSITION_PROXY().repayAllForBorrowPositionWithDifferentAccounts(
-            /* _fromAccountOwner = */ msg.sender,
+            /* _fromAccountOwner = */ _proxySelf().owner(),
             _fromAccountNumber,
             /* _borrowAccountOwner = */ address(this),
             _borrowAccountNumber,
@@ -793,6 +811,16 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
             _from == _proxySelf().owner(),
             _FILE,
             "Only owner can call",
+            _from
+        );
+    }
+
+    function _requireOnlyVaultOwnerOrConverter(address _from) internal virtual view {
+        Require.that(
+            _from == address(_proxySelf().owner())
+                || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
+            _FILE,
+            "Only owner or converter can call",
             _from
         );
     }

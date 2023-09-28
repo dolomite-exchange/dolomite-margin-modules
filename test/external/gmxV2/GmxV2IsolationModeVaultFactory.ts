@@ -380,4 +380,53 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       expect(marketInfo.longTokenMarketId).to.eq(core.marketIds.weth);
     });
   });
+
+  describe('#setIsAccountWaitingForCallback', () => {
+    it('should work normally for unwrapper', async () => {
+      const unwrapper = await impersonate(await gmxRegistryV2.gmxV2UnwrapperTrader(), true);
+      const accountNumber = 123;
+      expect(await factory.isAccountWaitingForCallback(vault.address, accountNumber)).to.eq(false);
+
+      const result = await factory.connect(unwrapper)
+        .setIsAccountWaitingForCallback(vault.address, accountNumber, true);
+      await expectEvent(factory, result, 'AccountWaitingForCallbackSet', {
+        _vault: vault.address,
+        _accountNumber: accountNumber,
+        _isWaiting: true,
+      });
+      expect(await factory.isAccountWaitingForCallback(vault.address, accountNumber)).to.eq(true);
+    });
+
+    it('should work normally for wrapper', async () => {
+      const wrapper = await impersonate(await gmxRegistryV2.gmxV2WrapperTrader(), true);
+      const accountNumber = 123;
+      expect(await factory.isAccountWaitingForCallback(vault.address, accountNumber)).to.eq(false);
+
+      const result = await factory.connect(wrapper)
+        .setIsAccountWaitingForCallback(vault.address, accountNumber, true);
+      await expectEvent(factory, result, 'AccountWaitingForCallbackSet', {
+        _vault: vault.address,
+        _accountNumber: accountNumber,
+        _isWaiting: true,
+      });
+      expect(await factory.isAccountWaitingForCallback(vault.address, accountNumber)).to.eq(true);
+    });
+
+    it('should fail when vault is invalid', async () => {
+      const wrapper = await impersonate(await gmxRegistryV2.gmxV2WrapperTrader(), true);
+      const accountNumber = 123;
+      await expectThrow(
+        factory.connect(wrapper).setIsAccountWaitingForCallback(OTHER_ADDRESS, accountNumber, true),
+        `IsolationModeVaultFactory: Invalid vault <${OTHER_ADDRESS.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when not called by a wrapper or unwrapper operator', async () => {
+      const accountNumber = 123;
+      await expectThrow(
+        factory.connect(core.hhUser1).setIsAccountWaitingForCallback(vault.address, accountNumber, true),
+        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
 });

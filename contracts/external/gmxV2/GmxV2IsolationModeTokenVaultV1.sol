@@ -19,6 +19,7 @@
 */
 pragma solidity ^0.8.9;
 
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
@@ -29,9 +30,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
-import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
-import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
@@ -49,6 +48,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     IGmxV2IsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithFreezableAndPausable
 {
+    using Address for address payable;
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
 
@@ -73,11 +73,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ===================================================
     // ==================== Modifiers ====================
     // ===================================================
-
-    modifier onlyVaultOwnerOrUnwrapper(address _from) {
-        _requireOnlyVaultOwnerOrUnwrapper(_from);
-        _;
-    }
 
     modifier onlyLiquidator(address _from) {
         Require.that(
@@ -172,31 +167,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
         // @follow-up This would revert in the callback where we check the key
         registry().gmxExchangeRouter().cancelWithdrawal(_key);
-    }
-
-    function swapExactInputForOutput(
-        uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] calldata _tradersPath,
-        IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
-        IGenericTraderProxyV1.UserConfig calldata _userConfig
-    )
-        external
-        payable
-        override
-        onlyVaultOwnerOrUnwrapper(msg.sender)
-    {
-        _swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
-        );
     }
 
     // @follow-up Should these emit events? I think not but just want to ask
@@ -310,7 +280,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
     }
 
     function isWaitingForCallback(uint256 _accountNumber) public view returns (bool) {
-        return registry().isAccountWaitingForCallback(/* _vault = */ address(this), _accountNumber);
+        return IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).isAccountWaitingForCallback(
+            /* _vault = */ address(this),
+            _accountNumber
+        );
     }
 
     // ==================================================================
@@ -395,6 +368,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _requireOnlyUnwrapper(msg.sender);
         }
 
+        // Ignore the freezable implementation and call the pausable one directly
         IsolationModeTokenVaultV1WithPausable._swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
@@ -413,7 +387,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
     )
     internal
     override {
-        super._transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
+        super._transferFromPositionWithUnderlyingToken(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _amountWei
+        );
         _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
@@ -442,7 +420,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
     )
     internal
     override {
-        super._closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
+        super._closeBorrowPositionWithUnderlyingVaultToken(
+            _borrowAccountNumber,
+            _toAccountNumber
+        );
         _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
@@ -453,7 +434,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
     )
     internal
     override {
-        super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+        super._closeBorrowPositionWithOtherTokens(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _collateralMarketIds
+        );
         _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
@@ -477,34 +462,14 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _setExecutionFeeForAccountNumber(_tradeAccountNumber, /* _executionFee = */ 0); // reset it to 0
         }
 
-        IGmxExchangeRouter exchangeRouter = registry().gmxExchangeRouter();
-        address withdrawalVault = registry().gmxWithdrawalVault();
-
-        exchangeRouter.sendWnt{value: ethExecutionFee}(withdrawalVault, ethExecutionFee);
-        IERC20(UNDERLYING_TOKEN()).safeApprove(address(registry().gmxRouter()), _inputAmount);
-        exchangeRouter.sendTokens(UNDERLYING_TOKEN(), withdrawalVault, _inputAmount);
-
-        address[] memory swapPath = new address[](1);
-        swapPath[0] = UNDERLYING_TOKEN();
-
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
-        IGmxV2IsolationModeUnwrapperTraderV2 unwrapper = registry().gmxV2UnwrapperTrader();
-        IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
-            /* receiver = */ address(unwrapper),
-            /* callbackContract = */ address(unwrapper),
-            /* uiFeeReceiver = */ address(0),
-            /* market = */ UNDERLYING_TOKEN(),
-            /* longTokenSwapPath = */ _outputToken == factory.LONG_TOKEN() ? new address[](0) : swapPath,
-            /* shortTokenSwapPath = */ _outputToken == factory.SHORT_TOKEN() ? new address[](0) : swapPath,
-            /* minLongTokenAmount = */ _outputToken == factory.LONG_TOKEN() ? _minOutputAmount : 0,
-            /* minShortTokenAmount = */ _outputToken == factory.SHORT_TOKEN() ? _minOutputAmount : 0,
-            /* shouldUnwrapNativeToken = */ false,
-            /* executionFee = */ ethExecutionFee,
-            /* callbackGasLimit = */ unwrapper.callbackGasLimit()
+        GmxV2Library.executeInitiateUnwrapping(
+            IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()),
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount,
+            ethExecutionFee
         );
-
-        bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
-        unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _inputAmount, _outputToken);
     }
 
     function _setVirtualBalance(uint256 _bal) internal {
@@ -537,15 +502,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
     }
 
-    function _requireOnlyVaultOwnerOrUnwrapper(address _from) internal view {
-        Require.that(
-            _from == address(_proxySelf().owner()) || _from == address(registry().gmxV2UnwrapperTrader()),
-            _FILE,
-            "Only owner or unwrapper can call",
-            _from
-        );
-    }
-
     function _requireOnlyUnwrapper(address _from) internal view {
         Require.that(
             _from == address(registry().gmxV2UnwrapperTrader()),
@@ -568,11 +524,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
         });
         if (DOLOMITE_MARGIN().getAccountNumberOfMarketsWithBalances(borrowAccountInfo) == 0) {
             // There's no assets left in the position. Issue a refund for the execution fee
-            // The refund is sent as WETH to eliminate reentrancy concerns
             uint256 executionFee = getExecutionFeeForAccountNumber(_borrowAccountNumber);
             _setExecutionFeeForAccountNumber(_borrowAccountNumber, /* _executionFee = */ 0);
-            WETH.deposit{value: executionFee}();
-            WETH.safeTransfer(msg.sender, executionFee);
+            // @audit: check for any reentrancy issues! No user-level functions on the vault should be reentered
+            payable(_proxySelf().owner()).sendValue(executionFee);
         }
     }
 }

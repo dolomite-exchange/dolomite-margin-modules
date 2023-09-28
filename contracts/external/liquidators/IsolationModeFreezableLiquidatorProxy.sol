@@ -159,5 +159,7 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
                 liquidBorrowValue.value
             );
         }
+
+
     }
 }

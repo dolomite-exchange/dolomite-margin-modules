@@ -21,8 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { GmxV2IsolationModeVaultFactory } from "../external/gmxV2/GmxV2IsolationModeVaultFactory.sol";
-import { IGenericTraderProxyV1 } from "../external/interfaces/IGenericTraderProxyV1.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -44,6 +42,10 @@ contract TestGmxV2IsolationModeVaultFactory is GmxV2IsolationModeVaultFactory {
     // ============ Storage ============
 
     ReversionType public reversionType;
+
+    // ======== Errors =========
+
+    error RevertError(string message);
 
     // ======== Constructor =========
 
@@ -78,10 +80,9 @@ contract TestGmxV2IsolationModeVaultFactory is GmxV2IsolationModeVaultFactory {
     ) internal override {
         super._depositIntoDolomiteMarginFromTokenConverter(_vault, _vaultAccountNumber, _amountWei);
         if (reversionType == ReversionType.Revert && _vaultAccountNumber != 0) {
-            assert(false);
+            revert RevertError("Reversion");
         } else if (reversionType == ReversionType.Require && _vaultAccountNumber != 0) {
             require(false, "Reversion");
         }
-        reversionType = ReversionType.None; // undo it after the first reversion
     }
 }

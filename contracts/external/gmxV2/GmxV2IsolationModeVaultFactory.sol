@@ -25,8 +25,8 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
-import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
@@ -61,6 +61,7 @@ contract GmxV2IsolationModeVaultFactory is
     // ============ Field Variables ============
 
     IGmxRegistryV2 public override gmxRegistryV2;
+    mapping(address => mapping (uint256 => bool)) private _isAccountWaitingForCallbackMap;
 
     // ============ Constructor ============
 
@@ -209,6 +210,18 @@ contract GmxV2IsolationModeVaultFactory is
         IGmxV2IsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
+    function setIsAccountWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber,
+        bool _isWaiting
+    )
+    external
+    requireIsTokenConverter(msg.sender)
+    requireIsVault(_vault) {
+        _isAccountWaitingForCallbackMap[_vault][_accountNumber] = _isWaiting;
+        emit AccountWaitingForCallbackSet(_vault, _accountNumber, _isWaiting);
+    }
+
     function getMarketInfo() external view returns (MarketInfoParams memory) {
         return MarketInfoParams({
             marketToken: UNDERLYING_TOKEN,
@@ -219,6 +232,13 @@ contract GmxV2IsolationModeVaultFactory is
             longToken: LONG_TOKEN,
             longTokenMarketId: _LONG_TOKEN_MARKET_ID
         });
+    }
+
+    function isAccountWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber
+    ) external view returns (bool) {
+        return _isAccountWaitingForCallbackMap[_vault][_accountNumber];
     }
 
     // ====================================================

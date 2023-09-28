@@ -728,7 +728,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.userConfig,
           { value: amountWei },
         ),
-        `GmxV2IsolationModeVaultV1: Only owner or unwrapper can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 

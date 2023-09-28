@@ -58,6 +58,7 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ================================================
 
     event GmxRegistryV2Set(address _gmxRegistryV2);
+    event AccountWaitingForCallbackSet(address _vault, uint256 _accountNumber, bool _isWaiting);
 
     // ===================================================
     // ==================== Functions ====================
@@ -92,6 +93,12 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
 
+    function setIsAccountWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber,
+        bool _isWaiting
+    ) external;
+
     function INDEX_TOKEN() external view returns (address);
 
     function SHORT_TOKEN() external view returns (address);
@@ -101,4 +108,9 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
     function gmxRegistryV2() external view returns (IGmxRegistryV2);
 
     function getMarketInfo() external view returns (MarketInfoParams memory);
+
+    function isAccountWaitingForCallback(
+        address _vault,
+        uint256 _accountNumber
+    ) external view returns (bool);
 }

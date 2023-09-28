@@ -59,7 +59,6 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     bytes32 private constant _GMX_WITHDRAWAL_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxWithdrawalVault")) - 1);
     bytes32 private constant _GMX_V2_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2UnwrapperTrader")) - 1);
     bytes32 private constant _GMX_V2_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2WrapperTrader")) - 1);
-    bytes32 private constant _IS_WAITING_FOR_CALLBACK_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isWaitingForCallback")) - 1);
     // solhint-enable max-line-length
 
     // ==================== Initializer ====================
@@ -172,25 +171,6 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         _ownerSetGmxV2WrapperTrader(_gmxV2WrapperTrader);
     }
 
-    // ==================== Non-Admin Functions ====================
-
-    function setIsAccountWaitingForCallback(
-        address _vault,
-        uint256 _accountNumber,
-        bool _isWaiting
-    )
-    external {
-        Require.that(
-            msg.sender == address(gmxV2UnwrapperTrader()) || msg.sender == address(gmxV2WrapperTrader()),
-            _FILE,
-            "Sender must be GMX V2 trader",
-            msg.sender
-        );
-        bytes32 slot = keccak256(abi.encodePacked(_IS_WAITING_FOR_CALLBACK_SLOT, _vault, _accountNumber));
-        _setUint256(slot, _isWaiting ? 1 : 0);
-        emit AccountWaitingForCallbackSet(_vault, _accountNumber, _isWaiting);
-    }
-
     // ==================== Views ====================
 
     function ethUsdMarketToken() external view returns (IERC20) {
@@ -227,14 +207,6 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
 
     function gmxWithdrawalVault() external view returns (address) {
         return _getAddress(_GMX_WITHDRAWAL_VAULT_SLOT);
-    }
-
-    function isAccountWaitingForCallback(
-        address _vault,
-        uint256 _accountNumber
-    ) external view returns (bool) {
-        bytes32 slot = keccak256(abi.encodePacked(_IS_WAITING_FOR_CALLBACK_SLOT, _vault, _accountNumber));
-        return _getUint256(slot) == 1;
     }
 
     function gmxV2UnwrapperTrader() public view returns (IGmxV2IsolationModeUnwrapperTraderV2) {

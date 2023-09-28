@@ -1,4 +1,7 @@
+import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import {
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
@@ -7,7 +10,7 @@ import {
   GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
-  GmxV2IsolationModeWrapperTraderV2,
+  GmxV2IsolationModeWrapperTraderV2, IERC20,
   IGmxMarketToken,
   IsolationModeFreezableLiquidatorProxy,
   IsolationModeFreezableLiquidatorProxy__factory,
@@ -16,28 +19,31 @@ import { AccountStruct } from '../../../src/utils/constants';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { Network, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { increaseByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { expectEvent, expectProtocolBalance, expectWalletBalance } from '../../utils/assertions';
 import {
   createGmxRegistryV2,
   createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
-  createGmxV2Library,
+  createGmxV2Library, getOracleParams,
 } from '../../utils/ecosystem-token-utils/gmx';
 import { setExpiry } from '../../utils/expiry-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
+  setupCoreProtocol, setupGMBalance,
   setupTestMarket,
   setupUserVaultProxy,
   setupWETHBalance,
 } from '../../utils/setup';
 
+const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
+const EXECUTION_FEE = parseEther('0.0005');
+
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
-const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
 
 const wethAmount = ONE_ETH_BI; // 1 ETH
 const usdcAmount = BigNumber.from('1888000000'); // 1,888
@@ -142,7 +148,91 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
   });
 
   describe('#prepareForLiquidation', () => {
+    let withdrawalKey: string;
+    let wethAmount: BigNumber;
+    async function setupBalances() {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      await expectWalletBalance(vault, underlyingToken, amountWei);
+      expect(await vault.isWaitingForCallback(defaultAccountNumber)).to.eq(false);
+      expect(await vault.isWaitingForCallback(borrowAccountNumber)).to.eq(false);
+
+      // Create debt for the position
+      const gmPrice = await core.dolomiteMargin.getMarketPrice(marketId);
+      const wethPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.weth);
+      wethAmount = amountWei.mul(gmPrice.value).div(wethPrice.value).mul(100).div(120);
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.To,
+      );
+
+      // Devalue the collateral so it's underwater
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_BI); // as close to 0 as possible
+      await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+
+      // Increase the value of ETH, so it's underwater after the liquidation is handled too
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, wethPrice.value.mul(107).div(100));
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
+    }
+
+    async function checkStateAfterUnwrapping() {
+      await expectWalletBalance(vault, underlyingToken, ZERO_BI);
+
+      const withdrawal = await unwrapper.getWithdrawalInfo(withdrawalKey);
+      expect(withdrawal.key).to.eq(withdrawalKey);
+      expect(withdrawal.vault).to.eq(vault.address);
+      expect(withdrawal.accountNumber).to.eq(borrowAccountNumber);
+      expect(withdrawal.inputAmount).to.eq(amountWei);
+      expect(withdrawal.outputToken).to.eq(core.tokens.nativeUsdc!.address);
+      expect(withdrawal.outputAmount).to.eq(ZERO_BI);
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, wethAmount.mul(-1));
+      expect(await vault.isWaitingForCallback(defaultAccountNumber)).to.eq(false);
+      expect(await vault.isWaitingForCallback(borrowAccountNumber)).to.eq(true);
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+    }
+
     it('should work normally for underwater account', async () => {
+      await setupBalances();
+      await liquidator.prepareForLiquidation(
+        liquidAccount,
+        marketId,
+        amountWei,
+        core.marketIds.usdc,
+        ONE_BI,
+        NO_EXPIRY,
+      );
+      const filter = unwrapper.filters.WithdrawalCreated();
+      withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+        .executeWithdrawal(
+          withdrawalKey,
+          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
+          { gasLimit: 10_000_000 },
+        );
+      await expectEvent(unwrapper, result, 'WithdrawalExecuted', {
+        key: withdrawalKey,
+      });
+      await checkStateAfterUnwrapping();
+
+
+    });
+
+    it('should work normally for underwater account when vault is frozen', async () => {
       await liquidator.prepareForLiquidation(
         liquidAccount,
         marketId,
@@ -188,6 +278,9 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     });
 
     it('should fail when liquid account is not underwater', async () => {
+    });
+
+    it('should fail when there is already a liquidation enqueued', async () => {
     });
   });
 });

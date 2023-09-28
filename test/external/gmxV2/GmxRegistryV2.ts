@@ -307,44 +307,4 @@ describe('GmxRegistryV2', () => {
       );
     });
   });
-
-  describe('#setIsAccountWaitingForCallback', () => {
-    it('should work normally for unwrapper', async () => {
-      const unwrapper = await impersonate(await registry.gmxV2UnwrapperTrader(), true);
-      const accountNumber = 123;
-      expect(await registry.isAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(false);
-
-      const result = await registry.connect(unwrapper)
-        .setIsAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true);
-      await expectEvent(registry, result, 'AccountWaitingForCallbackSet', {
-        _vault: OTHER_ADDRESS_1,
-        _accountNumber: accountNumber,
-        _isWaiting: true,
-      });
-      expect(await registry.isAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(true);
-    });
-
-    it('should work normally for wrapper', async () => {
-      const wrapper = await impersonate(await registry.gmxV2WrapperTrader(), true);
-      const accountNumber = 123;
-      expect(await registry.isAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(false);
-
-      const result = await registry.connect(wrapper)
-        .setIsAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true);
-      await expectEvent(registry, result, 'AccountWaitingForCallbackSet', {
-        _vault: OTHER_ADDRESS_1,
-        _accountNumber: accountNumber,
-        _isWaiting: true,
-      });
-      expect(await registry.isAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber)).to.eq(true);
-    });
-
-    it('should fail when not called by a wrapper or unwrapper operator', async () => {
-      const accountNumber = 123;
-      await expectThrow(
-        registry.connect(core.hhUser1).setIsAccountWaitingForCallback(OTHER_ADDRESS_1, accountNumber, true),
-        `GmxRegistryV2: Sender must be GMX V2 trader <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
 });

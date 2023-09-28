@@ -176,7 +176,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             userConfig
         ) {
             factory.setIsVaultFrozen(withdrawalInfo.vault, /* _isVaultFrozen = */ false);
-            _setWithdrawalInfo(_key, _emptyWithdrawalInfo());
+            _setWithdrawalInfo(_key, _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber));
             emit WithdrawalExecuted(_key);
         } catch Error(string memory reason) {
             _handleCallbackError(
@@ -216,7 +216,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         // The GM tokens are sent back to the vault
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         factory.setIsVaultFrozen(withdrawalInfo.vault, /* _isVaultFrozen = */ false);
-        _setWithdrawalInfo(_key, _emptyWithdrawalInfo());
+        _setWithdrawalInfo(_key, _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber));
         emit WithdrawalCancelled(_key);
     }
 
@@ -226,15 +226,18 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         uint256 _inputAmount,
         address _outputToken
     ) external {
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         Require.that(
-            address(VAULT_FACTORY().getAccountByVault(msg.sender)) != address(0),
+            factory.getAccountByVault(msg.sender) != address(0),
             _FILE,
             "Invalid vault"
         );
 
-        assert(_getWithdrawalSlot(_key).vault == address(0)); // panic if the key is already used
+        // Panic if the key is already used
+        assert(_getWithdrawalSlot(_key).vault == address(0));
+
         // Disallow the withdrawal if there's already an action waiting for it
-        GmxV2Library.checkVaultIsNotActive(GMX_REGISTRY_V2(), msg.sender, _accountNumber);
+        GmxV2Library.checkVaultIsNotActive(factory, msg.sender, _accountNumber);
 
         _setWithdrawalInfo(_key, WithdrawalInfo({
             key: _key,
@@ -289,14 +292,8 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             extraOrderData
         );
 
-        // @follow-up How to test this since _exchangeUnderlying returns the minOutputAmount
-        Require.that(
-            outputAmount >= minOutputAmount,
-            _FILE,
-            "Insufficient output amount",
-            outputAmount,
-            minOutputAmount
-        );
+        // Panic if this condition doesn't hold, since _exchangeUnderlying returns at least the minOutputAmount
+        assert(outputAmount >= minOutputAmount);
 
         IERC20(_outputToken).safeApprove(_receiver, outputAmount);
 
@@ -366,18 +363,19 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _orderData
         );
         if (actionsLength == 4) {
-            _inputAmount -= withdrawalInfo.inputAmount;
+            // This variable is stored in memory. The storage updates occur in the `exchange` function.
+            withdrawalInfo.inputAmount -= _inputAmount;
             actions[2] = AccountActionLib.encodeCallAction(
                 _liquidAccountId,
                 /* _callee */ address(this),
-                /* (_transferAmount, _key)[encoded] = */ abi.encode(_inputAmount, withdrawalInfo.key)
+                /* (_transferAmount, _key)[encoded] = */ abi.encode(withdrawalInfo.inputAmount, withdrawalInfo.key)
             );
             actions[3] = AccountActionLib.encodeExternalSellAction(
                 _liquidAccountId,
                 _inputMarket,
                 _outputMarket,
                 /* _trader = */ address(this),
-                /* _amountInWei = */ _inputAmount,
+                /* _amountInWei = */ withdrawalInfo.inputAmount,
                 /* _amountOutMinWei = */ 1,
                 _orderData
             );
@@ -460,18 +458,20 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     }
 
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
-        WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
-        GMX_REGISTRY_V2().setIsAccountWaitingForCallback(
-            storageInfo.vault,
-            storageInfo.accountNumber,
-            _info.vault != address(0)
+        bool clearValues = _info.inputAmount == 0;
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsAccountWaitingForCallback(
+            _info.vault,
+            _info.accountNumber,
+            !clearValues
         );
+
+        WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
         storageInfo.key = _key;
-        storageInfo.vault = _info.vault;
-        storageInfo.accountNumber = _info.accountNumber;
-        storageInfo.inputAmount = _info.inputAmount;
-        storageInfo.outputToken = _info.outputToken;
-        storageInfo.outputAmount = _info.outputAmount;
+        storageInfo.vault = clearValues ? address(0) : _info.vault;
+        storageInfo.accountNumber = clearValues ? 0 : _info.accountNumber;
+        storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
+        storageInfo.outputToken = clearValues ? address(0) : _info.outputToken;
+        storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
     }
 
     function _callFunction(
@@ -534,11 +534,15 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
 
-    function _emptyWithdrawalInfo() internal pure returns (WithdrawalInfo memory) {
+    function _emptyWithdrawalInfo(
+        bytes32 _key,
+        address _vault,
+        uint256 _accountNumber
+    ) internal pure returns (WithdrawalInfo memory) {
         return WithdrawalInfo({
-            key: bytes32(0),
-            vault: address(0),
-            accountNumber: 0,
+            key: _key,
+            vault: _vault,
+            accountNumber: _accountNumber,
             inputAmount: 0,
             outputToken: address(0),
             outputAmount: 0

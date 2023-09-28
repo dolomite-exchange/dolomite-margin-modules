@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IsolationModeTokenVaultV1WithPausable } from "./IsolationModeTokenVaultV1WithPausable.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
+import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 
 
 /**
@@ -50,6 +51,19 @@ abstract contract IsolationModeTokenVaultV1WithPausableAndOnlyEoa is IsolationMo
             _from == tx.origin,
             _FILE,
             "Only EOA can call",
+            _from
+        );
+        // solhint-enable avoid-tx-origin
+    }
+
+    // TODO test this
+    function _requireOnlyVaultOwnerOrConverter(address _from) internal override view {
+        super._requireOnlyVaultOwnerOrConverter(_from);
+        // solhint-disable avoid-tx-origin
+        Require.that(
+            _from == tx.origin || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
+            _FILE,
+            "Only EOA or converter can call",
             _from
         );
         // solhint-enable avoid-tx-origin

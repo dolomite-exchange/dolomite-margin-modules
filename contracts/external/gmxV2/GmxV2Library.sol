@@ -19,13 +19,19 @@
 */
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
 import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
+import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
+import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+
 
 /**
  * @title   GmxV2Library
@@ -34,6 +40,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
  * @notice  Library contract for the GmxV2IsolationModeTokenVaultV1 contract to reduce code size
  */
 library GmxV2Library {
+    using SafeERC20 for IERC20;
 
     // ==================================================================
     // ============================ Constants ===========================
@@ -50,15 +57,53 @@ library GmxV2Library {
     // ======================== Public Functions ========================
     // ==================================================================
 
+    function executeInitiateUnwrapping(
+        IGmxV2IsolationModeVaultFactory _factory,
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        uint256 _ethExecutionFee
+    ) public {
+        IGmxRegistryV2 registry = _factory.gmxRegistryV2();
+        IGmxExchangeRouter exchangeRouter = registry.gmxExchangeRouter();
+        address withdrawalVault = registry.gmxWithdrawalVault();
+
+        address[] memory swapPath = new address[](1);
+        swapPath[0] = _factory.UNDERLYING_TOKEN();
+
+        exchangeRouter.sendWnt{value: _ethExecutionFee}(withdrawalVault, _ethExecutionFee);
+        IERC20(swapPath[0]).safeApprove(address(registry.gmxRouter()), _inputAmount);
+        exchangeRouter.sendTokens(swapPath[0], withdrawalVault, _inputAmount);
+
+        IGmxV2IsolationModeUnwrapperTraderV2 unwrapper = registry.gmxV2UnwrapperTrader();
+        IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
+            /* receiver = */ address(unwrapper),
+            /* callbackContract = */ address(unwrapper),
+            /* uiFeeReceiver = */ address(0),
+            /* market = */ swapPath[0],
+            /* longTokenSwapPath = */ _outputToken == _factory.LONG_TOKEN() ? new address[](0) : swapPath,
+            /* shortTokenSwapPath = */ _outputToken == _factory.SHORT_TOKEN() ? new address[](0) : swapPath,
+            /* minLongTokenAmount = */ _outputToken == _factory.LONG_TOKEN() ? _minOutputAmount : 0,
+            /* minShortTokenAmount = */ _outputToken == _factory.SHORT_TOKEN() ? _minOutputAmount : 0,
+            /* shouldUnwrapNativeToken = */ false,
+            /* executionFee = */ _ethExecutionFee,
+            /* callbackGasLimit = */ unwrapper.callbackGasLimit()
+        );
+
+        bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
+        unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _inputAmount, _outputToken);
+    }
+
     function checkVaultIsNotActive(
-        IGmxRegistryV2 _registry,
+        IGmxV2IsolationModeVaultFactory _factory,
         address _vault,
         uint256 _accountNumber
     ) public view {
         Require.that(
-            !_registry.isAccountWaitingForCallback(_vault, _accountNumber),
+            !_factory.isAccountWaitingForCallback(_vault, _accountNumber),
             _FILE,
-            "Account has callback waiting",
+            "Account has an active callback",
             _vault,
             _accountNumber
         );
@@ -67,9 +112,9 @@ library GmxV2Library {
     function isExternalRedemptionPaused(
         IGmxRegistryV2 _registry,
         IDolomiteMargin _dolomiteMargin,
-        IGmxV2IsolationModeVaultFactory _vaultFactory
+        IGmxV2IsolationModeVaultFactory _factory
     ) public view returns (bool) {
-        address underlyingToken = _vaultFactory.UNDERLYING_TOKEN();
+        address underlyingToken = _factory.UNDERLYING_TOKEN();
         IGmxDataStore dataStore = _registry.gmxDataStore();
         uint256 maxPnlForAdl = dataStore.getUint(
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_ADL, underlyingToken, /* _isLong = */ true)
@@ -78,7 +123,7 @@ library GmxV2Library {
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS, underlyingToken, /* _isLong = */ true)
         );
 
-        IGmxV2IsolationModeVaultFactory.MarketInfoParams memory info = _vaultFactory.getMarketInfo();
+        IGmxV2IsolationModeVaultFactory.MarketInfoParams memory info = _factory.getMarketInfo();
         GmxMarket.MarketPrices memory marketPrices = _getGmxMarketPrices(
             _dolomiteMargin.getMarketPrice(info.indexTokenMarketId).value,
             _dolomiteMargin.getMarketPrice(info.longTokenMarketId).value,
