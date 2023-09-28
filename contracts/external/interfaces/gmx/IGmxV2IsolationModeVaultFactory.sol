@@ -58,6 +58,7 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ================================================
 
     event GmxRegistryV2Set(address _gmxRegistryV2);
+    event ExecutionFeeSet(uint256 _executionFee);
     event AccountWaitingForCallbackSet(address _vault, uint256 _accountNumber, bool _isWaiting);
 
     // ===================================================
@@ -87,6 +88,8 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     function ownerSetGmxRegistryV2(address _gmxRegistryV2) external;
 
+    function ownerSetExecutionFee(uint256 _executionFee) external;
+
     function setIsVaultFrozen(address _vault, bool _isVaultFrozen) external;
 
     function setIsDepositSourceWrapper(address _vault, bool _isDepositSourceWrapper) external;
@@ -113,4 +116,6 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
         address _vault,
         uint256 _accountNumber
     ) external view returns (bool);
+
+    function executionFee() external view returns (uint256);
 }

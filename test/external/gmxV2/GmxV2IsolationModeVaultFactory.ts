@@ -216,6 +216,31 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     });
   });
 
+  describe('#ownerSetExecutionFee', () => {
+    const newExecutionFee = parseEther('0.1');
+    it('should work normally', async () => {
+      const result = await factory.connect(core.governance).ownerSetExecutionFee(newExecutionFee);
+      await expectEvent(factory, result, 'ExecutionFeeSet', {
+        executionFee: newExecutionFee,
+      });
+      expect(await factory.executionFee()).to.eq(newExecutionFee);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        factory.connect(core.hhUser1).ownerSetExecutionFee(newExecutionFee),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when execution fee is too large', async () => {
+      await expectThrow(
+        factory.connect(core.governance).ownerSetExecutionFee(parseEther('1.01')),
+        'GmxV2IsolationModeVaultFactory: Invalid execution fee',
+      );
+    });
+  });
+
   describe('#depositIntoDolomiteMarginFromTokenConverter', () => {
     it('should fail if not token converter', async () => {
       await expectThrow(

@@ -1,4 +1,5 @@
 import { BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import { CoreProtocol } from '../../../test/utils/setup';
 import {
   GLPIsolationModeTokenVaultV1,
@@ -154,6 +155,8 @@ export async function getGmxRegistryV2ConstructorParams(
   ];
 }
 
+const EXECUTION_FEE = parseEther('0.001');
+
 export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   core: CoreProtocol,
   gmxRegistry: IGmxRegistryV2,
@@ -168,6 +171,7 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
 
   return [
     gmxRegistry.address,
+    EXECUTION_FEE,
     [
       gmToken.address,
       core.tokens.weth.address,

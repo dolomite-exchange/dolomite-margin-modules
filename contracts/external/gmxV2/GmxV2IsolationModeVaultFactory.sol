@@ -61,12 +61,14 @@ contract GmxV2IsolationModeVaultFactory is
     // ============ Field Variables ============
 
     IGmxRegistryV2 public override gmxRegistryV2;
+    uint256 public override executionFee;
     mapping(address => mapping (uint256 => bool)) private _isAccountWaitingForCallbackMap;
 
     // ============ Constructor ============
 
     constructor(
         address _gmxRegistryV2,
+        uint256 _executionFee,
         MarketInfoConstructorParams memory _tokenAndMarketAddresses,
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
@@ -82,7 +84,8 @@ contract GmxV2IsolationModeVaultFactory is
         _userVaultImplementation,
         _dolomiteMargin
     ) {
-        gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
+        _ownerSetGmxRegistryV2(_gmxRegistryV2);
+        _ownerSetExecutionFee(_executionFee);
         INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
         _INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
         SHORT_TOKEN = _tokenAndMarketAddresses.shortToken;
@@ -176,8 +179,16 @@ contract GmxV2IsolationModeVaultFactory is
     external
     override
     onlyDolomiteMarginOwner(msg.sender) {
-        gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
-        emit GmxRegistryV2Set(_gmxRegistryV2);
+        _ownerSetGmxRegistryV2(_gmxRegistryV2);
+    }
+
+    function ownerSetExecutionFee(
+        uint256 _executionFee
+    )
+    external
+    override
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetExecutionFee(_executionFee);
     }
 
     function setIsVaultFrozen(
@@ -244,6 +255,25 @@ contract GmxV2IsolationModeVaultFactory is
     // ====================================================
     // ================ Internal Functions ================
     // ====================================================
+
+    function _ownerSetGmxRegistryV2(
+        address _gmxRegistryV2
+    ) internal {
+        gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
+        emit GmxRegistryV2Set(_gmxRegistryV2);
+    }
+
+    function _ownerSetExecutionFee(
+        uint256 _executionFee
+    ) internal {
+        Require.that(
+            _executionFee <= 1 ether,
+            _FILE,
+            "Invalid execution fee"
+        );
+        executionFee = _executionFee;
+        emit ExecutionFeeSet(_executionFee);
+    }
 
     function _depositIntoDolomiteMarginFromTokenConverter(
         address _vault,

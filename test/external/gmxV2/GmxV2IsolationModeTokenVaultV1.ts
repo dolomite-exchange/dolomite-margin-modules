@@ -56,7 +56,7 @@ const borrowAccountNumber = '123';
 const amountWei = parseEther('1');
 const otherAmountWei = parseEther('0.33');
 const minAmountOut = parseEther('1800');
-const EXECUTION_FEE = parseEther('0.0005');
+const EXECUTION_FEE = parseEther('0.001');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
@@ -207,7 +207,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
-      await expect(() => vault.connect(core.hhUser1).initiateUnwrapping(
+      await expect(() => vault.initiateUnwrapping(
         borrowAccountNumber,
         amountWei,
         core.tokens.weth.address,
@@ -224,7 +224,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if output token is invalid', async () => {
       await expectThrow(
-        vault.connect(core.hhUser1).initiateUnwrapping(
+        vault.initiateUnwrapping(
           borrowAccountNumber,
           amountWei,
           core.tokens.wbtc.address,
@@ -238,7 +238,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     it('should fail if vault is frozen', async () => {
       await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
-        vault.connect(core.hhUser1).initiateUnwrapping(
+        vault.initiateUnwrapping(
           borrowAccountNumber,
           amountWei,
           core.tokens.wbtc.address,
@@ -266,7 +266,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     it('should fail if reentered', async () => {
       await vault.connect(impersonatedFactory).setIsVaultFrozen(true);
       await expectThrow(
-        vault.connect(core.hhUser1).callInitiateUnwrappingAndTriggerReentrancy(
+        vault.callInitiateUnwrappingAndTriggerReentrancy(
           borrowAccountNumber,
           amountWei,
           core.tokens.wbtc.address,
@@ -332,7 +332,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
-      await expect(() => vault.connect(core.hhUser1).initiateUnwrapping(
+      await expect(() => vault.initiateUnwrapping(
         defaultAccountNumber,
         amountWei,
         core.tokens.weth.address,
@@ -404,7 +404,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if not called by factory', async () => {
       await expectThrow(
-        vault.connect(core.hhUser1).executeDepositIntoVault(core.hhUser1.address, ONE_BI),
+        vault.executeDepositIntoVault(core.hhUser1.address, ONE_BI),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -449,7 +449,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if not called by factory', async () => {
       await expectThrow(
-        vault.connect(core.hhUser1).executeWithdrawalFromVault(core.hhUser1.address, ONE_BI),
+        vault.executeWithdrawalFromVault(core.hhUser1.address, ONE_BI),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -468,19 +468,18 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei.div(2));
       expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
 
-      await vault.openBorrowPosition(
+      await vault.transferIntoPositionWithUnderlyingToken(
         defaultAccountNumber,
         borrowAccountNumber,
         amountWei.div(2),
-        { value: EXECUTION_FEE },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE.mul(2));
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
     });
 
     it('should fail if execution fee does not match', async () => {
       await expectThrow(
-        vault.connect(core.hhUser1).openBorrowPosition(
+        vault.openBorrowPosition(
           defaultAccountNumber,
           borrowAccountNumber,
           amountWei.div(2),
@@ -489,6 +488,30 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         'GmxV2IsolationModeVaultV1: Invalid execution fee',
       );
       expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(0);
+    });
+
+    it('should fail if execution fee already paid', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei.div(2),
+        { value: EXECUTION_FEE },
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei.div(2));
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
+
+      await expectThrow(
+        vault.openBorrowPosition(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          amountWei.div(2),
+          { value: EXECUTION_FEE },
+        ),
+        'GmxV2IsolationModeVaultV1: Execution fee already paid',
+      );
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(EXECUTION_FEE);
     });
   });
 
@@ -512,7 +535,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if position is not yet open', async () => {
       await expectThrow(
-        vault.connect(core.hhUser1).transferIntoPositionWithUnderlyingToken(
+        vault.transferIntoPositionWithUnderlyingToken(
           defaultAccountNumber,
           borrowAccountNumber,
           amountWei,
@@ -639,7 +662,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         parseEther('.01'),
       );
       await expectThrow(
-        vault.connect(core.hhUser1).swapExactInputForOutput(
+        vault.swapExactInputForOutput(
           borrowAccountNumber,
           initiateWrappingParams.marketPath,
           initiateWrappingParams.amountIn,
@@ -665,7 +688,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         parseEther('.01'),
       );
       await expectThrow(
-        vault.connect(core.hhUser1).swapExactInputForOutput(
+        vault.swapExactInputForOutput(
           borrowAccountNumber,
           unwrappingParams.marketPath,
           unwrappingParams.amountIn,
@@ -693,7 +716,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         parseEther('.01'),
       );
       await expectThrow(
-        vault.connect(core.hhUser1).swapExactInputForOutput(
+        vault.swapExactInputForOutput(
           borrowAccountNumber,
           initiateWrappingParams.marketPath,
           initiateWrappingParams.amountIn,
@@ -1034,7 +1057,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if not called by factory', async () => {
       await expectThrow(
-        vault.connect(core.hhUser1).setIsDepositSourceWrapper(true),
+        vault.setIsDepositSourceWrapper(true),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -1052,7 +1075,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if not called by factory', async () => {
       await expectThrow(
-        vault.connect(core.hhUser1).setShouldSkipTransfer(true),
+        vault.setShouldSkipTransfer(true),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

@@ -62,8 +62,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _POSITION_TO_EXECUTION_FEE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.positionToExecutionFee")) - 1); // solhint-disable-line max-line-length
 
-    uint256 public constant EXECUTION_FEE = 0.0005 ether;
-
     // ==================================================================
     // ====================== Immutable Variables =======================
     // ==================================================================
@@ -298,15 +296,17 @@ contract GmxV2IsolationModeTokenVaultV1 is
     internal
     override {
         Require.that(
-            msg.value == EXECUTION_FEE,
+            msg.value == IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).executionFee(),
             _FILE,
             "Invalid execution fee"
         );
-        super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
-        _setExecutionFeeForAccountNumber(
-            _toAccountNumber,
-            getExecutionFeeForAccountNumber(_toAccountNumber) + msg.value
+        Require.that(
+            getExecutionFeeForAccountNumber(_toAccountNumber) == 0,
+            _FILE,
+            "Execution fee already paid"
         );
+        super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+        _setExecutionFeeForAccountNumber(_toAccountNumber, msg.value);
     }
 
     function _transferIntoPositionWithUnderlyingToken(

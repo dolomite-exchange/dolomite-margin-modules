@@ -51,6 +51,7 @@ contract TestGmxV2IsolationModeVaultFactory is GmxV2IsolationModeVaultFactory {
 
     constructor(
         address _gmxRegistryV2,
+        uint256 _executionFee,
         MarketInfoConstructorParams memory _tokenAndMarketAddresses,
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
@@ -59,6 +60,7 @@ contract TestGmxV2IsolationModeVaultFactory is GmxV2IsolationModeVaultFactory {
         address _dolomiteMargin
     ) GmxV2IsolationModeVaultFactory(
         _gmxRegistryV2,
+        _executionFee,
         _tokenAndMarketAddresses,
         _initialAllowableDebtMarketIds,
         _initialAllowableCollateralMarketIds,
