@@ -71,6 +71,23 @@ export function getUmamiAssetVaultPriceOracleConstructorParams(
   ];
 }
 
+export function getUmamiAssetVaultWithChainlinkPriceOracleConstructorParams(
+  core: CoreProtocol,
+  umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,
+  umamiVaultIsolationModeToken: { address: address },
+): any[] {
+  if (!core.umamiEcosystem) {
+    throw new Error('Umami ecosystem not initialized');
+  }
+
+  return [
+    core.dolomiteMargin.address,
+    core.chainlinkRegistry!.address,
+    umamiAssetVaultRegistry.address,
+    umamiVaultIsolationModeToken.address,
+  ];
+}
+
 export function getUmamiAssetVaultIsolationModeUnwrapperTraderV2ConstructorParams(
   core: CoreProtocol,
   umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,

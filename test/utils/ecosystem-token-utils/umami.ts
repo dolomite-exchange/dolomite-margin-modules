@@ -17,6 +17,8 @@ import {
   UmamiAssetVaultPriceOracle__factory,
   UmamiAssetVaultRegistry,
   UmamiAssetVaultRegistry__factory,
+  UmamiAssetVaultWithChainlinkAutomationPriceOracle,
+  UmamiAssetVaultWithChainlinkAutomationPriceOracle__factory,
 } from '../../../src/types';
 import {
   getUmamiAssetVaultIsolationModeUnwrapperTraderV2ConstructorParams,
@@ -24,6 +26,7 @@ import {
   getUmamiAssetVaultIsolationModeWrapperTraderV2ConstructorParams,
   getUmamiAssetVaultPriceOracleConstructorParams,
   getUmamiAssetVaultRegistryConstructorParams,
+  getUmamiAssetVaultWithChainlinkPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/umami';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
@@ -63,6 +66,22 @@ export function createUmamiAssetVaultPriceOracle(
     UmamiAssetVaultPriceOracle__factory.abi,
     UmamiAssetVaultPriceOracle__factory.bytecode,
     getUmamiAssetVaultPriceOracleConstructorParams(
+      core,
+      umamiAssetVaultRegistry,
+      dUmamiAssetVaultToken,
+    ),
+  );
+}
+
+export function createUmamiAssetVaultWithChainlinkPriceOracle(
+  core: CoreProtocol,
+  umamiAssetVaultRegistry: UmamiAssetVaultRegistry,
+  dUmamiAssetVaultToken: { address: address },
+): Promise<UmamiAssetVaultWithChainlinkAutomationPriceOracle> {
+  return createContractWithAbi<UmamiAssetVaultWithChainlinkAutomationPriceOracle>(
+    UmamiAssetVaultWithChainlinkAutomationPriceOracle__factory.abi,
+    UmamiAssetVaultWithChainlinkAutomationPriceOracle__factory.bytecode,
+    getUmamiAssetVaultWithChainlinkPriceOracleConstructorParams(
       core,
       umamiAssetVaultRegistry,
       dUmamiAssetVaultToken,
