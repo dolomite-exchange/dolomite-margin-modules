@@ -232,6 +232,30 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
 
     });
 
+    it('should work normally for underwater account that must be liquidated', async () => {
+      await setupBalances();
+      await liquidator.prepareForLiquidation(
+        liquidAccount,
+        marketId,
+        amountWei,
+        core.marketIds.usdc,
+        ONE_BI,
+        NO_EXPIRY,
+      );
+      const filter = unwrapper.filters.WithdrawalCreated();
+      withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+        .executeWithdrawal(
+          withdrawalKey,
+          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
+          { gasLimit: 10_000_000 },
+        );
+      await expectEvent(unwrapper, result, 'WithdrawalExecuted', {
+        key: withdrawalKey,
+      });
+      await checkStateAfterUnwrapping();
+    });
+
     it('should work normally for underwater account when vault is frozen', async () => {
       await liquidator.prepareForLiquidation(
         liquidAccount,
