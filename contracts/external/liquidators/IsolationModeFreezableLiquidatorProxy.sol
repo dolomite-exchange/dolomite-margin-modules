@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
@@ -34,7 +35,7 @@ import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFac
  *
  * @notice  Liquidator for handling the GMX V2 (GM) tokens and other freezable vaults.
  */
-contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
+contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, ReentrancyGuard {
 
     // ============================ Constants ============================
 
@@ -67,7 +68,12 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
         uint256 _outputMarketId,
         uint256 _minOutputAmount,
         uint256 _expirationTimestamp
-    ) external requireIsAssetWhitelistedForLiquidation(_freezableMarketId) {
+    )
+        external
+        payable
+        nonReentrant
+        requireIsAssetWhitelistedForLiquidation(_freezableMarketId)
+    {
         address freezableToken = DOLOMITE_MARGIN.getMarketTokenAddress(_freezableMarketId);
         Require.that(
             IIsolationModeVaultFactory(freezableToken).getAccountByVault(_liquidAccount.owner) != address(0),
@@ -87,7 +93,8 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy {
         );
 
         address outputToken = DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarketId);
-        IIsolationModeTokenVaultV1WithFreezable(_liquidAccount.owner).initiateUnwrappingForLiquidation(
+        IIsolationModeTokenVaultV1WithFreezable vault = IIsolationModeTokenVaultV1WithFreezable(_liquidAccount.owner);
+        vault.initiateUnwrappingForLiquidation{value: msg.value}(
             _liquidAccount.number,
             _inputTokenAmount,
             outputToken,

@@ -64,4 +64,6 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
         uint256 _inputAmount,
         address _outputToken
     ) external;
+
+    function getWithdrawalInfo(bytes32 _key) external view returns (WithdrawalInfo memory);
 }

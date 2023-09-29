@@ -48,7 +48,7 @@ interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 
         uint256 _minOutputAmount
     ) external payable;
 
-    function setIsVaultFrozen(bool _isVaultFrozen) external;
-
     function isVaultFrozen() external view returns (bool);
+
+    function isVaultAccountFrozen(uint256 _accountNumber) external view returns (bool);
 }

@@ -19,15 +19,16 @@
 */
 pragma solidity ^0.8.9;
 
-import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
@@ -154,8 +155,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
      * @dev    This calls the wrapper trader which will revert if given an invalid _key
      */
     function cancelDeposit(bytes32 _key) external onlyVaultOwner(msg.sender) {
+        _validateVaultOwnerForStruct(registry().gmxV2WrapperTrader().getDepositInfo(_key).vault);
         registry().gmxV2WrapperTrader().cancelDeposit(_key);
-        _setIsVaultFrozen(false);
     }
 
     /**
@@ -163,11 +164,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
      * @param  _key Withdrawal key
      */
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
-        // @follow-up This would revert in the callback where we check the key
+        _validateVaultOwnerForStruct(registry().gmxV2UnwrapperTrader().getWithdrawalInfo(_key).vault);
         registry().gmxExchangeRouter().cancelWithdrawal(_key);
     }
 
-    // @follow-up Should these emit events? I think not but just want to ask
     function setIsDepositSourceWrapper(
         bool _isDepositSourceWrapper
     )
@@ -238,10 +238,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
     }
 
     function isExternalRedemptionPaused()
-    public
-    override
-    view
-    returns (bool) {
+        public
+        override
+        view
+        returns (bool)
+    {
         return GmxV2Library.isExternalRedemptionPaused(
             registry(),
             DOLOMITE_MARGIN(),
@@ -277,13 +278,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
         return _getUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)));
     }
 
-    function isWaitingForCallback(uint256 _accountNumber) public view returns (bool) {
-        return IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).isAccountWaitingForCallback(
-            /* _vault = */ address(this),
-            _accountNumber
-        );
-    }
-
     // ==================================================================
     // ======================== Internal Functions ========================
     // ==================================================================
@@ -295,16 +289,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     )
     internal
     override {
-        Require.that(
-            msg.value == IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).executionFee(),
-            _FILE,
-            "Invalid execution fee"
-        );
-        Require.that(
-            getExecutionFeeForAccountNumber(_toAccountNumber) == 0,
-            _FILE,
-            "Execution fee already paid"
-        );
+        GmxV2Library.validateExecutionFee(this, _toAccountNumber);
         super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
         _setExecutionFeeForAccountNumber(_toAccountNumber, msg.value);
     }
@@ -342,14 +327,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
     override {
         uint256 len = _tradersPath.length;
         if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
-            Require.that(
-                msg.value > 0,
-                _FILE,
-                "Invalid execution fee"
-            );
+            GmxV2Library.depositAndApproveWethForWrapping(this);
             _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, msg.value);
-            WETH.deposit{value: msg.value}();
-            WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
+//            WETH.deposit{value: msg.value}();
+//            WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
         } else {
             Require.that(
                 msg.value == 0,
@@ -454,7 +435,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _FILE,
             "Invalid output token"
         );
-        _setIsVaultFrozen(/* _isVaultFrozen = */ true);
+        IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setIsVaultAccountFrozen(
+            /* _vault */ address(this),
+            _tradeAccountNumber,
+            /* _isFrozen = */ true
+        );
 
         uint256 ethExecutionFee = msg.value;
         if (_isLiquidation) {
@@ -508,6 +493,15 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _FILE,
             "Only unwrapper can call",
             _from
+        );
+    }
+
+    function _validateVaultOwnerForStruct(address _vault) internal view {
+        Require.that(
+            _vault == address(this),
+            _FILE,
+            "Invalid vault owner",
+            _vault
         );
     }
 

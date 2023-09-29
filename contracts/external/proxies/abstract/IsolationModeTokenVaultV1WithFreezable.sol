@@ -24,6 +24,7 @@ import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
+import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
@@ -46,7 +47,6 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ===================================================
 
     bytes32 private constant _FILE = "IsolationModeVaultV1Freezable"; // shortened to fit in 32 bytes
-    bytes32 private constant _IS_VAULT_FROZEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isVaultFrozen")) - 1);
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -126,25 +126,12 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function setIsVaultFrozen(
-        bool _isVaultFrozen
-    )
-    external
-    onlyVaultFactory(msg.sender) {
-        _setIsVaultFrozen(_isVaultFrozen);
-    }
-
     function isVaultFrozen() public view returns (bool) {
-        return _getUint256(_IS_VAULT_FROZEN_SLOT) == 1;
+        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultFrozen(address(this));
     }
 
-    // ==================================================================
-    // ======================== Internal Functions ========================
-    // ==================================================================
-
-    function _setIsVaultFrozen(bool _isVaultFrozen) internal {
-        _setUint256(_IS_VAULT_FROZEN_SLOT, _isVaultFrozen ? 1 : 0);
-        emit IsVaultFrozenSet(_isVaultFrozen);
+    function isVaultAccountFrozen(uint256 _accountNumber) public view returns (bool) {
+        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultAccountFrozen(address(this), _accountNumber);
     }
 
     // ==================================================================

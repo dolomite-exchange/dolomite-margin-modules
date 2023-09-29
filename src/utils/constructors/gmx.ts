@@ -155,7 +155,7 @@ export async function getGmxRegistryV2ConstructorParams(
   ];
 }
 
-const EXECUTION_FEE = parseEther('0.001');
+export const GMX_V2_EXECUTION_FEE = parseEther('0.0075');
 
 export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   core: CoreProtocol,
@@ -171,7 +171,7 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
 
   return [
     gmxRegistry.address,
-    EXECUTION_FEE,
+    GMX_V2_EXECUTION_FEE,
     [
       gmToken.address,
       core.tokens.weth.address,

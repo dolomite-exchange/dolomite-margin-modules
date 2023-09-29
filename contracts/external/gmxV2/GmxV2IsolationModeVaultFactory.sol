@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
@@ -30,7 +31,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
-
+import { FreezableIsolationModeVaultFactory } from "../proxies/abstract/FreezableIsolationModeVaultFactory.sol";
 
 /**
  * @title   GmxV2IsolationModeVaultFactory
@@ -41,8 +42,10 @@ import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeV
  */
 contract GmxV2IsolationModeVaultFactory is
     IGmxV2IsolationModeVaultFactory,
+    FreezableIsolationModeVaultFactory,
     SimpleIsolationModeVaultFactory
 {
+    using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
@@ -62,7 +65,6 @@ contract GmxV2IsolationModeVaultFactory is
 
     IGmxRegistryV2 public override gmxRegistryV2;
     uint256 public override executionFee;
-    mapping(address => mapping (uint256 => bool)) private _isAccountWaitingForCallbackMap;
 
     // ============ Constructor ============
 
@@ -191,16 +193,6 @@ contract GmxV2IsolationModeVaultFactory is
         _ownerSetExecutionFee(_executionFee);
     }
 
-    function setIsVaultFrozen(
-        address _vault,
-        bool _isVaultFrozen
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setIsVaultFrozen(_isVaultFrozen);
-    }
-
     function setIsDepositSourceWrapper(
         address _vault,
         bool _isDepositSourceWrapper
@@ -221,18 +213,6 @@ contract GmxV2IsolationModeVaultFactory is
         IGmxV2IsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
-    function setIsAccountWaitingForCallback(
-        address _vault,
-        uint256 _accountNumber,
-        bool _isWaiting
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        _isAccountWaitingForCallbackMap[_vault][_accountNumber] = _isWaiting;
-        emit AccountWaitingForCallbackSet(_vault, _accountNumber, _isWaiting);
-    }
-
     function getMarketInfo() external view returns (MarketInfoParams memory) {
         return MarketInfoParams({
             marketToken: UNDERLYING_TOKEN,
@@ -243,13 +223,6 @@ contract GmxV2IsolationModeVaultFactory is
             longToken: LONG_TOKEN,
             longTokenMarketId: _LONG_TOKEN_MARKET_ID
         });
-    }
-
-    function isAccountWaitingForCallback(
-        address _vault,
-        uint256 _accountNumber
-    ) external view returns (bool) {
-        return _isAccountWaitingForCallbackMap[_vault][_accountNumber];
     }
 
     // ====================================================

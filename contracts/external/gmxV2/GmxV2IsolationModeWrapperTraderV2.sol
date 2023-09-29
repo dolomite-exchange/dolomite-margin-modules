@@ -106,7 +106,9 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         if (receivedMarketTokens.value > _deposit.numbers.minMarketTokens) {
-            // We need to send the diff into the vault via `operate` and blind transfer the min token amount
+            // We need to
+            // 1) send the diff into the vault via `operate` and
+            // 2) blind transfer the min token amount to the vault
             uint256 diff = receivedMarketTokens.value - _deposit.numbers.minMarketTokens;
 
             // The allowance is entirely spent in the call to `factory.depositIntoDolomiteMarginFromTokenConverter` or
@@ -118,6 +120,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             //          gas, though. If the user goes underwater, we'll want to recover as reasonably as possible. The
             //          way we do this is by initiating an unwrapping & then a liquidation via
             //          `IsolationModeFreezableLiquidatorProxy.sol`
+            // @audit   This can also fail if the user pushes the GM token total supply on Dolomite past our supply cap
+            //          How do we mitigate this? We don't know ahead of time how many tokens the user will get...
             // @audit   Are there any other "reasons" that the try-catch can fail that I'm missing here?
             try
                 factory.depositIntoDolomiteMarginFromTokenConverter(
@@ -126,7 +130,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                     diff
                 )
             {
-                _clearDeposit(factory, depositInfo);
+                _clearDeposit(depositInfo);
                 emit DepositExecuted(_key);
             } catch Error(string memory reason) {
                 _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
@@ -137,7 +141,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             }
         } else {
             // There's nothing additional to send to the vault; clear out the deposit
-            _clearDeposit(factory, depositInfo);
+            _clearDeposit(depositInfo);
             emit DepositExecuted(_key);
         }
     }
@@ -183,7 +187,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             _deposit.numbers.minMarketTokens
         );
 
-        _clearDeposit(factory, depositInfo);
+        _clearDeposit(depositInfo);
         emit DepositCancelled(_key);
     }
 
@@ -229,7 +233,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
 
         // Disallow the deposit if there's already an action waiting for it
-        GmxV2Library.checkVaultIsNotActive(factory, _tradeOriginator, accountNumber);
+        GmxV2Library.checkVaultAccountIsNotFrozen(factory, _tradeOriginator, accountNumber);
 
         address tradeOriginatorForStackTooDeep = _tradeOriginator;
         IGmxExchangeRouter exchangeRouter = GMX_REGISTRY_V2().gmxExchangeRouter();
@@ -269,10 +273,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             emit DepositCreated(depositKey);
         }
 
-        factory.setIsVaultFrozen(
-            tradeOriginatorForStackTooDeep,
-            /* _isVaultFrozen = */ true
-        );
         factory.setShouldSkipTransfer(
             tradeOriginatorForStackTooDeep,
             /* _shouldSkipTransfer = */ true
@@ -290,14 +290,12 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             _DEFAULT_ACCOUNT_NUMBER,
             _depositAmountWei
         );
-        _clearDeposit(_factory, _depositInfo);
+        _clearDeposit(_depositInfo);
     }
 
     function _clearDeposit(
-        IGmxV2IsolationModeVaultFactory _factory,
         DepositInfo memory _depositInfo
     ) internal {
-        _factory.setIsVaultFrozen(_depositInfo.vault, /* _isVaultFrozen = */ false);
         _setDepositInfo(_depositInfo.key, _emptyDepositInfo(_depositInfo.vault, _depositInfo.accountNumber));
     }
 
@@ -319,7 +317,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
         bool clearValues = _info.outputAmount == 0;
         DepositInfo storage storageInfo = _getDepositSlot(_key);
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsAccountWaitingForCallback(
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultAccountFrozen(
             _info.vault,
             _info.accountNumber,
             !clearValues

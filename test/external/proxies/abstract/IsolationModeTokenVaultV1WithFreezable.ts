@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   CustomTestToken,
-  TestIsolationModeFactory,
+  TestFreezableIsolationModeFactory,
   TestIsolationModeTokenVaultV1WithFreezable,
   TestIsolationModeTokenVaultV1WithFreezable__factory,
   TestIsolationModeUnwrapperTraderV2,
@@ -20,8 +20,14 @@ import {
 } from '../../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
-import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../../utils/assertions';
-import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectThrow,
+  expectTotalSupply,
+  expectWalletBalance,
+} from '../../../utils/assertions';
+import { createTestFreezableIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
@@ -45,10 +51,10 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
-  let factory: TestIsolationModeFactory;
+  let factory: TestFreezableIsolationModeFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithFreezable;
   let userVault: TestIsolationModeTokenVaultV1WithFreezable;
-  let impersonatedFactory: SignerWithAddress;
+  let impersonatedVault: SignerWithAddress;
 
   let solidUser: SignerWithAddress;
   let otherToken1: CustomTestToken;
@@ -64,12 +70,11 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       TestIsolationModeTokenVaultV1WithFreezable__factory.bytecode,
       [],
     );
-    factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
+    factory = await createTestFreezableIsolationModeFactory(core, underlyingToken, userVaultImplementation);
     await core.testEcosystem!.testPriceOracle.setPrice(
       factory.address,
       '1000000000000000000', // $1.00
     );
-    impersonatedFactory = await impersonate(factory.address, true);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true);
@@ -132,6 +137,8 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     await otherToken2.connect(solidUser).addBalance(solidUser.address, bigOtherAmountWei);
     await otherToken2.connect(solidUser).approve(core.dolomiteMargin.address, bigOtherAmountWei);
     await depositIntoDolomiteMargin(core, solidUser, defaultAccountNumber, otherMarketId2, bigOtherAmountWei);
+
+    impersonatedVault = await impersonate(userVault.address, true);
 
     snapshotId = await snapshot();
   });
@@ -205,7 +212,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       await expectThrow(
         userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -243,7 +250,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       await expectThrow(
         userVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -284,7 +291,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       await expectThrow(
         userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -327,7 +334,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       await expectThrow(
         userVault.closeBorrowPositionWithUnderlyingVaultToken(defaultAccountNumber, borrowAccountNumber),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -384,7 +391,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       await expectThrow(
         userVault.closeBorrowPositionWithOtherTokens(defaultAccountNumber, borrowAccountNumber, []),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -426,7 +433,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       await expectThrow(
         userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -563,7 +570,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       await expectThrow(
         userVault.transferIntoPositionWithOtherToken(
           defaultAccountNumber,
@@ -612,7 +619,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       await expectThrow(
         userVault.transferFromPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -736,7 +743,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       await expectThrow(
         userVault.transferFromPositionWithOtherToken(
           defaultAccountNumber,
@@ -816,7 +823,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       await expectThrow(
         userVault.repayAllForBorrowPosition(
           defaultAccountNumber,
@@ -927,7 +934,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
     });
 
-    it('should fail when not called by vault owner', async () => {
+    it('should fail when not called by vault owner or converter', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
       await expectThrow(
         userVault.connect(core.hhUser2).addCollateralAndSwapExactInputForOutput(
@@ -940,7 +947,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -979,7 +986,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
       await expectThrow(
         userVault.addCollateralAndSwapExactInputForOutput(
@@ -1211,7 +1218,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, borrowAmount.mul(-1));
     });
 
-    it('should fail when not called by vault owner', async () => {
+    it('should fail when not called by vault owner or converter', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
       await expectThrow(
         userVault.connect(core.hhUser2).swapExactInputForOutputAndRemoveCollateral(
@@ -1224,12 +1231,12 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if vault is frozen', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
       await expectThrow(
         userVault.swapExactInputForOutputAndRemoveCollateral(
@@ -1299,7 +1306,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       );
     });
 
-    it('should fail when not called by vault owner', async () => {
+    it('should fail when not called by vault owner or converter', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
       await expectThrow(
         userVault.connect(core.hhUser2).swapExactInputForOutput(
@@ -1311,7 +1318,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -1444,7 +1451,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen and called by owner', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
       await expectThrow(
         userVault.swapExactInputForOutput(
@@ -1480,18 +1487,24 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
   });
 
-  describe('#setIsVaultFrozen', () => {
+  describe('#setIsVaultAccountFrozen', () => {
     it('should work normally', async () => {
-      await userVault.connect(impersonatedFactory).setIsVaultFrozen(true);
+      expect(await userVault.isVaultFrozen()).to.eq(false);
+      const result = await factory.connect(impersonatedVault)
+        .setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true);
+      await expectEvent(factory, result, 'VaultAccountFrozen', {
+        vault: userVault.address,
+        accountNumber: defaultAccountNumber,
+        isVaultFrozen: true,
+      });
       expect(await userVault.isVaultFrozen()).to.eq(true);
     });
 
-    it('should fail if not called by factory', async () => {
+    it('should fail if not called by vault', async () => {
       await expectThrow(
-        userVault.connect(core.hhUser1).setIsVaultFrozen(true),
-        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
+        factory.connect(core.hhUser1).setIsVaultAccountFrozen(userVault.address, defaultAccountNumber, true),
+        `IsolationModeVaultFactory: Caller is not a authorized <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
-
 });

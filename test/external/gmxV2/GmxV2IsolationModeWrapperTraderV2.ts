@@ -10,19 +10,13 @@ import {
   GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeWrapperTraderV2,
-  GmxV2MarketTokenPriceOracle, IERC20,
+  GmxV2MarketTokenPriceOracle,
   IGmxMarketToken,
   TestGmxV2IsolationModeVaultFactory,
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
-import {
-  getRealLatestBlockNumber,
-  impersonate,
-  revertToSnapshotAndCapture,
-  setEtherBalance,
-  snapshot,
-} from 'test/utils';
+import { BYTES_EMPTY, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -45,6 +39,7 @@ import {
 import {
   CoreProtocol,
   disableInterestAccrual,
+  getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
   setupGMBalance,
   setupNativeUSDCBalance,
@@ -82,11 +77,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
   let marketId: BigNumber;
 
   before(async () => {
-    const latestBlockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
-    core = await setupCoreProtocol({
-      blockNumber: latestBlockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
     const library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
@@ -254,7 +245,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       inputMarketId: BigNumberish,
       inputAmount: BigNumberish,
       minAmountOut: BigNumberish,
-      beforeInitiatingHook: () => Promise<void> = async () => {},
+      beforeInitiatingHook: () => Promise<void> = async () => {
+      },
     ) {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -296,8 +288,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       expect(deposit.accountNumber).to.eq(borrowAccountNumber);
       expect(deposit.outputAmount).to.eq(minAmountOut);
 
-      expect(await vault.isWaitingForCallback(defaultAccountNumber)).to.eq(false);
-      expect(await vault.isWaitingForCallback(borrowAccountNumber)).to.eq(true);
+      expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
+      expect(await vault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(true);
     }
 
     async function expectStateIsCleared() {
@@ -312,8 +304,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       expect(deposit.accountNumber).to.eq(ZERO_BI);
       expect(deposit.outputAmount).to.eq(ZERO_BI);
 
-      expect(await vault.isWaitingForCallback(defaultAccountNumber)).to.eq(false);
-      expect(await vault.isWaitingForCallback(borrowAccountNumber)).to.eq(false);
+      expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
+      expect(await vault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(false);
     }
 
     it('should work normally with long token', async () => {

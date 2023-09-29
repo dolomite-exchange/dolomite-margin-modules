@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { TestIsolationModeFactory } from "./TestIsolationModeFactory.sol";
 import { IDolomiteRegistry } from "../external/interfaces/IDolomiteRegistry.sol";
+import { IFreezableIsolationModeVaultFactory } from "../external/interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV1 } from "../external/proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 
@@ -38,13 +39,16 @@ contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeT
     bytes32 private constant _IS_EXTERNAL_REDEMPTION_PAUSED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isExternalRedemptionPaused")) - 1);
 
     function initiateUnwrappingForLiquidation(
-        uint256 /* _tradeAccountNumber */,
+        uint256 _tradeAccountNumber,
         uint256 /* _inputAmount */,
         address /* _outputToken */,
         uint256 /* _minOutputAmount */
     ) external payable {
-        _setIsVaultFrozen(true);
-        // TODO; set anything else needed for testing
+        IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setIsVaultAccountFrozen(
+            /* _vault = */ address(this),
+            _tradeAccountNumber,
+            /* _isFrozen = */ true
+        );
     }
 
     function setIsExternalRedemptionPaused(bool _newIsExternalRedemptionPaused) public {

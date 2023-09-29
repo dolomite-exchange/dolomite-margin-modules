@@ -166,6 +166,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         factory.setShouldSkipTransfer(withdrawalInfo.vault, /* _shouldSkipTransfer = */ true);
+
         try IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
             withdrawalInfo.accountNumber,
             marketIdsPath,
@@ -175,7 +176,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
         ) {
-            factory.setIsVaultFrozen(withdrawalInfo.vault, /* _isVaultFrozen = */ false);
             _setWithdrawalInfo(_key, _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber));
             emit WithdrawalExecuted(_key);
         } catch Error(string memory reason) {
@@ -213,9 +213,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         );
 
         // @audit - Is there a way for us to verify the tokens were sent back to the vault?
-        // The GM tokens are sent back to the vault
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        factory.setIsVaultFrozen(withdrawalInfo.vault, /* _isVaultFrozen = */ false);
         _setWithdrawalInfo(_key, _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber));
         emit WithdrawalCancelled(_key);
     }
@@ -237,7 +234,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         assert(_getWithdrawalSlot(_key).vault == address(0));
 
         // Disallow the withdrawal if there's already an action waiting for it
-        GmxV2Library.checkVaultIsNotActive(factory, msg.sender, _accountNumber);
+        GmxV2Library.checkVaultAccountIsNotFrozen(factory, msg.sender, _accountNumber);
 
         _setWithdrawalInfo(_key, WithdrawalInfo({
             key: _key,
@@ -459,7 +456,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
         bool clearValues = _info.inputAmount == 0;
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsAccountWaitingForCallback(
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultAccountFrozen(
             _info.vault,
             _info.accountNumber,
             !clearValues

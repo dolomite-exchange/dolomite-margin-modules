@@ -51,4 +51,6 @@ interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase {
     // ===================================================
 
     function cancelDeposit(bytes32 _key) external;
+
+    function getDepositInfo(bytes32 _key) external view returns (DepositInfo memory);
 }

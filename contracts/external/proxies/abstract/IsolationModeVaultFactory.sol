@@ -107,6 +107,17 @@ abstract contract IsolationModeVaultFactory is
         _;
     }
 
+    modifier requireIsTokenConverterOrVault(address _tokenConverterOrVault) {
+        Require.that(
+            _tokenConverterToIsTrustedMap[_tokenConverterOrVault]
+                || _vaultToUserMap[_tokenConverterOrVault] != address(0),
+            _FILE,
+            "Caller is not a authorized",
+            _tokenConverterOrVault
+        );
+        _;
+    }
+
     constructor(
         address _underlyingToken,
         address _borrowPositionProxyV2,

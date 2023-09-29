@@ -15,15 +15,7 @@ import {
   TestGmxV2IsolationModeTokenVaultV1__factory,
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
-import {
-  BYTES_EMPTY,
-  BYTES_ZERO,
-  MAX_UINT_256_BI,
-  Network,
-  ONE_BI,
-  ONE_ETH_BI,
-  ZERO_BI,
-} from 'src/utils/no-deps-constants';
+import { BYTES_EMPTY, BYTES_ZERO, MAX_UINT_256_BI, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import {
   expectEvent,
@@ -46,6 +38,7 @@ import {
 import {
   CoreProtocol,
   disableInterestAccrual,
+  getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
   setupGMBalance,
   setupNativeUSDCBalance,
@@ -53,6 +46,7 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from 'test/utils/setup';
+import { GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 
 enum ReversionType {
   None = 0,
@@ -66,7 +60,6 @@ const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb5
 const CALLBACK_GAS_LIMIT = BigNumber.from('2000000'); // 2M units
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const amountWei = parseEther('10');
-const EXECUTION_FEE = parseEther('0.0005');
 
 describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
@@ -82,13 +75,8 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   let priceOracle: GmxV2MarketTokenPriceOracle;
   let marketId: BigNumber;
 
-  const blockNumber = 131050900;
-
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
     const library = await createGmxV2Library();
     const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core, library);
@@ -182,7 +170,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         amountWei,
-        { value: EXECUTION_FEE },
+        { value: GMX_V2_EXECUTION_FEE },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectWalletBalance(vault, underlyingToken, amountWei);
@@ -360,7 +348,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         amountWei,
-        { value: EXECUTION_FEE },
+        { value: GMX_V2_EXECUTION_FEE },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
 
@@ -450,12 +438,12 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         amountWei,
-        { value: EXECUTION_FEE },
+        { value: GMX_V2_EXECUTION_FEE },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectWalletBalance(vault, underlyingToken, amountWei);
-      expect(await vault.isWaitingForCallback(defaultAccountNumber)).to.eq(false);
-      expect(await vault.isWaitingForCallback(borrowAccountNumber)).to.eq(false);
+      expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
+      expect(await vault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(false);
 
       await vault.initiateUnwrapping(
         borrowAccountNumber,
@@ -478,8 +466,8 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, 0);
-      expect(await vault.isWaitingForCallback(defaultAccountNumber)).to.eq(false);
-      expect(await vault.isWaitingForCallback(borrowAccountNumber)).to.eq(true);
+      expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
+      expect(await vault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(true);
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -862,7 +850,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           amountWei,
           core.tokens.weth.address,
         ),
-        `GmxV2Library: Account has an active callback <${vault.address.toLowerCase()}, ${defaultAccountNumber}>`,
+        `GmxV2Library: Account is frozen <${vault.address.toLowerCase()}, ${defaultAccountNumber}>`,
       );
     });
   });
@@ -887,7 +875,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         amountWei,
-        { value: EXECUTION_FEE },
+        { value: GMX_V2_EXECUTION_FEE },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       await expectWalletBalance(vault, underlyingToken, amountWei);

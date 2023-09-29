@@ -9,8 +9,8 @@ import {
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
 } from 'src/types';
-import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { ZERO_BI } from 'src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectArrayEq, expectEvent, expectThrow } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
@@ -20,7 +20,13 @@ import {
   createGmxV2IsolationModeWrapperTraderV2,
   createGmxV2Library,
 } from 'test/utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from 'test/utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfigForGmxV2,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from 'test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
@@ -42,11 +48,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
   let marketId: BigNumber;
 
   before(async () => {
-    const latestBlockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
-    core = await setupCoreProtocol({
-      blockNumber: latestBlockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     gmxRegistryV2 = await createGmxRegistryV2(core);
     const library = await createGmxV2Library();
     vaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
@@ -327,28 +329,6 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     });
   });
 
-  describe('#setIsVaultFrozen', () => {
-    it('should work normally', async () => {
-      expect(await vault.isVaultFrozen()).to.eq(false);
-      await factory.connect(impersonatedWrapper).setIsVaultFrozen(vault.address, true);
-      expect(await vault.isVaultFrozen()).to.eq(true);
-    });
-
-    it('should fail if not token converter', async () => {
-      await expectThrow(
-        factory.connect(core.hhUser1).setIsVaultFrozen(vault.address, true),
-        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if invalid vault', async () => {
-      await expectThrow(
-        factory.connect(impersonatedWrapper).setIsVaultFrozen(core.hhUser1.address, false),
-        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
   describe('#setIsDepositSourceWrapper', () => {
     it('should work normally', async () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -403,55 +383,6 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       expect(marketInfo.shortTokenMarketId).to.eq(core.marketIds.nativeUsdc);
       expect(marketInfo.longToken).to.eq(core.tokens.weth.address);
       expect(marketInfo.longTokenMarketId).to.eq(core.marketIds.weth);
-    });
-  });
-
-  describe('#setIsAccountWaitingForCallback', () => {
-    it('should work normally for unwrapper', async () => {
-      const unwrapper = await impersonate(await gmxRegistryV2.gmxV2UnwrapperTrader(), true);
-      const accountNumber = 123;
-      expect(await factory.isAccountWaitingForCallback(vault.address, accountNumber)).to.eq(false);
-
-      const result = await factory.connect(unwrapper)
-        .setIsAccountWaitingForCallback(vault.address, accountNumber, true);
-      await expectEvent(factory, result, 'AccountWaitingForCallbackSet', {
-        _vault: vault.address,
-        _accountNumber: accountNumber,
-        _isWaiting: true,
-      });
-      expect(await factory.isAccountWaitingForCallback(vault.address, accountNumber)).to.eq(true);
-    });
-
-    it('should work normally for wrapper', async () => {
-      const wrapper = await impersonate(await gmxRegistryV2.gmxV2WrapperTrader(), true);
-      const accountNumber = 123;
-      expect(await factory.isAccountWaitingForCallback(vault.address, accountNumber)).to.eq(false);
-
-      const result = await factory.connect(wrapper)
-        .setIsAccountWaitingForCallback(vault.address, accountNumber, true);
-      await expectEvent(factory, result, 'AccountWaitingForCallbackSet', {
-        _vault: vault.address,
-        _accountNumber: accountNumber,
-        _isWaiting: true,
-      });
-      expect(await factory.isAccountWaitingForCallback(vault.address, accountNumber)).to.eq(true);
-    });
-
-    it('should fail when vault is invalid', async () => {
-      const wrapper = await impersonate(await gmxRegistryV2.gmxV2WrapperTrader(), true);
-      const accountNumber = 123;
-      await expectThrow(
-        factory.connect(wrapper).setIsAccountWaitingForCallback(OTHER_ADDRESS, accountNumber, true),
-        `IsolationModeVaultFactory: Invalid vault <${OTHER_ADDRESS.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail when not called by a wrapper or unwrapper operator', async () => {
-      const accountNumber = 123;
-      await expectThrow(
-        factory.connect(core.hhUser1).setIsAccountWaitingForCallback(vault.address, accountNumber, true),
-        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
-      );
     });
   });
 });

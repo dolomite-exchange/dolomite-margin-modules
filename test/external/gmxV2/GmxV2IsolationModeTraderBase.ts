@@ -2,12 +2,12 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { GmxRegistryV2, TestGmxV2IsolationModeTraderBase, TestGmxV2IsolationModeTraderBase__factory } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
-import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
+import { ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { createIsolationModeTraderProxy } from 'test/utils/dolomite';
 import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from 'test/utils/setup';
 
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
 
@@ -19,7 +19,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
   let trader: TestGmxV2IsolationModeTraderBase;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     gmxRegistryV2 = await createGmxRegistryV2(core);
 
     const implementation = await createContractWithAbi<TestGmxV2IsolationModeTraderBase>(

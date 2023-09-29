@@ -1,11 +1,10 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { GmxRegistryV2 } from 'src/types';
-import { Network } from 'src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
 const OTHER_ADDRESS_2 = '0x1234567812345678123456781234567812345672';
@@ -17,7 +16,7 @@ describe('GmxRegistryV2', () => {
   let registry: GmxRegistryV2;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     registry = await createGmxRegistryV2(core);
 
     snapshotId = await snapshot();

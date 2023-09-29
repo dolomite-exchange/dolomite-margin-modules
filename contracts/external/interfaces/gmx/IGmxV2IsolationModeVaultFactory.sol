@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
-import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
+import { IFreezableIsolationModeVaultFactory } from "../IFreezableIsolationModeVaultFactory.sol";
 
 
 /**
@@ -30,7 +30,7 @@ import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
  *
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for GM tokens.
  */
-interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
+interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory {
 
     // ================================================
     // ==================== Structs ===================
@@ -59,7 +59,6 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     event GmxRegistryV2Set(address _gmxRegistryV2);
     event ExecutionFeeSet(uint256 _executionFee);
-    event AccountWaitingForCallbackSet(address _vault, uint256 _accountNumber, bool _isWaiting);
 
     // ===================================================
     // ==================== Functions ====================
@@ -90,17 +89,9 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     function ownerSetExecutionFee(uint256 _executionFee) external;
 
-    function setIsVaultFrozen(address _vault, bool _isVaultFrozen) external;
-
     function setIsDepositSourceWrapper(address _vault, bool _isDepositSourceWrapper) external;
 
     function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
-
-    function setIsAccountWaitingForCallback(
-        address _vault,
-        uint256 _accountNumber,
-        bool _isWaiting
-    ) external;
 
     function INDEX_TOKEN() external view returns (address);
 
@@ -111,11 +102,6 @@ interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
     function gmxRegistryV2() external view returns (IGmxRegistryV2);
 
     function getMarketInfo() external view returns (MarketInfoParams memory);
-
-    function isAccountWaitingForCallback(
-        address _vault,
-        uint256 _accountNumber
-    ) external view returns (bool);
 
     function executionFee() external view returns (uint256);
 }

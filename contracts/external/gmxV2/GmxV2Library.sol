@@ -24,11 +24,13 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
 import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
+import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 
@@ -95,15 +97,39 @@ library GmxV2Library {
         unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _inputAmount, _outputToken);
     }
 
-    function checkVaultIsNotActive(
+    function depositAndApproveWethForWrapping(IGmxV2IsolationModeTokenVaultV1 _vault) public {
+        Require.that(
+            msg.value > 0,
+            _FILE,
+            "Invalid execution fee"
+        );
+        _vault.WETH().deposit{value: msg.value}();
+        IERC20(address(_vault.WETH())).safeApprove(address(_vault.registry().gmxV2WrapperTrader()), msg.value);
+    }
+
+    function validateExecutionFee(IGmxV2IsolationModeTokenVaultV1 _vault, uint256 _toAccountNumber) public view {
+        address factory = IIsolationModeUpgradeableProxy(address(_vault)).vaultFactory();
+        Require.that(
+            msg.value == IGmxV2IsolationModeVaultFactory(factory).executionFee(),
+            _FILE,
+            "Invalid execution fee"
+        );
+        Require.that(
+            _vault.getExecutionFeeForAccountNumber(_toAccountNumber) == 0,
+            _FILE,
+            "Execution fee already paid"
+        );
+    }
+
+    function checkVaultAccountIsNotFrozen(
         IGmxV2IsolationModeVaultFactory _factory,
         address _vault,
         uint256 _accountNumber
     ) public view {
         Require.that(
-            !_factory.isAccountWaitingForCallback(_vault, _accountNumber),
+            !_factory.isVaultAccountFrozen(_vault, _accountNumber),
             _FILE,
-            "Account has an active callback",
+            "Account is frozen",
             _vault,
             _accountNumber
         );
