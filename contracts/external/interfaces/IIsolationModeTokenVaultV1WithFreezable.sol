@@ -41,6 +41,10 @@ interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 
     // ======================== Functions ========================
     // ===========================================================
 
+    /**
+     * @dev Throws if the VaultAccount is frozen, if the inputAmount is now the user's whole balance, or if the
+     *      outputToken is invalid.
+     */
     function initiateUnwrappingForLiquidation(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,

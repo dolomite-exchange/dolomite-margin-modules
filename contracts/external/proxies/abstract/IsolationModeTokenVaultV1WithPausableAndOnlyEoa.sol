@@ -56,7 +56,6 @@ abstract contract IsolationModeTokenVaultV1WithPausableAndOnlyEoa is IsolationMo
         // solhint-enable avoid-tx-origin
     }
 
-    // TODO test this
     function _requireOnlyVaultOwnerOrConverter(address _from) internal override view {
         super._requireOnlyVaultOwnerOrConverter(_from);
         // solhint-disable avoid-tx-origin

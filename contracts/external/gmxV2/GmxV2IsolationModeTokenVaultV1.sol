@@ -28,7 +28,6 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
@@ -110,6 +109,15 @@ contract GmxV2IsolationModeTokenVaultV1 is
         onlyVaultOwner(msg.sender)
         requireNotFrozen
     {
+        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _tradeAccountNumber
+        });
+        Require.that(
+            _inputAmount <= DOLOMITE_MARGIN().getAccountWei(account, marketId()).value,
+            _FILE,
+            "Invalid inputAmount"
+        );
         _initiateUnwrapping(
             _tradeAccountNumber,
             _inputAmount,
@@ -435,10 +443,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _FILE,
             "Invalid output token"
         );
-        IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setIsVaultAccountFrozen(
-            /* _vault */ address(this),
-            _tradeAccountNumber,
-            /* _isFrozen = */ true
+        Require.that(
+            _inputAmount > 0,
+            _FILE,
+            "Invalid inputAmount"
         );
 
         uint256 ethExecutionFee = msg.value;

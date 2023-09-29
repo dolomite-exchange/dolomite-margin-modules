@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
@@ -32,6 +33,7 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
 import { FreezableIsolationModeVaultFactory } from "../proxies/abstract/FreezableIsolationModeVaultFactory.sol";
+
 
 /**
  * @title   GmxV2IsolationModeVaultFactory
@@ -57,9 +59,9 @@ contract GmxV2IsolationModeVaultFactory is
     address public immutable override SHORT_TOKEN; // solhint-disable-line var-name-mixedcase
     address public immutable override LONG_TOKEN; // solhint-disable-line var-name-mixedcase
     address public immutable override INDEX_TOKEN; // solhint-disable-line var-name-mixedcase
-    uint256 private immutable _INDEX_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
-    uint256 private immutable _SHORT_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
-    uint256 private immutable _LONG_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable INDEX_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable SHORT_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable LONG_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============ Field Variables ============
 
@@ -89,11 +91,11 @@ contract GmxV2IsolationModeVaultFactory is
         _ownerSetGmxRegistryV2(_gmxRegistryV2);
         _ownerSetExecutionFee(_executionFee);
         INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
-        _INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
+        INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
         SHORT_TOKEN = _tokenAndMarketAddresses.shortToken;
-        _SHORT_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(SHORT_TOKEN);
+        SHORT_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(SHORT_TOKEN);
         LONG_TOKEN = _tokenAndMarketAddresses.longToken;
-        _LONG_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN);
+        LONG_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN);
 
         Require.that(
             _initialAllowableDebtMarketIds.length == 2,
@@ -101,10 +103,10 @@ contract GmxV2IsolationModeVaultFactory is
             "Invalid debt market ids"
         );
         Require.that(
-            (_initialAllowableDebtMarketIds[0] == _LONG_TOKEN_MARKET_ID
-                && _initialAllowableDebtMarketIds[1] == _SHORT_TOKEN_MARKET_ID)
-            || (_initialAllowableDebtMarketIds[0] == _SHORT_TOKEN_MARKET_ID
-                && _initialAllowableDebtMarketIds[1] == _LONG_TOKEN_MARKET_ID),
+            (_initialAllowableDebtMarketIds[0] == LONG_TOKEN_MARKET_ID
+                && _initialAllowableDebtMarketIds[1] == SHORT_TOKEN_MARKET_ID)
+            || (_initialAllowableDebtMarketIds[0] == SHORT_TOKEN_MARKET_ID
+                && _initialAllowableDebtMarketIds[1] == LONG_TOKEN_MARKET_ID),
             _FILE,
             "Invalid debt market ids"
         );
@@ -115,10 +117,10 @@ contract GmxV2IsolationModeVaultFactory is
             "Invalid collateral market ids"
         );
         Require.that(
-            (_initialAllowableCollateralMarketIds[0] == _LONG_TOKEN_MARKET_ID
-                && _initialAllowableCollateralMarketIds[1] == _SHORT_TOKEN_MARKET_ID)
-            || (_initialAllowableCollateralMarketIds[0] == _SHORT_TOKEN_MARKET_ID
-                && _initialAllowableCollateralMarketIds[1] == _LONG_TOKEN_MARKET_ID),
+            (_initialAllowableCollateralMarketIds[0] == LONG_TOKEN_MARKET_ID
+                && _initialAllowableCollateralMarketIds[1] == SHORT_TOKEN_MARKET_ID)
+            || (_initialAllowableCollateralMarketIds[0] == SHORT_TOKEN_MARKET_ID
+                && _initialAllowableCollateralMarketIds[1] == LONG_TOKEN_MARKET_ID),
             _FILE,
             "Invalid collateral market ids"
         );
@@ -213,16 +215,21 @@ contract GmxV2IsolationModeVaultFactory is
         IGmxV2IsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
-    function getMarketInfo() external view returns (MarketInfoParams memory) {
-        return MarketInfoParams({
-            marketToken: UNDERLYING_TOKEN,
-            indexToken: INDEX_TOKEN,
-            indexTokenMarketId: _INDEX_TOKEN_MARKET_ID,
-            shortToken: SHORT_TOKEN,
-            shortTokenMarketId: _SHORT_TOKEN_MARKET_ID,
-            longToken: LONG_TOKEN,
-            longTokenMarketId: _LONG_TOKEN_MARKET_ID
-        });
+    function clearExpirationIfNeeded(
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _owedMarketId
+    )
+    external
+    requireIsTokenConverter(msg.sender)
+    requireIsVault(_vault) {
+        GmxV2Library.clearExpirationIfNeeded(
+            DOLOMITE_MARGIN(),
+            gmxRegistryV2,
+            _vault,
+            _accountNumber,
+            _owedMarketId
+        );
     }
 
     // ====================================================

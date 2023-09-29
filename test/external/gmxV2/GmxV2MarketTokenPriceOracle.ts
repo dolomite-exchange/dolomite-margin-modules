@@ -57,6 +57,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
+      library,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,

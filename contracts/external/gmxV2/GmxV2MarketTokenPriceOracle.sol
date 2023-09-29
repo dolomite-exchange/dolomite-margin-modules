@@ -113,19 +113,18 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
 
     function _getCurrentPrice(address _token) internal view returns (uint256) {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(_token);
-        IGmxV2IsolationModeVaultFactory.MarketInfoParams memory info = factory.getMarketInfo();
 
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        uint256 indexTokenPrice = dolomiteMargin.getMarketPrice(info.indexTokenMarketId).value;
-        uint256 shortTokenPrice = dolomiteMargin.getMarketPrice(info.shortTokenMarketId).value;
-        uint256 longTokenPrice = dolomiteMargin.getMarketPrice(info.longTokenMarketId).value;
+        uint256 indexTokenPrice = dolomiteMargin.getMarketPrice(factory.INDEX_TOKEN_MARKET_ID()).value;
+        uint256 shortTokenPrice = dolomiteMargin.getMarketPrice(factory.SHORT_TOKEN_MARKET_ID()).value;
+        uint256 longTokenPrice = dolomiteMargin.getMarketPrice(factory.LONG_TOKEN_MARKET_ID()).value;
 
-        GmxMarket.MarketProps memory marketProps = GmxMarket.MarketProps(
-            info.marketToken,
-            info.indexToken,
-            info.longToken,
-            info.shortToken
-        );
+        GmxMarket.MarketProps memory marketProps = GmxMarket.MarketProps({
+            marketToken: factory.UNDERLYING_TOKEN(),
+            indexToken: factory.INDEX_TOKEN(),
+            longToken: factory.LONG_TOKEN(),
+            shortToken: factory.SHORT_TOKEN()
+        });
 
        // Dolomite returns price as 36 decimals - token decimals
        // GMX expects 30 decimals - token decimals so we divide by 10 ** 6

@@ -203,15 +203,16 @@ export async function createTestGmxV2IsolationModeTokenVaultV1(
 
 export async function createGmxV2IsolationModeVaultFactory(
   core: CoreProtocol,
+  gmxV2Library: GmxV2Library,
   gmxRegistry: IGmxRegistryV2,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
   gmToken: IGmxMarketToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
 ): Promise<GmxV2IsolationModeVaultFactory> {
-  return createContractWithAbi<GmxV2IsolationModeVaultFactory>(
-    GmxV2IsolationModeVaultFactory__factory.abi,
-    GmxV2IsolationModeVaultFactory__factory.bytecode,
+  return createContractWithLibrary<GmxV2IsolationModeVaultFactory>(
+    'GmxV2IsolationModeVaultFactory',
+    { GmxV2Library: gmxV2Library.address },
     getGmxV2IsolationModeVaultFactoryConstructorParams(
       core,
       gmxRegistry,

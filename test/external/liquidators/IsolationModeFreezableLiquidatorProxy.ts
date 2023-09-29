@@ -1,7 +1,7 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import {
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
@@ -19,9 +19,15 @@ import {
 import { AccountStruct } from '../../../src/utils/constants';
 import { GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectProtocolBalance, expectWalletBalance } from '../../utils/assertions';
+import { MAX_UINT_256_BI, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { getBlockTimestamp, increaseByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectThrow,
+  expectWalletBalance,
+} from '../../utils/assertions';
 import {
   createGmxRegistryV2,
   createGmxV2IsolationModeTokenVaultV1,
@@ -32,6 +38,7 @@ import {
   createGmxV2MarketTokenPriceOracle,
   getOracleParams,
 } from '../../utils/ecosystem-token-utils/gmx';
+import { setExpiry } from '../../utils/expiry-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,
@@ -48,6 +55,7 @@ const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
 const borrowAccountNumber2 = borrowAccountNumber.add(ONE_BI);
+const borrowAccountNumber3 = borrowAccountNumber2.add(ONE_BI);
 
 const amountWei = ONE_ETH_BI.mul('1234'); // 1,234
 
@@ -96,6 +104,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
+      library,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
@@ -154,7 +163,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     await core.dolomiteMargin.ownerSetGlobalOperator(liquidatorProxy.address, true);
 
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
-    liquidAccount2 = { owner: vault.address, number: defaultAccountNumber };
+    liquidAccount2 = { owner: vault.address, number: borrowAccountNumber2 };
 
     await setupGMBalance(core, core.hhUser1, amountWei.mul(2), vault);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
@@ -173,9 +182,9 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
     await expectProtocolBalance(core, vault.address, borrowAccountNumber2, marketId, amountWei);
     await expectWalletBalance(vault, underlyingToken, amountWei.mul(2));
-    expect(await vault.isWaitingForCallback(defaultAccountNumber)).to.eq(false);
-    expect(await vault.isWaitingForCallback(borrowAccountNumber)).to.eq(false);
-    expect(await vault.isWaitingForCallback(borrowAccountNumber2)).to.eq(false);
+    expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
+    expect(await vault.isVaultAccountFrozen(borrowAccountNumber)).to.eq(false);
+    expect(await vault.isVaultAccountFrozen(borrowAccountNumber2)).to.eq(false);
 
     snapshotId = await snapshot();
   });
@@ -191,7 +200,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     async function setupBalances(
       account: BigNumber,
       devalueCollateral: boolean = true,
-      pushFullyUnderwater: boolean = true
+      pushFullyUnderwater: boolean = true,
     ) {
       // Create debt for the position
       const gmPrice = await core.dolomiteMargin.getMarketPrice(marketId);
@@ -218,19 +227,41 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       }
     }
 
+    async function performUnwrapping(key?: string): Promise<ContractTransaction> {
+      if (!key) {
+        const filter = unwrapper.filters.WithdrawalCreated();
+        withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+      }
+      return await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+        .executeWithdrawal(
+          withdrawalKey,
+          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
+          { gasLimit: 10_000_000 },
+        );
+    }
+
     enum FinishState {
       Prepared = 0,
       WithdrawalFailed = 1,
       WithdrawalSucceeded = 2,
       Liquidated = 3,
+      Expired = 4,
     }
 
-    async function checkStateAfterUnwrapping(accountNumber: BigNumber, walletBalance: BigNumber, state: FinishState) {
-      await expectWalletBalance(vault, underlyingToken, walletBalance);
+    async function checkStateAfterUnwrapping(
+      accountNumber: BigNumber,
+      state: FinishState,
+      vaultErc20Balance: BigNumber = amountWei,
+    ) {
+      await expectWalletBalance(vault, underlyingToken, vaultErc20Balance);
 
       const withdrawal = await unwrapper.getWithdrawalInfo(withdrawalKey);
       expect(withdrawal.key).to.eq(withdrawalKey);
-      if (state === FinishState.WithdrawalSucceeded || state === FinishState.Liquidated) {
+      if (
+        state === FinishState.WithdrawalSucceeded
+        || state === FinishState.Liquidated
+        || state === FinishState.Expired
+      ) {
         expect(withdrawal.vault).to.eq(ZERO_ADDRESS);
         expect(withdrawal.accountNumber).to.eq(ZERO_BI);
         expect(withdrawal.inputAmount).to.eq(ZERO_BI);
@@ -244,34 +275,39 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         expect(withdrawal.outputAmount).to.gt(ZERO_BI);
       }
 
-      if (state === FinishState.WithdrawalSucceeded || state === FinishState.Liquidated) {
+      if (
+        state === FinishState.WithdrawalSucceeded
+        || state === FinishState.Liquidated
+        || state === FinishState.Expired
+      ) {
         await expectProtocolBalance(core, vault.address, accountNumber, marketId, ZERO_BI);
-        expect(await vault.isWaitingForCallback(defaultAccountNumber)).to.eq(false);
-        expect(await vault.isWaitingForCallback(accountNumber)).to.eq(false);
+        expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
+        expect(await vault.isVaultAccountFrozen(accountNumber)).to.eq(false);
         expect(await vault.isVaultFrozen()).to.eq(false);
         expect(await vault.shouldSkipTransfer()).to.eq(false);
         expect(await vault.isDepositSourceWrapper()).to.eq(false);
-        expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
         if (state === FinishState.Liquidated) {
           await expectProtocolBalance(core, vault.address, accountNumber, core.marketIds.weth, ZERO_BI);
+        } else if (state === FinishState.WithdrawalSucceeded) {
+          await expectProtocolBalance(core, vault.address, accountNumber, core.marketIds.weth, wethAmount.mul(-1));
         } else {
-          await expectProtocolBalance(
+          await expectProtocolBalanceIsGreaterThan(
             core,
-            vault.address,
-            accountNumber,
+            { owner: vault.address, number: accountNumber },
             core.marketIds.weth,
-            wethAmount.mul(-1),
+            ONE_BI,
+            0,
           );
         }
       } else {
         await expectProtocolBalance(core, vault.address, accountNumber, marketId, amountWei);
         await expectProtocolBalance(core, vault.address, accountNumber, core.marketIds.weth, wethAmount.mul(-1));
-        expect(await vault.isWaitingForCallback(defaultAccountNumber)).to.eq(false);
-        expect(await vault.isWaitingForCallback(accountNumber)).to.eq(true);
+        expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
+        expect(await vault.isVaultAccountFrozen(accountNumber)).to.eq(true);
         expect(await vault.isVaultFrozen()).to.eq(true);
         expect(await vault.shouldSkipTransfer()).to.eq(false);
         expect(await vault.isDepositSourceWrapper()).to.eq(false);
-        expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+        await expectWalletBalance(vault, underlyingToken, vaultErc20Balance);
       }
 
       if (state === FinishState.WithdrawalFailed) {
@@ -290,7 +326,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     }
 
     it('should work normally for underwater account', async () => {
-      await setupBalances(false);
+      await setupBalances(borrowAccountNumber, true, false);
       const liquidationResult = await liquidatorProxy.prepareForLiquidation(
         liquidAccount,
         marketId,
@@ -307,18 +343,11 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         owedMarketId: core.marketIds.nativeUsdc!,
         minOutputAmount: ONE_BI,
       });
-      const filter = unwrapper.filters.WithdrawalCreated();
-      withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
-      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
-        .executeWithdrawal(
-          withdrawalKey,
-          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit: 10_000_000 },
-        );
+      const result = await performUnwrapping();
       await expectEvent(unwrapper, result, 'WithdrawalExecuted', {
         key: withdrawalKey,
       });
-      await checkStateAfterUnwrapping(FinishState.WithdrawalSucceeded);
+      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalSucceeded);
 
       // it's sufficiently collateralized now
       const [supplyValue, borrowValue] = await core.dolomiteMargin.getAccountValues(liquidAccount);
@@ -326,7 +355,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     });
 
     it('should work normally for underwater account that must be liquidated', async () => {
-      await setupBalances();
+      await setupBalances(borrowAccountNumber);
       await liquidatorProxy.prepareForLiquidation(
         liquidAccount,
         marketId,
@@ -335,23 +364,20 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         ONE_BI,
         NO_EXPIRY,
       );
-      const filter = unwrapper.filters.WithdrawalCreated();
-      withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
-      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
-        .executeWithdrawal(
-          withdrawalKey,
-          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit: 10_000_000 },
-        );
+      const result = await performUnwrapping();
       await expectEvent(unwrapper, result, 'WithdrawalFailed', {
         key: withdrawalKey,
-        reason: `OperationImpl: Account undercollaterealized <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
+        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
       });
-      await checkStateAfterUnwrapping(FinishState.WithdrawalFailed);
+      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalFailed);
+
+      // TODO liquidate
     });
 
     it('should work normally for underwater account when vault is frozen', async () => {
-      await liquidator.prepareForLiquidation(
+      await setupBalances(borrowAccountNumber2, false, false);
+      await setupBalances(borrowAccountNumber);
+      await liquidatorProxy.prepareForLiquidation(
         liquidAccount,
         marketId,
         amountWei,
@@ -359,16 +385,37 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         ONE_BI,
         NO_EXPIRY,
       );
-      // TODO: check vault is frozen
-      // TODO: check liquidation enqueued event
+
+      const filter = unwrapper.filters.WithdrawalCreated();
+      withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      await liquidatorProxy.prepareForLiquidation(
+        liquidAccount2,
+        marketId,
+        amountWei,
+        core.marketIds.nativeUsdc!,
+        ONE_BI,
+        NO_EXPIRY,
+      );
+
+      const result = await performUnwrapping(withdrawalKey);
+      await expectEvent(unwrapper, result, 'WithdrawalFailed', {
+        key: withdrawalKey,
+        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
+      });
+      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalFailed, ZERO_BI);
+
+      // TODO fully liquidate liquidAccount
+      // TODO Check vault is still frozen
     });
 
     it('should work normally for expired account', async () => {
-      const owedMarket = core.marketIds.nativeUsdc!;
+      await setupBalances(borrowAccountNumber, false, false);
+      const owedMarket = core.marketIds.weth;
       await setExpiry(core, liquidAccount, owedMarket, 123);
       const expiry = await core.expiry.getExpiry(liquidAccount, owedMarket);
       await increaseByTimeDelta(1234);
-      await liquidator.prepareForLiquidation(
+      await liquidatorProxy.prepareForLiquidation(
         liquidAccount,
         marketId,
         amountWei,
@@ -376,29 +423,116 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         ONE_BI,
         expiry,
       );
-      // TODO: check vault is frozen
-      // TODO: check liquidation enqueued event
+
+      const result = await performUnwrapping();
+      await expectEvent(unwrapper, result, 'WithdrawalExecuted', {
+        key: withdrawalKey,
+      });
+      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.Expired);
+
+      // At this point the expiration should be unset and the user's owed balance should be gt 0
+      await expectProtocolBalanceIsGreaterThan(core, liquidAccount, owedMarket, ONE_BI, 0);
+      expect(await core.expiry.getExpiry(liquidAccount, owedMarket)).to.eq(0);
     });
 
     it('should fail when liquid account is not a valid vault', async () => {
+      const liquidAccount = { owner: ZERO_ADDRESS, number: ZERO_BI };
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation(
+          liquidAccount,
+          marketId,
+          amountWei,
+          core.marketIds.weth,
+          ONE_BI,
+          NO_EXPIRY,
+        ),
+        `FreezableVaultLiquidatorProxy: Invalid liquid account <${liquidAccount.owner}>`,
+      );
     });
 
     it('should fail when expiration overflows', async () => {
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation(
+          liquidAccount,
+          marketId,
+          amountWei,
+          core.marketIds.weth,
+          ONE_BI,
+          MAX_UINT_256_BI,
+        ),
+        'FreezableVaultLiquidatorProxy: Invalid expiration timestamp',
+      );
     });
 
     it('should fail when position is not expired', async () => {
+      const timestamp = await getBlockTimestamp(core.config.blockNumber);
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation(
+          liquidAccount,
+          marketId,
+          amountWei,
+          core.marketIds.weth,
+          ONE_BI,
+          timestamp + 3600,
+        ),
+        'FreezableVaultLiquidatorProxy: Account not expired',
+      );
     });
 
     it('should fail when position expiration does not match input', async () => {
+      await setupBalances(borrowAccountNumber, false, false);
+      const owedMarket = core.marketIds.weth;
+      await setExpiry(core, liquidAccount, owedMarket, 123);
+      const expiry = await core.expiry.getExpiry(liquidAccount, owedMarket);
+      await increaseByTimeDelta(1234);
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation(
+          liquidAccount,
+          marketId,
+          amountWei,
+          owedMarket,
+          ONE_BI,
+          expiry + 321,
+        ),
+        'FreezableVaultLiquidatorProxy: Expiration mismatch',
+      );
     });
 
-    it('should fail when liquid account has no supply (should be vaporized)', async () => {
+    it('should fail when liquid account has no supply', async () => {
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation(
+          { owner: vault.address, number: borrowAccountNumber3 },
+          marketId,
+          amountWei,
+          core.marketIds.weth,
+          ONE_BI,
+          NO_EXPIRY,
+        ),
+        'FreezableVaultLiquidatorProxy: Liquid account has no supply',
+      );
     });
 
-    it('should fail when liquid account is not underwater', async () => {
-    });
-
-    it('should fail when there is already a liquidation/operation enqueued for the same account', async () => {
+    it('should fail when vault account is frozen', async () => {
+      await setupBalances(borrowAccountNumber, true, false);
+      await liquidatorProxy.prepareForLiquidation(
+        liquidAccount,
+        marketId,
+        amountWei,
+        core.marketIds.weth,
+        ONE_BI,
+        NO_EXPIRY,
+      );
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation(
+          liquidAccount,
+          marketId,
+          amountWei,
+          core.marketIds.weth,
+          ONE_BI,
+          NO_EXPIRY,
+        ),
+        `FreezableVaultLiquidatorProxy: Account is frozen <${liquidAccount.owner.toLowerCase()}, ${liquidAccount.number.toString()}>`,
+      );
     });
   });
 });

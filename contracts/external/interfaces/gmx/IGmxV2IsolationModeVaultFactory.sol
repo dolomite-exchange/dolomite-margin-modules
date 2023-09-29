@@ -43,16 +43,6 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
         address longToken;
     }
 
-    struct MarketInfoParams {
-        address marketToken;
-        address indexToken;
-        uint256 indexTokenMarketId;
-        address shortToken;
-        uint256 shortTokenMarketId;
-        address longToken;
-        uint256 longTokenMarketId;
-    }
-
     // ================================================
     // ==================== Events ====================
     // ================================================
@@ -93,15 +83,26 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
 
     function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
 
+    function clearExpirationIfNeeded(
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _owedMarketId
+    )
+    external;
+
     function INDEX_TOKEN() external view returns (address);
 
     function SHORT_TOKEN() external view returns (address);
 
     function LONG_TOKEN() external view returns (address);
 
-    function gmxRegistryV2() external view returns (IGmxRegistryV2);
+    function INDEX_TOKEN_MARKET_ID() external view returns (uint256);
 
-    function getMarketInfo() external view returns (MarketInfoParams memory);
+    function SHORT_TOKEN_MARKET_ID() external view returns (uint256);
+
+    function LONG_TOKEN_MARKET_ID() external view returns (uint256);
+
+    function gmxRegistryV2() external view returns (IGmxRegistryV2);
 
     function executionFee() external view returns (uint256);
 }

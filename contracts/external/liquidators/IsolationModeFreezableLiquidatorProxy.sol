@@ -94,6 +94,13 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
 
         address outputToken = DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarketId);
         IIsolationModeTokenVaultV1WithFreezable vault = IIsolationModeTokenVaultV1WithFreezable(_liquidAccount.owner);
+        Require.that(
+            !vault.isVaultAccountFrozen(_liquidAccount.number),
+            _FILE,
+            "Account is frozen",
+            _liquidAccount.owner,
+            _liquidAccount.number
+        );
         vault.initiateUnwrappingForLiquidation{value: msg.value}(
             _liquidAccount.number,
             _inputTokenAmount,
@@ -130,9 +137,7 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
             Require.that(
                 _expirationTimestamp <= block.timestamp,
                 _FILE,
-                "Account not expired",
-                _expirationTimestamp,
-                block.timestamp
+                "Account not expired"
             );
             Require.that(
                 EXPIRY.getExpiry(_liquidAccount, _outputMarketId) == uint32(_expirationTimestamp),
@@ -150,10 +155,11 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
                 DOLOMITE_MARGIN.getAccountMarketsWithBalances(_liquidAccount)
             );
 
+            // Panic if there's no supply value
             Require.that(
                 liquidSupplyValue.value != 0,
                 _FILE,
-                "Liquid account no supply"
+                "Liquid account has no supply"
             );
 
             IDolomiteStructs.Decimal memory marginRatio = DOLOMITE_MARGIN.getMarginRatio();
@@ -161,12 +167,8 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
                 DOLOMITE_MARGIN.getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
                     || !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio),
                 _FILE,
-                "Liquid account not liquidatable",
-                liquidSupplyValue.value,
-                liquidBorrowValue.value
+                "Liquid account not liquidatable"
             );
         }
-
-
     }
 }

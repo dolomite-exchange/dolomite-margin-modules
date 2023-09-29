@@ -7,7 +7,7 @@ import {
   GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
-  GmxV2IsolationModeWrapperTraderV2,
+  GmxV2IsolationModeWrapperTraderV2, GmxV2Library,
 } from 'src/types';
 import { ZERO_BI } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
@@ -38,6 +38,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
 
   let core: CoreProtocol;
   let gmxRegistryV2: GmxRegistryV2;
+  let gmxV2Library: GmxV2Library;
   let allowableMarketIds: BigNumberish[];
   let vaultImplementation: GmxV2IsolationModeTokenVaultV1;
   let factory: GmxV2IsolationModeVaultFactory;
@@ -50,12 +51,13 @@ describe('GmxV2IsolationModeVaultFactory', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     gmxRegistryV2 = await createGmxRegistryV2(core);
-    const library = await createGmxV2Library();
-    vaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
+    gmxV2Library = await createGmxV2Library();
+    vaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
+      gmxV2Library,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
@@ -66,14 +68,14 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,
       factory,
-      library,
+      gmxV2Library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
-      library,
+      gmxV2Library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
     );
@@ -124,6 +126,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     it('should construct if allowable market ids is in either order', async () => {
       await createGmxV2IsolationModeVaultFactory(
         core,
+        gmxV2Library,
         gmxRegistryV2,
         allowableMarketIds,
         allowableMarketIds,
@@ -132,6 +135,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       );
       await createGmxV2IsolationModeVaultFactory(
         core,
+        gmxV2Library,
         gmxRegistryV2,
         [allowableMarketIds[1], allowableMarketIds[0]],
         [allowableMarketIds[1], allowableMarketIds[0]],
@@ -145,6 +149,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
+          gmxV2Library,
           gmxRegistryV2,
           badAllowableDebtMarketIds,
           allowableMarketIds,
@@ -160,6 +165,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
+          gmxV2Library,
           gmxRegistryV2,
           badAllowableDebtMarketIds,
           allowableMarketIds,
@@ -175,6 +181,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
+          gmxV2Library,
           gmxRegistryV2,
           allowableMarketIds,
           badAllowableCollateralMarketIds,
@@ -190,6 +197,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
+          gmxV2Library,
           gmxRegistryV2,
           allowableMarketIds,
           badAllowableCollateralMarketIds,
@@ -370,19 +378,6 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         factory.connect(impersonatedWrapper).setShouldSkipTransfer(core.hhUser1.address, false),
         `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
-    });
-  });
-
-  describe('#getMarketInfo', async () => {
-    it('should work normally', async () => {
-      const marketInfo = await factory.getMarketInfo();
-      expect(marketInfo.marketToken).to.eq(core.gmxEcosystemV2!.gmxEthUsdMarketToken.address);
-      expect(marketInfo.indexToken).to.eq(core.tokens.weth.address);
-      expect(marketInfo.indexTokenMarketId).to.eq(core.marketIds.weth);
-      expect(marketInfo.shortToken).to.eq(core.tokens.nativeUsdc!.address);
-      expect(marketInfo.shortTokenMarketId).to.eq(core.marketIds.nativeUsdc);
-      expect(marketInfo.longToken).to.eq(core.tokens.weth.address);
-      expect(marketInfo.longTokenMarketId).to.eq(core.marketIds.weth);
     });
   });
 });

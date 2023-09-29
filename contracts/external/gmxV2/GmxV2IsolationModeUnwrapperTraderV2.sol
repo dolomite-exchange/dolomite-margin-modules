@@ -176,6 +176,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
         ) {
+            factory.clearExpirationIfNeeded(
+                withdrawalInfo.vault,
+                withdrawalInfo.accountNumber,
+                /* _owedMarketId = */ marketIdsPath[marketIdsPath.length - 1]
+            );
             _setWithdrawalInfo(_key, _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber));
             emit WithdrawalExecuted(_key);
         } catch Error(string memory reason) {

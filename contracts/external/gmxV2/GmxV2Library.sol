@@ -23,7 +23,10 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { TypesLib } from "../../protocol/lib/TypesLib.sol";
+import { IExpiry } from "../interfaces/IExpiry.sol";
 import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
@@ -33,6 +36,7 @@ import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 
 /**
@@ -43,6 +47,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
  */
 library GmxV2Library {
     using SafeERC20 for IERC20;
+    using TypesLib for IDolomiteStructs.Par;
 
     // ==================================================================
     // ============================ Constants ===========================
@@ -107,6 +112,39 @@ library GmxV2Library {
         IERC20(address(_vault.WETH())).safeApprove(address(_vault.registry().gmxV2WrapperTrader()), msg.value);
     }
 
+    function clearExpirationIfNeeded(
+        IDolomiteMargin _dolomiteMargin,
+        IGmxRegistryV2 _registry,
+        address _liquidAccountOwner,
+        uint256 _liquidAccountNumber,
+        uint256 _owedMarketId
+    ) public {
+        IExpiry expiry = _registry.dolomiteRegistry().expiry();
+        IDolomiteStructs.AccountInfo memory expiredAccount = IDolomiteStructs.AccountInfo({
+            owner: _liquidAccountOwner,
+            number: _liquidAccountNumber
+        });
+
+        uint32 expirationTimestamp = expiry.getExpiry(expiredAccount, _owedMarketId);
+        IDolomiteStructs.Par memory balancePar = _dolomiteMargin.getAccountPar(expiredAccount, _owedMarketId);
+
+        if (expirationTimestamp != 0 && (balancePar.isZero() || balancePar.isPositive())) {
+            // Unset the expiration if the owed balance was repaid
+            IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
+            accounts[0] = expiredAccount;
+
+            IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
+            actions[0] = AccountActionLib.encodeExpirationAction(
+                expiredAccount,
+                /* _accountId = */ 0,
+                _owedMarketId,
+                address(expiry),
+                /* _expiryTimeDelta = */ 0
+            );
+            _dolomiteMargin.operate(accounts, actions);
+        }
+    }
+
     function validateExecutionFee(IGmxV2IsolationModeTokenVaultV1 _vault, uint256 _toAccountNumber) public view {
         address factory = IIsolationModeUpgradeableProxy(address(_vault)).vaultFactory();
         Require.that(
@@ -149,11 +187,10 @@ library GmxV2Library {
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS, underlyingToken, /* _isLong = */ true)
         );
 
-        IGmxV2IsolationModeVaultFactory.MarketInfoParams memory info = _factory.getMarketInfo();
         GmxMarket.MarketPrices memory marketPrices = _getGmxMarketPrices(
-            _dolomiteMargin.getMarketPrice(info.indexTokenMarketId).value,
-            _dolomiteMargin.getMarketPrice(info.longTokenMarketId).value,
-            _dolomiteMargin.getMarketPrice(info.shortTokenMarketId).value
+            _dolomiteMargin.getMarketPrice(_factory.INDEX_TOKEN_MARKET_ID()).value,
+            _dolomiteMargin.getMarketPrice(_factory.LONG_TOKEN_MARKET_ID()).value,
+            _dolomiteMargin.getMarketPrice(_factory.SHORT_TOKEN_MARKET_ID()).value
         );
 
         int256 shortPnlToPoolFactor = _registry.gmxReader().getPnlToPoolFactor(
