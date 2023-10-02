@@ -52,6 +52,7 @@ import {
 } from 'test/utils/setup';
 import { getSimpleZapParams } from 'test/utils/zap-utils';
 import { GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
+import { createExpirationLibrary } from '../../utils/expiry-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -88,10 +89,11 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const library = await createGmxV2Library();
+    const expirationLibrary = await createExpirationLibrary();
+    const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createContractWithLibrary<TestGmxV2IsolationModeTokenVaultV1>(
       'TestGmxV2IsolationModeTokenVaultV1',
-      { GmxV2Library: library.address },
+      { GmxV2Library: gmxV2Library.address },
       [core.tokens.weth.address],
     );
     gmxRegistryV2 = await createGmxRegistryV2(core);
@@ -99,7 +101,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
-      library,
+      expirationLibrary,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
@@ -110,14 +112,14 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,
       factory,
-      library,
+      gmxV2Library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
-      library,
+      gmxV2Library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
     );

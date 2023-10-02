@@ -219,7 +219,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
                 _FILE,
                 "Vault should be frozen"
             );
-            _setShouldSkipTransfer(false);
+            _setShouldSkipTransfer(/* _shouldSkipTransfer = */ false);
         }
     }
 
@@ -337,8 +337,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
         if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             GmxV2Library.depositAndApproveWethForWrapping(this);
             _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, msg.value);
-//            WETH.deposit{value: msg.value}();
-//            WETH.safeApprove(address(registry().gmxV2WrapperTrader()), msg.value);
         } else {
             Require.that(
                 msg.value == 0,

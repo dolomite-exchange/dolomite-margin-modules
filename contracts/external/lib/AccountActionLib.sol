@@ -229,7 +229,7 @@ library AccountActionLib {
         Require.that(
             _expiryTimeDelta == uint32(_expiryTimeDelta),
             _FILE,
-            "invalid expiry time"
+            "Invalid expiry time delta"
         );
 
         IExpiry.SetExpiryArg[] memory expiryArgs = new IExpiry.SetExpiryArg[](1);

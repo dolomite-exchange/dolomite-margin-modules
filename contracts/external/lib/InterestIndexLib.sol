@@ -93,9 +93,9 @@ library InterestIndexLib {
         IDolomiteStructs.Par memory input,
         IDolomiteStructs.InterestIndex memory index
     )
-    internal
-    pure
-    returns (IDolomiteStructs.Wei memory)
+        internal
+        pure
+        returns (IDolomiteStructs.Wei memory)
     {
         uint256 inputValue = uint256(input.value);
         if (input.sign) {
@@ -118,9 +118,9 @@ library InterestIndexLib {
         IDolomiteStructs.Wei memory input,
         IDolomiteStructs.InterestIndex memory index
     )
-    internal
-    pure
-    returns (IDolomiteStructs.Par memory)
+        internal
+        pure
+        returns (IDolomiteStructs.Par memory)
     {
         if (input.sign) {
             return IDolomiteStructs.Par({

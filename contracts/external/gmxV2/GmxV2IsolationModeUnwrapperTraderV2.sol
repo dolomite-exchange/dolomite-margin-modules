@@ -41,6 +41,8 @@ import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawal
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import { console } from "hardhat/console.sol";
 
 
 /**
@@ -62,6 +64,18 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
     bytes32 private constant _FILE = "GmxV2IsolationModeUnwrapperV2";
     bytes32 private constant _WITHDRAWAL_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalInfo")) - 1);
+    bytes32 private constant _ACTIONS_LENGTH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.actionsLength")) - 1);
+    uint256 private constant _ACTIONS_LENGTH_NORMAL = 4;
+    uint256 private constant _ACTIONS_LENGTH_CALLBACK = 3;
+
+    // ============ Modifiers ============
+
+    modifier handleGmxCallback() {
+        // For GMX callbacks, we restrict the # of actions to use less gas
+        _setUint256(_ACTIONS_LENGTH_SLOT, _ACTIONS_LENGTH_CALLBACK);
+        _;
+        _setUint256(_ACTIONS_LENGTH_SLOT, _ACTIONS_LENGTH_NORMAL);
+    }
 
     // ============ Constructor ============
 
@@ -79,6 +93,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     external initializer {
         _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
         _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit);
+        _setUint256(_ACTIONS_LENGTH_SLOT, _ACTIONS_LENGTH_NORMAL);
     }
 
     // ============================================
@@ -91,7 +106,10 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         GmxEventUtils.EventLogData memory _eventData
     )
     external
+    nonReentrant
+    handleGmxCallback
     onlyHandler(msg.sender) {
+        console.log("gasLeft: ", gasleft());
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         Require.that(
             withdrawalInfo.vault != address(0),
@@ -165,7 +183,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         _setWithdrawalInfo(_key, withdrawalInfo);
 
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        factory.setShouldSkipTransfer(withdrawalInfo.vault, /* _shouldSkipTransfer = */ true);
 
         try IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
             withdrawalInfo.accountNumber,
@@ -176,27 +193,23 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
         ) {
+            console.log("swap worked");
             factory.clearExpirationIfNeeded(
                 withdrawalInfo.vault,
                 withdrawalInfo.accountNumber,
                 /* _owedMarketId = */ marketIdsPath[marketIdsPath.length - 1]
             );
             _setWithdrawalInfo(_key, _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber));
+            console.log("gasLeft: ", gasleft());
             emit WithdrawalExecuted(_key);
-        } catch Error(string memory reason) {
-            _handleCallbackError(
-                _key,
-                factory,
-                withdrawalInfo,
-                reason
-            );
-        } catch (bytes memory /* reason */) {
-            _handleCallbackError(
-                _key,
-                factory,
-                withdrawalInfo,
-                /* _reason = */ ""
-            );
+        } catch Error(string memory _reason) {
+            console.log("swap failed: ", _reason);
+            console.log("gasLeft: ", gasleft());
+            emit WithdrawalFailed(_key, _reason);
+        } catch (bytes memory /* _reason */) {
+            console.log("swap failed (no reason)");
+            console.log("gasLeft: ", gasleft());
+            emit WithdrawalFailed(_key, "");
         }
     }
 
@@ -209,6 +222,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external
+    nonReentrant
     onlyHandler(msg.sender) {
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         Require.that(
@@ -302,6 +316,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         return outputAmount;
     }
 
+
     function createActionsForUnwrapping(
         uint256 _solidAccountId,
         uint256 _liquidAccountId,
@@ -345,8 +360,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         );
 
         // If the input amount doesn't match, we need to add 2 actions to settle the difference
-        uint256 actionsLength = _inputAmount < withdrawalInfo.inputAmount ? 4 : 2;
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength);
+        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength());
 
         // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
         // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
@@ -364,7 +378,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             /* _amountOutMinWei = */ _minAmountOut,
             _orderData
         );
-        if (actionsLength == 4) {
+//        if (_inputAmount < withdrawalInfo.inputAmount) {
+        if (actions.length == 4) {
+            // We need to spend the whole withdrawal amount, so we need to add an extra sales to spend the difference
+            // This can only happen during a liquidation
+
             // This variable is stored in memory. The storage updates occur in the `exchange` function.
             withdrawalInfo.inputAmount -= _inputAmount;
             actions[2] = AccountActionLib.encodeCallAction(
@@ -381,9 +399,30 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
                 /* _amountOutMinWei = */ 1,
                 _orderData
             );
+//        } else {
+//            // Add no-op actions (since we can't flatten the array)
+//            actions[2] = AccountActionLib.encodeCallAction(
+//                /* _accountId = */ _liquidAccountId,
+//                /* _callee = */ address(this),
+//                /* (_transferAmount, _key)[encoded] = */ abi.encode(uint256(0), bytes32(0))
+//            );
+//            actions[3] = AccountActionLib.encodeCallAction(
+//                /* _accountId = */ _liquidAccountId,
+//                /* _callee = */ address(this),
+//                /* (_transferAmount, _key)[encoded] = */ abi.encode(uint256(0), bytes32(0))
+//            );
         }
 
         return actions;
+    }
+
+    function actionsLength()
+        public
+        override(IIsolationModeUnwrapperTrader, UpgradeableIsolationModeUnwrapperTrader)
+        view
+        returns (uint256)
+    {
+        return _getUint256(_ACTIONS_LENGTH_SLOT);
     }
 
     function isValidOutputToken(
@@ -405,17 +444,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // ============================================
     // =========== Internal Functions =============
     // ============================================
-
-    function _handleCallbackError(
-        bytes32 _key,
-        IGmxV2IsolationModeVaultFactory _factory,
-        WithdrawalInfo memory _withdrawalInfo,
-        string memory _reason
-    ) internal {
-        // Reset this value back to `false` since the transfer did not occur
-        _factory.setShouldSkipTransfer(_withdrawalInfo.vault, /* _shouldSkipTransfer = */ false);
-        emit WithdrawalFailed(_key, _reason);
-    }
 
     function _exchangeUnderlyingTokenToOutputToken(
         address /* _tradeOriginator */,
@@ -483,14 +511,23 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     )
     internal
     override {
+        (uint256 transferAmount, bytes32 key) = abi.decode(_data, (uint256, bytes32));
+        console.log(" ------------ Amounts ------------");
+        console.log(transferAmount);
+        console.logBytes32(key);
+        if (transferAmount == 0 && key == bytes32(0)) {
+            // no-op
+            return;
+        }
+
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         Require.that(
-            VAULT_FACTORY().getAccountByVault(_accountInfo.owner) != address(0),
+            factory.getAccountByVault(_accountInfo.owner) != address(0),
             _FILE,
             "Account owner is not a vault",
             _accountInfo.owner
         );
 
-        (uint256 transferAmount, bytes32 key) = abi.decode(_data, (uint256, bytes32));
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
         Require.that(
             withdrawalInfo.vault == _accountInfo.owner,
@@ -512,7 +549,8 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             transferAmount
         );
 
-        VAULT_FACTORY().enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
+        factory.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
+        factory.setShouldSkipTransfer(withdrawalInfo.vault, /* _shouldSkipTransfer = */ true);
     }
 
     function _getWithdrawalSlot(bytes32 _key) internal pure returns (WithdrawalInfo storage info) {

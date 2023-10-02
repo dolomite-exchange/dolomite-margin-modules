@@ -39,10 +39,10 @@ import { AccountActionLib } from "../../lib/AccountActionLib.sol";
  * @notice  Abstract contract for selling a vault token into the underlying token. Must be set as a token converter by
  *          the DolomiteMargin admin on the corresponding `IsolationModeVaultFactory` token to be used.
  */
-abstract contract UpgradeableIsolationModeUnwrapperTrader is 
+abstract contract UpgradeableIsolationModeUnwrapperTrader is
     IUpgradeableIsolationModeUnwrapperTrader,
     OnlyDolomiteMarginForUpgradeable,
-    Initializable 
+    Initializable
 {
     using SafeERC20 for IERC20;
 
@@ -54,6 +54,28 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
     // ======================== Field Variables ========================
 
     bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
+    bytes32 private constant _REENTRANCY_GUARD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.reentrancyGuard")) - 1);
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
+
+    // ======================== Modifiers ========================
+
+    modifier nonReentrant() {
+        // On the first call to nonReentrant, _reentrancyGuard will be _NOT_ENTERED
+        Require.that(
+            _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
+            _FILE,
+            "Reentrant call"
+        );
+
+        // Any calls to nonReentrant after this point will fail
+        _setUint256(_REENTRANCY_GUARD_SLOT, _ENTERED);
+
+        _;
+
+        // By storing the original value once again, a refund is triggered (see https://eips.ethereum.org/EIPS/eip-2200)
+        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+    }
 
     // ======================== External Functions ========================
 
@@ -190,7 +212,7 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         return actions;
     }
 
-    function actionsLength() external virtual pure returns (uint256) {
+    function actionsLength() external virtual view returns (uint256) {
         return _ACTIONS_LENGTH;
     }
 
@@ -244,6 +266,7 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
     ) internal initializer {
         _setVaultFactory(_vaultFactory);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
+        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
     }
 
     function _callFunction(

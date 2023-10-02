@@ -14,15 +14,7 @@ import {
 import { AccountInfoStruct } from '../../../src/utils';
 import { getUmamiTokenCollateralization } from '../../../src/utils/constructors/umami';
 import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import {
-  BYTES_EMPTY,
-  LIQUIDATE_ALL,
-  Network,
-  NO_PARASWAP_TRADER_PARAM,
-  ONE_BI,
-  SELL_ALL,
-  ZERO_BI,
-} from '../../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, NO_PARASWAP_TRADER_PARAM, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../utils';
 import {
   expectProtocolBalance,
@@ -192,7 +184,6 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
         solidAccountStruct,
         liquidAccountStruct,
         [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
         unwrapper,
       );
       const receipt = await txResult.wait();
@@ -289,7 +280,6 @@ describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
         solidAccountStruct,
         liquidAccountStruct,
         [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
         unwrapper,
         BYTES_EMPTY,
         NO_PARASWAP_TRADER_PARAM,

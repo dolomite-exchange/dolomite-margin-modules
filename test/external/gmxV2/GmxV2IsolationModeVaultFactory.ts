@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { BigNumber, BigNumberish, Signer } from 'ethers';
+import { BigNumber, BigNumberish, Contract, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
   GmxRegistryV2,
@@ -27,6 +27,7 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from 'test/utils/setup';
+import { createExpirationLibrary } from '../../utils/expiry-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
@@ -38,6 +39,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
 
   let core: CoreProtocol;
   let gmxRegistryV2: GmxRegistryV2;
+  let expirationLibrary: Contract;
   let gmxV2Library: GmxV2Library;
   let allowableMarketIds: BigNumberish[];
   let vaultImplementation: GmxV2IsolationModeTokenVaultV1;
@@ -51,13 +53,14 @@ describe('GmxV2IsolationModeVaultFactory', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     gmxRegistryV2 = await createGmxRegistryV2(core);
+    expirationLibrary = await createExpirationLibrary();
     gmxV2Library = await createGmxV2Library();
     vaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
-      gmxV2Library,
+      expirationLibrary,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
@@ -126,7 +129,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     it('should construct if allowable market ids is in either order', async () => {
       await createGmxV2IsolationModeVaultFactory(
         core,
-        gmxV2Library,
+        expirationLibrary,
         gmxRegistryV2,
         allowableMarketIds,
         allowableMarketIds,
@@ -135,7 +138,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       );
       await createGmxV2IsolationModeVaultFactory(
         core,
-        gmxV2Library,
+        expirationLibrary,
         gmxRegistryV2,
         [allowableMarketIds[1], allowableMarketIds[0]],
         [allowableMarketIds[1], allowableMarketIds[0]],
@@ -149,7 +152,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
-          gmxV2Library,
+          expirationLibrary,
           gmxRegistryV2,
           badAllowableDebtMarketIds,
           allowableMarketIds,
@@ -165,7 +168,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
-          gmxV2Library,
+          expirationLibrary,
           gmxRegistryV2,
           badAllowableDebtMarketIds,
           allowableMarketIds,
@@ -181,7 +184,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
-          gmxV2Library,
+          expirationLibrary,
           gmxRegistryV2,
           allowableMarketIds,
           badAllowableCollateralMarketIds,
@@ -197,7 +200,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
-          gmxV2Library,
+          expirationLibrary,
           gmxRegistryV2,
           allowableMarketIds,
           badAllowableCollateralMarketIds,

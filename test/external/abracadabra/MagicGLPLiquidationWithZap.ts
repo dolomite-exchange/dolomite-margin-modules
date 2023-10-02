@@ -1,4 +1,9 @@
-import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk/dist';
+import {
+  ApiToken,
+  BigNumber as ZapBigNumber,
+  DolomiteZap,
+  Network as ZapNetwork,
+} from '@dolomite-exchange/zap-sdk/dist';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -53,7 +58,7 @@ describe('MagicGLPLiquidationWithZap', () => {
 
     heldMarketId = BigNumber.from(core.marketIds.magicGlp!);
     magicGlpApiToken = {
-      marketId: heldMarketId.toNumber(),
+      marketId: new ZapBigNumber(heldMarketId.toNumber()),
       symbol: 'mGLP',
       name: 'magicGLP',
       decimals: 18,

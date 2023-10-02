@@ -47,6 +47,7 @@ import {
   setupWETHBalance,
 } from 'test/utils/setup';
 import { GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
+import { createExpirationLibrary } from '../../utils/expiry-utils';
 
 enum ReversionType {
   None = 0,
@@ -78,14 +79,15 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const library = await createGmxV2Library();
-    const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core, library);
+    const expirationLibrary = await createExpirationLibrary();
+    const gmxV2Library = await createGmxV2Library();
+    const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
     gmxRegistryV2 = await createGmxRegistryV2(core);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
-      library,
+      expirationLibrary,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
@@ -95,14 +97,14 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
-      library,
+      gmxV2Library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,
       factory,
-      library,
+      gmxV2Library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
     );

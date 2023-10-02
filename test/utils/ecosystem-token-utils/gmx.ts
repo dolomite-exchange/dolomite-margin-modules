@@ -1,7 +1,7 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { BigNumber, BigNumberish, ethers } from 'ethers';
+import { BigNumber, BigNumberish, Contract, ethers } from 'ethers';
 import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV1__factory,
@@ -25,7 +25,6 @@ import {
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeUnwrapperTraderV2__factory,
   GmxV2IsolationModeVaultFactory,
-  GmxV2IsolationModeVaultFactory__factory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2IsolationModeWrapperTraderV2__factory,
   GmxV2Library,
@@ -203,7 +202,7 @@ export async function createTestGmxV2IsolationModeTokenVaultV1(
 
 export async function createGmxV2IsolationModeVaultFactory(
   core: CoreProtocol,
-  gmxV2Library: GmxV2Library,
+  expirationLibrary: Contract,
   gmxRegistry: IGmxRegistryV2,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
@@ -212,7 +211,7 @@ export async function createGmxV2IsolationModeVaultFactory(
 ): Promise<GmxV2IsolationModeVaultFactory> {
   return createContractWithLibrary<GmxV2IsolationModeVaultFactory>(
     'GmxV2IsolationModeVaultFactory',
-    { GmxV2Library: gmxV2Library.address },
+    { ExpirationLib: expirationLibrary.address },
     getGmxV2IsolationModeVaultFactoryConstructorParams(
       core,
       gmxRegistry,

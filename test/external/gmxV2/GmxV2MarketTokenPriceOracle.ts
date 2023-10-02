@@ -26,6 +26,7 @@ import {
   createGmxV2MarketTokenPriceOracle,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
+import { createExpirationLibrary } from '../../utils/expiry-utils';
 
 const GM_ETH_USD_PRICE = BigNumber.from('924171934216256043');
 const NEGATIVE_PRICE = BigNumber.from('-5');
@@ -51,13 +52,14 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       network: Network.ArbitrumOne,
     });
     gmxRegistryV2 = await createGmxRegistryV2(core);
-    const library = await createGmxV2Library();
-    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
+    const expirationLibrary = await createExpirationLibrary();
+    const gmxV2Library = await createGmxV2Library();
+    const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
-      library,
+      expirationLibrary,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
@@ -67,14 +69,14 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,
       factory,
-      library,
+      gmxV2Library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
-      library,
+      gmxV2Library,
       gmxRegistryV2,
       CALLBACK_GAS_LIMIT,
     );
