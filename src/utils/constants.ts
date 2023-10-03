@@ -13,9 +13,25 @@ interface TokenWithMarketId {
   marketId: number;
 }
 
+export const ARB_MAP: Record<Network, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x912CE59144191C1204E64559FE8253a0e49E6548',
+    marketId: 7,
+  },
+  [Network.ArbitrumGoerli]: {
+    address: '0xF861378B543525ae0C47d33C90C954Dc774Ac1F9',
+    marketId: 7,
+  },
+};
+
 export const CHAINLINK_PRICE_ORACLE_OLD_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xeA3Fe12d8CC2E87f99e985EE271971C808006531',
   [Network.ArbitrumGoerli]: '0x1BEC3A1331d36e57Ef3b1A8ccf1946c8cfe3Fef0',
+};
+
+export const CHAINLINK_PRICE_ORACLE_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xA07e80C08D8bae7fFA3e46534eaBdBb6Ca98da1D',
+  [Network.ArbitrumGoerli]: undefined,
 };
 
 export const CHAINLINK_REGISTRY_MAP: Record<Network, string | undefined> = {

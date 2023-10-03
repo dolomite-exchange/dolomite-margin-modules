@@ -33,6 +33,8 @@ import {
   GLPIsolationModeWrapperTraderV1__factory,
   IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
+  IChainlinkPriceOracle,
+  IChainlinkPriceOracle__factory,
   IChainlinkPriceOracleOld,
   IChainlinkPriceOracleOld__factory,
   IChainlinkRegistry,
@@ -152,7 +154,9 @@ import {
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
+  ARB_MAP,
   ATLAS_SI_TOKEN_MAP,
+  CHAINLINK_PRICE_ORACLE_MAP,
   CHAINLINK_PRICE_ORACLE_OLD_MAP,
   CHAINLINK_REGISTRY_MAP,
   DAI_MAP,
@@ -354,6 +358,7 @@ export interface CoreProtocol {
   atlasEcosystem: AtlasEcosystem | undefined;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
   chainlinkPriceOracleOld: IChainlinkPriceOracleOld | undefined;
+  chainlinkPriceOracle: IChainlinkPriceOracle | undefined;
   chainlinkRegistry: IChainlinkRegistry | undefined;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteAmmFactory: IDolomiteAmmFactory;
@@ -385,6 +390,7 @@ export interface CoreProtocol {
    * A mapping from token's symbol to its market ID
    */
   marketIds: {
+    arb: BigNumberish;
     dai: BigNumberish | undefined;
     dfsGlp: BigNumberish | undefined;
     djUSDC: BigNumberish | undefined;
@@ -405,6 +411,7 @@ export interface CoreProtocol {
     weth: ApiToken;
   };
   tokens: {
+    arb: IERC20;
     dfsGlp: IERC20 | undefined;
     dPtGlp: IERC20 | undefined;
     dYtGlp: IERC20 | undefined;
@@ -428,6 +435,18 @@ export async function setupWETHBalance(
 ) {
   await core.tokens.weth.connect(signer).deposit({ value: amount });
   await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupARBBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xf3fc178157fb3c87548baa86f9d24ba38e649b58'; // ARB Treasury
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.arb.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.arb.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupUSDCBalance(
@@ -507,6 +526,12 @@ export async function setupCoreProtocol(
   const chainlinkPriceOracleOld = getContractOpt(
     CHAINLINK_PRICE_ORACLE_OLD_MAP[config.network],
     IChainlinkPriceOracleOld__factory.connect,
+    governance,
+  );
+
+  const chainlinkPriceOracle = getContractOpt(
+    CHAINLINK_PRICE_ORACLE_MAP[config.network],
+    IChainlinkPriceOracle__factory.connect,
     governance,
   );
 
@@ -622,6 +647,7 @@ export async function setupCoreProtocol(
     borrowPositionProxyV2,
     chainlinkRegistry,
     chainlinkPriceOracleOld,
+    chainlinkPriceOracle,
     depositWithdrawalProxy,
     dolomiteAmmFactory,
     dolomiteAmmRouterProxy,
@@ -672,6 +698,7 @@ export async function setupCoreProtocol(
       },
     },
     marketIds: {
+      arb: ARB_MAP[config.network].marketId,
       dai: DAI_MAP[config.network]?.marketId,
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
       djUSDC: DJ_USDC[config.network]?.marketId,
@@ -688,6 +715,7 @@ export async function setupCoreProtocol(
       weth: WETH_MAP[config.network].marketId,
     },
     tokens: {
+      arb: IERC20__factory.connect(ARB_MAP[config.network].address, hhUser1),
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
       dPtGlp: createIERC20Opt(DPT_GLP_2024_MAP[config.network]?.address, hhUser1),
       dYtGlp: createIERC20Opt(DYT_GLP_2024_MAP[config.network]?.address, hhUser1),
