@@ -45,7 +45,7 @@ interface IEmitter {
         uint256 marketId;
         uint256 totalPar;
         uint256 allocPoint;
-        uint256 lastRewardBlock;
+        uint256 lastRewardTime;
         uint256 accOARBPerShare;
     }
 
@@ -66,17 +66,17 @@ interface IEmitter {
      *
      * @param  _fromAccountNumber   The account number to tranfer funds from
      * @param  _marketId            The market id of the token to deposit
-     * @param  _amount              The amount of the token to deposit
+     * @param  _amountWei           The amount wei of the token to deposit
      */
-    function deposit(uint256 _fromAccountNumber, uint256 _marketId, uint256 _amount) external;
+    function deposit(uint256 _fromAccountNumber, uint256 _marketId, uint256 _amountWei) external;
 
     /**
      * @notice  Withdraws tokens from the Emitter contract
      *
      * @param  _marketId        The market id of the token to deposit
-     * @param  _amount          The amount of the token to withdraw
+     * @param  _amountWei       The amount of the token to withdraw
      */
-    function withdraw(uint256 _marketId, uint256 _amount) external;
+    function withdraw(uint256 _marketId, uint256 _amountWei) external;
 
     /**
      * @notice  Emergency withdraws tokens from the Emitter contract
@@ -103,7 +103,7 @@ interface IEmitter {
      * @param  _marketId    The id of the position that is fully vested
      * @param  _allocPoint  The id of the position that is fully vested
      */
-    function add(uint256 _marketId, uint256 _allocPoint) external;
+    function ownerAddPool(uint256 _marketId, uint256 _allocPoint, bool _withUpdate) external;
 
     /**
      * @notice  Update the given market id's allocation point. Can only be called by the owner
@@ -111,17 +111,19 @@ interface IEmitter {
      * @param  _marketId    The id of the position that is fully vested
      * @param  _allocPoint  The id of the position that is fully vested
      */
-    function set(uint256 _marketId, uint256 _allocPoint) external;
+    function ownerSetPool(uint256 _marketId, uint256 _allocPoint) external;
+
+    function ownerSetOARBPerSecond(uint256 _oARBPerSecond) external;
 
     // =================================================
     // ================= View Functions ================
     // =================================================
 
-    function dolomiteRegistry() external view returns (IDolomiteRegistry);
+    function DOLOMITE_REGISTRY() external view returns (IDolomiteRegistry);
 
     function oARB() external view returns (IOARB);
 
-    function oARBPerBlock() external view returns (uint256);
+    function oARBPerSecond() external view returns (uint256);
 
     // @todo come back to this
     // function userInfo(uint256 _marketId, uint256 _accountHash) external view returns (UserInfo memory);
@@ -130,5 +132,5 @@ interface IEmitter {
 
     function totalAllocPoint() external view returns (uint256);
 
-    function startBlock() external view returns (uint256);
+    function startTime() external view returns (uint256);
 }

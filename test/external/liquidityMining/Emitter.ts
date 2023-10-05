@@ -1,40 +1,38 @@
+import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { Emitter, Emitter__factory, OARB, OARB__factory } from 'src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow } from 'test/utils/assertions';
+import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
 import {
   CoreProtocol,
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
-  setupTestMarket,
   setupUSDCBalance,
 } from 'test/utils/setup';
 
 const defaultAccountNumber = ZERO_BI;
 const defaultAllocPoint = BigNumber.from('100');
-const usdcAmount = BigNumber.from('100000000'); // $100
+const usdcAmount = BigNumber.from('100816979'); // Makes par value 100000000
 
 describe('Emitter', () => {
   let snapshotId: string;
-
   let core: CoreProtocol;
 
   let emitter: Emitter;
   let oARB: OARB;
-  let blockNumber: number;
-  let marketId: BigNumberish;
+  let startTime: number;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
-    blockNumber = await ethers.provider.getBlockNumber();
+    startTime = await getBlockTimestamp(await ethers.provider.getBlockNumber()) + 200;
     emitter = await createContractWithAbi<Emitter>(
       Emitter__factory.abi,
       Emitter__factory.bytecode,
@@ -43,7 +41,7 @@ describe('Emitter', () => {
         core.dolomiteRegistry.address,
         oARB.address,
         ONE_ETH_BI,
-        blockNumber,
+        startTime,
       ]
     );
 
@@ -51,9 +49,6 @@ describe('Emitter', () => {
       oARB.address,
       '1000000000000000000' // $1.00
     );
-    marketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, oARB, true);
-    await oARB.connect(core.governance).ownerInitialize();
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
     // @follow-up Do we want to test with interest or no?
@@ -73,72 +68,16 @@ describe('Emitter', () => {
   describe('#constructor', () => {
     it('should work normally', async () => {
       expect(await emitter.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
-      expect(await emitter.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
+      expect(await emitter.DOLOMITE_REGISTRY()).to.eq(core.dolomiteRegistry.address);
       expect(await emitter.oARB()).to.eq(oARB.address);
-      expect(await emitter.oARBPerBlock()).to.eq(ONE_ETH_BI);
-      expect(await emitter.startBlock()).to.eq(blockNumber);
-    });
-  });
-
-  describe('#add', () => {
-    it('should work normally', async () => {
-      await emitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
-      const blockNumber = await ethers.provider.getBlockNumber();
-      const pool = await emitter.poolInfo(core.marketIds.usdc);
-
-      expect(pool.marketId).to.eq(core.marketIds.usdc);
-      expect(pool.allocPoint).to.eq(defaultAllocPoint);
-      expect(pool.lastRewardBlock).to.eq(blockNumber);
-      expect(pool.accOARBPerShare).to.eq(0);
-    });
-
-    it('should use start block if after current block', async () => {
-      const testEmitter = await createContractWithAbi<Emitter>(
-        Emitter__factory.abi,
-        Emitter__factory.bytecode,
-        [
-          core.dolomiteMargin.address,
-          core.dolomiteRegistry.address,
-          oARB.address,
-          ONE_ETH_BI,
-          blockNumber + 200,
-        ]
-      );
-      await testEmitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
-      expect((await testEmitter.poolInfo(core.marketIds.usdc)).lastRewardBlock).to.eq(blockNumber + 200);
-    });
-
-    it('should fail if not called by dolomite margin owner', async () => {
-      await expectThrow(
-        emitter.connect(core.hhUser1).add(core.marketIds.usdc, defaultAllocPoint),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
-      );
-    });
-  });
-
-  describe('#set', () => {
-    it('should work normally', async () => {
-      await emitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
-      expect((await emitter.poolInfo(core.marketIds.usdc)).allocPoint).to.eq(defaultAllocPoint);
-      expect(await emitter.totalAllocPoint()).to.eq(defaultAllocPoint);
-
-      await emitter.connect(core.governance).set(core.marketIds.usdc, 150);
-      expect((await emitter.poolInfo(core.marketIds.usdc)).allocPoint).to.eq(150);
-      expect(await emitter.totalAllocPoint()).to.eq(150);
-    });
-
-    it('should fail if not called by dolomite margin owner', async () => {
-      await expectThrow(
-        emitter.connect(core.hhUser1).set(core.marketIds.usdc, defaultAllocPoint),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
-      );
+      expect(await emitter.oARBPerSecond()).to.eq(ONE_ETH_BI);
+      expect(await emitter.startTime()).to.eq(startTime);
     });
   });
 
   describe('#deposit', () => {
-    // @follow-up These tests are 1 wei off because par values and interest accrual
     it('should work normally', async () => {
-      await emitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
 
       const result = await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
       await expectEvent(emitter, result, 'Deposit', {
@@ -157,8 +96,7 @@ describe('Emitter', () => {
     });
 
     it('should accrue rewards and deposit more', async () => {
-      await emitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
-
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
       await expectProtocolBalance(
@@ -170,9 +108,9 @@ describe('Emitter', () => {
       );
 
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await setNextBlockTimestamp(startTime + 1);
       await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-      // 2 ether because 2 blocks have passed
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, marketId, parseEther('2'));
+      await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
       await expectProtocolBalance(
         core,
         emitter.address,
@@ -180,8 +118,8 @@ describe('Emitter', () => {
         core.marketIds.usdc,
         usdcAmount.mul(2)
       );
-      expect(await oARB.balanceOf(core.dolomiteMargin.address)).to.eq(parseEther('2'));
     });
+    // @todo add tests to make sure changing oARBPerSecond doesn't rug users rewards
 
     it('should fail if pool is not initialized', async () => {
       await expectThrow(
@@ -191,7 +129,7 @@ describe('Emitter', () => {
     });
 
     it('should fail if passed zero amount', async () => {
-      await emitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await expectThrow(
         emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, ZERO_BI),
         'Emitter: Invalid amount'
@@ -201,39 +139,39 @@ describe('Emitter', () => {
 
   describe('#withdraw', () => {
     it('should work normally to accrue rewards', async () => {
-      await emitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
 
       await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await setNextBlockTimestamp(startTime + 1);
       const result = await emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, ZERO_BI);
       await expectEvent(emitter, result, 'Withdraw', {
         user: core.hhUser1.address,
         marketId: core.marketIds.usdc,
         amount: ZERO_BI,
       });
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, marketId, ONE_ETH_BI);
-      expect(await oARB.balanceOf(core.dolomiteMargin.address)).to.eq(ONE_ETH_BI);
+      await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
     });
 
     it('should work normally to accrue rewards and withdraw', async () => {
-      await emitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
 
+      await setNextBlockTimestamp(startTime + 1);
       await emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, usdcAmount);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, marketId, ONE_ETH_BI);
+      await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
       await expectProtocolBalance(core, emitter.address, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
-      expect(await oARB.balanceOf(core.dolomiteMargin.address)).to.eq(ONE_ETH_BI);
     });
 
     it('should withdraw all', async () => {
-      await emitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
 
+      await setNextBlockTimestamp(startTime + 1);
       await emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, ethers.constants.MaxUint256);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, marketId, ONE_ETH_BI);
+      await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
       await expectProtocolBalance(core, emitter.address, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
-      expect(await oARB.balanceOf(core.dolomiteMargin.address)).to.eq(ONE_ETH_BI);
     });
 
     it('should fail if pool is not initialized', async () => {
@@ -244,7 +182,7 @@ describe('Emitter', () => {
     });
 
     it('should fail if withdraw amount is greater than user amount', async () => {
-      await emitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
       await expectThrow(
         emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, usdcAmount.add(1)),
@@ -255,7 +193,7 @@ describe('Emitter', () => {
 
   describe('#emergencyWithdraw', () => {
     it('should work normally', async () => {
-      await emitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
 
       const result = await emitter.connect(core.hhUser1).emergencyWithdraw(core.marketIds.usdc);
@@ -264,13 +202,11 @@ describe('Emitter', () => {
         marketId: core.marketIds.usdc,
         amount: usdcAmount,
       });
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, marketId, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-      expect(await oARB.balanceOf(core.dolomiteMargin.address)).to.eq(ZERO_BI);
     });
 
     it('should fail if users amount is zero', async () => {
-      await emitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await expectThrow(
         emitter.connect(core.hhUser1).emergencyWithdraw(core.marketIds.usdc),
         'Emitter: Insufficient balance'
@@ -278,7 +214,44 @@ describe('Emitter', () => {
     });
   });
 
+  describe('#massUpdatePools', () => {
+    it('should work normally', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.weth, defaultAllocPoint, false);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.dai!, defaultAllocPoint, false);
+
+      await setNextBlockTimestamp(startTime + 1);
+      await emitter.massUpdatePools();
+      expect((await emitter.poolInfo(core.marketIds.usdc)).lastRewardTime).to.eq(startTime + 1);
+      expect((await emitter.poolInfo(core.marketIds.weth)).lastRewardTime).to.eq(startTime + 1);
+      expect((await emitter.poolInfo(core.marketIds.dai!)).lastRewardTime).to.eq(startTime + 1);
+    });
+  });
+
   describe('#updatePool', () => {
+    it('should work normally', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await setNextBlockTimestamp(startTime + 1);
+      await emitter.updatePool(core.marketIds.usdc);
+      const pool = await emitter.poolInfo(core.marketIds.usdc);
+
+      expect(pool.marketId).to.eq(core.marketIds.usdc);
+      expect(pool.lastRewardTime).to.eq(startTime + 1);
+      expect(pool.accOARBPerShare).to.eq(parseEther('10000000000')); // 1e28
+    });
+
+    it('should not update rewards if supply is zero', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      await setNextBlockTimestamp(startTime + 100);
+      await emitter.updatePool(core.marketIds.usdc);
+      const pool = await emitter.poolInfo(core.marketIds.usdc);
+
+      expect(pool.marketId).to.eq(core.marketIds.usdc);
+      expect(pool.lastRewardTime).to.eq(startTime + 100);
+      expect(pool.accOARBPerShare).to.eq(0);
+    });
+
     it('should not update if block.number is less than lastRewardBlock', async () => {
       const testEmitter = await createContractWithAbi<Emitter>(
         Emitter__factory.abi,
@@ -288,12 +261,114 @@ describe('Emitter', () => {
           core.dolomiteRegistry.address,
           oARB.address,
           ONE_ETH_BI,
-          blockNumber + 200,
+          startTime,
         ]
       );
-      await testEmitter.connect(core.governance).add(core.marketIds.usdc, defaultAllocPoint);
+      await testEmitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await testEmitter.updatePool(core.marketIds.usdc);
-      expect((await testEmitter.poolInfo(core.marketIds.usdc)).lastRewardBlock).to.eq(blockNumber + 200);
+      expect((await testEmitter.poolInfo(core.marketIds.usdc)).lastRewardTime).to.eq(startTime);
+    });
+  });
+
+  describe('#ownerAddPool', () => {
+    it('should work normally', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      const pool = await emitter.poolInfo(core.marketIds.usdc);
+
+      expect(pool.marketId).to.eq(core.marketIds.usdc);
+      expect(pool.allocPoint).to.eq(defaultAllocPoint);
+      expect(pool.lastRewardTime).to.eq(startTime);
+      expect(pool.accOARBPerShare).to.eq(0);
+      expect(await emitter.totalAllocPoint()).to.eq(defaultAllocPoint);
+    });
+
+    it('should work normally with update', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.weth, defaultAllocPoint, false);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.dai!, defaultAllocPoint, false);
+      expect((await emitter.poolInfo(core.marketIds.usdc)).lastRewardTime).to.eq(startTime);
+      expect((await emitter.poolInfo(core.marketIds.weth)).lastRewardTime).to.eq(startTime);
+      expect((await emitter.poolInfo(core.marketIds.dai!)).lastRewardTime).to.eq(startTime);
+
+      await setNextBlockTimestamp(startTime + 100);
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.mim!, defaultAllocPoint, true);
+      expect((await emitter.poolInfo(core.marketIds.usdc)).lastRewardTime).to.eq(startTime + 100);
+      expect((await emitter.poolInfo(core.marketIds.weth)).lastRewardTime).to.eq(startTime + 100);
+      expect((await emitter.poolInfo(core.marketIds.dai!)).lastRewardTime).to.eq(startTime + 100);
+      expect((await emitter.poolInfo(core.marketIds.mim!)).lastRewardTime).to.eq(startTime + 100);
+    });
+
+    it('should use block.timestamp if after startTime', async () => {
+      const testEmitter = await createContractWithAbi<Emitter>(
+        Emitter__factory.abi,
+        Emitter__factory.bytecode,
+        [
+          core.dolomiteMargin.address,
+          core.dolomiteRegistry.address,
+          oARB.address,
+          ONE_ETH_BI,
+          startTime,
+        ]
+      );
+      await setNextBlockTimestamp(startTime + 500);
+      await testEmitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      expect((await testEmitter.poolInfo(core.marketIds.usdc)).lastRewardTime).to.eq(startTime + 500);
+    });
+
+    it('should fail if pool already exists', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      await expectThrow(
+        emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false),
+        'Emitter: Pool already exists',
+      );
+    });
+
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        emitter.connect(core.hhUser1).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#ownerSetPool', () => {
+    it('should work normally', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      expect((await emitter.poolInfo(core.marketIds.usdc)).allocPoint).to.eq(defaultAllocPoint);
+      expect(await emitter.totalAllocPoint()).to.eq(defaultAllocPoint);
+
+      await emitter.connect(core.governance).ownerSetPool(core.marketIds.usdc, 150);
+      expect((await emitter.poolInfo(core.marketIds.usdc)).allocPoint).to.eq(150);
+      expect(await emitter.totalAllocPoint()).to.eq(150);
+    });
+
+    it('should fail if pool is not initialized', async () => {
+      await expectThrow(
+        emitter.connect(core.governance).ownerSetPool(core.marketIds.usdc, defaultAllocPoint),
+        'Emitter: Pool not initialized',
+      );
+    });
+
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        emitter.connect(core.hhUser1).ownerSetPool(core.marketIds.usdc, defaultAllocPoint),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#ownerSetOARBPerSecond', () => {
+    it('should work normally', async () => {
+      expect(await emitter.oARBPerSecond()).to.eq(ONE_ETH_BI);
+      await emitter.connect(core.governance).ownerSetOARBPerSecond(10);
+      expect(await emitter.oARBPerSecond()).to.eq(10);
+    });
+
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        emitter.connect(core.hhUser1).ownerSetOARBPerSecond(15),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
     });
   });
 });

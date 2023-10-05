@@ -20,11 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IDolomiteRegistry } from "../IDolomiteRegistry.sol";
 
 /**
- * @title   IEmitter
+ * @title   IVester
  * @author  Dolomite
  *
  * Interface for a vesting contract that offers users a discount on ARB tokens
@@ -43,6 +41,16 @@ interface IVester {
         uint256 duration;
         uint256 amount;
     }
+
+    // ================================================
+    // ==================== Events ====================
+    // ================================================
+
+    event Vesting(address indexed owner, uint256 duration, uint256 amount, uint256 vestingId);
+    event PositionClosed(address indexed owner, uint256 vestingId);
+    event EmergencyWithdraw(address indexed owner, uint256 vestingId);
+    event VestingActiveSet(bool vestingActive);
+    event OARBSet(address oARB);
 
     // ======================================================
     // ================== User Functions ===================
@@ -64,6 +72,13 @@ interface IVester {
      * @param  _id  The id of the position that is fully vested
      */
     function closePositionAndBuyTokens(uint256 _id) external payable;
+
+    /**
+     * @notice  Burns the vested oARB tokens and sends vested ARB back to position owner's dolomite balance
+     *
+     * @param  _id  The id of the position that is expired
+     */
+    function forceClosePosition(uint256 _id) external;
 
     /**
      * @notice  Emergency withdraws oARB tokens and ARB tokens back to users account

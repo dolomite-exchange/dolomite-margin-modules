@@ -24,18 +24,28 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
- * @title   IoARB
+ * @title   IOARB
  * @author  Dolomite
  *
  * @notice  Interface for oARB token
  */
-interface IoARB is IERC20 {
+interface IOARB is IERC20 {
 
+    // ======================================================
+    // ================== External Functions ================
+    // ======================================================
+
+    /**
+     * @notice  Mints the provided amount of oARB tokens. Can only be called by dolomite global operator
+     *
+     * @param  _amount  The amount of tokens to mint
+     */
     function mint(uint256 _amount) external;
 
+    /**
+     * @notice  Burns the provided amount of oARB tokens. Can only be called by dolomite global operator
+     *
+     * @param  _amount  The amount of tokens to burn
+     */
     function burn(uint256 _amount) external;
-
-    function ownerInitialize() external;
-
-    function marketId() external view returns (uint256);
 }

@@ -19,11 +19,11 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol"; 
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IEmitter } from "../interfaces/liquidityMining/IEmitter.sol";
@@ -39,8 +39,9 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  * An implementation of the IEmitter interface that grants users oARB rewards for staking assets
  */
 contract Emitter is OnlyDolomiteMargin, IEmitter {
-    using SafeERC20 for IERC20;
     using SafeERC20 for IOARB;
+    using EnumerableSet for EnumerableSet.UintSet;
+    using TypesLib for IDolomiteStructs.Par;
 
     // ===================================================
     // ==================== Constants ====================
@@ -48,22 +49,23 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
 
     bytes32 private constant _FILE = "Emitter";
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
+    uint256 private constant _SCALE = 1e18;
 
     // ===================================================
     // ==================== State Variables ====================
     // ===================================================
 
-    // @follow-up What to make immutable?
-    IDolomiteRegistry public immutable dolomiteRegistry;
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line
+    // @todo work on multiple reward tokens
     IOARB public immutable oARB;
 
+    EnumerableSet.UintSet private _pools;
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     mapping(uint256 => PoolInfo) public poolInfo;
 
-    // @follow-up What to make updateable?
-    uint256 public oARBPerBlock; 
+    uint256 public oARBPerSecond; 
     uint256 public totalAllocPoint;
-    uint256 public startBlock;
+    uint256 public startTime;
 
     // ==================================================================
     // ======================= Constructor =======================
@@ -73,13 +75,13 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         address _dolomiteMargin,
         address _dolomiteRegistry,
         address _oARB,
-        uint256 _oARBPerBlock,
-        uint256 _startBlock
+        uint256 _oARBPerSecond,
+        uint256 _startTime
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        dolomiteRegistry = IDolomiteRegistry(_dolomiteRegistry);
+        DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         oARB = IOARB(_oARB);
-        oARBPerBlock = _oARBPerBlock;
-        startBlock = _startBlock;
+        oARBPerSecond = _oARBPerSecond;
+        startTime = _startTime;
     }
 
     // ==================================================================
@@ -89,7 +91,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
     function deposit(
         uint256 _fromAccountNumber,
         uint256 _marketId,
-        uint256 _amount
+        uint256 _amountWei
     ) external {
         PoolInfo storage pool = poolInfo[_marketId];
         UserInfo storage user = userInfo[_marketId][msg.sender];
@@ -99,39 +101,46 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         });
 
         Require.that(
-            pool.marketId != 0,
+            _pools.contains(_marketId),
             _FILE,
             "Pool not initialized"
         );
         Require.that(
-            _amount > 0,
+            _amountWei > 0,
             _FILE,
             "Invalid amount"
         );
 
         updatePool(_marketId);
         if (user.amount > 0) {
-            uint256 pending = user.amount * pool.accOARBPerShare / 1e18 - user.rewardDebt;
+            uint256 pending = user.amount * pool.accOARBPerShare / _SCALE - user.rewardDebt;
             oARB.mint(pending);
-            _depositOARBIntoDolomite(msg.sender, pending);
+            oARB.transfer(msg.sender, pending);
         }
 
-        // We calculate the change in par value based on the transfer of the wei amount
-        // @audit Check to make sure we are ok ignoring sign of par values
-        uint256 beforeAccountPar = (DOLOMITE_MARGIN().getAccountPar(info, _marketId)).value;
-        _transfer(msg.sender, _fromAccountNumber, address(this), uint256(uint160(msg.sender)), _marketId, _amount);
-        uint256 changeAccountPar = (DOLOMITE_MARGIN().getAccountPar(info, _marketId)).value - beforeAccountPar;
+        IDolomiteStructs.Par memory beforeAccountPar = DOLOMITE_MARGIN().getAccountPar(info, _marketId);
+        _transfer(
+            /* _fromAccount = */ msg.sender,
+            /* _fromAccountNumber = */ _fromAccountNumber,
+            /* _toAccount = */ address(this),
+            /* _toAccountNumber = */ uint256(uint160(msg.sender)),
+            /* _marketId = */ _marketId,
+            /* _amountWei */ _amountWei
+        );
+        IDolomiteStructs.Par memory changeAccountPar = 
+            DOLOMITE_MARGIN().getAccountPar(info, _marketId).sub(beforeAccountPar);
+        assert(changeAccountPar.sign);
 
-        pool.totalPar += changeAccountPar;
-        user.amount += changeAccountPar;
-        user.rewardDebt = user.amount * pool.accOARBPerShare / 1e18;
+        pool.totalPar += changeAccountPar.value;
+        user.amount += changeAccountPar.value;
+        user.rewardDebt = user.amount * pool.accOARBPerShare / _SCALE;
 
-        emit Deposit(msg.sender, _marketId, _amount);
+        emit Deposit(msg.sender, _marketId, _amountWei);
     }
 
     function withdraw(
         uint256 _marketId,
-        uint256 _amount
+        uint256 _amountWei
     ) external {
         PoolInfo storage pool = poolInfo[_marketId];
         UserInfo storage user = userInfo[_marketId][msg.sender];
@@ -141,48 +150,50 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         });
 
         Require.that(
-            pool.marketId != 0,
+            _pools.contains(_marketId),
             _FILE,
             "Pool not initialized"
         );
 
         uint256 withdrawalAmount;
-        if (_amount == type(uint256).max) {
+        if (_amountWei == type(uint256).max) {
             withdrawalAmount = (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value;
         }
         else {
             Require.that(
-                (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value >= _amount,
+                (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value >= _amountWei,
                 _FILE,
                 "Insufficient balance"
             );
-            withdrawalAmount = _amount;
+            withdrawalAmount = _amountWei;
         }
 
 
         updatePool(_marketId);
-        uint256 pending = user.amount * pool.accOARBPerShare / 1e18 - user.rewardDebt;
+        uint256 pending = user.amount * pool.accOARBPerShare / _SCALE - user.rewardDebt;
         oARB.mint(pending);
-        _depositOARBIntoDolomite(msg.sender, pending);
+        oARB.transfer(msg.sender, pending);
 
         // We calculate the change in par value based on the transfer of the wei amount
         if(withdrawalAmount > 0) {
-            uint256 beforeAccountPar = (DOLOMITE_MARGIN().getAccountPar(info, _marketId)).value;
+            IDolomiteStructs.Par memory beforeAccountPar = DOLOMITE_MARGIN().getAccountPar(info, _marketId);
             _transfer(
-                address(this),
-                uint256(uint160(msg.sender)),
-                msg.sender,
-                _DEFAULT_ACCOUNT_NUMBER,
-                _marketId,
-                withdrawalAmount
+                /* _fromAccount = */ address(this),
+                /* _fromAccountNumber = */ uint256(uint160(msg.sender)),
+                /* _toAccount = */ msg.sender,
+                /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+                /* _marketId = */ _marketId,
+                /* _amountWei */ withdrawalAmount
             );
-            uint256 changeAccountPar = beforeAccountPar - (DOLOMITE_MARGIN().getAccountPar(info, _marketId)).value;
+            IDolomiteStructs.Par memory changeAccountPar = 
+                beforeAccountPar.sub(DOLOMITE_MARGIN().getAccountPar(info, _marketId));
+            assert(changeAccountPar.sign);
 
-            user.amount = user.amount - changeAccountPar;
-            pool.totalPar -= changeAccountPar;
+            user.amount = user.amount - changeAccountPar.value;
+            pool.totalPar -= changeAccountPar.value;
         }
 
-        user.rewardDebt = user.amount * pool.accOARBPerShare / 1e18;
+        user.rewardDebt = user.amount * pool.accOARBPerShare / _SCALE;
         emit Withdraw(msg.sender, _marketId, withdrawalAmount);
     }
 
@@ -194,9 +205,9 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
             number: uint256(uint160(msg.sender))
         });
 
-        uint256 amount = (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value;
+        uint256 amountWei = (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value;
         Require.that(
-            amount > 0,
+            amountWei > 0,
             _FILE,
             "Insufficient balance"
         );
@@ -204,60 +215,96 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         user.rewardDebt = 0;
 
         // @follow-up Which account number to transfer to?
-        uint256 beforeAccountPar = (DOLOMITE_MARGIN().getAccountPar(info, _marketId)).value;
-        _transfer(address(this), uint256(uint160(msg.sender)), msg.sender, _DEFAULT_ACCOUNT_NUMBER, _marketId, amount);
-        uint256 changeAccountPar = beforeAccountPar - (DOLOMITE_MARGIN().getAccountPar(info, _marketId)).value;
-        pool.totalPar -= changeAccountPar;
+        IDolomiteStructs.Par memory beforeAccountPar = DOLOMITE_MARGIN().getAccountPar(info, _marketId);
+        _transfer(
+            /* _fromAccount = */ address(this),
+            /* _fromAccountNumber = */ uint256(uint160(msg.sender)),
+            /* _toAccount = */ msg.sender,
+            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+            /* _marketId = */ _marketId,
+            /* _amountWei */ amountWei
+        );
+        IDolomiteStructs.Par memory changeAccountPar = 
+            beforeAccountPar.sub(DOLOMITE_MARGIN().getAccountPar(info, _marketId));
+        assert(changeAccountPar.sign);
 
-        emit EmergencyWithdraw(msg.sender, _marketId, amount);
+        pool.totalPar -= changeAccountPar.value;
+        emit EmergencyWithdraw(msg.sender, _marketId, amountWei);
+    }
+
+    function massUpdatePools() public {
+        uint256 len = _pools.length();
+        for (uint256 i; i < len; i++) {
+            updatePool(_pools.at(i));
+        }
     }
 
     function updatePool(uint256 _marketId) public {
-        // @follow-up Where can we switch these to memory throughout the code
         PoolInfo storage pool = poolInfo[_marketId];
-        if (block.number <= pool.lastRewardBlock) {
+        if (block.timestamp <= pool.lastRewardTime) {
             return;
         }
 
         uint256 supply = pool.totalPar;
         if (supply == 0) {
-            pool.lastRewardBlock = block.number;
+            pool.lastRewardTime = block.timestamp;
             return;
         }
 
-        uint256 reward = oARBPerBlock * pool.allocPoint * (block.number - pool.lastRewardBlock) / totalAllocPoint;
-        pool.accOARBPerShare = pool.accOARBPerShare + reward * 1e18 / supply;
-        pool.lastRewardBlock = block.number;
+        uint256 reward = oARBPerSecond * pool.allocPoint * (block.timestamp - pool.lastRewardTime) / totalAllocPoint;
+        pool.accOARBPerShare = pool.accOARBPerShare + reward * _SCALE / supply;
+        pool.lastRewardTime = block.timestamp;
     }
 
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
 
-    // @follow-up Do we want update flag with mass update pools function?
-    // MasterChef has it but it didn't feel super necessary
-    function add( // solhint-disable-line ordering
+    function ownerAddPool(
         uint256 _marketId,
-        uint256 _allocPoint
+        uint256 _allocPoint,
+        bool _withUpdate
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        uint256 lastRewardBlock = block.number > startBlock ? block.number : startBlock;
+        Require.that(
+            !_pools.contains(_marketId),
+            _FILE,
+            "Pool already exists"
+        );
+        if (_withUpdate) {
+            massUpdatePools();
+        }
+
+        uint256 lastRewardTime = block.timestamp > startTime ? block.timestamp : startTime;
         totalAllocPoint = totalAllocPoint + _allocPoint;
         poolInfo[_marketId] = 
             PoolInfo({
                 marketId: _marketId,
                 allocPoint: _allocPoint,
-                lastRewardBlock: lastRewardBlock,
+                lastRewardTime: lastRewardTime,
                 accOARBPerShare: 0,
                 totalPar: 0
             });
+        _pools.add(_marketId);
     }
 
-    function set(
+    function ownerSetPool(
         uint256 _marketId,
         uint256 _allocPoint
-    ) public onlyDolomiteMarginOwner(msg.sender) {
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _pools.contains(_marketId),
+            _FILE,
+            "Pool not initialized"
+        );
         totalAllocPoint += _allocPoint - poolInfo[_marketId].allocPoint;
         poolInfo[_marketId].allocPoint = _allocPoint;
+    }
+
+    function ownerSetOARBPerSecond(
+        uint256 _oARBPerSecond
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        massUpdatePools();
+        oARBPerSecond = _oARBPerSecond;
     }
 
     // ==================================================================
@@ -281,28 +328,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
             _marketId,
             IDolomiteStructs.AssetDenomination.Wei,
             _amount,
-            AccountBalanceLib.BalanceCheckFlag.From
-        );
-    }
-
-    function _depositOARBIntoDolomite(
-        address _account,
-        uint256 _amount
-    ) internal {
-        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        oARB.safeApprove(address(dolomiteMargin), _amount);
-        AccountActionLib.deposit(
-            dolomiteMargin,
-            _account,
-            address(this),
-            _DEFAULT_ACCOUNT_NUMBER,
-            oARB.marketId(),
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amount
-            })
+            AccountBalanceLib.BalanceCheckFlag.Both
         );
     }
 }

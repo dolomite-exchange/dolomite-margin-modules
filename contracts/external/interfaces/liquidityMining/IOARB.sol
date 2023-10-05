@@ -31,12 +31,6 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 interface IOARB is IERC20 {
 
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event Initialized(uint256 marketId);
-
     // ======================================================
     // ================== External Functions ================
     // ======================================================
@@ -54,15 +48,4 @@ interface IOARB is IERC20 {
      * @param  _amount  The amount of tokens to burn
      */
     function burn(uint256 _amount) external;
-
-    /**
-     * @notice  Initializes this contract's variables that are dependent on this token being added to DolomiteMargin.
-     */
-    function ownerInitialize() external;
-
-    /**
-     * @return  The market ID of this token contract according to DolomiteMargin. This value is initialized in the
-     *          #ownerInitialize function
-     */
-    function marketId() external view returns (uint256);
 }
