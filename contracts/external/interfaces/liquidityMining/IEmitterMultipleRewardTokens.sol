@@ -46,7 +46,7 @@ interface IEmitterMultipleRewardTokens {
         uint256 totalPar;
         uint256 allocPoint;
         mapping(address => uint256) lastRewardTimes;
-        mapping(address => uint256) accOARBPerShares;
+        mapping(address => uint256) accRewardTokenPerShares;
     }
 
     struct RewardToken {

@@ -113,17 +113,7 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             "Invalid amount"
         );
 
-        updatePool(_marketId);
-        uint256 len = _rewardTokens.length();
-        if (user.amount > 0) {
-            for (uint256 i; i < len; i++) {
-                RewardToken memory rewardToken = rewardTokenInfo[_rewardTokens.at(i)];
-                uint256 pending = user.amount * pool.accOARBPerShares[rewardToken.token] / _SCALE - user.rewardDebts[rewardToken.token];
-                IStorageVault(rewardToken.tokenStorageVault).pullTokensFromVault(pending);
-                IERC20(rewardToken.token).transfer(msg.sender, pending);
-            }
-        }
-
+        // Transfer _amountWei to this contract
         IDolomiteStructs.Par memory beforeAccountPar = DOLOMITE_MARGIN().getAccountPar(info, _marketId);
         _transfer(
             /* _fromAccount = */ msg.sender,
@@ -137,11 +127,20 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             DOLOMITE_MARGIN().getAccountPar(info, _marketId).sub(beforeAccountPar);
         assert(changeAccountPar.sign);
 
+        uint256 cachedAmount = user.amount;
+        updatePool(_marketId);
         pool.totalPar += changeAccountPar.value;
         user.amount += changeAccountPar.value;
-        for (uint256 i; i < len; i++) {
-            RewardToken memory rewardToken = rewardTokenInfo[_rewardTokens.at(i)];
-            user.rewardDebts[rewardToken.token] = user.amount * pool.accOARBPerShares[rewardToken.token] / _SCALE;
+
+        uint256 len = _rewardTokens.length();
+        if (cachedAmount > 0) {
+            for (uint256 i; i < len; i++) {
+                RewardToken memory rewardToken = rewardTokenInfo[_rewardTokens.at(i)];
+                uint256 pending = cachedAmount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE - user.rewardDebts[rewardToken.token];
+                IStorageVault(rewardToken.tokenStorageVault).pullTokensFromVault(pending);
+                IERC20(rewardToken.token).transfer(msg.sender, pending);
+                user.rewardDebts[rewardToken.token] = user.amount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE;
+            }
         }
 
         emit Deposit(msg.sender, _marketId, _amountWei);
@@ -177,20 +176,10 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             withdrawalAmount = _amountWei;
         }
 
-
+        // We calculate the change in par value based on the transfer of the wei amount
         updatePool(_marketId);
 
-        uint256 len = _rewardTokens.length();
-        if (user.amount > 0) {
-            for (uint256 i; i < len; i++) {
-                RewardToken memory rewardToken = rewardTokenInfo[_rewardTokens.at(i)];
-                uint256 pending = user.amount * pool.accOARBPerShares[rewardToken.token] / _SCALE - user.rewardDebts[rewardToken.token];
-                IStorageVault(rewardToken.tokenStorageVault).pullTokensFromVault(pending);
-                IERC20(rewardToken.token).transfer(msg.sender, pending);
-            }
-        }
-
-        // We calculate the change in par value based on the transfer of the wei amount
+        uint256 cachedAmount = user.amount;
         if(withdrawalAmount > 0) {
             IDolomiteStructs.Par memory beforeAccountPar = DOLOMITE_MARGIN().getAccountPar(info, _marketId);
             _transfer(
@@ -209,10 +198,17 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             pool.totalPar -= changeAccountPar.value;
         }
 
-        for (uint256 i; i < len; i++) {
-            RewardToken memory rewardToken = rewardTokenInfo[_rewardTokens.at(i)];
-            user.rewardDebts[rewardToken.token] = user.amount * pool.accOARBPerShares[rewardToken.token] / _SCALE;
+        uint256 len = _rewardTokens.length();
+        if (cachedAmount > 0) {
+            for (uint256 i; i < len; i++) {
+                RewardToken memory rewardToken = rewardTokenInfo[_rewardTokens.at(i)];
+                uint256 pending = cachedAmount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE - user.rewardDebts[rewardToken.token];
+                IStorageVault(rewardToken.tokenStorageVault).pullTokensFromVault(pending);
+                IERC20(rewardToken.token).transfer(msg.sender, pending);
+                user.rewardDebts[rewardToken.token] = user.amount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE;
+            }
         }
+
         emit Withdraw(msg.sender, _marketId, withdrawalAmount);
     }
 
@@ -230,11 +226,12 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             _FILE,
             "Insufficient balance"
         );
+
         user.amount = 0;
         uint256 len = _rewardTokens.length();
         for (uint256 i; i < len; i++) {
             RewardToken memory rewardToken = rewardTokenInfo[_rewardTokens.at(i)];
-            user.rewardDebts[rewardToken.token] = user.amount * pool.accOARBPerShares[rewardToken.token] / _SCALE;
+            user.rewardDebts[rewardToken.token] = 0;
         }
 
         // @follow-up Which account number to transfer to?
@@ -281,7 +278,7 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
             if (rewardToken.isAccruing) {
                 uint256 reward = oARBPerSecond * pool.allocPoint * (block.timestamp - pool.lastRewardTimes[rewardToken.token]) / totalAllocPoint;
-                pool.accOARBPerShares[rewardToken.token] = pool.accOARBPerShares[rewardToken.token] + reward * _SCALE / supply;
+                pool.accRewardTokenPerShares[rewardToken.token] = pool.accRewardTokenPerShares[rewardToken.token] + reward * _SCALE / supply;
                 pool.lastRewardTimes[rewardToken.token] = block.timestamp;
             }
         }
@@ -296,24 +293,19 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         address _tokenStorageVault,
         bool _isAccruing
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        uint256 lastRewardTime = block.timestamp > startTime ? block.timestamp : startTime;
         Require.that(
             !_rewardTokens.contains(_token),
             _FILE,
             "Reward token already exists"
         );
+
         rewardTokenInfo[_token] = RewardToken({
             token: _token,
             tokenStorageVault: _tokenStorageVault,
             isAccruing: _isAccruing
         });
         _rewardTokens.add(_token);
-
-        uint256 len = _pools.length();
-        for (uint256 i; i < len; i++) {
-            PoolInfo storage pool = poolInfo[_pools.at(i)];
-            pool.lastRewardTimes[_token] = lastRewardTime;
-        }
+        _updateLastRewardTimesForRewardToken(_token);
     }
 
     function ownerEnableRewardToken(
@@ -324,28 +316,27 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             _FILE,
             "Reward token does not exist"
         );
+
         RewardToken storage rewardToken = rewardTokenInfo[_token];
         rewardToken.isAccruing = true;
-        uint256 len = _pools.length();
-        for (uint256 i; i < len; i++) {
-            PoolInfo storage pool = poolInfo[_pools.at(i)];
-            pool.lastRewardTimes[_token] = block.timestamp;
-        }
+        _updateLastRewardTimesForRewardToken(_token);
     }
 
     function ownerDisableRewardToken(
         address _token
     ) external onlyDolomiteMarginOwner(msg.sender) {
-        massUpdatePools();
         Require.that(
             _rewardTokens.contains(_token),
             _FILE,
             "Reward token does not exist"
         );
+        massUpdatePools();
         RewardToken storage rewardToken = rewardTokenInfo[_token];
         rewardToken.isAccruing = false;
     }
 
+    // @follow-up Removing reward token could make certain things weird. Need to make sure it isn't added back
+    // WARNING
     function ownerRemoveRewardToken(
         address _token
     ) external onlyDolomiteMarginOwner(msg.sender) {
@@ -374,6 +365,7 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
         uint256 lastRewardTime = block.timestamp > startTime ? block.timestamp : startTime;
         totalAllocPoint = totalAllocPoint + _allocPoint;
+
         PoolInfo storage pool = poolInfo[_marketId];
         pool.marketId = _marketId;
         pool.allocPoint = _allocPoint;
@@ -429,5 +421,17 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             _amount,
             AccountBalanceLib.BalanceCheckFlag.Both
         );
+    }
+
+    function _updateLastRewardTimesForRewardToken(
+        address _rewardToken
+    ) internal {
+        uint256 lastRewardTime = block.timestamp > startTime ? block.timestamp : startTime;
+
+        uint256 len = _pools.length();
+        for (uint256 i; i < len; i++) {
+            PoolInfo storage pool = poolInfo[_pools.at(i)];
+            pool.lastRewardTimes[_rewardToken] = lastRewardTime;
+        }
     }
 }
