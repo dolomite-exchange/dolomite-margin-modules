@@ -35,7 +35,6 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
-
 /**
  * @title   Vester
  * @author  Dolomite

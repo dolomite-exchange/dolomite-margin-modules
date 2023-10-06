@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { Emitter, Emitter__factory, OARB, OARB__factory, Vester, Vester__factory } from 'src/types';
+import { Emitter, Emitter__factory, OARB, OARB__factory, TestVester, TestVester__factory } from 'src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
@@ -29,7 +29,7 @@ describe('Vester', () => {
   let core: CoreProtocol;
 
   let emitter: Emitter;
-  let vester: Vester;
+  let vester: TestVester;
   let oARB: OARB;
   let startTime: number;
 
@@ -52,9 +52,9 @@ describe('Vester', () => {
         startTime,
       ]
     );
-    vester = await createContractWithAbi<Vester>(
-      Vester__factory.abi,
-      Vester__factory.bytecode,
+    vester = await createContractWithAbi<TestVester>(
+      TestVester__factory.abi,
+      TestVester__factory.bytecode,
       [
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
@@ -379,10 +379,10 @@ describe('Vester', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb, core.testEcosystem!.testPriceOracle.address);
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
-      await expect(() => vester.closePositionAndBuyTokens(1, { value: parseEther('.9') })).to.changeEtherBalance(
-        core.hhUser1,
-        parseEther('-.8')
-      );
+      await expect(() => vester.closePositionAndBuyTokens(
+        1,
+        { value: parseEther('.9') }
+      )).to.changeEtherBalance(core.hhUser1, parseEther('-.8'));
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
@@ -423,6 +423,14 @@ describe('Vester', () => {
       await expectThrow(
         vester.connect(core.hhUser1).closePositionAndBuyTokens(1),
         'Vester: Position expired',
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
+      await expectThrow(
+        vester.connect(core.hhUser1).callClosePositionAndBuyTokensAndTriggerReentrancy(1),
+        'ReentrancyGuard: reentrant call',
       );
     });
   });

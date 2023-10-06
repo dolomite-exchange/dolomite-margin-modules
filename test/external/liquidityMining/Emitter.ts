@@ -50,7 +50,7 @@ describe('Emitter', () => {
       '1000000000000000000' // $1.00
     );
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(3), core.dolomiteMargin);
     // @follow-up Do we want to test with interest or no?
     await disableInterestAccrual(core, core.marketIds.usdc);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
@@ -119,7 +119,47 @@ describe('Emitter', () => {
         usdcAmount.mul(2)
       );
     });
+
     // @todo add tests to make sure changing oARBPerSecond doesn't rug users rewards
+    it('should reset rewardDebt if new campaign is started', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount.div(2));
+
+      await setNextBlockTimestamp(startTime + 1);
+      await emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, ZERO_BI);
+      expect((await emitter.userInfo(core.marketIds.usdc, core.hhUser1.address)).rewardDebt).to.be.gt(ZERO_BI);
+
+      await emitter.connect(core.governance).ownerCreateNewCampaign(startTime + 100, oARB.address);
+      await expect(() => emitter.connect(core.hhUser1).deposit(
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcAmount.div(2)
+      )).to.changeTokenBalance(oARB, core.hhUser1, ZERO_BI);
+      expect((await emitter.poolInfo(core.marketIds.usdc)).accOARBPerShare).to.eq(ZERO_BI);
+      expect((await emitter.userInfo(core.marketIds.usdc, core.hhUser1.address)).rewardDebt).to.eq(ZERO_BI);
+    });
+
+    it('should not reset rewardDebt if user has been updated after startTime', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      await setNextBlockTimestamp(startTime + 1);
+      await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        emitter.address,
+        BigNumber.from(core.hhUser1.address),
+        core.marketIds.usdc,
+        usdcAmount
+      );
+
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await expectWalletBalance(core.hhUser1.address, oARB, parseEther('2'));
+
+      await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await expectWalletBalance(core.hhUser1.address, oARB, parseEther('4').sub(1)); // @follow-up Off by one wei
+    });
 
     it('should fail if pool is not initialized', async () => {
       await expectThrow(
@@ -172,6 +212,41 @@ describe('Emitter', () => {
       await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
       await expectProtocolBalance(core, emitter.address, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
+    });
+
+    it('should reset rewardDebt if new campaign is started', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+
+      await setNextBlockTimestamp(startTime + 1);
+      await emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, ZERO_BI);
+      expect((await emitter.userInfo(core.marketIds.usdc, core.hhUser1.address)).rewardDebt).to.be.gt(ZERO_BI);
+
+      await emitter.connect(core.governance).ownerCreateNewCampaign(startTime + 100, oARB.address);
+      await expect(() => emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, ZERO_BI))
+        .to.changeTokenBalance(oARB, core.hhUser1, ZERO_BI);
+      expect((await emitter.poolInfo(core.marketIds.usdc)).accOARBPerShare).to.eq(ZERO_BI);
+      expect((await emitter.userInfo(core.marketIds.usdc, core.hhUser1.address)).rewardDebt).to.eq(ZERO_BI);
+    });
+
+    it('should not reset rewardDebt if user has been updated after startTime', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        emitter.address,
+        BigNumber.from(core.hhUser1.address),
+        core.marketIds.usdc,
+        usdcAmount
+      );
+
+      await setNextBlockTimestamp(startTime + 1);
+      await emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, ZERO_BI);
+      await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
+
+      await emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, ZERO_BI);
+      await expectWalletBalance(core.hhUser1.address, oARB, parseEther('2'));
     });
 
     it('should fail if pool is not initialized', async () => {
@@ -367,6 +442,44 @@ describe('Emitter', () => {
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         emitter.connect(core.hhUser1).ownerSetOARBPerSecond(15),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+  });
+
+  describe('#ownerCreateNewCampaign', () => {
+    it('should work normally', async () => {
+      await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
+      await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
+
+      await setNextBlockTimestamp(startTime + 1);
+      await emitter.updatePool(core.marketIds.usdc);
+      let pool = await emitter.poolInfo(core.marketIds.usdc);
+      expect(pool.lastRewardTime).to.eq(startTime + 1);
+      expect(pool.accOARBPerShare).to.eq(parseEther('10000000000')); // 1e28
+
+      await emitter.connect(core.governance).ownerCreateNewCampaign(startTime + 100, oARB.address);
+      pool = await emitter.poolInfo(core.marketIds.usdc);
+      expect(pool.lastRewardTime).to.eq(startTime + 100);
+      expect(pool.accOARBPerShare).to.eq(0);
+
+      await emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc , ZERO_BI);
+      pool = await emitter.poolInfo(core.marketIds.usdc);
+      expect(pool.lastRewardTime).to.eq(startTime + 100);
+      expect(pool.accOARBPerShare).to.eq(0);
+    });
+
+    it('should fail if startTime is less than block.timestamp', async () => {
+      await setNextBlockTimestamp(startTime);
+      await expectThrow(
+        emitter.connect(core.governance).ownerCreateNewCampaign(startTime - 1, core.tokens.link.address),
+        'Emitter: Invalid startTime',
+      );
+    });
+
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        emitter.connect(core.hhUser1).ownerCreateNewCampaign(startTime, core.tokens.link.address),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
       );
     });

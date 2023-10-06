@@ -56,13 +56,12 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
     // ===================================================
 
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line
-    // @todo work on multiple reward tokens
-    IOARB public immutable oARB;
 
     EnumerableSet.UintSet private _pools;
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     mapping(uint256 => PoolInfo) public poolInfo;
 
+    IOARB public oARB;
     uint256 public oARBPerSecond; 
     uint256 public totalAllocPoint;
     uint256 public startTime;
@@ -112,6 +111,11 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         );
 
         updatePool(_marketId);
+        // Reset reward debt in the case of new campaign
+        if (user.lastUpdateTime < startTime) {
+            user.rewardDebt = 0;
+        }
+
         if (user.amount > 0) {
             uint256 pending = user.amount * pool.accOARBPerShare / _SCALE - user.rewardDebt;
             oARB.mint(pending);
@@ -134,6 +138,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         pool.totalPar += changeAccountPar.value;
         user.amount += changeAccountPar.value;
         user.rewardDebt = user.amount * pool.accOARBPerShare / _SCALE;
+        user.lastUpdateTime = block.timestamp;
 
         emit Deposit(msg.sender, _marketId, _amountWei);
     }
@@ -170,6 +175,10 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
 
 
         updatePool(_marketId);
+        if (user.lastUpdateTime < startTime) {
+            user.rewardDebt = 0;
+        }
+
         uint256 pending = user.amount * pool.accOARBPerShare / _SCALE - user.rewardDebt;
         oARB.mint(pending);
         oARB.transfer(msg.sender, pending);
@@ -194,6 +203,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         }
 
         user.rewardDebt = user.amount * pool.accOARBPerShare / _SCALE;
+        user.lastUpdateTime = block.timestamp;
         emit Withdraw(msg.sender, _marketId, withdrawalAmount);
     }
 
@@ -213,6 +223,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         );
         user.amount = 0;
         user.rewardDebt = 0;
+        user.lastUpdateTime = 0;
 
         // @follow-up Which account number to transfer to?
         IDolomiteStructs.Par memory beforeAccountPar = DOLOMITE_MARGIN().getAccountPar(info, _marketId);
@@ -298,6 +309,25 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         );
         totalAllocPoint += _allocPoint - poolInfo[_marketId].allocPoint;
         poolInfo[_marketId].allocPoint = _allocPoint;
+    }
+
+    function ownerCreateNewCampaign(
+        uint256 _startTime,
+        IOARB _oARB
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _startTime >= block.timestamp,
+            _FILE,
+            "Invalid startTime"
+        );
+        startTime = _startTime;
+        oARB = _oARB;
+
+        uint256 len = _pools.length();
+        for (uint256 i; i < len; i++) {
+            poolInfo[_pools.at(i)].lastRewardTime = startTime;
+            poolInfo[_pools.at(i)].accOARBPerShare = 0;
+        }
     }
 
     function ownerSetOARBPerSecond(

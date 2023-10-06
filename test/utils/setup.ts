@@ -412,6 +412,7 @@ export interface CoreProtocol {
   };
   tokens: {
     arb: IERC20;
+    dai: IERC20;
     dfsGlp: IERC20 | undefined;
     dPtGlp: IERC20 | undefined;
     dYtGlp: IERC20 | undefined;
@@ -447,6 +448,18 @@ export async function setupARBBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.arb.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.arb.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupDAIBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x489ee077994b6658eafa855c308275ead8097c4a'; // GMX Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.dai.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.dai.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupUSDCBalance(
@@ -716,6 +729,7 @@ export async function setupCoreProtocol(
     },
     tokens: {
       arb: IERC20__factory.connect(ARB_MAP[config.network].address, hhUser1),
+      dai: IERC20__factory.connect(DAI_MAP[config.network].address, hhUser1),
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
       dPtGlp: createIERC20Opt(DPT_GLP_2024_MAP[config.network]?.address, hhUser1),
       dYtGlp: createIERC20Opt(DYT_GLP_2024_MAP[config.network]?.address, hhUser1),

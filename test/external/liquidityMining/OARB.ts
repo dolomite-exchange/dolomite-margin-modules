@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { BigNumberish } from 'ethers';
 import { OARB, OARB__factory } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';

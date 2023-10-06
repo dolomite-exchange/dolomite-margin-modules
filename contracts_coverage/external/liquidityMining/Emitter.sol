@@ -21,17 +21,17 @@ pragma solidity ^0.8.9;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IEmitter } from "../interfaces/liquidityMining/IEmitter.sol";
 import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   Emitter
@@ -56,14 +56,13 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
     // ==================== State Variables ====================
     // ===================================================
 
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
-    // @todo work on multiple reward tokens
-    IOARB public immutable oARB;
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line
 
     EnumerableSet.UintSet private _pools;
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     mapping(uint256 => PoolInfo) public poolInfo;
 
+    IOARB public oARB;
     uint256 public oARBPerSecond;
     uint256 public totalAllocPoint;
     uint256 public startTime;
@@ -113,6 +112,11 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         );
 
         updatePool(_marketId);
+        // Reset reward debt in the case of new campaign
+        if (user.lastUpdateTime < startTime) {
+            user.rewardDebt = 0;
+        }
+
         if (user.amount > 0) {
             uint256 pending = user.amount * pool.accOARBPerShare / _SCALE - user.rewardDebt;
             oARB.mint(pending);
@@ -135,6 +139,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         pool.totalPar += changeAccountPar.value;
         user.amount += changeAccountPar.value;
         user.rewardDebt = user.amount * pool.accOARBPerShare / _SCALE;
+        user.lastUpdateTime = block.timestamp;
 
         emit Deposit(msg.sender, _marketId, _amountWei);
     }
@@ -171,6 +176,10 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
 
 
         updatePool(_marketId);
+        if (user.lastUpdateTime < startTime) {
+            user.rewardDebt = 0;
+        }
+
         uint256 pending = user.amount * pool.accOARBPerShare / _SCALE - user.rewardDebt;
         oARB.mint(pending);
         oARB.transfer(msg.sender, pending);
@@ -195,6 +204,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         }
 
         user.rewardDebt = user.amount * pool.accOARBPerShare / _SCALE;
+        user.lastUpdateTime = block.timestamp;
         emit Withdraw(msg.sender, _marketId, withdrawalAmount);
     }
 
@@ -214,6 +224,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         );
         user.amount = 0;
         user.rewardDebt = 0;
+        user.lastUpdateTime = 0;
 
         // @follow-up Which account number to transfer to?
         IDolomiteStructs.Par memory beforeAccountPar = DOLOMITE_MARGIN().getAccountPar(info, _marketId);
@@ -299,6 +310,25 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         );
         totalAllocPoint += _allocPoint - poolInfo[_marketId].allocPoint;
         poolInfo[_marketId].allocPoint = _allocPoint;
+    }
+
+    function ownerCreateNewCampaign(
+        uint256 _startTime,
+        IOARB _oARB
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        if (_startTime >= block.timestamp) { /* FOR COVERAGE TESTING */ }
+        Require.that(_startTime >= block.timestamp,
+            _FILE,
+            "Invalid startTime"
+        );
+        startTime = _startTime;
+        oARB = _oARB;
+
+        uint256 len = _pools.length();
+        for (uint256 i; i < len; i++) {
+            poolInfo[_pools.at(i)].lastRewardTime = startTime;
+            poolInfo[_pools.at(i)].accOARBPerShare = 0;
+        }
     }
 
     function ownerSetOARBPerSecond(

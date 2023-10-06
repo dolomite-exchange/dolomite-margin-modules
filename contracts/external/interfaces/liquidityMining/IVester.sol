@@ -28,6 +28,7 @@ pragma solidity ^0.8.9;
  * Interface for a vesting contract that offers users a discount on ARB tokens
  * if they vest ARB and oARB for a length of time
  */
+// @todo check and add views to interfaces if necessary
 interface IVester {
 
     // =================================================
@@ -87,4 +88,11 @@ interface IVester {
      * @param  _id  The id of the position to emergency withdraw
      */
     function emergencyWithdraw(uint256 _id) external;
+
+    /**
+     * @notice  Sets vestingActive. Callable by Dolomite Margin owner
+     *
+     * @param  _vestingActive   The id of the position to emergency withdraw
+     */
+    function ownerSetVestingActive(bool _vestingActive) external;
 }

@@ -19,11 +19,10 @@
 
 pragma solidity ^0.8.9;
 
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
@@ -34,6 +33,7 @@ import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
 import { IVester } from "../interfaces/liquidityMining/IVester.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+
 
 
 /**
@@ -62,9 +62,9 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
     // ==================== State Variables ====================
     // ===================================================
 
-    IDolomiteRegistry public immutable DOLOMITE_REGISTRY;
-    uint256 public immutable WETH_MARKET_ID;
-    uint256 public immutable ARB_MARKET_ID;
+    IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line
+    uint256 public immutable WETH_MARKET_ID; // solhint-disable-line
+    uint256 public immutable ARB_MARKET_ID; // solhint-disable-line
 
     uint256 private _nextId;
 
