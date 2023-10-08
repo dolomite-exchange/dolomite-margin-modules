@@ -28,10 +28,15 @@ import {
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
 import { createExpirationLibrary } from '../../utils/expiry-utils';
 
-const GM_ETH_USD_PRICE = BigNumber.from('924171934216256043');
+const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('919979975416060612'); // $0.9199
+const GM_ETH_USD_PRICE_MAX_WEI = BigNumber.from('918897815809950545'); // $0.9188
+const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
 const NEGATIVE_PRICE = BigNumber.from('-5');
+const FEE_BASIS_POINTS = BigNumber.from('7');
+const BASIS_POINTS = BigNumber.from('10000');
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
-const blockNumber = 128276157;
+const GMX_DECIMAL_ADJUSTMENT = BigNumber.from('1000000000000');
+const blockNumber = 128_276_157;
 
 describe('GmxV2MarketTokenPriceOracle', () => {
   let snapshotId: string;
@@ -111,13 +116,44 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     });
   });
 
+  describe('#getFeeBpByMarketToken', () => {
+    it('should work normally', async () => {
+      expect(await gmPriceOracle.getFeeBpByMarketToken(core.gmxEcosystemV2!.gmxEthUsdMarketToken.address))
+        .to
+        .eq(FEE_BASIS_POINTS);
+    });
+  });
+
   describe('#getPrice', () => {
-    it('returns the correct value under normal conditions', async () => {
+    it('returns the correct value when there is no max wei', async () => {
       // Have to be at specific timestamp to get consistent price
       // Setup core protocol sometimes ends at different timestamps which threw off the test
       await setNextBlockTimestamp(1693923100);
       await mine();
-      expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE);
+      expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_NO_MAX_WEI);
+    });
+
+    it('returns the correct value when there is a max wei', async () => {
+      // Have to be at specific timestamp to get consistent price
+      // Setup core protocol sometimes ends at different timestamps which threw off the test
+      await core.dolomiteMargin.ownerSetMaxWei(marketId, MAX_WEI); // 10M tokens
+      await setNextBlockTimestamp(1693923100);
+      await mine();
+      expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_MAX_WEI);
+    });
+
+    it('returns the correct value when there is a max wei & 0 price impact', async () => {
+      // Have to be at specific timestamp to get consistent price
+      // Setup core protocol sometimes ends at different timestamps which threw off the test
+      await core.dolomiteMargin.ownerSetMaxWei(marketId, MAX_WEI); // 10M tokens
+      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      const price = BigNumber.from('1000000000000000000000000000000');
+      await testReader.setMarketPrice(price);
+      await setNextBlockTimestamp(1693923100);
+      await mine();
+      expect((await gmPriceOracle.getPrice(factory.address)).value)
+        .to
+        .eq(price.mul(BASIS_POINTS.sub(FEE_BASIS_POINTS)).div(BASIS_POINTS).div(GMX_DECIMAL_ADJUSTMENT));
     });
 
     it('should fail when token sent is not a valid token', async () => {

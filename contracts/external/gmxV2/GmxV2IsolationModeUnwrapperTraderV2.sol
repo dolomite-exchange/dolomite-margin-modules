@@ -41,8 +41,6 @@ import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawal
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { console } from "hardhat/console.sol";
 
 
 /**
@@ -66,7 +64,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     bytes32 private constant _WITHDRAWAL_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalInfo")) - 1);
     bytes32 private constant _ACTIONS_LENGTH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.actionsLength")) - 1);
     uint256 private constant _ACTIONS_LENGTH_NORMAL = 4;
-    uint256 private constant _ACTIONS_LENGTH_CALLBACK = 3;
+    uint256 private constant _ACTIONS_LENGTH_CALLBACK = 2;
 
     // ============ Modifiers ============
 
@@ -109,7 +107,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     nonReentrant
     handleGmxCallback
     onlyHandler(msg.sender) {
-        console.log("gasLeft: ", gasleft());
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         Require.that(
             withdrawalInfo.vault != address(0),
@@ -182,8 +179,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
         _setWithdrawalInfo(_key, withdrawalInfo);
 
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-
         try IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
             withdrawalInfo.accountNumber,
             marketIdsPath,
@@ -193,22 +188,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
         ) {
-            console.log("swap worked");
-            factory.clearExpirationIfNeeded(
-                withdrawalInfo.vault,
-                withdrawalInfo.accountNumber,
-                /* _owedMarketId = */ marketIdsPath[marketIdsPath.length - 1]
-            );
             _setWithdrawalInfo(_key, _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber));
-            console.log("gasLeft: ", gasleft());
             emit WithdrawalExecuted(_key);
         } catch Error(string memory _reason) {
-            console.log("swap failed: ", _reason);
-            console.log("gasLeft: ", gasleft());
             emit WithdrawalFailed(_key, _reason);
         } catch (bytes memory /* _reason */) {
-            console.log("swap failed (no reason)");
-            console.log("gasLeft: ", gasleft());
             emit WithdrawalFailed(_key, "");
         }
     }
@@ -378,8 +362,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             /* _amountOutMinWei = */ _minAmountOut,
             _orderData
         );
-//        if (_inputAmount < withdrawalInfo.inputAmount) {
-        if (actions.length == 4) {
+        if (actions.length == _ACTIONS_LENGTH_NORMAL) {
             // We need to spend the whole withdrawal amount, so we need to add an extra sales to spend the difference
             // This can only happen during a liquidation
 
@@ -399,18 +382,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
                 /* _amountOutMinWei = */ 1,
                 _orderData
             );
-//        } else {
-//            // Add no-op actions (since we can't flatten the array)
-//            actions[2] = AccountActionLib.encodeCallAction(
-//                /* _accountId = */ _liquidAccountId,
-//                /* _callee = */ address(this),
-//                /* (_transferAmount, _key)[encoded] = */ abi.encode(uint256(0), bytes32(0))
-//            );
-//            actions[3] = AccountActionLib.encodeCallAction(
-//                /* _accountId = */ _liquidAccountId,
-//                /* _callee = */ address(this),
-//                /* (_transferAmount, _key)[encoded] = */ abi.encode(uint256(0), bytes32(0))
-//            );
         }
 
         return actions;
@@ -512,9 +483,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     internal
     override {
         (uint256 transferAmount, bytes32 key) = abi.decode(_data, (uint256, bytes32));
-        console.log(" ------------ Amounts ------------");
-        console.log(transferAmount);
-        console.logBytes32(key);
         if (transferAmount == 0 && key == bytes32(0)) {
             // no-op
             return;

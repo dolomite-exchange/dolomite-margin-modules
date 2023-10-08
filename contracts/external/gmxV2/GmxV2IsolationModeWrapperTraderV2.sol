@@ -24,6 +24,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
@@ -32,7 +34,9 @@ import { IGmxDepositCallbackReceiver } from "../interfaces/gmx/IGmxDepositCallba
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
+import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { UpgradeableIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeWrapperTrader.sol";
+import { console } from "hardhat/console.sol";
 
 
 /**
@@ -47,6 +51,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     IGmxV2IsolationModeWrapperTraderV2,
     IGmxDepositCallbackReceiver
 {
+    using InterestIndexLib for IDolomiteMargin;
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
 
@@ -104,7 +109,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         // We just need to blind transfer the min amount to the vault
         underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
 
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         if (receivedMarketTokens.value > _deposit.numbers.minMarketTokens) {
             // We need to
             // 1) send the diff into the vault via `operate` and
@@ -123,6 +127,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             // @audit   This can also fail if the user pushes the GM token total supply on Dolomite past our supply cap
             //          How do we mitigate this? We don't know ahead of time how many tokens the user will get...
             // @audit   Are there any other "reasons" that the try-catch can fail that I'm missing here?
+            IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
             try
                 factory.depositIntoDolomiteMarginFromTokenConverter(
                     depositInfo.vault,
@@ -132,10 +137,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             {
                 _clearDeposit(depositInfo);
                 emit DepositExecuted(_key);
-            } catch Error(string memory reason) {
+            } catch Error(string memory _reason) {
                 _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
-                emit DepositFailed(_key, reason);
-            } catch (bytes memory /* reason */) {
+                emit DepositFailed(_key, _reason);
+            } catch (bytes memory /* _reason */) {
                 _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
                 emit DepositFailed(_key, "");
             }
@@ -179,6 +184,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             );
         }
 
+        // @audit - Is it mathematically possible for the prior `_depositOtherTokenIntoDolomiteMarginFromTokenConverter`
+        //          to work but this function to fail? If so, that would be problematic.
+        //          Considering the GM tokens have a higher collateralization requirement than the long/short tokens AND
+        //          we only minted `minMarketTokens`, there should be no situation where this fails but the other can
+        //          execute successfully.
         // Burn the GM tokens that were virtually minted to the vault, since the deposit was cancelled
         factory.setShouldSkipTransfer(depositInfo.vault, /* _shouldSkipTransfer = */ true);
         factory.withdrawFromDolomiteMarginFromTokenConverter(
@@ -189,6 +199,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
         _clearDeposit(depositInfo);
         emit DepositCancelled(_key);
+        console.log("afterDepositCancellation gasLeft: ", gasleft());
     }
 
     function cancelDeposit(bytes32 _key) external {
@@ -285,11 +296,28 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         DepositInfo memory _depositInfo,
         uint256 _depositAmountWei
     ) internal {
-        _factory.depositIntoDolomiteMarginFromTokenConverter(
-            _depositInfo.vault,
-            _DEFAULT_ACCOUNT_NUMBER,
-            _depositAmountWei
-        );
+        uint256 marketId = _factory.marketId();
+        uint256 maxWei = DOLOMITE_MARGIN().getMarketMaxWei(marketId).value;
+        IDolomiteStructs.Par memory supplyPar = IDolomiteStructs.Par({
+            sign: true,
+            value: DOLOMITE_MARGIN().getMarketTotalPar(marketId).supply
+        });
+
+        if (DOLOMITE_MARGIN().parToWei(marketId, supplyPar).value + _depositAmountWei >= maxWei && maxWei != 0) {
+            // If the supplyPar is gte than the maxWei, then we should to transfer the deposit to the vault owner. It's
+            // better to do this than to revert, since the user will be able to maintain control over the assets.
+            IERC20 underlyingToken = IERC20(_factory.UNDERLYING_TOKEN());
+            underlyingToken.safeTransfer(_factory.getAccountByVault(_depositInfo.vault), _depositAmountWei);
+            // Reset the allowance to 0 since it won't be used
+            underlyingToken.safeApprove(_depositInfo.vault, 0);
+        } else {
+            _factory.depositIntoDolomiteMarginFromTokenConverter(
+                _depositInfo.vault,
+                _DEFAULT_ACCOUNT_NUMBER,
+                _depositAmountWei
+            );
+        }
+
         _clearDeposit(_depositInfo);
     }
 

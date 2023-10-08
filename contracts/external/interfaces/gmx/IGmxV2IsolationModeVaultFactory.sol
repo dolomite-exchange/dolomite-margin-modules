@@ -83,13 +83,6 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
 
     function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
 
-    function clearExpirationIfNeeded(
-        address _vault,
-        uint256 _accountNumber,
-        uint256 _owedMarketId
-    )
-    external;
-
     function INDEX_TOKEN() external view returns (address);
 
     function SHORT_TOKEN() external view returns (address);

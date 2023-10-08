@@ -60,7 +60,7 @@ import {
   getGmxV2MarketTokenPriceOracleConstructorParams,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
-import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
+import { createContract, createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
 
 export async function createGLPPriceOracleV1(
@@ -209,9 +209,8 @@ export async function createGmxV2IsolationModeVaultFactory(
   gmToken: IGmxMarketToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
 ): Promise<GmxV2IsolationModeVaultFactory> {
-  return createContractWithLibrary<GmxV2IsolationModeVaultFactory>(
+  return createContract<GmxV2IsolationModeVaultFactory>(
     'GmxV2IsolationModeVaultFactory',
-    { ExpirationLib: expirationLibrary.address },
     getGmxV2IsolationModeVaultFactoryConstructorParams(
       core,
       gmxRegistry,

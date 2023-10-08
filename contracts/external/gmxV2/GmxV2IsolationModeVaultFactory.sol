@@ -30,7 +30,6 @@ import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { ExpirationLib } from "../lib/ExpirationLib.sol";
 import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
 import { FreezableIsolationModeVaultFactory } from "../proxies/abstract/FreezableIsolationModeVaultFactory.sol";
 
@@ -213,23 +212,6 @@ contract GmxV2IsolationModeVaultFactory is
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
         IGmxV2IsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
-    }
-
-    function clearExpirationIfNeeded(
-        address _vault,
-        uint256 _accountNumber,
-        uint256 _owedMarketId
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        ExpirationLib.clearExpirationIfNeeded(
-            DOLOMITE_MARGIN(),
-            gmxRegistryV2.dolomiteRegistry(),
-            _vault,
-            _accountNumber,
-            _owedMarketId
-        );
     }
 
     // ====================================================

@@ -20,10 +20,13 @@
 
 pragma solidity ^0.8.9;
 
+import { GmxDeposit } from "../external/interfaces/gmx/GmxDeposit.sol";
 import { GmxMarket } from "../external/interfaces/gmx/GmxMarket.sol";
 import { GmxMarketPoolValueInfo } from "../external/interfaces/gmx/GmxMarketPoolValueInfo.sol";
 import { GmxPrice } from "../external/interfaces/gmx/GmxPrice.sol";
+import { GmxWithdrawal } from "../external/interfaces/gmx/GmxWithdrawal.sol";
 import { IGmxDataStore } from "../external/interfaces/gmx/IGmxDataStore.sol";
+import { IGmxReader } from "../external/interfaces/gmx/IGmxReader.sol";
 
 /**
  * @title   TestGmxReader
@@ -31,7 +34,7 @@ import { IGmxDataStore } from "../external/interfaces/gmx/IGmxDataStore.sol";
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestGmxReader {
+contract TestGmxReader is IGmxReader {
 
     bytes32 private constant _FILE = "TestGmxReader";
 
@@ -82,5 +85,31 @@ contract TestGmxReader {
         });
 
         return (marketPrice, props);
+    }
+
+    function getDeposit(
+        IGmxDataStore /* _dataStore */,
+        bytes32 /* _key */
+    ) external pure returns (GmxDeposit.DepositProps memory props) {
+        return props;
+    }
+
+    function getWithdrawal(
+        IGmxDataStore /* _dataStore */,
+        bytes32 /* _key */
+    ) external pure returns (GmxWithdrawal.WithdrawalProps memory props) {
+        return props;
+    }
+
+    function getSwapPriceImpact(
+        IGmxDataStore /* _dataStore */,
+        address /* _marketKey */,
+        address /* _tokenIn */,
+        address /* _tokenOut */,
+        uint256 /* _amountIn */,
+        GmxPrice.PriceProps memory /* _tokenInPrice */,
+        GmxPrice.PriceProps memory /* _tokenOutPrice */
+    ) external pure returns (int256, int256) {
+        return (0, 0);
     }
 }
