@@ -4,6 +4,7 @@ import { GmxRegistryV2 } from 'src/types';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
 import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
@@ -17,7 +18,7 @@ describe('GmxRegistryV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
-    registry = await createGmxRegistryV2(core);
+    registry = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     snapshotId = await snapshot();
   });
@@ -52,6 +53,7 @@ describe('GmxRegistryV2', () => {
           core.gmxEcosystemV2!.gmxReader.address,
           core.gmxEcosystemV2!.gmxRouter.address,
           core.gmxEcosystemV2!.gmxWithdrawalVault.address,
+          GMX_V2_CALLBACK_GAS_LIMIT,
           core.dolomiteRegistry.address,
         ),
         'Initializable: contract is already initialized',

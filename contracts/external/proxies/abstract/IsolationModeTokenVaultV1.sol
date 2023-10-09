@@ -66,12 +66,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     // ===================================================
 
     modifier onlyVaultFactory(address _from) {
-        Require.that(
-            _from == address(VAULT_FACTORY()),
-            _FILE,
-            "Only factory can call",
-            _from
-        );
+        _requireOnlyVaultFactory(_from);
         _;
     }
 
@@ -806,6 +801,15 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         _checkAllowableDebtMarket(tradeAccountOwner, _tradeAccountNumber, outputMarketId);
     }
 
+    function _requireOnlyVaultFactory(address _from) internal view {
+        Require.that(
+            _from == address(VAULT_FACTORY()),
+            _FILE,
+            "Only factory can call",
+            _from
+        );
+    }
+
     function _requireOnlyVaultOwner(address _from) internal virtual view {
         Require.that(
             _from == _proxySelf().owner(),
@@ -830,6 +834,15 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
             _from == address(_proxySelf().owner()) || _from == VAULT_FACTORY(),
             _FILE,
             "Only owner or factory can call",
+            _from
+        );
+    }
+
+    function _requireOnlyConverter(address _from) internal virtual view {
+        Require.that(
+            IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
+            _FILE,
+            "Only converter can call",
             _from
         );
     }

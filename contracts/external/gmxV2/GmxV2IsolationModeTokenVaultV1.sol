@@ -346,13 +346,13 @@ contract GmxV2IsolationModeTokenVaultV1 is
         }
 
         if (_tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper) {
-            // Only the unwrapper can initiate unwraps (via the callback)
-            _requireOnlyUnwrapper(msg.sender);
+            // Only a trusted converter can initiate unwraps (via the callback)
+            _requireOnlyConverter(msg.sender);
         }
 
         if (isVaultFrozen()) {
             // This guarantees only a handler is executing the swap
-            _requireOnlyUnwrapper(msg.sender);
+            _requireOnlyConverter(msg.sender);
         }
 
         // Ignore the freezable implementation and call the pausable one directly

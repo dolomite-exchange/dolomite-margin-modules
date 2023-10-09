@@ -70,11 +70,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         address _dGM,
         address _dolomiteMargin,
         address _gmxRegistryV2,
-        address _weth,
-        uint256 _callbackGasLimit
+        address _weth
     ) external initializer {
         _initializeWrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit);
+        _initializeTraderBase(_gmxRegistryV2, _weth);
     }
 
     // ============================================
@@ -271,7 +270,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                 /* minMarketTokens = */ _minOutputAmount,
                 /* shouldUnwrapNativeToken = */ false,
                 /* executionFee = */ ethExecutionFee,
-                /* callbackGasLimit = */ _getUint256(_CALLBACK_GAS_LIMIT_SLOT)
+                /* callbackGasLimit = */ callbackGasLimit()
             );
 
             bytes32 depositKey = exchangeRouter.createDeposit(depositParams);

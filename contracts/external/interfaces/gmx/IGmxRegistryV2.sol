@@ -54,6 +54,8 @@ interface IGmxRegistryV2 is IBaseRegistry {
     event EthUsdMarketTokenSet(address _ethUsdMarketToken);
     event GmxV2UnwrapperTraderSet(address _gmxV2UnwrapperTrader);
     event GmxV2WrapperTraderSet(address _gmxV2WrapperTrader);
+    event HandlerSet(address _handler, bool _isTrusted);
+    event CallbackGasLimitSet(uint256 _callbackGasLimit);
 
     // ===================================================
     // ==================== Functions ====================
@@ -82,6 +84,10 @@ interface IGmxRegistryV2 is IBaseRegistry {
 
     function ownerSetGmxV2WrapperTrader(address _gmxV2UnwrapperTrader) external;
 
+    function ownerSetIsHandler(address _handler, bool _isTrusted) external;
+
+    function ownerSetCallbackGasLimit(uint256 _callbackGasLimit) external;
+
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter);
 
     function gmxDataStore() external view returns (IGmxDataStore);
@@ -103,4 +109,8 @@ interface IGmxRegistryV2 is IBaseRegistry {
     function gmxV2UnwrapperTrader() external view returns (IGmxV2IsolationModeUnwrapperTraderV2);
 
     function gmxV2WrapperTrader() external view returns (IGmxV2IsolationModeWrapperTraderV2);
+
+    function isHandler(address _handler) external view returns (bool);
+
+    function callbackGasLimit() external view returns (uint256);
 }

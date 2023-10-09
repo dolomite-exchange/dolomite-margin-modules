@@ -35,16 +35,10 @@ interface IGmxV2IsolationModeTraderBase {
     // ================================================
 
     event OwnerWithdrawETH(address _receiver, uint256 _bal);
-    event OwnerSetIsHandler(address _handler, bool _isTrusted);
-    event OwnerSetCallbackGasLimit(uint256 _callbackGasLimit);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
-
-    function ownerSetCallbackGasLimit(uint256 _callbackGasLimit) external;
-
-    function ownerSetIsHandler(address _handler, bool _isTrusted) external;
 
     function ownerWithdrawETH(address _receiver) external;
 
