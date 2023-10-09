@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { console } from "hardhat/console.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
@@ -36,7 +37,6 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { UpgradeableIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeWrapperTrader.sol";
-import { console } from "hardhat/console.sol";
 
 
 /**
@@ -135,7 +135,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                     diff
                 )
             {
-                _clearDeposit(depositInfo);
+                _clearDepositAndSetVaultFrozenStatus(depositInfo);
                 emit DepositExecuted(_key);
             } catch Error(string memory _reason) {
                 _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
@@ -146,7 +146,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             }
         } else {
             // There's nothing additional to send to the vault; clear out the deposit
-            _clearDeposit(depositInfo);
+            _clearDepositAndSetVaultFrozenStatus(depositInfo);
             emit DepositExecuted(_key);
         }
     }
@@ -168,6 +168,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         assert(_deposit.numbers.initialLongTokenAmount == 0 || _deposit.numbers.initialShortTokenAmount == 0);
 
+        // TODO: fix possible DOS edge cases; set up a swap exact tokens for tokens (which skips the transfer) using the
+        // TODO: unwrapper contract (which can pull/read deposits from this contract)
         if (_deposit.numbers.initialLongTokenAmount > 0) {
             _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
                 _deposit.addresses.initialLongToken,
@@ -197,7 +199,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             _deposit.numbers.minMarketTokens
         );
 
-        _clearDeposit(depositInfo);
+        _clearDepositAndSetVaultFrozenStatus(depositInfo);
         emit DepositCancelled(_key);
         console.log("afterDepositCancellation gasLeft: ", gasleft());
     }
@@ -275,12 +277,15 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             );
 
             bytes32 depositKey = exchangeRouter.createDeposit(depositParams);
-            _setDepositInfo(depositKey, DepositInfo({
-                key: depositKey,
-                vault: tradeOriginatorForStackTooDeep,
-                accountNumber: accountNumber,
-                outputAmount: _minOutputAmount
-            }));
+            _setDepositInfoAndSetVaultFrozenStatus(
+                depositKey,
+                DepositInfo({
+                    key: depositKey,
+                    vault: tradeOriginatorForStackTooDeep,
+                    accountNumber: accountNumber,
+                    outputAmount: _minOutputAmount
+                })
+            );
             emit DepositCreated(depositKey);
         }
 
@@ -318,13 +323,16 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             );
         }
 
-        _clearDeposit(_depositInfo);
+        _clearDepositAndSetVaultFrozenStatus(_depositInfo);
     }
 
-    function _clearDeposit(
+    function _clearDepositAndSetVaultFrozenStatus(
         DepositInfo memory _depositInfo
     ) internal {
-        _setDepositInfo(_depositInfo.key, _emptyDepositInfo(_depositInfo.vault, _depositInfo.accountNumber));
+        _setDepositInfoAndSetVaultFrozenStatus(
+            _depositInfo.key,
+            _emptyDepositInfo(_depositInfo.vault, _depositInfo.accountNumber)
+        );
     }
 
     function _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
@@ -342,7 +350,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         );
     }
 
-    function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
+    function _setDepositInfoAndSetVaultFrozenStatus(bytes32 _key, DepositInfo memory _info) internal {
         bool clearValues = _info.outputAmount == 0;
         DepositInfo storage storageInfo = _getDepositSlot(_key);
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultAccountFrozen(

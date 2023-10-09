@@ -177,7 +177,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         // Save the output amount so we can refer to it later
         withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
-        _setWithdrawalInfo(_key, withdrawalInfo);
+        _setWithdrawalInfoAndSetVaultFrozenStatus(_key, withdrawalInfo);
 
         try IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
             withdrawalInfo.accountNumber,
@@ -188,7 +188,10 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
         ) {
-            _setWithdrawalInfo(_key, _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber));
+            _setWithdrawalInfoAndSetVaultFrozenStatus(
+                _key,
+                _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber)
+            );
             emit WithdrawalExecuted(_key);
         } catch Error(string memory _reason) {
             emit WithdrawalFailed(_key, _reason);
@@ -216,7 +219,10 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         );
 
         // @audit - Is there a way for us to verify the tokens were sent back to the vault?
-        _setWithdrawalInfo(_key, _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber));
+        _setWithdrawalInfoAndSetVaultFrozenStatus(
+            _key,
+            _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber)
+        );
         emit WithdrawalCancelled(_key);
     }
 
@@ -239,14 +245,17 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         // Disallow the withdrawal if there's already an action waiting for it
         GmxV2Library.checkVaultAccountIsNotFrozen(factory, msg.sender, _accountNumber);
 
-        _setWithdrawalInfo(_key, WithdrawalInfo({
-            key: _key,
-            vault: msg.sender,
-            accountNumber: _accountNumber,
-            inputAmount: _inputAmount,
-            outputToken: _outputToken,
-            outputAmount: 0
-        }));
+        _setWithdrawalInfoAndSetVaultFrozenStatus(
+            _key,
+            WithdrawalInfo({
+                key: _key,
+                vault: msg.sender,
+                accountNumber: _accountNumber,
+                inputAmount: _inputAmount,
+                outputToken: _outputToken,
+                outputAmount: 0
+            })
+        );
         emit WithdrawalCreated(_key);
     }
 
@@ -454,11 +463,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         uint256 outputAmount = withdrawalInfo.outputAmount * _inputAmount / withdrawalInfo.inputAmount;
         withdrawalInfo.inputAmount -= _inputAmount;
         withdrawalInfo.outputAmount -= outputAmount;
-        _setWithdrawalInfo(key, withdrawalInfo);
+        _setWithdrawalInfoAndSetVaultFrozenStatus(key, withdrawalInfo);
         return outputAmount;
     }
 
-    function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
+    function _setWithdrawalInfoAndSetVaultFrozenStatus(bytes32 _key, WithdrawalInfo memory _info) internal {
         bool clearValues = _info.inputAmount == 0;
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultAccountFrozen(
             _info.vault,

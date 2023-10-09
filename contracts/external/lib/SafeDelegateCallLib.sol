@@ -20,13 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { TypesLib } from "../../protocol/lib/TypesLib.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IExpiry } from "../interfaces/IExpiry.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
-
 
 /**
  * @title   SafeDelegateCallLib
@@ -48,7 +41,7 @@ library SafeDelegateCallLib {
             if (result.length < 68) {
                 revert("No reversion message!");
             } else {
-                // solhint-disable-next-line no-inline-assembly
+                // solhint-disable-next-line avoid-low-level-calls
                 assembly {
                     result := add(result, 0x04) // Slice the sighash.
                 }

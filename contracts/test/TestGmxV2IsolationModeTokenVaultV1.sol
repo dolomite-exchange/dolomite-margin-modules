@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 
 import { GmxV2IsolationModeTokenVaultV1 } from "../external/gmxV2/GmxV2IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IGenericTraderProxyV1 } from "../external/interfaces/IGenericTraderProxyV1.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { SafeDelegateCallLib } from "../external/lib/SafeDelegateCallLib.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
