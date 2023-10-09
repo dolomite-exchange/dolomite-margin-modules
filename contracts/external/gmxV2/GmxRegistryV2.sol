@@ -50,6 +50,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     bytes32 private constant _FILE = "GmxRegistryV2";
 
     // solhint-disable max-line-length
+    bytes32 internal constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1);
     bytes32 private constant _ETH_USD_MARKET_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ethUsdMarketToken")) - 1);
     bytes32 private constant _GMX_DATASTORE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDataStore")) - 1);
     bytes32 private constant _GMX_DEPOSIT_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDepositVault")) - 1);
@@ -59,6 +60,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
     bytes32 private constant _GMX_WITHDRAWAL_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxWithdrawalVault")) - 1);
     bytes32 private constant _GMX_V2_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2UnwrapperTrader")) - 1);
     bytes32 private constant _GMX_V2_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2WrapperTrader")) - 1);
+    bytes32 internal constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
     // solhint-enable max-line-length
 
     // ==================== Initializer ====================
@@ -71,6 +73,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         address _gmxReader,
         address _gmxRouter,
         address _gmxWithdrawalVault,
+        uint256 _callbackGasLimit,
         address _dolomiteRegistry
     ) external initializer {
         _ownerSetEthUsdMarketToken(_ethUsdMarketToken);
@@ -80,6 +83,7 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         _ownerSetGmxReader(_gmxReader);
         _ownerSetGmxRouter(_gmxRouter);
         _ownerSetGmxWithdrawalVault(_gmxWithdrawalVault);
+        _ownerSetCallbackGasLimit(_callbackGasLimit);
 
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
     }
@@ -171,6 +175,23 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         _ownerSetGmxV2WrapperTrader(_gmxV2WrapperTrader);
     }
 
+    function ownerSetIsHandler(
+        address _handler,
+        bool _isTrusted
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetIsHandler(_handler, _isTrusted);
+    }
+
+    function ownerSetCallbackGasLimit(
+        uint256 _callbackGasLimit
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetCallbackGasLimit(_callbackGasLimit);
+    }
+
     // ==================== Views ====================
 
     function ethUsdMarketToken() external view returns (IERC20) {
@@ -179,10 +200,6 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
 
     function gmxDataStore() external view returns (IGmxDataStore) {
         return IGmxDataStore(_getAddress(_GMX_DATASTORE_SLOT));
-    }
-
-    function gmxDepositHandler() external view returns (IGmxDepositHandler) {
-        return IGmxExchangeRouter(_getAddress(_GMX_EXCHANGE_ROUTER_SLOT)).depositHandler();
     }
 
     function gmxDepositVault() external view returns (address) {
@@ -201,12 +218,19 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         return IGmxRouter(_getAddress(_GMX_ROUTER_SLOT));
     }
 
-    function gmxWithdrawalHandler() external view returns (IGmxWithdrawalHandler) {
-        return IGmxExchangeRouter(_getAddress(_GMX_EXCHANGE_ROUTER_SLOT)).withdrawalHandler();
-    }
-
     function gmxWithdrawalVault() external view returns (address) {
         return _getAddress(_GMX_WITHDRAWAL_VAULT_SLOT);
+    }
+
+    function isHandler(address _handler) external view returns (bool) {
+        bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
+        return _getUint256(slot) == 1
+            || _handler == address(gmxDepositHandler())
+            || _handler == address(gmxWithdrawalHandler());
+    }
+
+    function callbackGasLimit() external view returns (uint256) {
+        return _getUint256(_CALLBACK_GAS_LIMIT_SLOT);
     }
 
     function gmxV2UnwrapperTrader() public view returns (IGmxV2IsolationModeUnwrapperTraderV2) {
@@ -215,6 +239,14 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
 
     function gmxV2WrapperTrader() public view returns (IGmxV2IsolationModeWrapperTraderV2) {
         return IGmxV2IsolationModeWrapperTraderV2(_getAddress(_GMX_V2_WRAPPER_TRADER_SLOT));
+    }
+
+    function gmxDepositHandler() public view returns (IGmxDepositHandler) {
+        return IGmxExchangeRouter(_getAddress(_GMX_EXCHANGE_ROUTER_SLOT)).depositHandler();
+    }
+
+    function gmxWithdrawalHandler() public view returns (IGmxWithdrawalHandler) {
+        return IGmxExchangeRouter(_getAddress(_GMX_EXCHANGE_ROUTER_SLOT)).withdrawalHandler();
     }
 
     // ============================================================
@@ -309,5 +341,17 @@ contract GmxRegistryV2 is IGmxRegistryV2, BaseRegistry {
         );
         _setAddress(_GMX_V2_WRAPPER_TRADER_SLOT, _gmxV2WrapperTrader);
         emit GmxV2WrapperTraderSet(_gmxV2WrapperTrader);
+    }
+
+    function _ownerSetIsHandler(address _handler, bool _isTrusted) internal {
+        bytes32 slot =  keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
+        _setUint256(slot, _isTrusted ? 1 : 0);
+        emit HandlerSet(_handler, _isTrusted);
+    }
+
+    function _ownerSetCallbackGasLimit(uint256 _callbackGasLimit) internal {
+        // We don't want to enforce a minimum. That way, we can disable callbacks (if needed) by setting this to 0.
+        _setUint256(_CALLBACK_GAS_LIMIT_SLOT, _callbackGasLimit);
+        emit CallbackGasLimitSet(_callbackGasLimit);
     }
 }

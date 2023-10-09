@@ -85,12 +85,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         address _dGM,
         address _dolomiteMargin,
         address _gmxRegistryV2,
-        address _weth,
-        uint256 _callbackGasLimit
+        address _weth
     )
     external initializer {
         _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxRegistryV2, _weth, _callbackGasLimit);
+        _initializeTraderBase(_gmxRegistryV2, _weth);
         _setUint256(_ACTIONS_LENGTH_SLOT, _ACTIONS_LENGTH_NORMAL);
     }
 
@@ -258,57 +257,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         );
         emit WithdrawalCreated(_key);
     }
-
-    function exchange(
-        address _tradeOriginator,
-        address _receiver,
-        address _outputToken,
-        address _inputToken,
-        uint256 _inputAmount,
-        bytes calldata _orderData
-    )
-    external
-    override(IDolomiteMarginExchangeWrapper, UpgradeableIsolationModeUnwrapperTrader)
-    onlyDolomiteMargin(msg.sender)
-    returns (uint256) {
-        Require.that(
-            _inputToken == address(VAULT_FACTORY()),
-            _FILE,
-            "Invalid input token",
-            _inputToken
-        );
-        Require.that(
-            isValidOutputToken(_outputToken),
-            _FILE,
-            "Invalid output token",
-            _outputToken
-        );
-        Require.that(
-            _inputAmount > 0,
-            _FILE,
-            "Invalid input amount"
-        );
-
-        (uint256 minOutputAmount, bytes memory extraOrderData) = abi.decode(_orderData, (uint256, bytes));
-
-        uint256 outputAmount = _exchangeUnderlyingTokenToOutputToken(
-            _tradeOriginator,
-            _receiver,
-            _outputToken,
-            minOutputAmount,
-            address(VAULT_FACTORY()),
-            _inputAmount,
-            extraOrderData
-        );
-
-        // Panic if this condition doesn't hold, since _exchangeUnderlying returns at least the minOutputAmount
-        assert(outputAmount >= minOutputAmount);
-
-        IERC20(_outputToken).safeApprove(_receiver, outputAmount);
-
-        return outputAmount;
-    }
-
 
     function createActionsForUnwrapping(
         uint256 _solidAccountId,
@@ -528,6 +476,10 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         factory.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
         factory.setShouldSkipTransfer(withdrawalInfo.vault, /* _shouldSkipTransfer = */ true);
+    }
+
+    function _requireBalanceIsSufficient(uint256 /* _inputAmount */) internal override view {
+        // Do nothing
     }
 
     function _getWithdrawalSlot(bytes32 _key) internal pure returns (WithdrawalInfo storage info) {

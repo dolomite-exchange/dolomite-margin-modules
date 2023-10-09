@@ -156,7 +156,7 @@ export async function createGmxRegistry(core: CoreProtocol): Promise<GmxRegistry
   return GmxRegistryV1__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createGmxRegistryV2(core: CoreProtocol): Promise<GmxRegistryV2> {
+export async function createGmxRegistryV2(core: CoreProtocol, callbackGasLimit: BigNumberish): Promise<GmxRegistryV2> {
   const implementation = await createContractWithAbi<GmxRegistryV2>(
     GmxRegistryV2__factory.abi,
     GmxRegistryV2__factory.bytecode,
@@ -165,7 +165,7 @@ export async function createGmxRegistryV2(core: CoreProtocol): Promise<GmxRegist
   const proxy = await createContractWithAbi<RegistryProxy>(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    await getGmxRegistryV2ConstructorParams(core, implementation),
+    await getGmxRegistryV2ConstructorParams(core, implementation, callbackGasLimit),
   );
   return GmxRegistryV2__factory.connect(proxy.address, core.hhUser1);
 }

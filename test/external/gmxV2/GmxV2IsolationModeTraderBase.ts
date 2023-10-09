@@ -8,6 +8,7 @@ import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { createIsolationModeTraderProxy } from 'test/utils/dolomite';
 import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from 'test/utils/setup';
+import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
 
 const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
 
@@ -20,7 +21,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
-    gmxRegistryV2 = await createGmxRegistryV2(core);
+    gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     const implementation = await createContractWithAbi<TestGmxV2IsolationModeTraderBase>(
       TestGmxV2IsolationModeTraderBase__factory.abi,
@@ -30,7 +31,6 @@ describe('GmxV2IsolationModeTraderBase', () => {
     const calldata = await implementation.populateTransaction.initialize(
       gmxRegistryV2.address,
       core.tokens.weth.address,
-      CALLBACK_GAS_LIMIT,
       core.dolomiteMargin.address,
     );
     const proxy = await createIsolationModeTraderProxy(implementation.address, calldata.data!, core);
@@ -56,31 +56,8 @@ describe('GmxV2IsolationModeTraderBase', () => {
         trader.triggerInternalInitializer(
           gmxRegistryV2.address,
           core.tokens.weth.address,
-          CALLBACK_GAS_LIMIT,
         ),
         'Initializable: contract is already initialized',
-      );
-    });
-  });
-
-  describe('#ownerSetIsHandler', () => {
-    it('should work normally', async () => {
-      const result = await trader.connect(core.governance).ownerSetIsHandler(
-        core.gmxEcosystemV2!.gmxDepositHandler.address,
-        true,
-      );
-      await expectEvent(trader, result, 'OwnerSetIsHandler', {
-        handler: core.gmxEcosystemV2!.gmxDepositHandler.address,
-        isTrusted: true,
-      });
-
-      expect(await trader.isHandler(core.gmxEcosystemV2!.gmxDepositHandler.address)).to.eq(true);
-    });
-
-    it('should failed if not called by dolomite owner', async () => {
-      await expectThrow(
-        trader.connect(core.hhUser1).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -110,6 +87,28 @@ describe('GmxV2IsolationModeTraderBase', () => {
     });
   });
 
+  describe('#ownerSetIsHandler', () => {
+    it('should work normally', async () => {
+      const result = await trader.connect(core.governance).ownerSetIsHandler(
+        core.gmxEcosystemV2!.gmxDepositHandler.address,
+        true,
+      );
+      await expectEvent(trader, result, 'HandlerSet', {
+        handler: core.gmxEcosystemV2!.gmxDepositHandler.address,
+        isTrusted: true,
+      });
+
+      expect(await trader.isHandler(core.gmxEcosystemV2!.gmxDepositHandler.address)).to.eq(true);
+    });
+
+    it('should failed if not called by dolomite owner', async () => {
+      await expectThrow(
+        trader.connect(core.hhUser1).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetCallbackGasLimit', () => {
     it('should work normally', async () => {
       await trader.connect(core.governance).ownerSetCallbackGasLimit(CALLBACK_GAS_LIMIT);
@@ -118,7 +117,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
 
     it('should failed if not called by dolomite owner', async () => {
       await expectThrow(
-        trader.connect(core.hhUser1).ownerSetCallbackGasLimit(ZERO_BI),
+        gmxRegistryV2.connect(core.hhUser1).ownerSetCallbackGasLimit(ZERO_BI),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -126,7 +125,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
 
   describe('#onlyHandler', () => {
     it('should work normally', async () => {
-      await trader.connect(core.governance).ownerSetIsHandler(core.hhUser4.address, true);
+      await gmxRegistryV2.connect(core.governance).ownerSetIsHandler(core.hhUser4.address, true);
       await trader.connect(core.hhUser4).testOnlyHandler();
     });
 

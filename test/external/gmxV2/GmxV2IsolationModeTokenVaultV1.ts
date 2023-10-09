@@ -51,7 +51,7 @@ import {
   setupWETHBalance,
 } from 'test/utils/setup';
 import { getSimpleZapParams } from 'test/utils/zap-utils';
-import { GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 import { createExpirationLibrary } from '../../utils/expiry-utils';
 
 const defaultAccountNumber = '0';
@@ -96,7 +96,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       { GmxV2Library: gmxV2Library.address },
       [core.tokens.weth.address],
     );
-    gmxRegistryV2 = await createGmxRegistryV2(core);
+    gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
@@ -299,7 +299,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        parseEther('.01'),
+        GMX_V2_EXECUTION_FEE,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -700,7 +700,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           unwrappingParams.makerAccounts,
           unwrappingParams.userConfig,
         ),
-        `GmxV2IsolationModeVaultV1: Only unwrapper can call <${core.hhUser1.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -771,7 +771,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `GmxV2IsolationModeVaultV1: Only unwrapper can call <${core.hhUser1.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 

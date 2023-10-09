@@ -1,4 +1,4 @@
-import { BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { CoreProtocol } from '../../../test/utils/setup';
 import {
@@ -132,6 +132,7 @@ export async function getGmxRegistryConstructorParams(
 export async function getGmxRegistryV2ConstructorParams(
   core: CoreProtocol,
   implementation: GmxRegistryV2,
+  callbackGasLimit: BigNumberish,
 ): Promise<any[]> {
   if (!core.gmxEcosystem) {
     throw new Error('GMX ecosystem not initialized');
@@ -145,6 +146,7 @@ export async function getGmxRegistryV2ConstructorParams(
     core.gmxEcosystemV2!.gmxReader.address,
     core.gmxEcosystemV2!.gmxRouter.address,
     core.gmxEcosystemV2!.gmxWithdrawalVault.address,
+    callbackGasLimit,
     core.dolomiteRegistry.address,
   );
 
@@ -156,6 +158,7 @@ export async function getGmxRegistryV2ConstructorParams(
 }
 
 export const GMX_V2_EXECUTION_FEE = parseEther('0.0075');
+export const GMX_V2_CALLBACK_GAS_LIMIT = BigNumber.from('2000000');
 
 export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   core: CoreProtocol,
