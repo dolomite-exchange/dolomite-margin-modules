@@ -48,7 +48,7 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     // ==================== State Variables ====================
     // ===================================================
 
-    bytes32 public merkleRoot;
+    mapping(uint256 => bytes32) public merkleRoots;
     mapping(address => mapping(uint256 => bool)) public claimStatus;
     IOARB public oARB;
 
@@ -67,26 +67,24 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     // ======================= External Functions =======================
     // ==================================================================
 
-    function claim(uint256[] calldata _epochs, uint256[] calldata _amounts, bytes32[] calldata _proof) external {
-        Require.that(
-            _epochs.length == _amounts.length,
-            _FILE,
-            "Array length mismatch"
-        );
-        uint256 len = _epochs.length;
-        Require.that(
-            _verifyMerkleProof(_epochs, _amounts, _proof),
-            _FILE,
-            "Invalid merkle proof"
-        );
+    function claim(ClaimInfo[] calldata _claimInfo) external {
+        uint256 len = _claimInfo.length;
         for (uint256 i; i < len; i++) {
-            if(!claimStatus[msg.sender][_epochs[i]]) {
-                claimStatus[msg.sender][_epochs[i]] = true;
-                oARB.mint(_amounts[i]);
-                oARB.transfer(msg.sender, _amounts[i]);
+            Require.that(
+                _verifyMerkleProof(_claimInfo[i]),
+                _FILE,
+                "Invalid merkle proof"
+            );
+            Require.that(
+                !claimStatus[msg.sender][_claimInfo[i].epoch],
+                _FILE,
+                "Already claimed"
+            );
+            claimStatus[msg.sender][_claimInfo[i].epoch] = true;
+            oARB.mint(_claimInfo[i].amount);
+            oARB.transfer(msg.sender, _claimInfo[i].amount);
 
-                emit Claimed(msg.sender, _epochs[i], _amounts[i]);
-            }
+            emit Claimed(msg.sender, _claimInfo[i].epoch, _claimInfo[i].amount);
         }
     }
 
@@ -94,9 +92,9 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     // ================== Admin Functions ===================
     // ======================================================
 
-    function ownerSetMerkleRoot(bytes32 _merkleRoot) external onlyDolomiteMarginOwner(msg.sender) {
-        merkleRoot = _merkleRoot;
-        emit MerkleRootSet(_merkleRoot);
+    function ownerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) external onlyDolomiteMarginOwner(msg.sender) {
+        merkleRoots[_epoch] = _merkleRoot;
+        emit MerkleRootSet(_epoch, _merkleRoot);
     }
 
     function ownerSetOARB(IOARB _oARB) external onlyDolomiteMarginOwner(msg.sender) {
@@ -108,8 +106,8 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     // ======================= Internal Functions =======================
     // ==================================================================
 
-    function _verifyMerkleProof(uint256[] calldata _epochs, uint256[] calldata _amounts, bytes32[] calldata _proof) internal view returns (bool) {
-        bytes32 leaf = keccak256(abi.encode(msg.sender, _epochs, _amounts));
-        return MerkleProof.verifyCalldata(_proof, merkleRoot, leaf);
+    function _verifyMerkleProof(ClaimInfo calldata _claimInfo) internal view returns (bool) {
+        bytes32 leaf = keccak256(abi.encode(msg.sender, _claimInfo.amount));
+        return MerkleProof.verifyCalldata(_claimInfo.proof, merkleRoots[_claimInfo.epoch], leaf);
     }
 }
