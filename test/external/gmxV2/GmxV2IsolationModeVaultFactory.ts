@@ -7,7 +7,8 @@ import {
   GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
-  GmxV2IsolationModeWrapperTraderV2, GmxV2Library,
+  GmxV2IsolationModeWrapperTraderV2,
+  GmxV2Library,
 } from 'src/types';
 import { ZERO_BI } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
@@ -27,10 +28,10 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from 'test/utils/setup';
+import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
 import { createExpirationLibrary } from '../../utils/expiry-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
-const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
 const amountWei = parseEther('1');
 const defaultAccountNumber = 0;
 
@@ -52,7 +53,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
-    gmxRegistryV2 = await createGmxRegistryV2(core);
+    gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
     expirationLibrary = await createExpirationLibrary();
     gmxV2Library = await createGmxV2Library();
     vaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
@@ -73,14 +74,12 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       factory,
       gmxV2Library,
       gmxRegistryV2,
-      CALLBACK_GAS_LIMIT,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
       gmxV2Library,
       gmxRegistryV2,
-      CALLBACK_GAS_LIMIT,
     );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);

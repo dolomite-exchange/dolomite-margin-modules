@@ -46,7 +46,7 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from 'test/utils/setup';
-import { GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 import { createExpirationLibrary } from '../../utils/expiry-utils';
 
 enum ReversionType {
@@ -58,7 +58,6 @@ enum ReversionType {
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
-const CALLBACK_GAS_LIMIT = BigNumber.from('2000000'); // 2M units
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const amountWei = parseEther('10');
 
@@ -82,7 +81,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     const expirationLibrary = await createExpirationLibrary();
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
-    gmxRegistryV2 = await createGmxRegistryV2(core);
+    gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
@@ -99,14 +98,12 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       factory,
       gmxV2Library,
       gmxRegistryV2,
-      CALLBACK_GAS_LIMIT,
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,
       factory,
       gmxV2Library,
       gmxRegistryV2,
-      CALLBACK_GAS_LIMIT,
     );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
@@ -155,7 +152,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           core.dolomiteMargin.address,
           gmxRegistryV2.address,
           core.tokens.weth.address,
-          CALLBACK_GAS_LIMIT,
         ),
         'Initializable: contract is already initialized',
       );

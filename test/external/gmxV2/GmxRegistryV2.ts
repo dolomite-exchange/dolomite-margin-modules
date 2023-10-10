@@ -5,6 +5,7 @@ import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
 import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
+import { ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from '../../utils/setup';
 
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
@@ -41,6 +42,7 @@ describe('GmxRegistryV2', () => {
       expect(await registry.gmxV2UnwrapperTrader()).to.eq(ZERO_ADDRESS);
       expect(await registry.gmxV2WrapperTrader()).to.eq(ZERO_ADDRESS);
       expect(await registry.dolomiteRegistry()).to.eq(core.dolomiteRegistry.address);
+      expect(await registry.callbackGasLimit()).to.eq(GMX_V2_CALLBACK_GAS_LIMIT);
     });
 
     it('should not initialize twice', async () => {
@@ -305,6 +307,42 @@ describe('GmxRegistryV2', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetEthUsdMarketToken(ZERO_ADDRESS),
         'GmxRegistryV2: Invalid address',
+      );
+    });
+  });
+
+  describe('#ownerSetIsHandler', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetIsHandler(
+        core.gmxEcosystemV2!.gmxDepositHandler.address,
+        true,
+      );
+      await expectEvent(registry, result, 'HandlerSet', {
+        handler: core.gmxEcosystemV2!.gmxDepositHandler.address,
+        isTrusted: true,
+      });
+
+      expect(await registry.isHandler(core.gmxEcosystemV2!.gmxDepositHandler.address)).to.eq(true);
+    });
+
+    it('should failed if not called by dolomite owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetCallbackGasLimit', () => {
+    it('should work normally', async () => {
+      await registry.connect(core.governance).ownerSetCallbackGasLimit(GMX_V2_CALLBACK_GAS_LIMIT.add(1));
+      expect(await registry.callbackGasLimit()).to.eq(GMX_V2_CALLBACK_GAS_LIMIT.add(1));
+    });
+
+    it('should failed if not called by dolomite owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetCallbackGasLimit(ZERO_BI),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

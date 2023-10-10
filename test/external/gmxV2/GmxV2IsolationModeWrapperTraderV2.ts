@@ -47,6 +47,7 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from 'test/utils/setup';
+import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
 
 enum ReversionType {
   None = 0,
@@ -59,7 +60,6 @@ const borrowAccountNumber = '123';
 const executionFee = parseEther('.01');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
-const CALLBACK_GAS_LIMIT = BigNumber.from('2000000'); // 2M units
 const minAmountOut = parseEther('1800');
 
 describe('GmxV2IsolationModeWrapperTraderV2', () => {
@@ -81,7 +81,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
     const library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
-    gmxRegistryV2 = await createGmxRegistryV2(core);
+    gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createTestGmxV2IsolationModeVaultFactory(
@@ -97,14 +97,12 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       factory,
       library,
       gmxRegistryV2,
-      CALLBACK_GAS_LIMIT,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
       library,
       gmxRegistryV2,
-      CALLBACK_GAS_LIMIT,
     );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
@@ -132,8 +130,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
     await setupNativeUSDCBalance(core, core.hhUser1, usdcAmount, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
-    await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
-    await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
     await setEtherBalance(core.gmxEcosystemV2!.gmxExecutor.address, parseEther('100'));
 
     snapshotId = await snapshot();
@@ -155,7 +151,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           core.dolomiteMargin.address,
           gmxRegistryV2.address,
           core.tokens.weth.address,
-          CALLBACK_GAS_LIMIT,
         ),
         'Initializable: contract is already initialized',
       );
@@ -479,7 +474,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         depositKey,
         depositInfo.deposit,
         depositInfo.eventData,
-        { gasLimit: CALLBACK_GAS_LIMIT },
+        { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT },
       );
       await expectEvent(wrapper, result, 'DepositExecuted', {
         key: depositKey,

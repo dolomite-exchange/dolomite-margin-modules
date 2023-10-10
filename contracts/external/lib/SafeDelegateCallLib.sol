@@ -36,12 +36,13 @@ library SafeDelegateCallLib {
     // ============ Functions ============
 
     function safeDelegateCall(address _target, bytes memory _calldata) public returns (bytes memory) {
+        // solhint-disable-next-line avoid-low-level-calls
         (bool isSuccessful, bytes memory result) = _target.delegatecall(_calldata);
         if (!isSuccessful) {
             if (result.length < 68) {
                 revert("No reversion message!");
             } else {
-                // solhint-disable-next-line avoid-low-level-calls
+                // solhint-disable-next-line no-inline-assembly
                 assembly {
                     result := add(result, 0x04) // Slice the sighash.
                 }

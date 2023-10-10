@@ -194,14 +194,12 @@ export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
   implementation: GmxV2IsolationModeUnwrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
-  callbackGasLimit: BigNumberish,
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     dGM.address,
     core.dolomiteMargin.address,
     gmxRegistryV2.address,
     core.tokens.weth.address,
-    callbackGasLimit,
   );
 
   return [
@@ -216,14 +214,12 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
   implementation: GmxV2IsolationModeWrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
-  callbackGasLimit: BigNumberish,
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     dGM.address,
     core.dolomiteMargin.address,
     gmxRegistryV2.address,
     core.tokens.weth.address,
-    callbackGasLimit,
   );
 
   return [

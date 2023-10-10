@@ -26,6 +26,7 @@ import {
   createGmxV2MarketTokenPriceOracle,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
+import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
 import { createExpirationLibrary } from '../../utils/expiry-utils';
 
 const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('919979975416060612'); // $0.9199
@@ -34,7 +35,6 @@ const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
 const NEGATIVE_PRICE = BigNumber.from('-5');
 const FEE_BASIS_POINTS = BigNumber.from('7');
 const BASIS_POINTS = BigNumber.from('10000');
-const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
 const GMX_DECIMAL_ADJUSTMENT = BigNumber.from('1000000000000');
 const blockNumber = 128_276_157;
 
@@ -56,7 +56,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       blockNumber,
       network: Network.ArbitrumOne,
     });
-    gmxRegistryV2 = await createGmxRegistryV2(core);
+    gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
     const expirationLibrary = await createExpirationLibrary();
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
@@ -76,14 +76,12 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       factory,
       gmxV2Library,
       gmxRegistryV2,
-      CALLBACK_GAS_LIMIT,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
       gmxV2Library,
       gmxRegistryV2,
-      CALLBACK_GAS_LIMIT,
     );
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
     await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);

@@ -177,6 +177,7 @@ library GmxV2Library {
             shortPnlToPoolFactor <= int256(maxPnlForAdl) && shortPnlToPoolFactor >= int256(maxPnlForWithdrawals);
         bool isLongPnlTooLarge =
             longPnlToPoolFactor <= int256(maxPnlForAdl) && longPnlToPoolFactor >= int256(maxPnlForWithdrawals);
+
         return isShortPnlTooLarge || isLongPnlTooLarge;
     }
 

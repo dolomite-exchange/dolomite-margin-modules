@@ -249,7 +249,6 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   library: GmxV2Library,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
-  callbackGasLimit: BigNumberish,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
   const implementation = await createContractWithLibrary<GmxV2IsolationModeUnwrapperTraderV2>(
     'GmxV2IsolationModeUnwrapperTraderV2',
@@ -265,7 +264,6 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
       implementation,
       dGM,
       gmxRegistryV2,
-      callbackGasLimit,
     ),
   );
 
@@ -277,7 +275,6 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   library: GmxV2Library,
   gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
-  callbackGasLimit: BigNumberish,
 ): Promise<GmxV2IsolationModeWrapperTraderV2> {
   const implementation = await createContractWithLibrary<GmxV2IsolationModeWrapperTraderV2>(
     'GmxV2IsolationModeWrapperTraderV2',
@@ -292,7 +289,6 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
       implementation,
       dGM,
       gmxRegistryV2,
-      callbackGasLimit,
     ),
   );
   return GmxV2IsolationModeWrapperTraderV2__factory.connect(proxy.address, core.hhUser1);

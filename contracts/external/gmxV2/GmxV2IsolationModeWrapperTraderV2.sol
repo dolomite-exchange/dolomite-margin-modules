@@ -167,39 +167,68 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         assert(_deposit.numbers.initialLongTokenAmount == 0 || _deposit.numbers.initialShortTokenAmount == 0);
 
-        // TODO: fix possible DOS edge cases; set up a swap exact tokens for tokens (which skips the transfer) using the
-        // TODO: unwrapper contract (which can pull/read deposits from this contract)
-        if (_deposit.numbers.initialLongTokenAmount > 0) {
-            _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-                _deposit.addresses.initialLongToken,
-                _deposit.numbers.initialLongTokenAmount,
-                depositInfo,
-                factory
-            );
-        } else {
-            _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-                _deposit.addresses.initialShortToken,
-                _deposit.numbers.initialShortTokenAmount,
-                depositInfo,
-                factory
-            );
-        }
+        uint256[] memory marketIdsPath = new uint256[](2);
+        marketIdsPath[0] = VAULT_FACTORY().marketId();
+        marketIdsPath[1] = DOLOMITE_MARGIN().getMarketIdByTokenAddress(
+            _deposit.numbers.initialLongTokenAmount > 0
+                ? _deposit.addresses.initialLongToken
+                : _deposit.addresses.initialShortToken
+        );
+        uint256 outputAmount = _deposit.numbers.initialLongTokenAmount > 0
+            ? _deposit.numbers.initialLongTokenAmount
+            : _deposit.numbers.initialShortTokenAmount;
 
-        // @audit - Is it mathematically possible for the prior `_depositOtherTokenIntoDolomiteMarginFromTokenConverter`
-        //          to work but this function to fail? If so, that would be problematic.
-        //          Considering the GM tokens have a higher collateralization requirement than the long/short tokens AND
-        //          we only minted `minMarketTokens`, there should be no situation where this fails but the other can
-        //          execute successfully.
-        // Burn the GM tokens that were virtually minted to the vault, since the deposit was cancelled
-        factory.setShouldSkipTransfer(depositInfo.vault, /* _shouldSkipTransfer = */ true);
-        factory.withdrawFromDolomiteMarginFromTokenConverter(
-            depositInfo.vault,
-            depositInfo.accountNumber,
-            _deposit.numbers.minMarketTokens
+        IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
+        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
+        traderParams[0].makerAccountIndex = 0;
+        traderParams[0].trader = address(this);
+        traderParams[0].tradeData = abi.encode((_key)); // TODO: encode that it's from a deposit
+
+        IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig(
+            block.timestamp,
+            AccountBalanceLib.BalanceCheckFlag.None
         );
 
-        _clearDepositAndSetVaultFrozenStatus(depositInfo);
-        emit DepositCancelled(_key);
+        factory.setShouldSkipTransfer(depositInfo.vault, /* _shouldSkipTransfer = */ true);
+        try
+            IGmxV2IsolationModeTokenVaultV1(depositInfo.vault).swapExactInputForOutput(
+                depositInfo.accountNumber,
+                _marketIdsPath,
+                _deposit.numbers.minMarketTokens,
+                outputAmount,
+                tradersPath,
+                /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
+                userConfig
+            )
+        {
+            _clearDepositAndSetVaultFrozenStatus(depositInfo);
+            emit DepositCancelled(_key);
+        } catch Error(string memory _reason) {
+            factory.setShouldSkipTransfer(depositInfo.vault, /* _shouldSkipTransfer = */ false);
+            _setDepositInfoAndSetVaultFrozenStatus(
+                _key,
+                DepositInfo({
+                    key: _key,
+                    vault: depositInfo.vault,
+                    accountNumber: depositInfo.accountNumber,
+                    outputAmount: outputAmount
+                })
+            );
+            emit DepositCancelledFailed(_key, _reason);
+        } catch (bytes memory /* _reason */) {
+            factory.setShouldSkipTransfer(depositInfo.vault, /* _shouldSkipTransfer = */ false);
+            _setDepositInfoAndSetVaultFrozenStatus(
+                _key,
+                DepositInfo({
+                    key: _key,
+                    vault: depositInfo.vault,
+                    accountNumber: depositInfo.accountNumber,
+                    outputAmount: outputAmount
+                })
+            );
+            emit DepositCancelledFailed(_key, "");
+        }
+
         console.log("afterDepositCancellation gasLeft: ", gasleft());
     }
 

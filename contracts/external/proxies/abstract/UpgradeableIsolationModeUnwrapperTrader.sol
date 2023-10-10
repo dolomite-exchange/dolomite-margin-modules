@@ -299,17 +299,6 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         _setAddress(_VAULT_FACTORY_SLOT, _factory);
     }
 
-    function _requireBalanceIsSufficient(uint256 _inputAmount) internal virtual view {
-        uint256 balance = IERC20(VAULT_FACTORY().UNDERLYING_TOKEN()).balanceOf(address(this));
-        Require.that(
-            balance >= _inputAmount,
-            _FILE,
-            "Insufficient input token",
-            balance,
-            _inputAmount
-        );
-    }
-
     /**
      * @notice Performs the exchange from the Isolation Mode's underlying token to `_outputToken`.
      */
@@ -322,6 +311,17 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         uint256 _inputAmount,
         bytes memory _extraOrderData
     ) internal virtual returns (uint256);
+
+    function _requireBalanceIsSufficient(uint256 _inputAmount) internal virtual view {
+        uint256 balance = IERC20(VAULT_FACTORY().UNDERLYING_TOKEN()).balanceOf(address(this));
+        Require.that(
+            balance >= _inputAmount,
+            _FILE,
+            "Insufficient input token",
+            balance,
+            _inputAmount
+        );
+    }
 
     function _getExchangeCost(
         address _inputToken,

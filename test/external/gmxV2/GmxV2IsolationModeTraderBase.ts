@@ -1,16 +1,13 @@
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
 import { GmxRegistryV2, TestGmxV2IsolationModeTraderBase, TestGmxV2IsolationModeTraderBase__factory } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
-import { ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
+import { ONE_ETH_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { createIsolationModeTraderProxy } from 'test/utils/dolomite';
 import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from 'test/utils/setup';
 import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
-
-const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
 
 describe('GmxV2IsolationModeTraderBase', () => {
   let snapshotId: string;
@@ -47,7 +44,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
     it('should initialize correctly', async () => {
       expect(await trader.WETH()).to.eq(core.tokens.weth.address);
       expect(await trader.GMX_REGISTRY_V2()).to.eq(gmxRegistryV2.address);
-      expect(await trader.callbackGasLimit()).to.eq(CALLBACK_GAS_LIMIT);
+      expect(await trader.callbackGasLimit()).to.eq(GMX_V2_CALLBACK_GAS_LIMIT);
       expect(await trader.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
     });
 
@@ -82,42 +79,6 @@ describe('GmxV2IsolationModeTraderBase', () => {
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         trader.connect(core.hhUser1).ownerWithdrawETH(core.governance.address),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#ownerSetIsHandler', () => {
-    it('should work normally', async () => {
-      const result = await trader.connect(core.governance).ownerSetIsHandler(
-        core.gmxEcosystemV2!.gmxDepositHandler.address,
-        true,
-      );
-      await expectEvent(trader, result, 'HandlerSet', {
-        handler: core.gmxEcosystemV2!.gmxDepositHandler.address,
-        isTrusted: true,
-      });
-
-      expect(await trader.isHandler(core.gmxEcosystemV2!.gmxDepositHandler.address)).to.eq(true);
-    });
-
-    it('should failed if not called by dolomite owner', async () => {
-      await expectThrow(
-        trader.connect(core.hhUser1).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#ownerSetCallbackGasLimit', () => {
-    it('should work normally', async () => {
-      await trader.connect(core.governance).ownerSetCallbackGasLimit(CALLBACK_GAS_LIMIT);
-      expect(await trader.callbackGasLimit()).to.eq(CALLBACK_GAS_LIMIT);
-    });
-
-    it('should failed if not called by dolomite owner', async () => {
-      await expectThrow(
-        gmxRegistryV2.connect(core.hhUser1).ownerSetCallbackGasLimit(ZERO_BI),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
