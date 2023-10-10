@@ -59,12 +59,12 @@ describe('EmitterMultipleRewardTokens', () => {
     oARBStorageVault = await createContractWithAbi<OARBStorageVault>(
       OARBStorageVault__factory.abi,
       OARBStorageVault__factory.bytecode,
-      [oARB.address]
+      [core.dolomiteMargin.address, oARB.address]
     );
     oARBStorageVault2 = await createContractWithAbi<OARBStorageVault>(
       OARBStorageVault__factory.abi,
       OARBStorageVault__factory.bytecode,
-      [oARB2.address]
+      [core.dolomiteMargin.address, oARB2.address]
     );
     startTime = (await getBlockTimestamp(await ethers.provider.getBlockNumber())) + 200;
     emitter = await createContractWithAbi<EmitterMultipleRewardTokens>(

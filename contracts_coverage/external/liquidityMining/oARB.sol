@@ -43,7 +43,6 @@ contract OARB is ERC20, OnlyDolomiteMargin, IOARB {
     // ======================= Constructor =======================
     // ==================================================================
 
-    // @follow-up Formatting here
     constructor(
         address _dolomiteMargin
     ) ERC20("oARB Token", "oARB") OnlyDolomiteMargin(_dolomiteMargin) {} // solhint-disable-line no-empty-blocks
@@ -52,7 +51,7 @@ contract OARB is ERC20, OnlyDolomiteMargin, IOARB {
     // ======================= External Functions =======================
     // ==================================================================
 
-    // @todo add address parameter (undecided)
+    // @follow-up Do we want to add address parameter?
     function mint(uint256 _amount) external onlyDolomiteMarginGlobalOperator(msg.sender) {
         _mint(msg.sender, _amount);
     }

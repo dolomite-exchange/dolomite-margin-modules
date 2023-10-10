@@ -19,27 +19,27 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IStorageVault } from "../interfaces/liquidityMining/IStorageVault.sol";
 import { IEmitterMultipleRewardTokens } from "../interfaces/liquidityMining/IEmitterMultipleRewardTokens.sol";
 import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
+import { IStorageVault } from "../interfaces/liquidityMining/IStorageVault.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   EmitterMultipleRewardTokens
  * @author  Dolomite
  *
- * An implementation of the IEmitter interface that grants users oARB rewards for staking assets
+ * An implementation of the IEmitterMultipleREwardTokens interface
+ * that grants users oARB rewards for staking assets
  */
 contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewardTokens {
     using SafeERC20 for IOARB;
@@ -295,15 +295,28 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         }
     }
 
-    function userRewardDebt(uint256 _marketId, address _user, address _rewardToken) external view returns (uint256) {
+    function userRewardDebt( // solhint-disable-line ordering
+        uint256 _marketId,
+        address _user,
+        address _rewardToken
+    )
+    external
+    view
+    returns (uint256) {
         return userInfo[_marketId][_user].rewardDebts[_rewardToken];
     }
 
-    function poolLastRewardTime(uint256 _marketId, address _rewardToken) external view returns (uint256) {
+    function poolLastRewardTime(uint256 _marketId, address _rewardToken)
+    external
+    view
+    returns (uint256) {
         return poolInfo[_marketId].lastRewardTimes[_rewardToken];
     }
 
-    function poolAccRewardTokenPerShares(uint256 _marketId, address _rewardToken) external view returns (uint256) {
+    function poolAccRewardTokenPerShares(uint256 _marketId, address _rewardToken)
+    external
+    view
+    returns (uint256) {
         return poolInfo[_marketId].accRewardTokenPerShares[_rewardToken];
     }
 
@@ -315,7 +328,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         address _token,
         address _tokenStorageVault,
         bool _isAccruing
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
         if (!_rewardTokens.contains(_token)) { /* FOR COVERAGE TESTING */ }
         Require.that(!_rewardTokens.contains(_token),
             _FILE,
@@ -333,7 +348,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
     function ownerEnableRewardToken(
         address _token
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
         if (_rewardTokens.contains(_token)) { /* FOR COVERAGE TESTING */ }
         Require.that(_rewardTokens.contains(_token),
             _FILE,
@@ -347,7 +364,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
     function ownerDisableRewardToken(
         address _token
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
         if (_rewardTokens.contains(_token)) { /* FOR COVERAGE TESTING */ }
         Require.that(_rewardTokens.contains(_token),
             _FILE,
@@ -358,11 +377,12 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         rewardToken.isAccruing = false;
     }
 
-    // @follow-up Removing reward token could make certain things weird. Need to make sure it isn't added back
-    // WARNING
+    // @follow-up I tested this functionality to remove and add back later, but should be fully investigated more
     function ownerRemoveRewardToken(
         address _token
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
         if (_rewardTokens.contains(_token)) { /* FOR COVERAGE TESTING */ }
         Require.that(_rewardTokens.contains(_token),
             _FILE,
@@ -376,7 +396,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         uint256 _marketId,
         uint256 _allocPoint,
         bool _withUpdate
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
         if (!_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
         Require.that(!_pools.contains(_marketId),
             _FILE,
@@ -404,7 +426,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     function ownerSetPool(
         uint256 _marketId,
         uint256 _allocPoint
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
         if (_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
         Require.that(_pools.contains(_marketId),
             _FILE,
@@ -416,7 +440,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
     function ownerSetRewardTokenPerSecond(
         uint256 _rewardTokenPerSecond
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
         massUpdatePools();
         rewardTokenPerSecond = _rewardTokenPerSecond;
     }

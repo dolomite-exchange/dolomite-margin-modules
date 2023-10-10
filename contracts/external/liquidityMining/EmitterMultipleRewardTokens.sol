@@ -38,7 +38,8 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  * @title   EmitterMultipleRewardTokens
  * @author  Dolomite
  *
- * An implementation of the IEmitter interface that grants users oARB rewards for staking assets
+ * An implementation of the IEmitterMultipleREwardTokens interface 
+ * that grants users oARB rewards for staking assets
  */
 contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewardTokens {
     using SafeERC20 for IOARB;
@@ -298,15 +299,24 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         uint256 _marketId,
         address _user,
         address _rewardToken
-    ) external view returns (uint256) {
+    ) 
+    external 
+    view 
+    returns (uint256) {
         return userInfo[_marketId][_user].rewardDebts[_rewardToken];
     }
 
-    function poolLastRewardTime(uint256 _marketId, address _rewardToken) external view returns (uint256) {
+    function poolLastRewardTime(uint256 _marketId, address _rewardToken) 
+    external 
+    view 
+    returns (uint256) {
         return poolInfo[_marketId].lastRewardTimes[_rewardToken];
     }
 
-    function poolAccRewardTokenPerShares(uint256 _marketId, address _rewardToken) external view returns (uint256) {
+    function poolAccRewardTokenPerShares(uint256 _marketId, address _rewardToken) 
+    external 
+    view 
+    returns (uint256) {
         return poolInfo[_marketId].accRewardTokenPerShares[_rewardToken];
     }
 
@@ -318,7 +328,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         address _token,
         address _tokenStorageVault,
         bool _isAccruing
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    ) 
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             !_rewardTokens.contains(_token),
             _FILE,
@@ -336,7 +348,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
     function ownerEnableRewardToken(
         address _token
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    ) 
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _rewardTokens.contains(_token),
             _FILE,
@@ -350,7 +364,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
     function ownerDisableRewardToken(
         address _token
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    ) 
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _rewardTokens.contains(_token),
             _FILE,
@@ -364,7 +380,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     // @follow-up I tested this functionality to remove and add back later, but should be fully investigated more
     function ownerRemoveRewardToken(
         address _token
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    ) 
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _rewardTokens.contains(_token),
             _FILE,
@@ -378,7 +396,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         uint256 _marketId,
         uint256 _allocPoint,
         bool _withUpdate
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    ) 
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             !_pools.contains(_marketId),
             _FILE,
@@ -406,7 +426,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     function ownerSetPool(
         uint256 _marketId,
         uint256 _allocPoint
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    ) 
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
             _pools.contains(_marketId),
             _FILE,
@@ -418,7 +440,9 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
     function ownerSetRewardTokenPerSecond(
         uint256 _rewardTokenPerSecond
-    ) external onlyDolomiteMarginOwner(msg.sender) {
+    ) 
+    external 
+    onlyDolomiteMarginOwner(msg.sender) {
         massUpdatePools();
         rewardTokenPerSecond = _rewardTokenPerSecond;
     }

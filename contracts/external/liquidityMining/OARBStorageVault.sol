@@ -19,6 +19,7 @@
 
 pragma solidity ^0.8.9;
 
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
 
 
@@ -26,17 +27,35 @@ import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
  * @title   OARBStorageVault
  * @author  Dolomite
  *
- * 
+ * OARB Storage Vault contract that mints oARB when pullTokensFromVault is called
  */
-contract OARBStorageVault {
+contract OARBStorageVault is OnlyDolomiteMargin {
+
+    // ===================================================
+    // ==================== Constants ====================
+    // ===================================================
+
+    bytes32 private constant _FILE = "oARBStorageVault";
 
     IOARB public oARB;
 
-    constructor(IOARB _oARB) {
+    // ==================================================================
+    // ======================= Constructor =======================
+    // ==================================================================
+
+    constructor(
+        address _dolomiteMargin,
+        IOARB _oARB
+    ) OnlyDolomiteMargin(_dolomiteMargin) {
         oARB = _oARB;
     }
 
-    function pullTokensFromVault(uint256 _amount) external {
+    // ==================================================================
+    // ======================= External Functions =======================
+    // ==================================================================
+
+    // @follow-up Is global operator the appropriate restriction here?
+    function pullTokensFromVault(uint256 _amount) external onlyDolomiteMarginGlobalOperator(msg.sender) {
         oARB.mint(_amount);
         oARB.transfer(msg.sender, _amount);
     }
