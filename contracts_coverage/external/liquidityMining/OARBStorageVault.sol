@@ -19,15 +19,15 @@
 
 pragma solidity ^0.8.9;
 
-import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
 
 
 /**
  * @title   OARBStorageVault
  * @author  Dolomite
  *
- * oARB Storage Vault contract that mints oARB when called by the emitter contracts
+ * OARB Storage Vault contract that mints oARB when pullTokensFromVault is called
  */
 contract OARBStorageVault is OnlyDolomiteMargin {
 
