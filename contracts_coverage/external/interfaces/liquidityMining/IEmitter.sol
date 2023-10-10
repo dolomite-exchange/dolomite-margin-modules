@@ -63,7 +63,7 @@ interface IEmitter {
     // ======================================================
 
     /**
-     * @notice  Deposit tokens to Emmiter for oARB allocation
+     * @notice  Deposit tokens to Emitter for oARB allocation
      *
      * @param  _fromAccountNumber   The account number to tranfer funds from
      * @param  _marketId            The market id of the token to deposit
@@ -86,6 +86,12 @@ interface IEmitter {
      * @param  _marketId        The market id of the token to deposit
      */
     function emergencyWithdraw(uint256 _marketId) external;
+
+    /**
+     * @notice  Update reward variables of all pools to be up-to-date
+     *
+     */
+    function massUpdatePools() external;
 
     /**
      * @notice  Update reward variables of the given pool to be up-to-date
@@ -114,6 +120,19 @@ interface IEmitter {
      */
     function ownerSetPool(uint256 _marketId, uint256 _allocPoint) external;
 
+    /**
+     * @notice  Resets all reward progress and starts a new reward campaign
+     *
+     * @param  _startTime   The startTime of the new campaign
+     * @param  _oARB        The new oARB token
+     */
+    function ownerCreateNewCampaign(uint256 _startTime, IOARB _oARB) external;
+
+    /**
+     * @notice  Updates the oARBPerSecond
+     *
+     * @param  _oARBPerSecond   The new oARBPerSecond value
+     */
     function ownerSetOARBPerSecond(uint256 _oARBPerSecond) external;
 
     // =================================================
@@ -126,7 +145,7 @@ interface IEmitter {
 
     function oARBPerSecond() external view returns (uint256);
 
-    // @todo come back to this
+    // @follow-up Do you know what to do here?
     // function userInfo(uint256 _marketId, uint256 _accountHash) external view returns (UserInfo memory);
 
     // function poolInfo(uint256 _marketId) external view returns (PoolInfo memory);

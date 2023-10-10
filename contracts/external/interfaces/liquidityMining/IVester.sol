@@ -36,7 +36,7 @@ interface IVester {
     // =================================================
 
     struct VestingPosition {
-        address owner;
+        address creator;
         uint256 id;
         uint256 startTime;
         uint256 duration;
@@ -52,6 +52,9 @@ interface IVester {
     event EmergencyWithdraw(address indexed owner, uint256 vestingId);
     event VestingActiveSet(bool vestingActive);
     event OARBSet(address oARB);
+    event ClosePositionWindowSet(uint256 _closePositionWindow);
+    event EmergencyWithdrawTaxSet(uint256 _emergencyWithdrawTax);
+    event ForceClosePositionTaxSet(uint256 _forceClosePositionTax);
 
     // ======================================================
     // ================== User Functions ===================

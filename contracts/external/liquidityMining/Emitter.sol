@@ -271,7 +271,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
     // ================== Admin Functions ===================
     // ======================================================
 
-    function ownerAddPool(
+    function ownerAddPool( // solhint-disable-line ordering
         uint256 _marketId,
         uint256 _allocPoint,
         bool _withUpdate

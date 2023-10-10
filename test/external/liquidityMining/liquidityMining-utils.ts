@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { BigNumberish } from 'ethers';
 
 export interface VestingPositionStruct {
-  owner: string;
+  creator: string;
   id: BigNumberish;
   startTime: BigNumberish;
   duration: BigNumberish;
@@ -11,7 +11,7 @@ export interface VestingPositionStruct {
 }
 
 export function expectEmptyPosition(position: VestingPositionStruct) {
-  expect(position.owner).to.eq(ZERO_ADDRESS);
+  expect(position.creator).to.eq(ZERO_ADDRESS);
   expect(position.id).to.eq(0);
   expect(position.startTime).to.eq(0);
   expect(position.duration).to.eq(0);

@@ -19,21 +19,20 @@
 
 pragma solidity ^0.8.9;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol"; 
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IStorageVault } from "../interfaces/liquidityMining/IStorageVault.sol";
 import { IEmitterMultipleRewardTokens } from "../interfaces/liquidityMining/IEmitterMultipleRewardTokens.sol";
 import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
+import { IStorageVault } from "../interfaces/liquidityMining/IStorageVault.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   EmitterMultipleRewardTokens
@@ -67,7 +66,7 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     mapping(uint256 => PoolInfo) public poolInfo;
     mapping(address => RewardToken) public rewardTokenInfo;
 
-    uint256 public oARBPerSecond; 
+    uint256 public rewardTokenPerSecond; 
     uint256 public totalAllocPoint;
     uint256 public startTime;
 
@@ -78,11 +77,11 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     constructor(
         address _dolomiteMargin,
         address _dolomiteRegistry,
-        uint256 _oARBPerSecond,
+        uint256 _rewardTokenPerSecond,
         uint256 _startTime
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-        oARBPerSecond = _oARBPerSecond;
+        rewardTokenPerSecond = _rewardTokenPerSecond;
         startTime = _startTime;
     }
 
@@ -136,10 +135,14 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         if (cachedAmount > 0) {
             for (uint256 i; i < len; i++) {
                 RewardToken memory rewardToken = rewardTokenInfo[_rewardTokens.at(i)];
-                uint256 pending = cachedAmount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE - user.rewardDebts[rewardToken.token];
+                uint256 pending = 
+                    (cachedAmount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE)
+                        - user.rewardDebts[rewardToken.token];
+                user.rewardDebts[rewardToken.token] = 
+                    user.amount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE;
+
                 IStorageVault(rewardToken.tokenStorageVault).pullTokensFromVault(pending);
                 IERC20(rewardToken.token).transfer(msg.sender, pending);
-                user.rewardDebts[rewardToken.token] = user.amount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE;
             }
         }
 
@@ -202,10 +205,14 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         if (cachedAmount > 0) {
             for (uint256 i; i < len; i++) {
                 RewardToken memory rewardToken = rewardTokenInfo[_rewardTokens.at(i)];
-                uint256 pending = cachedAmount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE - user.rewardDebts[rewardToken.token];
+                uint256 pending = 
+                    (cachedAmount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE)
+                        - user.rewardDebts[rewardToken.token];
+                user.rewardDebts[rewardToken.token] = 
+                    user.amount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE;
+
                 IStorageVault(rewardToken.tokenStorageVault).pullTokensFromVault(pending);
                 IERC20(rewardToken.token).transfer(msg.sender, pending);
-                user.rewardDebts[rewardToken.token] = user.amount * pool.accRewardTokenPerShares[rewardToken.token] / _SCALE;
             }
         }
 
@@ -277,11 +284,30 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             }
 
             if (rewardToken.isAccruing) {
-                uint256 reward = oARBPerSecond * pool.allocPoint * (block.timestamp - pool.lastRewardTimes[rewardToken.token]) / totalAllocPoint;
-                pool.accRewardTokenPerShares[rewardToken.token] = pool.accRewardTokenPerShares[rewardToken.token] + reward * _SCALE / supply;
+                uint256 reward = 
+                    rewardTokenPerSecond * pool.allocPoint * (block.timestamp - pool.lastRewardTimes[rewardToken.token])
+                        / totalAllocPoint;
+                pool.accRewardTokenPerShares[rewardToken.token] 
+                    = pool.accRewardTokenPerShares[rewardToken.token] + (reward * _SCALE / supply);
                 pool.lastRewardTimes[rewardToken.token] = block.timestamp;
             }
         }
+    }
+
+    function userRewardDebt( // solhint-disable-line ordering
+        uint256 _marketId,
+        address _user,
+        address _rewardToken
+    ) external view returns (uint256) {
+        return userInfo[_marketId][_user].rewardDebts[_rewardToken];
+    }
+
+    function poolLastRewardTime(uint256 _marketId, address _rewardToken) external view returns (uint256) {
+        return poolInfo[_marketId].lastRewardTimes[_rewardToken];
+    }
+
+    function poolAccRewardTokenPerShares(uint256 _marketId, address _rewardToken) external view returns (uint256) {
+        return poolInfo[_marketId].accRewardTokenPerShares[_rewardToken];
     }
 
     // ======================================================
@@ -335,8 +361,7 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         rewardToken.isAccruing = false;
     }
 
-    // @follow-up Removing reward token could make certain things weird. Need to make sure it isn't added back
-    // WARNING
+    // @follow-up I tested this functionality to remove and add back later, but should be fully investigated more
     function ownerRemoveRewardToken(
         address _token
     ) external onlyDolomiteMarginOwner(msg.sender) {
@@ -391,11 +416,11 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         poolInfo[_marketId].allocPoint = _allocPoint;
     }
 
-    function ownerSetOARBPerSecond(
-        uint256 _oARBPerSecond
+    function ownerSetRewardTokenPerSecond(
+        uint256 _rewardTokenPerSecond
     ) external onlyDolomiteMarginOwner(msg.sender) {
         massUpdatePools();
-        oARBPerSecond = _oARBPerSecond;
+        rewardTokenPerSecond = _rewardTokenPerSecond;
     }
 
     // ==================================================================

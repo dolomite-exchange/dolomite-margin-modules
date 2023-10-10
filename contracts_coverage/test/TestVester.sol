@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { Vester } from "../external/liquidityMining/Vester.sol"; // solhint-disable-line max-line-length
 import { IOARB } from "../external/interfaces/liquidityMining/IOARB.sol";
+import { Vester } from "../external/liquidityMining/Vester.sol";
 
 
 /**
@@ -46,7 +46,7 @@ contract TestVester is Vester {
         _wethMarketId,
         _arbMarketId,
         _oARB
-    ) {}
+    ) {} // solhint-disable-line
 
     function callClosePositionAndBuyTokensAndTriggerReentrancy(
         uint256 _id

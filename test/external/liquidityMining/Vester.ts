@@ -120,6 +120,7 @@ describe('Vester', () => {
       const newAccountNumber = BigNumber.from(
         ethers.utils.solidityKeccak256(['address', 'uint256'], [core.hhUser1.address, 1])
       );
+      expect(await vester.ownerOf(1)).to.eq(core.hhUser1.address);
       await expectWalletBalance(vester.address, oARB, ONE_ETH_BI);
       await expectProtocolBalance(core, vester.address, newAccountNumber, core.marketIds.arb, ONE_ETH_BI);
       expect(await vester.promisedArbTokens()).to.eq(ONE_ETH_BI);
@@ -139,6 +140,7 @@ describe('Vester', () => {
       const newAccountNumber = BigNumber.from(
         ethers.utils.solidityKeccak256(['address', 'uint256'], [core.hhUser1.address, 1])
       );
+      expect(await vester.ownerOf(1)).to.eq(core.hhUser1.address);
       await expectWalletBalance(vester.address, oARB, ONE_ETH_BI);
       await expectProtocolBalance(core, vester.address, newAccountNumber, core.marketIds.arb, ONE_ETH_BI);
       expect(await vester.promisedArbTokens()).to.eq(ONE_ETH_BI);
@@ -158,6 +160,7 @@ describe('Vester', () => {
       const newAccountNumber = BigNumber.from(
         ethers.utils.solidityKeccak256(['address', 'uint256'], [core.hhUser1.address, 1])
       );
+      expect(await vester.ownerOf(1)).to.eq(core.hhUser1.address);
       await expectWalletBalance(vester.address, oARB, ONE_ETH_BI);
       await expectProtocolBalance(core, vester.address, newAccountNumber, core.marketIds.arb, ONE_ETH_BI);
       expect(await vester.promisedArbTokens()).to.eq(ONE_ETH_BI);
@@ -177,6 +180,7 @@ describe('Vester', () => {
       const newAccountNumber = BigNumber.from(
         ethers.utils.solidityKeccak256(['address', 'uint256'], [core.hhUser1.address, 1])
       );
+      expect(await vester.ownerOf(1)).to.eq(core.hhUser1.address);
       await expectWalletBalance(vester.address, oARB, ONE_ETH_BI);
       await expectProtocolBalance(core, vester.address, newAccountNumber, core.marketIds.arb, ONE_ETH_BI);
       expect(await vester.promisedArbTokens()).to.eq(ONE_ETH_BI);
@@ -193,7 +197,7 @@ describe('Vester', () => {
       await core.tokens.arb.connect(vesterSigner).transfer(core.hhUser2.address, parseEther('.5'));
       await expectThrow(
         vester.connect(core.hhUser1).vest(defaultAccountNumber, ONE_WEEK.mul(4), ONE_ETH_BI),
-        'Vester: Vesting not available',
+        'Vester: Arb tokens currently unavailable',
       );
     });
 
@@ -253,6 +257,10 @@ describe('Vester', () => {
       expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
 
       expectEmptyPosition(await vester.vestingPositions(1));
+      await expectThrow(
+        vester.ownerOf(1),
+        'ERC721: invalid token ID',
+      );
     });
 
     it('should work normally with one week', async () => {
@@ -281,6 +289,10 @@ describe('Vester', () => {
       expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
 
       expectEmptyPosition(await vester.vestingPositions(1));
+      await expectThrow(
+        vester.ownerOf(1),
+        'ERC721: invalid token ID',
+      );
     });
 
     it('should work normally with two weeks', async () => {
@@ -309,6 +321,10 @@ describe('Vester', () => {
       expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
 
       expectEmptyPosition(await vester.vestingPositions(1));
+      await expectThrow(
+        vester.ownerOf(1),
+        'ERC721: invalid token ID',
+      );
     });
 
     it('should work normally with three weeks', async () => {
@@ -337,6 +353,10 @@ describe('Vester', () => {
       expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
 
       expectEmptyPosition(await vester.vestingPositions(1));
+      await expectThrow(
+        vester.ownerOf(1),
+        'ERC721: invalid token ID',
+      );
     });
 
     it('should work normally with four weeks', async () => {
@@ -365,6 +385,10 @@ describe('Vester', () => {
       expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
 
       expectEmptyPosition(await vester.vestingPositions(1));
+      await expectThrow(
+        vester.ownerOf(1),
+        'ERC721: invalid token ID',
+      );
     });
 
     it('should work normally with refund', async () => {
@@ -396,6 +420,10 @@ describe('Vester', () => {
       expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
 
       expectEmptyPosition(await vester.vestingPositions(1));
+      await expectThrow(
+        vester.ownerOf(1),
+        'ERC721: invalid token ID',
+      );
     });
 
     it('should fail if msg.value is not sufficient', async () => {
@@ -451,11 +479,48 @@ describe('Vester', () => {
         core.hhUser1.address,
         defaultAccountNumber,
         core.marketIds.arb,
-        parseEther('1')
+        parseEther('.95')
       );
+      await expectWalletBalance(core.governance.address, core.tokens.arb, parseEther('.05'));
       await expectWalletBalance(vester.address, oARB, ZERO_BI);
       await expectProtocolBalance(core, vester.address, newAccountNumber, core.marketIds.arb, ZERO_BI);
       expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
+
+      expectEmptyPosition(await vester.vestingPositions(1));
+      await expectThrow(
+        vester.ownerOf(1),
+        'ERC721: invalid token ID',
+      );
+    });
+
+    it('should work normally if tax is zero', async () => {
+      await vester.connect(core.governance).ownerSetForceClosePositionTax(0);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
+      const newAccountNumber = BigNumber.from(
+        ethers.utils.solidityKeccak256(['address', 'uint256'], [core.hhUser1.address, 1])
+      );
+      increase(ONE_WEEK.mul(2).add(1));
+
+      await vester.connect(core.hhUser5).forceClosePosition(1);
+      await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.marketIds.arb,
+        ONE_ETH_BI,
+      );
+      await expectWalletBalance(core.governance.address, core.tokens.arb, ZERO_BI);
+      await expectWalletBalance(vester.address, oARB, ZERO_BI);
+      await expectProtocolBalance(core, vester.address, newAccountNumber, core.marketIds.arb, ZERO_BI);
+      expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
+
+      expectEmptyPosition(await vester.vestingPositions(1));
+      await expectThrow(
+        vester.ownerOf(1),
+        'ERC721: invalid token ID',
+      );
     });
 
     it('should fail if position is not expired', async () => {
@@ -493,17 +558,61 @@ describe('Vester', () => {
         owner: core.hhUser1.address,
         vestingId: ONE_BI,
       });
-      await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
+      await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.arb, ONE_ETH_BI);
       await expectWalletBalance(vester.address, oARB, ZERO_BI);
       await expectProtocolBalance(core, vester.address, newAccountNumber, core.marketIds.arb, ZERO_BI);
       expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
 
       expectEmptyPosition(await vester.vestingPositions(1));
+      await expectThrow(
+        vester.ownerOf(1),
+        'ERC721: invalid token ID',
+      );
+    });
+
+    it('should work normally with tax', async () => {
+      await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
+      await vester.connect(core.governance).ownerSetEmergencyWithdrawTax(50);
+
+      await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.arb, ZERO_BI);
+      const newAccountNumber = BigNumber.from(
+        ethers.utils.solidityKeccak256(['address', 'uint256'], [core.hhUser1.address, 1])
+      );
+      await expectWalletBalance(vester.address, oARB, ONE_ETH_BI);
+      await expectProtocolBalance(core, vester.address, newAccountNumber, core.marketIds.arb, ONE_ETH_BI);
+
+      const result = await vester.emergencyWithdraw(1);
+      await expectEvent(vester, result, 'EmergencyWithdraw', {
+        owner: core.hhUser1.address,
+        vestingId: ONE_BI,
+      });
+      await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
+      await expectWalletBalance(core.governance.address, core.tokens.arb, parseEther('.05'));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.marketIds.arb,
+        parseEther('.95')
+      );
+      await expectWalletBalance(vester.address, oARB, ZERO_BI);
+      await expectProtocolBalance(core, vester.address, newAccountNumber, core.marketIds.arb, ZERO_BI);
+      expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
+
+      expectEmptyPosition(await vester.vestingPositions(1));
+      await expectThrow(
+        vester.ownerOf(1),
+        'ERC721: invalid token ID',
+      );
     });
 
     it('should fail if not called by position owner', async () => {
-      await expectThrow(vester.emergencyWithdraw(1), 'Vester: Invalid position owner');
+      await expectThrow(
+        vester.emergencyWithdraw(1),
+        'ERC721: invalid token ID',
+      );
       await vester.connect(core.hhUser1).vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
       await expectThrow(
         vester.connect(core.hhUser2).emergencyWithdraw(1),
@@ -550,6 +659,78 @@ describe('Vester', () => {
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerSetOARB(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetClosePositionWindow', () => {
+    it('should work normally', async () => {
+      const result = await vester.connect(core.governance).ownerSetClosePositionWindow(ONE_WEEK.mul(2));
+      await expectEvent(vester, result, 'ClosePositionWindowSet', {
+        closePositionWindow: ONE_WEEK.mul(2),
+      });
+      expect(await vester.closePositionWindow()).to.eq(ONE_WEEK.mul(2));
+    });
+
+    it('should fail less than min duration', async () => {
+      await expectThrow(
+        vester.connect(core.governance).ownerSetClosePositionWindow(ONE_WEEK.sub(1)),
+        'Vester: Invalid close position window',
+      );
+    });
+
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        vester.connect(core.hhUser1).ownerSetClosePositionWindow(ONE_WEEK),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetEmergencyWithdrawTax', () => {
+    it('should work normally', async () => {
+      const result = await vester.connect(core.governance).ownerSetEmergencyWithdrawTax(100);
+      await expectEvent(vester, result, 'EmergencyWithdrawTaxSet', {
+        emergencyWithdrawTax: 100,
+      });
+      expect(await vester.emergencyWithdrawTax()).to.eq(100);
+    });
+
+    it('should fail if outside of range', async () => {
+      await expectThrow(
+        vester.connect(core.governance).ownerSetEmergencyWithdrawTax(1001),
+        'Vester: Invalid emergency withdrawal tax',
+      );
+    });
+
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        vester.connect(core.hhUser1).ownerSetEmergencyWithdrawTax(100),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#ownerSetForceClosePositionTax', () => {
+    it('should work normally', async () => {
+      const result = await vester.connect(core.governance).ownerSetForceClosePositionTax(100);
+      await expectEvent(vester, result, 'ForceClosePositionTaxSet', {
+        forceClosePositionTax: 100,
+      });
+      expect(await vester.forceClosePositionTax()).to.eq(100);
+    });
+
+    it('should fail if outside of range', async () => {
+      await expectThrow(
+        vester.connect(core.governance).ownerSetForceClosePositionTax(1001),
+        'Vester: Invalid force close position tax',
+      );
+    });
+
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        vester.connect(core.hhUser1).ownerSetForceClosePositionTax(100),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

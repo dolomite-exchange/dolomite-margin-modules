@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IOARB } from "./IOARB.sol";
 import { IDolomiteRegistry } from "../IDolomiteRegistry.sol";
 
 

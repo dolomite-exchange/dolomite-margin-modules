@@ -52,7 +52,7 @@ contract OARB is ERC20, OnlyDolomiteMargin, IOARB {
     // ======================= External Functions =======================
     // ==================================================================
 
-    // @todo add address parameter (come back to)
+    // @todo add address parameter (undecided)
     function mint(uint256 _amount) external onlyDolomiteMarginGlobalOperator(msg.sender) {
         _mint(msg.sender, _amount);
     }

@@ -22,13 +22,14 @@ pragma solidity ^0.8.9;
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IEmitter } from "../interfaces/liquidityMining/IEmitter.sol";
 import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
 import { IVester } from "../interfaces/liquidityMining/IVester.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
@@ -39,9 +40,10 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  * @title   Vester
  * @author  Dolomite
  *
- * An implementation of the IEmitter interface that grants users oARB rewards for staking assets
+ * An implementation of the IVester interface that allows users to buy ARB
+ * at a discount if they vest ARB and oARB for a certain time
  */
-contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
+contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVester {
     using SafeERC20 for IERC20;
     using SafeERC20 for IOARB;
 
@@ -55,7 +57,6 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
 
     uint256 private constant _MIN_DURATION = 1 weeks;
     uint256 private constant _MAX_DURATION = 4 weeks;
-    uint256 private constant _DURATION_INTERVAL = 1 weeks;
 
     // ===================================================
     // ==================== State Variables ====================
@@ -69,8 +70,12 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
 
     mapping(uint256 => VestingPosition) public vestingPositions;
     uint256 public promisedArbTokens;
-    bool public vestingActive;
     IOARB public oARB;
+
+    uint256 public closePositionWindow = 1 weeks;
+    uint256 public emergencyWithdrawTax;
+    uint256 public forceClosePositionTax = 50;
+    bool public vestingActive;
 
     // ==================================================================
     // ======================= Modifiers =======================
@@ -95,7 +100,8 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
         uint256 _wethMarketId,
         uint256 _arbMarketId,
         IOARB _oARB
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
+    ) OnlyDolomiteMargin(_dolomiteMargin) ERC721("DolomiteArbVesting", "DAV") {
+        // @follow-up Come back to name and symbol
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         WETH_MARKET_ID = _wethMarketId;
         ARB_MARKET_ID = _arbMarketId;
@@ -118,23 +124,25 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
         Require.that(
             arb.balanceOf(address(this)) >= _amount + promisedArbTokens,
             _FILE,
-            "Vesting not available" // @follow-up this message
+            "Arb tokens currently unavailable" // @follow-up this message
         );
         Require.that(
-            _duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _DURATION_INTERVAL == 0,
+            _duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0,
             _FILE,
             "Invalid duration"
         );
 
-        // Create vesting position NFT or mapping
-        uint256 vestingId = ++_nextId;
-        vestingPositions[vestingId] = VestingPosition({
-            owner: msg.sender,
+        // Create vesting position NFT
+        uint256 nftId = ++_nextId;
+        vestingPositions[nftId] = VestingPosition({
+            creator: msg.sender,
             id: _nextId,
             startTime: block.timestamp,
             duration: _duration,
             amount: _amount
         });
+        _mint(msg.sender, nftId);
+
 
         // Transfer amounts in to hash of id and msg.sender
         oARB.safeTransferFrom(msg.sender, address(this), _amount);
@@ -142,17 +150,16 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
             /* fromAccount = */ msg.sender,
             /* fromAccountNumber = */ _fromAccountNumber,
             /* toAccount = */ address(this),
-            /* toAccountNumber = */ uint256(keccak256(abi.encodePacked(msg.sender, vestingId))),
+            /* toAccountNumber = */ uint256(keccak256(abi.encodePacked(msg.sender, nftId))),
             /* marketId */ ARB_MARKET_ID,
             /* amount */ _amount
         );
 
         promisedArbTokens += _amount;
-        emit Vesting(msg.sender, _duration, _amount, vestingId);
-        return vestingId;
+        emit Vesting(msg.sender, _duration, _amount, nftId);
+        return nftId;
     }
 
-    // @follow-up This is kind of a long function. When do you decide to break it up?
     function closePositionAndBuyTokens(
         uint256 _id
     ) 
@@ -160,9 +167,10 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
     nonReentrant 
     payable {
         VestingPosition memory _position = vestingPositions[_id];
-        uint256 accountNumber = uint256(keccak256(abi.encodePacked(msg.sender, _id)));
+        uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
+        address owner = ownerOf(_id);
         Require.that(
-            _position.owner == msg.sender,
+            owner == msg.sender,
             _FILE,
             "Invalid position owner"
         );
@@ -172,7 +180,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
             "Position not vested"
         );
         Require.that(
-            block.timestamp <= _position.startTime + _position.duration + _DURATION_INTERVAL,
+            block.timestamp <= _position.startTime + _position.duration + closePositionWindow,
             _FILE,
             "Position expired"
         );
@@ -182,7 +190,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
         _transfer(
             /* fromAccount = */ address(this),
             /* fromAccountNumber = */ accountNumber,
-            /* toAccount = */ msg.sender,
+            /* toAccount = */ owner,
             /* toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
             /* marketId */ ARB_MARKET_ID,
             /* amount */ _position.amount
@@ -202,16 +210,17 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
         );
 
         // Deposit purchased ARB tokens into dolomite, clear vesting position, and refund
-        _depositARBIntoDolomite(msg.sender, _position.amount);
+        _depositARBIntoDolomite(owner, _position.amount);
         promisedArbTokens -= _position.amount;
+        _burn(_id);
         delete vestingPositions[_id];
         
         uint256 refund = (wethValue - arbValue) / wethPrice;
         if (refund > 0) {
-            Address.sendValue(payable(msg.sender), refund);
+            Address.sendValue(payable(owner), refund);
         }
 
-        emit PositionClosed(msg.sender, _id);
+        emit PositionClosed(owner, _id);
     }
 
     // @follow-up Who should this be callable by? Operator?
@@ -220,56 +229,100 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
     ) 
     external 
     onlyDolomiteMarginGlobalOperator(msg.sender) {
+        IERC20 arb = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(ARB_MARKET_ID));
         VestingPosition memory _position = vestingPositions[_id];
-        uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.owner, _id)));
+        uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
+        address owner = ownerOf(_id);
         Require.that(
             block.timestamp > _position.startTime + _position.duration + 1 weeks,
             _FILE,
             "Position not expired"
         );
 
-        // @follow-up Burn oARB or transfer them back to user
-        // Burn oARB and deposit ARB tokens back into dolomite
+        // Burn oARB and transfer ARB tokens back to user"s dolomite account minus tax amount
+        uint256 tax = _position.amount * forceClosePositionTax / _DISCOUNT_BASE;
         oARB.burn(_position.amount);
         _transfer(
             /* _fromAccount = */ address(this),
             /* _fromAccountNumber = */ accountNumber,
-            /* _toAccount = */ _position.owner,
+            /* _toAccount = */ owner,
             /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
             /* _marketId = */ ARB_MARKET_ID,
-            /* _amountWei */ _position.amount
+            /* _amountWei */ _position.amount - tax
         );
 
         promisedArbTokens -= _position.amount;
-        emit PositionClosed(_position.owner, _id);
+        _burn(_id);
         delete vestingPositions[_id];
+
+        if (tax > 0) {
+            AccountActionLib.withdraw(
+                DOLOMITE_MARGIN(),
+                address(this),
+                accountNumber,
+                address(this),
+                ARB_MARKET_ID,
+                IDolomiteStructs.AssetAmount({
+                    sign: false,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Delta,
+                    value: tax
+                }),
+                AccountBalanceLib.BalanceCheckFlag.Both
+            );
+            arb.transfer(DOLOMITE_MARGIN().owner(), tax);
+        }
+
+        emit PositionClosed(owner, _id);
     }
 
-    // @follow-up Do we want this function? Maybe send ARB back but burn oARB instead?
-    // WARNING: This will forfeit all vesting progress
+    // WARNING: This will forfeit all vesting progress and burn any vested oARB
     function emergencyWithdraw(uint256 _id) external {
+        IERC20 arb = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(ARB_MARKET_ID));
         VestingPosition memory _position = vestingPositions[_id];
-        uint256 accountNumber = uint256(keccak256(abi.encodePacked(msg.sender, _id)));
+        uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
+        address owner = ownerOf(_id);
         Require.that(
-            _position.owner == msg.sender,
+            owner == msg.sender,
             _FILE,
             "Invalid position owner"
         );
 
-        // Transfer arb and oARB back to the user
-        oARB.safeTransfer(msg.sender, _position.amount);
+        // Transfer arb back to the user and burn ARB
+        oARB.burn(_position.amount);
+        uint256 tax = _position.amount * emergencyWithdrawTax / _DISCOUNT_BASE;
         _transfer(
             /* _fromAccount = */ address(this),
             /* _fromAccountNumber = */ accountNumber,
-            /* _toAccount = */ msg.sender,
+            /* _toAccount = */ owner,
             /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
             /* _marketId = */ ARB_MARKET_ID,
-            /* _amountWei */ _position.amount
+            /* _amountWei */ _position.amount - tax
         );
 
         promisedArbTokens -= _position.amount;
+        _burn(_id);
         delete vestingPositions[_id];
-        emit EmergencyWithdraw(msg.sender, _id);
+
+        if (tax > 0) {
+            AccountActionLib.withdraw(
+                DOLOMITE_MARGIN(),
+                address(this),
+                accountNumber,
+                address(this),
+                ARB_MARKET_ID,
+                IDolomiteStructs.AssetAmount({
+                    sign: false,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Delta,
+                    value: tax
+                }),
+                AccountBalanceLib.BalanceCheckFlag.Both
+            );
+            arb.transfer(DOLOMITE_MARGIN().owner(), tax);
+        }
+
+        emit EmergencyWithdraw(owner, _id);
     }
 
     // ==================================================================
@@ -297,6 +350,49 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, IVester {
         );
         oARB = IOARB(_oARB);
         emit OARBSet(_oARB);
+    }
+
+    function ownerSetClosePositionWindow(
+        uint256 _closePositionWindow
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _closePositionWindow >= _MIN_DURATION,
+            _FILE,
+            "Invalid close position window"
+        );
+        closePositionWindow = _closePositionWindow;
+        emit ClosePositionWindowSet(_closePositionWindow);
+    }
+
+    function ownerSetEmergencyWithdrawTax(
+        uint256 _emergencyWithdrawTax
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        // @todo revisit this range
+        Require.that(
+            _emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _DISCOUNT_BASE,
+            _FILE,
+            "Invalid emergency withdrawal tax"
+        );
+        emergencyWithdrawTax = _emergencyWithdrawTax;
+        emit EmergencyWithdrawTaxSet(_emergencyWithdrawTax);
+    }
+
+    function ownerSetForceClosePositionTax(
+        uint256 _forceClosePositionTax
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        Require.that(
+            _forceClosePositionTax >= 0 && _forceClosePositionTax < _DISCOUNT_BASE,
+            _FILE,
+            "Invalid force close position tax"
+        );
+        forceClosePositionTax = _forceClosePositionTax;
+        emit ForceClosePositionTaxSet(_forceClosePositionTax);
     }
 
     // ==================================================================
