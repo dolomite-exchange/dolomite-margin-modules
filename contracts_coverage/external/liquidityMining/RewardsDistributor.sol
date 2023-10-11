@@ -21,22 +21,21 @@
 pragma solidity ^0.8.9;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
 import { IRewardsDistributor } from "../interfaces/liquidityMining/IRewardsDistributor.sol";
-import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-
-import "hardhat/console.sol";
 
 
 /**
  * @title   RewardsDistributor
  * @author  Dolomite
  *
- * RewardsDistributor contract for oARB tokens
+ * Rewards Distributor contract for oARB tokens
  */
 contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
+    using SafeERC20 for IOARB;
 
     // ===================================================
     // ==================== Constants ====================
@@ -80,9 +79,11 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
                 _FILE,
                 "Already claimed"
             );
+
             claimStatus[msg.sender][_claimInfo[i].epoch] = true;
             oARB.mint(_claimInfo[i].amount);
-            oARB.transfer(msg.sender, _claimInfo[i].amount);
+            // @follow-up Don't really need safeTransfer here, can remove if you'd like
+            oARB.safeTransfer(msg.sender, _claimInfo[i].amount);
 
             emit Claimed(msg.sender, _claimInfo[i].epoch, _claimInfo[i].amount);
         }

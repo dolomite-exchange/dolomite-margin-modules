@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteRegistry } from "../IDolomiteRegistry.sol";
 
 
 /**
@@ -130,21 +129,4 @@ interface IEmitterMultipleRewardTokens {
      * @param  _rewardTokenPerSecond    The new rewardTokenPerSecond value
      */
     function ownerSetRewardTokenPerSecond(uint256 _rewardTokenPerSecond) external;
-
-    // =================================================
-    // ================= View Functions ================
-    // =================================================
-
-    function DOLOMITE_REGISTRY() external view returns (IDolomiteRegistry);
-
-    function rewardTokenPerSecond() external view returns (uint256);
-
-    // @follow-up Do you know what to do here?
-    // function userInfo(uint256 _marketId, uint256 _accountHash) external view returns (UserInfo memory);
-
-    // function poolInfo(uint256 _marketId) external view returns (PoolInfo memory);
-
-    function totalAllocPoint() external view returns (uint256);
-
-    function startTime() external view returns (uint256);
 }

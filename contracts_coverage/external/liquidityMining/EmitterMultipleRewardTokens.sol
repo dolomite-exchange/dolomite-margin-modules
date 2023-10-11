@@ -40,6 +40,7 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  *
  * An implementation of the IEmitterMultipleREwardTokens interface
  * that grants users oARB rewards for staking assets
+ * WARNING: THIS CODE HAS NOT BEEN THOROUGHLY TESTED AND IS NOT PRODUCTION READY
  */
 contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewardTokens {
     using SafeERC20 for IOARB;
@@ -242,7 +243,6 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
             user.rewardDebts[rewardToken.token] = 0;
         }
 
-        // @follow-up Which account number to transfer to?
         IDolomiteStructs.Par memory beforeAccountPar = DOLOMITE_MARGIN().getAccountPar(info, _marketId);
         _transfer(
             /* _fromAccount = */ address(this),
@@ -377,7 +377,6 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         rewardToken.isAccruing = false;
     }
 
-    // @follow-up I tested this functionality to remove and add back later, but should be fully investigated more
     function ownerRemoveRewardToken(
         address _token
     )

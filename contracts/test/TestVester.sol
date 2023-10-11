@@ -20,8 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IOARB } from "../external/interfaces/liquidityMining/IOARB.sol";
 import { Vester } from "../external/liquidityMining/Vester.sol";
+import { IWETH } from "../protocol/interfaces/IWETH.sol";
 
 
 /**
@@ -37,14 +39,14 @@ contract TestVester is Vester {
     constructor(
         address _dolomiteMargin,
         address _dolomiteRegistry,
-        uint256 _wethMarketId,
-        uint256 _arbMarketId,
+        IWETH _weth,
+        IERC20 _arb,
         IOARB _oARB
     ) Vester(
         _dolomiteMargin,
         _dolomiteRegistry,
-        _wethMarketId,
-        _arbMarketId,
+        _weth,
+        _arb,
         _oARB
     ) {} // solhint-disable-line
 

@@ -1,9 +1,9 @@
-import { increase, setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { Emitter, Emitter__factory, OARB, OARB__factory, TestVester, TestVester__factory } from 'src/types';
+import { OARB, OARB__factory, TestVester, TestVester__factory } from 'src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
@@ -28,7 +28,6 @@ describe('Vester', () => {
 
   let core: CoreProtocol;
 
-  let emitter: Emitter;
   let vester: TestVester;
   let oARB: OARB;
   let startTime: number;
@@ -41,42 +40,27 @@ describe('Vester', () => {
     oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
 
     startTime = await getBlockTimestamp(await ethers.provider.getBlockNumber()) + 200;
-    emitter = await createContractWithAbi<Emitter>(
-      Emitter__factory.abi,
-      Emitter__factory.bytecode,
-      [
-        core.dolomiteMargin.address,
-        core.dolomiteRegistry.address,
-        oARB.address,
-        ONE_ETH_BI,
-        startTime,
-      ]
-    );
     vester = await createContractWithAbi<TestVester>(
       TestVester__factory.abi,
       TestVester__factory.bytecode,
       [
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
-        core.marketIds.weth,
-        core.marketIds.arb,
+        core.tokens.weth.address,
+        core.tokens.arb.address,
         oARB.address,
       ],
     );
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(emitter.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(vester.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.hhUser5.address, true);
 
-    await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, 100, false);
-    await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-    await setNextBlockTimestamp(startTime + 1);
-    await emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, usdcAmount);
-
+    await oARB.connect(core.hhUser5).mint(ONE_ETH_BI);
+    await oARB.connect(core.hhUser5).transfer(core.hhUser1.address, ONE_ETH_BI);
     await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
     await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-    await expectProtocolBalance(core, emitter.address, defaultAccountNumber, core.marketIds.usdc, ZERO_BI);
 
     await setupARBBalance(core, core.hhUser1, ONE_ETH_BI, core.dolomiteMargin);
     await setupARBBalance(core, core.hhUser2, parseEther('100'), core.dolomiteMargin);

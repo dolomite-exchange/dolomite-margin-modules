@@ -27,6 +27,7 @@ import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extension
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
@@ -53,7 +54,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
 
     bytes32 private constant _FILE = "Vester";
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
-    uint256 private constant _DISCOUNT_BASE = 1_000;
+    uint256 private constant _BASE = 1_000;
 
     uint256 private constant _MIN_DURATION = 1 weeks;
     uint256 private constant _MAX_DURATION = 4 weeks;
@@ -63,7 +64,9 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     // ===================================================
 
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line
+    IWETH public immutable WETH; // solhint-disable-line
     uint256 public immutable WETH_MARKET_ID; // solhint-disable-line
+    IERC20 public immutable ARB; // solhint-disable-line
     uint256 public immutable ARB_MARKET_ID; // solhint-disable-line
 
     uint256 private _nextId;
@@ -73,8 +76,8 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     IOARB public oARB;
 
     uint256 public closePositionWindow = 1 weeks;
-    uint256 public emergencyWithdrawTax;
     uint256 public forceClosePositionTax = 50;
+    uint256 public emergencyWithdrawTax;
     bool public vestingActive;
 
     // ==================================================================
@@ -97,14 +100,16 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     constructor(
         address _dolomiteMargin,
         address _dolomiteRegistry,
-        uint256 _wethMarketId,
-        uint256 _arbMarketId,
+        IWETH _weth,
+        IERC20 _arb,
         IOARB _oARB
     ) OnlyDolomiteMargin(_dolomiteMargin) ERC721("DolomiteArbVesting", "DAV") {
-        // @follow-up Come back to name and symbol
+        // @follow-up Want to confirm name and symbol
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-        WETH_MARKET_ID = _wethMarketId;
-        ARB_MARKET_ID = _arbMarketId;
+        WETH = _weth;
+        WETH_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_weth));
+        ARB = _arb;
+        ARB_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_arb));
         oARB = _oARB;
     }
 
@@ -120,11 +125,10 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     external
     requireVestingActive
     returns (uint256) {
-        IERC20 arb = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(ARB_MARKET_ID));
-        if (arb.balanceOf(address(this)) >= _amount + promisedArbTokens) { /* FOR COVERAGE TESTING */ }
-        Require.that(arb.balanceOf(address(this)) >= _amount + promisedArbTokens,
+        if (ARB.balanceOf(address(this)) >= _amount + promisedArbTokens) { /* FOR COVERAGE TESTING */ }
+        Require.that(ARB.balanceOf(address(this)) >= _amount + promisedArbTokens,
             _FILE,
-            "Arb tokens currently unavailable" // @follow-up this message
+            "Arb tokens currently unavailable" // @follow-up Is this message sufficient?
         );
         if (_duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(_duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0,
@@ -199,7 +203,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         // Calculate price
         uint256 discount = _calculateDiscount(_position.duration);
         uint256 wethPrice = (DOLOMITE_MARGIN().getMarketPrice(WETH_MARKET_ID)).value;
-        uint256 arbPriceAdj = ((DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID)).value) * discount / _DISCOUNT_BASE;
+        uint256 arbPriceAdj = ((DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID)).value) * discount / _BASE;
 
         uint256 wethValue = msg.value * wethPrice;
         uint256 arbValue = _position.amount * arbPriceAdj;
@@ -229,7 +233,6 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     )
     external
     onlyDolomiteMarginGlobalOperator(msg.sender) {
-        IERC20 arb = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(ARB_MARKET_ID));
         VestingPosition memory _position = vestingPositions[_id];
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
         address owner = ownerOf(_id);
@@ -240,7 +243,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         );
 
         // Burn oARB and transfer ARB tokens back to user"s dolomite account minus tax amount
-        uint256 tax = _position.amount * forceClosePositionTax / _DISCOUNT_BASE;
+        uint256 tax = _position.amount * forceClosePositionTax / _BASE;
         oARB.burn(_position.amount);
         _transfer(
             /* _fromAccount = */ address(this),
@@ -270,15 +273,14 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
                 }),
                 AccountBalanceLib.BalanceCheckFlag.Both
             );
-            arb.transfer(DOLOMITE_MARGIN().owner(), tax);
+            ARB.transfer(DOLOMITE_MARGIN().owner(), tax);
         }
 
         emit PositionClosed(owner, _id);
     }
 
-    // WARNING: This will forfeit all vesting progress and burn any vested oARB
+    // WARNING: This will forfeit all vesting progress and burn any locked oARB
     function emergencyWithdraw(uint256 _id) external {
-        IERC20 arb = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(ARB_MARKET_ID));
         VestingPosition memory _position = vestingPositions[_id];
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
         address owner = ownerOf(_id);
@@ -290,7 +292,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
 
         // Transfer arb back to the user and burn ARB
         oARB.burn(_position.amount);
-        uint256 tax = _position.amount * emergencyWithdrawTax / _DISCOUNT_BASE;
+        uint256 tax = _position.amount * emergencyWithdrawTax / _BASE;
         _transfer(
             /* _fromAccount = */ address(this),
             /* _fromAccountNumber = */ accountNumber,
@@ -319,7 +321,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
                 }),
                 AccountBalanceLib.BalanceCheckFlag.Both
             );
-            arb.transfer(DOLOMITE_MARGIN().owner(), tax);
+            ARB.transfer(DOLOMITE_MARGIN().owner(), tax);
         }
 
         emit EmergencyWithdraw(owner, _id);
@@ -371,9 +373,9 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        // @todo revisit this range
-        if (_emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _DISCOUNT_BASE) { /* FOR COVERAGE TESTING */ }
-        Require.that(_emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _DISCOUNT_BASE,
+        // @follow-up Do we want to allow the full range?
+        if (_emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _BASE) { /* FOR COVERAGE TESTING */ }
+        Require.that(_emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _BASE,
             _FILE,
             "Invalid emergency withdrawal tax"
         );
@@ -386,8 +388,8 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        if (_forceClosePositionTax >= 0 && _forceClosePositionTax < _DISCOUNT_BASE) { /* FOR COVERAGE TESTING */ }
-        Require.that(_forceClosePositionTax >= 0 && _forceClosePositionTax < _DISCOUNT_BASE,
+        if (_forceClosePositionTax >= 0 && _forceClosePositionTax < _BASE) { /* FOR COVERAGE TESTING */ }
+        Require.that(_forceClosePositionTax >= 0 && _forceClosePositionTax < _BASE,
             _FILE,
             "Invalid force close position tax"
         );

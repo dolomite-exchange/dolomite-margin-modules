@@ -27,6 +27,7 @@ import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extension
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
@@ -63,7 +64,9 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     // ===================================================
 
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line
+    IWETH public immutable WETH; // solhint-disable-line
     uint256 public immutable WETH_MARKET_ID; // solhint-disable-line
+    IERC20 public immutable ARB; // solhint-disable-line
     uint256 public immutable ARB_MARKET_ID; // solhint-disable-line
 
     uint256 private _nextId;
@@ -97,14 +100,16 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     constructor(
         address _dolomiteMargin,
         address _dolomiteRegistry,
-        uint256 _wethMarketId,
-        uint256 _arbMarketId,
+        IWETH _weth,
+        IERC20 _arb,
         IOARB _oARB
     ) OnlyDolomiteMargin(_dolomiteMargin) ERC721("DolomiteArbVesting", "DAV") {
         // @follow-up Want to confirm name and symbol
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-        WETH_MARKET_ID = _wethMarketId;
-        ARB_MARKET_ID = _arbMarketId;
+        WETH = _weth;
+        WETH_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_weth));
+        ARB = _arb;
+        ARB_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_arb));
         oARB = _oARB;
     }
 
@@ -120,9 +125,8 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     external 
     requireVestingActive 
     returns (uint256) {
-        IERC20 arb = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(ARB_MARKET_ID));
         Require.that(
-            arb.balanceOf(address(this)) >= _amount + promisedArbTokens,
+            ARB.balanceOf(address(this)) >= _amount + promisedArbTokens,
             _FILE,
             "Arb tokens currently unavailable" // @follow-up Is this message sufficient?
         );
@@ -229,7 +233,6 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     ) 
     external 
     onlyDolomiteMarginGlobalOperator(msg.sender) {
-        IERC20 arb = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(ARB_MARKET_ID));
         VestingPosition memory _position = vestingPositions[_id];
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
         address owner = ownerOf(_id);
@@ -270,7 +273,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
                 }),
                 AccountBalanceLib.BalanceCheckFlag.Both
             );
-            arb.transfer(DOLOMITE_MARGIN().owner(), tax);
+            ARB.transfer(DOLOMITE_MARGIN().owner(), tax);
         }
 
         emit PositionClosed(owner, _id);
@@ -278,7 +281,6 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
 
     // WARNING: This will forfeit all vesting progress and burn any locked oARB
     function emergencyWithdraw(uint256 _id) external {
-        IERC20 arb = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(ARB_MARKET_ID));
         VestingPosition memory _position = vestingPositions[_id];
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
         address owner = ownerOf(_id);
@@ -319,7 +321,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
                 }),
                 AccountBalanceLib.BalanceCheckFlag.Both
             );
-            arb.transfer(DOLOMITE_MARGIN().owner(), tax);
+            ARB.transfer(DOLOMITE_MARGIN().owner(), tax);
         }
 
         emit EmergencyWithdraw(owner, _id);
