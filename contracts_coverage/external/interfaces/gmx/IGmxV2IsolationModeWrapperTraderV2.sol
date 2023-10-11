@@ -30,6 +30,10 @@ import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.s
  */
 interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase {
 
+    // ================================================
+    // ==================== Structs ===================
+    // ================================================
+
     struct DepositInfo {
         bytes32 key;
         address vault;
