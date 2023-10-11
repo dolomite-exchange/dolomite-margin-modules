@@ -32,7 +32,7 @@ import { IRewardsDistributor } from "../interfaces/liquidityMining/IRewardsDistr
  * @title   RewardsDistributor
  * @author  Dolomite
  *
- * RewardsDistributor contract for oARB tokens
+ * Rewards Distributor contract for oARB tokens
  */
 contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     using SafeERC20 for IOARB;
@@ -82,7 +82,7 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
 
             claimStatus[msg.sender][_claimInfo[i].epoch] = true;
             oARB.mint(_claimInfo[i].amount);
-            // @follow-up Don't really need safeTransfer here, but added it anyway
+            // @follow-up Don't really need safeTransfer here, can remove if you'd like
             oARB.safeTransfer(msg.sender, _claimInfo[i].amount);
 
             emit Claimed(msg.sender, _claimInfo[i].epoch, _claimInfo[i].amount);

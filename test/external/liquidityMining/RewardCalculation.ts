@@ -56,7 +56,6 @@ describe('Reward Calculation', () => {
     await setupWETHBalance(core, core.hhUser1, wethAmount.mul(3), core.dolomiteMargin);
     await setupWETHBalance(core, core.hhUser2, wethAmount.mul(3), core.dolomiteMargin);
     await setupDAIBalance(core, core.hhUser2, daiAmount.mul(3), core.dolomiteMargin);
-    // @follow-up Do we want to test with interest or no?
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, wethAmount.mul(3));
     await depositIntoDolomiteMargin(core, core.hhUser2, defaultAccountNumber, core.marketIds.weth, wethAmount.mul(3));
     await depositIntoDolomiteMargin(core, core.hhUser2, defaultAccountNumber, core.marketIds.dai!, daiAmount.mul(3));

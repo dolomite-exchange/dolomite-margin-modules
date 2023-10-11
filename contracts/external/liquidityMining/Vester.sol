@@ -53,7 +53,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
 
     bytes32 private constant _FILE = "Vester";
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
-    uint256 private constant _DISCOUNT_BASE = 1_000;
+    uint256 private constant _BASE = 1_000;
 
     uint256 private constant _MIN_DURATION = 1 weeks;
     uint256 private constant _MAX_DURATION = 4 weeks;
@@ -73,8 +73,8 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     IOARB public oARB;
 
     uint256 public closePositionWindow = 1 weeks;
-    uint256 public emergencyWithdrawTax;
     uint256 public forceClosePositionTax = 50;
+    uint256 public emergencyWithdrawTax;
     bool public vestingActive;
 
     // ==================================================================
@@ -101,7 +101,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         uint256 _arbMarketId,
         IOARB _oARB
     ) OnlyDolomiteMargin(_dolomiteMargin) ERC721("DolomiteArbVesting", "DAV") {
-        // @follow-up Come back to name and symbol
+        // @follow-up Want to confirm name and symbol
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         WETH_MARKET_ID = _wethMarketId;
         ARB_MARKET_ID = _arbMarketId;
@@ -124,7 +124,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         Require.that(
             arb.balanceOf(address(this)) >= _amount + promisedArbTokens,
             _FILE,
-            "Arb tokens currently unavailable" // @follow-up this message
+            "Arb tokens currently unavailable" // @follow-up Is this message sufficient?
         );
         Require.that(
             _duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0,
@@ -199,7 +199,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         // Calculate price
         uint256 discount = _calculateDiscount(_position.duration);
         uint256 wethPrice = (DOLOMITE_MARGIN().getMarketPrice(WETH_MARKET_ID)).value;
-        uint256 arbPriceAdj = ((DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID)).value) * discount / _DISCOUNT_BASE;
+        uint256 arbPriceAdj = ((DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID)).value) * discount / _BASE;
 
         uint256 wethValue = msg.value * wethPrice;
         uint256 arbValue = _position.amount * arbPriceAdj;
@@ -240,7 +240,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         );
 
         // Burn oARB and transfer ARB tokens back to user"s dolomite account minus tax amount
-        uint256 tax = _position.amount * forceClosePositionTax / _DISCOUNT_BASE;
+        uint256 tax = _position.amount * forceClosePositionTax / _BASE;
         oARB.burn(_position.amount);
         _transfer(
             /* _fromAccount = */ address(this),
@@ -276,7 +276,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         emit PositionClosed(owner, _id);
     }
 
-    // WARNING: This will forfeit all vesting progress and burn any vested oARB
+    // WARNING: This will forfeit all vesting progress and burn any locked oARB
     function emergencyWithdraw(uint256 _id) external {
         IERC20 arb = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(ARB_MARKET_ID));
         VestingPosition memory _position = vestingPositions[_id];
@@ -290,7 +290,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
 
         // Transfer arb back to the user and burn ARB
         oARB.burn(_position.amount);
-        uint256 tax = _position.amount * emergencyWithdrawTax / _DISCOUNT_BASE;
+        uint256 tax = _position.amount * emergencyWithdrawTax / _BASE;
         _transfer(
             /* _fromAccount = */ address(this),
             /* _fromAccountNumber = */ accountNumber,
@@ -371,9 +371,9 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        // @todo revisit this range
+        // @follow-up Do we want to allow the full range?
         Require.that(
-            _emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _DISCOUNT_BASE,
+            _emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _BASE,
             _FILE,
             "Invalid emergency withdrawal tax"
         );
@@ -387,7 +387,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     external
     onlyDolomiteMarginOwner(msg.sender) {
         Require.that(
-            _forceClosePositionTax >= 0 && _forceClosePositionTax < _DISCOUNT_BASE,
+            _forceClosePositionTax >= 0 && _forceClosePositionTax < _BASE,
             _FILE,
             "Invalid force close position tax"
         );

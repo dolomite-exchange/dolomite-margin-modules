@@ -28,7 +28,6 @@ pragma solidity ^0.8.9;
  * Interface for a vesting contract that offers users a discount on ARB tokens
  * if they vest ARB and oARB for a length of time
  */
-// @todo check and add views to interfaces if necessary
 interface IVester {
 
     // =================================================

@@ -51,7 +51,6 @@ describe('Emitter', () => {
     );
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(3), core.dolomiteMargin);
-    // @follow-up Do we want to test with interest or no?
     await disableInterestAccrual(core, core.marketIds.usdc);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(emitter.address, true);
@@ -120,7 +119,6 @@ describe('Emitter', () => {
       );
     });
 
-    // @todo add tests to make sure changing oARBPerSecond doesn't rug users rewards
     it('should reset rewardDebt if new campaign is started', async () => {
       await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount.div(2));
@@ -158,7 +156,7 @@ describe('Emitter', () => {
 
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
       await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
-      await expectWalletBalance(core.hhUser1.address, oARB, parseEther('4').sub(1)); // @follow-up Off by one wei
+      await expectWalletBalance(core.hhUser1.address, oARB, parseEther('4').sub(1));
     });
 
     it('should fail if pool is not initialized', async () => {

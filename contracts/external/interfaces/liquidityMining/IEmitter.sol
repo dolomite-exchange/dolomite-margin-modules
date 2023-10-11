@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { IOARB } from "./IOARB.sol";
-import { IDolomiteRegistry } from "../IDolomiteRegistry.sol";
 
 
 /**
@@ -134,23 +133,4 @@ interface IEmitter {
      * @param  _oARBPerSecond   The new oARBPerSecond value
      */
     function ownerSetOARBPerSecond(uint256 _oARBPerSecond) external;
-
-    // =================================================
-    // ================= View Functions ================
-    // =================================================
-
-    function DOLOMITE_REGISTRY() external view returns (IDolomiteRegistry);
-
-    function oARB() external view returns (IOARB);
-
-    function oARBPerSecond() external view returns (uint256);
-
-    // @follow-up Do you know what to do here?
-    // function userInfo(uint256 _marketId, uint256 _accountHash) external view returns (UserInfo memory);
-
-    // function poolInfo(uint256 _marketId) external view returns (PoolInfo memory);
-
-    function totalAllocPoint() external view returns (uint256);
-
-    function startTime() external view returns (uint256);
 }

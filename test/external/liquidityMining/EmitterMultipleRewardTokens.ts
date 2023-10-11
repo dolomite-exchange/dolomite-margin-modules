@@ -80,7 +80,6 @@ describe('EmitterMultipleRewardTokens', () => {
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(3), core.dolomiteMargin);
     await setupWETHBalance(core, core.hhUser1, wethAmount.mul(3), core.dolomiteMargin);
-    // @follow-up Do we want to test with interest or no?
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, wethAmount.mul(3));
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(emitter.address, true);

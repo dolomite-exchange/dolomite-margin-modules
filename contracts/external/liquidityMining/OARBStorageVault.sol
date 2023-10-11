@@ -28,6 +28,7 @@ import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
  * @author  Dolomite
  *
  * OARB Storage Vault contract that mints oARB when pullTokensFromVault is called
+ * WARNING: THIS CODE HAS NOT BEEN THOROUGHLY TESTED AND IS NOT PRODUCTION READY
  */
 contract OARBStorageVault is OnlyDolomiteMargin {
 
@@ -54,7 +55,6 @@ contract OARBStorageVault is OnlyDolomiteMargin {
     // ======================= External Functions =======================
     // ==================================================================
 
-    // @follow-up Is global operator the appropriate restriction here?
     function pullTokensFromVault(uint256 _amount) external onlyDolomiteMarginGlobalOperator(msg.sender) {
         oARB.mint(_amount);
         oARB.transfer(msg.sender, _amount);

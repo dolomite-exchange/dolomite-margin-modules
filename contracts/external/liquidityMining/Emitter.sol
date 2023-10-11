@@ -37,6 +37,7 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  * @author  Dolomite
  *
  * An implementation of the IEmitter interface that grants users oARB rewards for staking assets
+ * WARNING: THIS CODE HAS NOT BEEN THOROUGHLY TESTED AND IS NOT PRODUCTION READY
  */
 contract Emitter is OnlyDolomiteMargin, IEmitter {
     using SafeERC20 for IOARB;
@@ -225,7 +226,6 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         user.rewardDebt = 0;
         user.lastUpdateTime = 0;
 
-        // @follow-up Which account number to transfer to?
         IDolomiteStructs.Par memory beforeAccountPar = DOLOMITE_MARGIN().getAccountPar(info, _marketId);
         _transfer(
             /* _fromAccount = */ address(this),
