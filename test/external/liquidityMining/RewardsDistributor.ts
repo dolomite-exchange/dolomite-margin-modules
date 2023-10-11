@@ -8,7 +8,6 @@ import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
 import { MerkleTree } from 'merkletreejs';
 
-
 describe('RewardsDistributor', () => {
   let snapshotId: string;
   let core: CoreProtocol;
@@ -22,7 +21,11 @@ describe('RewardsDistributor', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
+    oARB = await createContractWithAbi<OARB>(
+      OARB__factory.abi,
+      OARB__factory.bytecode,
+      [core.dolomiteMargin.address]
+    );
     rewardsDistributor = await createContractWithAbi<RewardsDistributor>(
       RewardsDistributor__factory.abi,
       RewardsDistributor__factory.bytecode,
@@ -31,22 +34,20 @@ describe('RewardsDistributor', () => {
     await core.dolomiteMargin.ownerSetGlobalOperator(rewardsDistributor.address, true);
 
     const rewards1 = [
-        { address: core.hhUser1.address, rewards: 10 },
-        { address: core.hhUser2.address, rewards: 10 },
-    ]
+      { address: core.hhUser1.address, rewards: 10 },
+      { address: core.hhUser2.address, rewards: 10 },
+    ];
     const rewards2 = [
-        { address: core.hhUser1.address, rewards: 20 },
-        { address: core.hhUser2.address, rewards: 20 },
-    ]
+      { address: core.hhUser1.address, rewards: 20 },
+      { address: core.hhUser2.address, rewards: 20 },
+    ];
     const leaves1 = rewards1.map((account) =>
       keccak256(defaultAbiCoder.encode(['address', 'uint256'], [account.address, account.rewards]))
     );
     const leaves2 = rewards2.map((account) =>
       keccak256(defaultAbiCoder.encode(['address', 'uint256'], [account.address, account.rewards]))
     );
-    const invalidLeaf = keccak256(
-      defaultAbiCoder.encode(['address', 'uint256'], [core.hhUser3.address, 10])
-    );
+    const invalidLeaf = keccak256(defaultAbiCoder.encode(['address', 'uint256'], [core.hhUser3.address, 10]));
     const tree1 = new MerkleTree(leaves1, keccak256, { sort: true });
     const tree2 = new MerkleTree(leaves2, keccak256, { sort: true });
 
@@ -75,33 +76,36 @@ describe('RewardsDistributor', () => {
 
   describe('#claim', () => {
     it('should work normally', async () => {
-      await rewardsDistributor.connect(core.hhUser1).claim([ { epoch: 1, amount: 10, proof: validProof1}]);
-        expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(10);
-        expect(await rewardsDistributor.claimStatus(core.hhUser1.address, 1)).to.be.true;
+      await rewardsDistributor.connect(core.hhUser1).claim([{ epoch: 1, amount: 10, proof: validProof1 }]);
+      expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(10);
+      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, 1)).to.be.true;
     });
 
     it('should work with multiple epochs', async () => {
-      await rewardsDistributor.connect(core.hhUser1).claim([ { epoch: 1, amount: 10, proof: validProof1}, { epoch: 2, amount: 20, proof: validProof2}]);
-        expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(30);
-        expect(await rewardsDistributor.claimStatus(core.hhUser1.address, 1)).to.be.true;
-        expect(await rewardsDistributor.claimStatus(core.hhUser1.address, 2)).to.be.true;
+      await rewardsDistributor.connect(core.hhUser1).claim([
+        { epoch: 1, amount: 10, proof: validProof1 },
+        { epoch: 2, amount: 20, proof: validProof2 },
+      ]);
+      expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(30);
+      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, 1)).to.be.true;
+      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, 2)).to.be.true;
     });
 
     it('should fail if tokens already claimed', async () => {
-      await rewardsDistributor.connect(core.hhUser1).claim([ { epoch: 1, amount: 10, proof: validProof1}]);
+      await rewardsDistributor.connect(core.hhUser1).claim([{ epoch: 1, amount: 10, proof: validProof1 }]);
       await expectThrow(
-        rewardsDistributor.connect(core.hhUser1).claim([ { epoch: 1, amount: 10, proof: validProof1}]),
-        'RewardsDistributor: Already claimed',
+        rewardsDistributor.connect(core.hhUser1).claim([{ epoch: 1, amount: 10, proof: validProof1 }]),
+        'RewardsDistributor: Already claimed'
       );
     });
 
     it('should fail if invalid merkle proof', async () => {
       await expectThrow(
-        rewardsDistributor.connect(core.hhUser3).claim([ { epoch: 1, amount: 10, proof: invalidProof}]),
+        rewardsDistributor.connect(core.hhUser3).claim([{ epoch: 1, amount: 10, proof: invalidProof }]),
         'RewardsDistributor: Invalid merkle proof'
       );
       await expectThrow(
-        rewardsDistributor.connect(core.hhUser3).claim([ { epoch: 1, amount: 10, proof: validProof1}]),
+        rewardsDistributor.connect(core.hhUser3).claim([{ epoch: 1, amount: 10, proof: validProof1 }]),
         'RewardsDistributor: Invalid merkle proof'
       );
     });
@@ -128,9 +132,11 @@ describe('RewardsDistributor', () => {
 
   describe('#setOARB', () => {
     it('should work normally', async () => {
-      const newOARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [
-        core.dolomiteMargin.address,
-      ]);
+      const newOARB = await createContractWithAbi<OARB>(
+        OARB__factory.abi,
+        OARB__factory.bytecode,
+        [core.dolomiteMargin.address]
+      );
       expect(await rewardsDistributor.oARB()).to.eq(oARB.address);
       const result = await rewardsDistributor.connect(core.governance).ownerSetOARB(newOARB.address);
       await expectEvent(rewardsDistributor, result, 'OARBSet', {
