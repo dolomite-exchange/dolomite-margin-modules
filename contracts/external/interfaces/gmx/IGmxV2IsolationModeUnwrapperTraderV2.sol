@@ -45,6 +45,11 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
         uint256 outputAmount;
     }
 
+    enum TradeType {
+        FromWithdrawal,
+        FromDeposit
+    }
+
     // ================================================
     // ==================== Events ====================
     // ================================================

@@ -24,6 +24,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
@@ -45,6 +46,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
  */
 library GmxV2Library {
     using SafeERC20 for IERC20;
+    using SafeERC20 for IWETH;
     using TypesLib for IDolomiteStructs.Par;
 
     // ==================================================================
@@ -61,6 +63,44 @@ library GmxV2Library {
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
+
+    function createDeposit(
+        IGmxV2IsolationModeVaultFactory _factory,
+        IGmxRegistryV2 _registry,
+        IWETH _weth,
+        address _tradeOriginator,
+        uint256 _ethExecutionFee,
+        address _outputTokenUnderlying,
+        uint256 _minOutputAmount,
+        address _inputToken,
+        uint256 _inputAmount
+    ) public returns (bytes32) {
+        IGmxExchangeRouter exchangeRouter = _registry.gmxExchangeRouter();
+        _weth.safeTransferFrom(_tradeOriginator, address(this), _ethExecutionFee);
+        _weth.withdraw(_ethExecutionFee);
+
+        address depositVault = _registry.gmxDepositVault();
+        exchangeRouter.sendWnt{value: _ethExecutionFee}(depositVault, _ethExecutionFee);
+        IERC20(_inputToken).safeApprove(address(_registry.gmxRouter()), _inputAmount);
+        exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
+
+        IGmxExchangeRouter.CreateDepositParams memory depositParams = IGmxExchangeRouter.CreateDepositParams(
+            /* receiver = */ address(this),
+            /* callbackContract = */ address(this),
+            /* uiFeeReceiver = */ address(0),
+            /* market = */ _outputTokenUnderlying,
+            /* initialLongToken = */ _factory.LONG_TOKEN(),
+            /* initialShortToken = */ _factory.SHORT_TOKEN(),
+            /* longTokenSwapPath = */ new address[](0),
+            /* shortTokenSwapPath = */ new address[](0),
+            /* minMarketTokens = */ _minOutputAmount,
+            /* shouldUnwrapNativeToken = */ false,
+            /* executionFee = */ _ethExecutionFee,
+            /* callbackGasLimit = */ _registry.callbackGasLimit()
+        );
+
+        return exchangeRouter.createDeposit(depositParams);
+    }
 
     function executeInitiateUnwrapping(
         IGmxV2IsolationModeVaultFactory _factory,
