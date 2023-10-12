@@ -230,6 +230,19 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
     }
 
+    function setDepositInfoAndSetVaultFrozenStatus(
+        bytes32 _key,
+        DepositInfo calldata _depositInfo
+    ) external {
+        Require.that(
+            msg.sender == address(GMX_REGISTRY_V2().gmxV2UnwrapperTrader()),
+            _FILE,
+            "Caller is not unwrapper",
+            msg.sender
+        );
+        _setDepositInfoAndSetVaultFrozenStatus(_key, _depositInfo);
+    }
+
     function isValidInputToken(address _inputToken) public view override returns (bool) {
         address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).LONG_TOKEN();
         address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).SHORT_TOKEN();
@@ -358,11 +371,16 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultAccountFrozen(
             _info.vault,
             _info.accountNumber,
-            !clearValues
+            /* _amountWei = */ IDolomiteStructs.Wei({
+                sign: clearValues ? false : true,
+                value: _info.outputAmount
+            })
         );
         storageInfo.key = _key;
         storageInfo.vault = clearValues ? address(0) : _info.vault;
         storageInfo.accountNumber = clearValues ? 0 : _info.accountNumber;
+        storageInfo.inputToken = clearValues ? address(0) : _info.inputToken;
+        storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
         storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
     }
 

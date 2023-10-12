@@ -48,6 +48,7 @@ library GmxV2Library {
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
     using TypesLib for IDolomiteStructs.Par;
+    using TypesLib for IDolomiteStructs.Wei;
 
     // ==================================================================
     // ============================ Constants ===========================
@@ -171,6 +172,31 @@ library GmxV2Library {
     ) public view {
         Require.that(
             !_factory.isVaultAccountFrozen(_vault, _accountNumber),
+            _FILE,
+            "Account is frozen",
+            _vault,
+            _accountNumber
+        );
+    }
+
+    function checkWithdrawalIsNotTooLargeAgainstPending(
+        IGmxV2IsolationModeVaultFactory _factory,
+        IDolomiteMargin _dolomiteMargin,
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _withdrawalAmount
+    ) public view {
+        IDolomiteStructs.Wei memory pendingAmount = _factory.getPendingAmountByAccount(_vault, _accountNumber);
+        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
+            owner: _vault,
+            number: _accountNumber
+        });
+        IDolomiteStructs.Wei memory balance = _dolomiteMargin.getAccountWei(accountInfo, _factory.marketId());
+        // The pending amount should be 0 (not frozen) OR the withdrawal cannot be for more than the user's balance,
+        // minus any pending.
+        Require.that(
+            pendingAmount.isZero()
+                || (pendingAmount.isPositive() && balance.value - pendingAmount.value >= _withdrawalAmount),
             _FILE,
             "Account is frozen",
             _vault,

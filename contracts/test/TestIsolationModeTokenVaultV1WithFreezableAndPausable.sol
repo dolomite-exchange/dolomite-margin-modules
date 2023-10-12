@@ -25,6 +25,7 @@ import { IDolomiteRegistry } from "../external/interfaces/IDolomiteRegistry.sol"
 import { IFreezableIsolationModeVaultFactory } from "../external/interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV1 } from "../external/proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -40,14 +41,17 @@ contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeT
 
     function initiateUnwrappingForLiquidation(
         uint256 _tradeAccountNumber,
-        uint256 /* _inputAmount */,
+        uint256 _inputAmount,
         address /* _outputToken */,
         uint256 /* _minOutputAmount */
     ) external payable {
         IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setIsVaultAccountFrozen(
             /* _vault = */ address(this),
             _tradeAccountNumber,
-            /* _isFrozen = */ true
+            /* _amountWei = */ IDolomiteStructs.Wei({
+                sign: false,
+                value: _inputAmount
+            })
         );
     }
 

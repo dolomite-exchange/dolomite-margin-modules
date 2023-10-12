@@ -22,6 +22,8 @@ pragma solidity ^0.8.9;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IsolationModeVaultFactory } from "./IsolationModeVaultFactory.sol";
+import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
+import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 
 
@@ -36,29 +38,33 @@ abstract contract FreezableIsolationModeVaultFactory is
     IsolationModeVaultFactory
 {
     using EnumerableSet for EnumerableSet.UintSet;
+    using TypesLib for IDolomiteStructs.Wei;
 
     // ============ Field Variables ============
 
     /// Vault ==> Set of Account Numbers
     mapping(address => EnumerableSet.UintSet) private _vaultToAccountFrozenSet;
+    mapping(address => mapping(uint256 => IDolomiteStructs.Wei)) private _accountInfoToPendingAmountWeiMap;
 
     // ============ Functions ============
 
     function setIsVaultAccountFrozen(
         address _vault,
         uint256 _accountNumber,
-        bool _isFrozen
+        IDolomiteStructs.Wei memory _amountWei
     )
         external
         requireIsTokenConverterOrVault(msg.sender)
         requireIsVault(_vault)
     {
-        if (_isFrozen) {
-            _vaultToAccountFrozenSet[_vault].add(_accountNumber);
-        } else {
+        if (_amountWei.isZero()) {
             _vaultToAccountFrozenSet[_vault].remove(_accountNumber);
+        } else {
+            _vaultToAccountFrozenSet[_vault].add(_accountNumber);
         }
-        emit VaultAccountFrozen(_vault, _accountNumber, _isFrozen);
+        _accountInfoToPendingAmountWeiMap[_vault][_accountNumber] = _amountWei;
+
+        emit VaultAccountFrozen(_vault, _accountNumber, !_amountWei.isZero());
     }
 
     function isVaultFrozen(
@@ -72,5 +78,12 @@ abstract contract FreezableIsolationModeVaultFactory is
         uint256 _accountNumber
     ) external view returns (bool) {
         return _vaultToAccountFrozenSet[_vault].contains(_accountNumber);
+    }
+
+    function getPendingAmountByAccount(
+        address _vault,
+        uint256 _accountNumber
+    ) external view returns (IDolomiteStructs.Wei memory) {
+        return _accountInfoToPendingAmountWeiMap[_vault][_accountNumber];
     }
 }
