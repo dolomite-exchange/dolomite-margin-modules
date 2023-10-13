@@ -237,7 +237,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
         address owner = ownerOf(_id);
         Require.that(
-            block.timestamp > _position.startTime + _position.duration + 1 weeks,
+            block.timestamp > _position.startTime + _position.duration + closePositionWindow,
             _FILE,
             "Position not expired"
         );
