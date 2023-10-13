@@ -483,6 +483,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     returns (uint256) {
         // We don't need to validate _tradeOriginator here because it is validated in _callFunction via the transfer
         // being enqueued (without it being enqueued, we'd never reach this point)
+        // TODO: fix this to be an array; aggregate data
         (TradeType tradeType, bytes32 key) = abi.decode(_extraOrderData, (TradeType, bytes32));
         if (tradeType == TradeType.FromWithdrawal) {
             WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
