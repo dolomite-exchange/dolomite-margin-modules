@@ -44,27 +44,31 @@ abstract contract FreezableIsolationModeVaultFactory is
 
     /// Vault ==> Set of Account Numbers
     mapping(address => EnumerableSet.UintSet) private _vaultToAccountFrozenSet;
-    mapping(address => mapping(uint256 => IDolomiteStructs.Wei)) private _accountInfoToPendingAmountWeiMap;
+    /// Vault ==> Account Number ==> Freeze Type ==> Pending Amount
+    mapping(address => mapping(uint256 => mapping(FreezeType => IDolomiteStructs.Wei))) private _accountInfoToPendingAmountWeiMap; // solhint-disable-line max-line-length
 
     // ============ Functions ============
 
     function setIsVaultAccountFrozen(
         address _vault,
         uint256 _accountNumber,
+        FreezeType _freezeType,
         IDolomiteStructs.Wei memory _amountWei
     )
         external
         requireIsTokenConverterOrVault(msg.sender)
         requireIsVault(_vault)
     {
-        if (_amountWei.isZero()) {
-            _vaultToAccountFrozenSet[_vault].remove(_accountNumber);
-        } else {
-            _vaultToAccountFrozenSet[_vault].add(_accountNumber);
-        }
-        _accountInfoToPendingAmountWeiMap[_vault][_accountNumber] = _amountWei;
+        _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][_freezeType] = _amountWei;
 
-        emit VaultAccountFrozen(_vault, _accountNumber, !_amountWei.isZero());
+        bool isFrozen = isVaultAccountFrozen(_vault, _accountNumber);
+        if (isFrozen) {
+            _vaultToAccountFrozenSet[_vault].add(_accountNumber);
+        } else {
+            _vaultToAccountFrozenSet[_vault].remove(_accountNumber);
+        }
+
+        emit VaultAccountFrozen(_vault, _accountNumber, isFrozen);
     }
 
     function isVaultFrozen(
@@ -73,17 +77,19 @@ abstract contract FreezableIsolationModeVaultFactory is
         return _vaultToAccountFrozenSet[_vault].length() > 0;
     }
 
+    function getPendingAmountByAccount(
+        address _vault,
+        uint256 _accountNumber,
+        FreezeType _freezeType
+    ) external view returns (IDolomiteStructs.Wei memory) {
+        return _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][_freezeType];
+    }
+
     function isVaultAccountFrozen(
         address _vault,
         uint256 _accountNumber
-    ) external view returns (bool) {
-        return _vaultToAccountFrozenSet[_vault].contains(_accountNumber);
-    }
-
-    function getPendingAmountByAccount(
-        address _vault,
-        uint256 _accountNumber
-    ) external view returns (IDolomiteStructs.Wei memory) {
-        return _accountInfoToPendingAmountWeiMap[_vault][_accountNumber];
+    ) public view returns (bool) {
+        return !_accountInfoToPendingAmountWeiMap[_vault][_accountNumber][FreezeType.Deposit].isZero()
+            || !_accountInfoToPendingAmountWeiMap[_vault][_accountNumber][FreezeType.Withdrawal].isZero();
     }
 }

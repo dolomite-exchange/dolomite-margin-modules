@@ -28,6 +28,7 @@ import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
+import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
 import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
@@ -186,17 +187,35 @@ library GmxV2Library {
         uint256 _accountNumber,
         uint256 _withdrawalAmount
     ) public view {
-        IDolomiteStructs.Wei memory pendingAmount = _factory.getPendingAmountByAccount(_vault, _accountNumber);
+        {
+            IDolomiteStructs.Wei memory withdrawalPendingAmount = _factory.getPendingAmountByAccount(
+                _vault,
+                _accountNumber,
+                IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
+            );
+            Require.that(
+                withdrawalPendingAmount.isZero(),
+                _FILE,
+                "Account is frozen",
+                _vault,
+                _accountNumber
+            );
+        }
+
+        IDolomiteStructs.Wei memory depositPendingAmount = _factory.getPendingAmountByAccount(
+            _vault,
+            _accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
+        );
         IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
             owner: _vault,
             number: _accountNumber
         });
         IDolomiteStructs.Wei memory balance = _dolomiteMargin.getAccountWei(accountInfo, _factory.marketId());
-        // The pending amount should be 0 (not frozen) OR the withdrawal cannot be for more than the user's balance,
-        // minus any pending.
+        // The pending amount should be 0 (not frozen) OR the requested withdrawal cannot be for more than the user's
+        // balance, minus any pending.
         Require.that(
-            pendingAmount.isZero()
-                || (pendingAmount.isPositive() && balance.value - pendingAmount.value >= _withdrawalAmount),
+            balance.value - depositPendingAmount.value >= _withdrawalAmount,
             _FILE,
             "Account is frozen",
             _vault,

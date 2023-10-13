@@ -56,6 +56,7 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
 
     event WithdrawalCreated(bytes32 indexed key);
     event WithdrawalExecuted(bytes32 indexed key);
+    event WithdrawalDeferred(bytes32 indexed key);
     event WithdrawalFailed(bytes32 indexed key, string reason);
     event WithdrawalCancelled(bytes32 indexed key);
 

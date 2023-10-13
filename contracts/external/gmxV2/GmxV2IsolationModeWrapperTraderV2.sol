@@ -29,6 +29,7 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
@@ -371,6 +372,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultAccountFrozen(
             _info.vault,
             _info.accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Deposit,
             /* _amountWei = */ IDolomiteStructs.Wei({
                 sign: clearValues ? false : true,
                 value: _info.outputAmount

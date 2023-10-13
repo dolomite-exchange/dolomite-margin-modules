@@ -34,6 +34,15 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     // ==========================================================
+    // ========================= Enums ==========================
+    // ==========================================================
+
+    enum FreezeType {
+        Deposit,
+        Withdrawal
+    }
+
+    // ==========================================================
     // ========================= Events =========================
     // ==========================================================
 
@@ -51,11 +60,13 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
      *
      * @param  _vault           The address of the vault whose frozen status should change
      * @param  _accountNumber   The account number (sub account) for the corresponding vault
+     * @param  _freezeType      The type of freeze that may have a pending callback amount (Deposit or Withdrawal)
      * @param  _amountWei       The amount that is pending for this sub account. Set to `0` to unfreeze
      */
     function setIsVaultAccountFrozen(
         address _vault,
         uint256 _accountNumber,
+        FreezeType _freezeType,
         IDolomiteStructs.Wei memory _amountWei
     ) external;
 
@@ -83,11 +94,13 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
      *
      * @param  _vault           The address of the vault that may have a pending callback amount
      * @param  _accountNumber   The account number (sub account) for the corresponding vault
+     * @param  _freezeType      The type of freeze that may have a pending callback amount (Deposit or Withdrawal)
      * @return                  The pending amount for this account. 0 means nothing. Positive means there is a pending
      *                          deposit. Negative means there is a pending withdrawal.
      */
     function getPendingAmountByAccount(
         address _vault,
-        uint256 _accountNumber
+        uint256 _accountNumber,
+        FreezeType _freezeType
     ) external view returns (IDolomiteStructs.Wei memory);
 }

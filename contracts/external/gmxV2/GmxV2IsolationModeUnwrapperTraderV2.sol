@@ -31,6 +31,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeUnwrapperTrader } from "../interfaces/IIsolationModeUnwrapperTrader.sol";
+import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { GmxWithdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
@@ -178,6 +179,21 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
         _setWithdrawalInfoAndSetVaultFrozenStatus(_key, withdrawalInfo);
 
+        {
+            // Change scope for the "stack too deep" error
+            IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
+            uint256 pendingDepositAmount = factory.getPendingAmountByAccount(
+                withdrawalInfo.vault,
+                withdrawalInfo.accountNumber,
+                IFreezableIsolationModeVaultFactory.FreezeType.Deposit
+            ).value;
+            if (pendingDepositAmount != 0) {
+                // If there's a pending deposit, we defer it, so the liquidation bot so we can process them all
+                emit WithdrawalDeferred(_key);
+                return;
+            }
+        }
+
         try IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
             withdrawalInfo.accountNumber,
             marketIdsPath,
@@ -294,27 +310,31 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _outputMarket
         );
 
-        (TradeType tradeType, bytes32 key) = abi.decode(_orderData, (TradeType, bytes32));
-        uint256 structInputAmount;
-        if (tradeType == TradeType.FromWithdrawal) {
-            WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
-            structInputAmount = withdrawalInfo.inputAmount;
-            Require.that(
-                structInputAmount >= _inputAmount && _inputAmount > 0,
-                _FILE,
-                "Invalid input amount"
-            );
-        } else {
-            assert(tradeType == TradeType.FromDeposit);
-            IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory depositInfo =
-                                            GMX_REGISTRY_V2().gmxV2WrapperTrader().getDepositInfo(key);
-            structInputAmount = depositInfo.outputAmount;
-            Require.that(
-                structInputAmount >= _inputAmount && _inputAmount > 0,
-                _FILE,
-                "Invalid input amount"
-            );
+        (TradeType[] memory tradeTypes, bytes32[] memory keys) = abi.decode(_orderData, (TradeType[], bytes32[]));
+        Require.that(
+            tradeTypes.length == keys.length && keys.length > 0,
+            _FILE,
+            "Invalid unwrapping order data"
+        );
+
+        uint256 structInputAmount = 0;
+        // Realistically this array length will only ever be 1 or 2.
+        for (uint256 i; i < tradeTypes.length; ++i) {
+            if (tradeTypes[i] == TradeType.FromWithdrawal) {
+                WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(keys[i]);
+                structInputAmount += withdrawalInfo.inputAmount;
+            } else {
+                assert(tradeTypes[i] == TradeType.FromDeposit);
+                IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory depositInfo =
+                                                GMX_REGISTRY_V2().gmxV2WrapperTrader().getDepositInfo(keys[i]);
+                structInputAmount += depositInfo.outputAmount;
+            }
         }
+        Require.that(
+            structInputAmount >= _inputAmount && _inputAmount > 0,
+            _FILE,
+            "Invalid input amount"
+        );
 
         // If the input amount doesn't match, we need to add 2 actions to settle the difference
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength());
@@ -324,7 +344,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         actions[0] = AccountActionLib.encodeCallAction(
             _liquidAccountId,
             /* _callee */ address(this),
-            /* (_transferAmount, _key)[encoded] = */ abi.encode(_inputAmount, key)
+            /* (transferAmount, tradeTypes, keys)[encoded] = */ abi.encode(_inputAmount, tradeTypes, keys)
         );
         actions[1] = AccountActionLib.encodeExternalSellAction(
             _solidAccountId,
@@ -339,12 +359,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             // We need to spend the whole withdrawal amount, so we need to add an extra sales to spend the difference
             // This can only happen during a liquidation
 
-            // This variable is stored in memory. The storage updates occur in the `exchange` function.
             structInputAmount -= _inputAmount;
             actions[2] = AccountActionLib.encodeCallAction(
                 _liquidAccountId,
                 /* _callee */ address(this),
-                /* (_transferAmount, _key)[encoded] = */ abi.encode(structInputAmount, key)
+                /* (transferAmount, tradeTypes, keys)[encoded] = */ abi.encode(structInputAmount, tradeTypes, keys)
             );
             actions[3] = AccountActionLib.encodeExternalSellAction(
                 _liquidAccountId,
@@ -388,6 +407,66 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // ============================================
     // =========== Internal Functions =============
     // ============================================
+
+    function _callFunction(
+        address /* _sender */,
+        IDolomiteStructs.AccountInfo calldata _accountInfo,
+        bytes calldata _data
+    )
+    internal
+    override {
+        (
+            uint256 transferAmount,
+            TradeType[] memory tradeTypes,
+            bytes32[] memory keys
+        ) = abi.decode(_data, (uint256, TradeType[], bytes32[]));
+
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
+        Require.that(
+            factory.getAccountByVault(_accountInfo.owner) != address(0),
+            _FILE,
+            "Account owner is not a vault",
+            _accountInfo.owner
+        );
+
+        address vault;
+        uint256 inputAmount;
+        for (uint256 i; i < tradeTypes.length; ++i) {
+            if (tradeTypes[i] == TradeType.FromWithdrawal) {
+                WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(keys[i]);
+                vault = withdrawalInfo.vault;
+                inputAmount += withdrawalInfo.inputAmount;
+            } else {
+                assert(tradeType == TradeType.FromDeposit);
+                IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory depositInfo =
+                                                GMX_REGISTRY_V2().gmxV2WrapperTrader().getDepositInfo(key);
+                vault = depositInfo.vault;
+                inputAmount += depositInfo.outputAmount;
+            }
+            Require.that(
+                vault == _accountInfo.owner,
+                _FILE,
+                "Invalid account owner"
+            );
+        }
+        Require.that(
+            transferAmount > 0 && transferAmount <= inputAmount,
+            _FILE,
+            "Invalid transfer amount"
+        );
+
+        uint256 underlyingVirtualBalance = IGmxV2IsolationModeTokenVaultV1(_accountInfo.owner).virtualBalance();
+        Require.that(
+            underlyingVirtualBalance >= transferAmount,
+            _FILE,
+            "Insufficient balance",
+            underlyingVirtualBalance,
+            transferAmount
+        );
+
+        factory.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
+        factory.setShouldSkipTransfer(vault, /* _shouldSkipTransfer = */ true);
+    }
 
     function _exchangeUnderlyingTokenToOutputToken(
         address /* _tradeOriginator */,
@@ -468,6 +547,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultAccountFrozen(
             _info.vault,
             _info.accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
             /* _amountWei = */ IDolomiteStructs.Wei({
                 sign: false,
                 value: _info.inputAmount
@@ -481,64 +561,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
         storageInfo.outputToken = clearValues ? address(0) : _info.outputToken;
         storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
-    }
-
-    function _callFunction(
-        address /* _sender */,
-        IDolomiteStructs.AccountInfo calldata _accountInfo,
-        bytes calldata _data
-    )
-    internal
-    override {
-        (uint256 transferAmount, TradeType tradeType, bytes32 key) = abi.decode(_data, (uint256, TradeType, bytes32));
-        if (transferAmount == 0 && key == bytes32(0)) {
-            // no-op
-            return;
-        }
-
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        Require.that(
-            factory.getAccountByVault(_accountInfo.owner) != address(0),
-            _FILE,
-            "Account owner is not a vault",
-            _accountInfo.owner
-        );
-
-        address vault;
-        uint256 inputAmount;
-        if (tradeType == TradeType.FromWithdrawal) {
-            WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
-            vault = withdrawalInfo.vault;
-            inputAmount = withdrawalInfo.inputAmount;
-        } else {
-            assert(tradeType == TradeType.FromDeposit);
-            IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory depositInfo =
-                                            GMX_REGISTRY_V2().gmxV2WrapperTrader().getDepositInfo(key);
-            vault = depositInfo.vault;
-            inputAmount = depositInfo.outputAmount;
-        }
-        Require.that(
-            vault == _accountInfo.owner,
-            _FILE,
-            "Invalid account owner"
-        );
-        Require.that(
-            transferAmount > 0 && transferAmount <= inputAmount,
-            _FILE,
-            "Invalid transfer amount"
-        );
-
-        uint256 underlyingVirtualBalance = IGmxV2IsolationModeTokenVaultV1(_accountInfo.owner).virtualBalance();
-        Require.that(
-            underlyingVirtualBalance >= transferAmount,
-            _FILE,
-            "Insufficient balance",
-            underlyingVirtualBalance,
-            transferAmount
-        );
-
-        factory.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
-        factory.setShouldSkipTransfer(vault, /* _shouldSkipTransfer = */ true);
     }
 
     function _requireBalanceIsSufficient(uint256 /* _inputAmount */) internal override view {

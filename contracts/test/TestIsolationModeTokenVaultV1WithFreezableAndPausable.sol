@@ -48,6 +48,7 @@ contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeT
         IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setIsVaultAccountFrozen(
             /* _vault = */ address(this),
             _tradeAccountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
             /* _amountWei = */ IDolomiteStructs.Wei({
                 sign: false,
                 value: _inputAmount
