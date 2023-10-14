@@ -96,32 +96,21 @@ contract GmxV2IsolationModeVaultFactory is
         LONG_TOKEN = _tokenAndMarketAddresses.longToken;
         LONG_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN);
 
-        Require.that(
-            _initialAllowableDebtMarketIds.length == 2,
-            _FILE,
-            "Invalid debt market ids"
-        );
-        Require.that(
-            (_initialAllowableDebtMarketIds[0] == LONG_TOKEN_MARKET_ID
-                && _initialAllowableDebtMarketIds[1] == SHORT_TOKEN_MARKET_ID)
-            || (_initialAllowableDebtMarketIds[0] == SHORT_TOKEN_MARKET_ID
-                && _initialAllowableDebtMarketIds[1] == LONG_TOKEN_MARKET_ID),
-            _FILE,
-            "Invalid debt market ids"
-        );
+        _checkInitialMarketIds(_initialAllowableDebtMarketIds);
+        _checkInitialMarketIds(_initialAllowableCollateralMarketIds);
+    }
 
+    function _checkInitialMarketIds(uint256[] memory _marketIds) internal view {
         Require.that(
-            _initialAllowableCollateralMarketIds.length == 2,
+            _marketIds.length == 2,
             _FILE,
-            "Invalid collateral market ids"
+            "Invalid market IDs length"
         );
         Require.that(
-            (_initialAllowableCollateralMarketIds[0] == LONG_TOKEN_MARKET_ID
-                && _initialAllowableCollateralMarketIds[1] == SHORT_TOKEN_MARKET_ID)
-            || (_initialAllowableCollateralMarketIds[0] == SHORT_TOKEN_MARKET_ID
-                && _initialAllowableCollateralMarketIds[1] == LONG_TOKEN_MARKET_ID),
+            (_marketIds[0] == LONG_TOKEN_MARKET_ID && _marketIds[1] == SHORT_TOKEN_MARKET_ID)
+                || (_marketIds[0] == SHORT_TOKEN_MARKET_ID && _marketIds[1] == LONG_TOKEN_MARKET_ID),
             _FILE,
-            "Invalid collateral market ids"
+            "Invalid market IDs"
         );
     }
 

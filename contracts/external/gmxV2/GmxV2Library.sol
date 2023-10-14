@@ -56,9 +56,10 @@ library GmxV2Library {
     // ==================================================================
 
     bytes32 private constant _FILE = "GmxV2Library";
-    bytes32 private constant _MAX_PNL_FACTOR = keccak256(abi.encode("MAX_PNL_FACTOR"));
-    bytes32 private constant _MAX_PNL_FACTOR_FOR_ADL = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_ADL"));
-    bytes32 private constant _MAX_PNL_FACTOR_FOR_WITHDRAWALS = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS"));
+    bytes32 private constant _MAX_PNL_FACTOR_KEY = keccak256(abi.encode("MAX_PNL_FACTOR"));
+    bytes32 private constant _MAX_PNL_FACTOR_FOR_ADL_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_ADL"));
+    bytes32 private constant _MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS"));
+    bytes32 private constant _MAX_CALLBACK_GAS_LIMIT_KEY = keccak256(abi.encode("MAX_CALLBACK_GAS_LIMIT"));
     uint256 private constant _GMX_PRICE_DECIMAL_ADJUSTMENT = 6;
     uint256 private constant _GMX_PRICE_SCALE_ADJUSTMENT = 10 ** _GMX_PRICE_DECIMAL_ADJUSTMENT;
 
@@ -231,10 +232,10 @@ library GmxV2Library {
         address underlyingToken = _factory.UNDERLYING_TOKEN();
         IGmxDataStore dataStore = _registry.gmxDataStore();
         uint256 maxPnlForAdl = dataStore.getUint(
-            _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_ADL, underlyingToken, /* _isLong = */ true)
+            _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_ADL_KEY, underlyingToken, /* _isLong = */ true)
         );
         uint256 maxPnlForWithdrawals = dataStore.getUint(
-            _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS, underlyingToken, /* _isLong = */ true)
+            _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ true)
         );
 
         GmxMarket.MarketPrices memory marketPrices = _getGmxMarketPrices(
@@ -263,7 +264,9 @@ library GmxV2Library {
         bool isLongPnlTooLarge =
             longPnlToPoolFactor <= int256(maxPnlForAdl) && longPnlToPoolFactor >= int256(maxPnlForWithdrawals);
 
-        return isShortPnlTooLarge || isLongPnlTooLarge;
+        uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
+
+        return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit;
     }
 
     // ==================================================================
@@ -302,7 +305,7 @@ library GmxV2Library {
         bool _isLong
     ) private pure returns (bytes32) {
         return keccak256(abi.encode(
-            _MAX_PNL_FACTOR,
+            _MAX_PNL_FACTOR_KEY,
             _pnlFactorType,
             _market,
             _isLong

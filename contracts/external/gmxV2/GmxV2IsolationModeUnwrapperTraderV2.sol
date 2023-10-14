@@ -420,6 +420,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             TradeType[] memory tradeTypes,
             bytes32[] memory keys
         ) = abi.decode(_data, (uint256, TradeType[], bytes32[]));
+        assert(tradeTypes.length == keys.length && keys.length > 0);
 
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         Require.that(
@@ -437,9 +438,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
                 vault = withdrawalInfo.vault;
                 inputAmount += withdrawalInfo.inputAmount;
             } else {
-                assert(tradeType == TradeType.FromDeposit);
+                assert(tradeTypes[i] == TradeType.FromDeposit);
                 IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory depositInfo =
-                                                GMX_REGISTRY_V2().gmxV2WrapperTrader().getDepositInfo(key);
+                                                GMX_REGISTRY_V2().gmxV2WrapperTrader().getDepositInfo(keys[i]);
                 vault = depositInfo.vault;
                 inputAmount += depositInfo.outputAmount;
             }
@@ -484,63 +485,69 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         // We don't need to validate _tradeOriginator here because it is validated in _callFunction via the transfer
         // being enqueued (without it being enqueued, we'd never reach this point)
         // TODO: fix this to be an array; aggregate data
-        (TradeType tradeType, bytes32 key) = abi.decode(_extraOrderData, (TradeType, bytes32));
-        if (tradeType == TradeType.FromWithdrawal) {
-            WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
-            Require.that(
-                withdrawalInfo.inputAmount >= _inputAmount,
-                _FILE,
-                "Invalid input amount"
-            );
-            Require.that(
-                withdrawalInfo.outputToken == _outputToken,
-                _FILE,
-                "Invalid output token"
-            );
-            Require.that(
-                withdrawalInfo.outputAmount >= _minOutputAmount,
-                _FILE,
-                "Invalid output amount"
-            );
-            // Reduce output amount by the size of the ratio of the input amount. Almost always the ratio will be 100%.
-            // During liquidations, there will be a non-100% ratio because the user may not lose all collateral to the
-            // liquidator.
-            uint256 outputAmount = withdrawalInfo.outputAmount * _inputAmount / withdrawalInfo.inputAmount;
-            withdrawalInfo.inputAmount -= _inputAmount;
-            withdrawalInfo.outputAmount -= outputAmount;
-            _setWithdrawalInfoAndSetVaultFrozenStatus(key, withdrawalInfo);
-            return outputAmount;
-        } else {
-            // panic if the trade type isn't correct (somehow).
-            assert(tradeType == TradeType.FromDeposit);
-            IGmxV2IsolationModeWrapperTraderV2 wrapperTrader = GMX_REGISTRY_V2().gmxV2WrapperTrader();
-            IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory depositInfo = wrapperTrader.getDepositInfo(key);
-            // The outputAmount for a deposit is the input amount in this case
-            Require.that(
-                depositInfo.outputAmount >= _inputAmount,
-                _FILE,
-                "Invalid input amount"
-            );
-            // The input token for a deposit is the output token in this case
-            Require.that(
-                depositInfo.inputToken == _outputToken,
-                _FILE,
-                "Invalid output token"
-            );
-            Require.that(
-                depositInfo.inputAmount >= _minOutputAmount,
-                _FILE,
-                "Invalid output amount"
-            );
-            // Reduce output amount by the size of the ratio of the input amount. Almost always the ratio will be 100%.
-            // During liquidations, there will be a non-100% ratio because the user may not lose all collateral to the
-            // liquidator.
-            uint256 outputAmount = depositInfo.inputAmount * _inputAmount / depositInfo.outputAmount;
-            depositInfo.outputAmount -= _inputAmount;
-            depositInfo.inputAmount -= outputAmount;
-            wrapperTrader.setDepositInfoAndSetVaultFrozenStatus(key, depositInfo);
-            return outputAmount;
+        (TradeType[] memory tradeTypes, bytes32[] memory keys) = abi.decode(_extraOrderData, (TradeType[], bytes32[]));
+        assert(tradeTypes.length == keys.length && keys.length > 0);
+
+        uint256 outputAmount = 0;
+        for (uint256 i; i < tradeTypes.length; ++i) {
+            bytes32 key = keys[i];
+            if (tradeTypes[i] == TradeType.FromWithdrawal) {
+                WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
+                Require.that(
+                    withdrawalInfo.inputAmount >= _inputAmount,
+                    _FILE,
+                    "Invalid input amount"
+                );
+                Require.that(
+                    withdrawalInfo.outputToken == _outputToken,
+                    _FILE,
+                    "Invalid output token"
+                );
+                Require.that(
+                    withdrawalInfo.outputAmount >= _minOutputAmount,
+                    _FILE,
+                    "Invalid output amount"
+                );
+                // Reduce output amount by the size of the ratio of the input amount. Almost always the ratio will be
+                // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
+                // collateral to the liquidator.
+                outputAmount = outputAmount + (withdrawalInfo.outputAmount * _inputAmount / withdrawalInfo.inputAmount);
+                withdrawalInfo.inputAmount -= _inputAmount;
+                withdrawalInfo.outputAmount -= outputAmount;
+                _setWithdrawalInfoAndSetVaultFrozenStatus(key, withdrawalInfo);
+            } else {
+                // panic if the trade type isn't correct (somehow).
+                assert(tradeTypes[i] == TradeType.FromDeposit);
+                IGmxV2IsolationModeWrapperTraderV2 wrapperTrader = GMX_REGISTRY_V2().gmxV2WrapperTrader();
+                IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory depositInfo = wrapperTrader.getDepositInfo(key);
+                // The outputAmount for a deposit is the input amount in this case
+                Require.that(
+                    depositInfo.outputAmount >= _inputAmount,
+                    _FILE,
+                    "Invalid input amount"
+                );
+                // The input token for a deposit is the output token in this case
+                Require.that(
+                    depositInfo.inputToken == _outputToken,
+                    _FILE,
+                    "Invalid output token"
+                );
+                Require.that(
+                    depositInfo.inputAmount >= _minOutputAmount,
+                    _FILE,
+                    "Invalid output amount"
+                );
+                // Reduce output amount by the size of the ratio of the input amount. Almost always the ratio will be
+                // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
+                // collateral to the liquidator.
+                outputAmount = outputAmount + (depositInfo.inputAmount * _inputAmount / depositInfo.outputAmount);
+                depositInfo.outputAmount -= _inputAmount;
+                depositInfo.inputAmount -= outputAmount;
+                wrapperTrader.setDepositInfoAndSetVaultFrozenStatus(key, depositInfo);
+            }
         }
+
+        return outputAmount;
     }
 
     function _setWithdrawalInfoAndSetVaultFrozenStatus(bytes32 _key, WithdrawalInfo memory _info) internal {

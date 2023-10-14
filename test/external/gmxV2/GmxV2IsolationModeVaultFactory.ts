@@ -158,7 +158,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation,
         ),
-        'GmxV2IsolationModeVaultFactory: Invalid debt market ids',
+        'GmxV2IsolationModeVaultFactory: Invalid market IDs length',
       );
     });
 
@@ -174,7 +174,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation,
         ),
-        'GmxV2IsolationModeVaultFactory: Invalid debt market ids',
+        'GmxV2IsolationModeVaultFactory: Invalid market IDs length',
       );
     });
 
@@ -190,7 +190,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation,
         ),
-        'GmxV2IsolationModeVaultFactory: Invalid collateral market ids',
+        'GmxV2IsolationModeVaultFactory: Invalid market IDs length',
       );
     });
 
@@ -206,7 +206,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation,
         ),
-        'GmxV2IsolationModeVaultFactory: Invalid collateral market ids',
+        'GmxV2IsolationModeVaultFactory: Invalid market IDs length',
       );
     });
   });
