@@ -27,8 +27,8 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
-import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
 import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
@@ -37,6 +37,7 @@ import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 
 /**
@@ -58,7 +59,7 @@ library GmxV2Library {
     bytes32 private constant _FILE = "GmxV2Library";
     bytes32 private constant _MAX_PNL_FACTOR_KEY = keccak256(abi.encode("MAX_PNL_FACTOR"));
     bytes32 private constant _MAX_PNL_FACTOR_FOR_ADL_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_ADL"));
-    bytes32 private constant _MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS"));
+    bytes32 private constant _MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS")); // solhint-disable-line max-line-length
     bytes32 private constant _MAX_CALLBACK_GAS_LIMIT_KEY = keccak256(abi.encode("MAX_CALLBACK_GAS_LIMIT"));
     uint256 private constant _GMX_PRICE_DECIMAL_ADJUSTMENT = 6;
     uint256 private constant _GMX_PRICE_SCALE_ADJUSTMENT = 10 ** _GMX_PRICE_DECIMAL_ADJUSTMENT;
@@ -153,7 +154,50 @@ library GmxV2Library {
         IERC20(address(_vault.WETH())).safeApprove(address(_vault.registry().gmxV2WrapperTrader()), msg.value);
     }
 
-    function validateExecutionFee(IGmxV2IsolationModeTokenVaultV1 _vault, uint256 _toAccountNumber) public view {
+    function depositOtherTokenIntoDolomiteMarginFromTokenConverter(
+        IGmxV2IsolationModeVaultFactory _factory,
+        address _vault,
+        uint256 _vaultAccountNumber,
+        uint256 _otherMarketId,
+        uint256 _amountWei
+    ) public {
+        Require.that(
+            _otherMarketId != _factory.marketId(),
+            _FILE,
+            "Invalid market",
+            _otherMarketId
+        );
+
+        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
+        accounts[0] = IDolomiteStructs.AccountInfo({
+            owner: _vault,
+            number: _vaultAccountNumber
+        });
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
+
+        IDolomiteMargin dolomiteMargin = _factory.DOLOMITE_MARGIN();
+        address token = dolomiteMargin.getMarketTokenAddress(_otherMarketId);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), _amountWei);
+        IERC20(token).safeApprove(address(dolomiteMargin), _amountWei);
+
+        actions[0] = AccountActionLib.encodeDepositAction(
+            /* _accountId = */ 0,
+            _otherMarketId,
+            IDolomiteStructs.AssetAmount({
+                sign: true,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: _amountWei
+            }),
+            /* _fromAccount = */ address(this)
+        );
+        dolomiteMargin.operate(accounts, actions);
+    }
+
+    function validateExecutionFee(
+        IGmxV2IsolationModeTokenVaultV1 _vault,
+        uint256 _toAccountNumber
+    ) public view {
         address factory = IIsolationModeUpgradeableProxy(address(_vault)).vaultFactory();
         Require.that(
             msg.value == IGmxV2IsolationModeVaultFactory(factory).executionFee(),
@@ -267,6 +311,25 @@ library GmxV2Library {
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
 
         return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit;
+    }
+
+    function validateInitialMarketIds(
+        IGmxV2IsolationModeVaultFactory _factory,
+        uint256[] memory _marketIds,
+        uint256 _longMarketId,
+        uint256 _shortMarketId
+    ) public view {
+        Require.that(
+            _marketIds.length == 2,
+            _FILE,
+            "Invalid market IDs length"
+        );
+        Require.that(
+            (_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
+            || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
+            _FILE,
+            "Invalid market IDs"
+        );
     }
 
     // ==================================================================

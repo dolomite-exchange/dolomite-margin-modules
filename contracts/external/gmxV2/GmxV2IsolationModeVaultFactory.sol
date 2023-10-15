@@ -20,9 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
@@ -47,7 +46,7 @@ contract GmxV2IsolationModeVaultFactory is
     SimpleIsolationModeVaultFactory
 {
     using EnumerableSet for EnumerableSet.UintSet;
-    using SafeERC20 for IERC20;
+    using GmxV2Library for GmxV2IsolationModeVaultFactory;
 
     // ============ Constants ============
 
@@ -96,21 +95,15 @@ contract GmxV2IsolationModeVaultFactory is
         LONG_TOKEN = _tokenAndMarketAddresses.longToken;
         LONG_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN);
 
-        _checkInitialMarketIds(_initialAllowableDebtMarketIds);
-        _checkInitialMarketIds(_initialAllowableCollateralMarketIds);
-    }
-
-    function _checkInitialMarketIds(uint256[] memory _marketIds) internal view {
-        Require.that(
-            _marketIds.length == 2,
-            _FILE,
-            "Invalid market IDs length"
+        GmxV2Library.validateInitialMarketIds(
+            _initialAllowableDebtMarketIds,
+            LONG_TOKEN_MARKET_ID,
+            SHORT_TOKEN_MARKET_ID
         );
-        Require.that(
-            (_marketIds[0] == LONG_TOKEN_MARKET_ID && _marketIds[1] == SHORT_TOKEN_MARKET_ID)
-                || (_marketIds[0] == SHORT_TOKEN_MARKET_ID && _marketIds[1] == LONG_TOKEN_MARKET_ID),
-            _FILE,
-            "Invalid market IDs"
+        GmxV2Library.validateInitialMarketIds(
+            _initialAllowableCollateralMarketIds,
+            LONG_TOKEN_MARKET_ID,
+            SHORT_TOKEN_MARKET_ID
         );
     }
 
@@ -142,7 +135,8 @@ contract GmxV2IsolationModeVaultFactory is
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
+        GmxV2Library.depositOtherTokenIntoDolomiteMarginFromTokenConverter(
+            /* _factory = */ this,
             _vault,
             _vaultAccountNumber,
             _otherMarketId,
@@ -251,44 +245,6 @@ contract GmxV2IsolationModeVaultFactory is
                 value: _amountWei
             })
         );
-    }
-
-    function _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _otherMarketId,
-        uint256 _amountWei
-    ) internal {
-        Require.that(
-            _otherMarketId != marketId,
-            _FILE,
-            "Invalid market",
-            _otherMarketId
-        );
-
-        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
-        accounts[0] = IDolomiteStructs.AccountInfo({
-            owner: _vault,
-            number: _vaultAccountNumber
-        });
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
-
-        address token = DOLOMITE_MARGIN().getMarketTokenAddress(_otherMarketId);
-        IERC20(token).safeTransferFrom(msg.sender, address(this), _amountWei);
-        IERC20(token).safeApprove(address(DOLOMITE_MARGIN()), _amountWei);
-
-        actions[0] = AccountActionLib.encodeDepositAction(
-        /* _accountId = */ 0,
-            _otherMarketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            }),
-            /* _fromAccount = */ address(this)
-        );
-        DOLOMITE_MARGIN().operate(accounts, actions);
     }
 
     function _withdrawFromDolomiteMarginFromTokenConverter(
