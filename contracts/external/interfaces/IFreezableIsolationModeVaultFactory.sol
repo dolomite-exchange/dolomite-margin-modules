@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**

@@ -24,7 +24,6 @@ import { TestSimpleIsolationModeVaultFactory } from "./TestSimpleIsolationModeVa
 import { IDolomiteRegistry } from "../external/interfaces/IDolomiteRegistry.sol";
 import { IFreezableIsolationModeVaultFactory } from "../external/interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -45,10 +44,7 @@ contract TestIsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1
             /* _vault = */ address(this),
             _tradeAccountNumber,
             IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
-            /* _amountWei = */ IDolomiteStructs.Wei({
-                sign: false,
-                value: _inputAmount
-            })
+            /* _amountWei = */ _inputAmount
         );
     }
 

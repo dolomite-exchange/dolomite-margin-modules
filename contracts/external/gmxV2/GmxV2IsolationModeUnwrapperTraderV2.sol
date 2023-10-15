@@ -20,17 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
-import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeUnwrapperTrader } from "../interfaces/IIsolationModeUnwrapperTrader.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { GmxWithdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
@@ -40,7 +35,6 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawalCallbackReceiver.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
@@ -56,8 +50,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     GmxV2IsolationModeTraderBase,
     IGmxWithdrawalCallbackReceiver
 {
-    using SafeERC20 for IERC20;
-    using SafeERC20 for IWETH;
 
     // ============ Constants ============
 
@@ -119,43 +111,16 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             "Invalid market token amount"
         );
 
-        uint256[] memory marketIdsPath = new uint256[](2);
-        marketIdsPath[0] = VAULT_FACTORY().marketId();
-        marketIdsPath[1] = DOLOMITE_MARGIN().getMarketIdByTokenAddress(withdrawalInfo.outputToken);
-
         GmxEventUtils.AddressKeyValue memory outputTokenAddress = _eventData.addressItems.items[0];
-        GmxEventUtils.UintKeyValue memory outputTokenAmount = _eventData.uintItems.items[0];
         GmxEventUtils.AddressKeyValue memory secondaryOutputTokenAddress = _eventData.addressItems.items[1];
+        GmxEventUtils.UintKeyValue memory outputTokenAmount = _eventData.uintItems.items[0];
         GmxEventUtils.UintKeyValue memory secondaryOutputTokenAmount = _eventData.uintItems.items[1];
-        Require.that(
-            keccak256(abi.encodePacked(outputTokenAddress.key))
-                == keccak256(abi.encodePacked("outputToken")),
-            _FILE,
-            "Unexpected outputToken"
-        );
-        Require.that(
-            keccak256(abi.encodePacked(outputTokenAmount.key))
-                == keccak256(abi.encodePacked("outputAmount")),
-            _FILE,
-            "Unexpected outputAmount"
-        );
-        Require.that(
-            keccak256(abi.encodePacked(secondaryOutputTokenAddress.key))
-                == keccak256(abi.encodePacked("secondaryOutputToken")),
-            _FILE,
-            "Unexpected secondaryOutputToken"
-        );
-        Require.that(
-            keccak256(abi.encodePacked(secondaryOutputTokenAmount.key))
-                == keccak256(abi.encodePacked("secondaryOutputAmount")),
-            _FILE,
-            "Unexpected secondaryOutputAmount"
-        );
-        Require.that(
-            outputTokenAddress.value == secondaryOutputTokenAddress.value
-                && outputTokenAddress.value == withdrawalInfo.outputToken,
-            _FILE,
-            "Can only receive one token"
+        GmxV2Library.validateEventDataForWithdrawal(
+            outputTokenAddress,
+            outputTokenAmount,
+            secondaryOutputTokenAddress,
+            secondaryOutputTokenAmount,
+            withdrawalInfo
         );
 
         // @audit:  If GMX changes the keys OR if the data sent back is malformed (causing the above requires to
@@ -163,17 +128,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         //          are for, nor the amount. The only solution will be to upgrade this contract and have an admin
         //          "unstuck" the funds for users by sending them to the appropriate vaults.
 
-
-        IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
-        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
-        traderParams[0].makerAccountIndex = 0;
-        traderParams[0].trader = address(this);
-        traderParams[0].tradeData = abi.encode(TradeType.FromWithdrawal, _key);
-
-        IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig(
-            block.timestamp,
-            AccountBalanceLib.BalanceCheckFlag.None
-        );
 
         // Save the output amount so we can refer to it later
         withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
@@ -186,7 +140,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
                 withdrawalInfo.vault,
                 withdrawalInfo.accountNumber,
                 IFreezableIsolationModeVaultFactory.FreezeType.Deposit
-            ).value;
+            );
             if (pendingDepositAmount != 0) {
                 // If there's a pending deposit, we defer it, so the liquidation bot so we can process them all
                 emit WithdrawalDeferred(_key);
@@ -194,15 +148,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             }
         }
 
-        try IGmxV2IsolationModeTokenVaultV1(withdrawalInfo.vault).swapExactInputForOutput(
-            withdrawalInfo.accountNumber,
-            marketIdsPath,
-            withdrawalInfo.inputAmount,
-            withdrawalInfo.outputAmount,
-            traderParams,
-            /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
-            userConfig
-        ) {
+        try GmxV2Library.swapExactInputForOutput(this, withdrawalInfo) {
             _setWithdrawalInfoAndSetVaultFrozenStatus(
                 _key,
                 _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber)
@@ -321,13 +267,10 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         // Realistically this array length will only ever be 1 or 2.
         for (uint256 i; i < tradeTypes.length; ++i) {
             if (tradeTypes[i] == TradeType.FromWithdrawal) {
-                WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(keys[i]);
-                structInputAmount += withdrawalInfo.inputAmount;
+                structInputAmount += _getWithdrawalSlot(keys[i]).inputAmount;
             } else {
                 assert(tradeTypes[i] == TradeType.FromDeposit);
-                IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory depositInfo =
-                                                GMX_REGISTRY_V2().gmxV2WrapperTrader().getDepositInfo(keys[i]);
-                structInputAmount += depositInfo.outputAmount;
+                structInputAmount += GMX_REGISTRY_V2().gmxV2WrapperTrader().getDepositInfo(keys[i]).outputAmount;
             }
         }
         Require.that(
@@ -395,9 +338,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     view
     override(UpgradeableIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTrader)
     returns (bool) {
-        address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).LONG_TOKEN();
-        address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).SHORT_TOKEN();
-        return _outputToken == longToken || _outputToken == shortToken;
+        return GmxV2Library.isValidOutputToken(IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())), _outputToken);
     }
 
     function getWithdrawalInfo(bytes32 _key) public pure returns (WithdrawalInfo memory) {
@@ -444,12 +385,13 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
                 vault = depositInfo.vault;
                 inputAmount += depositInfo.outputAmount;
             }
-            Require.that(
-                vault == _accountInfo.owner,
-                _FILE,
-                "Invalid account owner"
-            );
         }
+
+        Require.that(
+            vault == _accountInfo.owner,
+            _FILE,
+            "Invalid account owner"
+        );
         Require.that(
             transferAmount > 0 && transferAmount <= inputAmount,
             _FILE,
@@ -484,7 +426,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     returns (uint256) {
         // We don't need to validate _tradeOriginator here because it is validated in _callFunction via the transfer
         // being enqueued (without it being enqueued, we'd never reach this point)
-        // TODO: fix this to be an array; aggregate data
+
         (TradeType[] memory tradeTypes, bytes32[] memory keys) = abi.decode(_extraOrderData, (TradeType[], bytes32[]));
         assert(tradeTypes.length == keys.length && keys.length > 0);
 
@@ -556,10 +498,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _info.vault,
             _info.accountNumber,
             IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
-            /* _amountWei = */ IDolomiteStructs.Wei({
-                sign: false,
-                value: _info.inputAmount
-            })
+            /* _amountWei = */ _info.inputAmount
         );
 
         WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);

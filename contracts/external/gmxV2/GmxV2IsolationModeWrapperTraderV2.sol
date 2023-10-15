@@ -373,10 +373,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             _info.vault,
             _info.accountNumber,
             IFreezableIsolationModeVaultFactory.FreezeType.Deposit,
-            /* _amountWei = */ IDolomiteStructs.Wei({
-                sign: clearValues ? false : true,
-                value: _info.outputAmount
-            })
+            /* _amountWei = */ _info.outputAmount
         );
         storageInfo.key = _key;
         storageInfo.vault = clearValues ? address(0) : _info.vault;

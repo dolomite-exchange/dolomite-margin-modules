@@ -28,7 +28,10 @@ import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
+import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
+import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
 import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
@@ -38,6 +41,7 @@ import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
 /**
@@ -50,7 +54,6 @@ library GmxV2Library {
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
     using TypesLib for IDolomiteStructs.Par;
-    using TypesLib for IDolomiteStructs.Wei;
 
     // ==================================================================
     // ============================ Constants ===========================
@@ -154,6 +157,39 @@ library GmxV2Library {
         IERC20(address(_vault.WETH())).safeApprove(address(_vault.registry().gmxV2WrapperTrader()), msg.value);
     }
 
+    function swapExactInputForOutput(
+        IGmxV2IsolationModeUnwrapperTraderV2 _unwrapper,
+        IGmxV2IsolationModeUnwrapperTraderV2.WithdrawalInfo memory _withdrawalInfo
+    ) public {
+        uint256[] memory marketIdsPath = new uint256[](2);
+        marketIdsPath[0] = _unwrapper.VAULT_FACTORY().marketId();
+        marketIdsPath[1] = _unwrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_withdrawalInfo.outputToken);
+
+        IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
+        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
+        traderParams[0].makerAccountIndex = 0;
+        traderParams[0].trader = address(this);
+        traderParams[0].tradeData = abi.encode(
+            IGmxV2IsolationModeUnwrapperTraderV2.TradeType.FromWithdrawal,
+            _withdrawalInfo.key
+        );
+
+        IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
+            deadline: block.timestamp,
+            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None
+        });
+
+        IGmxV2IsolationModeTokenVaultV1(_withdrawalInfo.vault).swapExactInputForOutput(
+            _withdrawalInfo.accountNumber,
+            marketIdsPath,
+            _withdrawalInfo.inputAmount,
+            _withdrawalInfo.outputAmount,
+            traderParams,
+                /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
+            userConfig
+        );
+    }
+
     function depositOtherTokenIntoDolomiteMarginFromTokenConverter(
         IGmxV2IsolationModeVaultFactory _factory,
         address _vault,
@@ -192,6 +228,13 @@ library GmxV2Library {
             /* _fromAccount = */ address(this)
         );
         dolomiteMargin.operate(accounts, actions);
+    }
+
+    function isValidOutputToken(
+        IGmxV2IsolationModeVaultFactory _factory,
+        address _outputToken
+    ) public view returns (bool) {
+        return _outputToken == _factory.LONG_TOKEN() || _outputToken == _factory.SHORT_TOKEN();
     }
 
     function validateExecutionFee(
@@ -233,13 +276,13 @@ library GmxV2Library {
         uint256 _withdrawalAmount
     ) public view {
         {
-            IDolomiteStructs.Wei memory withdrawalPendingAmount = _factory.getPendingAmountByAccount(
+            uint256 withdrawalPendingAmount = _factory.getPendingAmountByAccount(
                 _vault,
                 _accountNumber,
                 IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
             );
             Require.that(
-                withdrawalPendingAmount.isZero(),
+                withdrawalPendingAmount == 0,
                 _FILE,
                 "Account is frozen",
                 _vault,
@@ -247,7 +290,7 @@ library GmxV2Library {
             );
         }
 
-        IDolomiteStructs.Wei memory depositPendingAmount = _factory.getPendingAmountByAccount(
+        uint256 depositPendingAmount = _factory.getPendingAmountByAccount(
             _vault,
             _accountNumber,
             IFreezableIsolationModeVaultFactory.FreezeType.Deposit
@@ -256,11 +299,11 @@ library GmxV2Library {
             owner: _vault,
             number: _accountNumber
         });
-        IDolomiteStructs.Wei memory balance = _dolomiteMargin.getAccountWei(accountInfo, _factory.marketId());
+        uint256 balance = _dolomiteMargin.getAccountWei(accountInfo, _factory.marketId()).value;
         // The pending amount should be 0 (not frozen) OR the requested withdrawal cannot be for more than the user's
         // balance, minus any pending.
         Require.that(
-            balance.value - depositPendingAmount.value >= _withdrawalAmount,
+            balance - depositPendingAmount >= _withdrawalAmount,
             _FILE,
             "Account is frozen",
             _vault,
@@ -314,11 +357,10 @@ library GmxV2Library {
     }
 
     function validateInitialMarketIds(
-        IGmxV2IsolationModeVaultFactory _factory,
         uint256[] memory _marketIds,
         uint256 _longMarketId,
         uint256 _shortMarketId
-    ) public view {
+    ) public pure {
         Require.that(
             _marketIds.length == 2,
             _FILE,
@@ -329,6 +371,45 @@ library GmxV2Library {
             || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
             _FILE,
             "Invalid market IDs"
+        );
+    }
+
+    function validateEventDataForWithdrawal(
+        GmxEventUtils.AddressKeyValue memory _outputTokenAddress,
+        GmxEventUtils.UintKeyValue memory _outputTokenAmount,
+        GmxEventUtils.AddressKeyValue memory _secondaryOutputTokenAddress,
+        GmxEventUtils.UintKeyValue memory _secondaryOutputTokenAmount,
+        IGmxV2IsolationModeUnwrapperTraderV2.WithdrawalInfo memory _withdrawalInfo
+    ) public pure {
+        Require.that(
+            keccak256(abi.encodePacked(_outputTokenAddress.key))
+                == keccak256(abi.encodePacked("outputToken")),
+            _FILE,
+            "Unexpected outputToken"
+        );
+        Require.that(
+            keccak256(abi.encodePacked(_outputTokenAmount.key))
+                == keccak256(abi.encodePacked("outputAmount")),
+            _FILE,
+            "Unexpected outputAmount"
+        );
+        Require.that(
+            keccak256(abi.encodePacked(_secondaryOutputTokenAddress.key))
+                == keccak256(abi.encodePacked("secondaryOutputToken")),
+            _FILE,
+            "Unexpected secondaryOutputToken"
+        );
+        Require.that(
+            keccak256(abi.encodePacked(_secondaryOutputTokenAmount.key))
+                == keccak256(abi.encodePacked("secondaryOutputAmount")),
+            _FILE,
+            "Unexpected secondaryOutputAmount"
+        );
+        Require.that(
+            _outputTokenAddress.value == _secondaryOutputTokenAddress.value
+                && _withdrawalInfo.outputToken == _outputTokenAddress.value,
+            _FILE,
+            "Can only receive one token"
         );
     }
 
