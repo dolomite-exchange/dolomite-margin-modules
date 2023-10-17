@@ -40,7 +40,8 @@
     "sort:contracts": "hardhat --network hardhat run scripts/sort-contract.ts",
     "test": "hardhat --network hardhat test",
     "test:specific": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/liquidators/IsolationModeFreezableLiquidatorProxy.ts",
-    "test:specific2": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/gmxV2/GmxRegistryV2.ts",
+    "test:specific2": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/gmxV2/GmxV2IsolationModeWrapperTraderV2.ts",
+    "test:specific3": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/gmxV2/GmxV2IsolationModeUnwrapperTraderV2.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
   "repository": {

@@ -22,7 +22,6 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { console } from "hardhat/console.sol";
 import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
@@ -30,16 +29,12 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
-import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IIsolationModeWrapperTrader } from "../interfaces/IIsolationModeWrapperTrader.sol";
 import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { IGmxDepositCallbackReceiver } from "../interfaces/gmx/IGmxDepositCallbackReceiver.sol";
-import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
-import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { UpgradeableIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeWrapperTrader.sol";
 
@@ -176,49 +171,17 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         assert(_deposit.numbers.initialLongTokenAmount == 0 || _deposit.numbers.initialShortTokenAmount == 0);
 
-        uint256[] memory marketIdsPath = new uint256[](2);
-        marketIdsPath[0] = VAULT_FACTORY().marketId();
-        marketIdsPath[1] = DOLOMITE_MARGIN().getMarketIdByTokenAddress(
-            _deposit.numbers.initialLongTokenAmount > 0
-                ? _deposit.addresses.initialLongToken
-                : _deposit.addresses.initialShortToken
-        );
-        uint256 outputAmount = _deposit.numbers.initialLongTokenAmount > 0
-            ? _deposit.numbers.initialLongTokenAmount
-            : _deposit.numbers.initialShortTokenAmount;
-
-        IGenericTraderBase.TraderParam[] memory tradersPath = new IGenericTraderBase.TraderParam[](1);
-        tradersPath[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
-        tradersPath[0].makerAccountIndex = 0;
-        tradersPath[0].trader = address(GMX_REGISTRY_V2().gmxV2UnwrapperTrader());
-        tradersPath[0].tradeData = abi.encode(IGmxV2IsolationModeUnwrapperTraderV2.TradeType.FromDeposit, _key);
-
-        IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
-            deadline: block.timestamp,
-            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None
-        });
-
         factory.setShouldSkipTransfer(depositInfo.vault, /* _shouldSkipTransfer = */ true);
-        try
-            IGmxV2IsolationModeTokenVaultV1(depositInfo.vault).swapExactInputForOutput(
-                depositInfo.accountNumber,
-                marketIdsPath,
-                _deposit.numbers.minMarketTokens,
-                outputAmount,
-                tradersPath,
-                /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
-                userConfig
-            )
-        {
-            _clearDepositAndSetVaultFrozenStatus(depositInfo);
+
+        try GmxV2Library.swapExactInputForOutputForDepositCancellation(/* _wrapper = */ this, depositInfo) {
+            // The deposit info is set via `setDepositInfoAndSetVaultFrozenStatus` by the unwrapper
             emit DepositCancelled(_key);
         } catch Error(string memory _reason) {
-            _handleDepositCancellationFailure(factory, depositInfo, _reason);
+            emit DepositCancelledFailed(_key, _reason);
         } catch (bytes memory /* _reason */) {
-            _handleDepositCancellationFailure(factory, depositInfo, "");
-        }
+            emit DepositCancelledFailed(_key, "");
 
-        console.log("afterDepositCancellation gasLeft: ", gasleft());
+        }
     }
 
     function cancelDeposit(bytes32 _key) external {
@@ -244,10 +207,17 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         _setDepositInfoAndSetVaultFrozenStatus(_key, _depositInfo);
     }
 
-    function isValidInputToken(address _inputToken) public view override returns (bool) {
-        address longToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).LONG_TOKEN();
-        address shortToken = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).SHORT_TOKEN();
-        return _inputToken == longToken || _inputToken == shortToken;
+    function isValidInputToken(
+        address _inputToken
+    )
+    public
+    view
+    override(UpgradeableIsolationModeWrapperTrader, IIsolationModeWrapperTrader)
+    returns (bool) {
+        return GmxV2Library.isValidInputOrOutputToken(
+            IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
+            _inputToken
+        );
     }
 
     function getDepositInfo(bytes32 _key) public pure returns (DepositInfo memory) {
@@ -257,15 +227,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // ============================================
     // ============ Internal Functions ============
     // ============================================
-
-    function _handleDepositCancellationFailure(
-        IGmxV2IsolationModeVaultFactory _factory,
-        DepositInfo memory _depositInfo,
-        string memory _reason
-    ) internal {
-        _factory.setShouldSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ false);
-        emit DepositCancelledFailed(_depositInfo.key, _reason);
-    }
 
     function _exchangeIntoUnderlyingToken(
         address _tradeOriginator,
@@ -289,6 +250,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
         bytes32 depositKey;
         {
+            // New scope for the "stack too deep" error
             address tradeOriginatorForStackTooDeep = _tradeOriginator;
             address outputTokenUnderlyingForStackTooDeep = _outputTokenUnderlying;
             uint256 minOutputAmountForStackTooDeep = _minOutputAmount;
@@ -362,7 +324,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     ) internal {
         _setDepositInfoAndSetVaultFrozenStatus(
             _depositInfo.key,
-            _emptyDepositInfo(_depositInfo.vault, _depositInfo.accountNumber)
+            _emptyDepositInfo(_depositInfo.key, _depositInfo.vault, _depositInfo.accountNumber)
         );
     }
 
@@ -416,14 +378,13 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }
 
-    function _emptyDepositInfo(address _vault, uint256 _accountNumber) internal pure returns (DepositInfo memory) {
-        return DepositInfo({
-            key: bytes32(0),
-            vault: _vault,
-            accountNumber: _accountNumber,
-            inputToken: address(0),
-            inputAmount: 0,
-            outputAmount: 0
-        });
+    function _emptyDepositInfo(
+        bytes32 _key,
+        address _vault,
+        uint256 _accountNumber
+    ) internal pure returns (DepositInfo memory _depositInfo) {
+        _depositInfo.key = _key;
+        _depositInfo.vault = _vault;
+        _depositInfo.accountNumber = _accountNumber;
     }
 }

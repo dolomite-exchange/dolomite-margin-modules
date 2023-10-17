@@ -126,39 +126,6 @@ contract GmxV2IsolationModeVaultFactory is
         );
     }
 
-    function depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _otherMarketId,
-        uint256 _amountWei
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        GmxV2Library.depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-            /* _factory = */ this,
-            _vault,
-            _vaultAccountNumber,
-            _otherMarketId,
-            _amountWei
-        );
-    }
-
-    function withdrawFromDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        _withdrawFromDolomiteMarginFromTokenConverter(
-            _vault,
-            _vaultAccountNumber,
-            _amountWei
-        );
-    }
-
     function ownerSetGmxRegistryV2(
         address _gmxRegistryV2
     )

@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
+import { IUpgradeableIsolationModeWrapperTrader } from "../IUpgradeableIsolationModeWrapperTrader.sol";
 
 
 /**
@@ -28,7 +29,7 @@ import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.s
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase {
+interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase, IUpgradeableIsolationModeWrapperTrader {
 
     struct DepositInfo {
         bytes32 key;

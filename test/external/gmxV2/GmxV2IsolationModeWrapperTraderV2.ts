@@ -22,7 +22,8 @@ import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
-  expectWalletBalance, expectWalletBalanceIsGreaterThan,
+  expectWalletBalance,
+  expectWalletBalanceIsGreaterThan,
 } from 'test/utils/assertions';
 import {
   createGmxRegistryV2,
@@ -60,7 +61,7 @@ const borrowAccountNumber = '123';
 const executionFee = parseEther('.01');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
-const minAmountOut = parseEther('1800');
+const minAmountOut = parseEther('1600');
 
 describe('GmxV2IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
@@ -86,6 +87,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createTestGmxV2IsolationModeVaultFactory(
       core,
+      library,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
@@ -304,7 +306,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     }
 
     it('should work normally with long token', async () => {
-      const minAmountOut = parseEther('1700');
+      const minAmountOut = parseEther('100');
       await setupBalances(core.marketIds.weth, ONE_ETH_BI, minAmountOut);
       const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
         .executeDeposit(
@@ -590,6 +592,11 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         { value: executionFee },
       );
 
+      await expectProtocolBalance(core, vault, borrowAccountNumber, core.marketIds.weth, ZERO_BI);
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, minAmountOut);
+      expect(await vault.virtualBalance()).to.eq(minAmountOut);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+
       const filter = wrapper.filters.DepositCreated();
       const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
@@ -600,7 +607,10 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      await vault.cancelDeposit(depositKey);
+      const result = await vault.cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
+      await expectEvent(wrapper, result, 'DepositCancelled', {
+        key: depositKey,
+      });
 
       expect(await core.tokens.weth.balanceOf(core.dolomiteMargin.address)).to.eq(wethBalanceBefore);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 0);
@@ -608,6 +618,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      await expectEmptyDepositInfo(depositKey);
     });
 
     it('should work normally with short token', async () => {
@@ -651,11 +662,12 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      await vault.cancelDeposit(depositKey);
+      await vault.cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
 
       expect(await core.tokens.nativeUsdc!.balanceOf(core.dolomiteMargin.address)).to.eq(usdcBalanceBefore);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 0);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
+      await expectEmptyDepositInfo(depositKey);
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
@@ -742,10 +754,11 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      const result = await vault.cancelDeposit(depositKey);
+      const result = await vault.cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
       await expectEvent(wrapper, result, 'DepositCancelled', {
         key: depositKey,
       });
+      await expectEmptyDepositInfo(depositKey);
     });
 
     it('should work normally when called by valid handler', async () => {
@@ -782,7 +795,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      const result = await wrapper.connect(depositExecutor).cancelDeposit(depositKey);
+      const result = await wrapper.connect(depositExecutor)
+        .cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
       await expectEvent(wrapper, result, 'DepositCancelled', {
         key: depositKey,
       });
@@ -846,4 +860,14 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       );
     });
   });
+
+  async function expectEmptyDepositInfo(key: string) {
+    const deposit = await wrapper.getDepositInfo(key);
+    expect(deposit.key).to.eq(key);
+    expect(deposit.vault).to.eq(ZERO_ADDRESS);
+    expect(deposit.accountNumber).to.eq(ZERO_BI);
+    expect(deposit.inputToken).to.eq(ZERO_ADDRESS);
+    expect(deposit.inputAmount).to.eq(ZERO_BI);
+    expect(deposit.outputAmount).to.eq(ZERO_BI);
+  }
 });

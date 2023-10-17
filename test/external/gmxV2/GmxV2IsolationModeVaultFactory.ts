@@ -61,7 +61,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
-      expirationLibrary,
+      gmxV2Library,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
@@ -125,10 +125,10 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
     });
 
-    it('should construct if allowable market ids is in either order', async () => {
+    it('should construct if allowable market IDs is in either order', async () => {
       await createGmxV2IsolationModeVaultFactory(
         core,
-        expirationLibrary,
+        gmxV2Library,
         gmxRegistryV2,
         allowableMarketIds,
         allowableMarketIds,
@@ -137,7 +137,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       );
       await createGmxV2IsolationModeVaultFactory(
         core,
-        expirationLibrary,
+        gmxV2Library,
         gmxRegistryV2,
         [allowableMarketIds[1], allowableMarketIds[0]],
         [allowableMarketIds[1], allowableMarketIds[0]],
@@ -146,67 +146,89 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       );
     });
 
-    it('should fail if allowable debt market ids does not have length of 2', async () => {
+    it('should fail if allowable debt market IDs does not have length of 2', async () => {
       const badAllowableDebtMarketIds = [1];
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
-          expirationLibrary,
+          gmxV2Library,
           gmxRegistryV2,
           badAllowableDebtMarketIds,
           allowableMarketIds,
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation,
         ),
-        'GmxV2IsolationModeVaultFactory: Invalid market IDs length',
+        'GmxV2Library: Invalid market IDs length',
       );
     });
 
-    it('should fail if allowable debt market ids does not have length of 2', async () => {
-      const badAllowableDebtMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.dai!];
+    it('should fail if allowable debt market IDs has an invalid market ID', async () => {
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
-          expirationLibrary,
+          gmxV2Library,
           gmxRegistryV2,
-          badAllowableDebtMarketIds,
+          [core.marketIds.nativeUsdc!, core.marketIds.dai!],
           allowableMarketIds,
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation,
         ),
-        'GmxV2IsolationModeVaultFactory: Invalid market IDs length',
+        'GmxV2Library: Invalid market IDs',
+      );
+      await expectThrow(
+        createGmxV2IsolationModeVaultFactory(
+          core,
+          gmxV2Library,
+          gmxRegistryV2,
+          [core.marketIds.dai!, core.marketIds.nativeUsdc!],
+          allowableMarketIds,
+          core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+          vaultImplementation,
+        ),
+        'GmxV2Library: Invalid market IDs',
       );
     });
 
-    it('should fail if allowable collateral market ids does not have short and long token', async () => {
+    it('should fail if allowable collateral market IDs does not have length of 2', async () => {
       const badAllowableCollateralMarketIds = [1];
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
-          expirationLibrary,
+          gmxV2Library,
           gmxRegistryV2,
           allowableMarketIds,
           badAllowableCollateralMarketIds,
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation,
         ),
-        'GmxV2IsolationModeVaultFactory: Invalid market IDs length',
+        'GmxV2Library: Invalid market IDs length',
       );
     });
 
-    it('should fail if allowable collateral market ids does not have short and long token', async () => {
-      const badAllowableCollateralMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.dai!];
+    it('should fail if allowable collateral market IDs has an invalid market ID', async () => {
       await expectThrow(
         createGmxV2IsolationModeVaultFactory(
           core,
-          expirationLibrary,
+          gmxV2Library,
           gmxRegistryV2,
           allowableMarketIds,
-          badAllowableCollateralMarketIds,
+          [core.marketIds.nativeUsdc!, core.marketIds.dai!],
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
           vaultImplementation,
         ),
-        'GmxV2IsolationModeVaultFactory: Invalid market IDs length',
+        'GmxV2Library: Invalid market IDs',
+      );
+      await expectThrow(
+        createGmxV2IsolationModeVaultFactory(
+          core,
+          gmxV2Library,
+          gmxRegistryV2,
+          allowableMarketIds,
+          [core.marketIds.dai!, core.marketIds.nativeUsdc!],
+          core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+          vaultImplementation,
+        ),
+        'GmxV2Library: Invalid market IDs',
       );
     });
   });
@@ -310,7 +332,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
           marketId,
           amountWei,
         ),
-        `GmxV2IsolationModeVaultFactory: Invalid market <${marketId.toString()}>`,
+        `GmxV2Library: Invalid market <${marketId.toString()}>`,
       );
     });
   });

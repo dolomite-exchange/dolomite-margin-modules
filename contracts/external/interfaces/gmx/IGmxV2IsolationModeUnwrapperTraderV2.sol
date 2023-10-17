@@ -34,6 +34,10 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
     IUpgradeableIsolationModeUnwrapperTrader
 {
 
+    // ================================================
+    // ==================== Structs ===================
+    // ================================================
+
     struct WithdrawalInfo {
         bytes32 key;
         address vault;
@@ -44,6 +48,10 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
         /// @dev initially 0 until the withdrawal is executed
         uint256 outputAmount;
     }
+
+    // ================================================
+    // ===================== Enums ====================
+    // ================================================
 
     enum TradeType {
         FromWithdrawal,
@@ -64,6 +72,21 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
     // ==================== Functions ====================
     // ===================================================
 
+    /**
+     * Notifies the unwrapper that it'll be entered for a trade from the unwrapper. This allows it to modify the action
+     * length
+     */
+    function handleGmxCallbackFromWrapperBefore() external;
+
+    /**
+     * Reverts any changes made in `handleGmxCallbackFromWrapperBefore`. Can only be called by the
+     * IGmxV2IsolationModeWrapperTraderV2
+     */
+    function handleGmxCallbackFromWrapperAfter() external;
+
+    /**
+     * Saves the follow withdrawal info as a struct.
+     */
     function vaultSetWithdrawalInfo(
         bytes32 _key,
         uint256 _accountNumber,

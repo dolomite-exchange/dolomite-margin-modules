@@ -54,6 +54,10 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
     // ==================== Functions ====================
     // ===================================================
 
+    function ownerSetGmxRegistryV2(address _gmxRegistryV2) external;
+
+    function ownerSetExecutionFee(uint256 _executionFee) external;
+
     function depositIntoDolomiteMarginFromTokenConverter(
         address _vault,
         uint256 _vaultAccountNumber,
@@ -61,26 +65,26 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
     )
     external;
 
-    function depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _otherMarketId,
-        uint256 _amountWei
-    )
-    external;
-
-    function withdrawFromDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    ) external;
-
-    function ownerSetGmxRegistryV2(address _gmxRegistryV2) external;
-
-    function ownerSetExecutionFee(uint256 _executionFee) external;
-
+    /**
+     * @dev Sets whether or not the vault should use the GmxV2IsolationModeWrapperTraderV2 as the ERC20 transfer
+     *      source when the call to `depositIntoVault` occurs. This value is unset once it is consumed by the call
+     *      to `depositIntoVault`.
+     *
+     * @param  _vault                   The vault whose `_isDepositSourceWrapper` value is being set.
+     * @param  _isDepositSourceWrapper  Whether or not the vault should use the `GmxV2IsolationModeWrapperTraderV2` as
+     *                                  deposit source.
+     */
     function setIsDepositSourceWrapper(address _vault, bool _isDepositSourceWrapper) external;
 
+    /**
+     * @dev     Sets whether or not the vault should skip the transferFrom call when depositing into Dolomite Margin.
+     *          This enables the protocol to not revert if there are no tokens in the vault, since no ERC20 event is
+     *          emitted with the underlying tokens. This value is unset after it is consumed in `depositIntoVault`
+     *          or `withdrawFromVault`.
+     *
+     * @param  _vault               The vault whose shouldSkipTransfer value is being set.
+     * @param  _shouldSkipTransfer  Whether or not the vault should skip the ERC20 transfer for the underlying token.
+     */
     function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
 
     function INDEX_TOKEN() external view returns (address);
@@ -97,5 +101,9 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
 
     function gmxRegistryV2() external view returns (IGmxRegistryV2);
 
+    /**
+     * @dev     The amount of gas (in ETH) that should be sent with a position so the user can pay the gas fees to be
+     *          liquidated. The gas fees are refunded when a position is closed.
+     */
     function executionFee() external view returns (uint256);
 }

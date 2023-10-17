@@ -15,7 +15,7 @@ import {
   TestGmxV2IsolationModeTokenVaultV1__factory,
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
-import { BYTES_EMPTY, BYTES_ZERO, MAX_UINT_256_BI, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
+import { BYTES_EMPTY, MAX_UINT_256_BI, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import {
   expectEvent,
@@ -47,7 +47,7 @@ import {
   setupWETHBalance,
 } from 'test/utils/setup';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
-import { createExpirationLibrary } from '../../utils/expiry-utils';
+import { createSafeDelegateLibrary } from '../../utils/ecosystem-token-utils/general';
 
 enum ReversionType {
   None = 0,
@@ -60,6 +60,23 @@ const borrowAccountNumber = '123';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const amountWei = parseEther('10');
+
+enum UnwrapTradeType {
+  ForWithdrawal = 0,
+  ForDeposit = 1,
+}
+
+function encodeWithdrawalKey(tradeType: UnwrapTradeType, key: string): string {
+  return ethers.utils.defaultAbiCoder.encode(['uint8[]', 'bytes32[]'], [[tradeType], [key]]);
+}
+
+function encodeWithdrawalKeyForCallFunction(
+  transferAmount: BigNumberish,
+  tradeType: UnwrapTradeType,
+  key: string,
+): string {
+  return ethers.utils.defaultAbiCoder.encode(['uint256', 'uint8[]', 'bytes32[]'], [transferAmount, [tradeType], [key]]);
+}
 
 describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
@@ -78,15 +95,19 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const expirationLibrary = await createExpirationLibrary();
     const gmxV2Library = await createGmxV2Library();
-    const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
+    const safeDelegateCallLibrary = await createSafeDelegateLibrary();
+    const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(
+      core,
+      gmxV2Library,
+      safeDelegateCallLibrary,
+    );
     gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
-      expirationLibrary,
+      gmxV2Library,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
@@ -212,7 +233,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `GmxV2IsolationModeUnwrapperV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
+        `UpgradeableUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -227,11 +248,11 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           amountWei,
           BYTES_EMPTY,
         ),
-        `GmxV2IsolationModeUnwrapperV2: Invalid output token <${core.tokens.wbtc.address.toLowerCase()}>`,
+        `UpgradeableUnwrapperTraderV2: Invalid output token <${core.tokens.wbtc.address.toLowerCase()}>`,
       );
     });
 
-    it('should fail if output token is incorrect for withdrawal', async () => {
+    it('should fail if output token does not match withdrawal struct', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
         unwrapper.connect(dolomiteMarginImpersonator).exchange(
@@ -242,10 +263,10 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           amountWei,
           ethers.utils.defaultAbiCoder.encode(
             ['uint256', 'bytes'],
-            [ONE_BI, ethers.utils.defaultAbiCoder.encode(['bytes32'], [withdrawalKey])],
+            [ONE_BI, encodeWithdrawalKey(UnwrapTradeType.ForWithdrawal, withdrawalKey)],
           ),
         ),
-        'GmxV2IsolationModeUnwrapperV2: Invalid output token',
+        'GmxV2IsolationModeUnwrapperV2: Output token mismatch',
       );
     });
 
@@ -260,7 +281,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           amountWei.add(1),
           ethers.utils.defaultAbiCoder.encode(
             ['uint256', 'bytes'],
-            [ONE_BI, ethers.utils.defaultAbiCoder.encode(['bytes32'], [withdrawalKey])],
+            [ONE_BI, encodeWithdrawalKey(UnwrapTradeType.ForWithdrawal, withdrawalKey)],
           ),
         ),
         'GmxV2IsolationModeUnwrapperV2: Invalid input amount',
@@ -278,10 +299,10 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           amountWei,
           ethers.utils.defaultAbiCoder.encode(
             ['uint256', 'bytes'],
-            [2, ethers.utils.defaultAbiCoder.encode(['bytes32'], [withdrawalKey])],
+            [2, encodeWithdrawalKey(UnwrapTradeType.ForWithdrawal, withdrawalKey)],
           ),
         ),
-        'GmxV2IsolationModeUnwrapperV2: Invalid output amount',
+        'GmxV2IsolationModeUnwrapperV2: Insufficient output amount',
       );
     });
 
@@ -296,7 +317,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           ZERO_BI,
           BYTES_EMPTY,
         ),
-        'GmxV2IsolationModeUnwrapperV2: Invalid input amount',
+        'UpgradeableUnwrapperTraderV2: Invalid input amount',
       );
     });
   });
@@ -307,9 +328,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
 
-      // 0x10aeb692
-      // 00000000000000000000000000000000000000000000000000000000002dc6c0
-      // 00000000000000000000000000000000000000000000000000000000001e8480
       await expect(() => vault.connect(core.hhUser1).initiateUnwrapping(
         defaultAccountNumber,
         amountWei,
@@ -615,7 +633,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           withdrawalInfo.withdrawal,
           withdrawalInfo.eventData,
         ),
-        'GmxV2IsolationModeUnwrapperV2: Unexpected outputToken',
+        'GmxV2Library: Unexpected outputToken',
       );
 
       withdrawalInfo.eventData.addressItems.items[0].key = 'outputToken';
@@ -626,7 +644,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           withdrawalInfo.withdrawal,
           withdrawalInfo.eventData,
         ),
-        'GmxV2IsolationModeUnwrapperV2: Unexpected secondaryOutputToken',
+        'GmxV2Library: Unexpected secondaryOutputToken',
       );
 
       withdrawalInfo.eventData.addressItems.items[1].key = 'secondaryOutputToken';
@@ -637,7 +655,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           withdrawalInfo.withdrawal,
           withdrawalInfo.eventData,
         ),
-        'GmxV2IsolationModeUnwrapperV2: Unexpected outputAmount',
+        'GmxV2Library: Unexpected outputAmount',
       );
 
       withdrawalInfo.eventData.uintItems.items[0].key = 'outputAmount';
@@ -648,7 +666,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           withdrawalInfo.withdrawal,
           withdrawalInfo.eventData,
         ),
-        'GmxV2IsolationModeUnwrapperV2: Unexpected secondaryOutputAmount',
+        'GmxV2Library: Unexpected secondaryOutputAmount',
       );
     });
 
@@ -675,7 +693,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           withdrawalInfo.withdrawal,
           withdrawalInfo.eventData,
         ),
-        'GmxV2IsolationModeUnwrapperV2: Can only receive one token',
+        'GmxV2Library: Can only receive one token',
       );
     });
 
@@ -726,25 +744,23 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
 
     it('should fail when withdrawal amount does not match', async () => {
       await setupBalances(core.tokens.weth);
+
       const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
         ONE_BI,
         ONE_BI,
-        amountWei,
+        amountWei.add(1),
         parseEther('.01'),
         core.tokens.weth.address,
         core.tokens.nativeUsdc!.address,
         ONE_BI,
         ONE_BI,
       );
-      const vaultImpersonator = await impersonate(vault.address, true);
-      await unwrapper.connect(vaultImpersonator)
-        .vaultSetWithdrawalInfo(DUMMY_WITHDRAWAL_KEY, defaultAccountNumber, '123123', core.tokens.weth.address);
       await expectThrow(
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
-          DUMMY_WITHDRAWAL_KEY,
+          withdrawalKey,
           withdrawalInfo.withdrawal,
           withdrawalInfo.eventData,
         ),
@@ -770,12 +786,21 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     it('should fail if transfer amount is zero or gt withdrawal amount', async () => {
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       const vaultCaller = await impersonate(vault.address, true);
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: GMX_V2_EXECUTION_FEE },
+      );
 
+      const smallAmountWei = amountWei.div(2);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await unwrapper.connect(vaultCaller).vaultSetWithdrawalInfo(
         DUMMY_WITHDRAWAL_KEY,
         borrowAccountNumber,
-        amountWei,
+        smallAmountWei,
         core.tokens.nativeUsdc!.address,
       );
 
@@ -783,7 +808,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginCaller).callFunction(
           core.hhUser5.address,
           { owner: vault.address, number: defaultAccountNumber },
-          defaultAbiCoder.encode(['uint256', 'uint256'], [ZERO_BI, DUMMY_WITHDRAWAL_KEY]),
+          encodeWithdrawalKeyForCallFunction(ZERO_BI, UnwrapTradeType.ForWithdrawal, DUMMY_WITHDRAWAL_KEY),
         ),
         'GmxV2IsolationModeUnwrapperV2: Invalid transfer amount',
       );
@@ -792,7 +817,11 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginCaller).callFunction(
           core.hhUser5.address,
           { owner: vault.address, number: defaultAccountNumber },
-          defaultAbiCoder.encode(['uint256', 'uint256'], [amountWei.add(1), DUMMY_WITHDRAWAL_KEY]),
+          encodeWithdrawalKeyForCallFunction(
+            smallAmountWei.add(1),
+            UnwrapTradeType.ForWithdrawal,
+            DUMMY_WITHDRAWAL_KEY,
+          ),
         ),
         'GmxV2IsolationModeUnwrapperV2: Invalid transfer amount',
       );
@@ -802,6 +831,15 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       const vaultCaller = await impersonate(vault.address, true);
 
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: GMX_V2_EXECUTION_FEE },
+      );
+
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await unwrapper.connect(vaultCaller).vaultSetWithdrawalInfo(
         DUMMY_WITHDRAWAL_KEY,
@@ -814,9 +852,9 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         unwrapper.connect(dolomiteMarginCaller).callFunction(
           core.hhUser5.address,
           { owner: vault.address, number: defaultAccountNumber },
-          defaultAbiCoder.encode(['uint256', 'uint256'], [amountWei, DUMMY_WITHDRAWAL_KEY]),
+          encodeWithdrawalKeyForCallFunction(amountWei.add(1), UnwrapTradeType.ForWithdrawal, DUMMY_WITHDRAWAL_KEY),
         ),
-        `GmxV2IsolationModeUnwrapperV2: Insufficient balance <0, ${amountWei.toString()}>`,
+        `GmxV2Library: Insufficient balance <${amountWei.toString()}, ${amountWei.add(1).toString()}>`,
       );
     });
   });
@@ -835,6 +873,9 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     });
 
     it('should fail if the vault is already frozen for this account number', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+
       const vaultSigner = await impersonate(vault.address, true);
       await unwrapper.connect(vaultSigner).vaultSetWithdrawalInfo(
         DUMMY_WITHDRAWAL_KEY,
@@ -926,23 +967,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       );
     });
 
-    it('should not work if the key passed is invalid', async () => {
-      await expectThrow(
-        unwrapper.createActionsForUnwrapping(
-          ZERO_BI,
-          ZERO_BI,
-          ZERO_ADDRESS,
-          ZERO_ADDRESS,
-          core.marketIds.nativeUsdc!,
-          marketId,
-          ONE_BI,
-          amountWei,
-          ethers.utils.defaultAbiCoder.encode(['bytes32'], [BYTES_ZERO]),
-        ),
-        'GmxV2IsolationModeUnwrapperV2: Invalid withdrawal',
-      );
-    });
-
     it('should not work if the input amount is too large', async () => {
       await expectThrow(
         unwrapper.createActionsForUnwrapping(
@@ -954,7 +978,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           marketId,
           ONE_BI,
           amountWei.add(1),
-          ethers.utils.defaultAbiCoder.encode(['bytes32'], [withdrawalKey]),
+          encodeWithdrawalKey(UnwrapTradeType.ForWithdrawal, withdrawalKey),
         ),
         'GmxV2IsolationModeUnwrapperV2: Invalid input amount',
       );

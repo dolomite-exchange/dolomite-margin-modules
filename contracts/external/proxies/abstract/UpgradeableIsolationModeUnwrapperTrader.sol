@@ -69,12 +69,12 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         );
 
         // Any calls to nonReentrant after this point will fail
-        _setUint256(_REENTRANCY_GUARD_SLOT, _ENTERED);
+        _setReentrancyGuard(_ENTERED);
 
         _;
 
         // By storing the original value once again, a refund is triggered (see https://eips.ethereum.org/EIPS/eip-2200)
-        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+        _setReentrancyGuard(_NOT_ENTERED);
     }
 
     // ======================== External Functions ========================
@@ -257,7 +257,7 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
     ) internal initializer {
         _setVaultFactory(_vaultFactory);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
-        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+        _setReentrancyGuard(_NOT_ENTERED);
     }
 
     function _callFunction(
@@ -329,4 +329,8 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         uint256 _desiredInputAmount,
         bytes memory _orderData
     ) internal virtual view returns (uint256);
+
+    function _setReentrancyGuard(uint256 _value) private {
+        _setUint256(_REENTRANCY_GUARD_SLOT, _value);
+    }
 }

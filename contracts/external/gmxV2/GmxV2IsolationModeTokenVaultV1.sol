@@ -210,7 +210,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
                     address(this),
                     _amount
                 );
-                _setIsDepositSourceWrapper(false);
+                _setIsDepositSourceWrapper(/* _isDepositSourceWrapper = */ false);
             }
             _requireVirtualBalanceMatchesRealBalance();
         } else {
@@ -345,13 +345,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
             );
         }
 
-        if (_tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper) {
-            // Only a trusted converter can initiate unwraps (via the callback)
-            _requireOnlyConverter(msg.sender);
-        }
-
-        if (isVaultFrozen()) {
-            // This guarantees only a handler is executing the swap
+        if (_tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper || isVaultFrozen()) {
+            // Only a trusted converter can initiate unwraps (via the callback) OR execute swaps if the vault is frozen
             _requireOnlyConverter(msg.sender);
         }
 
@@ -463,8 +458,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
     }
 
-    function _setVirtualBalance(uint256 _bal) internal {
-        _setUint256(_VIRTUAL_BALANCE_SLOT, _bal);
+    function _setVirtualBalance(uint256 _balance) internal {
+        _setUint256(_VIRTUAL_BALANCE_SLOT, _balance);
     }
 
     function _setIsDepositSourceWrapper(bool _isDepositSourceWrapper) internal {

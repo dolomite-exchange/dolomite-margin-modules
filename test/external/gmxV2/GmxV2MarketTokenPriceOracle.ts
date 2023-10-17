@@ -27,7 +27,6 @@ import {
 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
 import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
-import { createExpirationLibrary } from '../../utils/expiry-utils';
 
 const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('919979975416060612'); // $0.9199
 const GM_ETH_USD_PRICE_MAX_WEI = BigNumber.from('918897815809950545'); // $0.9188
@@ -57,14 +56,13 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       network: Network.ArbitrumOne,
     });
     gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
-    const expirationLibrary = await createExpirationLibrary();
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
-      expirationLibrary,
+      gmxV2Library,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,

@@ -40,7 +40,7 @@ import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
+import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
@@ -157,7 +157,7 @@ library GmxV2Library {
         IERC20(address(_vault.WETH())).safeApprove(address(_vault.registry().gmxV2WrapperTrader()), msg.value);
     }
 
-    function swapExactInputForOutput(
+    function swapExactInputForOutputForWithdrawal(
         IGmxV2IsolationModeUnwrapperTraderV2 _unwrapper,
         IGmxV2IsolationModeUnwrapperTraderV2.WithdrawalInfo memory _withdrawalInfo
     ) public {
@@ -169,10 +169,12 @@ library GmxV2Library {
         traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
         traderParams[0].makerAccountIndex = 0;
         traderParams[0].trader = address(this);
-        traderParams[0].tradeData = abi.encode(
-            IGmxV2IsolationModeUnwrapperTraderV2.TradeType.FromWithdrawal,
-            _withdrawalInfo.key
-        );
+
+        IGmxV2IsolationModeUnwrapperTraderV2.TradeType[] memory tradeTypes = new IGmxV2IsolationModeUnwrapperTraderV2.TradeType[](1); // solhint-disable-line max-line-length
+        tradeTypes[0] = IGmxV2IsolationModeUnwrapperTraderV2.TradeType.FromWithdrawal;
+        bytes32[] memory keys = new bytes32[](1);
+        keys[0] = _withdrawalInfo.key;
+        traderParams[0].tradeData = abi.encode(tradeTypes, keys);
 
         IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
             deadline: block.timestamp,
@@ -190,51 +192,73 @@ library GmxV2Library {
         );
     }
 
-    function depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-        IGmxV2IsolationModeVaultFactory _factory,
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _otherMarketId,
-        uint256 _amountWei
+    function swapExactInputForOutputForDepositCancellation(
+        IGmxV2IsolationModeWrapperTraderV2 _wrapper,
+        IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory _depositInfo
     ) public {
-        Require.that(
-            _otherMarketId != _factory.marketId(),
-            _FILE,
-            "Invalid market",
-            _otherMarketId
-        );
+        uint256[] memory marketIdsPath = new uint256[](2);
+        marketIdsPath[0] = _wrapper.VAULT_FACTORY().marketId();
+        marketIdsPath[1] = _wrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_depositInfo.inputToken);
 
-        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
-        accounts[0] = IDolomiteStructs.AccountInfo({
-            owner: _vault,
-            number: _vaultAccountNumber
+        IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
+        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
+        traderParams[0].makerAccountIndex = 0;
+        traderParams[0].trader = address(_wrapper.GMX_REGISTRY_V2().gmxV2UnwrapperTrader());
+
+        IGmxV2IsolationModeUnwrapperTraderV2.TradeType[] memory tradeTypes = new IGmxV2IsolationModeUnwrapperTraderV2.TradeType[](1); // solhint-disable-line max-line-length
+        tradeTypes[0] = IGmxV2IsolationModeUnwrapperTraderV2.TradeType.FromDeposit;
+        bytes32[] memory keys = new bytes32[](1);
+        keys[0] = _depositInfo.key;
+        traderParams[0].tradeData = abi.encode(tradeTypes, keys);
+
+        IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
+            deadline: block.timestamp,
+            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None
         });
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
 
-        IDolomiteMargin dolomiteMargin = _factory.DOLOMITE_MARGIN();
-        address token = dolomiteMargin.getMarketTokenAddress(_otherMarketId);
-        IERC20(token).safeTransferFrom(msg.sender, address(this), _amountWei);
-        IERC20(token).safeApprove(address(dolomiteMargin), _amountWei);
+        uint256 outputAmount = _depositInfo.inputAmount;
+        IERC20(_depositInfo.inputToken).safeApprove(traderParams[0].trader, outputAmount);
 
-        actions[0] = AccountActionLib.encodeDepositAction(
-            /* _accountId = */ 0,
-            _otherMarketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            }),
-            /* _fromAccount = */ address(this)
+        IGmxV2IsolationModeUnwrapperTraderV2(traderParams[0].trader).handleGmxCallbackFromWrapperBefore();
+        IGmxV2IsolationModeTokenVaultV1(_depositInfo.vault).swapExactInputForOutput(
+            _depositInfo.accountNumber,
+            marketIdsPath,
+            /* _inputAmountWei = */ _depositInfo.outputAmount,
+            outputAmount,
+            traderParams,
+            /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
+            userConfig
         );
-        dolomiteMargin.operate(accounts, actions);
+        IGmxV2IsolationModeUnwrapperTraderV2(traderParams[0].trader).handleGmxCallbackFromWrapperAfter();
     }
 
-    function isValidOutputToken(
+    function hasPendingDeposit(
         IGmxV2IsolationModeVaultFactory _factory,
-        address _outputToken
+        address _vault,
+        uint256 _accountNumber
     ) public view returns (bool) {
-        return _outputToken == _factory.LONG_TOKEN() || _outputToken == _factory.SHORT_TOKEN();
+        return _factory.getPendingAmountByAccount(_vault,
+            _accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
+        ) != 0;
+    }
+
+    function isValidInputOrOutputToken(
+        IGmxV2IsolationModeVaultFactory _factory,
+        address _token
+    ) public view returns (bool) {
+        return _token == _factory.LONG_TOKEN() || _token == _factory.SHORT_TOKEN();
+    }
+
+    function validateVirtualBalance(address _vault, uint256 _transferAmount) public view {
+        uint256 underlyingVirtualBalance = IGmxV2IsolationModeTokenVaultV1(_vault).virtualBalance();
+        Require.that(
+            underlyingVirtualBalance >= _transferAmount,
+            _FILE,
+            "Insufficient balance",
+            underlyingVirtualBalance,
+            _transferAmount
+        );
     }
 
     function validateExecutionFee(
@@ -275,20 +299,18 @@ library GmxV2Library {
         uint256 _accountNumber,
         uint256 _withdrawalAmount
     ) public view {
-        {
-            uint256 withdrawalPendingAmount = _factory.getPendingAmountByAccount(
-                _vault,
-                _accountNumber,
-                IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
-            );
-            Require.that(
-                withdrawalPendingAmount == 0,
-                _FILE,
-                "Account is frozen",
-                _vault,
-                _accountNumber
-            );
-        }
+        uint256 withdrawalPendingAmount = _factory.getPendingAmountByAccount(
+            _vault,
+            _accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
+        );
+        Require.that(
+            withdrawalPendingAmount == 0,
+            _FILE,
+            "Account is frozen",
+            _vault,
+            _accountNumber
+        );
 
         uint256 depositPendingAmount = _factory.getPendingAmountByAccount(
             _vault,
@@ -300,8 +322,8 @@ library GmxV2Library {
             number: _accountNumber
         });
         uint256 balance = _dolomiteMargin.getAccountWei(accountInfo, _factory.marketId()).value;
-        // The pending amount should be 0 (not frozen) OR the requested withdrawal cannot be for more than the user's
-        // balance, minus any pending.
+
+        // The requested withdrawal cannot be for more than the user's balance, minus any pending.
         Require.that(
             balance - depositPendingAmount >= _withdrawalAmount,
             _FILE,
@@ -448,11 +470,6 @@ library GmxV2Library {
         address _market,
         bool _isLong
     ) private pure returns (bytes32) {
-        return keccak256(abi.encode(
-            _MAX_PNL_FACTOR_KEY,
-            _pnlFactorType,
-            _market,
-            _isLong
-        ));
+        return keccak256(abi.encode(_MAX_PNL_FACTOR_KEY, _pnlFactorType, _market, _isLong));
     }
 }

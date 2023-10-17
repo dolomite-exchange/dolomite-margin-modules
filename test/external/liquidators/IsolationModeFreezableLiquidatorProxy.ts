@@ -17,7 +17,7 @@ import {
   IsolationModeFreezableLiquidatorProxy__factory,
 } from '../../../src/types';
 import { AccountStruct } from '../../../src/utils/constants';
-import { GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, increaseByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -38,7 +38,7 @@ import {
   createGmxV2MarketTokenPriceOracle,
   getOracleParams,
 } from '../../utils/ecosystem-token-utils/gmx';
-import { createExpirationLibrary, setExpiry } from '../../utils/expiry-utils';
+import { setExpiry } from '../../utils/expiry-utils';
 import { liquidateV4WithZapParam } from '../../utils/liquidation-utils';
 import {
   CoreProtocol,
@@ -51,8 +51,6 @@ import {
   setupWETHBalance,
 } from '../../utils/setup';
 import { getLiquidateIsolationModeZapPath } from '../../utils/zap-utils';
-
-const CALLBACK_GAS_LIMIT = BigNumber.from('1500000');
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -100,15 +98,14 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       ],
     );
 
-    const expirationLibrary = await createExpirationLibrary();
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
-    gmxRegistryV2 = await createGmxRegistryV2(core);
+    gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
-      expirationLibrary,
+      gmxV2Library,
       gmxRegistryV2,
       allowableMarketIds,
       allowableMarketIds,
@@ -121,14 +118,12 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       factory,
       gmxV2Library,
       gmxRegistryV2,
-      CALLBACK_GAS_LIMIT,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
       gmxV2Library,
       gmxRegistryV2,
-      CALLBACK_GAS_LIMIT,
     );
     const priceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxRegistryV2);
     await priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
@@ -158,8 +153,6 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
 
     await setupWETHBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, amountWei);
-    await wrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxDepositHandler.address, true);
-    await unwrapper.connect(core.governance).ownerSetIsHandler(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
 
     await core.dolomiteRegistry.ownerSetLiquidatorAssetRegistry(core.liquidatorAssetRegistry.address);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.liquidatorProxyV4.address);
@@ -251,6 +244,11 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
           { gasLimit: 10_000_000 },
         );
+    }
+
+    enum UnwrapperTradeType {
+      FromWithdrawal = 0,
+      FromDeposit = 1,
     }
 
     enum FinishState {
@@ -391,7 +389,10 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       );
 
       const withdrawal = await unwrapper.getWithdrawalInfo(withdrawalKey);
-      const liquidationData = ethers.utils.defaultAbiCoder.encode(['bytes32'], [withdrawalKey]);
+      const liquidationData = ethers.utils.defaultAbiCoder.encode(
+        ['uint8[]', 'bytes32[]'],
+        [[UnwrapperTradeType.FromWithdrawal], [withdrawalKey]],
+      );
       const outputAmount = withdrawal.outputAmount.mul(amountWeiForLiquidation).div(amountWei);
       const zapParam = await getLiquidateIsolationModeZapPath(
         [marketId, core.marketIds.nativeUsdc!, core.marketIds.weth],

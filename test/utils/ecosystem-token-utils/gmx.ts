@@ -1,7 +1,7 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { BigNumber, BigNumberish, Contract, ethers } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, Contract, ethers } from 'ethers';
 import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV1__factory,
@@ -191,26 +191,28 @@ export async function createGmxV2IsolationModeTokenVaultV1(
 
 export async function createTestGmxV2IsolationModeTokenVaultV1(
   core: CoreProtocol,
-  library: GmxV2Library,
+  gmxV2Library: GmxV2Library,
+  safeDelegateCallLibrary: BaseContract,
 ): Promise<TestGmxV2IsolationModeTokenVaultV1> {
   return createContractWithLibrary<TestGmxV2IsolationModeTokenVaultV1>(
     'TestGmxV2IsolationModeTokenVaultV1',
-    { GmxV2Library: library.address },
+    { GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address },
     [core.tokens.weth.address],
   );
 }
 
 export async function createGmxV2IsolationModeVaultFactory(
   core: CoreProtocol,
-  expirationLibrary: Contract,
+  library: GmxV2Library,
   gmxRegistry: IGmxRegistryV2,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
   gmToken: IGmxMarketToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
 ): Promise<GmxV2IsolationModeVaultFactory> {
-  return createContract<GmxV2IsolationModeVaultFactory>(
+  return createContractWithLibrary<GmxV2IsolationModeVaultFactory>(
     'GmxV2IsolationModeVaultFactory',
+    { GmxV2Library: library.address },
     getGmxV2IsolationModeVaultFactoryConstructorParams(
       core,
       gmxRegistry,
@@ -224,15 +226,16 @@ export async function createGmxV2IsolationModeVaultFactory(
 
 export async function createTestGmxV2IsolationModeVaultFactory(
   core: CoreProtocol,
+  library: GmxV2Library,
   gmxRegistry: IGmxRegistryV2,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
   gmToken: IGmxMarketToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
 ): Promise<TestGmxV2IsolationModeVaultFactory> {
-  return createContractWithAbi<TestGmxV2IsolationModeVaultFactory>(
-    TestGmxV2IsolationModeVaultFactory__factory.abi,
-    TestGmxV2IsolationModeVaultFactory__factory.bytecode,
+  return createContractWithLibrary<TestGmxV2IsolationModeVaultFactory>(
+    'TestGmxV2IsolationModeVaultFactory',
+    { GmxV2Library: library.address },
     getGmxV2IsolationModeVaultFactoryConstructorParams(
       core,
       gmxRegistry,
