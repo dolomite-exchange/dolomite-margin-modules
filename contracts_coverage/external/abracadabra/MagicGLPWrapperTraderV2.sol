@@ -80,19 +80,22 @@ contract MagicGLPWrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomite
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         if (GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken)) { /* FOR COVERAGE TESTING */ }
-        Require.that(GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
+        Require.that(
+GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         if (_outputToken == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_outputToken == address(MAGIC_GLP),
+        Require.that(
+_outputToken == address(MAGIC_GLP),
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputAmount > 0,
+        Require.that(
+_inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -130,19 +133,22 @@ contract MagicGLPWrapperTraderV2 is IDolomiteMarginExchangeWrapper, OnlyDolomite
     view
     returns (uint256) {
         if (GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken)) { /* FOR COVERAGE TESTING */ }
-        Require.that(GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
+        Require.that(
+GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         if (_outputToken == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_outputToken == address(MAGIC_GLP),
+        Require.that(
+_outputToken == address(MAGIC_GLP),
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_desiredInputAmount > 0,
+        Require.that(
+_desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );

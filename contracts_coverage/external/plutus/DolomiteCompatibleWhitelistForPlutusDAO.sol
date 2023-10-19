@@ -110,7 +110,8 @@ contract DolomiteCompatibleWhitelistForPlutusDAO is IWhitelist, OnlyDolomiteMarg
         address _plvGlpUnwrapperTrader
     ) internal {
         if (_plvGlpUnwrapperTrader != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_plvGlpUnwrapperTrader != address(0),
+        Require.that(
+_plvGlpUnwrapperTrader != address(0),
             _FILE,
             "Invalid plvGlpUnwrapperTrader"
         );
@@ -122,7 +123,8 @@ contract DolomiteCompatibleWhitelistForPlutusDAO is IWhitelist, OnlyDolomiteMarg
         address _plvGlpWrapperTrader
     ) internal {
         if (_plvGlpWrapperTrader != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_plvGlpWrapperTrader != address(0),
+        Require.that(
+_plvGlpWrapperTrader != address(0),
             _FILE,
             "Invalid plvGlpWrapperTrader"
         );

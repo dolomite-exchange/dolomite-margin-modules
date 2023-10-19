@@ -146,7 +146,8 @@ contract DolomiteRegistryImplementation is
         address _genericTraderProxy
     ) internal {
         if (_genericTraderProxy != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_genericTraderProxy != address(0),
+        Require.that(
+_genericTraderProxy != address(0),
             _FILE,
             "Invalid genericTraderProxy"
         );
@@ -165,7 +166,8 @@ contract DolomiteRegistryImplementation is
         address _expiry
     ) internal {
         if (_expiry != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_expiry != address(0),
+        Require.that(
+_expiry != address(0),
             _FILE,
             "Invalid expiry"
         );
@@ -184,7 +186,8 @@ contract DolomiteRegistryImplementation is
         uint256 _slippageToleranceForPauseSentinel
     ) internal {
         if (_slippageToleranceForPauseSentinel > 0 && _slippageToleranceForPauseSentinel < 1e18) { /* FOR COVERAGE TESTING */ }
-        Require.that(_slippageToleranceForPauseSentinel > 0 && _slippageToleranceForPauseSentinel < 1e18,
+        Require.that(
+_slippageToleranceForPauseSentinel > 0 && _slippageToleranceForPauseSentinel < 1e18,
             _FILE,
             "Invalid slippageTolerance"
         );
@@ -197,7 +200,8 @@ contract DolomiteRegistryImplementation is
         address _liquidatorAssetRegistry
     ) internal {
         if (_liquidatorAssetRegistry != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_liquidatorAssetRegistry != address(0),
+        Require.that(
+_liquidatorAssetRegistry != address(0),
             _FILE,
             "Invalid liquidatorAssetRegistry"
         );

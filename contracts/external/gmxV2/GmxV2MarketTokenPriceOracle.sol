@@ -26,9 +26,9 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2MarketTokenPriceOracle } from "../interfaces/gmx/IGmxV2MarketTokenPriceOracle.sol";
+import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 
 
 /**
@@ -57,17 +57,17 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
 
     // ============================ Public State Variables ============================
 
-    IGmxRegistryV2 public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
+    IGmxV2Registry public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
 
     mapping(address => bool) public marketTokens;
 
     // ============================ Constructor ============================
 
     constructor(
-        address _gmxRegistryV2,
+        address _gmxV2Registry,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        REGISTRY = IGmxRegistryV2(_gmxRegistryV2);
+        REGISTRY = IGmxV2Registry(_gmxV2Registry);
     }
 
     function ownerSetMarketToken(

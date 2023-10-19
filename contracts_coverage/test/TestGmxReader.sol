@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { GmxDeposit } from "../external/interfaces/gmx/GmxDeposit.sol";
 import { GmxMarket } from "../external/interfaces/gmx/GmxMarket.sol";
 import { GmxMarketPoolValueInfo } from "../external/interfaces/gmx/GmxMarketPoolValueInfo.sol";
-import { GmxDeposit } from "../external/interfaces/gmx/GmxDeposit.sol";
 import { GmxPrice } from "../external/interfaces/gmx/GmxPrice.sol";
 import { GmxWithdrawal } from "../external/interfaces/gmx/GmxWithdrawal.sol";
 import { IGmxDataStore } from "../external/interfaces/gmx/IGmxDataStore.sol";
@@ -49,20 +49,6 @@ contract TestGmxReader is IGmxReader {
 
     function setMarketPrice(int256 _marketPrice) external {
         marketPrice = _marketPrice;
-    }
-
-    function getDeposit(
-        IGmxDataStore /* _dataStore */,
-        bytes32 /* _key */
-    ) external pure returns (GmxDeposit.DepositProps memory props) {
-        return props;
-    }
-
-    function getWithdrawal(
-        IGmxDataStore /* _dataStore */,
-        bytes32 /* _key */
-    ) external pure returns (GmxWithdrawal.WithdrawalProps memory props) {
-        return props;
     }
 
     function getPnlToPoolFactor(
@@ -99,6 +85,20 @@ contract TestGmxReader is IGmxReader {
         });
 
         return (marketPrice, props);
+    }
+
+    function getDeposit(
+        IGmxDataStore /* _dataStore */,
+        bytes32 /* _key */
+    ) external pure returns (GmxDeposit.DepositProps memory props) {
+        return props;
+    }
+
+    function getWithdrawal(
+        IGmxDataStore /* _dataStore */,
+        bytes32 /* _key */
+    ) external pure returns (GmxWithdrawal.WithdrawalProps memory props) {
+        return props;
     }
 
     function getSwapPriceImpact(

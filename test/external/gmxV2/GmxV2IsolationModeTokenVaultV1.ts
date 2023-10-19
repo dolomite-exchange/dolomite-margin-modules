@@ -6,7 +6,7 @@ import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
   CustomTestToken,
-  GmxRegistryV2,
+  GmxV2Registry,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
@@ -32,7 +32,7 @@ import {
   expectWalletBalance,
 } from 'test/utils/assertions';
 import {
-  createGmxRegistryV2,
+  createGmxV2Registry,
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
@@ -74,12 +74,13 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
   let core: CoreProtocol;
   let underlyingToken: IGmxMarketToken;
-  let gmxRegistryV2: GmxRegistryV2;
+  let gmxV2Registry: GmxV2Registry;
   let allowableMarketIds: BigNumberish[];
   let unwrapper: GmxV2IsolationModeUnwrapperTraderV2;
   let wrapper: GmxV2IsolationModeWrapperTraderV2;
   let factory: GmxV2IsolationModeVaultFactory;
   let vault: TestGmxV2IsolationModeTokenVaultV1;
+  let vault2: TestGmxV2IsolationModeTokenVaultV1;
   let marketId: BigNumber;
   let impersonatedFactory: SignerWithAddress;
   let impersonatedVault: SignerWithAddress;
@@ -100,13 +101,13 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       { GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address },
       [core.tokens.weth.address],
     );
-    gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
+    gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
       gmxV2Library,
-      gmxRegistryV2,
+      gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
@@ -117,16 +118,16 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       core,
       factory,
       gmxV2Library,
-      gmxRegistryV2,
+      gmxV2Registry,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
       gmxV2Library,
-      gmxRegistryV2,
+      gmxV2Registry,
     );
-    await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
-    await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
+    await gmxV2Registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
+    await gmxV2Registry.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
     // Use actual price oracle later
     await core.testEcosystem!.testPriceOracle!.setPrice(factory.address, '1000000000000000000000000000000');
@@ -161,11 +162,18 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     await factory.createVault(core.hhUser1.address);
+    await factory.createVault(core.hhUser2.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
+    const vaultAddress2 = await factory.getVaultByAccount(core.hhUser2.address);
     vault = setupUserVaultProxy<TestGmxV2IsolationModeTokenVaultV1>(
       vaultAddress,
       TestGmxV2IsolationModeTokenVaultV1__factory,
       core.hhUser1,
+    );
+    vault2 = setupUserVaultProxy<TestGmxV2IsolationModeTokenVaultV1>(
+      vaultAddress2,
+      TestGmxV2IsolationModeTokenVaultV1__factory,
+      core.hhUser2,
     );
 
     testReader = await createContractWithAbi(
@@ -184,6 +192,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     await otherToken2.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
     await otherToken2.connect(core.hhUser1).approve(core.dolomiteMargin.address, amountWei);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, otherMarketId2, amountWei);
+
+    await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.hhUser5.address);
+    await core.dolomiteRegistry.ownerSetLiquidatorAssetRegistry(core.liquidatorAssetRegistry.address);
 
     impersonatedVault = await impersonate(vault.address, true);
 
@@ -229,6 +240,16 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(await vault.isVaultFrozen()).to.eq(true);
       expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
+
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+      const withdrawal = await unwrapper.getWithdrawalInfo(withdrawalKey);
+      expect(withdrawal.key).to.eq(withdrawalKey);
+      expect(withdrawal.vault).to.eq(vault.address);
+      expect(withdrawal.accountNumber).to.eq(borrowAccountNumber);
+      expect(withdrawal.inputAmount).to.eq(amountWei);
+      expect(withdrawal.outputToken).to.eq(core.tokens.weth.address);
+      expect(withdrawal.outputAmount).to.eq(ONE_BI);
     });
 
     it('should fail if output token is invalid', async () => {
@@ -256,37 +277,85 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       );
     });
 
-    it('should fail if vault is frozen from withdrawal', async () => {
-      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(
-        vault.address,
+    it('should fail if input amount is 0', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
         defaultAccountNumber,
-        FreezeType.Withdrawal,
-        ONE_BI,
+        borrowAccountNumber,
+        amountWei,
+        { value: GMX_V2_EXECUTION_FEE },
       );
+
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+
+      await expectThrow(
+        vault.initiateUnwrapping(
+          borrowAccountNumber,
+          ZERO_BI,
+          core.tokens.weth.address,
+          ONE_BI,
+          { value: parseEther('.01') },
+        ),
+        'GmxV2IsolationModeVaultV1: Invalid input amount',
+      );
+    });
+
+    it('should fail if vault attempts to over withdraw', async () => {
       await expectThrow(
         vault.initiateUnwrapping(
           borrowAccountNumber,
           amountWei,
-          core.tokens.wbtc.address,
+          core.tokens.weth.address,
+          ONE_BI,
+          { value: parseEther('.01') },
+        ),
+        `GmxV2Library: Withdrawal too large <${vault.address.toLowerCase()}, ${borrowAccountNumber}>`,
+      );
+    });
+
+    it('should fail if vault is frozen', async () => {
+      expect(await vault.isVaultFrozen()).to.be.false;
+      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
+        vault.address,
+        defaultAccountNumber,
+        FreezeType.Deposit,
+        toPositiveWeiStruct(ONE_BI),
+      );
+      expect(await vault.isVaultFrozen()).to.be.true;
+
+      await expectThrow(
+        vault.initiateUnwrapping(
+          borrowAccountNumber,
+          amountWei,
+          core.tokens.weth.address,
           ONE_BI,
           { value: parseEther('.01') },
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
       );
-    });
 
-    it('should fail if vault is frozen from deposit', async () => {
-      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(
+      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Deposit,
-        ONE_BI,
+        toNegativeWeiStruct(ONE_BI),
       );
+      expect(await vault.isVaultFrozen()).to.be.false;
+      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
+        vault.address,
+        defaultAccountNumber,
+        FreezeType.Withdrawal,
+        toPositiveWeiStruct(ONE_BI),
+      );
+      expect(await vault.isVaultFrozen()).to.be.true;
+
       await expectThrow(
         vault.initiateUnwrapping(
           borrowAccountNumber,
           amountWei,
-          core.tokens.wbtc.address,
+          core.tokens.weth.address,
           ONE_BI,
           { value: parseEther('.01') },
         ),
@@ -295,17 +364,11 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if not owner', async () => {
-      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(
-        vault.address,
-        defaultAccountNumber,
-        FreezeType.Withdrawal,
-        ONE_BI,
-      );
       await expectThrow(
         vault.connect(core.hhUser2).initiateUnwrapping(
           borrowAccountNumber,
           amountWei,
-          core.tokens.wbtc.address,
+          core.tokens.weth.address,
           ONE_BI,
           { value: parseEther('.01') },
         ),
@@ -314,19 +377,46 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if reentered', async () => {
-      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(
-        vault.address,
-        defaultAccountNumber,
-        FreezeType.Withdrawal,
+      const transaction = await vault.populateTransaction.initiateUnwrapping(
+        borrowAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
         ONE_BI,
       );
       await expectThrow(
-        vault.callInitiateUnwrappingAndTriggerReentrancy(
+        vault.callFunctionAndTriggerReentrancy(
+          transaction.data!,
+          { value: parseEther('.01') },
+        ),
+        'IsolationModeTokenVaultV1: Reentrant call',
+      );
+    });
+  });
+
+  describe('#initiateUnwrappingForLiquidation', () => {
+    it('should fail if sender is not a valid liquidator', async () => {
+      await expectThrow(
+        vault.initiateUnwrappingForLiquidation(
           borrowAccountNumber,
           amountWei,
-          core.tokens.wbtc.address,
+          core.tokens.weth.address,
           ONE_BI,
-          ONE_BI,
+          { value: parseEther('.01') },
+        ),
+        `GmxV2IsolationModeVaultV1: Only liquidator can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      const transaction = await vault.populateTransaction.initiateUnwrappingForLiquidation(
+        borrowAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
+        ONE_BI,
+      );
+      await expectThrow(
+        vault.callFunctionAndTriggerReentrancy(
+          transaction.data!,
           { value: parseEther('.01') },
         ),
         'IsolationModeTokenVaultV1: Reentrant call',
@@ -369,12 +459,52 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      const result = await vault.cancelDeposit(depositKey);
+      const result = await vault.cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
       await expectEvent(wrapper, result, 'DepositCancelled', {
         key: depositKey,
       });
 
       expect(await vault.isVaultFrozen()).to.eq(false);
+    });
+
+    it('should fail if a user attempts to cancel a different users deposit', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut,
+        wrapper,
+        GMX_V2_EXECUTION_FEE,
+      );
+      await vault.swapExactInputForOutput(
+        borrowAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+        { value: parseEther('.01') },
+      );
+      const filter = wrapper.filters.DepositCreated();
+      const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
+      expect(await vault.isVaultFrozen()).to.eq(true);
+
+      // Mine blocks so we can cancel deposit
+      await mine(1200);
+      await expectThrow(
+        vault2.cancelDeposit(depositKey),
+        `GmxV2IsolationModeVaultV1: Invalid vault owner <${vault.address.toLowerCase()}>`,
+      );
     });
 
     it('should fail if not called by vault owner', async () => {
@@ -419,6 +549,37 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(await vault.isVaultFrozen()).to.eq(false);
       expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
+    });
+
+    it('should fail if a user attempts to cancel another users withdrawal', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
+
+      await expect(() => vault.initiateUnwrapping(
+        defaultAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
+        ONE_BI,
+        { value: parseEther('.01') },
+      )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+
+      const filter = unwrapper.filters.WithdrawalCreated();
+      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+
+      // Mine blocks so we can cancel deposit
+      await mine(1200);
+      await expectThrow(
+        vault2.cancelWithdrawal(withdrawalKey),
+        `GmxV2IsolationModeVaultV1: Invalid vault owner <${vault.address.toLowerCase()}>`,
+      );
     });
 
     it('should fail if not called by vault owner', async () => {
@@ -495,18 +656,18 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if virtual balance does not equal real balance', async () => {
       await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
-      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(
+      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Deposit,
-        ONE_BI,
+        toPositiveWeiStruct(ONE_BI),
       );
       await vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI);
-      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(
+      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Deposit,
-        ZERO_BI,
+        toNegativeWeiStruct(ONE_BI),
       );
       await setupGMBalance(core, await impersonate(vault.address, true), parseEther('.5'), vault);
 
@@ -744,12 +905,45 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       );
     });
 
+    it('should fail if ETH is sent for non-wrapper', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId2,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      const outputAmount = amountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        vault.swapExactInputForOutput(
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+          { value: ONE_BI },
+        ),
+        'GmxV2IsolationModeVaultV1: Cannot send ETH for non-wrapper',
+      );
+    });
+
     it('should fail when caller is not unwrapper for unwrapping is frozen', async () => {
-      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(
+      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Withdrawal,
-        ONE_BI,
+        toPositiveWeiStruct(ONE_BI),
       );
 
       const unwrappingParams = await getInitiateUnwrappingParams(
@@ -776,7 +970,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail when redemptions are paused', async () => {
-      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
       await testReader.setPnlToPoolFactors(INVALID_POOL_FACTOR, VALID_POOL_FACTOR);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
 
@@ -830,11 +1024,11 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if vault is frozen and called by owner', async () => {
-      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(
+      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Withdrawal,
-        ONE_BI,
+        toPositiveWeiStruct(ONE_BI),
       );
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
       await expectThrow(
@@ -869,11 +1063,11 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
       const outputAmount = amountWei.div(2);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await factory.connect(impersonatedVault).setIsVaultAccountFrozen(
+      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Withdrawal,
-        ONE_BI,
+        toPositiveWeiStruct(ONE_BI),
       );
       const unwrapperImpersonator = await impersonate(unwrapper.address, true);
       await vault.connect(unwrapperImpersonator).swapExactInputForOutput(
@@ -1113,30 +1307,30 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should return false if short and long are outside pnl range', async () => {
-      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
       await testReader.setPnlToPoolFactors(VALID_POOL_FACTOR, VALID_POOL_FACTOR);
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
     });
 
     it('should return true if max callback gas limit is too large', async () => {
-      await gmxRegistryV2.connect(core.governance).ownerSetCallbackGasLimit(MAX_UINT_256_BI);
+      await gmxV2Registry.connect(core.governance).ownerSetCallbackGasLimit(MAX_UINT_256_BI);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
 
     it('should return true if short is within pnl range', async () => {
-      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
       await testReader.setPnlToPoolFactors(INVALID_POOL_FACTOR, VALID_POOL_FACTOR);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
 
     it('should return true if long is within pnl range', async () => {
-      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
       await testReader.setPnlToPoolFactors(VALID_POOL_FACTOR, INVALID_POOL_FACTOR);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
 
     it('should return false if both are within pnl range', async () => {
-      await gmxRegistryV2.connect(core.governance).ownerSetGmxReader(testReader.address);
+      await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
       await testReader.setPnlToPoolFactors(INVALID_POOL_FACTOR, INVALID_POOL_FACTOR);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
@@ -1178,3 +1372,17 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
   });
 });
+
+function toNegativeWeiStruct(value: BigNumberish) {
+  return {
+    sign: false,
+    value: BigNumber.from(value),
+  };
+}
+
+function toPositiveWeiStruct(value: BigNumberish) {
+  return {
+    sign: true,
+    value: BigNumber.from(value),
+  };
+}

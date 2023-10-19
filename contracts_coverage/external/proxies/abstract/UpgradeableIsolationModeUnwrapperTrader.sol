@@ -63,18 +63,19 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
     modifier nonReentrant() {
         // On the first call to nonReentrant, _reentrancyGuard will be _NOT_ENTERED
         if (_getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED) { /* FOR COVERAGE TESTING */ }
-        Require.that(_getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
+        Require.that(
+_getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
             _FILE,
             "Reentrant call"
         );
 
         // Any calls to nonReentrant after this point will fail
-        _setUint256(_REENTRANCY_GUARD_SLOT, _ENTERED);
+        _setReentrancyGuard(_ENTERED);
 
         _;
 
         // By storing the original value once again, a refund is triggered (see https://eips.ethereum.org/EIPS/eip-2200)
-        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+        _setReentrancyGuard(_NOT_ENTERED);
     }
 
     // ======================== External Functions ========================
@@ -104,35 +105,29 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         if (_inputToken == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputToken == address(VAULT_FACTORY()),
+        Require.that(
+_inputToken == address(VAULT_FACTORY()),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         if (isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
-        Require.that(isValidOutputToken(_outputToken),
+        Require.that(
+isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputAmount > 0,
+        Require.that(
+_inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
 
         (uint256 minOutputAmount, bytes memory extraOrderData) = abi.decode(_orderData, (uint256, bytes));
 
-        {
-            uint256 balance = IERC20(VAULT_FACTORY().UNDERLYING_TOKEN()).balanceOf(address(this));
-            if (balance >= _inputAmount) { /* FOR COVERAGE TESTING */ }
-            Require.that(balance >= _inputAmount,
-                _FILE,
-                "Insufficient input token",
-                balance,
-                _inputAmount
-            );
-        }
+        _requireBalanceIsSufficient(_inputAmount);
 
         uint256 outputAmount = _exchangeUnderlyingTokenToOutputToken(
             _tradeOriginator,
@@ -144,7 +139,8 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
             extraOrderData
         );
         if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
-        Require.that(outputAmount >= minOutputAmount,
+        Require.that(
+outputAmount >= minOutputAmount,
             _FILE,
             "Insufficient output amount",
             outputAmount,
@@ -177,13 +173,15 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
         if (DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
-        Require.that(DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY()),
+        Require.that(
+DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY()),
             _FILE,
             "Invalid input market",
             _inputMarket
         );
         if (isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket))) { /* FOR COVERAGE TESTING */ }
-        Require.that(isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
+        Require.that(
+isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
             _FILE,
             "Invalid output market",
             _outputMarket
@@ -229,19 +227,22 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
     view
     returns (uint256) {
         if (_inputToken == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputToken == address(VAULT_FACTORY()),
+        Require.that(
+_inputToken == address(VAULT_FACTORY()),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         if (isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
-        Require.that(isValidOutputToken(_outputToken),
+        Require.that(
+isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_desiredInputAmount > 0,
+        Require.that(
+_desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );
@@ -266,7 +267,7 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
     ) internal initializer {
         _setVaultFactory(_vaultFactory);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
-        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+        _setReentrancyGuard(_NOT_ENTERED);
     }
 
     function _callFunction(
@@ -277,7 +278,8 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
     internal
     virtual {
         if (VAULT_FACTORY().getAccountByVault(_accountInfo.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(VAULT_FACTORY().getAccountByVault(_accountInfo.owner) != address(0),
+        Require.that(
+VAULT_FACTORY().getAccountByVault(_accountInfo.owner) != address(0),
             _FILE,
             "Account owner is not a vault",
             _accountInfo.owner
@@ -287,14 +289,16 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         // designated recipient
         (uint256 transferAmount) = abi.decode(_data, (uint256));
         if (transferAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(transferAmount > 0,
+        Require.that(
+transferAmount > 0,
             _FILE,
             "Invalid transfer amount"
         );
 
         uint256 underlyingBalanceOf = IIsolationModeTokenVaultV1(_accountInfo.owner).underlyingBalanceOf();
         if (underlyingBalanceOf >= transferAmount) { /* FOR COVERAGE TESTING */ }
-        Require.that(underlyingBalanceOf >= transferAmount,
+        Require.that(
+underlyingBalanceOf >= transferAmount,
             _FILE,
             "Insufficient balance",
             underlyingBalanceOf,
@@ -321,10 +325,26 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         bytes memory _extraOrderData
     ) internal virtual returns (uint256);
 
+    function _requireBalanceIsSufficient(uint256 _inputAmount) internal virtual view {
+        uint256 balance = IERC20(VAULT_FACTORY().UNDERLYING_TOKEN()).balanceOf(address(this));
+        if (balance >= _inputAmount) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+balance >= _inputAmount,
+            _FILE,
+            "Insufficient input token",
+            balance,
+            _inputAmount
+        );
+    }
+
     function _getExchangeCost(
         address _inputToken,
         address _outputToken,
         uint256 _desiredInputAmount,
         bytes memory _orderData
     ) internal virtual view returns (uint256);
+
+    function _setReentrancyGuard(uint256 _value) private {
+        _setUint256(_REENTRANCY_GUARD_SLOT, _value);
+    }
 }

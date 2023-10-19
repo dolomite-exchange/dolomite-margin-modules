@@ -21,6 +21,8 @@
 pragma solidity ^0.8.9;
 
 import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
+import { IGmxDepositCallbackReceiver } from "./IGmxDepositCallbackReceiver.sol";
+import { IUpgradeableIsolationModeWrapperTrader } from "../IUpgradeableIsolationModeWrapperTrader.sol";
 
 
 /**
@@ -28,16 +30,18 @@ import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.s
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase {
-
-    // ================================================
-    // ==================== Structs ===================
-    // ================================================
+interface IGmxV2IsolationModeWrapperTraderV2 is
+    IGmxV2IsolationModeTraderBase,
+    IUpgradeableIsolationModeWrapperTrader,
+    IGmxDepositCallbackReceiver
+{
 
     struct DepositInfo {
         bytes32 key;
         address vault;
         uint256 accountNumber;
+        address inputToken;
+        uint256 inputAmount;
         uint256 outputAmount;
     }
 
@@ -56,6 +60,12 @@ interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase {
     // ===================================================
 
     function cancelDeposit(bytes32 _key) external;
+
+    function setDepositInfoAndReducePendingAmountFromUnwrapper(
+        bytes32 _key,
+        uint256 _outputAmountDeltaWei,
+        DepositInfo calldata _depositInfo
+    ) external;
 
     function getDepositInfo(bytes32 _key) external view returns (DepositInfo memory);
 }

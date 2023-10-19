@@ -5,12 +5,12 @@ import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
 import {
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
-  GmxRegistryV2,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
+  GmxV2Registry,
   IGmxMarketToken,
   IGmxMarketToken__factory,
   IsolationModeFreezableLiquidatorProxy,
@@ -29,13 +29,13 @@ import {
   expectWalletBalance,
 } from '../../utils/assertions';
 import {
-  createGmxRegistryV2,
   createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
   createGmxV2Library,
   createGmxV2MarketTokenPriceOracle,
+  createGmxV2Registry,
   getOracleParams,
 } from '../../utils/ecosystem-token-utils/gmx';
 import { setExpiry } from '../../utils/expiry-utils';
@@ -64,7 +64,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
 
   let core: CoreProtocol;
   let underlyingToken: IGmxMarketToken;
-  let gmxRegistryV2: GmxRegistryV2;
+  let gmxV2Registry: GmxV2Registry;
   let allowableMarketIds: BigNumberish[];
   let unwrapper: GmxV2IsolationModeUnwrapperTraderV2;
   let wrapper: GmxV2IsolationModeWrapperTraderV2;
@@ -100,13 +100,13 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
 
     const gmxV2Library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
-    gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
+    gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
       gmxV2Library,
-      gmxRegistryV2,
+      gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
@@ -117,18 +117,18 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       core,
       factory,
       gmxV2Library,
-      gmxRegistryV2,
+      gmxV2Registry,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
       gmxV2Library,
-      gmxRegistryV2,
+      gmxV2Registry,
     );
-    const priceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxRegistryV2);
+    const priceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxV2Registry);
     await priceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
-    await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
-    await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
+    await gmxV2Registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
+    await gmxV2Registry.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
     // Use actual price oracle later
     marketId = await core.dolomiteMargin.getNumMarkets();
@@ -526,6 +526,12 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       expect(await core.expiry.getExpiry(liquidAccount, owedMarket)).to.eq(expiry);
     });
 
+    it('should work for underwater account when there is already a pending deposit', async () => {
+    });
+
+    it('should work for underwater account when there is already a pending withdrawal', async () => {
+    });
+
     it('should fail when liquid account is not a valid vault', async () => {
       const liquidAccount = { owner: ZERO_ADDRESS, number: ZERO_BI };
       await expectThrow(
@@ -625,5 +631,11 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         `FreezableVaultLiquidatorProxy: Account is frozen <${liquidAccount.owner.toLowerCase()}, ${liquidAccount.number.toString()}>`,
       );
     });
+
+    it(
+      'should fail when a second callback is triggered that over spends the balance',
+      async () => {
+      },
+    );
   });
 });

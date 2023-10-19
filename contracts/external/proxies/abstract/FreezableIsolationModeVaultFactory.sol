@@ -22,6 +22,8 @@ pragma solidity ^0.8.9;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IsolationModeVaultFactory } from "./IsolationModeVaultFactory.sol";
+import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
+import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 
 
@@ -36,6 +38,7 @@ abstract contract FreezableIsolationModeVaultFactory is
     IsolationModeVaultFactory
 {
     using EnumerableSet for EnumerableSet.UintSet;
+    using TypesLib for IDolomiteStructs.Wei;
 
     // ============ Field Variables ============
 
@@ -46,17 +49,21 @@ abstract contract FreezableIsolationModeVaultFactory is
 
     // ============ Functions ============
 
-    function setIsVaultAccountFrozen(
+    function updateVaultAccountPendingAmountForFrozenStatus(
         address _vault,
         uint256 _accountNumber,
         FreezeType _freezeType,
-        uint256 _amountWei
+        IDolomiteStructs.Wei calldata _amountDeltaWei
     )
         external
         requireIsTokenConverterOrVault(msg.sender)
         requireIsVault(_vault)
     {
-        _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][_freezeType] = _amountWei;
+        if (_amountDeltaWei.isNegative()) {
+            _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][_freezeType] -= _amountDeltaWei.value;
+        } else if (_amountDeltaWei.isPositive()) {
+            _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][_freezeType] += _amountDeltaWei.value;
+        }
 
         bool isFrozen = isVaultAccountFrozen(_vault, _accountNumber);
         if (isFrozen) {

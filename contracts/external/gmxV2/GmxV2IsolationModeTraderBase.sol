@@ -25,8 +25,8 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeTraderBase } from "../interfaces/gmx/IGmxV2IsolationModeTraderBase.sol";
+import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 
 
 /**
@@ -47,7 +47,7 @@ abstract contract GmxV2IsolationModeTraderBase is
     bytes32 private constant _FILE = "GmxV2IsolationModeTraderBase";
 
     bytes32 internal constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.weth")) - 1);
-    bytes32 internal constant _GMX_REGISTRY_V2_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxRegistryV2")) - 1);
+    bytes32 internal constant _GMX_REGISTRY_V2_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2Registry")) - 1);
 
 
     // ===================================================
@@ -75,8 +75,8 @@ abstract contract GmxV2IsolationModeTraderBase is
         return IWETH(_getAddress(_WETH_SLOT));
     }
 
-    function GMX_REGISTRY_V2() public view returns (IGmxRegistryV2) {
-        return IGmxRegistryV2(_getAddress(_GMX_REGISTRY_V2_SLOT));
+    function GMX_REGISTRY_V2() public view returns (IGmxV2Registry) {
+        return IGmxV2Registry(_getAddress(_GMX_REGISTRY_V2_SLOT));
     }
 
     function callbackGasLimit() public view returns (uint256) {
@@ -90,10 +90,10 @@ abstract contract GmxV2IsolationModeTraderBase is
     // ========================= Internal Functions =========================
 
     function _initializeTraderBase(
-        address _gmxRegistryV2,
+        address _gmxV2Registry,
         address _weth
     ) internal initializer {
-        _setAddress(_GMX_REGISTRY_V2_SLOT, _gmxRegistryV2);
+        _setAddress(_GMX_REGISTRY_V2_SLOT, _gmxV2Registry);
         _setAddress(_WETH_SLOT, _weth);
     }
 }

@@ -34,12 +34,12 @@ import { IBaseRegistry } from "../IBaseRegistry.sol";
 
 
 /**
- * @title   IGmxRegistryV2
+ * @title   IGmxV2Registry
  * @author  Dolomite
  *
  * @notice  A registry contract for storing all of the different addresses that can interact with the GMX V2 ecosystem
  */
-interface IGmxRegistryV2 is IBaseRegistry {
+interface IGmxV2Registry is IBaseRegistry {
 
     // ================================================
     // ==================== Events ====================

@@ -43,7 +43,8 @@ contract TestRequire {
     pure
     {
         if (false) { /* FOR COVERAGE TESTING */ }
-        Require.that(false,
+        Require.that(
+false,
             _FILE,
             reason
         );
@@ -57,7 +58,8 @@ contract TestRequire {
     pure
     {
         if (false) { /* FOR COVERAGE TESTING */ }
-        Require.that(false,
+        Require.that(
+false,
             _FILE,
             reason,
             payloadA
@@ -73,7 +75,8 @@ contract TestRequire {
     pure
     {
         if (false) { /* FOR COVERAGE TESTING */ }
-        Require.that(false,
+        Require.that(
+false,
             _FILE,
             reason,
             payloadA,
@@ -90,7 +93,8 @@ contract TestRequire {
     pure
     {
         if (true) { /* FOR COVERAGE TESTING */ }
-        Require.that(true,
+        Require.that(
+true,
             _FILE,
             reason,
             payloadA,
@@ -106,7 +110,8 @@ contract TestRequire {
     pure
     {
         if (false) { /* FOR COVERAGE TESTING */ }
-        Require.that(false,
+        Require.that(
+false,
             _FILE,
             reason,
             payloadA
@@ -121,7 +126,8 @@ contract TestRequire {
     pure
     {
         if (true) { /* FOR COVERAGE TESTING */ }
-        Require.that(true,
+        Require.that(
+true,
             _FILE,
             reason,
             payloadA
@@ -137,7 +143,8 @@ contract TestRequire {
     pure
     {
         if (false) { /* FOR COVERAGE TESTING */ }
-        Require.that(false,
+        Require.that(
+false,
             _FILE,
             reason,
             payloadA,
@@ -154,7 +161,8 @@ contract TestRequire {
     pure
     {
         if (true) { /* FOR COVERAGE TESTING */ }
-        Require.that(true,
+        Require.that(
+true,
             _FILE,
             reason,
             payloadA,
@@ -172,7 +180,8 @@ contract TestRequire {
     pure
     {
         if (false) { /* FOR COVERAGE TESTING */ }
-        Require.that(false,
+        Require.that(
+false,
             _FILE,
             reason,
             payloadA,
@@ -191,7 +200,8 @@ contract TestRequire {
     pure
     {
         if (true) { /* FOR COVERAGE TESTING */ }
-        Require.that(true,
+        Require.that(
+true,
             _FILE,
             reason,
             payloadA,
@@ -208,7 +218,8 @@ contract TestRequire {
     pure
     {
         if (false) { /* FOR COVERAGE TESTING */ }
-        Require.that(false,
+        Require.that(
+false,
             _FILE,
             reason,
             payloadA
@@ -223,7 +234,8 @@ contract TestRequire {
     pure
     {
         if (true) { /* FOR COVERAGE TESTING */ }
-        Require.that(true,
+        Require.that(
+true,
             _FILE,
             reason,
             payloadA
@@ -240,7 +252,8 @@ contract TestRequire {
     pure
     {
         if (false) { /* FOR COVERAGE TESTING */ }
-        Require.that(false,
+        Require.that(
+false,
             _FILE,
             reason,
             payloadA,
@@ -259,7 +272,8 @@ contract TestRequire {
     pure
     {
         if (true) { /* FOR COVERAGE TESTING */ }
-        Require.that(true,
+        Require.that(
+true,
             _FILE,
             reason,
             payloadA,

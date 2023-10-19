@@ -32,7 +32,6 @@ import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIso
 import { IIsolationModeWrapperTrader } from "../interfaces/IIsolationModeWrapperTrader.sol";
 import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
-import { IGmxDepositCallbackReceiver } from "../interfaces/gmx/IGmxDepositCallbackReceiver.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
@@ -47,7 +46,6 @@ import { UpgradeableIsolationModeWrapperTrader } from "../proxies/abstract/Upgra
  */
 contract GmxV2IsolationModeWrapperTraderV2 is
     IGmxV2IsolationModeWrapperTraderV2,
-    IGmxDepositCallbackReceiver,
     UpgradeableIsolationModeWrapperTrader,
     GmxV2IsolationModeTraderBase
 {
@@ -73,11 +71,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     function initialize(
         address _dGM,
         address _dolomiteMargin,
-        address _gmxRegistryV2,
+        address _gmxV2Registry,
         address _weth
     ) external initializer {
         _initializeWrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxRegistryV2, _weth);
+        _initializeTraderBase(_gmxV2Registry, _weth);
     }
 
     // ============================================
@@ -138,7 +136,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                     diff
                 )
             {
-                _clearDepositAndSetVaultFrozenStatus(depositInfo);
+                _clearDepositAndUpdatePendingAmount(depositInfo);
                 emit DepositExecuted(_key);
             } catch Error(string memory _reason) {
                 _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
@@ -149,7 +147,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             }
         } else {
             // There's nothing additional to send to the vault; clear out the deposit
-            _clearDepositAndSetVaultFrozenStatus(depositInfo);
+            _clearDepositAndUpdatePendingAmount(depositInfo);
             emit DepositExecuted(_key);
         }
     }
@@ -180,7 +178,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             emit DepositCancelledFailed(_key, _reason);
         } catch (bytes memory /* _reason */) {
             emit DepositCancelledFailed(_key, "");
-
         }
     }
 
@@ -194,17 +191,24 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
     }
 
-    function setDepositInfoAndSetVaultFrozenStatus(
+    function setDepositInfoAndReducePendingAmountFromUnwrapper(
         bytes32 _key,
+        uint256 _outputAmountDeltaWei,
         DepositInfo calldata _depositInfo
     ) external {
         Require.that(
             msg.sender == address(GMX_REGISTRY_V2().gmxV2UnwrapperTrader()),
             _FILE,
-            "Caller is not unwrapper",
+            "Only unwrapper can call",
             msg.sender
         );
-        _setDepositInfoAndSetVaultFrozenStatus(_key, _depositInfo);
+        _setDepositInfo(_key, _depositInfo);
+        _updateVaultPendingAmount(
+            _depositInfo.vault,
+            _depositInfo.accountNumber,
+            _outputAmountDeltaWei,
+            /* _isPositive = */ false
+        );
     }
 
     function isValidInputToken(
@@ -246,7 +250,12 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         (uint256 accountNumber, uint256 ethExecutionFee) = abi.decode(_extraOrderData, (uint256, uint256));
 
         // Disallow the deposit if there's already an action waiting for it
-        GmxV2Library.checkVaultAccountIsNotFrozen(factory, _tradeOriginator, accountNumber);
+        Require.that(
+            !factory.isVaultFrozen(_tradeOriginator),
+            _FILE,
+            "Vault is frozen",
+            _tradeOriginator
+        );
 
         bytes32 depositKey;
         {
@@ -269,7 +278,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             );
         }
 
-        _setDepositInfoAndSetVaultFrozenStatus(
+        _setDepositInfo(
             depositKey,
             DepositInfo({
                 key: depositKey,
@@ -279,6 +288,12 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                 inputAmount: _inputAmount,
                 outputAmount: _minOutputAmount
             })
+        );
+        _updateVaultPendingAmount(
+            _tradeOriginator,
+            accountNumber,
+            _minOutputAmount,
+            /* _isPositive = */ true
         );
         emit DepositCreated(depositKey);
 
@@ -316,27 +331,26 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             );
         }
 
-        _clearDepositAndSetVaultFrozenStatus(_depositInfo);
+        _clearDepositAndUpdatePendingAmount(_depositInfo);
     }
 
-    function _clearDepositAndSetVaultFrozenStatus(
+    function _clearDepositAndUpdatePendingAmount(
         DepositInfo memory _depositInfo
     ) internal {
-        _setDepositInfoAndSetVaultFrozenStatus(
-            _depositInfo.key,
-            _emptyDepositInfo(_depositInfo.key, _depositInfo.vault, _depositInfo.accountNumber)
+        _updateVaultPendingAmount(
+            _depositInfo.vault,
+            _depositInfo.accountNumber,
+            _depositInfo.outputAmount,
+            /* _isPositive = */ false
         );
+        // Setting the outputAmount to 0 clears it
+        _depositInfo.outputAmount = 0;
+        _setDepositInfo(_depositInfo.key, _depositInfo);
     }
 
-    function _setDepositInfoAndSetVaultFrozenStatus(bytes32 _key, DepositInfo memory _info) internal {
+    function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
         bool clearValues = _info.outputAmount == 0;
         DepositInfo storage storageInfo = _getDepositSlot(_key);
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultAccountFrozen(
-            _info.vault,
-            _info.accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Deposit,
-            /* _amountWei = */ _info.outputAmount
-        );
         storageInfo.key = _key;
         storageInfo.vault = clearValues ? address(0) : _info.vault;
         storageInfo.accountNumber = clearValues ? 0 : _info.accountNumber;
@@ -345,6 +359,22 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
     }
 
+    function _updateVaultPendingAmount(
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _amountDeltaWei,
+        bool _isPositive
+    ) internal {
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).updateVaultAccountPendingAmountForFrozenStatus(
+            _vault,
+            _accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Deposit,
+            /* _amountDeltaWei = */ IDolomiteStructs.Wei({
+                sign: _isPositive,
+                value: _amountDeltaWei
+            })
+        );
+    }
     function _approveIsolationModeTokenForTransfer(
         address _vault,
         address _receiver,
@@ -376,15 +406,5 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     returns (uint256)
     {
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
-    }
-
-    function _emptyDepositInfo(
-        bytes32 _key,
-        address _vault,
-        uint256 _accountNumber
-    ) internal pure returns (DepositInfo memory _depositInfo) {
-        _depositInfo.key = _key;
-        _depositInfo.vault = _vault;
-        _depositInfo.accountNumber = _accountNumber;
     }
 }

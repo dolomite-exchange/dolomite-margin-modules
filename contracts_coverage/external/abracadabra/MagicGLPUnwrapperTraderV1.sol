@@ -91,20 +91,23 @@ contract MagicGLPUnwrapperTraderV1 is IDolomiteMarginUnwrapperTraderForLiquidato
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         if (_inputToken == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputToken == address(MAGIC_GLP),
+        Require.that(
+_inputToken == address(MAGIC_GLP),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         if (GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)&& DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId()) { /* FOR COVERAGE TESTING */ }
-        Require.that(GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
+        Require.that(
+GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
                 && DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputAmount > 0,
+        Require.that(
+_inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -137,20 +140,23 @@ contract MagicGLPUnwrapperTraderV1 is IDolomiteMarginUnwrapperTraderForLiquidato
     view
     returns (uint256) {
         if (_inputToken == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputToken == address(MAGIC_GLP),
+        Require.that(
+_inputToken == address(MAGIC_GLP),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         if (GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)&& DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId()) { /* FOR COVERAGE TESTING */ }
-        Require.that(GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
+        Require.that(
+GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
                 && DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_desiredInputAmount > 0,
+        Require.that(
+_desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );

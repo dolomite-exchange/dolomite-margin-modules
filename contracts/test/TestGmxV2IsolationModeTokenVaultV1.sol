@@ -61,24 +61,10 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
         _setUint256(_REVERSION_TYPE_SLOT, uint256(_reversionType));
     }
 
-    function callInitiateUnwrappingAndTriggerReentrancy(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minLongTokenAmount,
-        uint256 _minShortTokenAmount
+    function callFunctionAndTriggerReentrancy(
+        bytes calldata _callDataWithSelector
     ) external payable nonReentrant {
-        // solhint-disable-next-line avoid-low-level-calls
-        address(this).safeDelegateCall(
-            abi.encodeWithSelector(
-                this.initiateUnwrapping.selector,
-                _tradeAccountNumber,
-                _inputAmount,
-                _outputToken,
-                _minLongTokenAmount,
-                _minShortTokenAmount
-            )
-        );
+        address(this).safeDelegateCall(_callDataWithSelector);
     }
 
     function reversionType() public view returns (ReversionType) {

@@ -20,14 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
-import { console } from "hardhat/console.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 
 
 /**
@@ -61,7 +59,6 @@ library ExpirationLib {
         uint32 expirationTimestamp = expiry.getExpiry(expiredAccount, _owedMarketId);
         IDolomiteStructs.Par memory balancePar = _dolomiteMargin.getAccountPar(expiredAccount, _owedMarketId);
 
-        console.log("Clearing expiration: ", gasleft());
         if (expirationTimestamp != 0 && (balancePar.isZero() || balancePar.isPositive())) {
             // Unset the expiration if the owed balance was repaid
             IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);

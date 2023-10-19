@@ -145,12 +145,14 @@ contract GLPIsolationModeTokenVaultV1 is
     nonReentrant
     onlyVaultOwnerOrVaultFactory(msg.sender) {
         if (_sender != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_sender != address(0),
+        Require.that(
+_sender != address(0),
             _FILE,
             "Invalid sender"
         );
         if (!hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(!hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0,
+        Require.that(
+!hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0,
             _FILE,
             "Cannot transfer more than once"
         );
@@ -322,7 +324,8 @@ contract GLPIsolationModeTokenVaultV1 is
         uint256 _depositAccountNumberForWeth
     ) internal {
         if ((!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth) { /* FOR COVERAGE TESTING */ }
-        Require.that((!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
+        Require.that(
+(!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
             _FILE,
             "Can only deposit ETH if claiming"
         );

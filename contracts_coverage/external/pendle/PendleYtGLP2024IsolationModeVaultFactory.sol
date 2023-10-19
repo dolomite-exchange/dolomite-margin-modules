@@ -105,7 +105,8 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
         uint256[] memory _newAllowableDebtMarketIds
     ) internal override {
         if (_newAllowableDebtMarketIds.length > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_newAllowableDebtMarketIds.length > 0,
+        Require.that(
+_newAllowableDebtMarketIds.length > 0,
             _FILE,
             "Invalid allowableDebtMarketIds"
         );

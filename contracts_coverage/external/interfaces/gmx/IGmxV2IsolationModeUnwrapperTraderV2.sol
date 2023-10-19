@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
+import { IGmxWithdrawalCallbackReceiver } from "./IGmxWithdrawalCallbackReceiver.sol";
 import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolationModeUnwrapperTrader.sol";
 
 
@@ -31,8 +32,13 @@ import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolati
  */
 interface IGmxV2IsolationModeUnwrapperTraderV2 is
     IGmxV2IsolationModeTraderBase,
-    IUpgradeableIsolationModeUnwrapperTrader
+    IUpgradeableIsolationModeUnwrapperTrader,
+    IGmxWithdrawalCallbackReceiver
 {
+
+    // ================================================
+    // ==================== Structs ===================
+    // ================================================
 
     struct WithdrawalInfo {
         bytes32 key;
@@ -43,6 +49,15 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
         address outputToken;
         /// @dev initially 0 until the withdrawal is executed
         uint256 outputAmount;
+    }
+
+    // ================================================
+    // ===================== Enums ====================
+    // ================================================
+
+    enum TradeType {
+        FromWithdrawal,
+        FromDeposit
     }
 
     // ================================================
@@ -58,11 +73,27 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
     // ==================== Functions ====================
     // ===================================================
 
-    function vaultSetWithdrawalInfo(
+    /**
+     * Notifies the unwrapper that it'll be entered for a trade from the unwrapper. This allows it to modify the action
+     * length
+     */
+    function handleGmxCallbackFromWrapperBefore() external;
+
+    /**
+     * Reverts any changes made in `handleGmxCallbackFromWrapperBefore`. Can only be called by the
+     * IGmxV2IsolationModeWrapperTraderV2
+     */
+    function handleGmxCallbackFromWrapperAfter() external;
+
+    /**
+     * Saves the follow withdrawal info as a struct. Only callable by the user's vault
+     */
+    function vaultCreateWithdrawalInfo(
         bytes32 _key,
         uint256 _accountNumber,
         uint256 _inputAmount,
-        address _outputToken
+        address _outputToken,
+        uint256 _minOutputAmount
     ) external;
 
     function getWithdrawalInfo(bytes32 _key) external view returns (WithdrawalInfo memory);

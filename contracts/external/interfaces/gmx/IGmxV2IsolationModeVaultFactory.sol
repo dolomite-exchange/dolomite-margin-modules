@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
+import { IGmxV2Registry } from "./IGmxV2Registry.sol";
 import { IFreezableIsolationModeVaultFactory } from "../IFreezableIsolationModeVaultFactory.sol";
 
 
@@ -47,14 +47,14 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
     // ==================== Events ====================
     // ================================================
 
-    event GmxRegistryV2Set(address _gmxRegistryV2);
+    event GmxV2RegistrySet(address _gmxV2Registry);
     event ExecutionFeeSet(uint256 _executionFee);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function ownerSetGmxRegistryV2(address _gmxRegistryV2) external;
+    function ownerSetGmxV2Registry(address _gmxV2Registry) external;
 
     function ownerSetExecutionFee(uint256 _executionFee) external;
 
@@ -99,7 +99,7 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
 
     function LONG_TOKEN_MARKET_ID() external view returns (uint256);
 
-    function gmxRegistryV2() external view returns (IGmxRegistryV2);
+    function gmxV2Registry() external view returns (IGmxV2Registry);
 
     /**
      * @dev     The amount of gas (in ETH) that should be sent with a position so the user can pay the gas fees to be

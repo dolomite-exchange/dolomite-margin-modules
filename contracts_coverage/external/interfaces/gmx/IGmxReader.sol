@@ -107,7 +107,11 @@ interface IGmxReader {
     error InsufficientExecutionFee(uint256 minExecutionFee, uint256 executionFee);
     error InsufficientWntAmountForExecutionFee(uint256 wntAmount, uint256 executionFee);
     error InsufficientExecutionGasForErrorHandling(uint256 startingGas, uint256 minHandleErrorGas);
-    error InsufficientExecutionGas(uint256 startingGas, uint256 estimatedGasLimit, uint256 minAdditionalGasForExecution);
+    error InsufficientExecutionGas(
+        uint256 startingGas,
+        uint256 estimatedGasLimit,
+        uint256 minAdditionalGasForExecution
+    );
     error InsufficientHandleExecutionErrorGas(uint256 gas, uint256 minHandleExecutionErrorGas);
 
     // MarketFactory errors
@@ -143,8 +147,18 @@ interface IGmxReader {
     error InvalidUiFeeFactor(uint256 uiFeeFactor, uint256 maxUiFeeFactor);
     error EmptyAddressInMarketTokenBalanceValidation(address market, address token);
     error InvalidMarketTokenBalance(address market, address token, uint256 balance, uint256 expectedMinBalance);
-    error InvalidMarketTokenBalanceForCollateralAmount(address market, address token, uint256 balance, uint256 collateralAmount);
-    error InvalidMarketTokenBalanceForClaimableFunding(address market, address token, uint256 balance, uint256 claimableFundingFeeAmount);
+    error InvalidMarketTokenBalanceForCollateralAmount(
+        address market,
+        address token,
+        uint256 balance,
+        uint256 collateralAmount
+    );
+    error InvalidMarketTokenBalanceForClaimableFunding(
+        address market,
+        address token,
+        uint256 balance,
+        uint256 claimableFundingFeeAmount
+    );
     error UnexpectedPoolValue(int256 poolValue);
 
     // Oracle errors
@@ -216,7 +230,13 @@ interface IGmxReader {
     );
     error EmptySizeDeltaInTokens();
     error PriceImpactLargerThanOrderSize(int256 priceImpactUsd, uint256 sizeDeltaUsd);
-    error NegativeExecutionPrice(int256 executionPrice, uint256 price, uint256 positionSizeInUsd, int256 priceImpactUsd, uint256 sizeDeltaUsd);
+    error NegativeExecutionPrice(
+        int256 executionPrice,
+        uint256 price,
+        uint256 positionSizeInUsd,
+        int256 priceImpactUsd,
+        uint256 sizeDeltaUsd
+    );
     error OrderNotFulfillableAtAcceptablePrice(uint256 price, uint256 acceptablePrice);
 
     // IncreaseOrderUtils errors

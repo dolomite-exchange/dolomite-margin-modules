@@ -24,11 +24,10 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
 import { FreezableIsolationModeVaultFactory } from "../proxies/abstract/FreezableIsolationModeVaultFactory.sol";
 
@@ -63,13 +62,13 @@ contract GmxV2IsolationModeVaultFactory is
 
     // ============ Field Variables ============
 
-    IGmxRegistryV2 public override gmxRegistryV2;
+    IGmxV2Registry public override gmxV2Registry;
     uint256 public override executionFee;
 
     // ============ Constructor ============
 
     constructor(
-        address _gmxRegistryV2,
+        address _gmxV2Registry,
         uint256 _executionFee,
         MarketInfoConstructorParams memory _tokenAndMarketAddresses,
         uint256[] memory _initialAllowableDebtMarketIds,
@@ -86,7 +85,7 @@ contract GmxV2IsolationModeVaultFactory is
         _userVaultImplementation,
         _dolomiteMargin
     ) {
-        _ownerSetGmxRegistryV2(_gmxRegistryV2);
+        _ownerSetGmxV2Registry(_gmxV2Registry);
         _ownerSetExecutionFee(_executionFee);
         INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
         INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
@@ -126,13 +125,13 @@ contract GmxV2IsolationModeVaultFactory is
         );
     }
 
-    function ownerSetGmxRegistryV2(
-        address _gmxRegistryV2
+    function ownerSetGmxV2Registry(
+        address _gmxV2Registry
     )
     external
     override
     onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetGmxRegistryV2(_gmxRegistryV2);
+        _ownerSetGmxV2Registry(_gmxV2Registry);
     }
 
     function ownerSetExecutionFee(
@@ -168,11 +167,11 @@ contract GmxV2IsolationModeVaultFactory is
     // ================ Internal Functions ================
     // ====================================================
 
-    function _ownerSetGmxRegistryV2(
-        address _gmxRegistryV2
+    function _ownerSetGmxV2Registry(
+        address _gmxV2Registry
     ) internal {
-        gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
-        emit GmxRegistryV2Set(_gmxRegistryV2);
+        gmxV2Registry = IGmxV2Registry(_gmxV2Registry);
+        emit GmxV2RegistrySet(_gmxV2Registry);
     }
 
     function _ownerSetExecutionFee(
@@ -211,33 +210,6 @@ contract GmxV2IsolationModeVaultFactory is
                 ref: IDolomiteStructs.AssetReference.Delta,
                 value: _amountWei
             })
-        );
-    }
-
-    function _withdrawFromDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    ) internal {
-        _enqueueTransfer(
-            address(DOLOMITE_MARGIN()),
-            _vault,
-            _amountWei,
-            _vault
-        );
-        AccountActionLib.withdraw(
-            DOLOMITE_MARGIN(),
-            _vault,
-            _vaultAccountNumber,
-            _vault,
-            marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            }),
-            AccountBalanceLib.BalanceCheckFlag.From
         );
     }
 

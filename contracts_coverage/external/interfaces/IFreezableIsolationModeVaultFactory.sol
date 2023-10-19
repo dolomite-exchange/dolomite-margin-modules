@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -32,24 +33,76 @@ import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
  */
 interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
 
+    // ==========================================================
+    // ========================= Enums ==========================
+    // ==========================================================
+
+    enum FreezeType {
+        Deposit,
+        Withdrawal
+    }
+
+    // ==========================================================
+    // ========================= Events =========================
+    // ==========================================================
+
     event VaultAccountFrozen(
         address indexed vault,
         uint256 indexed accountNumber,
         bool isFrozen
     );
 
-    function setIsVaultAccountFrozen(
+    // ===========================================================
+    // ======================== Functions ========================
+    // ===========================================================
+
+    /**
+     *
+     * @param  _vault           The address of the vault whose frozen status should change
+     * @param  _accountNumber   The account number (sub account) for the corresponding vault
+     * @param  _freezeType      The type of freeze that may have a pending callback amount (Deposit or Withdrawal)
+     * @param  _amountDeltaWei  The amount that is pending for this sub account. Set to positive to add to the pending
+     *                          amount or negative to subtract from it.
+     */
+    function updateVaultAccountPendingAmountForFrozenStatus(
         address _vault,
         uint256 _accountNumber,
-        bool _isFrozen
+        FreezeType _freezeType,
+        IDolomiteStructs.Wei calldata _amountDeltaWei
     ) external;
 
+    /**
+     *
+     * @param  _vault   The address of the vault that may be frozen
+     * @return          True if any sub account for the corresponding `_vault` is frozen, or false if none are.
+     */
     function isVaultFrozen(
         address _vault
     ) external view returns (bool);
 
+    /**
+     *
+     * @param  _vault           The address of the vault that may be frozen
+     * @param  _accountNumber   The account number (sub account) for the corresponding vault
+     * @return                  True if the corresponding sub account is frozen, or false if it is not.
+     */
     function isVaultAccountFrozen(
         address _vault,
         uint256 _accountNumber
     ) external view returns (bool);
+
+    /**
+     *
+     * @param  _vault           The address of the vault that may have a pending callback amount
+     * @param  _accountNumber   The account number (sub account) for the corresponding vault
+     * @param  _freezeType      The type of freeze that may have a pending callback amount (Deposit or Withdrawal)
+     * @return                  The pending amount for this account. 0 means nothing is pending. FreezeType.ForDeposit
+     *                          means the pending amount is positive, and FreezeType.ForWithdrawal means the pending
+     *                          amount is negative.
+     */
+    function getPendingAmountByAccount(
+        address _vault,
+        uint256 _accountNumber,
+        FreezeType _freezeType
+    ) external view returns (uint256);
 }

@@ -367,7 +367,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
 
     function _requireNotFrozen() private view {
         if (!isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
-        Require.that(!isVaultFrozen(),
+        Require.that(
+!isVaultFrozen(),
             _FILE,
             "Vault is frozen"
         );

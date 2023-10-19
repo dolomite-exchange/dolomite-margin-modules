@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -60,13 +61,14 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
      * @param  _vault           The address of the vault whose frozen status should change
      * @param  _accountNumber   The account number (sub account) for the corresponding vault
      * @param  _freezeType      The type of freeze that may have a pending callback amount (Deposit or Withdrawal)
-     * @param  _amountWei       The amount that is pending for this sub account. Set to `0` to unfreeze
+     * @param  _amountDeltaWei  The amount that is pending for this sub account. Set to positive to add to the pending
+     *                          amount or negative to subtract from it.
      */
-    function setIsVaultAccountFrozen(
+    function updateVaultAccountPendingAmountForFrozenStatus(
         address _vault,
         uint256 _accountNumber,
         FreezeType _freezeType,
-        uint256 _amountWei
+        IDolomiteStructs.Wei calldata _amountDeltaWei
     ) external;
 
     /**

@@ -118,7 +118,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         uint256 rewardTokenLength = rewardTokens.length;
 
         if (_depositRewardsIntoDolomite.length == rewardTokenLength) { /* FOR COVERAGE TESTING */ }
-        Require.that(_depositRewardsIntoDolomite.length == rewardTokenLength,
+        Require.that(
+_depositRewardsIntoDolomite.length == rewardTokenLength,
             _FILE,
             "Array length mismatch"
         );
@@ -181,7 +182,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     {
         uint256 ytMaturityTimestamp = IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY()).ytMaturityTimestamp();
         if (block.timestamp + _ONE_WEEK < ytMaturityTimestamp) { /* FOR COVERAGE TESTING */ }
-        Require.that(block.timestamp + _ONE_WEEK < ytMaturityTimestamp,
+        Require.that(
+block.timestamp + _ONE_WEEK < ytMaturityTimestamp,
             _FILE,
             "Too close to expiry"
         );
@@ -218,7 +220,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         // check if balanceAfterWei is negative and it is within 1 week of expiry. If so, revert
         uint256 ytMaturityTimestamp = vaultFactory.ytMaturityTimestamp();
         if (block.timestamp + _ONE_WEEK < ytMaturityTimestamp|| balanceAfterWei.isPositive()|| balanceAfterWei.isZero()) { /* FOR COVERAGE TESTING */ }
-        Require.that(block.timestamp + _ONE_WEEK < ytMaturityTimestamp
+        Require.that(
+block.timestamp + _ONE_WEEK < ytMaturityTimestamp
                 || balanceAfterWei.isPositive()
                 || balanceAfterWei.isZero(),
             _FILE,
@@ -266,7 +269,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         // check if balanceAfterWei is negative and it is within 1 week of expiry. If so, revert
         uint256 ytMaturityTimestamp = vaultFactory.ytMaturityTimestamp();
         if (block.timestamp + _ONE_WEEK < ytMaturityTimestamp|| balanceAfterWei.isPositive()|| balanceAfterWei.isZero()) { /* FOR COVERAGE TESTING */ }
-        Require.that(block.timestamp + _ONE_WEEK < ytMaturityTimestamp
+        Require.that(
+block.timestamp + _ONE_WEEK < ytMaturityTimestamp
                 || balanceAfterWei.isPositive()
                 || balanceAfterWei.isZero(),
             _FILE,
@@ -297,7 +301,8 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
 
         uint256 expirationTimestamp = _getExistingExpirationTimestampFromAccount(_accountInfo, expiry);
         if (expirationTimestamp == 0 || expirationTimestamp > _SAFETY_BUFFER_SECONDS + block.timestamp) { /* FOR COVERAGE TESTING */ }
-        Require.that(expirationTimestamp == 0 || expirationTimestamp > _SAFETY_BUFFER_SECONDS + block.timestamp,
+        Require.that(
+expirationTimestamp == 0 || expirationTimestamp > _SAFETY_BUFFER_SECONDS + block.timestamp,
             _FILE,
             "Position is about to expire"
         );

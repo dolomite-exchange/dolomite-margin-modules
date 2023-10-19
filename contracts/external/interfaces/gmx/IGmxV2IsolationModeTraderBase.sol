@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
+import { IGmxV2Registry } from "./IGmxV2Registry.sol";
 
 
 /**
@@ -46,5 +46,5 @@ interface IGmxV2IsolationModeTraderBase {
 
     function isHandler(address _handler) external view returns (bool);
 
-    function GMX_REGISTRY_V2() external view returns (IGmxRegistryV2);
+    function GMX_REGISTRY_V2() external view returns (IGmxV2Registry);
 }

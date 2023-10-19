@@ -66,12 +66,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     // ===================================================
 
     modifier onlyVaultFactory(address _from) {
-        if (_from == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
-        Require.that(_from == address(VAULT_FACTORY()),
-            _FILE,
-            "Only factory can call",
-            _from
-        );
+        _requireOnlyVaultFactory(_from);
         _;
     }
 
@@ -98,7 +93,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     modifier nonReentrant() {
         // On the first call to nonReentrant, _reentrancyGuard will be _NOT_ENTERED
         if (_reentrancyGuard != _ENTERED) { /* FOR COVERAGE TESTING */ }
-        Require.that(_reentrancyGuard != _ENTERED,
+        Require.that(
+_reentrancyGuard != _ENTERED,
             _FILE,
             "Reentrant call"
         );
@@ -118,7 +114,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     function initialize() external {
         if (_reentrancyGuard == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_reentrancyGuard == 0,
+        Require.that(
+_reentrancyGuard == 0,
             _FILE,
             "Already initialized"
         );
@@ -393,7 +390,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     ) internal virtual {
         // This implementation requires we deposit into index 0
         if (_toAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_toAccountNumber == 0,
+        Require.that(
+_toAccountNumber == 0,
             _FILE,
             "Invalid toAccountNumber",
             _toAccountNumber
@@ -407,7 +405,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     ) internal virtual {
         // This implementation requires we withdraw from index 0
         if (_fromAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_fromAccountNumber == 0,
+        Require.that(
+_fromAccountNumber == 0,
             _FILE,
             "Invalid fromAccountNumber",
             _fromAccountNumber
@@ -424,13 +423,15 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         virtual
     {
         if (_fromAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_fromAccountNumber == 0,
+        Require.that(
+_fromAccountNumber == 0,
             _FILE,
             "Invalid fromAccountNumber",
             _fromAccountNumber
         );
         if (_toAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_toAccountNumber != 0,
+        Require.that(
+_toAccountNumber != 0,
             _FILE,
             "Invalid toAccountNumber",
             _toAccountNumber
@@ -453,13 +454,15 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         virtual
     {
         if (_borrowAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_borrowAccountNumber != 0,
+        Require.that(
+_borrowAccountNumber != 0,
             _FILE,
             "Invalid borrowAccountNumber",
             _borrowAccountNumber
         );
         if (_toAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_toAccountNumber == 0,
+        Require.that(
+_toAccountNumber == 0,
             _FILE,
             "Invalid toAccountNumber",
             _toAccountNumber
@@ -486,7 +489,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         virtual
     {
         if (_borrowAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_borrowAccountNumber != 0,
+        Require.that(
+_borrowAccountNumber != 0,
             _FILE,
             "Invalid borrowAccountNumber",
             _borrowAccountNumber
@@ -494,7 +498,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 underlyingMarketId = marketId();
         for (uint256 i = 0; i < _collateralMarketIds.length; i++) {
             if (_collateralMarketIds[i] != underlyingMarketId) { /* FOR COVERAGE TESTING */ }
-            Require.that(_collateralMarketIds[i] != underlyingMarketId,
+            Require.that(
+_collateralMarketIds[i] != underlyingMarketId,
                 _FILE,
                 "Cannot withdraw market to wallet",
                 underlyingMarketId
@@ -519,13 +524,15 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         virtual
     {
         if (_fromAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_fromAccountNumber == 0,
+        Require.that(
+_fromAccountNumber == 0,
             _FILE,
             "Invalid fromAccountNumber",
             _fromAccountNumber
         );
         if (_borrowAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_borrowAccountNumber != 0,
+        Require.that(
+_borrowAccountNumber != 0,
             _FILE,
             "Invalid borrowAccountNumber",
             _borrowAccountNumber
@@ -551,13 +558,15 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         virtual
     {
         if (_borrowAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_borrowAccountNumber != 0,
+        Require.that(
+_borrowAccountNumber != 0,
             _FILE,
             "Invalid borrowAccountNumber",
             _borrowAccountNumber
         );
         if (_marketId != marketId()) { /* FOR COVERAGE TESTING */ }
-        Require.that(_marketId != marketId(),
+        Require.that(
+_marketId != marketId(),
             _FILE,
             "Invalid marketId",
             _marketId
@@ -585,13 +594,15 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         virtual
     {
         if (_borrowAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_borrowAccountNumber != 0,
+        Require.that(
+_borrowAccountNumber != 0,
             _FILE,
             "Invalid borrowAccountNumber",
             _borrowAccountNumber
         );
         if (_toAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_toAccountNumber == 0,
+        Require.that(
+_toAccountNumber == 0,
             _FILE,
             "Invalid toAccountNumber",
             _toAccountNumber
@@ -617,13 +628,15 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
     {
         if (_borrowAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_borrowAccountNumber != 0,
+        Require.that(
+_borrowAccountNumber != 0,
             _FILE,
             "Invalid borrowAccountNumber",
             _borrowAccountNumber
         );
         if (_marketId != marketId()) { /* FOR COVERAGE TESTING */ }
-        Require.that(_marketId != marketId(),
+        Require.that(
+_marketId != marketId(),
             _FILE,
             "Invalid marketId",
             _marketId
@@ -652,13 +665,15 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         virtual
     {
         if (_borrowAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_borrowAccountNumber != 0,
+        Require.that(
+_borrowAccountNumber != 0,
             _FILE,
             "Invalid borrowAccountNumber",
             _borrowAccountNumber
         );
         if (_marketId != marketId()) { /* FOR COVERAGE TESTING */ }
-        Require.that(_marketId != marketId(),
+        Require.that(
+_marketId != marketId(),
             _FILE,
             "Invalid marketId",
             _marketId
@@ -780,7 +795,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         virtual
     {
         if (_tradeAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_tradeAccountNumber != 0,
+        Require.that(
+_tradeAccountNumber != 0,
             _FILE,
             "Invalid tradeAccountNumber",
             _tradeAccountNumber
@@ -806,9 +822,20 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         _checkAllowableDebtMarket(tradeAccountOwner, _tradeAccountNumber, outputMarketId);
     }
 
+    function _requireOnlyVaultFactory(address _from) internal view {
+        if (_from == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+_from == address(VAULT_FACTORY()),
+            _FILE,
+            "Only factory can call",
+            _from
+        );
+    }
+
     function _requireOnlyVaultOwner(address _from) internal virtual view {
         if (_from == _proxySelf().owner()) { /* FOR COVERAGE TESTING */ }
-        Require.that(_from == _proxySelf().owner(),
+        Require.that(
+_from == _proxySelf().owner(),
             _FILE,
             "Only owner can call",
             _from
@@ -817,7 +844,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     function _requireOnlyVaultOwnerOrConverter(address _from) internal virtual view {
         if (_from == address(_proxySelf().owner())|| IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_from == address(_proxySelf().owner())
+        Require.that(
+_from == address(_proxySelf().owner())
                 || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
             _FILE,
             "Only owner or converter can call",
@@ -827,9 +855,20 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 
     function _requireOnlyVaultOwnerOrVaultFactory(address _from) internal virtual view {
         if (_from == address(_proxySelf().owner()) || _from == VAULT_FACTORY()) { /* FOR COVERAGE TESTING */ }
-        Require.that(_from == address(_proxySelf().owner()) || _from == VAULT_FACTORY(),
+        Require.that(
+_from == address(_proxySelf().owner()) || _from == VAULT_FACTORY(),
             _FILE,
             "Only owner or factory can call",
+            _from
+        );
+    }
+
+    function _requireOnlyConverter(address _from) internal virtual view {
+        if (IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
+            _FILE,
+            "Only converter can call",
             _from
         );
     }
@@ -863,7 +902,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
                     }
                 }
                 if (isAllowable) { /* FOR COVERAGE TESTING */ }
-                Require.that(isAllowable,
+                Require.that(
+isAllowable,
                     _FILE,
                     "Market not allowed as collateral",
                     _marketId
@@ -882,7 +922,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
      */
     function _checkMsgValue() internal virtual view {
         if (msg.value == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(msg.value == 0,
+        Require.that(
+msg.value == 0,
             _FILE,
             "Cannot send ETH"
         );
@@ -915,7 +956,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
                     }
                 }
                 if (isAllowable) { /* FOR COVERAGE TESTING */ }
-                Require.that(isAllowable,
+                Require.that(
+isAllowable,
                     _FILE,
                     "Market not allowed as debt",
                     _marketId

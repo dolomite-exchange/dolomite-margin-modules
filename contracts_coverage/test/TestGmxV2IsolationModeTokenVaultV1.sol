@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { GmxV2IsolationModeTokenVaultV1 } from "../external/gmxV2/GmxV2IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IGenericTraderProxyV1 } from "../external/interfaces/IGenericTraderProxyV1.sol";
+import { SafeDelegateCallLib } from "../external/lib/SafeDelegateCallLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
@@ -32,6 +33,7 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
  * @notice  Test implementation for exposing areas for coverage testing
  */
 contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
+    using SafeDelegateCallLib for address;
 
     // ============ Enums ============
 
@@ -43,8 +45,7 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "TestGmxV2IsolationModeVaultV1";
-    bytes32 private constant _REVERSION_TYPE = bytes32(uint256(keccak256("eip1967.proxy.reversionType")) - 1);
+    bytes32 private constant _REVERSION_TYPE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.reversionType")) - 1);
 
     // ============ Errors ============
 
@@ -57,43 +58,17 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
     // ============ Functions ============
 
     function setReversionType(ReversionType _reversionType) external {
-        _setUint256(_REVERSION_TYPE, uint256(_reversionType));
+        _setUint256(_REVERSION_TYPE_SLOT, uint256(_reversionType));
     }
 
-    function callInitiateUnwrappingAndTriggerReentrancy(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minLongTokenAmount,
-        uint256 _minShortTokenAmount
+    function callFunctionAndTriggerReentrancy(
+        bytes calldata _callDataWithSelector
     ) external payable nonReentrant {
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool isSuccessful, bytes memory result) = address(this).delegatecall(
-            abi.encodeWithSelector(
-                this.initiateUnwrapping.selector,
-                _tradeAccountNumber,
-                _inputAmount,
-                _outputToken,
-                _minLongTokenAmount,
-                _minShortTokenAmount
-            )
-        );
-        if (!isSuccessful) {
-            if (result.length < 68) {
-                revert("No reversion message!");
-            } else {
-                // solhint-disable-next-line no-inline-assembly
-                assembly {
-                    result := add(result, 0x04) // Slice the sighash.
-                }
-            }
-            (string memory errorMessage) = abi.decode(result, (string));
-            revert(errorMessage);
-        }
+        address(this).safeDelegateCall(_callDataWithSelector);
     }
 
     function reversionType() public view returns (ReversionType) {
-        return ReversionType(_getUint256(_REVERSION_TYPE));
+        return ReversionType(_getUint256(_REVERSION_TYPE_SLOT));
     }
 
     function _swapExactInputForOutput(

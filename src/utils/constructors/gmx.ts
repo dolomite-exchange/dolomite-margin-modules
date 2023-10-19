@@ -5,7 +5,7 @@ import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeVaultFactory,
   GmxRegistryV1,
-  GmxRegistryV2,
+  GmxV2Registry,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
@@ -15,7 +15,7 @@ import {
   IGLPIsolationModeVaultFactoryOld,
   IGmxMarketToken,
   IGmxRegistryV1,
-  IGmxRegistryV2,
+  IGmxV2Registry,
   IGmxV2IsolationModeVaultFactory,
   TestGLPIsolationModeTokenVaultV1,
 } from '../../types';
@@ -129,9 +129,9 @@ export async function getGmxRegistryConstructorParams(
   ];
 }
 
-export async function getGmxRegistryV2ConstructorParams(
+export async function getGmxV2RegistryConstructorParams(
   core: CoreProtocol,
-  implementation: GmxRegistryV2,
+  implementation: GmxV2Registry,
   callbackGasLimit: BigNumberish,
 ): Promise<any[]> {
   if (!core.gmxEcosystem) {
@@ -162,7 +162,7 @@ export const GMX_V2_CALLBACK_GAS_LIMIT = BigNumber.from('2000000');
 
 export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   core: CoreProtocol,
-  gmxRegistry: IGmxRegistryV2,
+  gmxRegistry: IGmxV2Registry,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
   gmToken: IGmxMarketToken,
@@ -193,7 +193,7 @@ export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
   core: CoreProtocol,
   implementation: GmxV2IsolationModeUnwrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
-  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+  gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     dGM.address,
@@ -213,7 +213,7 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
   core: CoreProtocol,
   implementation: GmxV2IsolationModeWrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
-  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+  gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
 ): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(
     dGM.address,
@@ -231,7 +231,7 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
 
 export function getGmxV2MarketTokenPriceOracleConstructorParams(
   core: CoreProtocol,
-  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+  gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
 ): any[] {
   if (!core.gmxEcosystem) {
     throw new Error('Gmx ecosystem not initialized');

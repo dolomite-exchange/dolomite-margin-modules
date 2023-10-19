@@ -77,7 +77,8 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation is JonesUSDCIsola
     override {
         uint256 marketId = VAULT_FACTORY.marketId();
         if (LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(marketId, _sender)&& LIQUIDATOR_ASSET_REGISTRY.getLiquidatorsForAsset(marketId).length > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(marketId, _sender)
+        Require.that(
+LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(marketId, _sender)
                 && LIQUIDATOR_ASSET_REGISTRY.getLiquidatorsForAsset(marketId).length > 0,
             _FILE,
             "Sender must be a liquidator",

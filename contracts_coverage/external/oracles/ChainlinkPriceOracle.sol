@@ -73,17 +73,20 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         OnlyDolomiteMargin(_dolomiteMargin)
     {
         if (_tokens.length == _chainlinkAggregators.length) { /* FOR COVERAGE TESTING */ }
-        Require.that(_tokens.length == _chainlinkAggregators.length,
+        Require.that(
+_tokens.length == _chainlinkAggregators.length,
             _FILE,
             "Invalid tokens length"
         );
         if (_chainlinkAggregators.length == _tokenDecimals.length) { /* FOR COVERAGE TESTING */ }
-        Require.that(_chainlinkAggregators.length == _tokenDecimals.length,
+        Require.that(
+_chainlinkAggregators.length == _tokenDecimals.length,
             _FILE,
             "Invalid aggregators length"
         );
         if (_tokenDecimals.length == _tokenPairs.length) { /* FOR COVERAGE TESTING */ }
-        Require.that(_tokenDecimals.length == _tokenPairs.length,
+        Require.that(
+_tokenDecimals.length == _tokenPairs.length,
             _FILE,
             "Invalid decimals length"
         );
@@ -139,7 +142,8 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
     returns (IDolomiteStructs.MonetaryPrice memory)
     {
         if (address(_tokenToAggregatorMap[_token]) != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(address(_tokenToAggregatorMap[_token]) != address(0),
+        Require.that(
+address(_tokenToAggregatorMap[_token]) != address(0),
             _FILE,
             "Invalid token",
             _token
@@ -154,7 +158,8 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
             /* uint80 answeredInRound */
         ) = aggregatorProxy.latestRoundData();
         if (block.timestamp - updatedAt < stalenessThreshold) { /* FOR COVERAGE TESTING */ }
-        Require.that(block.timestamp - updatedAt < stalenessThreshold,
+        Require.that(
+block.timestamp - updatedAt < stalenessThreshold,
             _FILE,
             "Chainlink price expired",
             _token
@@ -162,12 +167,14 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
 
         IChainlinkAccessControlAggregator controlAggregator = aggregatorProxy.aggregator();
         if (controlAggregator.minAnswer() < answer) { /* FOR COVERAGE TESTING */ }
-        Require.that(controlAggregator.minAnswer() < answer,
+        Require.that(
+controlAggregator.minAnswer() < answer,
             _FILE,
             "Chainlink price too low"
         );
         if (answer < controlAggregator.maxAnswer()) { /* FOR COVERAGE TESTING */ }
-        Require.that(answer < controlAggregator.maxAnswer(),
+        Require.that(
+answer < controlAggregator.maxAnswer(),
             _FILE,
             "Chainlink price too high"
         );
@@ -238,13 +245,15 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
     internal
     {
         if (_stalenessThreshold >= 24 hours) { /* FOR COVERAGE TESTING */ }
-        Require.that(_stalenessThreshold >= 24 hours,
+        Require.that(
+_stalenessThreshold >= 24 hours,
             _FILE,
             "Staleness threshold too low",
             _stalenessThreshold
         );
         if (_stalenessThreshold <= 7 days) { /* FOR COVERAGE TESTING */ }
-        Require.that(_stalenessThreshold <= 7 days,
+        Require.that(
+_stalenessThreshold <= 7 days,
             _FILE,
             "Staleness threshold too high",
             _stalenessThreshold
@@ -264,7 +273,8 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         _tokenToDecimalsMap[_token] = _tokenDecimals;
         if (_tokenPair != address(0)) {
             if (address(_tokenToAggregatorMap[_tokenPair]) != address(0)) { /* FOR COVERAGE TESTING */ }
-            Require.that(address(_tokenToAggregatorMap[_tokenPair]) != address(0),
+            Require.that(
+address(_tokenToAggregatorMap[_tokenPair]) != address(0),
                 _FILE,
                 "Invalid token pair",
                 _tokenPair

@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
-import { IGmxRegistryV2 } from "./GmxRegistryV2.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
+import { IGmxV2Registry } from "./GmxV2Registry.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
@@ -109,15 +109,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
         onlyVaultOwner(msg.sender)
         requireNotFrozen
     {
-        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: address(this),
-            number: _tradeAccountNumber
-        });
-        Require.that(
-            _inputAmount <= DOLOMITE_MARGIN().getAccountWei(account, marketId()).value,
-            _FILE,
-            "Invalid inputAmount"
-        );
         _initiateUnwrapping(
             _tradeAccountNumber,
             _inputAmount,
@@ -138,15 +129,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
         nonReentrant
         onlyLiquidator(msg.sender)
     {
-        IDolomiteStructs.AccountInfo memory account = IDolomiteStructs.AccountInfo({
-            owner: address(this),
-            number: _tradeAccountNumber
-        });
-        Require.that(
-            _inputAmount == DOLOMITE_MARGIN().getAccountWei(account, marketId()).value,
-            _FILE,
-            "Invalid inputAmount"
-        );
         _initiateUnwrapping(
             _tradeAccountNumber,
             _inputAmount,
@@ -163,8 +145,9 @@ contract GmxV2IsolationModeTokenVaultV1 is
      * @dev    This calls the wrapper trader which will revert if given an invalid _key
      */
     function cancelDeposit(bytes32 _key) external onlyVaultOwner(msg.sender) {
-        _validateVaultOwnerForStruct(registry().gmxV2WrapperTrader().getDepositInfo(_key).vault);
-        registry().gmxV2WrapperTrader().cancelDeposit(_key);
+        IGmxV2Registry gmxRegistry = registry();
+        _validateVaultOwnerForStruct(gmxRegistry.gmxV2WrapperTrader().getDepositInfo(_key).vault);
+        gmxRegistry.gmxV2WrapperTrader().cancelDeposit(_key);
     }
 
     /**
@@ -172,8 +155,9 @@ contract GmxV2IsolationModeTokenVaultV1 is
      * @param  _key Withdrawal key
      */
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
-        _validateVaultOwnerForStruct(registry().gmxV2UnwrapperTrader().getWithdrawalInfo(_key).vault);
-        registry().gmxExchangeRouter().cancelWithdrawal(_key);
+        IGmxV2Registry gmxRegistry = registry();
+        _validateVaultOwnerForStruct(gmxRegistry.gmxV2UnwrapperTrader().getWithdrawalInfo(_key).vault);
+        gmxRegistry.gmxExchangeRouter().cancelWithdrawal(_key);
     }
 
     function setIsDepositSourceWrapper(
@@ -270,8 +254,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
         return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
     }
 
-    function registry() public view returns (IGmxRegistryV2) {
-        return IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).gmxRegistryV2();
+    function registry() public view returns (IGmxV2Registry) {
+        return IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).gmxV2Registry();
     }
 
     function dolomiteRegistry()
@@ -439,7 +423,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         Require.that(
             _inputAmount > 0,
             _FILE,
-            "Invalid inputAmount"
+            "Invalid input amount"
         );
 
         uint256 ethExecutionFee = msg.value;
@@ -448,13 +432,15 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _setExecutionFeeForAccountNumber(_tradeAccountNumber, /* _executionFee = */ 0); // reset it to 0
         }
 
-        GmxV2Library.executeInitiateUnwrapping(
+        GmxV2Library.validateAndExecuteInitiateUnwrapping(
             IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()),
+            /* _vault = */ address(this),
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
             _minOutputAmount,
-            ethExecutionFee
+            ethExecutionFee,
+            _isLiquidation
         );
     }
 
@@ -485,15 +471,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
             virtualBalance() == IERC20(UNDERLYING_TOKEN()).balanceOf(address(this)),
             _FILE,
             "Virtual vs real balance mismatch"
-        );
-    }
-
-    function _requireOnlyUnwrapper(address _from) internal view {
-        Require.that(
-            _from == address(registry().gmxV2UnwrapperTrader()),
-            _FILE,
-            "Only unwrapper can call",
-            _from
         );
     }
 

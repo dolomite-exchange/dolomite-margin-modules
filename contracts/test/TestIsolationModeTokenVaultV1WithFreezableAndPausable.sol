@@ -25,6 +25,7 @@ import { IDolomiteRegistry } from "../external/interfaces/IDolomiteRegistry.sol"
 import { IFreezableIsolationModeVaultFactory } from "../external/interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV1 } from "../external/proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -44,11 +45,14 @@ contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeT
         address /* _outputToken */,
         uint256 /* _minOutputAmount */
     ) external payable {
-        IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setIsVaultAccountFrozen(
+        IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).updateVaultAccountPendingAmountForFrozenStatus(
             /* _vault = */ address(this),
             _tradeAccountNumber,
             IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
-            /* _amountWei = */ _inputAmount
+            /* _amountDeltaWei = */ IDolomiteStructs.Wei({
+                sign: true,
+                value: _inputAmount
+            })
         );
     }
 

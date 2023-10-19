@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish, Contract, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
-  GmxRegistryV2,
+  GmxV2Registry,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
@@ -10,11 +10,10 @@ import {
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2Library,
 } from 'src/types';
-import { ZERO_BI } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectArrayEq, expectEvent, expectThrow } from 'test/utils/assertions';
 import {
-  createGmxRegistryV2,
+  createGmxV2Registry,
   createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
@@ -39,7 +38,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let gmxRegistryV2: GmxRegistryV2;
+  let gmxV2Registry: GmxV2Registry;
   let expirationLibrary: Contract;
   let gmxV2Library: GmxV2Library;
   let allowableMarketIds: BigNumberish[];
@@ -53,7 +52,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
-    gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
+    gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
     expirationLibrary = await createExpirationLibrary();
     gmxV2Library = await createGmxV2Library();
     vaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
@@ -62,7 +61,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
       gmxV2Library,
-      gmxRegistryV2,
+      gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
@@ -73,16 +72,16 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       core,
       factory,
       gmxV2Library,
-      gmxRegistryV2,
+      gmxV2Registry,
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
       factory,
       gmxV2Library,
-      gmxRegistryV2,
+      gmxV2Registry,
     );
-    await gmxRegistryV2.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
-    await gmxRegistryV2.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
+    await gmxV2Registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
+    await gmxV2Registry.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
     await core.testEcosystem!.testPriceOracle!.setPrice(factory.address, '1000000000000000000000000000000');
     marketId = await core.dolomiteMargin.getNumMarkets();
@@ -110,7 +109,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
 
   describe('#constructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await factory.gmxRegistryV2()).to.equal(gmxRegistryV2.address);
+      expect(await factory.gmxV2Registry()).to.equal(gmxV2Registry.address);
       expect(await factory.SHORT_TOKEN()).to.equal(core.tokens.nativeUsdc!.address);
       expect(await factory.LONG_TOKEN()).to.equal(core.tokens.weth.address);
       expect(await factory.INDEX_TOKEN()).to.equal(core.tokens.weth.address);
@@ -129,7 +128,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       await createGmxV2IsolationModeVaultFactory(
         core,
         gmxV2Library,
-        gmxRegistryV2,
+        gmxV2Registry,
         allowableMarketIds,
         allowableMarketIds,
         core.gmxEcosystemV2!.gmxEthUsdMarketToken,
@@ -138,7 +137,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       await createGmxV2IsolationModeVaultFactory(
         core,
         gmxV2Library,
-        gmxRegistryV2,
+        gmxV2Registry,
         [allowableMarketIds[1], allowableMarketIds[0]],
         [allowableMarketIds[1], allowableMarketIds[0]],
         core.gmxEcosystemV2!.gmxEthUsdMarketToken,
@@ -152,7 +151,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         createGmxV2IsolationModeVaultFactory(
           core,
           gmxV2Library,
-          gmxRegistryV2,
+          gmxV2Registry,
           badAllowableDebtMarketIds,
           allowableMarketIds,
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
@@ -167,7 +166,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         createGmxV2IsolationModeVaultFactory(
           core,
           gmxV2Library,
-          gmxRegistryV2,
+          gmxV2Registry,
           [core.marketIds.nativeUsdc!, core.marketIds.dai!],
           allowableMarketIds,
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
@@ -179,7 +178,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         createGmxV2IsolationModeVaultFactory(
           core,
           gmxV2Library,
-          gmxRegistryV2,
+          gmxV2Registry,
           [core.marketIds.dai!, core.marketIds.nativeUsdc!],
           allowableMarketIds,
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
@@ -195,7 +194,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         createGmxV2IsolationModeVaultFactory(
           core,
           gmxV2Library,
-          gmxRegistryV2,
+          gmxV2Registry,
           allowableMarketIds,
           badAllowableCollateralMarketIds,
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
@@ -210,7 +209,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         createGmxV2IsolationModeVaultFactory(
           core,
           gmxV2Library,
-          gmxRegistryV2,
+          gmxV2Registry,
           allowableMarketIds,
           [core.marketIds.nativeUsdc!, core.marketIds.dai!],
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
@@ -222,7 +221,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
         createGmxV2IsolationModeVaultFactory(
           core,
           gmxV2Library,
-          gmxRegistryV2,
+          gmxV2Registry,
           allowableMarketIds,
           [core.marketIds.dai!, core.marketIds.nativeUsdc!],
           core.gmxEcosystemV2!.gmxEthUsdMarketToken,
@@ -233,18 +232,18 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     });
   });
 
-  describe('#ownerSetGmxRegistryV2', () => {
+  describe('#ownerSetGmxV2Registry', () => {
     it('should work normally', async () => {
-      const result = await factory.connect(core.governance).ownerSetGmxRegistryV2(OTHER_ADDRESS);
-      await expectEvent(factory, result, 'GmxRegistryV2Set', {
-        gmxRegistryV2: OTHER_ADDRESS,
+      const result = await factory.connect(core.governance).ownerSetGmxV2Registry(OTHER_ADDRESS);
+      await expectEvent(factory, result, 'GmxV2RegistrySet', {
+        gmxV2Registry: OTHER_ADDRESS,
       });
-      expect(await factory.gmxRegistryV2()).to.eq(OTHER_ADDRESS);
+      expect(await factory.gmxV2Registry()).to.eq(OTHER_ADDRESS);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        factory.connect(core.hhUser1).ownerSetGmxRegistryV2(OTHER_ADDRESS),
+        factory.connect(core.hhUser1).ownerSetGmxV2Registry(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
@@ -290,68 +289,6 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     it('should fail if invalid vault', async () => {
       await expectThrow(
         factory.connect(impersonatedWrapper).depositIntoDolomiteMarginFromTokenConverter(
-          core.hhUser1.address,
-          defaultAccountNumber,
-          amountWei,
-        ),
-        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-  });
-
-  describe('#depositOtherTokenIntoDolomiteMarginFromTokenConverter', () => {
-    it('should fail if not token converter', async () => {
-      await expectThrow(
-        factory.connect(core.hhUser1).depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-          vault.address,
-          defaultAccountNumber,
-          ZERO_BI,
-          amountWei,
-        ),
-        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if invalid vault', async () => {
-      await expectThrow(
-        factory.connect(impersonatedWrapper).depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-          core.hhUser1.address,
-          defaultAccountNumber,
-          ZERO_BI,
-          amountWei,
-        ),
-        `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if otherMarketId is underlyingMarketId', async () => {
-      await expectThrow(
-        factory.connect(impersonatedWrapper).depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-          vault.address,
-          defaultAccountNumber,
-          marketId,
-          amountWei,
-        ),
-        `GmxV2Library: Invalid market <${marketId.toString()}>`,
-      );
-    });
-  });
-
-  describe('#withdrawFromDolomiteMarginFromTokenConverter', () => {
-    it('should fail if not token converter', async () => {
-      await expectThrow(
-        factory.connect(core.hhUser1).withdrawFromDolomiteMarginFromTokenConverter(
-          vault.address,
-          defaultAccountNumber,
-          amountWei,
-        ),
-        `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if invalid vault', async () => {
-      await expectThrow(
-        factory.connect(impersonatedWrapper).withdrawFromDolomiteMarginFromTokenConverter(
           core.hhUser1.address,
           defaultAccountNumber,
           amountWei,

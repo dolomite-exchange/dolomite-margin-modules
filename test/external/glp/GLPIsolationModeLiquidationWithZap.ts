@@ -65,7 +65,7 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
 
     heldMarketId = BigNumber.from(core.marketIds.dfsGlp!);
     glpApiToken = {
-      marketId: heldMarketId.toNumber(),
+      marketId: toZapBigNumber(heldMarketId),
       symbol: 'dfsGLP',
       name: 'Dolomite Isolation: Fee + Staked GLP',
       decimals: 18,

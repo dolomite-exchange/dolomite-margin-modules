@@ -101,7 +101,8 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
 
         if (isExternalRedemptionPaused()) {
             if (valueBefore.isPositive()) { /* FOR COVERAGE TESTING */ }
-            Require.that(valueBefore.isPositive(),
+            Require.that(
+valueBefore.isPositive(),
                 _FILE,
                 "Cannot lever up when paused",
                 _marketId
@@ -129,14 +130,16 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             uint256 outputMarket = _marketIdsPath[_marketIdsPath.length - 1];
             // If the ecosystem is paused, we cannot swap into more of the irredeemable asset
             if (outputMarket != marketId()) { /* FOR COVERAGE TESTING */ }
-            Require.that(outputMarket != marketId(),
+            Require.that(
+outputMarket != marketId(),
                 _FILE,
                 "Cannot zap to market when paused",
                 outputMarket
             );
             outputBalanceBefore = DOLOMITE_MARGIN().getAccountWei(tradeAccount, outputMarket);
             if (outputBalanceBefore.isNegative()) { /* FOR COVERAGE TESTING */ }
-            Require.that(outputBalanceBefore.isNegative(),
+            Require.that(
+outputBalanceBefore.isNegative(),
                 _FILE,
                 "Zaps can only repay when paused"
             );
@@ -154,7 +157,8 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
                 inputMarket
             );
             if (inputBalanceAfter.isPositive() || inputBalanceAfter.value == 0) { /* FOR COVERAGE TESTING */ }
-            Require.that(inputBalanceAfter.isPositive() || inputBalanceAfter.value == 0,
+            Require.that(
+inputBalanceAfter.isPositive() || inputBalanceAfter.value == 0,
                 _FILE,
                 "Cannot lever up when paused",
                 inputMarket
@@ -169,7 +173,8 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             uint256 slippageDenominator = dolomiteRegistry().slippageToleranceForPauseSentinelBase();
             // Confirm the user is doing a fair trade and there is not more than the acceptable slippage while paused
             if (outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenominator)) { /* FOR COVERAGE TESTING */ }
-            Require.that(outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenominator),
+            Require.that(
+outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenominator),
                 _FILE,
                 "Unacceptable trade when paused"
             );
@@ -316,7 +321,8 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
 
     function _requireExternalRedemptionNotPaused() private view {
         if (!isExternalRedemptionPaused()) { /* FOR COVERAGE TESTING */ }
-        Require.that(!isExternalRedemptionPaused(),
+        Require.that(
+!isExternalRedemptionPaused(),
             _FILE,
             "Cannot execute when paused"
         );
@@ -331,7 +337,8 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         );
         // If the user has debt, withdrawing collateral decreases their collateralization
         if (numberOfMarketsWithDebt == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(numberOfMarketsWithDebt == 0,
+        Require.that(
+numberOfMarketsWithDebt == 0,
             _FILE,
             "Cannot lever up when paused"
         );

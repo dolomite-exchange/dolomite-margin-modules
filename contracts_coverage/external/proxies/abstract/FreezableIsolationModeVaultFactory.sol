@@ -22,6 +22,8 @@ pragma solidity ^0.8.9;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IsolationModeVaultFactory } from "./IsolationModeVaultFactory.sol";
+import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
+import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 
 
@@ -36,29 +38,41 @@ abstract contract FreezableIsolationModeVaultFactory is
     IsolationModeVaultFactory
 {
     using EnumerableSet for EnumerableSet.UintSet;
+    using TypesLib for IDolomiteStructs.Wei;
 
     // ============ Field Variables ============
 
     /// Vault ==> Set of Account Numbers
     mapping(address => EnumerableSet.UintSet) private _vaultToAccountFrozenSet;
+    /// Vault ==> Account Number ==> Freeze Type ==> Pending Amount
+    mapping(address => mapping(uint256 => mapping(FreezeType => uint256))) private _accountInfoToPendingAmountWeiMap;
 
     // ============ Functions ============
 
-    function setIsVaultAccountFrozen(
+    function updateVaultAccountPendingAmountForFrozenStatus(
         address _vault,
         uint256 _accountNumber,
-        bool _isFrozen
+        FreezeType _freezeType,
+        IDolomiteStructs.Wei calldata _amountDeltaWei
     )
         external
         requireIsTokenConverterOrVault(msg.sender)
         requireIsVault(_vault)
     {
-        if (_isFrozen) {
+        if (_amountDeltaWei.isNegative()) {
+            _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][_freezeType] -= _amountDeltaWei.value;
+        } else if (_amountDeltaWei.isPositive()) {
+            _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][_freezeType] += _amountDeltaWei.value;
+        }
+
+        bool isFrozen = isVaultAccountFrozen(_vault, _accountNumber);
+        if (isFrozen) {
             _vaultToAccountFrozenSet[_vault].add(_accountNumber);
         } else {
             _vaultToAccountFrozenSet[_vault].remove(_accountNumber);
         }
-        emit VaultAccountFrozen(_vault, _accountNumber, _isFrozen);
+
+        emit VaultAccountFrozen(_vault, _accountNumber, isFrozen);
     }
 
     function isVaultFrozen(
@@ -67,10 +81,19 @@ abstract contract FreezableIsolationModeVaultFactory is
         return _vaultToAccountFrozenSet[_vault].length() > 0;
     }
 
+    function getPendingAmountByAccount(
+        address _vault,
+        uint256 _accountNumber,
+        FreezeType _freezeType
+    ) external view returns (uint256) {
+        return _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][_freezeType];
+    }
+
     function isVaultAccountFrozen(
         address _vault,
         uint256 _accountNumber
-    ) external view returns (bool) {
-        return _vaultToAccountFrozenSet[_vault].contains(_accountNumber);
+    ) public view returns (bool) {
+        return _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][FreezeType.Deposit] != 0
+            || _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][FreezeType.Withdrawal] != 0;
     }
 }

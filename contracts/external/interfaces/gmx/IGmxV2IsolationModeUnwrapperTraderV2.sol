@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
+import { IGmxWithdrawalCallbackReceiver } from "./IGmxWithdrawalCallbackReceiver.sol";
 import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolationModeUnwrapperTrader.sol";
 
 
@@ -31,7 +32,8 @@ import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolati
  */
 interface IGmxV2IsolationModeUnwrapperTraderV2 is
     IGmxV2IsolationModeTraderBase,
-    IUpgradeableIsolationModeUnwrapperTrader
+    IUpgradeableIsolationModeUnwrapperTrader,
+    IGmxWithdrawalCallbackReceiver
 {
 
     // ================================================
@@ -64,7 +66,6 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
 
     event WithdrawalCreated(bytes32 indexed key);
     event WithdrawalExecuted(bytes32 indexed key);
-    event WithdrawalDeferred(bytes32 indexed key);
     event WithdrawalFailed(bytes32 indexed key, string reason);
     event WithdrawalCancelled(bytes32 indexed key);
 
@@ -85,13 +86,14 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
     function handleGmxCallbackFromWrapperAfter() external;
 
     /**
-     * Saves the follow withdrawal info as a struct.
+     * Saves the follow withdrawal info as a struct. Only callable by the user's vault
      */
-    function vaultSetWithdrawalInfo(
+    function vaultCreateWithdrawalInfo(
         bytes32 _key,
         uint256 _accountNumber,
         uint256 _inputAmount,
-        address _outputToken
+        address _outputToken,
+        uint256 _minOutputAmount
     ) external;
 
     function getWithdrawalInfo(bytes32 _key) external view returns (WithdrawalInfo memory);

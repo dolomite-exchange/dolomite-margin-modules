@@ -89,19 +89,22 @@ contract GLPIsolationModeUnwrapperTraderV1 is IsolationModeUnwrapperTraderV1 {
     view
     returns (uint256) {
         if (_inputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputToken == address(VAULT_FACTORY),
+        Require.that(
+_inputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         if (_outputToken == USDC) { /* FOR COVERAGE TESTING */ }
-        Require.that(_outputToken == USDC,
+        Require.that(
+_outputToken == USDC,
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_desiredInputAmount > 0,
+        Require.that(
+_desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );
@@ -128,7 +131,8 @@ contract GLPIsolationModeUnwrapperTraderV1 is IsolationModeUnwrapperTraderV1 {
     override
     returns (uint256) {
         if (_outputToken == USDC) { /* FOR COVERAGE TESTING */ }
-        Require.that(_outputToken == USDC,
+        Require.that(
+_outputToken == USDC,
             _FILE,
             "Invalid output token",
             _outputToken

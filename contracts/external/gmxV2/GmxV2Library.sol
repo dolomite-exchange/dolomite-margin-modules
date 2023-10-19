@@ -36,11 +36,11 @@ import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
 import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
+import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
@@ -73,7 +73,7 @@ library GmxV2Library {
 
     function createDeposit(
         IGmxV2IsolationModeVaultFactory _factory,
-        IGmxRegistryV2 _registry,
+        IGmxV2Registry _registry,
         IWETH _weth,
         address _tradeOriginator,
         uint256 _ethExecutionFee,
@@ -109,15 +109,27 @@ library GmxV2Library {
         return exchangeRouter.createDeposit(depositParams);
     }
 
-    function executeInitiateUnwrapping(
+    function validateAndExecuteInitiateUnwrapping(
         IGmxV2IsolationModeVaultFactory _factory,
+        address _vault,
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
-        uint256 _ethExecutionFee
+        uint256 _ethExecutionFee,
+        bool _isLiquidation
     ) public {
-        IGmxRegistryV2 registry = _factory.gmxRegistryV2();
+        // Disallow the withdrawal if there's already a withdrawal waiting for it or if we're attempting to OVER
+        // withdraw. This can happen due to a pending deposit OR if the user inputs a number that's too large)
+        _validateWithdrawalAmountForUnwrapping(
+            _factory,
+            _vault,
+            _tradeAccountNumber,
+            _inputAmount,
+            _isLiquidation
+        );
+
+        IGmxV2Registry registry = _factory.gmxV2Registry();
         IGmxExchangeRouter exchangeRouter = registry.gmxExchangeRouter();
         address withdrawalVault = registry.gmxWithdrawalVault();
 
@@ -144,7 +156,13 @@ library GmxV2Library {
         );
 
         bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
-        unwrapper.vaultSetWithdrawalInfo(withdrawalKey, _tradeAccountNumber, _inputAmount, _outputToken);
+        unwrapper.vaultCreateWithdrawalInfo(
+            withdrawalKey,
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount
+        );
     }
 
     function depositAndApproveWethForWrapping(IGmxV2IsolationModeTokenVaultV1 _vault) public {
@@ -278,63 +296,8 @@ library GmxV2Library {
         );
     }
 
-    function checkVaultAccountIsNotFrozen(
-        IGmxV2IsolationModeVaultFactory _factory,
-        address _vault,
-        uint256 _accountNumber
-    ) public view {
-        Require.that(
-            !_factory.isVaultAccountFrozen(_vault, _accountNumber),
-            _FILE,
-            "Account is frozen",
-            _vault,
-            _accountNumber
-        );
-    }
-
-    function checkWithdrawalIsNotTooLargeAgainstPending(
-        IGmxV2IsolationModeVaultFactory _factory,
-        IDolomiteMargin _dolomiteMargin,
-        address _vault,
-        uint256 _accountNumber,
-        uint256 _withdrawalAmount
-    ) public view {
-        uint256 withdrawalPendingAmount = _factory.getPendingAmountByAccount(
-            _vault,
-            _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
-        );
-        Require.that(
-            withdrawalPendingAmount == 0,
-            _FILE,
-            "Account is frozen",
-            _vault,
-            _accountNumber
-        );
-
-        uint256 depositPendingAmount = _factory.getPendingAmountByAccount(
-            _vault,
-            _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
-        );
-        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
-            owner: _vault,
-            number: _accountNumber
-        });
-        uint256 balance = _dolomiteMargin.getAccountWei(accountInfo, _factory.marketId()).value;
-
-        // The requested withdrawal cannot be for more than the user's balance, minus any pending.
-        Require.that(
-            balance - depositPendingAmount >= _withdrawalAmount,
-            _FILE,
-            "Account is frozen",
-            _vault,
-            _accountNumber
-        );
-    }
-
     function isExternalRedemptionPaused(
-        IGmxRegistryV2 _registry,
+        IGmxV2Registry _registry,
         IDolomiteMargin _dolomiteMargin,
         IGmxV2IsolationModeVaultFactory _factory
     ) public view returns (bool) {
@@ -438,6 +401,51 @@ library GmxV2Library {
     // ==================================================================
     // ======================== Private Functions ======================
     // ==================================================================
+
+    function _validateWithdrawalAmountForUnwrapping(
+        IGmxV2IsolationModeVaultFactory _factory,
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _withdrawalAmount,
+        bool _isLiquidation
+    ) private view {
+        uint256 withdrawalPendingAmount = _factory.getPendingAmountByAccount(
+            _vault,
+            _accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
+        );
+        uint256 depositPendingAmount = _factory.getPendingAmountByAccount(
+            _vault,
+            _accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
+        );
+
+        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
+            owner: _vault,
+            number: _accountNumber
+        });
+        uint256 balance = _factory.DOLOMITE_MARGIN().getAccountWei(accountInfo, _factory.marketId()).value;
+
+        if (!_isLiquidation) {
+            // The requested withdrawal cannot be for more than the user's balance, minus any pending.
+            Require.that(
+                balance - (withdrawalPendingAmount + depositPendingAmount) >= _withdrawalAmount,
+                _FILE,
+                "Withdrawal too large",
+                _vault,
+                _accountNumber
+            );
+        } else {
+            // The requested withdrawal must be for the entirety of the user's balance
+            Require.that(
+                balance - (withdrawalPendingAmount + depositPendingAmount) == _withdrawalAmount,
+                _FILE,
+                "Liquidation must be full balance",
+                _vault,
+                _accountNumber
+            );
+        }
+    }
 
     function _getGmxMarketPrices(
         uint256 _indexTokenPrice,

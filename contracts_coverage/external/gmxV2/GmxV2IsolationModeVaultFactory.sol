@@ -20,17 +20,14 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { ExpirationLib } from "../lib/ExpirationLib.sol";
 import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
 import { FreezableIsolationModeVaultFactory } from "../proxies/abstract/FreezableIsolationModeVaultFactory.sol";
 
@@ -48,7 +45,7 @@ contract GmxV2IsolationModeVaultFactory is
     SimpleIsolationModeVaultFactory
 {
     using EnumerableSet for EnumerableSet.UintSet;
-    using SafeERC20 for IERC20;
+    using GmxV2Library for GmxV2IsolationModeVaultFactory;
 
     // ============ Constants ============
 
@@ -65,13 +62,13 @@ contract GmxV2IsolationModeVaultFactory is
 
     // ============ Field Variables ============
 
-    IGmxRegistryV2 public override gmxRegistryV2;
+    IGmxV2Registry public override gmxV2Registry;
     uint256 public override executionFee;
 
     // ============ Constructor ============
 
     constructor(
-        address _gmxRegistryV2,
+        address _gmxV2Registry,
         uint256 _executionFee,
         MarketInfoConstructorParams memory _tokenAndMarketAddresses,
         uint256[] memory _initialAllowableDebtMarketIds,
@@ -88,7 +85,7 @@ contract GmxV2IsolationModeVaultFactory is
         _userVaultImplementation,
         _dolomiteMargin
     ) {
-        _ownerSetGmxRegistryV2(_gmxRegistryV2);
+        _ownerSetGmxV2Registry(_gmxV2Registry);
         _ownerSetExecutionFee(_executionFee);
         INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
         INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
@@ -97,32 +94,15 @@ contract GmxV2IsolationModeVaultFactory is
         LONG_TOKEN = _tokenAndMarketAddresses.longToken;
         LONG_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN);
 
-        if (_initialAllowableDebtMarketIds.length == 2) { /* FOR COVERAGE TESTING */ }
-        Require.that(_initialAllowableDebtMarketIds.length == 2,
-            _FILE,
-            "Invalid debt market ids"
+        GmxV2Library.validateInitialMarketIds(
+            _initialAllowableDebtMarketIds,
+            LONG_TOKEN_MARKET_ID,
+            SHORT_TOKEN_MARKET_ID
         );
-        if ((_initialAllowableDebtMarketIds[0] == LONG_TOKEN_MARKET_ID&& _initialAllowableDebtMarketIds[1] == SHORT_TOKEN_MARKET_ID)|| (_initialAllowableDebtMarketIds[0] == SHORT_TOKEN_MARKET_ID&& _initialAllowableDebtMarketIds[1] == LONG_TOKEN_MARKET_ID)) { /* FOR COVERAGE TESTING */ }
-        Require.that((_initialAllowableDebtMarketIds[0] == LONG_TOKEN_MARKET_ID
-                && _initialAllowableDebtMarketIds[1] == SHORT_TOKEN_MARKET_ID)
-            || (_initialAllowableDebtMarketIds[0] == SHORT_TOKEN_MARKET_ID
-                && _initialAllowableDebtMarketIds[1] == LONG_TOKEN_MARKET_ID),
-            _FILE,
-            "Invalid debt market ids"
-        );
-
-        if (_initialAllowableCollateralMarketIds.length == 2) { /* FOR COVERAGE TESTING */ }
-        Require.that(_initialAllowableCollateralMarketIds.length == 2,
-            _FILE,
-            "Invalid collateral market ids"
-        );
-        if ((_initialAllowableCollateralMarketIds[0] == LONG_TOKEN_MARKET_ID&& _initialAllowableCollateralMarketIds[1] == SHORT_TOKEN_MARKET_ID)|| (_initialAllowableCollateralMarketIds[0] == SHORT_TOKEN_MARKET_ID&& _initialAllowableCollateralMarketIds[1] == LONG_TOKEN_MARKET_ID)) { /* FOR COVERAGE TESTING */ }
-        Require.that((_initialAllowableCollateralMarketIds[0] == LONG_TOKEN_MARKET_ID
-                && _initialAllowableCollateralMarketIds[1] == SHORT_TOKEN_MARKET_ID)
-            || (_initialAllowableCollateralMarketIds[0] == SHORT_TOKEN_MARKET_ID
-                && _initialAllowableCollateralMarketIds[1] == LONG_TOKEN_MARKET_ID),
-            _FILE,
-            "Invalid collateral market ids"
+        GmxV2Library.validateInitialMarketIds(
+            _initialAllowableCollateralMarketIds,
+            LONG_TOKEN_MARKET_ID,
+            SHORT_TOKEN_MARKET_ID
         );
     }
 
@@ -145,45 +125,13 @@ contract GmxV2IsolationModeVaultFactory is
         );
     }
 
-    function depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _otherMarketId,
-        uint256 _amountWei
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-            _vault,
-            _vaultAccountNumber,
-            _otherMarketId,
-            _amountWei
-        );
-    }
-
-    function withdrawFromDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        _withdrawFromDolomiteMarginFromTokenConverter(
-            _vault,
-            _vaultAccountNumber,
-            _amountWei
-        );
-    }
-
-    function ownerSetGmxRegistryV2(
-        address _gmxRegistryV2
+    function ownerSetGmxV2Registry(
+        address _gmxV2Registry
     )
     external
     override
     onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetGmxRegistryV2(_gmxRegistryV2);
+        _ownerSetGmxV2Registry(_gmxV2Registry);
     }
 
     function ownerSetExecutionFee(
@@ -215,39 +163,23 @@ contract GmxV2IsolationModeVaultFactory is
         IGmxV2IsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
-    function clearExpirationIfNeeded(
-        address _vault,
-        uint256 _accountNumber,
-        uint256 _owedMarketId
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        ExpirationLib.clearExpirationIfNeeded(
-            DOLOMITE_MARGIN(),
-            gmxRegistryV2.dolomiteRegistry(),
-            _vault,
-            _accountNumber,
-            _owedMarketId
-        );
-    }
-
     // ====================================================
     // ================ Internal Functions ================
     // ====================================================
 
-    function _ownerSetGmxRegistryV2(
-        address _gmxRegistryV2
+    function _ownerSetGmxV2Registry(
+        address _gmxV2Registry
     ) internal {
-        gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
-        emit GmxRegistryV2Set(_gmxRegistryV2);
+        gmxV2Registry = IGmxV2Registry(_gmxV2Registry);
+        emit GmxV2RegistrySet(_gmxV2Registry);
     }
 
     function _ownerSetExecutionFee(
         uint256 _executionFee
     ) internal {
         if (_executionFee <= 1 ether) { /* FOR COVERAGE TESTING */ }
-        Require.that(_executionFee <= 1 ether,
+        Require.that(
+_executionFee <= 1 ether,
             _FILE,
             "Invalid execution fee"
         );
@@ -279,71 +211,6 @@ contract GmxV2IsolationModeVaultFactory is
                 ref: IDolomiteStructs.AssetReference.Delta,
                 value: _amountWei
             })
-        );
-    }
-
-    function _depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _otherMarketId,
-        uint256 _amountWei
-    ) internal {
-        if (_otherMarketId != marketId) { /* FOR COVERAGE TESTING */ }
-        Require.that(_otherMarketId != marketId,
-            _FILE,
-            "Invalid market",
-            _otherMarketId
-        );
-
-        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
-        accounts[0] = IDolomiteStructs.AccountInfo({
-            owner: _vault,
-            number: _vaultAccountNumber
-        });
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
-
-        address token = DOLOMITE_MARGIN().getMarketTokenAddress(_otherMarketId);
-        IERC20(token).safeTransferFrom(msg.sender, address(this), _amountWei);
-        IERC20(token).safeApprove(address(DOLOMITE_MARGIN()), _amountWei);
-
-        actions[0] = AccountActionLib.encodeDepositAction(
-        /* _accountId = */ 0,
-            _otherMarketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            }),
-            /* _fromAccount = */ address(this)
-        );
-        DOLOMITE_MARGIN().operate(accounts, actions);
-    }
-
-    function _withdrawFromDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    ) internal {
-        _enqueueTransfer(
-            address(DOLOMITE_MARGIN()),
-            _vault,
-            _amountWei,
-            _vault
-        );
-        AccountActionLib.withdraw(
-            DOLOMITE_MARGIN(),
-            _vault,
-            _vaultAccountNumber,
-            _vault,
-            marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            }),
-            AccountBalanceLib.BalanceCheckFlag.From
         );
     }
 

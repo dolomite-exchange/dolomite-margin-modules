@@ -67,7 +67,8 @@ contract BaseRegistry is
         address _dolomiteRegistry
     ) internal {
         if (_dolomiteRegistry != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_dolomiteRegistry != address(0),
+        Require.that(
+_dolomiteRegistry != address(0),
             _FILE,
             "Invalid dolomiteRegistry"
         );

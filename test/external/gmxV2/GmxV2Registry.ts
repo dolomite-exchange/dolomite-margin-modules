@@ -1,9 +1,9 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { GmxRegistryV2 } from 'src/types';
+import { GmxV2Registry } from 'src/types';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
-import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
+import { createGmxV2Registry } from 'test/utils/ecosystem-token-utils/gmx';
 import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
 import { ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from '../../utils/setup';
@@ -11,15 +11,15 @@ import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol }
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
 const OTHER_ADDRESS_2 = '0x1234567812345678123456781234567812345672';
 
-describe('GmxRegistryV2', () => {
+describe('GmxV2Registry', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let registry: GmxRegistryV2;
+  let registry: GmxV2Registry;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
-    registry = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
+    registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     snapshotId = await snapshot();
   });
@@ -83,14 +83,14 @@ describe('GmxRegistryV2', () => {
       await registry.connect(core.hhUser1).initializeTraders(OTHER_ADDRESS_1, OTHER_ADDRESS_2);
       await expectThrow(
         registry.connect(core.hhUser1).initializeTraders(OTHER_ADDRESS_1, OTHER_ADDRESS_2),
-        'GmxRegistryV2: Already initialized',
+        'GmxV2Registry: Already initialized',
       );
     });
 
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).initializeTraders(ZERO_ADDRESS, ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
+        'GmxV2Registry: Invalid address',
       );
     });
   });
@@ -114,7 +114,7 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxExchangeRouter(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
+        'GmxV2Registry: Invalid address',
       );
     });
   });
@@ -138,7 +138,7 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxDataStore(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
+        'GmxV2Registry: Invalid address',
       );
     });
   });
@@ -162,7 +162,7 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxReader(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
+        'GmxV2Registry: Invalid address',
       );
     });
   });
@@ -186,7 +186,7 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxRouter(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
+        'GmxV2Registry: Invalid address',
       );
     });
   });
@@ -210,7 +210,7 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxDepositVault(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
+        'GmxV2Registry: Invalid address',
       );
     });
   });
@@ -234,7 +234,7 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxWithdrawalVault(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
+        'GmxV2Registry: Invalid address',
       );
     });
   });
@@ -258,7 +258,7 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
+        'GmxV2Registry: Invalid address',
       );
     });
   });
@@ -282,7 +282,7 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxV2WrapperTrader(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
+        'GmxV2Registry: Invalid address',
       );
     });
   });
@@ -306,7 +306,7 @@ describe('GmxRegistryV2', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetEthUsdMarketToken(ZERO_ADDRESS),
-        'GmxRegistryV2: Invalid address',
+        'GmxV2Registry: Invalid address',
       );
     });
   });

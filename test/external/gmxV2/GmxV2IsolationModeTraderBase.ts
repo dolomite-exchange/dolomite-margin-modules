@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { GmxRegistryV2, TestGmxV2IsolationModeTraderBase, TestGmxV2IsolationModeTraderBase__factory } from 'src/types';
+import { GmxV2Registry, TestGmxV2IsolationModeTraderBase, TestGmxV2IsolationModeTraderBase__factory } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { ONE_ETH_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { createIsolationModeTraderProxy } from 'test/utils/dolomite';
-import { createGmxRegistryV2 } from 'test/utils/ecosystem-token-utils/gmx';
+import { createGmxV2Registry } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from 'test/utils/setup';
 import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
 
@@ -13,12 +13,12 @@ describe('GmxV2IsolationModeTraderBase', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let gmxRegistryV2: GmxRegistryV2;
+  let gmxV2Registry: GmxV2Registry;
   let trader: TestGmxV2IsolationModeTraderBase;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
-    gmxRegistryV2 = await createGmxRegistryV2(core, GMX_V2_CALLBACK_GAS_LIMIT);
+    gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     const implementation = await createContractWithAbi<TestGmxV2IsolationModeTraderBase>(
       TestGmxV2IsolationModeTraderBase__factory.abi,
@@ -26,7 +26,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
       [],
     );
     const calldata = await implementation.populateTransaction.initialize(
-      gmxRegistryV2.address,
+      gmxV2Registry.address,
       core.tokens.weth.address,
       core.dolomiteMargin.address,
     );
@@ -43,7 +43,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
   describe('#initialize', () => {
     it('should initialize correctly', async () => {
       expect(await trader.WETH()).to.eq(core.tokens.weth.address);
-      expect(await trader.GMX_REGISTRY_V2()).to.eq(gmxRegistryV2.address);
+      expect(await trader.GMX_REGISTRY_V2()).to.eq(gmxV2Registry.address);
       expect(await trader.callbackGasLimit()).to.eq(GMX_V2_CALLBACK_GAS_LIMIT);
       expect(await trader.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
     });
@@ -51,7 +51,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
     it('should not initialize twice', async () => {
       await expectThrow(
         trader.triggerInternalInitializer(
-          gmxRegistryV2.address,
+          gmxV2Registry.address,
           core.tokens.weth.address,
         ),
         'Initializable: contract is already initialized',
@@ -86,7 +86,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
 
   describe('#onlyHandler', () => {
     it('should work normally', async () => {
-      await gmxRegistryV2.connect(core.governance).ownerSetIsHandler(core.hhUser4.address, true);
+      await gmxV2Registry.connect(core.governance).ownerSetIsHandler(core.hhUser4.address, true);
       await trader.connect(core.hhUser4).testOnlyHandler();
     });
 

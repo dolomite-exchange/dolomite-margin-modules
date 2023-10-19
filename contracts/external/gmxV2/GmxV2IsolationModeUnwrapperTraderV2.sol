@@ -34,7 +34,6 @@ import { GmxWithdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
-import { IGmxWithdrawalCallbackReceiver } from "../interfaces/gmx/IGmxWithdrawalCallbackReceiver.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
@@ -48,8 +47,7 @@ import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/Upg
 contract GmxV2IsolationModeUnwrapperTraderV2 is
     IGmxV2IsolationModeUnwrapperTraderV2,
     UpgradeableIsolationModeUnwrapperTrader,
-    GmxV2IsolationModeTraderBase,
-    IGmxWithdrawalCallbackReceiver
+    GmxV2IsolationModeTraderBase
 {
     using SafeERC20 for IERC20;
 
@@ -62,13 +60,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     uint256 private constant _ACTIONS_LENGTH_CALLBACK = 2;
 
     // ============ Modifiers ============
-
-    modifier handleGmxCallback() {
-        // For GMX callbacks, we restrict the # of actions to use less gas
-        _setActionsLength(_ACTIONS_LENGTH_CALLBACK);
-        _;
-        _setActionsLength(_ACTIONS_LENGTH_NORMAL);
-    }
 
     modifier onlyWrapperCaller(address _from) {
         _validateIsWrapper(_from);
@@ -84,12 +75,12 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     function initialize(
         address _dGM,
         address _dolomiteMargin,
-        address _gmxRegistryV2,
+        address _gmxV2Registry,
         address _weth
     )
     external initializer {
         _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxRegistryV2, _weth);
+        _initializeTraderBase(_gmxV2Registry, _weth);
         _setActionsLength(_ACTIONS_LENGTH_NORMAL);
     }
 
@@ -98,13 +89,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // ============================================
 
     function handleGmxCallbackFromWrapperBefore() external onlyWrapperCaller(msg.sender) {
-        // For GMX callbacks, we restrict the # of actions to use less gas
-        _setActionsLength(_ACTIONS_LENGTH_CALLBACK);
+        _handleGmxCallbackBefore();
     }
 
     function handleGmxCallbackFromWrapperAfter() external onlyWrapperCaller(msg.sender) {
-        // For GMX callbacks, we restrict the # of actions to use less gas
-        _setActionsLength(_ACTIONS_LENGTH_NORMAL);
+        _handleGmxCallbackAfter();
     }
 
     function afterWithdrawalExecution(
@@ -114,7 +103,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     )
     external
     nonReentrant
-    handleGmxCallback
     onlyHandler(msg.sender) {
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         _validateWithdrawalExists(withdrawalInfo);
@@ -142,31 +130,17 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
         // Save the output amount so we can refer to it later
         withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
-        _setWithdrawalInfoAndSetVaultFrozenStatus(_key, withdrawalInfo);
+        _setWithdrawalInfo(_key, withdrawalInfo);
 
-        if (
-            GmxV2Library.hasPendingDeposit(
-                IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
-                withdrawalInfo.vault,
-                withdrawalInfo.accountNumber
-            )
-        ) {
-            // If there's a pending deposit, we defer it, so the liquidation bot so we can process them all
-            emit WithdrawalDeferred(_key);
-            return;
-        }
-
+        _handleGmxCallbackBefore();
         try GmxV2Library.swapExactInputForOutputForWithdrawal(this, withdrawalInfo) {
-            _setWithdrawalInfoAndSetVaultFrozenStatus(
-                _key,
-                _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber)
-            );
             emit WithdrawalExecuted(_key);
         } catch Error(string memory _reason) {
             emit WithdrawalFailed(_key, _reason);
         } catch (bytes memory /* _reason */) {
             emit WithdrawalFailed(_key, "");
         }
+        _handleGmxCallbackAfter();
     }
 
     /**
@@ -184,22 +158,30 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         _validateWithdrawalExists(withdrawalInfo);
 
         // @audit - Is there a way for us to verify the tokens were sent back to the vault?
-        _setWithdrawalInfoAndSetVaultFrozenStatus(
-            _key,
-            _emptyWithdrawalInfo(_key, withdrawalInfo.vault, withdrawalInfo.accountNumber)
+        _updateVaultPendingAmount(
+            withdrawalInfo.vault,
+            withdrawalInfo.accountNumber,
+            withdrawalInfo.inputAmount,
+            /* _isPositive = */ false
         );
+
+        // Setting inputAmount to 0 will clear the withdrawal
+        withdrawalInfo.inputAmount = 0;
+        _setWithdrawalInfo(_key, withdrawalInfo);
         emit WithdrawalCancelled(_key);
     }
 
-    function vaultSetWithdrawalInfo(
+    function vaultCreateWithdrawalInfo(
         bytes32 _key,
         uint256 _accountNumber,
         uint256 _inputAmount,
-        address _outputToken
+        address _outputToken,
+        uint256 _minOutputAmount
     ) external {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
+        address vault = msg.sender;
         Require.that(
-            factory.getAccountByVault(msg.sender) != address(0),
+            factory.getAccountByVault(vault) != address(0),
             _FILE,
             "Invalid vault"
         );
@@ -207,27 +189,18 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         // Panic if the key is already used
         assert(_getWithdrawalSlot(_key).vault == address(0));
 
-        // Disallow the withdrawal if there's already a withdrawal waiting for it (or if we're attempting to OVER
-        // withdraw)
-        GmxV2Library.checkWithdrawalIsNotTooLargeAgainstPending(
-            factory,
-            DOLOMITE_MARGIN(),
-            msg.sender,
-            _accountNumber,
-            _inputAmount
-        );
-
-        _setWithdrawalInfoAndSetVaultFrozenStatus(
+        _setWithdrawalInfo(
             _key,
             WithdrawalInfo({
                 key: _key,
-                vault: msg.sender,
+                vault: vault,
                 accountNumber: _accountNumber,
                 inputAmount: _inputAmount,
                 outputToken: _outputToken,
-                outputAmount: 0
+                outputAmount: _minOutputAmount
             })
         );
+        _updateVaultPendingAmount(vault, _accountNumber, _inputAmount, /* _isPositive = */ true);
         emit WithdrawalCreated(_key);
     }
 
@@ -270,11 +243,12 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         uint256 structInputAmount = 0;
         // Realistically this array length will only ever be 1 or 2.
         for (uint256 i; i < tradeTypes.length; ++i) {
-            // The withdrawal/deposit is validated later in _callFunction
+            // The withdrawal/deposit is authenticated & validated later in `_callFunction`
             if (tradeTypes[i] == TradeType.FromWithdrawal) {
                 structInputAmount += _getWithdrawalSlot(keys[i]).inputAmount;
             } else {
                 assert(tradeTypes[i] == TradeType.FromDeposit);
+                // The output amount for a deposit is the input amount for an unwrapping
                 structInputAmount += GMX_REGISTRY_V2().gmxV2WrapperTrader().getDepositInfo(keys[i]).outputAmount;
             }
         }
@@ -304,7 +278,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _orderData
         );
         if (actions.length == _ACTIONS_LENGTH_NORMAL) {
-            // We need to spend the whole withdrawal amount, so we need to add an extra sales to spend the difference
+            // We need to spend the whole withdrawal amount, so we need to add an extra sale to spend the difference.
             // This can only happen during a liquidation
 
             structInputAmount -= _inputAmount;
@@ -416,7 +390,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         address /* _tradeOriginator */,
         address /* _receiver */,
         address _outputToken,
-        uint256 _minOutputAmount,
+        uint256 /* _minOutputAmount */,
         address /* _inputToken */,
         uint256 _inputAmount,
         bytes memory _extraOrderData
@@ -431,62 +405,83 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         (TradeType[] memory tradeTypes, bytes32[] memory keys) = abi.decode(_extraOrderData, (TradeType[], bytes32[]));
         assert(tradeTypes.length == keys.length && keys.length > 0);
 
+        uint256 inputAmountNeeded = _inputAmount; // decays toward 0
         uint256 outputAmount = 0;
         for (uint256 i; i < tradeTypes.length; ++i) {
             bytes32 key = keys[i];
             if (tradeTypes[i] == TradeType.FromWithdrawal) {
                 WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
-                _validateInputAmountForExchange(withdrawalInfo.inputAmount, _inputAmount);
                 _validateOutputTokenForExchange(withdrawalInfo.outputToken, _outputToken);
-                _validateMinOutputAmountForExchange(withdrawalInfo.outputAmount, _minOutputAmount);
 
-                // Reduce output amount by the size of the ratio of the input amount. Almost always the ratio will be
-                // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
-                // collateral to the liquidator.
-                outputAmount = outputAmount + (withdrawalInfo.outputAmount * _inputAmount / withdrawalInfo.inputAmount);
-                withdrawalInfo.inputAmount -= _inputAmount;
-                withdrawalInfo.outputAmount -= outputAmount;
-                _setWithdrawalInfoAndSetVaultFrozenStatus(key, withdrawalInfo);
+                (uint256 inputAmountToCollect, uint256 outputAmountToCollect) = _getAmountsToCollect(
+                    /* _structInputAmount = */ withdrawalInfo.inputAmount,
+                    inputAmountNeeded,
+                    /* _structOutputAmount = */ withdrawalInfo.outputAmount
+                );
+                withdrawalInfo.inputAmount -= inputAmountToCollect;
+                withdrawalInfo.outputAmount -= outputAmountToCollect;
+                _setWithdrawalInfo(key, withdrawalInfo);
+                _updateVaultPendingAmount(
+                    withdrawalInfo.vault,
+                    withdrawalInfo.accountNumber,
+                    inputAmountToCollect,
+                    /* _isPositive = */ false
+                );
+
+                inputAmountNeeded -= inputAmountToCollect;
+                outputAmount = outputAmount + outputAmountToCollect;
             } else {
                 // panic if the trade type isn't correct (somehow).
                 assert(tradeTypes[i] == TradeType.FromDeposit);
                 IGmxV2IsolationModeWrapperTraderV2 wrapperTrader = GMX_REGISTRY_V2().gmxV2WrapperTrader();
                 IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory depositInfo = wrapperTrader.getDepositInfo(key);
-                // The outputAmount for a deposit is the input amount in this case
-                _validateInputAmountForExchange(depositInfo.outputAmount, _inputAmount);
+
                 // The input token for a deposit is the output token in this case
                 _validateOutputTokenForExchange(depositInfo.inputToken, _outputToken);
-                // The input amount for a deposit is the output amount for a withdrawal
-                _validateMinOutputAmountForExchange(depositInfo.inputAmount, _minOutputAmount);
 
-                // Reduce output amount by the size of the ratio of the input amount. Almost always the ratio will be
-                // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
-                // collateral to the liquidator.
-                uint256 outputAmountFromDeposit = (depositInfo.inputAmount * _inputAmount / depositInfo.outputAmount);
+                (uint256 inputAmountToCollect, uint256 outputAmountToCollect) = _getAmountsToCollect(
+                    /* _structInputAmount = */ depositInfo.outputAmount,
+                    inputAmountNeeded,
+                    /* _structOutputAmount = */ depositInfo.inputAmount
+                );
+
                 IERC20(depositInfo.inputToken).safeTransferFrom(
                     address(wrapperTrader),
                     address(this),
-                    outputAmountFromDeposit
+                    outputAmountToCollect
                 );
-                depositInfo.outputAmount -= _inputAmount;
-                depositInfo.inputAmount -= outputAmountFromDeposit;
-                outputAmount = outputAmount + outputAmountFromDeposit;
-                wrapperTrader.setDepositInfoAndSetVaultFrozenStatus(key, depositInfo);
+                depositInfo.outputAmount -= inputAmountToCollect;
+                depositInfo.inputAmount -= outputAmountToCollect;
+                wrapperTrader.setDepositInfoAndReducePendingAmountFromUnwrapper(key, inputAmountToCollect, depositInfo);
+
+                inputAmountNeeded -= inputAmountToCollect;
+                outputAmount = outputAmount + outputAmountToCollect;
             }
         }
+
+        // Panic if the developer didn't set this up to consume enough of the structs
+        assert(inputAmountNeeded == 0);
 
         return outputAmount;
     }
 
-    function _setWithdrawalInfoAndSetVaultFrozenStatus(bytes32 _key, WithdrawalInfo memory _info) internal {
-        bool clearValues = _info.inputAmount == 0;
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).setIsVaultAccountFrozen(
-            _info.vault,
-            _info.accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
-            /* _amountWei = */ _info.inputAmount
-        );
+    function _getAmountsToCollect(
+        uint256 _structInputAmount,
+        uint256 _inputAmountNeeded,
+        uint256 _structOutputAmount
+    ) internal pure returns (uint256 _inputAmountToCollect, uint256 _outputAmountToCollect) {
+        _inputAmountToCollect = _structInputAmount >= _inputAmountNeeded
+            ? _inputAmountNeeded
+            : _structInputAmount;
 
+        // Reduce output amount by the ratio of the collected input amount. Almost always the ratio will be
+        // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
+        // collateral to the liquidator.
+        _outputAmountToCollect = _structOutputAmount * _inputAmountNeeded / _structInputAmount;
+    }
+
+    function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
+        bool clearValues = _info.inputAmount == 0;
         WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
         storageInfo.key = _key;
         storageInfo.vault = clearValues ? address(0) : _info.vault;
@@ -494,6 +489,33 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
         storageInfo.outputToken = clearValues ? address(0) : _info.outputToken;
         storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
+    }
+
+    function _updateVaultPendingAmount(
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _amountDeltaWei,
+        bool _isPositive
+    ) internal {
+        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).updateVaultAccountPendingAmountForFrozenStatus(
+            _vault,
+            _accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
+            /* _amountWei = */ IDolomiteStructs.Wei({
+                sign: _isPositive,
+                value: _amountDeltaWei
+            })
+        );
+    }
+
+    function _handleGmxCallbackBefore() internal {
+        // For GMX callbacks, we restrict the # of actions to use less gas
+        _setActionsLength(_ACTIONS_LENGTH_CALLBACK);
+    }
+
+    function _handleGmxCallbackAfter() internal {
+        // For GMX callbacks, we restrict the # of actions to use less gas
+        _setActionsLength(_ACTIONS_LENGTH_NORMAL);
     }
 
     function _setActionsLength(uint256 _length) internal {
@@ -514,17 +536,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         );
     }
 
-    function _validateInputAmountForExchange(
-        uint256 _structInputAmount,
-        uint256 _inputAmount
-    ) internal pure {
-        Require.that(
-            _structInputAmount >= _inputAmount,
-            _FILE,
-            "Invalid input amount"
-        );
-    }
-
     function _validateOutputTokenForExchange(
         address _structOutputToken,
         address _outputToken
@@ -533,17 +544,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _structOutputToken == _outputToken,
             _FILE,
             "Output token mismatch"
-        );
-    }
-
-    function _validateMinOutputAmountForExchange(
-        uint256 _structMinOutputAmount,
-        uint256 _minOutputAmount
-    ) internal pure {
-        Require.that(
-            _structMinOutputAmount >= _minOutputAmount,
-            _FILE,
-            "Insufficient output amount"
         );
     }
 
@@ -574,15 +574,5 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     pure
     returns (uint256) {
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
-    }
-
-    function _emptyWithdrawalInfo(
-        bytes32 _key,
-        address _vault,
-        uint256 _accountNumber
-    ) internal pure returns (WithdrawalInfo memory _withdrawalInfo) {
-        _withdrawalInfo.key = _key;
-        _withdrawalInfo.vault = _vault;
-        _withdrawalInfo.accountNumber = _accountNumber;
     }
 }

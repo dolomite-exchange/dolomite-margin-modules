@@ -21,16 +21,14 @@
 pragma solidity ^0.8.9;
 
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2MarketTokenPriceOracle } from "../interfaces/gmx/IGmxV2MarketTokenPriceOracle.sol";
-import { console } from "hardhat/console.sol";
+import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 
 
 /**
@@ -44,7 +42,8 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "GmxV2MarketTokenPriceOracle";
-    uint256 public constant PRICE_DEVIATION_BP = 25; // all of the GM tokens we're listing have, at-worst, 20 bp for the prive deviation
+    /// @dev All of the GM tokens listed have, at-worst, 20 bp for the price deviation
+    uint256 public constant PRICE_DEVIATION_BP = 25;
     uint256 public constant BASIS_POINTS = 10_000;
     uint256 public constant SUPPLY_CAP_USAGE_NUMERATOR = 5;
     uint256 public constant SUPPLY_CAP_USAGE_DENOMINATOR = 100;
@@ -58,17 +57,17 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
 
     // ============================ Public State Variables ============================
 
-    IGmxRegistryV2 public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
+    IGmxV2Registry public immutable REGISTRY; // solhint-disable-line var-name-mixedcase
 
     mapping(address => bool) public marketTokens;
 
     // ============================ Constructor ============================
 
     constructor(
-        address _gmxRegistryV2,
+        address _gmxV2Registry,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        REGISTRY = IGmxRegistryV2(_gmxRegistryV2);
+        REGISTRY = IGmxV2Registry(_gmxV2Registry);
     }
 
     function ownerSetMarketToken(
@@ -87,14 +86,16 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         if (marketTokens[_token]) { /* FOR COVERAGE TESTING */ }
-        Require.that(marketTokens[_token],
+        Require.that(
+marketTokens[_token],
             _FILE,
             "Invalid token",
             _token
         );
 
         if (DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
-        Require.that(DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
+        Require.that(
+DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
             _FILE,
             "gmToken cannot be borrowable"
         );
@@ -113,7 +114,8 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
 
     function _ownerSetMarketToken(address _token, bool _status) internal {
         if (IERC20Metadata(_token).decimals() == 18) { /* FOR COVERAGE TESTING */ }
-        Require.that(IERC20Metadata(_token).decimals() == 18,
+        Require.that(
+IERC20Metadata(_token).decimals() == 18,
             _FILE,
             "Invalid market token decimals"
         );
@@ -183,6 +185,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
 
         if (wethPriceImpact < 0) {
             uint256 wethPriceImpactAbs = uint256(wethPriceImpact * -1);
+            // @audit - Am I using price impact properly? It's measured in terms of WETH units, not %-age, right?
             return _gmPrice - (_gmPrice * wethPriceImpactAbs / wethAmountInAdj);
         } else {
             // For positive price impact, we don't care to add it to the price.
@@ -227,7 +230,8 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
 
         // @audit Is there a better way to handle this? When could the reader return negative here?
         if (value > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(value > 0,
+        Require.that(
+value > 0,
             _FILE,
             "Invalid oracle response"
         );

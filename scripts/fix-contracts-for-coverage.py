@@ -65,12 +65,11 @@ def fixRequires(dir, filepath):
 
         indexOfEnd = builder.find(');')
         if (inARequire and indexOfEnd >= 0):
-#             print('Running for ' + filepath + ': ' + str(requireLine))
             numLeadingSpaces = len(builder) - 2
             allLines[requireLine] = (' ' * numLeadingSpaces) \
             + 'if (' + ifStatement[:-1] + ') { /* FOR COVERAGE TESTING */ }\n'
             allLines[requireLine + 1] = (' ' * numLeadingSpaces) \
-            + 'Require.that(' + allLines[requireLine + 1].lstrip()
+            + 'Require.that(\n' + allLines[requireLine + 1].lstrip()
             inARequire = False
             inMessage = False
             ifStatement = ''

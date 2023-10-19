@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
+import { IGmxV2Registry } from "./IGmxV2Registry.sol";
 import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 import { IWETH } from "../../../protocol/interfaces/IWETH.sol";
 
@@ -63,7 +63,7 @@ interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreez
 
     function virtualBalance() external view returns (uint256);
 
-    function registry() external view returns (IGmxRegistryV2);
+    function registry() external view returns (IGmxV2Registry);
 
     function getExecutionFeeForAccountNumber(uint256 _accountNumber) external view returns (uint256);
 }
