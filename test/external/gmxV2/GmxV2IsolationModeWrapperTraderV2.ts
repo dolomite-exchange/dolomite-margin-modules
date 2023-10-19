@@ -963,7 +963,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           initiateWrappingParams.userConfig,
           { value: parseEther('.01') },
         ),
-        `GmxV2Library: Vault is frozen <${vault.address.toLowerCase()}>`,
+        `GmxV2IsolationModeWrapperV2: Vault is frozen <${vault.address.toLowerCase()}>`,
       );
     });
   });

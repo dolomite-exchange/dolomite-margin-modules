@@ -249,18 +249,7 @@ library GmxV2Library {
         );
         IGmxV2IsolationModeUnwrapperTraderV2(traderParams[0].trader).handleGmxCallbackFromWrapperAfter();
     }
-
-    function hasPendingDeposit(
-        IGmxV2IsolationModeVaultFactory _factory,
-        address _vault,
-        uint256 _accountNumber
-    ) public view returns (bool) {
-        return _factory.getPendingAmountByAccount(_vault,
-            _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
-        ) != 0;
-    }
-
+    
     function isValidInputOrOutputToken(
         IGmxV2IsolationModeVaultFactory _factory,
         address _token
