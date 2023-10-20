@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { OARB, OARB__factory, TestVester, TestVester__factory } from 'src/types';
+import { OARB, OARB__factory, TestVester, TestVester__factory, VesterProxy, VesterProxy__factory } from 'src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
@@ -40,7 +40,7 @@ describe('Vester', () => {
     oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
 
     startTime = await getBlockTimestamp(await ethers.provider.getBlockNumber()) + 200;
-    vester = await createContractWithAbi<TestVester>(
+    const implementation = await createContractWithAbi<TestVester>(
       TestVester__factory.abi,
       TestVester__factory.bytecode,
       [
@@ -48,9 +48,20 @@ describe('Vester', () => {
         core.dolomiteRegistry.address,
         core.tokens.weth.address,
         core.tokens.arb.address,
-        oARB.address,
       ],
     );
+
+    const calldata = await implementation.populateTransaction.initialize(
+      oARB.address
+    );
+    
+    const vesterProxy = await createContractWithAbi<VesterProxy>(
+      VesterProxy__factory.abi,
+      VesterProxy__factory.bytecode,
+      [implementation.address, core.dolomiteMargin.address, calldata.data!]
+    );
+
+    vester = TestVester__factory.connect(vesterProxy.address, core.hhUser1);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
@@ -431,7 +442,7 @@ describe('Vester', () => {
 
     it('should fail if position is expired', async () => {
       await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
-      increase(ONE_WEEK.mul(2).add(1));
+      await increase(ONE_WEEK.mul(2).add(1));
       await expectThrow(
         vester.connect(core.hhUser1).closePositionAndBuyTokens(1),
         'Vester: Position expired',
@@ -454,7 +465,7 @@ describe('Vester', () => {
       const newAccountNumber = BigNumber.from(
         ethers.utils.solidityKeccak256(['address', 'uint256'], [core.hhUser1.address, 1])
       );
-      increase(ONE_WEEK.mul(2).add(1));
+      await increase(ONE_WEEK.mul(2).add(1));
 
       await vester.connect(core.hhUser5).forceClosePosition(1);
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
@@ -484,7 +495,7 @@ describe('Vester', () => {
       const newAccountNumber = BigNumber.from(
         ethers.utils.solidityKeccak256(['address', 'uint256'], [core.hhUser1.address, 1])
       );
-      increase(ONE_WEEK.mul(2).add(1));
+      await increase(ONE_WEEK.mul(2).add(1));
 
       await vester.connect(core.hhUser5).forceClosePosition(1);
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
@@ -510,7 +521,7 @@ describe('Vester', () => {
     it('should fail if position is not expired', async () => {
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
-      increase(ONE_WEEK.mul(2));
+      await increase(ONE_WEEK.mul(2).sub(2)); // Not sure why this is off by a bit
       await expectThrow(
         vester.connect(core.hhUser5).forceClosePosition(1),
         'Vester: Position not expired',

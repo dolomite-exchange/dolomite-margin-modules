@@ -40,14 +40,12 @@ contract TestVester is Vester {
         address _dolomiteMargin,
         address _dolomiteRegistry,
         IWETH _weth,
-        IERC20 _arb,
-        IOARB _oARB
+        IERC20 _arb
     ) Vester(
         _dolomiteMargin,
         _dolomiteRegistry,
         _weth,
-        _arb,
-        _oARB
+        _arb
     ) {} // solhint-disable-line
 
     function callClosePositionAndBuyTokensAndTriggerReentrancy(
