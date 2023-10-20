@@ -97,7 +97,7 @@ contract ParaswapAggregatorTraderV2 is OnlyDolomiteMargin, IDolomiteMarginExchan
 
         if (outputAmount >= minAmountOutWei) { /* FOR COVERAGE TESTING */ }
         Require.that(
-outputAmount >= minAmountOutWei,
+            outputAmount >= minAmountOutWei,
             _FILE,
             "Insufficient output amount",
             outputAmount,

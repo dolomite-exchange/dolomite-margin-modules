@@ -95,7 +95,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         // solhint-disable avoid-tx-origin
         if (tx.origin == address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-tx.origin == address(0),
+            tx.origin == address(0),
             _FILE,
             "Static rpc calls only"
         );
@@ -107,13 +107,13 @@ tx.origin == address(0),
     function performUpkeep(bytes calldata /* performData */) external {
         if (msg.sender == chainlinkRegistry) { /* FOR COVERAGE TESTING */ }
         Require.that(
-msg.sender == chainlinkRegistry,
+            msg.sender == chainlinkRegistry,
             _FILE,
             "Caller is not Chainlink"
         );
         if (_checkUpkeepConditions()) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_checkUpkeepConditions(),
+            _checkUpkeepConditions(),
             _FILE,
             "checkUpkeep conditions not met"
         );
@@ -136,7 +136,7 @@ _checkUpkeepConditions(),
     function _ownerSetUpperEdge(uint256 _upperEdge) internal {
         if (_upperEdge > 10_000) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_upperEdge > 10_000,
+            _upperEdge > 10_000,
             _FILE,
             "Invalid upper edge"
         );
@@ -147,7 +147,7 @@ _upperEdge > 10_000,
     function _ownerSetLowerEdge(uint256 _lowerEdge) internal {
         if (_lowerEdge < 10_000) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_lowerEdge < 10_000,
+            _lowerEdge < 10_000,
             _FILE,
             "Invalid lower edge"
         );
@@ -158,7 +158,7 @@ _lowerEdge < 10_000,
     function _ownerSetChainlinkRegistry(address _chainlinkRegistry) internal {
         if (_chainlinkRegistry != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_chainlinkRegistry != address(0),
+            _chainlinkRegistry != address(0),
             _FILE,
             "Invalid chainlink registry"
         );
@@ -200,7 +200,7 @@ _chainlinkRegistry != address(0),
     function _checkIsPriceExpired() internal view {
         if (lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
-lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp,
+            lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp,
             _FILE,
             "Price is expired"
         );

@@ -228,7 +228,7 @@ library AccountActionLib {
     ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
         if (_expiryTimeDelta == uint32(_expiryTimeDelta)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_expiryTimeDelta == uint32(_expiryTimeDelta),
+            _expiryTimeDelta == uint32(_expiryTimeDelta),
             _FILE,
             "Invalid expiry time delta"
         );

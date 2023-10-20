@@ -102,7 +102,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         if (isExternalRedemptionPaused()) {
             if (valueBefore.isPositive()) { /* FOR COVERAGE TESTING */ }
             Require.that(
-valueBefore.isPositive(),
+                valueBefore.isPositive(),
                 _FILE,
                 "Cannot lever up when paused",
                 _marketId
@@ -131,7 +131,7 @@ valueBefore.isPositive(),
             // If the ecosystem is paused, we cannot swap into more of the irredeemable asset
             if (outputMarket != marketId()) { /* FOR COVERAGE TESTING */ }
             Require.that(
-outputMarket != marketId(),
+                outputMarket != marketId(),
                 _FILE,
                 "Cannot zap to market when paused",
                 outputMarket
@@ -139,7 +139,7 @@ outputMarket != marketId(),
             outputBalanceBefore = DOLOMITE_MARGIN().getAccountWei(tradeAccount, outputMarket);
             if (outputBalanceBefore.isNegative()) { /* FOR COVERAGE TESTING */ }
             Require.that(
-outputBalanceBefore.isNegative(),
+                outputBalanceBefore.isNegative(),
                 _FILE,
                 "Zaps can only repay when paused"
             );
@@ -158,7 +158,7 @@ outputBalanceBefore.isNegative(),
             );
             if (inputBalanceAfter.isPositive() || inputBalanceAfter.value == 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
-inputBalanceAfter.isPositive() || inputBalanceAfter.value == 0,
+                inputBalanceAfter.isPositive() || inputBalanceAfter.value == 0,
                 _FILE,
                 "Cannot lever up when paused",
                 inputMarket
@@ -174,7 +174,7 @@ inputBalanceAfter.isPositive() || inputBalanceAfter.value == 0,
             // Confirm the user is doing a fair trade and there is not more than the acceptable slippage while paused
             if (outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenominator)) { /* FOR COVERAGE TESTING */ }
             Require.that(
-outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenominator),
+                outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenominator),
                 _FILE,
                 "Unacceptable trade when paused"
             );
@@ -322,7 +322,7 @@ outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenom
     function _requireExternalRedemptionNotPaused() private view {
         if (!isExternalRedemptionPaused()) { /* FOR COVERAGE TESTING */ }
         Require.that(
-!isExternalRedemptionPaused(),
+            !isExternalRedemptionPaused(),
             _FILE,
             "Cannot execute when paused"
         );
@@ -338,7 +338,7 @@ outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenom
         // If the user has debt, withdrawing collateral decreases their collateralization
         if (numberOfMarketsWithDebt == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-numberOfMarketsWithDebt == 0,
+            numberOfMarketsWithDebt == 0,
             _FILE,
             "Cannot lever up when paused"
         );

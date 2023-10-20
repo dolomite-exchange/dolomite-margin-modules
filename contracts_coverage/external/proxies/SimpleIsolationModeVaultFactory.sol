@@ -111,7 +111,7 @@ abstract contract SimpleIsolationModeVaultFactory is IsolationModeVaultFactory {
         for (uint256 i; i < len; i++) {
             if (!DOLOMITE_MARGIN().getMarketIsClosing(_newAllowableDebtMarketIds[i])) { /* FOR COVERAGE TESTING */ }
             Require.that(
-!DOLOMITE_MARGIN().getMarketIsClosing(_newAllowableDebtMarketIds[i]),
+                !DOLOMITE_MARGIN().getMarketIsClosing(_newAllowableDebtMarketIds[i]),
                 _FILE,
                 "Market cannot be closing"
             );

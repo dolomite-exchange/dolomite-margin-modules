@@ -177,7 +177,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
 
         if (_constants.owedMarket != _constants.heldMarket) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_constants.owedMarket != _constants.heldMarket,
+            _constants.owedMarket != _constants.heldMarket,
             _FILE,
             "Owed market equals held market",
             _constants.owedMarket
@@ -185,7 +185,7 @@ _constants.owedMarket != _constants.heldMarket,
 
         if (!DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
-!DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive(),
+            !DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive(),
             _FILE,
             "Owed market cannot be positive",
             _constants.owedMarket
@@ -193,7 +193,7 @@ _constants.owedMarket != _constants.heldMarket,
 
         if (DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
-DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive(),
+            DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive(),
             _FILE,
             "Held market cannot be negative",
             _constants.heldMarket
@@ -201,7 +201,7 @@ DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.heldMarket).i
 
         if (uint32(_constants.expirationTimestamp) == _constants.expirationTimestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
-uint32(_constants.expirationTimestamp) == _constants.expirationTimestamp,
+            uint32(_constants.expirationTimestamp) == _constants.expirationTimestamp,
             _FILE,
             "Expiration timestamp overflows",
             _constants.expirationTimestamp
@@ -209,7 +209,7 @@ uint32(_constants.expirationTimestamp) == _constants.expirationTimestamp,
 
         if (_constants.expirationTimestamp <= block.timestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_constants.expirationTimestamp <= block.timestamp,
+            _constants.expirationTimestamp <= block.timestamp,
             _FILE,
             "Borrow not yet expired",
             _constants.expirationTimestamp
@@ -228,9 +228,9 @@ _constants.expirationTimestamp <= block.timestamp,
     view
     {
         // check credentials for msg.sender
-        if (_constants.solidAccount.owner == msg.sender|| DOLOMITE_MARGIN.getIsLocalOperator(_constants.solidAccount.owner, msg.sender)) { /* FOR COVERAGE TESTING */ }
+        if (_constants.solidAccount.owner == msg.sender || DOLOMITE_MARGIN.getIsLocalOperator(_constants.solidAccount.owner, msg.sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_constants.solidAccount.owner == msg.sender
+            _constants.solidAccount.owner == msg.sender
                 || DOLOMITE_MARGIN.getIsLocalOperator(_constants.solidAccount.owner, msg.sender),
             _FILE,
             "Sender not operator",
@@ -242,7 +242,7 @@ _constants.solidAccount.owner == msg.sender
             uint32 expirationTimestamp = EXPIRY.getExpiry(_constants.liquidAccount, _constants.owedMarket);
             if (expirationTimestamp == _constants.expirationTimestamp) { /* FOR COVERAGE TESTING */ }
             Require.that(
-expirationTimestamp == _constants.expirationTimestamp,
+                expirationTimestamp == _constants.expirationTimestamp,
                 _FILE,
                 "Expiration timestamp mismatch",
                 expirationTimestamp,

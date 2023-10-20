@@ -179,7 +179,7 @@ contract GmxV2IsolationModeVaultFactory is
     ) internal {
         if (_executionFee <= 1 ether) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_executionFee <= 1 ether,
+            _executionFee <= 1 ether,
             _FILE,
             "Invalid execution fee"
         );

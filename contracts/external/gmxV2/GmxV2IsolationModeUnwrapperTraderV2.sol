@@ -128,19 +128,23 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         //          "unstuck" the funds for users by sending them to the appropriate vaults.
 
 
-        // Save the output amount so we can refer to it later
+        // Save the output amount so we can refer to it later. This also enables it to be retried if execution fails
         withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
+        withdrawalInfo.isRetryable = true;
         _setWithdrawalInfo(_key, withdrawalInfo);
 
-        _handleGmxCallbackBefore();
-        try GmxV2Library.swapExactInputForOutputForWithdrawal(this, withdrawalInfo) {
-            emit WithdrawalExecuted(_key);
-        } catch Error(string memory _reason) {
-            emit WithdrawalFailed(_key, _reason);
-        } catch (bytes memory /* _reason */) {
-            emit WithdrawalFailed(_key, "");
-        }
-        _handleGmxCallbackAfter();
+        _executeWithdrawal(withdrawalInfo);
+    }
+
+    function executeWithdrawalForRetry(bytes32 _key) external onlyHandler(msg.sender) nonReentrant {
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
+        _validateWithdrawalExists(withdrawalInfo);
+        Require.that(
+            withdrawalInfo.isRetryable,
+            _FILE,
+            "Withdrawal not retryable"
+        );
+        _executeWithdrawal(withdrawalInfo);
     }
 
     /**
@@ -180,11 +184,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     ) external {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         address vault = msg.sender;
-        Require.that(
-            factory.getAccountByVault(vault) != address(0),
-            _FILE,
-            "Invalid vault"
-        );
+        _validateVaultExists(factory, vault);
 
         // Panic if the key is already used
         assert(_getWithdrawalSlot(_key).vault == address(0));
@@ -197,7 +197,8 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
                 accountNumber: _accountNumber,
                 inputAmount: _inputAmount,
                 outputToken: _outputToken,
-                outputAmount: _minOutputAmount
+                outputAmount: _minOutputAmount,
+                isRetryable: false
             })
         );
         _updateVaultPendingAmount(vault, _accountNumber, _inputAmount, /* _isPositive = */ true);
@@ -331,6 +332,18 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // =========== Internal Functions =============
     // ============================================
 
+    function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal {
+        _handleGmxCallbackBefore();
+        try GmxV2Library.swapExactInputForOutputForWithdrawal(this, _withdrawalInfo) {
+            emit WithdrawalExecuted(_withdrawalInfo.key);
+        } catch Error(string memory _reason) {
+            emit WithdrawalFailed(_withdrawalInfo.key, _reason);
+        } catch (bytes memory /* _reason */) {
+            emit WithdrawalFailed(_withdrawalInfo.key, "");
+        }
+        _handleGmxCallbackAfter();
+    }
+
     function _callFunction(
         address /* _sender */,
         IDolomiteStructs.AccountInfo calldata _accountInfo,
@@ -339,12 +352,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     internal
     override {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        Require.that(
-            factory.getAccountByVault(_accountInfo.owner) != address(0),
-            _FILE,
-            "Account owner is not a vault",
-            _accountInfo.owner
-        );
+        _validateVaultExists(factory, _accountInfo.owner);
 
         (
             uint256 transferAmount,
@@ -465,6 +473,15 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         return outputAmount;
     }
 
+    function _validateVaultExists(IGmxV2IsolationModeVaultFactory _factory, address _vault) internal view {
+        Require.that(
+            _factory.getAccountByVault(_vault) != address(0),
+            _FILE,
+            "Invalid vault",
+            _vault
+        );
+    }
+
     function _getAmountsToCollect(
         uint256 _structInputAmount,
         uint256 _inputAmountNeeded,
@@ -477,7 +494,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         // Reduce output amount by the ratio of the collected input amount. Almost always the ratio will be
         // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
         // collateral to the liquidator.
-        _outputAmountToCollect = _structOutputAmount * _inputAmountNeeded / _structInputAmount;
+        _outputAmountToCollect = _inputAmountNeeded < _structInputAmount
+            ? _structOutputAmount * _inputAmountNeeded / _structInputAmount
+            : _structOutputAmount;
     }
 
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
@@ -489,6 +508,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
         storageInfo.outputToken = clearValues ? address(0) : _info.outputToken;
         storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
+        storageInfo.isRetryable = clearValues ? false : _info.isRetryable;
     }
 
     function _updateVaultPendingAmount(

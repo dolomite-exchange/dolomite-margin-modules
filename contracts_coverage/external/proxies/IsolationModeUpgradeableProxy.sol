@@ -50,7 +50,7 @@ contract IsolationModeUpgradeableProxy is
     modifier requireIsInitialized() {
         if (isInitialized()) { /* FOR COVERAGE TESTING */ }
         Require.that(
-isInitialized(),
+            isInitialized(),
             _FILE,
             "Not initialized"
         );
@@ -77,13 +77,13 @@ isInitialized(),
     ) external {
         if (!isInitialized()) { /* FOR COVERAGE TESTING */ }
         Require.that(
-!isInitialized(),
+            !isInitialized(),
             _FILE,
             "Already initialized"
         );
         if (IIsolationModeVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-IIsolationModeVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this),
+            IIsolationModeVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this),
             _FILE,
             "Invalid account",
             _account

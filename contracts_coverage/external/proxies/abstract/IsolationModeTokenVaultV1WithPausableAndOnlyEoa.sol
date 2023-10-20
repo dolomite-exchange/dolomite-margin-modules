@@ -49,7 +49,7 @@ abstract contract IsolationModeTokenVaultV1WithPausableAndOnlyEoa is IsolationMo
         // solhint-disable avoid-tx-origin
         if (_from == tx.origin) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_from == tx.origin,
+            _from == tx.origin,
             _FILE,
             "Only EOA can call",
             _from
@@ -62,7 +62,7 @@ _from == tx.origin,
         // solhint-disable avoid-tx-origin
         if (_from == tx.origin || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_from == tx.origin || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
+            _from == tx.origin || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
             _FILE,
             "Only EOA or converter can call",
             _from
@@ -75,7 +75,7 @@ _from == tx.origin || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConvert
         // solhint-disable avoid-tx-origin
         if (_proxySelf().owner() == tx.origin) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_proxySelf().owner() == tx.origin,
+            _proxySelf().owner() == tx.origin,
             _FILE,
             "Vault owner is not an EOA",
             _proxySelf().owner()

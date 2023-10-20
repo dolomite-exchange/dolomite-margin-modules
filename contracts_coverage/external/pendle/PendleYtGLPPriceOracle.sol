@@ -72,7 +72,7 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
 
         if (!increaseCardinalityRequired && oldestObservationSatisfied) { /* FOR COVERAGE TESTING */ }
         Require.that(
-!increaseCardinalityRequired && oldestObservationSatisfied,
+            !increaseCardinalityRequired && oldestObservationSatisfied,
             _FILE,
             "Oracle not ready yet"
         );
@@ -86,14 +86,14 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
     returns (IDolomiteStructs.MonetaryPrice memory) {
         if (_token == address(DYT_GLP)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_token == address(DYT_GLP),
+            _token == address(DYT_GLP),
             _FILE,
             "Invalid token",
             _token
         );
         if (DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
+            DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
             _FILE,
             "ytGLP cannot be borrowable"
         );

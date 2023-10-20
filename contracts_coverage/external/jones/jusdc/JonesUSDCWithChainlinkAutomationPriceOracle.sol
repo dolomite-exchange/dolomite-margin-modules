@@ -73,14 +73,14 @@ contract JonesUSDCWithChainlinkAutomationPriceOracle is ChainlinkAutomationPrice
     returns (IDolomiteStructs.MonetaryPrice memory) {
         if (_token == DJUSDC) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_token == DJUSDC,
+            _token == DJUSDC,
             _FILE,
             "Invalid token",
             _token
         );
         if (DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
+            DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
             _FILE,
             "jUSDC cannot be borrowable"
         );

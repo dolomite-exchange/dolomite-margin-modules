@@ -81,7 +81,7 @@ contract PlutusVaultGLPIsolationModeWrapperTraderV1 is IsolationModeWrapperTrade
     returns (uint256) {
         if (GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
+            GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
@@ -89,14 +89,14 @@ GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
         // VAULT_FACTORY is the DFS_GLP token
         if (_vaultToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_vaultToken == address(VAULT_FACTORY),
+            _vaultToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid output token",
             _vaultToken
         );
         if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_desiredInputAmount > 0,
+            _desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );
@@ -122,7 +122,7 @@ _desiredInputAmount > 0,
     returns (uint256) {
         if (GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
+            GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken

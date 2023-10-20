@@ -49,6 +49,7 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
         address outputToken;
         /// @dev initially 0 until the withdrawal is executed
         uint256 outputAmount;
+        bool isRetryable;
     }
 
     // ================================================
@@ -84,6 +85,13 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
      * IGmxV2IsolationModeWrapperTraderV2
      */
     function handleGmxCallbackFromWrapperAfter() external;
+
+    /**
+     * Can be called by a valid handler to re-execute a stuck withdrawal if it failed in the typical GMX callback but
+     * can now be processed without a liquidation.
+     * @param  _key  The key of the withdrawal to re-execute
+     */
+    function executeWithdrawalForRetry(bytes32 _key) external;
 
     /**
      * Saves the follow withdrawal info as a struct. Only callable by the user's vault

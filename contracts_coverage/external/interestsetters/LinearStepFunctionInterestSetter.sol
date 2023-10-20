@@ -52,7 +52,7 @@ contract LinearStepFunctionInterestSetter is ILinearStepFunctionInterestSetter {
     ) {
         if (_lowerOptimalPercent < _upperOptimalPercent) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_lowerOptimalPercent < _upperOptimalPercent,
+            _lowerOptimalPercent < _upperOptimalPercent,
             _FILE,
             "Lower optimal percent too high"
         );

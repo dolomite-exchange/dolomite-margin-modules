@@ -11,8 +11,9 @@
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
-    "coverage": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat --max-memory 32768 coverage --testfiles \"test/**/!(*Liquidation*|*LiquidatorProxyV2*|*Umami*)*.ts\" --network hardhat",
-    "coverage:specific": "ts-node scripts/fix-contracts-for-coverage.ts && COVERAGE=true hardhat --max-memory 32768 coverage --testfiles \"test/external/**/(GmxV2*|IsolationModeFreezableLiquidatorProxy)*.ts\" --network hardhat",
+    "coverage": "yarn coverage:prepare && COVERAGE=true hardhat --max-memory 32768 coverage --testfiles \"test/**/!(*Liquidation*|*LiquidatorProxyV2*|*Umami*)*.ts\" --network hardhat",
+    "coverage:prepare": "ts-node scripts/fix-contracts-for-coverage.ts",
+    "coverage:specific": "yarn coverage:prepare && COVERAGE=true hardhat --max-memory 32768 coverage --testfiles \"test/external/**/(GmxV2*|IsolationModeFreezableLiquidatorProxy)*.ts\" --network hardhat",
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy/deploy-atlas-ecosystem.ts",
     "deploy:coveralls": "coveralls < coverage/lcov.info",

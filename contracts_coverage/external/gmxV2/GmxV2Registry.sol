@@ -94,7 +94,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry {
     ) external {
         if (address(gmxV2UnwrapperTrader()) == address(0) && address(gmxV2WrapperTrader()) == address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-address(gmxV2UnwrapperTrader()) == address(0) && address(gmxV2WrapperTrader()) == address(0),
+            address(gmxV2UnwrapperTrader()) == address(0) && address(gmxV2WrapperTrader()) == address(0),
             _FILE,
             "Already initialized"
         );
@@ -257,7 +257,7 @@ address(gmxV2UnwrapperTrader()) == address(0) && address(gmxV2WrapperTrader()) =
     function _ownerSetEthUsdMarketToken(address _ethUsdMarketToken) internal {
         if (_ethUsdMarketToken != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_ethUsdMarketToken != address(0),
+            _ethUsdMarketToken != address(0),
             _FILE,
             "Invalid address"
         );
@@ -268,7 +268,7 @@ _ethUsdMarketToken != address(0),
     function _ownerSetGmxDataStore(address _gmxDataStore) internal {
         if (_gmxDataStore != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_gmxDataStore != address(0),
+            _gmxDataStore != address(0),
             _FILE,
             "Invalid address"
         );
@@ -279,7 +279,7 @@ _gmxDataStore != address(0),
     function _ownerSetGmxDepositVault(address _gmxDepositVault) internal {
         if (_gmxDepositVault != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_gmxDepositVault != address(0),
+            _gmxDepositVault != address(0),
             _FILE,
             "Invalid address"
         );
@@ -290,7 +290,7 @@ _gmxDepositVault != address(0),
     function _ownerSetGmxExchangeRouter(address _gmxExchangeRouter) internal {
         if (_gmxExchangeRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_gmxExchangeRouter != address(0),
+            _gmxExchangeRouter != address(0),
             _FILE,
             "Invalid address"
         );
@@ -301,7 +301,7 @@ _gmxExchangeRouter != address(0),
     function _ownerSetGmxReader(address _gmxReader) internal {
         if (_gmxReader != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_gmxReader != address(0),
+            _gmxReader != address(0),
             _FILE,
             "Invalid address"
         );
@@ -312,7 +312,7 @@ _gmxReader != address(0),
     function _ownerSetGmxRouter(address _gmxRouter) internal {
         if (_gmxRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_gmxRouter != address(0),
+            _gmxRouter != address(0),
             _FILE,
             "Invalid address"
         );
@@ -323,7 +323,7 @@ _gmxRouter != address(0),
     function _ownerSetGmxWithdrawalVault(address _gmxWithdrawalVault) internal {
         if (_gmxWithdrawalVault != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_gmxWithdrawalVault != address(0),
+            _gmxWithdrawalVault != address(0),
             _FILE,
             "Invalid address"
         );
@@ -334,7 +334,7 @@ _gmxWithdrawalVault != address(0),
     function _ownerSetGmxV2UnwrapperTrader(address _gmxV2UnwrapperTrader) internal {
         if (_gmxV2UnwrapperTrader != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_gmxV2UnwrapperTrader != address(0),
+            _gmxV2UnwrapperTrader != address(0),
             _FILE,
             "Invalid address"
         );
@@ -345,7 +345,7 @@ _gmxV2UnwrapperTrader != address(0),
     function _ownerSetGmxV2WrapperTrader(address _gmxV2WrapperTrader) internal {
         if (_gmxV2WrapperTrader != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_gmxV2WrapperTrader != address(0),
+            _gmxV2WrapperTrader != address(0),
             _FILE,
             "Invalid address"
         );

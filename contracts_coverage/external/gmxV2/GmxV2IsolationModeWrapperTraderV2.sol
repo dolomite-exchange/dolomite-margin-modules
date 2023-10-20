@@ -90,19 +90,14 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     external
     onlyHandler(msg.sender) {
         DepositInfo memory depositInfo = _getDepositSlot(_key);
-        if (depositInfo.vault != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-depositInfo.vault != address(0),
-            _FILE,
-            "Invalid deposit key"
-        );
+        _validateDepositExists(depositInfo);
 
         // @follow-up Switched to use 0 instead of len-1
         // @audit Don't use len - 1 but use index value
         GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[0];
-        if (keccak256(abi.encodePacked(receivedMarketTokens.key))== keccak256(abi.encodePacked("receivedMarketTokens"))) { /* FOR COVERAGE TESTING */ }
+        if (keccak256(abi.encodePacked(receivedMarketTokens.key)) == keccak256(abi.encodePacked("receivedMarketTokens"))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-keccak256(abi.encodePacked(receivedMarketTokens.key))
+            keccak256(abi.encodePacked(receivedMarketTokens.key))
                 == keccak256(abi.encodePacked("receivedMarketTokens")),
             _FILE,
             "Unexpected receivedMarketTokens"
@@ -113,9 +108,7 @@ keccak256(abi.encodePacked(receivedMarketTokens.key))
         underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
 
         if (receivedMarketTokens.value > _deposit.numbers.minMarketTokens) {
-            // We need to
-            // 1) send the diff into the vault via `operate` and
-            // 2) blind transfer the min token amount to the vault
+            // We need to send the diff into the vault via `operate` and
             uint256 diff = receivedMarketTokens.value - _deposit.numbers.minMarketTokens;
 
             // The allowance is entirely spent in the call to `factory.depositIntoDolomiteMarginFromTokenConverter` or
@@ -162,12 +155,7 @@ keccak256(abi.encodePacked(receivedMarketTokens.key))
     external
     onlyHandler(msg.sender) {
         DepositInfo memory depositInfo = _getDepositSlot(_key);
-        if (depositInfo.vault != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-depositInfo.vault != address(0),
-            _FILE,
-            "Invalid deposit key"
-        );
+        _validateDepositExists(depositInfo);
 
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         /*assert(_deposit.numbers.initialLongTokenAmount == 0 || _deposit.numbers.initialShortTokenAmount == 0);*/
@@ -188,7 +176,7 @@ depositInfo.vault != address(0),
         DepositInfo memory depositInfo = _getDepositSlot(_key);
         if (msg.sender == depositInfo.vault || isHandler(msg.sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-msg.sender == depositInfo.vault || isHandler(msg.sender),
+            msg.sender == depositInfo.vault || isHandler(msg.sender),
             _FILE,
             "Only vault or handler can cancel"
         );
@@ -202,7 +190,7 @@ msg.sender == depositInfo.vault || isHandler(msg.sender),
     ) external {
         if (msg.sender == address(GMX_REGISTRY_V2().gmxV2UnwrapperTrader())) { /* FOR COVERAGE TESTING */ }
         Require.that(
-msg.sender == address(GMX_REGISTRY_V2().gmxV2UnwrapperTrader()),
+            msg.sender == address(GMX_REGISTRY_V2().gmxV2UnwrapperTrader()),
             _FILE,
             "Only unwrapper can call",
             msg.sender
@@ -257,7 +245,7 @@ msg.sender == address(GMX_REGISTRY_V2().gmxV2UnwrapperTrader()),
         // Disallow the deposit if there's already an action waiting for it
         if (!factory.isVaultFrozen(_tradeOriginator)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-!factory.isVaultFrozen(_tradeOriginator),
+            !factory.isVaultFrozen(_tradeOriginator),
             _FILE,
             "Vault is frozen",
             _tradeOriginator
@@ -390,6 +378,15 @@ msg.sender == address(GMX_REGISTRY_V2().gmxV2UnwrapperTrader()),
     override {
         VAULT_FACTORY().enqueueTransferIntoDolomiteMargin(_vault, _amount);
         IERC20(address(VAULT_FACTORY())).safeApprove(_receiver, _amount);
+    }
+
+    function _validateDepositExists(DepositInfo memory _depositInfo) internal pure {
+        if (_depositInfo.vault != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _depositInfo.vault != address(0),
+            _FILE,
+            "Invalid deposit key"
+        );
     }
 
     function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {

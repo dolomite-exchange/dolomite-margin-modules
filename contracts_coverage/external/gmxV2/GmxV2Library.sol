@@ -168,7 +168,7 @@ library GmxV2Library {
     function depositAndApproveWethForWrapping(IGmxV2IsolationModeTokenVaultV1 _vault) public {
         if (msg.value > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-msg.value > 0,
+            msg.value > 0,
             _FILE,
             "Invalid execution fee"
         );
@@ -251,17 +251,6 @@ msg.value > 0,
         IGmxV2IsolationModeUnwrapperTraderV2(traderParams[0].trader).handleGmxCallbackFromWrapperAfter();
     }
 
-    function hasPendingDeposit(
-        IGmxV2IsolationModeVaultFactory _factory,
-        address _vault,
-        uint256 _accountNumber
-    ) public view returns (bool) {
-        return _factory.getPendingAmountByAccount(_vault,
-            _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
-        ) != 0;
-    }
-
     function isValidInputOrOutputToken(
         IGmxV2IsolationModeVaultFactory _factory,
         address _token
@@ -273,7 +262,7 @@ msg.value > 0,
         uint256 underlyingVirtualBalance = IGmxV2IsolationModeTokenVaultV1(_vault).virtualBalance();
         if (underlyingVirtualBalance >= _transferAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
-underlyingVirtualBalance >= _transferAmount,
+            underlyingVirtualBalance >= _transferAmount,
             _FILE,
             "Insufficient balance",
             underlyingVirtualBalance,
@@ -288,13 +277,13 @@ underlyingVirtualBalance >= _transferAmount,
         address factory = IIsolationModeUpgradeableProxy(address(_vault)).vaultFactory();
         if (msg.value == IGmxV2IsolationModeVaultFactory(factory).executionFee()) { /* FOR COVERAGE TESTING */ }
         Require.that(
-msg.value == IGmxV2IsolationModeVaultFactory(factory).executionFee(),
+            msg.value == IGmxV2IsolationModeVaultFactory(factory).executionFee(),
             _FILE,
             "Invalid execution fee"
         );
         if (_vault.getExecutionFeeForAccountNumber(_toAccountNumber) == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_vault.getExecutionFeeForAccountNumber(_toAccountNumber) == 0,
+            _vault.getExecutionFeeForAccountNumber(_toAccountNumber) == 0,
             _FILE,
             "Execution fee already paid"
         );
@@ -352,13 +341,13 @@ _vault.getExecutionFeeForAccountNumber(_toAccountNumber) == 0,
     ) public pure {
         if (_marketIds.length == 2) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_marketIds.length == 2,
+            _marketIds.length == 2,
             _FILE,
             "Invalid market IDs length"
         );
-        if ((_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)|| (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId)) { /* FOR COVERAGE TESTING */ }
+        if ((_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId) || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-(_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
+            (_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
             || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
             _FILE,
             "Invalid market IDs"
@@ -372,37 +361,37 @@ _marketIds.length == 2,
         GmxEventUtils.UintKeyValue memory _secondaryOutputTokenAmount,
         IGmxV2IsolationModeUnwrapperTraderV2.WithdrawalInfo memory _withdrawalInfo
     ) public pure {
-        if (keccak256(abi.encodePacked(_outputTokenAddress.key))== keccak256(abi.encodePacked("outputToken"))) { /* FOR COVERAGE TESTING */ }
+        if (keccak256(abi.encodePacked(_outputTokenAddress.key)) == keccak256(abi.encodePacked("outputToken"))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-keccak256(abi.encodePacked(_outputTokenAddress.key))
+            keccak256(abi.encodePacked(_outputTokenAddress.key))
                 == keccak256(abi.encodePacked("outputToken")),
             _FILE,
             "Unexpected outputToken"
         );
-        if (keccak256(abi.encodePacked(_outputTokenAmount.key))== keccak256(abi.encodePacked("outputAmount"))) { /* FOR COVERAGE TESTING */ }
+        if (keccak256(abi.encodePacked(_outputTokenAmount.key)) == keccak256(abi.encodePacked("outputAmount"))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-keccak256(abi.encodePacked(_outputTokenAmount.key))
+            keccak256(abi.encodePacked(_outputTokenAmount.key))
                 == keccak256(abi.encodePacked("outputAmount")),
             _FILE,
             "Unexpected outputAmount"
         );
-        if (keccak256(abi.encodePacked(_secondaryOutputTokenAddress.key))== keccak256(abi.encodePacked("secondaryOutputToken"))) { /* FOR COVERAGE TESTING */ }
+        if (keccak256(abi.encodePacked(_secondaryOutputTokenAddress.key)) == keccak256(abi.encodePacked("secondaryOutputToken"))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-keccak256(abi.encodePacked(_secondaryOutputTokenAddress.key))
+            keccak256(abi.encodePacked(_secondaryOutputTokenAddress.key))
                 == keccak256(abi.encodePacked("secondaryOutputToken")),
             _FILE,
             "Unexpected secondaryOutputToken"
         );
-        if (keccak256(abi.encodePacked(_secondaryOutputTokenAmount.key))== keccak256(abi.encodePacked("secondaryOutputAmount"))) { /* FOR COVERAGE TESTING */ }
+        if (keccak256(abi.encodePacked(_secondaryOutputTokenAmount.key)) == keccak256(abi.encodePacked("secondaryOutputAmount"))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-keccak256(abi.encodePacked(_secondaryOutputTokenAmount.key))
+            keccak256(abi.encodePacked(_secondaryOutputTokenAmount.key))
                 == keccak256(abi.encodePacked("secondaryOutputAmount")),
             _FILE,
             "Unexpected secondaryOutputAmount"
         );
-        if (_outputTokenAddress.value == _secondaryOutputTokenAddress.value&& _withdrawalInfo.outputToken == _outputTokenAddress.value) { /* FOR COVERAGE TESTING */ }
+        if (_outputTokenAddress.value == _secondaryOutputTokenAddress.value && _withdrawalInfo.outputToken == _outputTokenAddress.value) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_outputTokenAddress.value == _secondaryOutputTokenAddress.value
+            _outputTokenAddress.value == _secondaryOutputTokenAddress.value
                 && _withdrawalInfo.outputToken == _outputTokenAddress.value,
             _FILE,
             "Can only receive one token"
@@ -441,7 +430,7 @@ _outputTokenAddress.value == _secondaryOutputTokenAddress.value
             // The requested withdrawal cannot be for more than the user's balance, minus any pending.
             if (balance - (withdrawalPendingAmount + depositPendingAmount) >= _withdrawalAmount) { /* FOR COVERAGE TESTING */ }
             Require.that(
-balance - (withdrawalPendingAmount + depositPendingAmount) >= _withdrawalAmount,
+                balance - (withdrawalPendingAmount + depositPendingAmount) >= _withdrawalAmount,
                 _FILE,
                 "Withdrawal too large",
                 _vault,
@@ -451,7 +440,7 @@ balance - (withdrawalPendingAmount + depositPendingAmount) >= _withdrawalAmount,
             // The requested withdrawal must be for the entirety of the user's balance
             if (balance - (withdrawalPendingAmount + depositPendingAmount) == _withdrawalAmount) { /* FOR COVERAGE TESTING */ }
             Require.that(
-balance - (withdrawalPendingAmount + depositPendingAmount) == _withdrawalAmount,
+                balance - (withdrawalPendingAmount + depositPendingAmount) == _withdrawalAmount,
                 _FILE,
                 "Liquidation must be full balance",
                 _vault,

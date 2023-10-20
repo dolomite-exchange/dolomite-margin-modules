@@ -78,14 +78,14 @@ abstract contract IsolationModeWrapperTraderV1 is IDolomiteMarginWrapperTraderFo
     returns (uint256) {
         if (_outputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_outputToken == address(VAULT_FACTORY),
+            _outputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_inputAmount > 0,
+            _inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -103,7 +103,7 @@ _inputAmount > 0,
         );
         if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
-outputAmount >= minOutputAmount,
+            outputAmount >= minOutputAmount,
             _FILE,
             "Insufficient output amount",
             outputAmount,
@@ -131,7 +131,7 @@ outputAmount >= minOutputAmount,
     returns (IDolomiteMargin.ActionArgs[] memory) {
         if (DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(VAULT_FACTORY),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(VAULT_FACTORY),
             _FILE,
             "Invalid output market",
             _outputMarket

@@ -147,7 +147,7 @@ contract DolomiteRegistryImplementation is
     ) internal {
         if (_genericTraderProxy != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_genericTraderProxy != address(0),
+            _genericTraderProxy != address(0),
             _FILE,
             "Invalid genericTraderProxy"
         );
@@ -167,7 +167,7 @@ _genericTraderProxy != address(0),
     ) internal {
         if (_expiry != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_expiry != address(0),
+            _expiry != address(0),
             _FILE,
             "Invalid expiry"
         );
@@ -187,7 +187,7 @@ _expiry != address(0),
     ) internal {
         if (_slippageToleranceForPauseSentinel > 0 && _slippageToleranceForPauseSentinel < 1e18) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_slippageToleranceForPauseSentinel > 0 && _slippageToleranceForPauseSentinel < 1e18,
+            _slippageToleranceForPauseSentinel > 0 && _slippageToleranceForPauseSentinel < 1e18,
             _FILE,
             "Invalid slippageTolerance"
         );
@@ -201,7 +201,7 @@ _slippageToleranceForPauseSentinel > 0 && _slippageToleranceForPauseSentinel < 1
     ) internal {
         if (_liquidatorAssetRegistry != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_liquidatorAssetRegistry != address(0),
+            _liquidatorAssetRegistry != address(0),
             _FILE,
             "Invalid liquidatorAssetRegistry"
         );

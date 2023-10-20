@@ -90,11 +90,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     external
     onlyHandler(msg.sender) {
         DepositInfo memory depositInfo = _getDepositSlot(_key);
-        Require.that(
-            depositInfo.vault != address(0),
-            _FILE,
-            "Invalid deposit key"
-        );
+        _validateDepositExists(depositInfo);
 
         // @follow-up Switched to use 0 instead of len-1
         // @audit Don't use len - 1 but use index value
@@ -111,9 +107,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
 
         if (receivedMarketTokens.value > _deposit.numbers.minMarketTokens) {
-            // We need to
-            // 1) send the diff into the vault via `operate` and
-            // 2) blind transfer the min token amount to the vault
+            // We need to send the diff into the vault via `operate` and
             uint256 diff = receivedMarketTokens.value - _deposit.numbers.minMarketTokens;
 
             // The allowance is entirely spent in the call to `factory.depositIntoDolomiteMarginFromTokenConverter` or
@@ -159,25 +153,46 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     )
     external
     onlyHandler(msg.sender) {
-        DepositInfo memory depositInfo = _getDepositSlot(_key);
-        Require.that(
-            depositInfo.vault != address(0),
-            _FILE,
-            "Invalid deposit key"
-        );
-
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         assert(_deposit.numbers.initialLongTokenAmount == 0 || _deposit.numbers.initialShortTokenAmount == 0);
 
-        factory.setShouldSkipTransfer(depositInfo.vault, /* _shouldSkipTransfer = */ true);
+        DepositInfo memory depositInfo = _getDepositSlot(_key);
+        _validateDepositExists(depositInfo);
+        _executeDepositCancellation(depositInfo);
+    }
 
-        try GmxV2Library.swapExactInputForOutputForDepositCancellation(/* _wrapper = */ this, depositInfo) {
-            // The deposit info is set via `setDepositInfoAndSetVaultFrozenStatus` by the unwrapper
-            emit DepositCancelled(_key);
+    function executeDepositCancellationForRetry(
+        bytes32 _key
+    )
+    external
+    onlyHandler(msg.sender) {
+        DepositInfo memory depositInfo = _getDepositSlot(_key);
+        _validateDepositExists(depositInfo);
+        Require.that(
+            depositInfo.isRetryable,
+            _FILE,
+            "Deposit is not retryable"
+        );
+
+        _executeDepositCancellation(depositInfo);
+    }
+
+    function _executeDepositCancellation(
+        DepositInfo memory _depositInfo
+    ) internal {
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
+        factory.setShouldSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ true);
+
+        try GmxV2Library.swapExactInputForOutputForDepositCancellation(/* _wrapper = */ this, _depositInfo) {
+            // The deposit info is set via `swapExactInputForOutputForDepositCancellation` by the unwrapper
+            emit DepositCancelled(_depositInfo.key);
         } catch Error(string memory _reason) {
-            emit DepositCancelledFailed(_key, _reason);
+            _depositInfo.isRetryable = true;
+            _setDepositInfo(_depositInfo.key, _depositInfo);
+            emit DepositCancelledFailed(_depositInfo.key, _reason);
         } catch (bytes memory /* _reason */) {
-            emit DepositCancelledFailed(_key, "");
+            _depositInfo.isRetryable = true;
+            _setDepositInfo(_depositInfo.key, _depositInfo);
+            emit DepositCancelledFailed(_depositInfo.key, "");
         }
     }
 
@@ -286,7 +301,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
                 accountNumber: accountNumber,
                 inputToken: _inputToken,
                 inputAmount: _inputAmount,
-                outputAmount: _minOutputAmount
+                outputAmount: _minOutputAmount,
+                isRetryable: false
             })
         );
         _updateVaultPendingAmount(
@@ -357,6 +373,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         storageInfo.inputToken = clearValues ? address(0) : _info.inputToken;
         storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
         storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
+        storageInfo.isRetryable = clearValues ? false : _info.isRetryable;
     }
 
     function _updateVaultPendingAmount(
@@ -384,6 +401,14 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     override {
         VAULT_FACTORY().enqueueTransferIntoDolomiteMargin(_vault, _amount);
         IERC20(address(VAULT_FACTORY())).safeApprove(_receiver, _amount);
+    }
+
+    function _validateDepositExists(DepositInfo memory _depositInfo) internal pure {
+        Require.that(
+            _depositInfo.vault != address(0),
+            _FILE,
+            "Invalid deposit key"
+        );
     }
 
     function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {

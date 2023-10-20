@@ -77,7 +77,7 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
         address freezableToken = DOLOMITE_MARGIN.getMarketTokenAddress(_freezableMarketId);
         if (IIsolationModeVaultFactory(freezableToken).getAccountByVault(_liquidAccount.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-IIsolationModeVaultFactory(freezableToken).getAccountByVault(_liquidAccount.owner) != address(0),
+            IIsolationModeVaultFactory(freezableToken).getAccountByVault(_liquidAccount.owner) != address(0),
             _FILE,
             "Invalid liquid account",
             _liquidAccount.owner
@@ -97,7 +97,7 @@ IIsolationModeVaultFactory(freezableToken).getAccountByVault(_liquidAccount.owne
         IIsolationModeTokenVaultV1WithFreezable vault = IIsolationModeTokenVaultV1WithFreezable(_liquidAccount.owner);
         if (!vault.isVaultAccountFrozen(_liquidAccount.number)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-!vault.isVaultAccountFrozen(_liquidAccount.number),
+            !vault.isVaultAccountFrozen(_liquidAccount.number),
             _FILE,
             "Account is frozen",
             _liquidAccount.owner,
@@ -133,19 +133,19 @@ IIsolationModeVaultFactory(freezableToken).getAccountByVault(_liquidAccount.owne
         if (_expirationTimestamp != 0) {
             if (_expirationTimestamp == uint32(_expirationTimestamp)) { /* FOR COVERAGE TESTING */ }
             Require.that(
-_expirationTimestamp == uint32(_expirationTimestamp),
+                _expirationTimestamp == uint32(_expirationTimestamp),
                 _FILE,
                 "Invalid expiration timestamp"
             );
             if (_expirationTimestamp <= block.timestamp) { /* FOR COVERAGE TESTING */ }
             Require.that(
-_expirationTimestamp <= block.timestamp,
+                _expirationTimestamp <= block.timestamp,
                 _FILE,
                 "Account not expired"
             );
             if (EXPIRY.getExpiry(_liquidAccount, _outputMarketId) == uint32(_expirationTimestamp)) { /* FOR COVERAGE TESTING */ }
             Require.that(
-EXPIRY.getExpiry(_liquidAccount, _outputMarketId) == uint32(_expirationTimestamp),
+                EXPIRY.getExpiry(_liquidAccount, _outputMarketId) == uint32(_expirationTimestamp),
                 _FILE,
                 "Expiration mismatch"
             );
@@ -163,15 +163,15 @@ EXPIRY.getExpiry(_liquidAccount, _outputMarketId) == uint32(_expirationTimestamp
             // Panic if there's no supply value
             if (liquidSupplyValue.value != 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
-liquidSupplyValue.value != 0,
+                liquidSupplyValue.value != 0,
                 _FILE,
                 "Liquid account has no supply"
             );
 
             IDolomiteStructs.Decimal memory marginRatio = DOLOMITE_MARGIN.getMarginRatio();
-            if (DOLOMITE_MARGIN.getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid|| !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio)) { /* FOR COVERAGE TESTING */ }
+            if (DOLOMITE_MARGIN.getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid || !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio)) { /* FOR COVERAGE TESTING */ }
             Require.that(
-DOLOMITE_MARGIN.getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
+                DOLOMITE_MARGIN.getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
                     || !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio),
                 _FILE,
                 "Liquid account not liquidatable"

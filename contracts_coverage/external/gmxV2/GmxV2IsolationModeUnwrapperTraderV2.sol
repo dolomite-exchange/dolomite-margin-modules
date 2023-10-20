@@ -108,7 +108,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         _validateWithdrawalExists(withdrawalInfo);
         if (withdrawalInfo.inputAmount == _withdrawal.numbers.marketTokenAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
-withdrawalInfo.inputAmount == _withdrawal.numbers.marketTokenAmount,
+            withdrawalInfo.inputAmount == _withdrawal.numbers.marketTokenAmount,
             _FILE,
             "Invalid market token amount"
         );
@@ -133,15 +133,13 @@ withdrawalInfo.inputAmount == _withdrawal.numbers.marketTokenAmount,
         withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
         _setWithdrawalInfo(_key, withdrawalInfo);
 
-        _handleGmxCallbackBefore();
-        try GmxV2Library.swapExactInputForOutputForWithdrawal(this, withdrawalInfo) {
-            emit WithdrawalExecuted(_key);
-        } catch Error(string memory _reason) {
-            emit WithdrawalFailed(_key, _reason);
-        } catch (bytes memory /* _reason */) {
-            emit WithdrawalFailed(_key, "");
-        }
-        _handleGmxCallbackAfter();
+        _executeWithdrawal(withdrawalInfo);
+    }
+
+    function executeWithdrawal(bytes32 _key) external onlyHandler(msg.sender) nonReentrant {
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
+        _validateWithdrawalExists(withdrawalInfo);
+        _executeWithdrawal(withdrawalInfo);
     }
 
     /**
@@ -183,7 +181,7 @@ withdrawalInfo.inputAmount == _withdrawal.numbers.marketTokenAmount,
         address vault = msg.sender;
         if (factory.getAccountByVault(vault) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-factory.getAccountByVault(vault) != address(0),
+            factory.getAccountByVault(vault) != address(0),
             _FILE,
             "Invalid vault"
         );
@@ -224,14 +222,14 @@ factory.getAccountByVault(vault) != address(0),
     returns (IDolomiteMargin.ActionArgs[] memory) {
         if (DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
         Require.that(
-DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY()),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY()),
             _FILE,
             "Invalid input market",
             _inputMarket
         );
         if (isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
+            isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
             _FILE,
             "Invalid output market",
             _outputMarket
@@ -240,7 +238,7 @@ isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
         (TradeType[] memory tradeTypes, bytes32[] memory keys) = abi.decode(_orderData, (TradeType[], bytes32[]));
         if (tradeTypes.length == keys.length && keys.length > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-tradeTypes.length == keys.length && keys.length > 0,
+            tradeTypes.length == keys.length && keys.length > 0,
             _FILE,
             "Invalid unwrapping order data"
         );
@@ -259,7 +257,7 @@ tradeTypes.length == keys.length && keys.length > 0,
         }
         if (structInputAmount >= _inputAmount && _inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-structInputAmount >= _inputAmount && _inputAmount > 0,
+            structInputAmount >= _inputAmount && _inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -337,6 +335,18 @@ structInputAmount >= _inputAmount && _inputAmount > 0,
     // =========== Internal Functions =============
     // ============================================
 
+    function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal {
+        _handleGmxCallbackBefore();
+        try GmxV2Library.swapExactInputForOutputForWithdrawal(this, _withdrawalInfo) {
+            emit WithdrawalExecuted(_withdrawalInfo.key);
+        } catch Error(string memory _reason) {
+            emit WithdrawalFailed(_withdrawalInfo.key, _reason);
+        } catch (bytes memory /* _reason */) {
+            emit WithdrawalFailed(_withdrawalInfo.key, "");
+        }
+        _handleGmxCallbackAfter();
+    }
+
     function _callFunction(
         address /* _sender */,
         IDolomiteStructs.AccountInfo calldata _accountInfo,
@@ -347,7 +357,7 @@ structInputAmount >= _inputAmount && _inputAmount > 0,
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         if (factory.getAccountByVault(_accountInfo.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-factory.getAccountByVault(_accountInfo.owner) != address(0),
+            factory.getAccountByVault(_accountInfo.owner) != address(0),
             _FILE,
             "Account owner is not a vault",
             _accountInfo.owner
@@ -376,7 +386,7 @@ factory.getAccountByVault(_accountInfo.owner) != address(0),
             }
             if (vault == _accountInfo.owner) { /* FOR COVERAGE TESTING */ }
             Require.that(
-vault == _accountInfo.owner,
+                vault == _accountInfo.owner,
                 _FILE,
                 "Invalid account owner",
                 _accountInfo.owner
@@ -386,7 +396,7 @@ vault == _accountInfo.owner,
         GmxV2Library.validateVirtualBalance(_accountInfo.owner, transferAmount);
         if (transferAmount > 0 && transferAmount <= inputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
-transferAmount > 0 && transferAmount <= inputAmount,
+            transferAmount > 0 && transferAmount <= inputAmount,
             _FILE,
             "Invalid transfer amount"
         );
@@ -486,7 +496,9 @@ transferAmount > 0 && transferAmount <= inputAmount,
         // Reduce output amount by the ratio of the collected input amount. Almost always the ratio will be
         // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
         // collateral to the liquidator.
-        _outputAmountToCollect = _structOutputAmount * _inputAmountNeeded / _structInputAmount;
+        _outputAmountToCollect = _inputAmountNeeded < _structInputAmount
+            ? _structOutputAmount * _inputAmountNeeded / _structInputAmount
+            : _structOutputAmount;
     }
 
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
@@ -539,7 +551,7 @@ transferAmount > 0 && transferAmount <= inputAmount,
     function _validateIsWrapper(address _from) internal view {
         if (_from == address(GMX_REGISTRY_V2().gmxV2WrapperTrader())) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_from == address(GMX_REGISTRY_V2().gmxV2WrapperTrader()),
+            _from == address(GMX_REGISTRY_V2().gmxV2WrapperTrader()),
             _FILE,
             "Caller can only be wrapper",
             _from
@@ -552,7 +564,7 @@ _from == address(GMX_REGISTRY_V2().gmxV2WrapperTrader()),
     ) internal pure {
         if (_structOutputToken == _outputToken) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_structOutputToken == _outputToken,
+            _structOutputToken == _outputToken,
             _FILE,
             "Output token mismatch"
         );
@@ -561,7 +573,7 @@ _structOutputToken == _outputToken,
     function _validateWithdrawalExists(WithdrawalInfo memory _withdrawalInfo) internal pure {
         if (_withdrawalInfo.vault != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_withdrawalInfo.vault != address(0),
+            _withdrawalInfo.vault != address(0),
             _FILE,
             "Invalid withdrawal key"
         );

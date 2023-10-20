@@ -212,7 +212,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     function _ownerSetEsGmx(address _esGmx) internal {
         if (_esGmx != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_esGmx != address(0),
+            _esGmx != address(0),
             _FILE,
             "Invalid esGmx address"
         );
@@ -223,7 +223,7 @@ _esGmx != address(0),
     function _ownerSetFSGlp(address _fsGlp) internal {
         if (_fsGlp != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_fsGlp != address(0),
+            _fsGlp != address(0),
             _FILE,
             "Invalid fsGlp address"
         );
@@ -234,7 +234,7 @@ _fsGlp != address(0),
     function _ownerSetGlp(address _glp) internal {
         if (_glp != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_glp != address(0),
+            _glp != address(0),
             _FILE,
             "Invalid glp address"
         );
@@ -245,7 +245,7 @@ _glp != address(0),
     function _ownerSetGlpManager(address _glpManager) internal {
         if (_glpManager != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_glpManager != address(0),
+            _glpManager != address(0),
             _FILE,
             "Invalid glpManager address"
         );
@@ -256,7 +256,7 @@ _glpManager != address(0),
     function _ownerSetGlpRewardsRouter(address _glpRewardsRouter) internal {
         if (_glpRewardsRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_glpRewardsRouter != address(0),
+            _glpRewardsRouter != address(0),
             _FILE,
             "Invalid glpRewardsRouter address"
         );
@@ -267,7 +267,7 @@ _glpRewardsRouter != address(0),
     function _ownerSetGmx(address _gmx) internal {
         if (_gmx != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_gmx != address(0),
+            _gmx != address(0),
             _FILE,
             "Invalid gmx address"
         );
@@ -278,7 +278,7 @@ _gmx != address(0),
     function _ownerSetGmxRewardsRouter(address _gmxRewardsRouter) internal {
         if (_gmxRewardsRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_gmxRewardsRouter != address(0),
+            _gmxRewardsRouter != address(0),
             _FILE,
             "Invalid gmxRewardsRouter address"
         );
@@ -289,7 +289,7 @@ _gmxRewardsRouter != address(0),
     function _ownerSetGmxVault(address _gmxVault) internal {
         if (_gmxVault != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_gmxVault != address(0),
+            _gmxVault != address(0),
             _FILE,
             "Invalid gmxVault address"
         );
@@ -300,7 +300,7 @@ _gmxVault != address(0),
     function _ownerSetSGlp(address _sGlp) internal {
         if (_sGlp != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_sGlp != address(0),
+            _sGlp != address(0),
             _FILE,
             "Invalid sGlp address"
         );
@@ -311,7 +311,7 @@ _sGlp != address(0),
     function _ownerSetSGmx(address _sGmx) internal {
         if (_sGmx != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_sGmx != address(0),
+            _sGmx != address(0),
             _FILE,
             "Invalid sGmx address"
         );
@@ -322,7 +322,7 @@ _sGmx != address(0),
     function _ownerSetSbfGmx(address _sbfGmx) internal {
         if (_sbfGmx != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_sbfGmx != address(0),
+            _sbfGmx != address(0),
             _FILE,
             "Invalid sbfGmx address"
         );
@@ -333,7 +333,7 @@ _sbfGmx != address(0),
     function _ownerSetVGlp(address _vGlp) internal {
         if (_vGlp != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_vGlp != address(0),
+            _vGlp != address(0),
             _FILE,
             "Invalid vGlp address"
         );
@@ -344,7 +344,7 @@ _vGlp != address(0),
     function _ownerSetVGmx(address _vGmx) internal {
         if (_vGmx != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_vGmx != address(0),
+            _vGmx != address(0),
             _FILE,
             "Invalid vGmx address"
         );

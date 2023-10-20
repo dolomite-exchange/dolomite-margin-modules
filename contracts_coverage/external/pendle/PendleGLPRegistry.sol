@@ -156,7 +156,7 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
     function _ownerSetPendleRouter(address _pendleRouter) internal {
         if (_pendleRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_pendleRouter != address(0),
+            _pendleRouter != address(0),
             _FILE,
             "Invalid pendleRouter address"
         );
@@ -167,7 +167,7 @@ _pendleRouter != address(0),
     function _ownerSetPtGlpMarket(address _ptGlpMarket) internal {
         if (_ptGlpMarket != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_ptGlpMarket != address(0),
+            _ptGlpMarket != address(0),
             _FILE,
             "Invalid ptGlpMarket address"
         );
@@ -178,7 +178,7 @@ _ptGlpMarket != address(0),
     function _ownerSetPtOracle(address _ptOracle) internal {
         if (_ptOracle != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_ptOracle != address(0),
+            _ptOracle != address(0),
             _FILE,
             "Invalid ptOracle address"
         );
@@ -189,7 +189,7 @@ _ptOracle != address(0),
     function _ownerSetSyGlpToken(address _syGlpToken) internal {
         if (_syGlpToken != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_syGlpToken != address(0),
+            _syGlpToken != address(0),
             _FILE,
             "Invalid syGlpToken address"
         );
@@ -200,7 +200,7 @@ _syGlpToken != address(0),
     function _ownerSetPtGlpToken(address _ptGlpToken) internal {
         if (_ptGlpToken != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_ptGlpToken != address(0),
+            _ptGlpToken != address(0),
             _FILE,
             "Invalid ptGlpToken address"
         );
@@ -211,7 +211,7 @@ _ptGlpToken != address(0),
     function _ownerSetYtGlpToken(address _ytGlpToken) internal {
         if (_ytGlpToken != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_ytGlpToken != address(0),
+            _ytGlpToken != address(0),
             _FILE,
             "Invalid ytGlpToken address"
         );

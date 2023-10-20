@@ -64,7 +64,7 @@ abstract contract UpgradeableIsolationModeUnwrapperTrader is
         // On the first call to nonReentrant, _reentrancyGuard will be _NOT_ENTERED
         if (_getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
+            _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
             _FILE,
             "Reentrant call"
         );
@@ -106,21 +106,21 @@ _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
     returns (uint256) {
         if (_inputToken == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_inputToken == address(VAULT_FACTORY()),
+            _inputToken == address(VAULT_FACTORY()),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         if (isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-isValidOutputToken(_outputToken),
+            isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_inputAmount > 0,
+            _inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -140,7 +140,7 @@ _inputAmount > 0,
         );
         if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
-outputAmount >= minOutputAmount,
+            outputAmount >= minOutputAmount,
             _FILE,
             "Insufficient output amount",
             outputAmount,
@@ -174,14 +174,14 @@ outputAmount >= minOutputAmount,
     returns (IDolomiteMargin.ActionArgs[] memory) {
         if (DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
         Require.that(
-DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY()),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY()),
             _FILE,
             "Invalid input market",
             _inputMarket
         );
         if (isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
+            isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
             _FILE,
             "Invalid output market",
             _outputMarket
@@ -228,21 +228,21 @@ isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
     returns (uint256) {
         if (_inputToken == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_inputToken == address(VAULT_FACTORY()),
+            _inputToken == address(VAULT_FACTORY()),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         if (isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-isValidOutputToken(_outputToken),
+            isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_desiredInputAmount > 0,
+            _desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );
@@ -279,7 +279,7 @@ _desiredInputAmount > 0,
     virtual {
         if (VAULT_FACTORY().getAccountByVault(_accountInfo.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-VAULT_FACTORY().getAccountByVault(_accountInfo.owner) != address(0),
+            VAULT_FACTORY().getAccountByVault(_accountInfo.owner) != address(0),
             _FILE,
             "Account owner is not a vault",
             _accountInfo.owner
@@ -290,7 +290,7 @@ VAULT_FACTORY().getAccountByVault(_accountInfo.owner) != address(0),
         (uint256 transferAmount) = abi.decode(_data, (uint256));
         if (transferAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-transferAmount > 0,
+            transferAmount > 0,
             _FILE,
             "Invalid transfer amount"
         );
@@ -298,7 +298,7 @@ transferAmount > 0,
         uint256 underlyingBalanceOf = IIsolationModeTokenVaultV1(_accountInfo.owner).underlyingBalanceOf();
         if (underlyingBalanceOf >= transferAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
-underlyingBalanceOf >= transferAmount,
+            underlyingBalanceOf >= transferAmount,
             _FILE,
             "Insufficient balance",
             underlyingBalanceOf,
@@ -329,7 +329,7 @@ underlyingBalanceOf >= transferAmount,
         uint256 balance = IERC20(VAULT_FACTORY().UNDERLYING_TOKEN()).balanceOf(address(this));
         if (balance >= _inputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
-balance >= _inputAmount,
+            balance >= _inputAmount,
             _FILE,
             "Insufficient input token",
             balance,

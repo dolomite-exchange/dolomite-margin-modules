@@ -43,6 +43,7 @@ interface IGmxV2IsolationModeWrapperTraderV2 is
         address inputToken;
         uint256 inputAmount;
         uint256 outputAmount;
+        bool isRetryable;
     }
 
     // ================================================

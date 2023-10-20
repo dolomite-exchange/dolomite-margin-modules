@@ -57,7 +57,7 @@ abstract contract GmxV2IsolationModeTraderBase is
     modifier onlyHandler(address _from) {
         if (isHandler(_from)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-isHandler(_from),
+            isHandler(_from),
             _FILE,
             "Only handler can call",
             _from

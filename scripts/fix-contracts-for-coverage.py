@@ -54,7 +54,10 @@ def fixRequires(dir, filepath):
             inMessage = True
 
         if inARequire and not inMessage:
-            ifStatement += builder.lstrip()
+            if ifStatement == '':
+                ifStatement = builder.lstrip()
+            else:
+                ifStatement += (' ' + builder.lstrip())
 
         indexOfOldRequire = line.find(oldRequire)
         indexOfIgnored = line.find(ignoreRequire)
@@ -69,7 +72,7 @@ def fixRequires(dir, filepath):
             allLines[requireLine] = (' ' * numLeadingSpaces) \
             + 'if (' + ifStatement[:-1] + ') { /* FOR COVERAGE TESTING */ }\n'
             allLines[requireLine + 1] = (' ' * numLeadingSpaces) \
-            + 'Require.that(\n' + allLines[requireLine + 1].lstrip()
+            + 'Require.that(\n' + (' ' * (numLeadingSpaces + 4)) + allLines[requireLine + 1].lstrip()
             inARequire = False
             inMessage = False
             ifStatement = ''

@@ -81,7 +81,7 @@ abstract contract IsolationModeVaultFactory is
     modifier requireIsInitialized {
         if (isInitialized) { /* FOR COVERAGE TESTING */ }
         Require.that(
-isInitialized,
+            isInitialized,
             _FILE,
             "Not initialized"
         );
@@ -91,7 +91,7 @@ isInitialized,
     modifier requireIsVault(address _vault) {
         if (address(_vaultToUserMap[_vault]) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-address(_vaultToUserMap[_vault]) != address(0),
+            address(_vaultToUserMap[_vault]) != address(0),
             _FILE,
             "Invalid vault",
             _vault
@@ -102,7 +102,7 @@ address(_vaultToUserMap[_vault]) != address(0),
     modifier requireIsTokenConverter(address _tokenConverter) {
         if (_tokenConverterToIsTrustedMap[_tokenConverter]) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_tokenConverterToIsTrustedMap[_tokenConverter],
+            _tokenConverterToIsTrustedMap[_tokenConverter],
             _FILE,
             "Caller is not a token converter",
             _tokenConverter
@@ -111,9 +111,9 @@ _tokenConverterToIsTrustedMap[_tokenConverter],
     }
 
     modifier requireIsTokenConverterOrVault(address _tokenConverterOrVault) {
-        if (_tokenConverterToIsTrustedMap[_tokenConverterOrVault]|| _vaultToUserMap[_tokenConverterOrVault] != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (_tokenConverterToIsTrustedMap[_tokenConverterOrVault] || _vaultToUserMap[_tokenConverterOrVault] != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_tokenConverterToIsTrustedMap[_tokenConverterOrVault]
+            _tokenConverterToIsTrustedMap[_tokenConverterOrVault]
                 || _vaultToUserMap[_tokenConverterOrVault] != address(0),
             _FILE,
             "Caller is not a authorized",
@@ -152,14 +152,14 @@ _tokenConverterToIsTrustedMap[_tokenConverterOrVault]
     onlyDolomiteMarginOwner(msg.sender) {
         if (!isInitialized) { /* FOR COVERAGE TESTING */ }
         Require.that(
-!isInitialized,
+            !isInitialized,
             _FILE,
             "Already initialized"
         );
         marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(this));
         if (DOLOMITE_MARGIN().getMarketIsClosing(marketId)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-DOLOMITE_MARGIN().getMarketIsClosing(marketId),
+            DOLOMITE_MARGIN().getMarketIsClosing(marketId),
             _FILE,
             "Market cannot allow borrowing"
         );
@@ -206,7 +206,7 @@ DOLOMITE_MARGIN().getMarketIsClosing(marketId),
     onlyDolomiteMarginOwner(msg.sender) {
         if (_userVaultImplementation != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_userVaultImplementation != address(0),
+            _userVaultImplementation != address(0),
             _FILE,
             "Invalid user implementation"
         );
@@ -236,7 +236,7 @@ _userVaultImplementation != address(0),
     requireIsVault(msg.sender) {
         if (_otherMarketId != marketId) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_otherMarketId != marketId,
+            _otherMarketId != marketId,
             _FILE,
             "Invalid market",
             _otherMarketId
@@ -365,7 +365,7 @@ _otherMarketId != marketId,
     function getQueuedTransferByCursor(uint256 _transferCursor) external view returns (QueuedTransfer memory) {
         if (_transferCursor <= transferCursor) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_transferCursor <= transferCursor,
+            _transferCursor <= transferCursor,
             _FILE,
             "Invalid transfer cursor"
         );
@@ -414,7 +414,7 @@ _transferCursor <= transferCursor,
     function _ownerSetIsTokenConverterTrusted(address _tokenConverter, bool _isTrusted) internal {
         if (_tokenConverter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_tokenConverter != address(0),
+            _tokenConverter != address(0),
             _FILE,
             "Invalid token converter"
         );
@@ -425,13 +425,13 @@ _tokenConverter != address(0),
     function _createVault(address _account) internal returns (address) {
         if (_account != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_account != address(0),
+            _account != address(0),
             _FILE,
             "Invalid account"
         );
         if (_userToVaultMap[_account] == address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_userToVaultMap[_account] == address(0),
+            _userToVaultMap[_account] == address(0),
             _FILE,
             "Vault already exists"
         );
@@ -442,7 +442,7 @@ _userToVaultMap[_account] == address(0),
         );
         if (vault != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-vault != address(0),
+            vault != address(0),
             _FILE,
             "Vault is zero address"
         );
@@ -493,13 +493,13 @@ vault != address(0),
     onlyDolomiteMargin(msg.sender) {
         if (_from != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_from != address(0),
+            _from != address(0),
             _FILE,
             "Transfer from the zero address"
         );
         if (_to != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_to != address(0),
+            _to != address(0),
             _FILE,
             "Transfer to the zero address"
         );
@@ -509,16 +509,16 @@ _to != address(0),
         address dolomiteMargin = address(DOLOMITE_MARGIN());
         if (_from == dolomiteMargin || _to == dolomiteMargin) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_from == dolomiteMargin || _to == dolomiteMargin,
+            _from == dolomiteMargin || _to == dolomiteMargin,
             _FILE,
             "from/to must eq DolomiteMargin"
         );
 
         uint256 _transferCursor = transferCursor;
         QueuedTransfer memory queuedTransfer = _cursorToQueuedTransferMap[_transferCursor];
-        if (queuedTransfer.from == _from&& queuedTransfer.to == _to&& queuedTransfer.amount == _amount&& _vaultToUserMap[queuedTransfer.vault] != address(0)) { /* FOR COVERAGE TESTING */ }
+        if (queuedTransfer.from == _from && queuedTransfer.to == _to && queuedTransfer.amount == _amount && _vaultToUserMap[queuedTransfer.vault] != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-queuedTransfer.from == _from
+            queuedTransfer.from == _from
                 && queuedTransfer.to == _to
                 && queuedTransfer.amount == _amount
                 && _vaultToUserMap[queuedTransfer.vault] != address(0),
@@ -527,7 +527,7 @@ queuedTransfer.from == _from
         );
         if (!queuedTransfer.isExecuted) { /* FOR COVERAGE TESTING */ }
         Require.that(
-!queuedTransfer.isExecuted,
+            !queuedTransfer.isExecuted,
             _FILE,
             "Transfer already executed",
             _transferCursor
@@ -539,7 +539,7 @@ queuedTransfer.from == _from
             address vaultOwner = _vaultToUserMap[_from];
             if ((vaultOwner != address(0) && _from == queuedTransfer.vault) || _tokenConverterToIsTrustedMap[_from]) { /* FOR COVERAGE TESTING */ }
             Require.that(
-(vaultOwner != address(0) && _from == queuedTransfer.vault) || _tokenConverterToIsTrustedMap[_from],
+                (vaultOwner != address(0) && _from == queuedTransfer.vault) || _tokenConverterToIsTrustedMap[_from],
                 _FILE,
                 "Invalid from"
             );
@@ -555,7 +555,7 @@ queuedTransfer.from == _from
             address vaultOwner = _vaultToUserMap[_to];
             if (vaultOwner != address(0) || _tokenConverterToIsTrustedMap[_to]) { /* FOR COVERAGE TESTING */ }
             Require.that(
-vaultOwner != address(0) || _tokenConverterToIsTrustedMap[_to],
+                vaultOwner != address(0) || _tokenConverterToIsTrustedMap[_to],
                 _FILE,
                 "Invalid to"
             );

@@ -73,9 +73,9 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ===================================================
 
     modifier onlyLiquidator(address _from) {
-        if (registry().dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).marketId(),_from)) { /* FOR COVERAGE TESTING */ }
+        if (registry().dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation( IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).marketId(), _from )) { /* FOR COVERAGE TESTING */ }
         Require.that(
-registry().dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(
+            registry().dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(
                 IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).marketId(),
                 _from
             ),
@@ -201,7 +201,7 @@ registry().dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiq
         } else {
             if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
             Require.that(
-isVaultFrozen(),
+                isVaultFrozen(),
                 _FILE,
                 "Vault should be frozen"
             );
@@ -224,7 +224,7 @@ isVaultFrozen(),
         } else {
             if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
             Require.that(
-isVaultFrozen(),
+                isVaultFrozen(),
                 _FILE,
                 "Vault should be frozen"
             );
@@ -298,7 +298,7 @@ isVaultFrozen(),
     override {
         if (getExecutionFeeForAccountNumber(_borrowAccountNumber) != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-getExecutionFeeForAccountNumber(_borrowAccountNumber) != 0,
+            getExecutionFeeForAccountNumber(_borrowAccountNumber) != 0,
             _FILE,
             "Missing execution fee"
         );
@@ -328,7 +328,7 @@ getExecutionFeeForAccountNumber(_borrowAccountNumber) != 0,
         } else {
             if (msg.value == 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
-msg.value == 0,
+                msg.value == 0,
                 _FILE,
                 "Cannot send ETH for non-wrapper"
             );
@@ -422,13 +422,13 @@ msg.value == 0,
     ) internal {
         if (registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken),
+            registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token"
         );
         if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_inputAmount > 0,
+            _inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -476,7 +476,7 @@ _inputAmount > 0,
     function _requireVirtualBalanceMatchesRealBalance() internal view {
         if (virtualBalance() == IERC20(UNDERLYING_TOKEN()).balanceOf(address(this))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-virtualBalance() == IERC20(UNDERLYING_TOKEN()).balanceOf(address(this)),
+            virtualBalance() == IERC20(UNDERLYING_TOKEN()).balanceOf(address(this)),
             _FILE,
             "Virtual vs real balance mismatch"
         );
@@ -485,7 +485,7 @@ virtualBalance() == IERC20(UNDERLYING_TOKEN()).balanceOf(address(this)),
     function _validateVaultOwnerForStruct(address _vault) internal view {
         if (_vault == address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-_vault == address(this),
+            _vault == address(this),
             _FILE,
             "Invalid vault owner",
             _vault
