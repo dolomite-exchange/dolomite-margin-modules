@@ -60,12 +60,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
 
-    receive() external payable {
-        // solhint-disable-previous-line no-empty-blocks
-        // @audit - should we bother validating it comes from WETH or the router? We don't have much contract space
-        //          to work with (we're up against the 24.5kb limit)
-    }
-
     // ============ Initializer ============
 
     function initialize(

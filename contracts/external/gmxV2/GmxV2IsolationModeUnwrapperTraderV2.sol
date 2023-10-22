@@ -66,10 +66,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         _;
     }
 
-    // ============ Constructor ============
-
-    receive() external payable {} // solhint-disable-line no-empty-blocks
-
     // ============ Initializer ============
 
     function initialize(

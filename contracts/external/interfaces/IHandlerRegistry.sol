@@ -20,36 +20,34 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxV2Registry } from "./IGmxV2Registry.sol";
-import { IWETH } from "../../../protocol/interfaces/IWETH.sol";
-
 
 /**
- * @title   IGmxV2IsolationModeTraderBase
+ * @title   IHandlerRegistry
  * @author  Dolomite
  *
+ * @notice  A registry contract for storing whether or not a handler is trusted for executing a function
  */
-interface IGmxV2IsolationModeTraderBase {
+interface IHandlerRegistry {
 
     // ================================================
     // ==================== Events ====================
     // ================================================
 
-    event OwnerWithdrawETH(address _receiver, uint256 _bal);
+    event HandlerSet(address _handler, bool _isTrusted);
+    event CallbackGasLimitSet(uint256 _callbackGasLimit);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function ownerWithdrawETH(address _receiver) external;
+    function ownerSetIsHandler(address _handler, bool _isTrusted) external;
 
-    function callbackGasLimit() external view returns (uint256);
-
-    function callbackGasLimit() external view returns (uint256);
+    function ownerSetCallbackGasLimit(
+        uint256 _callbackGasLimit
+    )
+    external;
 
     function isHandler(address _handler) external view returns (bool);
 
-    function GMX_REGISTRY_V2() external view returns (IGmxV2Registry);
-
-    function WETH() external view returns (IWETH);
+    function callbackGasLimit() external view returns (uint256);
 }

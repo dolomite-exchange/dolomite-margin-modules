@@ -32,7 +32,7 @@ import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2Is
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { IGmxWithdrawalHandler } from "../interfaces/gmx/IGmxWithdrawalHandler.sol";
-
+import { HandlerRegistry } from "../general/HandlerRegistry.sol";
 
 /**
  * @title   GmxV2Registry
@@ -43,14 +43,13 @@ import { IGmxWithdrawalHandler } from "../interfaces/gmx/IGmxWithdrawalHandler.s
  *          without having to deprecate the system and force users to migrate (losing any vesting rewards / multiplier
  *          points) when Dolomite needs to point to new contracts or functions that GMX introduces.
  */
-contract GmxV2Registry is IGmxV2Registry, BaseRegistry {
+contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
 
     // ==================== Constants ====================
 
     bytes32 private constant _FILE = "GmxV2Registry";
 
     // solhint-disable max-line-length
-    bytes32 internal constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1);
     bytes32 private constant _ETH_USD_MARKET_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ethUsdMarketToken")) - 1);
     bytes32 private constant _GMX_DATASTORE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDataStore")) - 1);
     bytes32 private constant _GMX_DEPOSIT_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDepositVault")) - 1);
@@ -60,7 +59,6 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry {
     bytes32 private constant _GMX_WITHDRAWAL_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxWithdrawalVault")) - 1);
     bytes32 private constant _GMX_V2_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2UnwrapperTrader")) - 1);
     bytes32 private constant _GMX_V2_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2WrapperTrader")) - 1);
-    bytes32 internal constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
     // solhint-enable max-line-length
 
     // ==================== Initializer ====================
@@ -175,23 +173,6 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry {
         _ownerSetGmxV2WrapperTrader(_gmxV2WrapperTrader);
     }
 
-    function ownerSetIsHandler(
-        address _handler,
-        bool _isTrusted
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetIsHandler(_handler, _isTrusted);
-    }
-
-    function ownerSetCallbackGasLimit(
-        uint256 _callbackGasLimit
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetCallbackGasLimit(_callbackGasLimit);
-    }
-
     // ==================== Views ====================
 
     function ethUsdMarketToken() external view returns (IERC20) {
@@ -223,14 +204,9 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry {
     }
 
     function isHandler(address _handler) external view returns (bool) {
-        bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
-        return _getUint256(slot) == 1
+        return super.isHandler(_handler)
             || _handler == address(gmxDepositHandler())
             || _handler == address(gmxWithdrawalHandler());
-    }
-
-    function callbackGasLimit() external view returns (uint256) {
-        return _getUint256(_CALLBACK_GAS_LIMIT_SLOT);
     }
 
     function gmxV2UnwrapperTrader() public view returns (IGmxV2IsolationModeUnwrapperTraderV2) {
@@ -341,17 +317,5 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry {
         );
         _setAddress(_GMX_V2_WRAPPER_TRADER_SLOT, _gmxV2WrapperTrader);
         emit GmxV2WrapperTraderSet(_gmxV2WrapperTrader);
-    }
-
-    function _ownerSetIsHandler(address _handler, bool _isTrusted) internal {
-        bytes32 slot =  keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
-        _setUint256(slot, _isTrusted ? 1 : 0);
-        emit HandlerSet(_handler, _isTrusted);
-    }
-
-    function _ownerSetCallbackGasLimit(uint256 _callbackGasLimit) internal {
-        // We don't want to enforce a minimum. That way, we can disable callbacks (if needed) by setting this to 0.
-        _setUint256(_CALLBACK_GAS_LIMIT_SLOT, _callbackGasLimit);
-        emit CallbackGasLimitSet(_callbackGasLimit);
     }
 }

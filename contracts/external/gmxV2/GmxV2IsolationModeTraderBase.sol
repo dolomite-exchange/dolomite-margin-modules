@@ -64,10 +64,17 @@ abstract contract GmxV2IsolationModeTraderBase is
         _;
     }
 
+    receive() external payable {
+        // solhint-disable-previous-line no-empty-blocks
+        // @audit - should we bother validating it comes from WETH or the router? We don't have much contract space
+        //          to work with (we're up against the 24.5kb limit)
+    }
+
     function ownerWithdrawETH(address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
         uint256 bal = address(this).balance;
-        WETH().deposit{value: bal}();
-        WETH().safeTransfer(_receiver, bal);
+        IWETH weth = WETH();
+        weth.deposit{value: bal}();
+        weth.safeTransfer(_receiver, bal);
         emit OwnerWithdrawETH(_receiver, bal);
     }
 
