@@ -22,7 +22,6 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
@@ -34,8 +33,9 @@ import { GmxWithdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
+import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -46,8 +46,7 @@ import { UpgradeableIsolationModeUnwrapperTrader } from "../proxies/abstract/Upg
  */
 contract GmxV2IsolationModeUnwrapperTraderV2 is
     IGmxV2IsolationModeUnwrapperTraderV2,
-    UpgradeableIsolationModeUnwrapperTrader,
-    GmxV2IsolationModeTraderBase
+    UpgradeableAsyncIsolationModeUnwrapperTrader
 {
     using SafeERC20 for IERC20;
 
@@ -76,7 +75,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     )
     external initializer {
         _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxV2Registry, _weth);
+        _initializeAsyncTraderBase(_gmxV2Registry, _weth);
         _setActionsLength(_ACTIONS_LENGTH_NORMAL);
     }
 
@@ -214,7 +213,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     )
     external
     virtual
-    override(UpgradeableIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTrader)
+    override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTrader)
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
         Require.that(
@@ -300,7 +299,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
     function actionsLength()
         public
-        override(IIsolationModeUnwrapperTrader, UpgradeableIsolationModeUnwrapperTrader)
+        override(IIsolationModeUnwrapperTrader, UpgradeableAsyncIsolationModeUnwrapperTrader)
         view
         returns (uint256)
     {
@@ -312,12 +311,16 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     )
     public
     view
-    override(UpgradeableIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTrader)
+    override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTrader)
     returns (bool) {
         return GmxV2Library.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             _outputToken
         );
+    }
+
+    function GMX_REGISTRY_V2() public view returns (IGmxV2Registry) {
+        return IGmxV2Registry(address(HANDLER_REGISTRY()));
     }
 
     function getWithdrawalInfo(bytes32 _key) public pure returns (WithdrawalInfo memory) {
@@ -469,32 +472,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         return outputAmount;
     }
 
-    function _validateVaultExists(IGmxV2IsolationModeVaultFactory _factory, address _vault) internal view {
-        Require.that(
-            _factory.getAccountByVault(_vault) != address(0),
-            _FILE,
-            "Invalid vault",
-            _vault
-        );
-    }
-
-    function _getAmountsToCollect(
-        uint256 _structInputAmount,
-        uint256 _inputAmountNeeded,
-        uint256 _structOutputAmount
-    ) internal pure returns (uint256 _inputAmountToCollect, uint256 _outputAmountToCollect) {
-        _inputAmountToCollect = _structInputAmount >= _inputAmountNeeded
-            ? _inputAmountNeeded
-            : _structInputAmount;
-
-        // Reduce output amount by the ratio of the collected input amount. Almost always the ratio will be
-        // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
-        // collateral to the liquidator.
-        _outputAmountToCollect = _inputAmountNeeded < _structInputAmount
-            ? _structOutputAmount * _inputAmountNeeded / _structInputAmount
-            : _structOutputAmount;
-    }
-
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
         bool clearValues = _info.inputAmount == 0;
         WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
@@ -543,6 +520,15 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         // Do nothing
     }
 
+    function _validateVaultExists(IGmxV2IsolationModeVaultFactory _factory, address _vault) internal view {
+        Require.that(
+            _factory.getAccountByVault(_vault) != address(0),
+            _FILE,
+            "Invalid vault",
+            _vault
+        );
+    }
+
     function _validateIsWrapper(address _from) internal view {
         Require.that(
             _from == address(GMX_REGISTRY_V2().gmxV2WrapperTrader()),
@@ -569,6 +555,23 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _FILE,
             "Invalid withdrawal key"
         );
+    }
+
+    function _getAmountsToCollect(
+        uint256 _structInputAmount,
+        uint256 _inputAmountNeeded,
+        uint256 _structOutputAmount
+    ) internal pure returns (uint256 _inputAmountToCollect, uint256 _outputAmountToCollect) {
+        _inputAmountToCollect = _structInputAmount >= _inputAmountNeeded
+            ? _inputAmountNeeded
+            : _structInputAmount;
+
+        // Reduce output amount by the ratio of the collected input amount. Almost always the ratio will be
+        // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
+        // collateral to the liquidator.
+        _outputAmountToCollect = _inputAmountNeeded < _structInputAmount
+            ? _structOutputAmount * _inputAmountNeeded / _structInputAmount
+            : _structOutputAmount;
     }
 
     function _getWithdrawalSlot(bytes32 _key) internal pure returns (WithdrawalInfo storage info) {

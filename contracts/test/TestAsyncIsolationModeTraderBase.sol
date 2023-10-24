@@ -20,22 +20,34 @@
 
 pragma solidity ^0.8.9;
 
-import { GmxV2IsolationModeUnwrapperTraderV2 } from "../external/gmxV2/GmxV2IsolationModeUnwrapperTraderV2.sol";
-import { SafeDelegateCallLib } from "../external/lib/SafeDelegateCallLib.sol";
+import { AsyncIsolationModeTraderBase } from "../external/proxies/abstract/AsyncIsolationModeTraderBase.sol";
 
 
 /**
- * @title   TestGmxV2IsolationModeUnwrapperTraderV2
+ * @title   TestAsyncIsolationModeTraderBase
  * @author  Dolomite
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestGmxV2IsolationModeUnwrapperTraderV2 is GmxV2IsolationModeUnwrapperTraderV2 {
-    using SafeDelegateCallLib for address;
+contract TestAsyncIsolationModeTraderBase is AsyncIsolationModeTraderBase {
 
-    function callFunctionAndTriggerReentrancy(
-        bytes calldata _callDataWithSelector
-    ) external payable nonReentrant {
-        address(this).safeDelegateCall(_callDataWithSelector);
+    bytes32 private constant _FILE = "TestAsyncIsolationModeTraderBase";
+
+    function initialize(
+        address _gmxV2Registry,
+        address _weth,
+        address _dolomiteMargin
+    ) external initializer {
+        _initializeAsyncTraderBase(_gmxV2Registry, _weth);
+        _setDolomiteMarginViaSlot(_dolomiteMargin);
     }
+
+    function triggerInternalInitializer(
+        address _gmxV2Registry,
+        address _weth
+    ) external {
+        _initializeAsyncTraderBase(_gmxV2Registry, _weth);
+    }
+
+    function testOnlyHandler() external onlyHandler(msg.sender) {} // solhint-disable-line no-empty-blocks
 }

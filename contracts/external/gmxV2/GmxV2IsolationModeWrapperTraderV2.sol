@@ -22,7 +22,6 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { GmxV2IsolationModeTraderBase } from "./GmxV2IsolationModeTraderBase.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
@@ -34,8 +33,9 @@ import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
+import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
-import { UpgradeableIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableIsolationModeWrapperTrader.sol";
+import { UpgradeableAsyncIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -46,8 +46,7 @@ import { UpgradeableIsolationModeWrapperTrader } from "../proxies/abstract/Upgra
  */
 contract GmxV2IsolationModeWrapperTraderV2 is
     IGmxV2IsolationModeWrapperTraderV2,
-    UpgradeableIsolationModeWrapperTrader,
-    GmxV2IsolationModeTraderBase
+    UpgradeableAsyncIsolationModeWrapperTrader
 {
     using InterestIndexLib for IDolomiteMargin;
     using SafeERC20 for IERC20;
@@ -69,7 +68,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         address _weth
     ) external initializer {
         _initializeWrapperTrader(_dGM, _dolomiteMargin);
-        _initializeTraderBase(_gmxV2Registry, _weth);
+        _initializeAsyncTraderBase(_gmxV2Registry, _weth);
     }
 
     // ============================================
@@ -170,26 +169,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         _executeDepositCancellation(depositInfo);
     }
 
-    function _executeDepositCancellation(
-        DepositInfo memory _depositInfo
-    ) internal {
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        factory.setShouldSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ true);
-
-        try GmxV2Library.swapExactInputForOutputForDepositCancellation(/* _wrapper = */ this, _depositInfo) {
-            // The deposit info is set via `swapExactInputForOutputForDepositCancellation` by the unwrapper
-            emit DepositCancelled(_depositInfo.key);
-        } catch Error(string memory _reason) {
-            _depositInfo.isRetryable = true;
-            _setDepositInfo(_depositInfo.key, _depositInfo);
-            emit DepositCancelledFailed(_depositInfo.key, _reason);
-        } catch (bytes memory /* _reason */) {
-            _depositInfo.isRetryable = true;
-            _setDepositInfo(_depositInfo.key, _depositInfo);
-            emit DepositCancelledFailed(_depositInfo.key, "");
-        }
-    }
-
     function cancelDeposit(bytes32 _key) external {
         DepositInfo memory depositInfo = _getDepositSlot(_key);
         Require.that(
@@ -225,12 +204,16 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     )
     public
     view
-    override(UpgradeableIsolationModeWrapperTrader, IIsolationModeWrapperTrader)
+    override(UpgradeableAsyncIsolationModeWrapperTrader, IIsolationModeWrapperTrader)
     returns (bool) {
         return GmxV2Library.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             _inputToken
         );
+    }
+
+    function GMX_REGISTRY_V2() public view returns (IGmxV2Registry) {
+        return IGmxV2Registry(address(HANDLER_REGISTRY()));
     }
 
     function getDepositInfo(bytes32 _key) public pure returns (DepositInfo memory) {
@@ -356,6 +339,26 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         // Setting the outputAmount to 0 clears it
         _depositInfo.outputAmount = 0;
         _setDepositInfo(_depositInfo.key, _depositInfo);
+    }
+
+    function _executeDepositCancellation(
+        DepositInfo memory _depositInfo
+    ) internal {
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
+        factory.setShouldSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ true);
+
+        try GmxV2Library.swapExactInputForOutputForDepositCancellation(/* _wrapper = */ this, _depositInfo) {
+            // The deposit info is set via `swapExactInputForOutputForDepositCancellation` by the unwrapper
+            emit DepositCancelled(_depositInfo.key);
+        } catch Error(string memory _reason) {
+            _depositInfo.isRetryable = true;
+            _setDepositInfo(_depositInfo.key, _depositInfo);
+            emit DepositCancelledFailed(_depositInfo.key, _reason);
+        } catch (bytes memory /* _reason */) {
+            _depositInfo.isRetryable = true;
+            _setDepositInfo(_depositInfo.key, _depositInfo);
+            emit DepositCancelledFailed(_depositInfo.key, "");
+        }
     }
 
     function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {

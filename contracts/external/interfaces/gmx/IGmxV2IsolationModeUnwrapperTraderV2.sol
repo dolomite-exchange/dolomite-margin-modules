@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
 import { IGmxWithdrawalCallbackReceiver } from "./IGmxWithdrawalCallbackReceiver.sol";
 import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolationModeUnwrapperTrader.sol";
 
@@ -31,7 +30,6 @@ import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolati
  *
  */
 interface IGmxV2IsolationModeUnwrapperTraderV2 is
-    IGmxV2IsolationModeTraderBase,
     IUpgradeableIsolationModeUnwrapperTrader,
     IGmxWithdrawalCallbackReceiver
 {
@@ -87,8 +85,9 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
     function handleGmxCallbackFromWrapperAfter() external;
 
     /**
-     * Can be called by a valid handler to re-execute a stuck withdrawal if it failed in the typical GMX callback but
-     * can now be processed without a liquidation.
+     * Can be called by a valid handler to re-execute a stuck withdrawal. This can be used if it failed in the GMX
+     * callback but can't be liquidated.
+     *
      * @param  _key  The key of the withdrawal to re-execute
      */
     function executeWithdrawalForRetry(bytes32 _key) external;

@@ -23,6 +23,8 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
+import { HandlerRegistry } from "../general/HandlerRegistry.sol";
+import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
 import { IGmxDataStore } from "../interfaces/gmx/IGmxDataStore.sol";
 import { IGmxDepositHandler } from "../interfaces/gmx/IGmxDepositHandler.sol";
 import { IGmxExchangeRouter } from "../interfaces/gmx/IGmxExchangeRouter.sol";
@@ -32,7 +34,6 @@ import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2Is
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { IGmxWithdrawalHandler } from "../interfaces/gmx/IGmxWithdrawalHandler.sol";
-import { HandlerRegistry } from "../general/HandlerRegistry.sol";
 
 /**
  * @title   GmxV2Registry
@@ -203,7 +204,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
         return _getAddress(_GMX_WITHDRAWAL_VAULT_SLOT);
     }
 
-    function isHandler(address _handler) external view returns (bool) {
+    function isHandler(address _handler) public override(HandlerRegistry, IHandlerRegistry) view returns (bool) {
         return super.isHandler(_handler)
             || _handler == address(gmxDepositHandler())
             || _handler == address(gmxWithdrawalHandler());

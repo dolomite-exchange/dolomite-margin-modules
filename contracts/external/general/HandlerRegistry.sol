@@ -21,12 +21,9 @@
 pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { ValidationLib } from "../lib/ValidationLib.sol";
 
 
 /**
@@ -71,7 +68,7 @@ abstract contract HandlerRegistry is
         return _getUint256(_CALLBACK_GAS_LIMIT_SLOT);
     }
 
-    function isHandler(address _handler) public view returns (bool) {
+    function isHandler(address _handler) public virtual view returns (bool) {
         bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
         return _getUint256(slot) == 1;
     }

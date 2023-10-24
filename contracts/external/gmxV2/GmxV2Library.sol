@@ -152,7 +152,7 @@ library GmxV2Library {
             /* minShortTokenAmount = */ _outputToken == _factory.SHORT_TOKEN() ? _minOutputAmount : 0,
             /* shouldUnwrapNativeToken = */ false,
             /* executionFee = */ _ethExecutionFee,
-            /* callbackGasLimit = */ unwrapper.callbackGasLimit()
+            /* callbackGasLimit = */ registry.callbackGasLimit()
         );
 
         bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
@@ -249,7 +249,7 @@ library GmxV2Library {
         );
         IGmxV2IsolationModeUnwrapperTraderV2(traderParams[0].trader).handleGmxCallbackFromWrapperAfter();
     }
-    
+
     function isValidInputOrOutputToken(
         IGmxV2IsolationModeVaultFactory _factory,
         address _token

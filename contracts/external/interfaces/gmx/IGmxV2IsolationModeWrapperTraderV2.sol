@@ -20,10 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
 import { IGmxDepositCallbackReceiver } from "./IGmxDepositCallbackReceiver.sol";
+import { IGmxV2Registry } from "./IGmxV2Registry.sol";
 import { IUpgradeableIsolationModeWrapperTrader } from "../IUpgradeableIsolationModeWrapperTrader.sol";
-
 
 /**
  * @title   IGmxV2IsolationModeWrapperTraderV2
@@ -31,7 +30,6 @@ import { IUpgradeableIsolationModeWrapperTrader } from "../IUpgradeableIsolation
  *
  */
 interface IGmxV2IsolationModeWrapperTraderV2 is
-    IGmxV2IsolationModeTraderBase,
     IUpgradeableIsolationModeWrapperTrader,
     IGmxDepositCallbackReceiver
 {
@@ -69,4 +67,6 @@ interface IGmxV2IsolationModeWrapperTraderV2 is
     ) external;
 
     function getDepositInfo(bytes32 _key) external view returns (DepositInfo memory);
+
+    function GMX_REGISTRY_V2() external view returns (IGmxV2Registry);
 }
