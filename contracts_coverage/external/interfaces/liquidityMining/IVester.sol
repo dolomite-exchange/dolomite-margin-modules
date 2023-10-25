@@ -59,6 +59,8 @@ interface IVester {
     // ================== User Functions ===================
     // ======================================================
 
+    function initialize(address _oARB) external;
+
     /**
      * @notice  Transfers ARB and oARB from user's dolomite balance to the contract and begins vesting
      * @dev     Duration must be 1 week, 2 weeks, 3 weeks, or 4 weeks in seconds

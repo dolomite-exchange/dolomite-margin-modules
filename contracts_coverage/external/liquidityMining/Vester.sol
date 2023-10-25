@@ -19,6 +19,7 @@
 
 pragma solidity ^0.8.9;
 
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -35,6 +36,7 @@ import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
 import { IVester } from "../interfaces/liquidityMining/IVester.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 
 
 /**
@@ -44,7 +46,7 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  * An implementation of the IVester interface that allows users to buy ARB
  * at a discount if they vest ARB and oARB for a certain time
  */
-contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVester {
+contract Vester is ProxyContractHelpers, OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, Initializable, IVester {
     using SafeERC20 for IERC20;
     using SafeERC20 for IOARB;
 
@@ -59,6 +61,15 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     uint256 private constant _MIN_DURATION = 1 weeks;
     uint256 private constant _MAX_DURATION = 4 weeks;
 
+    bytes32 private constant _NEXT_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.nextId")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _VESTING_POSITIONS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vestingPositions")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _PROMISED_ARB_TOKENS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.promisedArbTokens")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _OARB_SLOT = bytes32(uint256(keccak256("eip1967.proxy.oarb")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _CLOSE_POSITION_WINDOW_SLOT = bytes32(uint256(keccak256("eip1967.proxy.closePositionWindow")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _FORCE_CLOSE_POSITION_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.forceClosePositionTax")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _EMERGENCY_WITHDRAW_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.emergencyWithdrawTax")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _VESTING_ACTIVE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vestingActive")) - 1); // solhint-disable-line max-line-length
+
     // ===================================================
     // ==================== State Variables ====================
     // ===================================================
@@ -69,24 +80,13 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     IERC20 public immutable ARB; // solhint-disable-line
     uint256 public immutable ARB_MARKET_ID; // solhint-disable-line
 
-    uint256 private _nextId;
-
-    mapping(uint256 => VestingPosition) public vestingPositions;
-    uint256 public promisedArbTokens;
-    IOARB public oARB;
-
-    uint256 public closePositionWindow = 1 weeks;
-    uint256 public forceClosePositionTax = 50;
-    uint256 public emergencyWithdrawTax;
-    bool public vestingActive;
-
     // ==================================================================
     // ======================= Modifiers =======================
     // ==================================================================
 
     modifier requireVestingActive() {
-        if (vestingActive) { /* FOR COVERAGE TESTING */ }
-        Require.that(vestingActive,
+        if (vestingActive()) { /* FOR COVERAGE TESTING */ }
+        Require.that(vestingActive(),
             _FILE,
             "Vesting not active"
         );
@@ -94,15 +94,22 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     }
 
     // ==================================================================
-    // ======================= Constructor =======================
+    // ======================= Initializer =======================
     // ==================================================================
+
+    function initialize(
+        address _oARB
+    ) external initializer {
+        _setAddress(_OARB_SLOT, _oARB);
+        _setUint256(_CLOSE_POSITION_WINDOW_SLOT, 1 weeks);
+        _setUint256(_FORCE_CLOSE_POSITION_TAX_SLOT, 50);
+    }
 
     constructor(
         address _dolomiteMargin,
         address _dolomiteRegistry,
         IWETH _weth,
-        IERC20 _arb,
-        IOARB _oARB
+        IERC20 _arb
     ) OnlyDolomiteMargin(_dolomiteMargin) ERC721("DolomiteArbVesting", "DAV") {
         // @follow-up Want to confirm name and symbol
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
@@ -110,7 +117,6 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         WETH_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_weth));
         ARB = _arb;
         ARB_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_arb));
-        oARB = _oARB;
     }
 
     // ==================================================================
@@ -125,8 +131,8 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     external
     requireVestingActive
     returns (uint256) {
-        if (ARB.balanceOf(address(this)) >= _amount + promisedArbTokens) { /* FOR COVERAGE TESTING */ }
-        Require.that(ARB.balanceOf(address(this)) >= _amount + promisedArbTokens,
+        if (ARB.balanceOf(address(this)) >= _amount + promisedArbTokens()) { /* FOR COVERAGE TESTING */ }
+        Require.that(ARB.balanceOf(address(this)) >= _amount + promisedArbTokens(),
             _FILE,
             "Arb tokens currently unavailable" // @follow-up Is this message sufficient?
         );
@@ -137,19 +143,21 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         );
 
         // Create vesting position NFT
-        uint256 nftId = ++_nextId;
-        vestingPositions[nftId] = VestingPosition({
+        uint256 nftId = _nextId() + 1;
+        _setNextId(nftId);
+
+        _setVestingPosition(VestingPosition({
             creator: msg.sender,
-            id: _nextId,
+            id: nftId,
             startTime: block.timestamp,
             duration: _duration,
             amount: _amount
-        });
+        }));
         _mint(msg.sender, nftId);
 
 
         // Transfer amounts in to hash of id and msg.sender
-        oARB.safeTransferFrom(msg.sender, address(this), _amount);
+        oARB().safeTransferFrom(msg.sender, address(this), _amount);
         _transfer(
             /* fromAccount = */ msg.sender,
             /* fromAccountNumber = */ _fromAccountNumber,
@@ -159,7 +167,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
             /* amount */ _amount
         );
 
-        promisedArbTokens += _amount;
+        _setPromisedArbTokens(promisedArbTokens() + _amount);
         emit Vesting(msg.sender, _duration, _amount, nftId);
         return nftId;
     }
@@ -170,7 +178,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     external
     nonReentrant
     payable {
-        VestingPosition memory _position = vestingPositions[_id];
+        VestingPosition memory _position = _getVestingPositionSlot(_id);
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
         address owner = ownerOf(_id);
         if (owner == msg.sender) { /* FOR COVERAGE TESTING */ }
@@ -183,14 +191,14 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
             _FILE,
             "Position not vested"
         );
-        if (block.timestamp <= _position.startTime + _position.duration + closePositionWindow) { /* FOR COVERAGE TESTING */ }
-        Require.that(block.timestamp <= _position.startTime + _position.duration + closePositionWindow,
+        if (block.timestamp <= _position.startTime + _position.duration + closePositionWindow()) { /* FOR COVERAGE TESTING */ }
+        Require.that(block.timestamp <= _position.startTime + _position.duration + closePositionWindow(),
             _FILE,
             "Position expired"
         );
 
         // Burn oARB and deposit ARB tokens back into dolomite
-        oARB.burn(_position.amount);
+        oARB().burn(_position.amount);
         _transfer(
             /* fromAccount = */ address(this),
             /* fromAccountNumber = */ accountNumber,
@@ -215,9 +223,9 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
 
         // Deposit purchased ARB tokens into dolomite, clear vesting position, and refund
         _depositARBIntoDolomite(owner, _position.amount);
-        promisedArbTokens -= _position.amount;
+        _setPromisedArbTokens(promisedArbTokens() - _position.amount);
         _burn(_id);
-        delete vestingPositions[_id];
+        _clearVestingPosition(_id);
 
         uint256 refund = (wethValue - arbValue) / wethPrice;
         if (refund > 0) {
@@ -233,18 +241,18 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     )
     external
     onlyDolomiteMarginGlobalOperator(msg.sender) {
-        VestingPosition memory _position = vestingPositions[_id];
+        VestingPosition memory _position = _getVestingPositionSlot(_id);
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
         address owner = ownerOf(_id);
-        if (block.timestamp > _position.startTime + _position.duration + 1 weeks) { /* FOR COVERAGE TESTING */ }
-        Require.that(block.timestamp > _position.startTime + _position.duration + 1 weeks,
+        if (block.timestamp > _position.startTime + _position.duration + closePositionWindow()) { /* FOR COVERAGE TESTING */ }
+        Require.that(block.timestamp > _position.startTime + _position.duration + closePositionWindow(),
             _FILE,
             "Position not expired"
         );
 
         // Burn oARB and transfer ARB tokens back to user"s dolomite account minus tax amount
-        uint256 tax = _position.amount * forceClosePositionTax / _BASE;
-        oARB.burn(_position.amount);
+        uint256 tax = _position.amount * forceClosePositionTax() / _BASE;
+        oARB().burn(_position.amount);
         _transfer(
             /* _fromAccount = */ address(this),
             /* _fromAccountNumber = */ accountNumber,
@@ -254,9 +262,9 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
             /* _amountWei */ _position.amount - tax
         );
 
-        promisedArbTokens -= _position.amount;
+        _setPromisedArbTokens(promisedArbTokens() - _position.amount);
         _burn(_id);
-        delete vestingPositions[_id];
+        _clearVestingPosition(_id);
 
         if (tax > 0) {
             AccountActionLib.withdraw(
@@ -281,7 +289,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
 
     // WARNING: This will forfeit all vesting progress and burn any locked oARB
     function emergencyWithdraw(uint256 _id) external {
-        VestingPosition memory _position = vestingPositions[_id];
+        VestingPosition memory _position = _getVestingPositionSlot(_id);
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
         address owner = ownerOf(_id);
         if (owner == msg.sender) { /* FOR COVERAGE TESTING */ }
@@ -291,8 +299,8 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         );
 
         // Transfer arb back to the user and burn ARB
-        oARB.burn(_position.amount);
-        uint256 tax = _position.amount * emergencyWithdrawTax / _BASE;
+        oARB().burn(_position.amount);
+        uint256 tax = _position.amount * emergencyWithdrawTax() / _BASE;
         _transfer(
             /* _fromAccount = */ address(this),
             /* _fromAccountNumber = */ accountNumber,
@@ -302,9 +310,9 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
             /* _amountWei */ _position.amount - tax
         );
 
-        promisedArbTokens -= _position.amount;
+        _setPromisedArbTokens(promisedArbTokens() - _position.amount);
         _burn(_id);
-        delete vestingPositions[_id];
+        _clearVestingPosition(_id);
 
         if (tax > 0) {
             AccountActionLib.withdraw(
@@ -336,7 +344,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        vestingActive = _vestingActive;
+        _setUint256(_VESTING_ACTIVE_SLOT, _vestingActive ? 1 : 0);
         emit VestingActiveSet(_vestingActive);
     }
 
@@ -345,12 +353,12 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        if (promisedArbTokens == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(promisedArbTokens == 0,
+        if (promisedArbTokens() == 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(promisedArbTokens() == 0,
             _FILE,
             "Outstanding vesting positions"
         );
-        oARB = IOARB(_oARB);
+        _setAddress(_OARB_SLOT, _oARB);
         emit OARBSet(_oARB);
     }
 
@@ -364,7 +372,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
             _FILE,
             "Invalid close position window"
         );
-        closePositionWindow = _closePositionWindow;
+        _setUint256(_CLOSE_POSITION_WINDOW_SLOT, _closePositionWindow);
         emit ClosePositionWindowSet(_closePositionWindow);
     }
 
@@ -379,7 +387,7 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
             _FILE,
             "Invalid emergency withdrawal tax"
         );
-        emergencyWithdrawTax = _emergencyWithdrawTax;
+        _setUint256(_EMERGENCY_WITHDRAW_TAX_SLOT, _emergencyWithdrawTax);
         emit EmergencyWithdrawTaxSet(_emergencyWithdrawTax);
     }
 
@@ -393,9 +401,54 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
             _FILE,
             "Invalid force close position tax"
         );
-        forceClosePositionTax = _forceClosePositionTax;
+        _setUint256(_FORCE_CLOSE_POSITION_TAX_SLOT, _forceClosePositionTax);
         emit ForceClosePositionTaxSet(_forceClosePositionTax);
     }
+
+    // ==================================================================
+    // ======================= View Functions ===========================
+    // ==================================================================
+
+    function availableArbTokens() public view returns (uint256) {
+        return ARB.balanceOf(address(this)) - promisedArbTokens();
+    }
+
+    function promisedArbTokens() public view returns (uint256) {
+        return _getUint256(_PROMISED_ARB_TOKENS_SLOT);
+    }
+
+    function oARB() public view returns (IOARB) {
+        return IOARB(_getAddress(_OARB_SLOT));
+    }
+
+    function closePositionWindow() public view returns (uint256) {
+        return _getUint256(_CLOSE_POSITION_WINDOW_SLOT);
+    }
+
+    function forceClosePositionTax() public view returns (uint256) {
+        return _getUint256(_FORCE_CLOSE_POSITION_TAX_SLOT);
+    }
+
+    function emergencyWithdrawTax() public view returns (uint256) {
+        return _getUint256(_EMERGENCY_WITHDRAW_TAX_SLOT);
+    }
+
+    function vestingActive() public view returns (bool) {
+        return _getUint256(_VESTING_ACTIVE_SLOT) == 1;
+    }
+
+    function vestingPositions(uint256 _id) public pure returns (VestingPosition memory) {
+        return _getVestingPositionSlot(_id);
+    }
+
+    function _nextId() internal view returns (uint256) {
+        return _getUint256(_NEXT_ID_SLOT);
+    }
+
+    function _setNextId(uint256 _id) internal {
+        _setUint256(_NEXT_ID_SLOT, _id);
+    }
+
 
     // ==================================================================
     // ======================= Internal Functions =======================
@@ -454,6 +507,36 @@ contract Vester is OnlyDolomiteMargin, ReentrancyGuard, ERC721Enumerable, IVeste
         } else {
             /*assert(_duration == 4 weeks);*/
             return 800;
+        }
+    }
+
+    function _setVestingPosition(VestingPosition memory _vestingPosition) internal {
+        VestingPosition storage vestingPosition = _getVestingPositionSlot(_vestingPosition.id);
+        vestingPosition.creator = _vestingPosition.creator;
+        vestingPosition.id = _vestingPosition.id;
+        vestingPosition.startTime = _vestingPosition.startTime;
+        vestingPosition.duration = _vestingPosition.duration;
+        vestingPosition.amount = _vestingPosition.amount;
+    }
+
+    function _setPromisedArbTokens(uint256 _promisedArbTokens) internal {
+        _setUint256(_PROMISED_ARB_TOKENS_SLOT, _promisedArbTokens);
+    }
+
+    function _clearVestingPosition(uint256 _id) internal {
+        VestingPosition storage vestingPosition = _getVestingPositionSlot(_id);
+        vestingPosition.creator = address(0);
+        vestingPosition.id = 0;
+        vestingPosition.startTime = 0;
+        vestingPosition.duration = 0;
+        vestingPosition.amount = 0;
+    }
+
+    function _getVestingPositionSlot(uint256 _id) internal pure returns (VestingPosition storage vestingPosition) {
+        bytes32 slot = keccak256(abi.encodePacked(_VESTING_POSITIONS_SLOT, _id));
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            vestingPosition.slot := slot
         }
     }
 }

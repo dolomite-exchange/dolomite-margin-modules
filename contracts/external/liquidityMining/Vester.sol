@@ -409,7 +409,9 @@ contract Vester is ProxyContractHelpers, OnlyDolomiteMargin, ReentrancyGuard, ER
     // ======================= View Functions ===========================
     // ==================================================================
 
-    // @todo Add view for availableARBTokens
+    function availableArbTokens() public view returns (uint256) {
+        return ARB.balanceOf(address(this)) - promisedArbTokens();
+    }
 
     function promisedArbTokens() public view returns (uint256) {
         return _getUint256(_PROMISED_ARB_TOKENS_SLOT);
