@@ -44,7 +44,7 @@ describe('VesterProxy', () => {
     const calldata = await implementation.populateTransaction.initialize(
       oARB.address
     );
-    
+
     proxy = await createContractWithAbi<VesterProxy>(
       VesterProxy__factory.abi,
       VesterProxy__factory.bytecode,
@@ -67,16 +67,16 @@ describe('VesterProxy', () => {
 
   describe('#upgradeTo', () => {
     it('should work normally', async () => {
-    const newImplementation = await createContractWithAbi<TestVester>(
-      TestVester__factory.abi,
-      TestVester__factory.bytecode,
-      [
-        core.dolomiteMargin.address,
-        core.dolomiteRegistry.address,
-        core.tokens.weth.address,
-        core.tokens.arb.address,
-      ],
-    );
+      const newImplementation = await createContractWithAbi<TestVester>(
+        TestVester__factory.abi,
+        TestVester__factory.bytecode,
+        [
+          core.dolomiteMargin.address,
+          core.dolomiteRegistry.address,
+          core.tokens.weth.address,
+          core.tokens.arb.address,
+        ],
+      );
       await expectEvent(
         proxy,
         await proxy.connect(core.governance).upgradeTo(newImplementation.address),
@@ -103,16 +103,16 @@ describe('VesterProxy', () => {
 
   describe('#upgradeToAndCall', () => {
     it('should work normally', async () => {
-    const newImplementation = await createContractWithAbi<TestVester>(
-      TestVester__factory.abi,
-      TestVester__factory.bytecode,
-      [
-        core.dolomiteMargin.address,
-        core.dolomiteRegistry.address,
-        core.tokens.weth.address,
-        core.tokens.arb.address,
-      ],
-    );
+      const newImplementation = await createContractWithAbi<TestVester>(
+        TestVester__factory.abi,
+        TestVester__factory.bytecode,
+        [
+          core.dolomiteMargin.address,
+          core.dolomiteRegistry.address,
+          core.tokens.weth.address,
+          core.tokens.arb.address,
+        ],
+      );
       const calldata = await newImplementation.populateTransaction.ownerSetForceClosePositionTax(
         100
       );
@@ -142,16 +142,16 @@ describe('VesterProxy', () => {
     });
 
     it('should fail when call to the new implementation fails', async () => {
-    const newImplementation = await createContractWithAbi<TestVester>(
-      TestVester__factory.abi,
-      TestVester__factory.bytecode,
-      [
-        core.dolomiteMargin.address,
-        core.dolomiteRegistry.address,
-        core.tokens.weth.address,
-        core.tokens.arb.address,
-      ],
-    );
+      const newImplementation = await createContractWithAbi<TestVester>(
+        TestVester__factory.abi,
+        TestVester__factory.bytecode,
+        [
+          core.dolomiteMargin.address,
+          core.dolomiteRegistry.address,
+          core.tokens.weth.address,
+          core.tokens.arb.address,
+        ],
+      );
       const calldata = await implementation.populateTransaction.ownerSetForceClosePositionTax(
         10000000
       );

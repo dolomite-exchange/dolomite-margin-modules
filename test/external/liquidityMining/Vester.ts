@@ -55,7 +55,7 @@ describe('Vester', () => {
     const calldata = await implementation.populateTransaction.initialize(
       oARB.address
     );
-    
+
     const vesterProxy = await createContractWithAbi<VesterProxy>(
       VesterProxy__factory.abi,
       VesterProxy__factory.bytecode,

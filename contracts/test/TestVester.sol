@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { IOARB } from "../external/interfaces/liquidityMining/IOARB.sol";
 import { Vester } from "../external/liquidityMining/Vester.sol";
 import { IWETH } from "../protocol/interfaces/IWETH.sol";
 

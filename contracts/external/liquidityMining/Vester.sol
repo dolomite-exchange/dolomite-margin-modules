@@ -31,12 +31,12 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
 import { IVester } from "../interfaces/liquidityMining/IVester.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 
 
 /**
@@ -97,14 +97,6 @@ contract Vester is ProxyContractHelpers, OnlyDolomiteMargin, ReentrancyGuard, ER
     // ======================= Initializer =======================
     // ==================================================================
 
-    function initialize(
-        address _oARB
-    ) external initializer {
-        _setAddress(_OARB_SLOT, _oARB);
-        _setUint256(_CLOSE_POSITION_WINDOW_SLOT, 1 weeks);
-        _setUint256(_FORCE_CLOSE_POSITION_TAX_SLOT, 50);
-    }
-
     constructor(
         address _dolomiteMargin,
         address _dolomiteRegistry,
@@ -117,6 +109,14 @@ contract Vester is ProxyContractHelpers, OnlyDolomiteMargin, ReentrancyGuard, ER
         WETH_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_weth));
         ARB = _arb;
         ARB_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_arb));
+    }
+
+    function initialize(
+        address _oARB
+    ) external initializer {
+        _setAddress(_OARB_SLOT, _oARB);
+        _setUint256(_CLOSE_POSITION_WINDOW_SLOT, 1 weeks);
+        _setUint256(_FORCE_CLOSE_POSITION_TAX_SLOT, 50);
     }
 
     // ==================================================================
@@ -441,15 +441,6 @@ contract Vester is ProxyContractHelpers, OnlyDolomiteMargin, ReentrancyGuard, ER
         return _getVestingPositionSlot(_id);
     }
 
-    function _nextId() internal view returns (uint256) {
-        return _getUint256(_NEXT_ID_SLOT);
-    }
-
-    function _setNextId(uint256 _id) internal {
-        _setUint256(_NEXT_ID_SLOT, _id);
-    }
-
-
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
@@ -497,19 +488,6 @@ contract Vester is ProxyContractHelpers, OnlyDolomiteMargin, ReentrancyGuard, ER
         );
     }
 
-    function _calculateDiscount(uint256 _duration) internal pure returns (uint256) {
-        if (_duration == 1 weeks) {
-            return 975;
-        } else if (_duration == 2 weeks) {
-            return 950;
-        } else if (_duration == 3 weeks) {
-            return 900;
-        } else {
-            assert(_duration == 4 weeks);
-            return 800;
-        }
-    }
-
     function _setVestingPosition(VestingPosition memory _vestingPosition) internal {
         VestingPosition storage vestingPosition = _getVestingPositionSlot(_vestingPosition.id);
         vestingPosition.creator = _vestingPosition.creator;
@@ -532,11 +510,32 @@ contract Vester is ProxyContractHelpers, OnlyDolomiteMargin, ReentrancyGuard, ER
         vestingPosition.amount = 0;
     }
 
+    function _setNextId(uint256 _id) internal {
+        _setUint256(_NEXT_ID_SLOT, _id);
+    }
+
+    function _nextId() internal view returns (uint256) {
+        return _getUint256(_NEXT_ID_SLOT);
+    }
+
     function _getVestingPositionSlot(uint256 _id) internal pure returns (VestingPosition storage vestingPosition) {
         bytes32 slot = keccak256(abi.encodePacked(_VESTING_POSITIONS_SLOT, _id));
         // solhint-disable-next-line no-inline-assembly
         assembly {
             vestingPosition.slot := slot
+        }
+    }
+
+    function _calculateDiscount(uint256 _duration) internal pure returns (uint256) {
+        if (_duration == 1 weeks) {
+            return 975;
+        } else if (_duration == 2 weeks) {
+            return 950;
+        } else if (_duration == 3 weeks) {
+            return 900;
+        } else {
+            assert(_duration == 4 weeks);
+            return 800;
         }
     }
 }
