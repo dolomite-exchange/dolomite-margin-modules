@@ -4,7 +4,7 @@ import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { OARB, OARB__factory, TestVester, TestVester__factory, VesterProxy, VesterProxy__factory } from 'src/types';
-import { createContractWithAbi, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
+import { createContractWithAbi, depositIntoDolomiteMargin, withdrawFromDolomiteMargin } from 'src/utils/dolomite-utils';
 import { Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
@@ -15,6 +15,7 @@ import {
   setupARBBalance,
   setupCoreProtocol,
   setupUSDCBalance,
+  setupWETHBalance,
 } from 'test/utils/setup';
 import { expectEmptyPosition } from './liquidityMining-utils';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
@@ -37,6 +38,7 @@ describe('Vester', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     await disableInterestAccrual(core, core.marketIds.usdc);
     await disableInterestAccrual(core, core.marketIds.arb);
+    await disableInterestAccrual(core, core.marketIds.weth);
 
     oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
 
@@ -76,8 +78,10 @@ describe('Vester', () => {
 
     await setupARBBalance(core, core.hhUser1, ONE_ETH_BI, core.dolomiteMargin);
     await setupARBBalance(core, core.hhUser2, parseEther('100'), core.dolomiteMargin);
+    await setupWETHBalance(core, core.hhUser1, parseEther('10'), core.dolomiteMargin);
     await core.tokens.arb.connect(core.hhUser2).transfer(vester.address, ONE_ETH_BI);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.arb, ONE_ETH_BI);
+    await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, parseEther('10'));
     await oARB.connect(core.hhUser1).approve(vester.address, ONE_ETH_BI);
     await vester.connect(core.governance).ownerSetVestingActive(true);
 
@@ -247,7 +251,7 @@ describe('Vester', () => {
       );
       await increase(ONE_WEEK);
 
-      const result = await vester.closePositionAndBuyTokens(1, { value: parseEther('.001') });
+      const result = await vester.closePositionAndBuyTokens(1, defaultAccountNumber);
       await expectEvent(vester, result, 'PositionClosed', {
         owner: core.hhUser1.address,
         vestingId: ONE_BI,
@@ -284,7 +288,7 @@ describe('Vester', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb, core.testEcosystem!.testPriceOracle.address);
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
-      await vester.closePositionAndBuyTokens(1, { value: parseEther('.975') });
+      await vester.closePositionAndBuyTokens(1, defaultAccountNumber);
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
@@ -317,7 +321,7 @@ describe('Vester', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb, core.testEcosystem!.testPriceOracle.address);
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
-      await vester.closePositionAndBuyTokens(1, { value: parseEther('.95') });
+      await vester.closePositionAndBuyTokens(1, defaultAccountNumber);
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
@@ -350,7 +354,7 @@ describe('Vester', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb, core.testEcosystem!.testPriceOracle.address);
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
-      await vester.closePositionAndBuyTokens(1, { value: parseEther('.9') });
+      await vester.closePositionAndBuyTokens(1, defaultAccountNumber);
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
@@ -383,7 +387,7 @@ describe('Vester', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb, core.testEcosystem!.testPriceOracle.address);
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
-      await vester.closePositionAndBuyTokens(1, { value: parseEther('.8') });
+      await vester.closePositionAndBuyTokens(1, defaultAccountNumber);
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
@@ -416,11 +420,15 @@ describe('Vester', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb, core.testEcosystem!.testPriceOracle.address);
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
-      await expect(() => vester.closePositionAndBuyTokens(
-        1,
-        { value: parseEther('.9') }
-      )).to.changeEtherBalance(core.hhUser1, parseEther('-.8'));
+      await vester.closePositionAndBuyTokens(1, defaultAccountNumber);
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        parseEther('9.2')
+      );
       await expectProtocolBalance(
         core,
         core.hhUser1.address,
@@ -440,30 +448,31 @@ describe('Vester', () => {
       );
     });
 
-    it('should fail if msg.value is not sufficient', async () => {
+    it('should fail if dolomite balance is not sufficient', async () => {
       await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
+      await withdrawFromDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, parseEther('10'));
       await increase(ONE_WEEK);
       await expectThrow(
-        vester.closePositionAndBuyTokens(1, { value: parseEther('.0001') }),
-        'Vester: Insufficient msg.value'
+        vester.closePositionAndBuyTokens(1, defaultAccountNumber),
+        `AccountBalanceLib: account cannot go negative <${core.hhUser1.address.toLowerCase()}, ${defaultAccountNumber}, 0>`
       );
     });
 
     it('should fail if not called by position owner', async () => {
       await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
-      await expectThrow(vester.connect(core.hhUser2).closePositionAndBuyTokens(1), 'Vester: Invalid position owner');
+      await expectThrow(vester.connect(core.hhUser2).closePositionAndBuyTokens(1, defaultAccountNumber), 'Vester: Invalid position owner');
     });
 
     it('should fail if before vesting time', async () => {
       await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
-      await expectThrow(vester.connect(core.hhUser1).closePositionAndBuyTokens(1), 'Vester: Position not vested');
+      await expectThrow(vester.connect(core.hhUser1).closePositionAndBuyTokens(1, defaultAccountNumber), 'Vester: Position not vested');
     });
 
     it('should fail if position is expired', async () => {
       await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
       await increase(ONE_WEEK.mul(2).add(1));
       await expectThrow(
-        vester.connect(core.hhUser1).closePositionAndBuyTokens(1),
+        vester.connect(core.hhUser1).closePositionAndBuyTokens(1, defaultAccountNumber),
         'Vester: Position expired',
       );
     });
@@ -471,7 +480,7 @@ describe('Vester', () => {
     it('should fail if reentered', async () => {
       await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
       await expectThrow(
-        vester.connect(core.hhUser1).callClosePositionAndBuyTokensAndTriggerReentrancy(1),
+        vester.connect(core.hhUser1).callClosePositionAndBuyTokensAndTriggerReentrancy(1, defaultAccountNumber),
         'ReentrancyGuard: reentrant call',
       );
     });

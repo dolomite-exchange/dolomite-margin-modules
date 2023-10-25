@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { IOARB } from "../external/interfaces/liquidityMining/IOARB.sol";
 import { Vester } from "../external/liquidityMining/Vester.sol";
 import { IWETH } from "../protocol/interfaces/IWETH.sol";
 
@@ -49,13 +48,15 @@ contract TestVester is Vester {
     ) {} // solhint-disable-line
 
     function callClosePositionAndBuyTokensAndTriggerReentrancy(
-        uint256 _id
+        uint256 _id,
+        uint256 _fromAccountNumber
     ) external payable nonReentrant {
         // solhint-disable-next-line avoid-low-level-calls
         (bool isSuccessful, bytes memory result) = address(this).delegatecall(
             abi.encodeWithSignature(
-                "closePositionAndBuyTokens(uint256)",
-                _id
+                "closePositionAndBuyTokens(uint256,uint256)",
+                _id,
+                _fromAccountNumber
             )
         );
         if (!isSuccessful) {

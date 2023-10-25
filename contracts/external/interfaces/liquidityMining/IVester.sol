@@ -56,9 +56,55 @@ interface IVester {
     event ForceClosePositionTaxSet(uint256 _forceClosePositionTax);
 
     // ======================================================
+    // ================== Admin Functions ===================
+    // ======================================================
+
+    /**
+     * @notice  Sets vestingActive. Callable by Dolomite Margin owner
+     *
+     * @param  _vestingActive   The id of the position to emergency withdraw
+     */
+    function ownerSetVestingActive(bool _vestingActive) external;
+
+    /**
+     * @notice  Sets the oARB token address. Callable by Dolomite Margin owner
+     *
+     * @param  _oARB   oARB token address
+     */
+    function ownerSetOARB(address _oARB) external;
+
+    /**
+     * @notice  Sets the close position window. Callable by Dolomite Margin owner
+     *
+     * @param  _closePositionWindow Close position window in seconds
+     */
+    function ownerSetClosePositionWindow(uint256 _closePositionWindow) external;
+
+    /**
+     * @notice  Sets the emergency withdraw tax. Callable by Dolomite Margin owner
+     * @dev     This must be an integer between 0 and 10_000
+     *
+     * @param  _emergencyWithdrawTax    Emergency withdraw tax amount
+     */
+    function ownerSetEmergencyWithdrawTax(uint256 _emergencyWithdrawTax) external;
+
+    /**
+     * @notice  Sets the force close position tax. Callable by Dolomite Margin owner
+     * @dev     This must be an integer between 0 and 10_000
+     *
+     * @param  _forceClosePositionTax`  Force close position tax amount
+     */
+    function ownerSetForceClosePositionTax(uint256 _forceClosePositionTax) external;
+
+    // ======================================================
     // ================== User Functions ===================
     // ======================================================
 
+    /**
+     * @notice  Initializes the oARB address
+     *
+     * @param  _oARB    oARB token address
+     */
     function initialize(address _oARB) external;
 
     /**
@@ -76,7 +122,7 @@ interface IVester {
      *
      * @param  _id  The id of the position that is fully vested
      */
-    function closePositionAndBuyTokens(uint256 _id) external payable;
+    function closePositionAndBuyTokens(uint256 _id, uint256 _fromAccountNumber) external;
 
     /**
      * @notice  Burns the vested oARB tokens and sends vested ARB back to position owner's dolomite balance
@@ -93,10 +139,7 @@ interface IVester {
      */
     function emergencyWithdraw(uint256 _id) external;
 
-    /**
-     * @notice  Sets vestingActive. Callable by Dolomite Margin owner
-     *
-     * @param  _vestingActive   The id of the position to emergency withdraw
-     */
-    function ownerSetVestingActive(bool _vestingActive) external;
+    // =================================================
+    // ================= View Functions ================
+    // =================================================
 }

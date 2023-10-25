@@ -173,11 +173,11 @@ contract Vester is ProxyContractHelpers, OnlyDolomiteMargin, ReentrancyGuard, ER
     }
 
     function closePositionAndBuyTokens(
-        uint256 _id
+        uint256 _id,
+        uint256 _fromAccountNumber
     ) 
     external 
-    nonReentrant 
-    payable {
+    nonReentrant {
         VestingPosition memory _position = _getVestingPositionSlot(_id);
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(_position.creator, _id)));
         address owner = ownerOf(_id);
@@ -213,12 +213,14 @@ contract Vester is ProxyContractHelpers, OnlyDolomiteMargin, ReentrancyGuard, ER
         uint256 wethPrice = (DOLOMITE_MARGIN().getMarketPrice(WETH_MARKET_ID)).value;
         uint256 arbPriceAdj = ((DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID)).value) * discount / _BASE;
 
-        uint256 wethValue = msg.value * wethPrice;
-        uint256 arbValue = _position.amount * arbPriceAdj;
-        Require.that(
-            wethValue >= arbValue,
-            _FILE,
-            "Insufficient msg.value"
+        uint256 cost = _position.amount * arbPriceAdj / wethPrice;
+        _transfer(
+            /* fromAccount = */ msg.sender,
+            /* fromAccountNumber = */ _fromAccountNumber,
+            /* toAccount = */ address(this),
+            /* toAccountNumber = */ accountNumber,
+            /* marketId */ WETH_MARKET_ID,
+            /* amount */ cost
         );
 
         // Deposit purchased ARB tokens into dolomite, clear vesting position, and refund
@@ -227,11 +229,6 @@ contract Vester is ProxyContractHelpers, OnlyDolomiteMargin, ReentrancyGuard, ER
         _burn(_id);
         _clearVestingPosition(_id);
         
-        uint256 refund = (wethValue - arbValue) / wethPrice;
-        if (refund > 0) {
-            Address.sendValue(payable(owner), refund);
-        }
-
         emit PositionClosed(owner, _id);
     }
 

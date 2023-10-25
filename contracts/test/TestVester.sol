@@ -48,13 +48,15 @@ contract TestVester is Vester {
     ) {} // solhint-disable-line
 
     function callClosePositionAndBuyTokensAndTriggerReentrancy(
-        uint256 _id
+        uint256 _id,
+        uint256 _fromAccountNumber
     ) external payable nonReentrant {
         // solhint-disable-next-line avoid-low-level-calls
         (bool isSuccessful, bytes memory result) = address(this).delegatecall(
             abi.encodeWithSignature(
-                "closePositionAndBuyTokens(uint256)",
-                _id
+                "closePositionAndBuyTokens(uint256,uint256)",
+                _id,
+                _fromAccountNumber
             )
         );
         if (!isSuccessful) {
