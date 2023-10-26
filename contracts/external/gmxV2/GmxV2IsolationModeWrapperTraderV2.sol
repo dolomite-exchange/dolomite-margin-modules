@@ -55,9 +55,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
-    uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
-
-    bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
 
     // ============ Initializer ============
 
@@ -185,7 +182,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         DepositInfo calldata _depositInfo
     ) external {
         Require.that(
-            msg.sender == address(GMX_REGISTRY_V2().gmxV2UnwrapperTrader()),
+            msg.sender == address(HANDLER_REGISTRY().getUnwrapperByToken(VAULT_FACTORY())),
             _FILE,
             "Only unwrapper can call",
             msg.sender
@@ -224,121 +221,27 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // ============ Internal Functions ============
     // ============================================
 
-    function _exchangeIntoUnderlyingToken(
-        address _tradeOriginator,
-        address /* _receiver */,
+    function _createDeposit(
+        address _vault,
         address _outputTokenUnderlying,
         uint256 _minOutputAmount,
         address _inputToken,
         uint256 _inputAmount,
         bytes memory _extraOrderData
-    )
-    internal
-    override
-    returns (uint256) {
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-
-        // Account number is set by the Token Vault so we know it's safe to use
-        (uint256 accountNumber, uint256 ethExecutionFee) = abi.decode(_extraOrderData, (uint256, uint256));
-
-        // Disallow the deposit if there's already an action waiting for it
-        Require.that(
-            !factory.isVaultFrozen(_tradeOriginator),
-            _FILE,
-            "Vault is frozen",
-            _tradeOriginator
-        );
-
-        bytes32 depositKey;
-        {
-            // New scope for the "stack too deep" error
-            address tradeOriginatorForStackTooDeep = _tradeOriginator;
-            address outputTokenUnderlyingForStackTooDeep = _outputTokenUnderlying;
-            uint256 minOutputAmountForStackTooDeep = _minOutputAmount;
-            address inputTokenForStackTooDeep = _inputToken;
-            uint256 inputAmountForStackTooDeep = _inputAmount;
-            depositKey = GmxV2Library.createDeposit(
-                factory,
-                GMX_REGISTRY_V2(),
-                WETH(),
-                tradeOriginatorForStackTooDeep,
-                ethExecutionFee,
-                outputTokenUnderlyingForStackTooDeep,
-                minOutputAmountForStackTooDeep,
-                inputTokenForStackTooDeep,
-                inputAmountForStackTooDeep
-            );
-        }
-
-        _setDepositInfo(
-            depositKey,
-            DepositInfo({
-                key: depositKey,
-                vault: _tradeOriginator,
-                accountNumber: accountNumber,
-                inputToken: _inputToken,
-                inputAmount: _inputAmount,
-                outputAmount: _minOutputAmount,
-                isRetryable: false
-            })
-        );
-        _updateVaultPendingAmount(
-            _tradeOriginator,
-            accountNumber,
+    ) internal override returns (bytes32) {
+        // New scope for the "stack too deep" error
+        uint256 ethExecutionFee = abi.decode(_extraOrderData, (uint256));
+        return GmxV2Library.createDeposit(
+            IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
+            GMX_REGISTRY_V2(),
+            WETH(),
+            _vault,
+            ethExecutionFee,
+            _outputTokenUnderlying,
             _minOutputAmount,
-            /* _isPositive = */ true
+            _inputToken,
+            _inputAmount
         );
-        emit DepositCreated(depositKey);
-
-        factory.setShouldSkipTransfer(
-            _tradeOriginator,
-            /* _shouldSkipTransfer = */ true
-        );
-        return _minOutputAmount;
-    }
-
-    function _depositIntoDefaultPositionAndClearDeposit(
-        IGmxV2IsolationModeVaultFactory _factory,
-        DepositInfo memory _depositInfo,
-        uint256 _depositAmountWei
-    ) internal {
-        uint256 marketId = _factory.marketId();
-        uint256 maxWei = DOLOMITE_MARGIN().getMarketMaxWei(marketId).value;
-        IDolomiteStructs.Par memory supplyPar = IDolomiteStructs.Par({
-            sign: true,
-            value: DOLOMITE_MARGIN().getMarketTotalPar(marketId).supply
-        });
-
-        if (DOLOMITE_MARGIN().parToWei(marketId, supplyPar).value + _depositAmountWei >= maxWei && maxWei != 0) {
-            // If the supplyPar is gte than the maxWei, then we should to transfer the deposit to the vault owner. It's
-            // better to do this than to revert, since the user will be able to maintain control over the assets.
-            IERC20 underlyingToken = IERC20(_factory.UNDERLYING_TOKEN());
-            underlyingToken.safeTransfer(_factory.getAccountByVault(_depositInfo.vault), _depositAmountWei);
-            // Reset the allowance to 0 since it won't be used
-            underlyingToken.safeApprove(_depositInfo.vault, 0);
-        } else {
-            _factory.depositIntoDolomiteMarginFromTokenConverter(
-                _depositInfo.vault,
-                _DEFAULT_ACCOUNT_NUMBER,
-                _depositAmountWei
-            );
-        }
-
-        _clearDepositAndUpdatePendingAmount(_depositInfo);
-    }
-
-    function _clearDepositAndUpdatePendingAmount(
-        DepositInfo memory _depositInfo
-    ) internal {
-        _updateVaultPendingAmount(
-            _depositInfo.vault,
-            _depositInfo.accountNumber,
-            _depositInfo.outputAmount,
-            /* _isPositive = */ false
-        );
-        // Setting the outputAmount to 0 clears it
-        _depositInfo.outputAmount = 0;
-        _setDepositInfo(_depositInfo.key, _depositInfo);
     }
 
     function _executeDepositCancellation(
@@ -358,61 +261,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             _depositInfo.isRetryable = true;
             _setDepositInfo(_depositInfo.key, _depositInfo);
             emit DepositCancelledFailed(_depositInfo.key, "");
-        }
-    }
-
-    function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
-        bool clearValues = _info.outputAmount == 0;
-        DepositInfo storage storageInfo = _getDepositSlot(_key);
-        storageInfo.key = _key;
-        storageInfo.vault = clearValues ? address(0) : _info.vault;
-        storageInfo.accountNumber = clearValues ? 0 : _info.accountNumber;
-        storageInfo.inputToken = clearValues ? address(0) : _info.inputToken;
-        storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
-        storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
-        storageInfo.isRetryable = clearValues ? false : _info.isRetryable;
-    }
-
-    function _updateVaultPendingAmount(
-        address _vault,
-        uint256 _accountNumber,
-        uint256 _amountDeltaWei,
-        bool _isPositive
-    ) internal {
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).updateVaultAccountPendingAmountForFrozenStatus(
-            _vault,
-            _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Deposit,
-            /* _amountDeltaWei = */ IDolomiteStructs.Wei({
-                sign: _isPositive,
-                value: _amountDeltaWei
-            })
-        );
-    }
-    function _approveIsolationModeTokenForTransfer(
-        address _vault,
-        address _receiver,
-        uint256 _amount
-    )
-    internal
-    override {
-        VAULT_FACTORY().enqueueTransferIntoDolomiteMargin(_vault, _amount);
-        IERC20(address(VAULT_FACTORY())).safeApprove(_receiver, _amount);
-    }
-
-    function _validateDepositExists(DepositInfo memory _depositInfo) internal pure {
-        Require.that(
-            _depositInfo.vault != address(0),
-            _FILE,
-            "Invalid deposit key"
-        );
-    }
-
-    function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {
-        bytes32 slot = keccak256(abi.encodePacked(_DEPOSIT_INFO_SLOT, _key));
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            info.slot := slot
         }
     }
 

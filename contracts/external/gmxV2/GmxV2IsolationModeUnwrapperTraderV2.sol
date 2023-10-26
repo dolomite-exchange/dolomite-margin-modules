@@ -34,6 +34,7 @@ import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2Is
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
+import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
@@ -53,10 +54,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeUnwrapperV2";
-    bytes32 private constant _WITHDRAWAL_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalInfo")) - 1);
-    bytes32 private constant _ACTIONS_LENGTH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.actionsLength")) - 1);
-    uint256 private constant _ACTIONS_LENGTH_NORMAL = 4;
-    uint256 private constant _ACTIONS_LENGTH_CALLBACK = 2;
 
     // ============ Modifiers ============
 
@@ -131,17 +128,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         _executeWithdrawal(withdrawalInfo);
     }
 
-    function executeWithdrawalForRetry(bytes32 _key) external onlyHandler(msg.sender) nonReentrant {
-        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
-        _validateWithdrawalExists(withdrawalInfo);
-        Require.that(
-            withdrawalInfo.isRetryable,
-            _FILE,
-            "Withdrawal not retryable"
-        );
-        _executeWithdrawal(withdrawalInfo);
-    }
-
     /**
      * @dev Funds will automatically be sent back to the vault by GMX
      */
@@ -170,142 +156,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         emit WithdrawalCancelled(_key);
     }
 
-    function vaultCreateWithdrawalInfo(
-        bytes32 _key,
-        uint256 _accountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount
-    ) external {
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        address vault = msg.sender;
-        _validateVaultExists(factory, vault);
-
-        // Panic if the key is already used
-        assert(_getWithdrawalSlot(_key).vault == address(0));
-
-        _setWithdrawalInfo(
-            _key,
-            WithdrawalInfo({
-                key: _key,
-                vault: vault,
-                accountNumber: _accountNumber,
-                inputAmount: _inputAmount,
-                outputToken: _outputToken,
-                outputAmount: _minOutputAmount,
-                isRetryable: false
-            })
-        );
-        _updateVaultPendingAmount(vault, _accountNumber, _inputAmount, /* _isPositive = */ true);
-        emit WithdrawalCreated(_key);
-    }
-
-    function createActionsForUnwrapping(
-        uint256 _solidAccountId,
-        uint256 _liquidAccountId,
-        address,
-        address,
-        uint256 _outputMarket,
-        uint256 _inputMarket,
-        uint256 _minAmountOut,
-        uint256 _inputAmount,
-        bytes calldata _orderData
-    )
-    external
-    virtual
-    override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTrader)
-    view
-    returns (IDolomiteMargin.ActionArgs[] memory) {
-        Require.that(
-            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY()),
-            _FILE,
-            "Invalid input market",
-            _inputMarket
-        );
-        Require.that(
-            isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
-            _FILE,
-            "Invalid output market",
-            _outputMarket
-        );
-
-        (TradeType[] memory tradeTypes, bytes32[] memory keys) = abi.decode(_orderData, (TradeType[], bytes32[]));
-        Require.that(
-            tradeTypes.length == keys.length && keys.length > 0,
-            _FILE,
-            "Invalid unwrapping order data"
-        );
-
-        uint256 structInputAmount = 0;
-        // Realistically this array length will only ever be 1 or 2.
-        for (uint256 i; i < tradeTypes.length; ++i) {
-            // The withdrawal/deposit is authenticated & validated later in `_callFunction`
-            if (tradeTypes[i] == TradeType.FromWithdrawal) {
-                structInputAmount += _getWithdrawalSlot(keys[i]).inputAmount;
-            } else {
-                assert(tradeTypes[i] == TradeType.FromDeposit);
-                // The output amount for a deposit is the input amount for an unwrapping
-                structInputAmount += GMX_REGISTRY_V2().gmxV2WrapperTrader().getDepositInfo(keys[i]).outputAmount;
-            }
-        }
-        Require.that(
-            structInputAmount >= _inputAmount && _inputAmount > 0,
-            _FILE,
-            "Invalid input amount"
-        );
-
-        // If the input amount doesn't match, we need to add 2 actions to settle the difference
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength());
-
-        // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
-        // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
-        actions[0] = AccountActionLib.encodeCallAction(
-            _liquidAccountId,
-            /* _callee */ address(this),
-            /* (transferAmount, tradeTypes, keys)[encoded] = */ abi.encode(_inputAmount, tradeTypes, keys)
-        );
-        actions[1] = AccountActionLib.encodeExternalSellAction(
-            _solidAccountId,
-            _inputMarket,
-            _outputMarket,
-            /* _trader = */ address(this),
-            /* _amountInWei = */ _inputAmount,
-            /* _amountOutMinWei = */ _minAmountOut,
-            _orderData
-        );
-        if (actions.length == _ACTIONS_LENGTH_NORMAL) {
-            // We need to spend the whole withdrawal amount, so we need to add an extra sale to spend the difference.
-            // This can only happen during a liquidation
-
-            structInputAmount -= _inputAmount;
-            actions[2] = AccountActionLib.encodeCallAction(
-                _liquidAccountId,
-                /* _callee */ address(this),
-                /* (transferAmount, tradeTypes, keys)[encoded] = */ abi.encode(structInputAmount, tradeTypes, keys)
-            );
-            actions[3] = AccountActionLib.encodeExternalSellAction(
-                _liquidAccountId,
-                _inputMarket,
-                _outputMarket,
-                /* _trader = */ address(this),
-                /* _amountInWei = */ structInputAmount,
-                /* _amountOutMinWei = */ 1,
-                _orderData
-            );
-        }
-
-        return actions;
-    }
-
-    function actionsLength()
-        public
-        override(IIsolationModeUnwrapperTrader, UpgradeableAsyncIsolationModeUnwrapperTrader)
-        view
-        returns (uint256)
-    {
-        return _getUint256(_ACTIONS_LENGTH_SLOT);
-    }
-
     function isValidOutputToken(
         address _outputToken
     )
@@ -319,10 +169,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         );
     }
 
-    function GMX_REGISTRY_V2() public view returns (IGmxV2Registry) {
-        return IGmxV2Registry(address(HANDLER_REGISTRY()));
-    }
-
     function getWithdrawalInfo(bytes32 _key) public pure returns (WithdrawalInfo memory) {
         return _getWithdrawalSlot(_key);
     }
@@ -331,7 +177,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // =========== Internal Functions =============
     // ============================================
 
-    function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal {
+    function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal override {
         _handleGmxCallbackBefore();
         try GmxV2Library.swapExactInputForOutputForWithdrawal(this, _withdrawalInfo) {
             emit WithdrawalExecuted(_withdrawalInfo.key);
@@ -341,164 +187,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             emit WithdrawalFailed(_withdrawalInfo.key, "");
         }
         _handleGmxCallbackAfter();
-    }
-
-    function _callFunction(
-        address /* _sender */,
-        IDolomiteStructs.AccountInfo calldata _accountInfo,
-        bytes calldata _data
-    )
-    internal
-    override {
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        _validateVaultExists(factory, _accountInfo.owner);
-
-        (
-            uint256 transferAmount,
-            TradeType[] memory tradeTypes,
-            bytes32[] memory keys
-        ) = abi.decode(_data, (uint256, TradeType[], bytes32[]));
-        assert(tradeTypes.length == keys.length && keys.length > 0);
-
-        address vault;
-        uint256 inputAmount;
-        for (uint256 i; i < tradeTypes.length; ++i) {
-            if (tradeTypes[i] == TradeType.FromWithdrawal) {
-                WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(keys[i]);
-                vault = withdrawalInfo.vault;
-                inputAmount += withdrawalInfo.inputAmount;
-            } else {
-                assert(tradeTypes[i] == TradeType.FromDeposit);
-                IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory depositInfo =
-                                                GMX_REGISTRY_V2().gmxV2WrapperTrader().getDepositInfo(keys[i]);
-                vault = depositInfo.vault;
-                inputAmount += depositInfo.outputAmount;
-            }
-            Require.that(
-                vault == _accountInfo.owner,
-                _FILE,
-                "Invalid account owner",
-                _accountInfo.owner
-            );
-        }
-
-        GmxV2Library.validateVirtualBalance(_accountInfo.owner, transferAmount);
-        Require.that(
-            transferAmount > 0 && transferAmount <= inputAmount,
-            _FILE,
-            "Invalid transfer amount"
-        );
-
-        factory.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
-        factory.setShouldSkipTransfer(vault, /* _shouldSkipTransfer = */ true);
-    }
-
-    function _exchangeUnderlyingTokenToOutputToken(
-        address /* _tradeOriginator */,
-        address /* _receiver */,
-        address _outputToken,
-        uint256 /* _minOutputAmount */,
-        address /* _inputToken */,
-        uint256 _inputAmount,
-        bytes memory _extraOrderData
-    )
-    internal
-    virtual
-    override
-    returns (uint256) {
-        // We don't need to validate _tradeOriginator here because it is validated in _callFunction via the transfer
-        // being enqueued (without it being enqueued, we'd never reach this point)
-
-        (TradeType[] memory tradeTypes, bytes32[] memory keys) = abi.decode(_extraOrderData, (TradeType[], bytes32[]));
-        assert(tradeTypes.length == keys.length && keys.length > 0);
-
-        uint256 inputAmountNeeded = _inputAmount; // decays toward 0
-        uint256 outputAmount = 0;
-        for (uint256 i; i < tradeTypes.length; ++i) {
-            bytes32 key = keys[i];
-            if (tradeTypes[i] == TradeType.FromWithdrawal) {
-                WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
-                _validateOutputTokenForExchange(withdrawalInfo.outputToken, _outputToken);
-
-                (uint256 inputAmountToCollect, uint256 outputAmountToCollect) = _getAmountsToCollect(
-                    /* _structInputAmount = */ withdrawalInfo.inputAmount,
-                    inputAmountNeeded,
-                    /* _structOutputAmount = */ withdrawalInfo.outputAmount
-                );
-                withdrawalInfo.inputAmount -= inputAmountToCollect;
-                withdrawalInfo.outputAmount -= outputAmountToCollect;
-                _setWithdrawalInfo(key, withdrawalInfo);
-                _updateVaultPendingAmount(
-                    withdrawalInfo.vault,
-                    withdrawalInfo.accountNumber,
-                    inputAmountToCollect,
-                    /* _isPositive = */ false
-                );
-
-                inputAmountNeeded -= inputAmountToCollect;
-                outputAmount = outputAmount + outputAmountToCollect;
-            } else {
-                // panic if the trade type isn't correct (somehow).
-                assert(tradeTypes[i] == TradeType.FromDeposit);
-                IGmxV2IsolationModeWrapperTraderV2 wrapperTrader = GMX_REGISTRY_V2().gmxV2WrapperTrader();
-                IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory depositInfo = wrapperTrader.getDepositInfo(key);
-
-                // The input token for a deposit is the output token in this case
-                _validateOutputTokenForExchange(depositInfo.inputToken, _outputToken);
-
-                (uint256 inputAmountToCollect, uint256 outputAmountToCollect) = _getAmountsToCollect(
-                    /* _structInputAmount = */ depositInfo.outputAmount,
-                    inputAmountNeeded,
-                    /* _structOutputAmount = */ depositInfo.inputAmount
-                );
-
-                IERC20(depositInfo.inputToken).safeTransferFrom(
-                    address(wrapperTrader),
-                    address(this),
-                    outputAmountToCollect
-                );
-                depositInfo.outputAmount -= inputAmountToCollect;
-                depositInfo.inputAmount -= outputAmountToCollect;
-                wrapperTrader.setDepositInfoAndReducePendingAmountFromUnwrapper(key, inputAmountToCollect, depositInfo);
-
-                inputAmountNeeded -= inputAmountToCollect;
-                outputAmount = outputAmount + outputAmountToCollect;
-            }
-        }
-
-        // Panic if the developer didn't set this up to consume enough of the structs
-        assert(inputAmountNeeded == 0);
-
-        return outputAmount;
-    }
-
-    function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
-        bool clearValues = _info.inputAmount == 0;
-        WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
-        storageInfo.key = _key;
-        storageInfo.vault = clearValues ? address(0) : _info.vault;
-        storageInfo.accountNumber = clearValues ? 0 : _info.accountNumber;
-        storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
-        storageInfo.outputToken = clearValues ? address(0) : _info.outputToken;
-        storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
-        storageInfo.isRetryable = clearValues ? false : _info.isRetryable;
-    }
-
-    function _updateVaultPendingAmount(
-        address _vault,
-        uint256 _accountNumber,
-        uint256 _amountDeltaWei,
-        bool _isPositive
-    ) internal {
-        IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())).updateVaultAccountPendingAmountForFrozenStatus(
-            _vault,
-            _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
-            /* _amountWei = */ IDolomiteStructs.Wei({
-                sign: _isPositive,
-                value: _amountDeltaWei
-            })
-        );
     }
 
     function _handleGmxCallbackBefore() internal {
@@ -511,75 +199,18 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         _setActionsLength(_ACTIONS_LENGTH_NORMAL);
     }
 
-    function _setActionsLength(uint256 _length) internal {
-        _setUint256(_ACTIONS_LENGTH_SLOT, _length);
-    }
-
-    function _requireBalanceIsSufficient(uint256 /* _inputAmount */) internal override view {
+    function _validateIsBalanceSufficient(uint256 /* _inputAmount */) internal override view {
         // solhint-disable-previous-line no-empty-blocks
         // Do nothing
     }
 
-    function _validateVaultExists(IGmxV2IsolationModeVaultFactory _factory, address _vault) internal view {
-        Require.that(
-            _factory.getAccountByVault(_vault) != address(0),
-            _FILE,
-            "Invalid vault",
-            _vault
-        );
-    }
-
     function _validateIsWrapper(address _from) internal view {
         Require.that(
-            _from == address(GMX_REGISTRY_V2().gmxV2WrapperTrader()),
+            _from == address(_getWrapperTrader()),
             _FILE,
             "Caller can only be wrapper",
             _from
         );
-    }
-
-    function _validateOutputTokenForExchange(
-        address _structOutputToken,
-        address _outputToken
-    ) internal pure {
-        Require.that(
-            _structOutputToken == _outputToken,
-            _FILE,
-            "Output token mismatch"
-        );
-    }
-
-    function _validateWithdrawalExists(WithdrawalInfo memory _withdrawalInfo) internal pure {
-        Require.that(
-            _withdrawalInfo.vault != address(0),
-            _FILE,
-            "Invalid withdrawal key"
-        );
-    }
-
-    function _getAmountsToCollect(
-        uint256 _structInputAmount,
-        uint256 _inputAmountNeeded,
-        uint256 _structOutputAmount
-    ) internal pure returns (uint256 _inputAmountToCollect, uint256 _outputAmountToCollect) {
-        _inputAmountToCollect = _structInputAmount >= _inputAmountNeeded
-            ? _inputAmountNeeded
-            : _structInputAmount;
-
-        // Reduce output amount by the ratio of the collected input amount. Almost always the ratio will be
-        // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
-        // collateral to the liquidator.
-        _outputAmountToCollect = _inputAmountNeeded < _structInputAmount
-            ? _structOutputAmount * _inputAmountNeeded / _structInputAmount
-            : _structOutputAmount;
-    }
-
-    function _getWithdrawalSlot(bytes32 _key) internal pure returns (WithdrawalInfo storage info) {
-        bytes32 slot = keccak256(abi.encodePacked(_WITHDRAWAL_INFO_SLOT, _key));
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            info.slot := slot
-        }
     }
 
     function _getExchangeCost(

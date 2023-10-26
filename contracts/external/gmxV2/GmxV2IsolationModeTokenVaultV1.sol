@@ -57,7 +57,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ==================================================================
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultV1";
-    bytes32 private constant _VIRTUAL_BALANCE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.virtualBalance")) - 1);
     bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _POSITION_TO_EXECUTION_FEE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.positionToExecutionFee")) - 1); // solhint-disable-line max-line-length
@@ -196,7 +195,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
                 );
                 _setIsDepositSourceWrapper(/* _isDepositSourceWrapper = */ false);
             }
-            _requireVirtualBalanceMatchesRealBalance();
+            _requireVirtualBalanceWithPendingMatchesRealBalance();
         } else {
             Require.that(
                 isVaultFrozen(),
@@ -218,7 +217,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
 
         if (!shouldSkipTransfer()) {
             IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
-            _requireVirtualBalanceMatchesRealBalance();
+            _requireVirtualBalanceWithPendingMatchesRealBalance();
         } else {
             Require.that(
                 isVaultFrozen(),
@@ -240,10 +239,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
             DOLOMITE_MARGIN(),
             IGmxV2IsolationModeVaultFactory(VAULT_FACTORY())
         );
-    }
-
-    function virtualBalance() public view returns (uint256) {
-        return _getUint256(_VIRTUAL_BALANCE_SLOT);
     }
 
     function isDepositSourceWrapper() public view returns (bool) {
@@ -320,7 +315,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         uint256 len = _tradersPath.length;
         if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             GmxV2Library.depositAndApproveWethForWrapping(this);
-            _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, msg.value);
+            _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, abi.encode(msg.value));
         } else {
             Require.that(
                 msg.value == 0,
@@ -444,10 +439,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
     }
 
-    function _setVirtualBalance(uint256 _balance) internal {
-        _setUint256(_VIRTUAL_BALANCE_SLOT, _balance);
-    }
-
     function _setIsDepositSourceWrapper(bool _isDepositSourceWrapper) internal {
         _setUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT, _isDepositSourceWrapper ? 1 : 0);
         emit IsDepositSourceWrapperSet(_isDepositSourceWrapper);
@@ -466,9 +457,18 @@ contract GmxV2IsolationModeTokenVaultV1 is
         emit ExecutionFeeSet(_accountNumber, _executionFee);
     }
 
-    function _requireVirtualBalanceMatchesRealBalance() internal view {
+    function _requireVirtualBalanceWithPendingMatchesRealBalance() internal view {
+        address vault = address(this);
+        uint256 pendingDeposit = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).getPendingAmountByAccount(
+            vault,
+            IGmxV2IsolationModeVaultFactory.FreezeType.Deposit
+        );
+        uint256 pendingWithdrawal = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).getPendingAmountByAccount(
+            vault,
+            IGmxV2IsolationModeVaultFactory.FreezeType.Withdrawal
+        );
         Require.that(
-            virtualBalance() == IERC20(UNDERLYING_TOKEN()).balanceOf(address(this)),
+            virtualBalance() - pendingDeposit + pendingWithdrawal == IERC20(UNDERLYING_TOKEN()).balanceOf(vault),
             _FILE,
             "Virtual vs real balance mismatch"
         );

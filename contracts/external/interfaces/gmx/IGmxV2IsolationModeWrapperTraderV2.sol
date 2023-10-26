@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IGmxDepositCallbackReceiver } from "./IGmxDepositCallbackReceiver.sol";
 import { IGmxV2Registry } from "./IGmxV2Registry.sol";
-import { IUpgradeableIsolationModeWrapperTrader } from "../IUpgradeableIsolationModeWrapperTrader.sol";
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../IUpgradeableAsyncIsolationModeWrapperTrader.sol";
 
 /**
  * @title   IGmxV2IsolationModeWrapperTraderV2
@@ -30,43 +30,9 @@ import { IUpgradeableIsolationModeWrapperTrader } from "../IUpgradeableIsolation
  *
  */
 interface IGmxV2IsolationModeWrapperTraderV2 is
-    IUpgradeableIsolationModeWrapperTrader,
+    IUpgradeableAsyncIsolationModeWrapperTrader,
     IGmxDepositCallbackReceiver
 {
-
-    struct DepositInfo {
-        bytes32 key;
-        address vault;
-        uint256 accountNumber;
-        address inputToken;
-        uint256 inputAmount;
-        uint256 outputAmount;
-        bool isRetryable;
-    }
-
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event DepositCreated(bytes32 indexed key);
-    event DepositExecuted(bytes32 indexed key);
-    event DepositFailed(bytes32 indexed key, string reason);
-    event DepositCancelled(bytes32 indexed key);
-    event DepositCancelledFailed(bytes32 indexed key, string reason);
-
-    // ===================================================
-    // ==================== Functions ====================
-    // ===================================================
-
-    function cancelDeposit(bytes32 _key) external;
-
-    function setDepositInfoAndReducePendingAmountFromUnwrapper(
-        bytes32 _key,
-        uint256 _outputAmountDeltaWei,
-        DepositInfo calldata _depositInfo
-    ) external;
-
-    function getDepositInfo(bytes32 _key) external view returns (DepositInfo memory);
 
     function GMX_REGISTRY_V2() external view returns (IGmxV2Registry);
 }

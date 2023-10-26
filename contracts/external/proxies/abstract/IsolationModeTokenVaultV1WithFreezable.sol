@@ -47,6 +47,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ===================================================
 
     bytes32 private constant _FILE = "IsolationModeVaultV1Freezable"; // shortened to fit in 32 bytes
+    bytes32 private constant _VIRTUAL_BALANCE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.virtualBalance")) - 1);
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -132,6 +133,18 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
 
     function isVaultAccountFrozen(uint256 _accountNumber) public view returns (bool) {
         return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultAccountFrozen(address(this), _accountNumber);
+    }
+
+    function virtualBalance() public view returns (uint256) {
+        return _getUint256(_VIRTUAL_BALANCE_SLOT);
+    }
+
+    function virtualBalanceWithoutPendingWithdrawals() public view returns (uint256) {
+        uint256 pendingWithdrawals = IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).getPendingAmountByVault(
+            /* _vault = */ address(this),
+            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
+        );
+        return virtualBalance() - pendingWithdrawals;
     }
 
     // ==================================================================
@@ -364,6 +377,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ==================================================================
     // ======================== Private Functions =======================
     // ==================================================================
+
+    function _setVirtualBalance(uint256 _balance) internal {
+        _setUint256(_VIRTUAL_BALANCE_SLOT, _balance);
+    }
 
     function _requireNotFrozen() private view {
         Require.that(

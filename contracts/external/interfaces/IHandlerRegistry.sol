@@ -20,6 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
+import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "./IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "./IUpgradeableAsyncIsolationModeWrapperTrader.sol";
+
 
 /**
  * @title   IHandlerRegistry
@@ -35,6 +39,8 @@ interface IHandlerRegistry {
 
     event HandlerSet(address _handler, bool _isTrusted);
     event CallbackGasLimitSet(uint256 _callbackGasLimit);
+    event UnwrapperTraderSet(address _token, address _unwrapperTrader);
+    event WrapperTraderSet(address _token, address _wrapperTrader);
 
     // ===================================================
     // ==================== Functions ====================
@@ -47,7 +53,27 @@ interface IHandlerRegistry {
     )
     external;
 
+    function ownerSetUnwrapperByToken(
+        IIsolationModeVaultFactory _factoryToken,
+        IUpgradeableAsyncIsolationModeUnwrapperTrader _unwrapperTrader
+    )
+    external;
+
+    function ownerSetWrapperByToken(
+        IIsolationModeVaultFactory _factoryToken,
+        IUpgradeableAsyncIsolationModeWrapperTrader _wrapperTrader
+    )
+    external;
+
     function isHandler(address _handler) external view returns (bool);
 
     function callbackGasLimit() external view returns (uint256);
+
+    function getUnwrapperByToken(
+        IIsolationModeVaultFactory _factoryToken
+    ) external view returns (IUpgradeableAsyncIsolationModeUnwrapperTrader);
+
+    function getWrapperByToken(
+        IIsolationModeVaultFactory _factoryToken
+    ) external view returns (IUpgradeableAsyncIsolationModeWrapperTrader);
 }

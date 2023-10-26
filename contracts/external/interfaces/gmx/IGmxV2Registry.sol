@@ -52,18 +52,12 @@ interface IGmxV2Registry is IBaseRegistry, IHandlerRegistry {
     event GmxRouterSet(address _gmxRouter);
     event GmxDepositVaultSet(address _gmxDepositVault);
     event GmxWithdrawalVaultSet(address _gmxDepositVault);
-    event EthUsdMarketTokenSet(address _ethUsdMarketToken);
     event GmxV2UnwrapperTraderSet(address _gmxV2UnwrapperTrader);
     event GmxV2WrapperTraderSet(address _gmxV2WrapperTrader);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
-
-    function initializeTraders(
-        address _unwrapperTrader,
-        address _wrapperTrader
-    ) external;
 
     function ownerSetGmxExchangeRouter(address _gmxExchangeRouter) external;
 
@@ -76,12 +70,6 @@ interface IGmxV2Registry is IBaseRegistry, IHandlerRegistry {
     function ownerSetGmxDepositVault(address _gmxDepositVault) external;
 
     function ownerSetGmxWithdrawalVault(address _gmxWithdrawalVault) external;
-
-    function ownerSetEthUsdMarketToken(address _ethUsdMarketToken) external;
-
-    function ownerSetGmxV2UnwrapperTrader(address _gmxV2UnwrapperTrader) external;
-
-    function ownerSetGmxV2WrapperTrader(address _gmxV2UnwrapperTrader) external;
 
     function gmxExchangeRouter() external view returns (IGmxExchangeRouter);
 
@@ -98,10 +86,4 @@ interface IGmxV2Registry is IBaseRegistry, IHandlerRegistry {
     function gmxWithdrawalHandler() external view returns (IGmxWithdrawalHandler);
 
     function gmxWithdrawalVault() external view returns (address);
-
-    function ethUsdMarketToken() external view returns (IERC20);
-
-    function gmxV2UnwrapperTrader() external view returns (IGmxV2IsolationModeUnwrapperTraderV2);
-
-    function gmxV2WrapperTrader() external view returns (IGmxV2IsolationModeWrapperTraderV2);
 }

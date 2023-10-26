@@ -51,21 +51,17 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
     bytes32 private constant _FILE = "GmxV2Registry";
 
     // solhint-disable max-line-length
-    bytes32 private constant _ETH_USD_MARKET_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ethUsdMarketToken")) - 1);
     bytes32 private constant _GMX_DATASTORE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDataStore")) - 1);
     bytes32 private constant _GMX_DEPOSIT_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxDepositVault")) - 1);
     bytes32 private constant _GMX_EXCHANGE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxExchangeRouter")) - 1);
     bytes32 private constant _GMX_READER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxReader")) - 1);
     bytes32 private constant _GMX_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxRouter")) - 1);
     bytes32 private constant _GMX_WITHDRAWAL_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxWithdrawalVault")) - 1);
-    bytes32 private constant _GMX_V2_UNWRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2UnwrapperTrader")) - 1);
-    bytes32 private constant _GMX_V2_WRAPPER_TRADER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxV2WrapperTrader")) - 1);
     // solhint-enable max-line-length
 
     // ==================== Initializer ====================
 
     function initialize(
-        address _ethUsdMarketToken,
         address _gmxDataStore,
         address _gmxDepositVault,
         address _gmxExchangeRouter,
@@ -75,7 +71,6 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
         uint256 _callbackGasLimit,
         address _dolomiteRegistry
     ) external initializer {
-        _ownerSetEthUsdMarketToken(_ethUsdMarketToken);
         _ownerSetGmxDataStore(_gmxDataStore);
         _ownerSetGmxDepositVault(_gmxDepositVault);
         _ownerSetGmxExchangeRouter(_gmxExchangeRouter);
@@ -87,28 +82,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
     }
 
-    function initializeTraders(
-        address _unwrapperTrader,
-        address _wrapperTrader
-    ) external {
-        Require.that(
-            address(gmxV2UnwrapperTrader()) == address(0) && address(gmxV2WrapperTrader()) == address(0),
-            _FILE,
-            "Already initialized"
-        );
-        _ownerSetGmxV2UnwrapperTrader(_unwrapperTrader);
-        _ownerSetGmxV2WrapperTrader(_wrapperTrader);
-    }
-
     // ==================== Functions ====================
-
-    function ownerSetEthUsdMarketToken(
-        address _ethUsdMarketToken
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetEthUsdMarketToken(_ethUsdMarketToken);
-    }
 
     function ownerSetGmxDataStore(
         address _gmxDataStore
@@ -158,27 +132,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
         _ownerSetGmxWithdrawalVault(_gmxWithdrawalVault);
     }
 
-    function ownerSetGmxV2UnwrapperTrader(
-        address _gmxV2UnwrapperTrader
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetGmxV2UnwrapperTrader(_gmxV2UnwrapperTrader);
-    }
-
-    function ownerSetGmxV2WrapperTrader(
-        address _gmxV2WrapperTrader
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetGmxV2WrapperTrader(_gmxV2WrapperTrader);
-    }
-
     // ==================== Views ====================
-
-    function ethUsdMarketToken() external view returns (IERC20) {
-        return IERC20(_getAddress(_ETH_USD_MARKET_TOKEN_SLOT));
-    }
 
     function gmxDataStore() external view returns (IGmxDataStore) {
         return IGmxDataStore(_getAddress(_GMX_DATASTORE_SLOT));
@@ -210,14 +164,6 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
             || _handler == address(gmxWithdrawalHandler());
     }
 
-    function gmxV2UnwrapperTrader() public view returns (IGmxV2IsolationModeUnwrapperTraderV2) {
-        return IGmxV2IsolationModeUnwrapperTraderV2(_getAddress(_GMX_V2_UNWRAPPER_TRADER_SLOT));
-    }
-
-    function gmxV2WrapperTrader() public view returns (IGmxV2IsolationModeWrapperTraderV2) {
-        return IGmxV2IsolationModeWrapperTraderV2(_getAddress(_GMX_V2_WRAPPER_TRADER_SLOT));
-    }
-
     function gmxDepositHandler() public view returns (IGmxDepositHandler) {
         return IGmxExchangeRouter(_getAddress(_GMX_EXCHANGE_ROUTER_SLOT)).depositHandler();
     }
@@ -229,16 +175,6 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
     // ============================================================
     // ==================== Internal Functions ====================
     // ============================================================
-
-    function _ownerSetEthUsdMarketToken(address _ethUsdMarketToken) internal {
-        Require.that(
-            _ethUsdMarketToken != address(0),
-            _FILE,
-            "Invalid address"
-        );
-        _setAddress(_ETH_USD_MARKET_TOKEN_SLOT, _ethUsdMarketToken);
-        emit EthUsdMarketTokenSet(_ethUsdMarketToken);
-    }
 
     function _ownerSetGmxDataStore(address _gmxDataStore) internal {
         Require.that(
@@ -298,25 +234,5 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
         );
         _setAddress(_GMX_WITHDRAWAL_VAULT_SLOT, _gmxWithdrawalVault);
         emit GmxWithdrawalVaultSet(_gmxWithdrawalVault);
-    }
-
-    function _ownerSetGmxV2UnwrapperTrader(address _gmxV2UnwrapperTrader) internal {
-        Require.that(
-            _gmxV2UnwrapperTrader != address(0),
-            _FILE,
-            "Invalid address"
-        );
-        _setAddress(_GMX_V2_UNWRAPPER_TRADER_SLOT, _gmxV2UnwrapperTrader);
-        emit GmxV2UnwrapperTraderSet(_gmxV2UnwrapperTrader);
-    }
-
-    function _ownerSetGmxV2WrapperTrader(address _gmxV2WrapperTrader) internal {
-        Require.that(
-            _gmxV2WrapperTrader != address(0),
-            _FILE,
-            "Invalid address"
-        );
-        _setAddress(_GMX_V2_WRAPPER_TRADER_SLOT, _gmxV2WrapperTrader);
-        emit GmxV2WrapperTraderSet(_gmxV2WrapperTrader);
     }
 }

@@ -58,13 +58,6 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
 
     function ownerSetExecutionFee(uint256 _executionFee) external;
 
-    function depositIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    )
-    external;
-
     /**
      * @dev Sets whether or not the vault should use the GmxV2IsolationModeWrapperTraderV2 as the ERC20 transfer
      *      source when the call to `depositIntoVault` occurs. This value is unset once it is consumed by the call

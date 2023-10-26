@@ -30,7 +30,9 @@ import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
+import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { GmxMarket } from "../interfaces/gmx/GmxMarket.sol";
 import { GmxPrice } from "../interfaces/gmx/GmxPrice.sol";
@@ -75,7 +77,7 @@ library GmxV2Library {
         IGmxV2IsolationModeVaultFactory _factory,
         IGmxV2Registry _registry,
         IWETH _weth,
-        address _tradeOriginator,
+        address _vault,
         uint256 _ethExecutionFee,
         address _outputTokenUnderlying,
         uint256 _minOutputAmount,
@@ -83,7 +85,7 @@ library GmxV2Library {
         uint256 _inputAmount
     ) public returns (bytes32) {
         IGmxExchangeRouter exchangeRouter = _registry.gmxExchangeRouter();
-        _weth.safeTransferFrom(_tradeOriginator, address(this), _ethExecutionFee);
+        _weth.safeTransferFrom(_vault, address(this), _ethExecutionFee);
         _weth.withdraw(_ethExecutionFee);
 
         address depositVault = _registry.gmxDepositVault();
@@ -140,7 +142,7 @@ library GmxV2Library {
         IERC20(swapPath[0]).safeApprove(address(registry.gmxRouter()), _inputAmount);
         exchangeRouter.sendTokens(swapPath[0], withdrawalVault, _inputAmount);
 
-        IGmxV2IsolationModeUnwrapperTraderV2 unwrapper = registry.gmxV2UnwrapperTrader();
+        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(_factory);
         IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
             /* receiver = */ address(unwrapper),
             /* callbackContract = */ address(unwrapper),
@@ -155,6 +157,7 @@ library GmxV2Library {
             /* callbackGasLimit = */ registry.callbackGasLimit()
         );
 
+        // TODO: move to unwrapper; that way we can verify cancellations + collect ETH fee refunds?
         bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
         unwrapper.vaultCreateWithdrawalInfo(
             withdrawalKey,
@@ -172,7 +175,10 @@ library GmxV2Library {
             "Invalid execution fee"
         );
         _vault.WETH().deposit{value: msg.value}();
-        IERC20(address(_vault.WETH())).safeApprove(address(_vault.registry().gmxV2WrapperTrader()), msg.value);
+        IERC20(address(_vault.WETH())).safeApprove(
+            address(_vault.registry().getWrapperByToken(IIsolationModeVaultFactory(_vault.VAULT_FACTORY()))),
+            msg.value
+        );
     }
 
     function swapExactInputForOutputForWithdrawal(
@@ -210,62 +216,11 @@ library GmxV2Library {
         );
     }
 
-    function swapExactInputForOutputForDepositCancellation(
-        IGmxV2IsolationModeWrapperTraderV2 _wrapper,
-        IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory _depositInfo
-    ) public {
-        uint256[] memory marketIdsPath = new uint256[](2);
-        marketIdsPath[0] = _wrapper.VAULT_FACTORY().marketId();
-        marketIdsPath[1] = _wrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_depositInfo.inputToken);
-
-        IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
-        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
-        traderParams[0].makerAccountIndex = 0;
-        traderParams[0].trader = address(_wrapper.GMX_REGISTRY_V2().gmxV2UnwrapperTrader());
-
-        IGmxV2IsolationModeUnwrapperTraderV2.TradeType[] memory tradeTypes = new IGmxV2IsolationModeUnwrapperTraderV2.TradeType[](1); // solhint-disable-line max-line-length
-        tradeTypes[0] = IGmxV2IsolationModeUnwrapperTraderV2.TradeType.FromDeposit;
-        bytes32[] memory keys = new bytes32[](1);
-        keys[0] = _depositInfo.key;
-        traderParams[0].tradeData = abi.encode(tradeTypes, keys);
-
-        IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
-            deadline: block.timestamp,
-            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None
-        });
-
-        uint256 outputAmount = _depositInfo.inputAmount;
-        IERC20(_depositInfo.inputToken).safeApprove(traderParams[0].trader, outputAmount);
-
-        IGmxV2IsolationModeUnwrapperTraderV2(traderParams[0].trader).handleGmxCallbackFromWrapperBefore();
-        IGmxV2IsolationModeTokenVaultV1(_depositInfo.vault).swapExactInputForOutput(
-            _depositInfo.accountNumber,
-            marketIdsPath,
-            /* _inputAmountWei = */ _depositInfo.outputAmount,
-            outputAmount,
-            traderParams,
-            /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
-            userConfig
-        );
-        IGmxV2IsolationModeUnwrapperTraderV2(traderParams[0].trader).handleGmxCallbackFromWrapperAfter();
-    }
-
     function isValidInputOrOutputToken(
         IGmxV2IsolationModeVaultFactory _factory,
         address _token
     ) public view returns (bool) {
         return _token == _factory.LONG_TOKEN() || _token == _factory.SHORT_TOKEN();
-    }
-
-    function validateVirtualBalance(address _vault, uint256 _transferAmount) public view {
-        uint256 underlyingVirtualBalance = IGmxV2IsolationModeTokenVaultV1(_vault).virtualBalance();
-        Require.that(
-            underlyingVirtualBalance >= _transferAmount,
-            _FILE,
-            "Insufficient balance",
-            underlyingVirtualBalance,
-            _transferAmount
-        );
     }
 
     function validateExecutionFee(

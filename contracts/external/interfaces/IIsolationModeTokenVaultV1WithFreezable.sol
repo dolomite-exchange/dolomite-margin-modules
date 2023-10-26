@@ -52,7 +52,26 @@ interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 
         uint256 _minOutputAmount
     ) external payable;
 
+    /**
+     * @return True if the entire vault is frozen, false otherwise.
+     */
     function isVaultFrozen() external view returns (bool);
 
+    /**
+     *
+     * @param _accountNumber    The account number of the vault to check.
+     * @return True if the vault account is frozen, false otherwise.
+     */
     function isVaultAccountFrozen(uint256 _accountNumber) external view returns (bool);
+
+    /**
+     * @return The balance of the assets in this vault assuming no pending withdrawals (but includes pending deposits).
+     */
+    function virtualBalance() external view returns (uint256);
+
+    /**
+     * @return  Same as `virtualBalance` but subtracts withdrawals to give a more accurate representation of optimistic
+     *          balance assuming all pending changes are executed.
+     */
+    function virtualBalanceWithoutPendingWithdrawals() external view returns (uint256);
 }

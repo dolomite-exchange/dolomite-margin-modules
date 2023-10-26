@@ -24,9 +24,11 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AsyncIsolationModeTraderBase } from "./AsyncIsolationModeTraderBase.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
-import { IUpgradeableIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableIsolationModeWrapperTrader.sol";
+import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 
 /**
@@ -37,7 +39,7 @@ import { AccountActionLib } from "../../lib/AccountActionLib.sol";
  *          for the VaultWrapperFactory token.
  */
 abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
-    IUpgradeableIsolationModeWrapperTrader,
+    IUpgradeableAsyncIsolationModeWrapperTrader,
     AsyncIsolationModeTraderBase
 {
     using SafeERC20 for IERC20;
@@ -45,11 +47,15 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "IsolationModeWrapperTraderV2";
+
+    bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
+    bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
+
+    uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _ACTIONS_LENGTH = 1;
 
     // ======================== Field Variables ========================
 
-    bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
 
     // ======================== External Functions ========================
 
@@ -221,13 +227,61 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
      */
     function _exchangeIntoUnderlyingToken(
         address _tradeOriginator,
-        address _receiver,
+        address /* _receiver */,
         address _outputTokenUnderlying,
         uint256 _minOutputAmount,
         address _inputToken,
         uint256 _inputAmount,
-        bytes memory _extraOrderData
-    ) internal virtual returns (uint256);
+        bytes memory _orderData
+    )
+    internal
+    returns (uint256) {
+        // Account number is set by the Token Vault so we know it's safe to use
+        (uint256 accountNumber, bytes memory _extraOrderData) = abi.decode(_orderData, (uint256, bytes));
+
+        // Disallow the deposit if there's already an action waiting for it
+        Require.that(
+            !IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).isVaultFrozen(_tradeOriginator),
+            _FILE,
+            "Vault is frozen",
+            _tradeOriginator
+        );
+
+        bytes32 depositKey = _createDeposit(
+            /* _vault = */ _tradeOriginator,
+            _outputTokenUnderlying,
+            _minOutputAmount,
+            _inputToken,
+            _inputAmount,
+            _extraOrderData
+        );
+
+        _setDepositInfo(
+            depositKey,
+            DepositInfo({
+                key: depositKey,
+                vault: _tradeOriginator,
+                accountNumber: accountNumber,
+                inputToken: _inputToken,
+                inputAmount: _inputAmount,
+                outputAmount: _minOutputAmount,
+                isRetryable: false
+            })
+        );
+        _updateVaultPendingAmount(
+            _tradeOriginator,
+            accountNumber,
+            _minOutputAmount,
+            /* _isPositive = */ true
+        );
+        emit DepositCreated(depositKey);
+
+        VAULT_FACTORY().setShouldSkipTransfer(
+            _tradeOriginator,
+            /* _shouldSkipTransfer = */ true
+        );
+        return _minOutputAmount;
+    }
 
     function _approveIsolationModeTokenForTransfer(
         address _vault,
@@ -235,16 +289,103 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         uint256 _amount
     )
     internal
-    virtual {
+    override {
         VAULT_FACTORY().enqueueTransferIntoDolomiteMargin(_vault, _amount);
-
-        address underlyingToken = VAULT_FACTORY().UNDERLYING_TOKEN();
-        IERC20(underlyingToken).safeApprove(_vault, _amount);
         IERC20(address(VAULT_FACTORY())).safeApprove(_receiver, _amount);
+    }
+
+    function _depositIntoDefaultPositionAndClearDeposit(
+        IFreezableIsolationModeVaultFactory _factory,
+        DepositInfo memory _depositInfo,
+        uint256 _depositAmountWei
+    ) internal {
+        uint256 marketId = _factory.marketId();
+        uint256 maxWei = DOLOMITE_MARGIN().getMarketMaxWei(marketId).value;
+        IDolomiteStructs.Par memory supplyPar = IDolomiteStructs.Par({
+            sign: true,
+            value: DOLOMITE_MARGIN().getMarketTotalPar(marketId).supply
+        });
+
+        if (DOLOMITE_MARGIN().parToWei(marketId, supplyPar).value + _depositAmountWei >= maxWei && maxWei != 0) {
+            // If the supplyPar is gte than the maxWei, then we should to transfer the deposit to the vault owner. It's
+            // better to do this than to revert, since the user will be able to maintain control over the assets.
+            IERC20 underlyingToken = IERC20(_factory.UNDERLYING_TOKEN());
+            underlyingToken.safeTransfer(_factory.getAccountByVault(_depositInfo.vault), _depositAmountWei);
+            // Reset the allowance to 0 since it won't be used
+            underlyingToken.safeApprove(_depositInfo.vault, 0);
+        } else {
+            _factory.depositIntoDolomiteMarginFromTokenConverter(
+                _depositInfo.vault,
+                _DEFAULT_ACCOUNT_NUMBER,
+                _depositAmountWei
+            );
+        }
+
+        _clearDepositAndUpdatePendingAmount(_depositInfo);
+    }
+
+    function _clearDepositAndUpdatePendingAmount(
+        DepositInfo memory _depositInfo
+    ) internal {
+        _updateVaultPendingAmount(
+            _depositInfo.vault,
+            _depositInfo.accountNumber,
+            _depositInfo.outputAmount,
+            /* _isPositive = */ false
+        );
+        // Setting the outputAmount to 0 clears it
+        _depositInfo.outputAmount = 0;
+        _setDepositInfo(_depositInfo.key, _depositInfo);
+    }
+
+    function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
+        bool clearValues = _info.outputAmount == 0;
+        DepositInfo storage storageInfo = _getDepositSlot(_key);
+        storageInfo.key = _key;
+        storageInfo.vault = clearValues ? address(0) : _info.vault;
+        storageInfo.accountNumber = clearValues ? 0 : _info.accountNumber;
+        storageInfo.inputToken = clearValues ? address(0) : _info.inputToken;
+        storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
+        storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
+        storageInfo.isRetryable = clearValues ? false : _info.isRetryable;
     }
 
     function _setVaultFactory(address _factory) internal {
         _setAddress(_VAULT_FACTORY_SLOT, _factory);
+    }
+
+    function _updateVaultPendingAmount(
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _amountDeltaWei,
+        bool _isPositive
+    ) internal {
+        IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).updateVaultAccountPendingAmountForFrozenStatus(
+            _vault,
+            _accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Deposit,
+            /* _amountDeltaWei = */ IDolomiteStructs.Wei({
+            sign: _isPositive,
+            value: _amountDeltaWei
+        })
+        );
+    }
+
+    function _createDeposit(
+        address _vault,
+        address _outputTokenUnderlying,
+        uint256 _minOutputAmount,
+        address _inputToken,
+        uint256 _inputAmount,
+        bytes memory _extraOrderData
+    ) internal virtual returns (bytes32 _depositKey);
+
+    function _validateDepositExists(DepositInfo memory _depositInfo) internal pure {
+        Require.that(
+            _depositInfo.vault != address(0),
+            _FILE,
+            "Invalid deposit key"
+        );
     }
 
     function _getExchangeCost(
@@ -257,4 +398,12 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     virtual
     view
     returns (uint256);
+
+    function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {
+        bytes32 slot = keccak256(abi.encodePacked(_DEPOSIT_INFO_SLOT, _key));
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            info.slot := slot
+        }
+    }
 }

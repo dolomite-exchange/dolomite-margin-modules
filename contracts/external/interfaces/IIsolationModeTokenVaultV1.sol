@@ -271,4 +271,6 @@ interface IIsolationModeTokenVaultV1 {
      * @return The registry used to discover important addresses for Dolomite
      */
     function dolomiteRegistry() external view returns (IDolomiteRegistry);
+
+    function VAULT_FACTORY() external view returns (address);
 }

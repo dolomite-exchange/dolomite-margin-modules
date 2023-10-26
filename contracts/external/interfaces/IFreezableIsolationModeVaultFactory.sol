@@ -57,6 +57,20 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ===========================================================
 
     /**
+     * Performs the deposit from a token wrapper/unwrapper contract into the vault.
+     *
+     * @param  _vault               The address of the vault making the deposit
+     * @param _vaultAccountNumber   The account number (sub account) for the corresponding vault
+     * @param _amountWei            The amount of the token to deposit
+     */
+    function depositIntoDolomiteMarginFromTokenConverter(
+        address _vault,
+        uint256 _vaultAccountNumber,
+        uint256 _amountWei
+    )
+    external;
+
+    /**
      *
      * @param  _vault           The address of the vault whose frozen status should change
      * @param  _accountNumber   The account number (sub account) for the corresponding vault
@@ -103,6 +117,19 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
     function getPendingAmountByAccount(
         address _vault,
         uint256 _accountNumber,
+        FreezeType _freezeType
+    ) external view returns (uint256);
+
+    /**
+     *
+     * @param  _vault           The address of the vault that may have a pending callback amount
+     * @param  _freezeType      The type of freeze that may have a pending callback amount (Deposit or Withdrawal)
+     * @return                  The pending amount for this account. 0 means nothing is pending. FreezeType.ForDeposit
+     *                          means the pending amount is positive, and FreezeType.ForWithdrawal means the pending
+     *                          amount is negative.
+     */
+    function getPendingAmountByVault(
+        address _vault,
         FreezeType _freezeType
     ) external view returns (uint256);
 }

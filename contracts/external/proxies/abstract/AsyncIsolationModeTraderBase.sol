@@ -46,8 +46,8 @@ abstract contract AsyncIsolationModeTraderBase is
 
     bytes32 private constant _FILE = "AsyncIsolationModeTraderBase";
 
-    bytes32 internal constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.weth")) - 1);
-    bytes32 internal constant _HANDLER_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlerRegistry")) - 1);
+    bytes32 private constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.weth")) - 1);
+    bytes32 private constant _HANDLER_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlerRegistry")) - 1);
 
 
     // ===================================================

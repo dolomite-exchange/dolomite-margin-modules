@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IGmxWithdrawalCallbackReceiver } from "./IGmxWithdrawalCallbackReceiver.sol";
-import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolationModeUnwrapperTrader.sol";
+import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 
 
 /**
@@ -30,43 +30,9 @@ import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolati
  *
  */
 interface IGmxV2IsolationModeUnwrapperTraderV2 is
-    IUpgradeableIsolationModeUnwrapperTrader,
+    IUpgradeableAsyncIsolationModeUnwrapperTrader,
     IGmxWithdrawalCallbackReceiver
 {
-
-    // ================================================
-    // ==================== Structs ===================
-    // ================================================
-
-    struct WithdrawalInfo {
-        bytes32 key;
-        address vault;
-        uint256 accountNumber;
-        /// @dev The amount of GM tokens that is being sold
-        uint256 inputAmount;
-        address outputToken;
-        /// @dev initially 0 until the withdrawal is executed
-        uint256 outputAmount;
-        bool isRetryable;
-    }
-
-    // ================================================
-    // ===================== Enums ====================
-    // ================================================
-
-    enum TradeType {
-        FromWithdrawal,
-        FromDeposit
-    }
-
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event WithdrawalCreated(bytes32 indexed key);
-    event WithdrawalExecuted(bytes32 indexed key);
-    event WithdrawalFailed(bytes32 indexed key, string reason);
-    event WithdrawalCancelled(bytes32 indexed key);
 
     // ===================================================
     // ==================== Functions ====================
@@ -83,25 +49,4 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
      * IGmxV2IsolationModeWrapperTraderV2
      */
     function handleGmxCallbackFromWrapperAfter() external;
-
-    /**
-     * Can be called by a valid handler to re-execute a stuck withdrawal. This can be used if it failed in the GMX
-     * callback but can't be liquidated.
-     *
-     * @param  _key  The key of the withdrawal to re-execute
-     */
-    function executeWithdrawalForRetry(bytes32 _key) external;
-
-    /**
-     * Saves the follow withdrawal info as a struct. Only callable by the user's vault
-     */
-    function vaultCreateWithdrawalInfo(
-        bytes32 _key,
-        uint256 _accountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount
-    ) external;
-
-    function getWithdrawalInfo(bytes32 _key) external view returns (WithdrawalInfo memory);
 }

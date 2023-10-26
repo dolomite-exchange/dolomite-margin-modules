@@ -24,6 +24,9 @@ import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
+import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
+import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable max-line-length
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable max-line-length
 
 
 /**
@@ -42,8 +45,12 @@ abstract contract HandlerRegistry is
     // ===================== Constants =====================
 
     bytes32 private constant _FILE = "HandlerRegistry";
-    bytes32 internal constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1); // solhint-disable-line max-line-length
+    // solhint-disable max-line-length
+    bytes32 internal constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1);
     bytes32 internal constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
+    bytes32 internal constant _UNWRAPPER_BY_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperByToken")) - 1);
+    bytes32 internal constant _WRAPPER_BY_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wrapperByToken")) - 1);
+    // solhint-enable max-line-length
 
     // ===================== Functions =====================
 
@@ -64,13 +71,45 @@ abstract contract HandlerRegistry is
         _ownerSetCallbackGasLimit(_callbackGasLimit);
     }
 
-    function callbackGasLimit() external view returns (uint256) {
-        return _getUint256(_CALLBACK_GAS_LIMIT_SLOT);
+    function ownerSetUnwrapperByToken(
+        IIsolationModeVaultFactory _factoryToken,
+        IUpgradeableAsyncIsolationModeUnwrapperTrader _unwrapperTrader
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetUnwrapperByToken(_factoryToken, _unwrapperTrader);
+    }
+
+    function ownerSetWrapperByToken(
+        IIsolationModeVaultFactory _factoryToken,
+        IUpgradeableAsyncIsolationModeWrapperTrader _wrapperTrader
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetWrapperByToken(_factoryToken, _wrapperTrader);
     }
 
     function isHandler(address _handler) public virtual view returns (bool) {
         bytes32 slot = keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));
         return _getUint256(slot) == 1;
+    }
+
+    function callbackGasLimit() external view returns (uint256) {
+        return _getUint256(_CALLBACK_GAS_LIMIT_SLOT);
+    }
+
+    function getUnwrapperByToken(
+        IIsolationModeVaultFactory _factoryToken
+    ) external view returns (IUpgradeableAsyncIsolationModeUnwrapperTrader) {
+        bytes32 slot = keccak256(abi.encodePacked(_UNWRAPPER_BY_TOKEN_SLOT, address(_factoryToken)));
+        return IUpgradeableAsyncIsolationModeUnwrapperTrader(_getAddress(slot));
+    }
+
+    function getWrapperByToken(
+        IIsolationModeVaultFactory _factoryToken
+    ) external view returns (IUpgradeableAsyncIsolationModeWrapperTrader) {
+        bytes32 slot = keccak256(abi.encodePacked(_WRAPPER_BY_TOKEN_SLOT, address(_factoryToken)));
+        return IUpgradeableAsyncIsolationModeWrapperTrader(_getAddress(slot));
     }
 
     // ===================== Internal Functions =====================
@@ -85,5 +124,25 @@ abstract contract HandlerRegistry is
         // We don't want to enforce a minimum. That way, we can disable callbacks (if needed) by setting this to 0.
         _setUint256(_CALLBACK_GAS_LIMIT_SLOT, _callbackGasLimit);
         emit CallbackGasLimitSet(_callbackGasLimit);
+    }
+
+    function _ownerSetUnwrapperByToken(
+        IIsolationModeVaultFactory _factoryToken,
+        IUpgradeableAsyncIsolationModeUnwrapperTrader _unwrapperTrader
+    )
+    internal {
+        bytes32 slot = keccak256(abi.encodePacked(_UNWRAPPER_BY_TOKEN_SLOT, address(_factoryToken)));
+        _setAddress(slot, address(_unwrapperTrader));
+        emit UnwrapperTraderSet(address(_factoryToken), address(_unwrapperTrader));
+    }
+
+    function _ownerSetWrapperByToken(
+        IIsolationModeVaultFactory _factoryToken,
+        IUpgradeableAsyncIsolationModeWrapperTrader _wrapperTrader
+    )
+    internal {
+        bytes32 slot = keccak256(abi.encodePacked(_WRAPPER_BY_TOKEN_SLOT, address(_factoryToken)));
+        _setAddress(slot, address(_wrapperTrader));
+        emit WrapperTraderSet(address(_factoryToken), address(_wrapperTrader));
     }
 }

@@ -61,8 +61,6 @@ interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreez
 
     function shouldSkipTransfer() external view returns (bool);
 
-    function virtualBalance() external view returns (uint256);
-
     function registry() external view returns (IGmxV2Registry);
 
     function getExecutionFeeForAccountNumber(uint256 _accountNumber) external view returns (uint256);
