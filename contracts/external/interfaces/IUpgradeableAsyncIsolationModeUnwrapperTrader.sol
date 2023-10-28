@@ -26,7 +26,7 @@ import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
 
 
 /**
- * @title   IUpgradeableIsolationModeUnwrapperTrader
+ * @title   IUpgradeableAsyncIsolationModeUnwrapperTrader
  * @author  Dolomite
  *
  * Interface for an upgradeable contract that can convert an isolation mode token into another token.
@@ -58,26 +58,15 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
         FromDeposit
     }
 
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event WithdrawalCreated(bytes32 indexed key);
-    event WithdrawalExecuted(bytes32 indexed key);
-    event WithdrawalFailed(bytes32 indexed key, string reason);
-    event WithdrawalCancelled(bytes32 indexed key);
-
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
     /**
-     * Can be called by a valid handler to re-execute a stuck withdrawal. This should be used if the withdrawal can't
-     * be liquidated (IE because the account is over-collateralized now).
      *
-     * @param  _key  The key of the withdrawal to re-execute
+     * @param _key The key of the withdrawal that should be cancelled
      */
-    function executeWithdrawalForRetry(bytes32 _key) external;
+    function cancelWithdrawal(bytes32 _key) external;
 
     /**
      * Saves the follow withdrawal info as a struct. Only callable by the user's vault

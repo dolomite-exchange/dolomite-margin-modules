@@ -32,6 +32,7 @@ import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsola
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; //solhint-disable-line max-line-length
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
+import { AsyncIsolationModeTraderLib } from "../../lib/AsyncIsolationModeTraderLib.sol";
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 
 /**
@@ -360,7 +361,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         IDolomiteStructs.AccountInfo calldata _accountInfo,
         bytes calldata _data
     ) internal virtual {
-        IIsolationModeVaultFactory factory = VAULT_FACTORY();
+        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
         _validateVaultExists(factory, _accountInfo.owner);
 
         (
@@ -409,7 +410,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         );
 
         factory.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
-        factory.setShouldSkipTransfer(vault, /* _shouldSkipTransfer = */ true);
+        factory.setShouldVaultSkipTransfer(vault, /* _shouldSkipTransfer = */ true);
     }
 
     /**
@@ -527,7 +528,15 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         );
     }
 
-    function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual;
+    function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual {
+        try AsyncIsolationModeTraderLib.swapExactInputForOutputForWithdrawal(/* _unwrapper = this */, _withdrawalInfo) {
+            emit WithdrawalExecuted(_withdrawalInfo.key);
+        } catch Error(string memory _reason) {
+            emit WithdrawalFailed(_withdrawalInfo.key, _reason);
+        } catch (bytes memory /* _reason */) {
+            emit WithdrawalFailed(_withdrawalInfo.key, "");
+        }
+    }
 
     function _validateVaultExists(IIsolationModeVaultFactory _factory, address _vault) internal view {
         Require.that(
@@ -556,7 +565,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function _getWrapperTrader() internal view returns (IUpgradeableAsyncIsolationModeWrapperTrader) {
-        return HANDLER_REGISTRY().getWrapperByToken(address(VAULT_FACTORY()));
+        return HANDLER_REGISTRY().getWrapperByToken(VAULT_FACTORY());
     }
 
     function _validateWithdrawalExists(WithdrawalInfo memory _withdrawalInfo) internal pure {

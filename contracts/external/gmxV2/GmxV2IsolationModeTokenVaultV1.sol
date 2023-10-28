@@ -33,7 +33,11 @@ import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
+import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
+import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
 
@@ -144,9 +148,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
      * @dev    This calls the wrapper trader which will revert if given an invalid _key
      */
     function cancelDeposit(bytes32 _key) external onlyVaultOwner(msg.sender) {
-        IGmxV2Registry gmxRegistry = registry();
-        _validateVaultOwnerForStruct(gmxRegistry.gmxV2WrapperTrader().getDepositInfo(_key).vault);
-        gmxRegistry.gmxV2WrapperTrader().cancelDeposit(_key);
+        IUpgradeableAsyncIsolationModeWrapperTrader wrapper =
+                                registry().getWrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
+        _validateVaultOwnerForStruct(wrapper.getDepositInfo(_key).vault);
+        wrapper.cancelDeposit(_key);
     }
 
     /**
@@ -154,25 +159,26 @@ contract GmxV2IsolationModeTokenVaultV1 is
      * @param  _key Withdrawal key
      */
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
-        IGmxV2Registry gmxRegistry = registry();
-        _validateVaultOwnerForStruct(gmxRegistry.gmxV2UnwrapperTrader().getWithdrawalInfo(_key).vault);
-        gmxRegistry.gmxExchangeRouter().cancelWithdrawal(_key);
+        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
+                                registry().getUnwrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
+        _validateVaultOwnerForStruct(unwrapper.getWithdrawalInfo(_key).vault);
+        unwrapper.cancelWithdrawal(_key);
     }
 
-    function setIsDepositSourceWrapper(
+    function setIsVaultDepositSourceWrapper(
         bool _isDepositSourceWrapper
     )
     external
     onlyVaultFactory(msg.sender) {
-        _setIsDepositSourceWrapper(_isDepositSourceWrapper);
+        _setIsVaultDepositSourceWrapper(_isDepositSourceWrapper);
     }
 
-    function setShouldSkipTransfer(
+    function setShouldVaultSkipTransfer(
         bool _shouldSkipTransfer
     )
     external
     onlyVaultFactory(msg.sender) {
-        _setShouldSkipTransfer(_shouldSkipTransfer);
+        _setShouldVaultSkipTransfer(_shouldSkipTransfer);
     }
 
     function executeDepositIntoVault(
@@ -189,11 +195,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
                 IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
             } else {
                 IERC20(UNDERLYING_TOKEN()).safeTransferFrom(
-                    address(registry().gmxV2WrapperTrader()),
+                    address(registry().getWrapperByToken(IIsolationModeVaultFactory(VAULT_FACTORY()))),
                     address(this),
                     _amount
                 );
-                _setIsDepositSourceWrapper(/* _isDepositSourceWrapper = */ false);
+                _setIsVaultDepositSourceWrapper(/* _isDepositSourceWrapper = */ false);
             }
             _requireVirtualBalanceWithPendingMatchesRealBalance();
         } else {
@@ -202,7 +208,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
                 _FILE,
                 "Vault should be frozen"
             );
-            _setShouldSkipTransfer(/* _shouldSkipTransfer = */ false);
+            _setShouldVaultSkipTransfer(/* _shouldSkipTransfer = */ false);
         }
     }
 
@@ -224,7 +230,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
                 _FILE,
                 "Vault should be frozen"
             );
-            _setShouldSkipTransfer(false);
+            _setShouldVaultSkipTransfer(false);
         }
     }
 
@@ -410,8 +416,9 @@ contract GmxV2IsolationModeTokenVaultV1 is
         uint256 _minOutputAmount,
         bool _isLiquidation
     ) internal {
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
         Require.that(
-            registry().gmxV2UnwrapperTrader().isValidOutputToken(_outputToken),
+            registry().getUnwrapperByToken(factory).isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token"
         );
@@ -428,7 +435,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         }
 
         GmxV2Library.validateAndExecuteInitiateUnwrapping(
-            IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()),
+            factory,
             /* _vault = */ address(this),
             _tradeAccountNumber,
             _inputAmount,
@@ -439,12 +446,12 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
     }
 
-    function _setIsDepositSourceWrapper(bool _isDepositSourceWrapper) internal {
+    function _setIsVaultDepositSourceWrapper(bool _isDepositSourceWrapper) internal {
         _setUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT, _isDepositSourceWrapper ? 1 : 0);
         emit IsDepositSourceWrapperSet(_isDepositSourceWrapper);
     }
 
-    function _setShouldSkipTransfer(bool _shouldSkipTransfer) internal {
+    function _setShouldVaultSkipTransfer(bool _shouldSkipTransfer) internal {
         _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
         emit ShouldSkipTransferSet(_shouldSkipTransfer);
     }
@@ -459,13 +466,13 @@ contract GmxV2IsolationModeTokenVaultV1 is
 
     function _requireVirtualBalanceWithPendingMatchesRealBalance() internal view {
         address vault = address(this);
-        uint256 pendingDeposit = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).getPendingAmountByAccount(
+        uint256 pendingDeposit = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).getPendingAmountByVault(
             vault,
-            IGmxV2IsolationModeVaultFactory.FreezeType.Deposit
+            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
         );
-        uint256 pendingWithdrawal = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).getPendingAmountByAccount(
+        uint256 pendingWithdrawal = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).getPendingAmountByVault(
             vault,
-            IGmxV2IsolationModeVaultFactory.FreezeType.Withdrawal
+            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
         );
         Require.that(
             virtualBalance() - pendingDeposit + pendingWithdrawal == IERC20(UNDERLYING_TOKEN()).balanceOf(vault),

@@ -80,6 +80,16 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // ============= Public Functions =============
     // ============================================
 
+    function cancelWithdrawal(bytes32 _key) external {
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
+        Require.that(
+            msg.sender == withdrawalInfo.vault || isHandler(msg.sender),
+            _FILE,
+            "Only vault or handler can cancel"
+        );
+        GMX_REGISTRY_V2().gmxExchangeRouter().cancelWithdrawal(_key);
+    }
+
     function handleGmxCallbackFromWrapperBefore() external onlyWrapperCaller(msg.sender) {
         _handleGmxCallbackBefore();
     }
@@ -142,7 +152,11 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         _validateWithdrawalExists(withdrawalInfo);
 
-        // @audit - Is there a way for us to verify the tokens were sent back to the vault?
+        IERC20(VAULT_FACTORY().UNDERLYING_TOKEN()).safeTransfer(
+            withdrawalInfo.vault,
+            withdrawalInfo.inputAmount
+        );
+
         _updateVaultPendingAmount(
             withdrawalInfo.vault,
             withdrawalInfo.accountNumber,
@@ -169,6 +183,10 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         );
     }
 
+    function GMX_REGISTRY_V2() public view returns (IGmxV2Registry) {
+        return IGmxV2Registry(address(HANDLER_REGISTRY()));
+    }
+
     function getWithdrawalInfo(bytes32 _key) public pure returns (WithdrawalInfo memory) {
         return _getWithdrawalSlot(_key);
     }
@@ -179,13 +197,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 
     function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal override {
         _handleGmxCallbackBefore();
-        try GmxV2Library.swapExactInputForOutputForWithdrawal(this, _withdrawalInfo) {
-            emit WithdrawalExecuted(_withdrawalInfo.key);
-        } catch Error(string memory _reason) {
-            emit WithdrawalFailed(_withdrawalInfo.key, _reason);
-        } catch (bytes memory /* _reason */) {
-            emit WithdrawalFailed(_withdrawalInfo.key, "");
-        }
+        super._executeWithdrawal(_withdrawalInfo);
         _handleGmxCallbackAfter();
     }
 

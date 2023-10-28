@@ -19,12 +19,19 @@
 */
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
+import { AccountBalanceLib } from "./AccountBalanceLib.sol";
 
 
 library AsyncIsolationModeTraderLib {
+    using SafeERC20 for IERC20;
 
     function swapExactInputForOutputForWithdrawal(
         IUpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper,
@@ -50,7 +57,7 @@ library AsyncIsolationModeTraderLib {
             balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None
         });
 
-        IGmxV2IsolationModeTokenVaultV1(_withdrawalInfo.vault).swapExactInputForOutput(
+        IIsolationModeTokenVaultV1(_withdrawalInfo.vault).swapExactInputForOutput(
             _withdrawalInfo.accountNumber,
             marketIdsPath,
             _withdrawalInfo.inputAmount,
@@ -62,8 +69,8 @@ library AsyncIsolationModeTraderLib {
     }
 
     function swapExactInputForOutputForDepositCancellation(
-        IGmxV2IsolationModeWrapperTraderV2 _wrapper,
-        IGmxV2IsolationModeWrapperTraderV2.DepositInfo memory _depositInfo
+        IUpgradeableAsyncIsolationModeWrapperTrader _wrapper,
+        IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory _depositInfo
     ) public {
         uint256[] memory marketIdsPath = new uint256[](2);
         marketIdsPath[0] = _wrapper.VAULT_FACTORY().marketId();
@@ -74,8 +81,8 @@ library AsyncIsolationModeTraderLib {
         traderParams[0].makerAccountIndex = 0;
         traderParams[0].trader = address(_wrapper.GMX_REGISTRY_V2().gmxV2UnwrapperTrader());
 
-        IGmxV2IsolationModeUnwrapperTraderV2.TradeType[] memory tradeTypes = new IGmxV2IsolationModeUnwrapperTraderV2.TradeType[](1); // solhint-disable-line max-line-length
-        tradeTypes[0] = IGmxV2IsolationModeUnwrapperTraderV2.TradeType.FromDeposit;
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes = new IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[](1); // solhint-disable-line max-line-length
+        tradeTypes[0] = IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit;
         bytes32[] memory keys = new bytes32[](1);
         keys[0] = _depositInfo.key;
         traderParams[0].tradeData = abi.encode(tradeTypes, keys);
@@ -88,8 +95,8 @@ library AsyncIsolationModeTraderLib {
         uint256 outputAmount = _depositInfo.inputAmount;
         IERC20(_depositInfo.inputToken).safeApprove(traderParams[0].trader, outputAmount);
 
-        IGmxV2IsolationModeUnwrapperTraderV2(traderParams[0].trader).handleGmxCallbackFromWrapperBefore();
-        IGmxV2IsolationModeTokenVaultV1(_depositInfo.vault).swapExactInputForOutput(
+        IUpgradeableAsyncIsolationModeUnwrapperTrader(traderParams[0].trader).handleGmxCallbackFromWrapperBefore();
+        IIsolationModeTokenVaultV1(_depositInfo.vault).swapExactInputForOutput(
             _depositInfo.accountNumber,
             marketIdsPath,
             /* _inputAmountWei = */ _depositInfo.outputAmount,
@@ -98,6 +105,6 @@ library AsyncIsolationModeTraderLib {
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
         );
-        IGmxV2IsolationModeUnwrapperTraderV2(traderParams[0].trader).handleGmxCallbackFromWrapperAfter();
+        IUpgradeableAsyncIsolationModeUnwrapperTrader(traderParams[0].trader).handleGmxCallbackFromWrapperAfter();
     }
 }

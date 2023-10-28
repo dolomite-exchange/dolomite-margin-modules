@@ -181,41 +181,6 @@ library GmxV2Library {
         );
     }
 
-    function swapExactInputForOutputForWithdrawal(
-        IGmxV2IsolationModeUnwrapperTraderV2 _unwrapper,
-        IGmxV2IsolationModeUnwrapperTraderV2.WithdrawalInfo memory _withdrawalInfo
-    ) public {
-        uint256[] memory marketIdsPath = new uint256[](2);
-        marketIdsPath[0] = _unwrapper.VAULT_FACTORY().marketId();
-        marketIdsPath[1] = _unwrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_withdrawalInfo.outputToken);
-
-        IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
-        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
-        traderParams[0].makerAccountIndex = 0;
-        traderParams[0].trader = address(this);
-
-        IGmxV2IsolationModeUnwrapperTraderV2.TradeType[] memory tradeTypes = new IGmxV2IsolationModeUnwrapperTraderV2.TradeType[](1); // solhint-disable-line max-line-length
-        tradeTypes[0] = IGmxV2IsolationModeUnwrapperTraderV2.TradeType.FromWithdrawal;
-        bytes32[] memory keys = new bytes32[](1);
-        keys[0] = _withdrawalInfo.key;
-        traderParams[0].tradeData = abi.encode(tradeTypes, keys);
-
-        IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
-            deadline: block.timestamp,
-            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None
-        });
-
-        IGmxV2IsolationModeTokenVaultV1(_withdrawalInfo.vault).swapExactInputForOutput(
-            _withdrawalInfo.accountNumber,
-            marketIdsPath,
-            _withdrawalInfo.inputAmount,
-            _withdrawalInfo.outputAmount,
-            traderParams,
-                /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
-            userConfig
-        );
-    }
-
     function isValidInputOrOutputToken(
         IGmxV2IsolationModeVaultFactory _factory,
         address _token

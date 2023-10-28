@@ -146,7 +146,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         assert(_deposit.numbers.initialLongTokenAmount == 0 || _deposit.numbers.initialShortTokenAmount == 0);
 
         DepositInfo memory depositInfo = _getDepositSlot(_key);
-        _validateDepositExists(depositInfo);
         _executeDepositCancellation(depositInfo);
     }
 
@@ -156,7 +155,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     external
     onlyHandler(msg.sender) {
         DepositInfo memory depositInfo = _getDepositSlot(_key);
-        _validateDepositExists(depositInfo);
         Require.that(
             depositInfo.isRetryable,
             _FILE,
@@ -247,8 +245,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     function _executeDepositCancellation(
         DepositInfo memory _depositInfo
     ) internal {
+        _validateDepositExists(_depositInfo);
+
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        factory.setShouldSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ true);
+        factory.setShouldVaultSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ true);
 
         try GmxV2Library.swapExactInputForOutputForDepositCancellation(/* _wrapper = */ this, _depositInfo) {
             // The deposit info is set via `swapExactInputForOutputForDepositCancellation` by the unwrapper

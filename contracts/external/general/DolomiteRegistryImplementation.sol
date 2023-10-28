@@ -29,7 +29,7 @@ import { IExpiry } from "../interfaces/IExpiry.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
-
+import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 
 /**
  * @title   DolomiteRegistryImplementation
@@ -107,7 +107,7 @@ contract DolomiteRegistryImplementation is
         uint256 _heldAmount,
         uint256 _owedMarketId,
         uint256 _minOutputAmount
-    ) external onlyDolomiteMarginGlobalOperator(msg.sender) {
+    ) external onlyTrustedTokenConverter(msg.sender) {
         emit LiquidationEnqueued(
             _liquidAccountOwner,
             _liquidAccountNumber,

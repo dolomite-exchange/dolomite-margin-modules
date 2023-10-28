@@ -143,24 +143,24 @@ contract GmxV2IsolationModeVaultFactory is
         _ownerSetExecutionFee(_executionFee);
     }
 
-    function setIsDepositSourceWrapper(
+    function setIsVaultDepositSourceWrapper(
         address _vault,
         bool _isDepositSourceWrapper
     )
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setIsDepositSourceWrapper(_isDepositSourceWrapper);
+        IGmxV2IsolationModeTokenVaultV1(_vault).setIsVaultDepositSourceWrapper(_isDepositSourceWrapper);
     }
 
-    function setShouldSkipTransfer(
+    function setShouldVaultSkipTransfer(
         address _vault,
         bool _shouldSkipTransfer
     )
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
+        IGmxV2IsolationModeTokenVaultV1(_vault).setShouldVaultSkipTransfer(_shouldSkipTransfer);
     }
 
     // ====================================================
@@ -191,7 +191,7 @@ contract GmxV2IsolationModeVaultFactory is
         uint256 _vaultAccountNumber,
         uint256 _amountWei
     ) internal virtual {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setIsDepositSourceWrapper(/* _isDepositSourceWrapper = */ true);
+        IGmxV2IsolationModeTokenVaultV1(_vault).setIsVaultDepositSourceWrapper(/* _isDepositSourceWrapper = */ true);
         _enqueueTransfer(
             _vault,
             address(DOLOMITE_MARGIN()),

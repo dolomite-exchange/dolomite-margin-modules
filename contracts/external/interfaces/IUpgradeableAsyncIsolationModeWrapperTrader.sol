@@ -26,7 +26,7 @@ import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
 
 
 /**
- * @title   IUpgradeableIsolationModeWrapperTrader
+ * @title   IUpgradeableAsyncIsolationModeWrapperTrader
  * @author  Dolomite
  *
  * Interface for an upgradeable contract that can convert a token into an isolation mode token.
@@ -61,6 +61,11 @@ interface IUpgradeableAsyncIsolationModeWrapperTrader is IIsolationModeWrapperTr
     // ==================== Functions ====================
     // ===================================================
 
+    /**
+     * This should be called by the vault to initiate a cancellation for a deposit.
+     *
+     * @param _key The key of the deposit that should be cancelled
+     */
     function cancelDeposit(bytes32 _key) external;
 
     function setDepositInfoAndReducePendingAmountFromUnwrapper(

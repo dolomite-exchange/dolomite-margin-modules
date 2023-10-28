@@ -276,7 +276,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         );
         emit DepositCreated(depositKey);
 
-        VAULT_FACTORY().setShouldSkipTransfer(
+        VAULT_FACTORY().setShouldVaultSkipTransfer(
             _tradeOriginator,
             /* _shouldSkipTransfer = */ true
         );
@@ -287,9 +287,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         address _vault,
         address _receiver,
         uint256 _amount
-    )
-    internal
-    override {
+    ) internal {
         VAULT_FACTORY().enqueueTransferIntoDolomiteMargin(_vault, _amount);
         IERC20(address(VAULT_FACTORY())).safeApprove(_receiver, _amount);
     }
