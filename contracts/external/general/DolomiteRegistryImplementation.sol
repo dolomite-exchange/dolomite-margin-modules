@@ -30,6 +30,7 @@ import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
+import { IEventEmitter } from "../interfaces/IEventEmitter.sol";
 
 /**
  * @title   DolomiteRegistryImplementation
@@ -51,6 +52,7 @@ contract DolomiteRegistryImplementation is
     bytes32 private constant _EXPIRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.expiry")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.slippageToleranceForPauseSentinel")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _LIQUIDATOR_ASSET_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.liquidatorAssetRegistry")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _EVENT_EMITTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.eventEmitter")) - 1);
 
     // ==================== Constructor ====================
 
@@ -98,24 +100,12 @@ contract DolomiteRegistryImplementation is
         _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
     }
 
-    // ===================== Event Emitter Functions =====================
-
-    function emitLiquidationEnqueued(
-        address _liquidAccountOwner,
-        uint256 _liquidAccountNumber,
-        uint256 _heldMarketId,
-        uint256 _heldAmount,
-        uint256 _owedMarketId,
-        uint256 _minOutputAmount
-    ) external onlyTrustedTokenConverter(msg.sender) {
-        emit LiquidationEnqueued(
-            _liquidAccountOwner,
-            _liquidAccountNumber,
-            _heldMarketId,
-            _heldAmount,
-            _owedMarketId,
-            _minOutputAmount
-        );
+    function ownerSetEventEmitter(
+        address _eventEmitter
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetEventEmitter(_eventEmitter);
     }
 
     // ========================== View Functions =========================
@@ -138,6 +128,10 @@ contract DolomiteRegistryImplementation is
 
     function slippageToleranceForPauseSentinelBase() external pure returns (uint256) {
         return 1e18;
+    }
+
+    function eventEmitter() external view returns (IEventEmitter) {
+        return IEventEmitter(_getAddress(_EVENT_EMITTER_SLOT));
     }
 
     // ===================== Internal Functions =====================
@@ -210,5 +204,18 @@ contract DolomiteRegistryImplementation is
 
         _setAddress(_LIQUIDATOR_ASSET_REGISTRY_SLOT, _liquidatorAssetRegistry);
         emit LiquidatorAssetRegistrySet(_liquidatorAssetRegistry);
+    }
+
+    function _ownerSetEventEmitter(
+        address _eventEmitter
+    ) internal {
+        Require.that(
+            _eventEmitter != address(0),
+            _FILE,
+            "Invalid eventEmitter"
+        );
+
+        _setAddress(_EVENT_EMITTER_SLOT, _eventEmitter);
+        emit EventEmitterSet(_eventEmitter);
     }
 }

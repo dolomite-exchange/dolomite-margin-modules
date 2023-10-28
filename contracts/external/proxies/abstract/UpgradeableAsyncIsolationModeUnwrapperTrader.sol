@@ -110,20 +110,22 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         // Panic if the key is already used
         assert(_getWithdrawalSlot(_key).vault == address(0));
 
-        _setWithdrawalInfo(
-            _key,
-            WithdrawalInfo({
-                key: _key,
-                vault: vault,
-                accountNumber: _accountNumber,
-                inputAmount: _inputAmount,
-                outputToken: _outputToken,
-                outputAmount: _minOutputAmount,
-                isRetryable: false
-            })
-        );
+        WithdrawalInfo memory withdrawalInfo = WithdrawalInfo({
+            key: _key,
+            vault: vault,
+            accountNumber: _accountNumber,
+            inputAmount: _inputAmount,
+            outputToken: _outputToken,
+            outputAmount: _minOutputAmount,
+            isRetryable: false
+        });
+        _setWithdrawalInfo(_key, withdrawalInfo);
         _updateVaultPendingAmount(vault, _accountNumber, _inputAmount, /* _isPositive = */ true);
-        emit WithdrawalCreated(_key);
+        HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalCreated(
+            _key,
+            address(VAULT_FACTORY()),
+            withdrawalInfo
+        );
     }
 
     function callFunction(
@@ -530,11 +532,22 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
 
     function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual {
         try AsyncIsolationModeTraderLib.swapExactInputForOutputForWithdrawal(/* _unwrapper = this */, _withdrawalInfo) {
-            emit WithdrawalExecuted(_withdrawalInfo.key);
+            HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalExecuted(
+                _withdrawalInfo.key,
+                address(VAULT_FACTORY())
+            );
         } catch Error(string memory _reason) {
-            emit WithdrawalFailed(_withdrawalInfo.key, _reason);
+            HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalFailed(
+                _withdrawalInfo.key,
+                address(VAULT_FACTORY()),
+                _reason
+            );
         } catch (bytes memory /* _reason */) {
-            emit WithdrawalFailed(_withdrawalInfo.key, "");
+            HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalFailed(
+                _withdrawalInfo.key,
+                address(VAULT_FACTORY()),
+                /* _reason =  */ ""
+            );
         }
     }
 

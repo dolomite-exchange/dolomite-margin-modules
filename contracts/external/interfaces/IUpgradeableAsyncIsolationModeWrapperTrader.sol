@@ -47,16 +47,6 @@ interface IUpgradeableAsyncIsolationModeWrapperTrader is IIsolationModeWrapperTr
         bool isRetryable;
     }
 
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event DepositCreated(bytes32 indexed key);
-    event DepositExecuted(bytes32 indexed key);
-    event DepositFailed(bytes32 indexed key, string reason);
-    event DepositCancelled(bytes32 indexed key);
-    event DepositCancelledFailed(bytes32 indexed key, string reason);
-
     // ===================================================
     // ==================== Functions ====================
     // ===================================================

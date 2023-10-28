@@ -47,12 +47,21 @@ abstract contract HandlerRegistry is
     bytes32 private constant _FILE = "HandlerRegistry";
     // solhint-disable max-line-length
     bytes32 internal constant _CALLBACK_GAS_LIMIT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.callbackGasLimit")) - 1);
+    bytes32 internal constant _DOLOMITE_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.dolomiteRegistry")) - 1);
     bytes32 internal constant _HANDLERS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlers")) - 1);
     bytes32 internal constant _UNWRAPPER_BY_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperByToken")) - 1);
     bytes32 internal constant _WRAPPER_BY_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wrapperByToken")) - 1);
     // solhint-enable max-line-length
 
     // ===================== Functions =====================
+
+    function ownerSetDolomiteRegistry(
+        address _dolomiteRegistry
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetDolomiteRegistry(_dolomiteRegistry);
+    }
 
     function ownerSetIsHandler(
         address _handler,
@@ -113,6 +122,11 @@ abstract contract HandlerRegistry is
     }
 
     // ===================== Internal Functions =====================
+
+    function _ownerSetDolomiteRegistry(address _dolomiteRegistry) internal {
+        _setAddress(_DOLOMITE_REGISTRY_SLOT, _dolomiteRegistry);
+        emit DolomiteRegistrySet(_dolomiteRegistry);
+    }
 
     function _ownerSetIsHandler(address _handler, bool _isTrusted) internal {
         bytes32 slot =  keccak256(abi.encodePacked(_HANDLERS_SLOT, _handler));

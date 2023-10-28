@@ -23,7 +23,7 @@ pragma solidity ^0.8.9;
 import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
-
+import "./IEventEmitter.sol";
 
 /**
  * @title   IDolomiteRegistry
@@ -39,17 +39,9 @@ interface IDolomiteRegistry {
 
     event GenericTraderProxySet(address indexed _genericTraderProxy);
     event ExpirySet(address indexed _expiry);
-    event SlippageToleranceForPauseSentinelSet(uint256 slippageTolerance);
+    event SlippageToleranceForPauseSentinelSet(uint256 _slippageTolerance);
     event LiquidatorAssetRegistrySet(address indexed _liquidatorAssetRegistry);
-
-    event LiquidationEnqueued(
-        address indexed liquidAccountOwner,
-        uint256 indexed liquidAccountNumber,
-        uint256 heldMarketId,
-        uint256 heldAmount,
-        uint256 owedMarketId,
-        uint256 minOutputAmount
-    );
+    event EventEmitterSet(address indexed _eventEmitter);
 
     // ========================================================
     // =================== Admin Functions ====================
@@ -80,21 +72,11 @@ interface IDolomiteRegistry {
      */
     function ownerSetLiquidatorAssetRegistry(address _liquidatorRegistry) external;
 
-    // ========================================================
-    // ==================== Event Functions ===================
-    // ========================================================
-
     /**
-     * Emits the `LiquidationEnqueued` event. Can only be called by a global operator.
+     *
+     * @param  _eventEmitter  The new address of the event emitter
      */
-    function emitLiquidationEnqueued(
-        address _liquidAccountOwner,
-        uint256 _liquidAccountNumber,
-        uint256 _heldMarketId,
-        uint256 _heldAmount,
-        uint256 _owedMarketId,
-        uint256 _minOutputAmount
-    ) external;
+    function ownerSetEventEmitter(address _eventEmitter) external;
 
     // ========================================================
     // =================== Getter Functions ===================
@@ -124,4 +106,9 @@ interface IDolomiteRegistry {
      * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
      */
     function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
+
+    /**
+     * @return The address of the emitter contract that can emit certain events for indexing
+     */
+    function eventEmitter() external view returns (IEventEmitter);
 }
