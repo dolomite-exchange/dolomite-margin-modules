@@ -22,8 +22,11 @@ pragma solidity ^0.8.9;
 
 import { IsolationModeVaultFactory } from "./IsolationModeVaultFactory.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
+import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 
 
 /**
@@ -38,14 +41,81 @@ abstract contract FreezableIsolationModeVaultFactory is
 {
     using TypesLib for IDolomiteStructs.Wei;
 
-    // ============ Field Variables ============
+    // =========================================================
+    // ======================= Constants =======================
+    // =========================================================
+
+    bytes32 private constant _FILE = "FreezableVaultFactory";
+    uint256 private constant _MAX_EXECUTION_FEE = 1 ether;
+
+    // =========================================================
+    // ==================== Field Variables ====================
+    // =========================================================
 
     /// Vault ==> Account Number ==> Freeze Type ==> Pending Amount
     mapping(address => mapping(uint256 => mapping(FreezeType => uint256))) private _accountInfoToPendingAmountWeiMap;
+
     /// Vault ==> Freeze Type ==> Pending Amount
     mapping(address => mapping(FreezeType => uint256)) private _vaultToPendingAmountWeiMap;
 
-    // ============ Functions ============
+    uint256 public override executionFee;
+
+    // ===========================================================
+    // ======================= Constructors ======================
+    // ===========================================================
+
+    constructor(uint256 _executionFee) {
+        _ownerSetExecutionFee(_executionFee);
+    }
+
+    // ===========================================================
+    // ===================== Public Functions ====================
+    // ===========================================================
+
+    function ownerSetExecutionFee(
+        uint256 _executionFee
+    )
+        external
+        override
+        onlyDolomiteMarginOwner(msg.sender)
+    {
+        _ownerSetExecutionFee(_executionFee);
+    }
+
+    function setIsVaultDepositSourceWrapper(
+        address _vault,
+        bool _isDepositSourceWrapper
+    )
+    external
+    requireIsTokenConverter(msg.sender)
+    requireIsVault(_vault) {
+        IIsolationModeTokenVaultV1WithFreezable(_vault).setIsVaultDepositSourceWrapper(_isDepositSourceWrapper);
+    }
+
+    function setShouldVaultSkipTransfer(
+        address _vault,
+        bool _shouldSkipTransfer
+    )
+    external
+    requireIsTokenConverter(msg.sender)
+    requireIsVault(_vault) {
+        IIsolationModeTokenVaultV1WithFreezable(_vault).setShouldVaultSkipTransfer(_shouldSkipTransfer);
+    }
+
+    function depositIntoDolomiteMarginFromTokenConverter(
+        address _vault,
+        uint256 _vaultAccountNumber,
+        uint256 _amountWei
+    )
+    external
+    requireIsTokenConverter(msg.sender)
+    requireIsVault(_vault) {
+        _depositIntoDolomiteMarginFromTokenConverter(
+            _vault,
+            _vaultAccountNumber,
+            _amountWei
+        );
+    }
 
     function updateVaultAccountPendingAmountForFrozenStatus(
         address _vault,
@@ -76,14 +146,6 @@ abstract contract FreezableIsolationModeVaultFactory is
             || _vaultToPendingAmountWeiMap[_vault][FreezeType.Withdrawal] != 0;
     }
 
-    function isVaultAccountFrozen(
-        address _vault,
-        uint256 _accountNumber
-    ) public view returns (bool) {
-        return _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][FreezeType.Deposit] != 0
-            || _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][FreezeType.Withdrawal] != 0;
-    }
-
     function getPendingAmountByAccount(
         address _vault,
         uint256 _accountNumber,
@@ -97,5 +159,58 @@ abstract contract FreezableIsolationModeVaultFactory is
         FreezeType _freezeType
     ) external view returns (uint256) {
         return _vaultToPendingAmountWeiMap[_vault][_freezeType];
+    }
+
+    function isVaultAccountFrozen(
+        address _vault,
+        uint256 _accountNumber
+    ) public view returns (bool) {
+        return _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][FreezeType.Deposit] != 0
+            || _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][FreezeType.Withdrawal] != 0;
+    }
+
+    // ===========================================================
+    // ==================== Internal Functions ===================
+    // ===========================================================
+
+    function _ownerSetExecutionFee(
+        uint256 _executionFee
+    ) internal {
+        Require.that(
+            _executionFee <= _MAX_EXECUTION_FEE,
+            _FILE,
+            "Invalid execution fee"
+        );
+        executionFee = _executionFee;
+        emit ExecutionFeeSet(_executionFee);
+    }
+
+    function _depositIntoDolomiteMarginFromTokenConverter(
+        address _vault,
+        uint256 _vaultAccountNumber,
+        uint256 _amountWei
+    ) internal virtual {
+        IIsolationModeTokenVaultV1WithFreezable(_vault).setIsVaultDepositSourceWrapper(
+            /* _isDepositSourceWrapper = */ true
+        );
+        _enqueueTransfer(
+            _vault,
+            address(DOLOMITE_MARGIN()),
+            _amountWei,
+            _vault
+        );
+        AccountActionLib.deposit(
+            DOLOMITE_MARGIN(),
+            /* _accountOwner = */ _vault,
+            /* _fromAccount = */ _vault,
+            _vaultAccountNumber,
+            marketId,
+            IDolomiteStructs.AssetAmount({
+                sign: true,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: _amountWei
+            })
+        );
     }
 }

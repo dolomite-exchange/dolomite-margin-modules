@@ -34,18 +34,24 @@ import { FreezableIsolationModeVaultFactory } from "../external/proxies/abstract
 contract TestFreezableIsolationModeFactory is TestIsolationModeFactory, FreezableIsolationModeVaultFactory {
 
     constructor(
+        uint256 _executionFee,
         address _dolomiteRegistry,
         address _underlyingToken,
         address _borrowPositionProxy,
         address _userVaultImplementation,
         address _dolomiteMargin
-    ) TestIsolationModeFactory(
+    )
+    TestIsolationModeFactory(
         _dolomiteRegistry,
         _underlyingToken,
         _borrowPositionProxy,
         _userVaultImplementation,
         _dolomiteMargin
-    ) { /* solhint-disable-line no-empty-blocks */ }
+    )
+    FreezableIsolationModeVaultFactory(
+        _executionFee
+    )
+    { /* solhint-disable-line no-empty-blocks */ }
 
     function _spendAllowance(
         address _owner,

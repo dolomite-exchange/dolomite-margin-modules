@@ -387,12 +387,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     ) internal virtual {
         // This implementation requires we deposit into index 0
-        Require.that(
-            _toAccountNumber == 0,
-            _FILE,
-            "Invalid toAccountNumber",
-            _toAccountNumber
-        );
+        _checkToAccountNumberIsZero(_toAccountNumber);
         IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(_toAccountNumber, _amountWei);
     }
 
@@ -401,12 +396,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     ) internal virtual {
         // This implementation requires we withdraw from index 0
-        Require.that(
-            _fromAccountNumber == 0,
-            _FILE,
-            "Invalid fromAccountNumber",
-            _fromAccountNumber
-        );
+        _checkFromAccountNumberIsZero(_fromAccountNumber);
         IIsolationModeVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_fromAccountNumber, _amountWei);
     }
 
@@ -418,12 +408,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _fromAccountNumber == 0,
-            _FILE,
-            "Invalid fromAccountNumber",
-            _fromAccountNumber
-        );
+        _checkFromAccountNumberIsZero(_fromAccountNumber);
         Require.that(
             _toAccountNumber != 0,
             _FILE,
@@ -447,18 +432,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-        Require.that(
-            _toAccountNumber == 0,
-            _FILE,
-            "Invalid toAccountNumber",
-            _toAccountNumber
-        );
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkToAccountNumberIsZero(_toAccountNumber);
 
         uint256[] memory collateralMarketIds = new uint256[](1);
         collateralMarketIds[0] = marketId();
@@ -480,12 +455,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
         uint256 underlyingMarketId = marketId();
         for (uint256 i = 0; i < _collateralMarketIds.length; i++) {
             Require.that(
@@ -513,18 +483,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _fromAccountNumber == 0,
-            _FILE,
-            "Invalid fromAccountNumber",
-            _fromAccountNumber
-        );
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
+        _checkFromAccountNumberIsZero(_fromAccountNumber);
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
 
         BORROW_POSITION_PROXY().transferBetweenAccounts(
             _fromAccountNumber,
@@ -545,18 +505,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-        Require.that(
-            _marketId != marketId(),
-            _FILE,
-            "Invalid marketId",
-            _marketId
-        );
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkMarketIdIsNotSelf(_marketId);
 
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
             /* _fromAccountOwner = */ _proxySelf().owner(),
@@ -579,18 +529,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-        Require.that(
-            _toAccountNumber == 0,
-            _FILE,
-            "Invalid toAccountNumber",
-            _toAccountNumber
-        );
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkToAccountNumberIsZero(_toAccountNumber);
 
         BORROW_POSITION_PROXY().transferBetweenAccounts(
             _borrowAccountNumber,
@@ -611,18 +551,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         virtual
         internal
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-        Require.that(
-            _marketId != marketId(),
-            _FILE,
-            "Invalid marketId",
-            _marketId
-        );
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkMarketIdIsNotSelf(_marketId);
 
         BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
             /* _fromAccountOwner = */ address(this),
@@ -646,18 +576,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-        Require.that(
-            _marketId != marketId(),
-            _FILE,
-            "Invalid marketId",
-            _marketId
-        );
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkMarketIdIsNotSelf(_marketId);
         BORROW_POSITION_PROXY().repayAllForBorrowPositionWithDifferentAccounts(
             /* _fromAccountOwner = */ _proxySelf().owner(),
             _fromAccountNumber,
@@ -889,6 +809,15 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         return IIsolationModeUpgradeableProxy(address(this));
     }
 
+    function _checkMarketIdIsNotSelf(uint256 _marketId) internal view {
+        Require.that(
+            _marketId != marketId(),
+            _FILE,
+            "Invalid marketId",
+            _marketId
+        );
+    }
+
     /**
      *  Called within `swapExactInputForOutput` to check that the caller send the right amount of ETH with the
      *  transaction.
@@ -935,5 +864,32 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
                 );
             }
         }
+    }
+
+    function _checkFromAccountNumberIsZero(uint256 _fromAccountNumber) internal pure {
+        Require.that(
+            _fromAccountNumber == 0,
+            _FILE,
+            "Invalid fromAccountNumber",
+            _fromAccountNumber
+        );
+    }
+
+    function _checkToAccountNumberIsZero(uint256 _toAccountNumber) internal pure {
+        Require.that(
+            _toAccountNumber == 0,
+            _FILE,
+            "Invalid toAccountNumber",
+            _toAccountNumber
+        );
+    }
+
+    function _checkBorrowAccountNumberIsNotZero(uint256 _borrowAccountNumber) internal pure {
+        Require.that(
+            _borrowAccountNumber != 0,
+            _FILE,
+            "Invalid borrowAccountNumber",
+            _borrowAccountNumber
+        );
     }
 }

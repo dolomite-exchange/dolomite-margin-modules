@@ -20,10 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { IEventEmitter } from "./IEventEmitter.sol";
 import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
-import "./IEventEmitter.sol";
 
 /**
  * @title   IDolomiteRegistry
@@ -103,12 +103,12 @@ interface IDolomiteRegistry {
     function liquidatorAssetRegistry() external view returns (ILiquidatorAssetRegistry);
 
     /**
-     * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
-     */
-    function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
-
-    /**
      * @return The address of the emitter contract that can emit certain events for indexing
      */
     function eventEmitter() external view returns (IEventEmitter);
+
+    /**
+     * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
+     */
+    function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
 }

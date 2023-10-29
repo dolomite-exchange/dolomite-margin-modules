@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { ICustomTestToken } from "./ICustomTestToken.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../external/proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
@@ -36,6 +35,11 @@ contract TestAsyncUpgradeableIsolationModeWrapperTrader is UpgradeableAsyncIsola
 
     bytes32 private constant _INPUT_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.inputToken")) - 1);
 
+    // ======================== Storage ========================
+
+    /// @dev Do not use storage like this in production contracts
+    mapping (address => uint256) private _vaultToNonceMap;
+
     // ======================== Initializer ========================
 
     function initialize(address _inputToken, address _vaultFactory, address _dolomiteMargin) external initializer {
@@ -45,15 +49,46 @@ contract TestAsyncUpgradeableIsolationModeWrapperTrader is UpgradeableAsyncIsola
 
     // ============ Public Functions ============
 
+    function initiateCancelDeposit() external {
+        // solhint-disable-previous-line no-empty-blocks
+    }
+
     function initializeWrapperTrader(address _vaultFactory, address _dolomiteMargin) external {
         super._initializeWrapperTrader(_vaultFactory, _dolomiteMargin);
+    }
+
+    function initiateCancelDeposit(bytes32 /* _key */) external {
+        // solhint-disable-previous-line no-empty-blocks
+    }
+
+    function setDepositInfoAndReducePendingAmountFromUnwrapper(
+        bytes32 /* _key */,
+        uint256 /* _outputAmountDeltaWei */,
+        DepositInfo calldata /* _depositInfo */
+    ) external {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     function isValidInputToken(address _inputToken) public override view returns (bool) {
         return _getAddress(_INPUT_TOKEN_SLOT) == _inputToken;
     }
 
+    function getDepositInfo(bytes32 /* _key */) public pure returns (DepositInfo memory deposit) {
+        return deposit;
+    }
+
     // ================ Internal Functions ================
+
+    function _createDepositWithExternalProtocol(
+        address _vault,
+        address /* _outputTokenUnderlying */,
+        uint256 /* _minOutputAmount */,
+        address /* _inputToken */,
+        uint256 /* _inputAmount */,
+        bytes memory /* _extraOrderData */
+    ) internal override returns (bytes32 _depositKey) {
+        _depositKey = keccak256(abi.encode(_vault, _vaultToNonceMap[_vault]++));
+    }
 
     function _getExchangeCost(
         address,

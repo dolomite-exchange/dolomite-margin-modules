@@ -26,11 +26,12 @@ import { AsyncIsolationModeTraderBase } from "./AsyncIsolationModeTraderBase.sol
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
-import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 import { AsyncIsolationModeTraderLib } from "../../lib/AsyncIsolationModeTraderLib.sol";
+import { InterestIndexLib } from "../../lib/InterestIndexLib.sol";
 
 /**
  * @title   UpgradeableAsyncIsolationModeWrapperTrader
@@ -43,6 +44,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     IUpgradeableAsyncIsolationModeWrapperTrader,
     AsyncIsolationModeTraderBase
 {
+    using InterestIndexLib for IDolomiteMargin;
     using SafeERC20 for IERC20;
 
     // ======================== Constants ========================
@@ -240,17 +242,17 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         // Account number is set by the Token Vault so we know it's safe to use
         (uint256 accountNumber, bytes memory _extraOrderData) = abi.decode(_orderData, (uint256, bytes));
 
-        IIsolationModeVaultFactory factory = VAULT_FACTORY();
+        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
 
         // Disallow the deposit if there's already an action waiting for it
         Require.that(
-            !IFreezableIsolationModeVaultFactory(address(factory)).isVaultFrozen(_tradeOriginator),
+            !factory.isVaultFrozen(_tradeOriginator),
             _FILE,
             "Vault is frozen",
             _tradeOriginator
         );
 
-        bytes32 depositKey = _createDeposit(
+        bytes32 depositKey = _createDepositWithExternalProtocol(
             /* _vault = */ _tradeOriginator,
             _outputTokenUnderlying,
             _minOutputAmount,
@@ -332,10 +334,10 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
                 _eventEmitter().emitAsyncDepositExecuted(_key, address(factory));
             } catch Error(string memory _reason) {
                 _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
-                _eventEmitter().emitAsyncDepositFailed(_key, _reason);
+                _eventEmitter().emitAsyncDepositFailed(_key, address(factory), _reason);
             } catch (bytes memory /* _reason */) {
                 _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
-                _eventEmitter().emitAsyncDepositFailed(_key, /* _reason = */ "");
+                _eventEmitter().emitAsyncDepositFailed(_key, address(factory), /* _reason = */ "");
             }
         } else {
             // There's nothing additional to send to the vault; clear out the deposit
@@ -446,7 +448,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         );
     }
 
-    function _createDeposit(
+    function _createDepositWithExternalProtocol(
         address _vault,
         address _outputTokenUnderlying,
         uint256 _minOutputAmount,
@@ -454,14 +456,6 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         uint256 _inputAmount,
         bytes memory _extraOrderData
     ) internal virtual returns (bytes32 _depositKey);
-
-    function _validateDepositExists(DepositInfo memory _depositInfo) internal pure {
-        Require.that(
-            _depositInfo.vault != address(0),
-            _FILE,
-            "Invalid deposit key"
-        );
-    }
 
     function _getExchangeCost(
         address _inputToken,
@@ -473,6 +467,14 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     virtual
     view
     returns (uint256);
+
+    function _validateDepositExists(DepositInfo memory _depositInfo) internal pure {
+        Require.that(
+            _depositInfo.vault != address(0),
+            _FILE,
+            "Invalid deposit key"
+        );
+    }
 
     function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {
         bytes32 slot = keccak256(abi.encodePacked(_DEPOSIT_INFO_SLOT, _key));

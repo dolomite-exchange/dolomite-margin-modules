@@ -23,19 +23,13 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeUnwrapperTrader } from "../interfaces/IIsolationModeUnwrapperTrader.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { GmxWithdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
-import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
-import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
@@ -81,21 +75,15 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // ============================================
 
     function initiateCancelWithdrawal(bytes32 _key) external {
-        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
-        Require.that(
-            msg.sender == withdrawalInfo.vault || isHandler(msg.sender),
-            _FILE,
-            "Only vault or handler can cancel"
-        );
-        GMX_REGISTRY_V2().gmxExchangeRouter().cancelWithdrawal(_key);
+        GmxV2Library.initiateCancelWithdrawal(/* _unwrapper = */ this, _key);
     }
 
-    function handleGmxCallbackFromWrapperBefore() external onlyWrapperCaller(msg.sender) {
-        _handleGmxCallbackBefore();
+    function handleCallbackFromWrapperBefore() external onlyWrapperCaller(msg.sender) {
+        _handleCallbackBefore();
     }
 
-    function handleGmxCallbackFromWrapperAfter() external onlyWrapperCaller(msg.sender) {
-        _handleGmxCallbackAfter();
+    function handleCallbackFromWrapperAfter() external onlyWrapperCaller(msg.sender) {
+        _handleCallbackAfter();
     }
 
     function afterWithdrawalExecution(
@@ -178,17 +166,17 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // ============================================
 
     function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal override {
-        _handleGmxCallbackBefore();
+        _handleCallbackBefore();
         super._executeWithdrawal(_withdrawalInfo);
-        _handleGmxCallbackAfter();
+        _handleCallbackAfter();
     }
 
-    function _handleGmxCallbackBefore() internal {
+    function _handleCallbackBefore() internal {
         // For GMX callbacks, we restrict the # of actions to use less gas
         _setActionsLength(_ACTIONS_LENGTH_CALLBACK);
     }
 
-    function _handleGmxCallbackAfter() internal {
+    function _handleCallbackAfter() internal {
         // For GMX callbacks, we restrict the # of actions to use less gas
         _setActionsLength(_ACTIONS_LENGTH_NORMAL);
     }

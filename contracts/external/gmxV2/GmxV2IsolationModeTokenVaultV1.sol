@@ -28,16 +28,17 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
+import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
+import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
-import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
-import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
-import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
 
@@ -61,85 +62,18 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ==================================================================
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultV1";
-    bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _POSITION_TO_EXECUTION_FEE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.positionToExecutionFee")) - 1); // solhint-disable-line max-line-length
-
-    // ==================================================================
-    // ====================== Immutable Variables =======================
-    // ==================================================================
-
-    IWETH public immutable WETH; // solhint-disable-line var-name-mixedcase
-
-    // ===================================================
-    // ==================== Modifiers ====================
-    // ===================================================
-
-    modifier onlyLiquidator(address _from) {
-        Require.that(
-            registry().dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(
-                IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).marketId(),
-                _from
-            ),
-            _FILE,
-            "Only liquidator can call",
-            _from
-        );
-        _;
-    }
 
     // ==================================================================
     // ========================== Constructors ==========================
     // ==================================================================
 
-    constructor(address _weth) {
-        WETH = IWETH(_weth);
+    constructor(address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
-
-    function initiateUnwrapping(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount
-    )
-        external
-        payable
-        nonReentrant
-        onlyVaultOwner(msg.sender)
-        requireNotFrozen
-    {
-        _initiateUnwrapping(
-            _tradeAccountNumber,
-            _inputAmount,
-            _outputToken,
-            _minOutputAmount,
-            /* _isLiquidation = */ false
-        );
-    }
-
-    function initiateUnwrappingForLiquidation(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount
-    )
-        external
-        payable
-        nonReentrant
-        onlyLiquidator(msg.sender)
-    {
-        _initiateUnwrapping(
-            _tradeAccountNumber,
-            _inputAmount,
-            _outputToken,
-            _minOutputAmount,
-            /* _isLiquidation = */ true
-        );
-    }
 
     // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can
     /**
@@ -163,22 +97,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
                                 registry().getUnwrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
         _validateVaultOwnerForStruct(unwrapper.getWithdrawalInfo(_key).vault);
         unwrapper.initiateCancelWithdrawal(_key);
-    }
-
-    function setIsVaultDepositSourceWrapper(
-        bool _isDepositSourceWrapper
-    )
-    external
-    onlyVaultFactory(msg.sender) {
-        _setIsVaultDepositSourceWrapper(_isDepositSourceWrapper);
-    }
-
-    function setShouldVaultSkipTransfer(
-        bool _shouldSkipTransfer
-    )
-    external
-    onlyVaultFactory(msg.sender) {
-        _setShouldVaultSkipTransfer(_shouldSkipTransfer);
     }
 
     function executeDepositIntoVault(
@@ -247,28 +165,17 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
     }
 
-    function isDepositSourceWrapper() public view returns (bool) {
-        return _getUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT) == 1;
-    }
-
-    function shouldSkipTransfer() public view returns (bool) {
-        return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
-    }
-
     function registry() public view returns (IGmxV2Registry) {
         return IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).gmxV2Registry();
     }
 
     function dolomiteRegistry()
-    public
-    override
-    view
-    returns (IDolomiteRegistry) {
+        public
+        override
+        view
+        returns (IDolomiteRegistry)
+    {
         return registry().dolomiteRegistry();
-    }
-
-    function getExecutionFeeForAccountNumber(uint256 _accountNumber) public view returns (uint256) {
-        return _getUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)));
     }
 
     // ==================================================================
@@ -415,7 +322,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         address _outputToken,
         uint256 _minOutputAmount,
         bool _isLiquidation
-    ) internal {
+    ) internal override {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
         Require.that(
             registry().getUnwrapperByToken(factory).isValidOutputToken(_outputToken),
@@ -444,24 +351,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
             ethExecutionFee,
             _isLiquidation
         );
-    }
-
-    function _setIsVaultDepositSourceWrapper(bool _isDepositSourceWrapper) internal {
-        _setUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT, _isDepositSourceWrapper ? 1 : 0);
-        emit IsDepositSourceWrapperSet(_isDepositSourceWrapper);
-    }
-
-    function _setShouldVaultSkipTransfer(bool _shouldSkipTransfer) internal {
-        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
-        emit ShouldSkipTransferSet(_shouldSkipTransfer);
-    }
-
-    function _setExecutionFeeForAccountNumber(
-        uint256 _accountNumber,
-        uint256 _executionFee
-    ) internal {
-        _setUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)), _executionFee);
-        emit ExecutionFeeSet(_accountNumber, _executionFee);
     }
 
     function _requireVirtualBalanceWithPendingMatchesRealBalance() internal view {

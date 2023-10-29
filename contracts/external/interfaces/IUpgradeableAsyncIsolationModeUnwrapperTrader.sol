@@ -63,8 +63,20 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
     // ===================================================
 
     /**
+     * Notifies the unwrapper that it'll be entered for a trade from the unwrapper. This allows it to modify the action
+     * length
+     */
+    function handleCallbackFromWrapperBefore() external;
+
+    /**
+     * Reverts any changes made in `handleCallbackFromWrapperBefore`. Can only be called by a corresponding Wrapper
+     * trader.
+     */
+    function handleCallbackFromWrapperAfter() external;
+
+    /**
      *
-     * @param _key The key of the withdrawal that should be cancelled
+     * @param  _key The key of the withdrawal that should be cancelled
      */
     function initiateCancelWithdrawal(bytes32 _key) external;
 

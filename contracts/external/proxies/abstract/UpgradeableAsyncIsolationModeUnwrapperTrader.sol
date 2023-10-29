@@ -31,9 +31,9 @@ import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeToken
 import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; //solhint-disable-line max-line-length
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 import { AsyncIsolationModeTraderLib } from "../../lib/AsyncIsolationModeTraderLib.sol";
-import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 
 /**
  * @title   UpgradeableAsyncIsolationModeUnwrapperTrader
@@ -358,6 +358,50 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         _setReentrancyGuard(_NOT_ENTERED);
     }
 
+    function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual {
+        try AsyncIsolationModeTraderLib.swapExactInputForOutputForWithdrawal(/* _unwrapper = */ this, _withdrawalInfo) {
+            _eventEmitter().emitAsyncWithdrawalExecuted(
+                _withdrawalInfo.key,
+                address(VAULT_FACTORY())
+            );
+        } catch Error(string memory _reason) {
+            _eventEmitter().emitAsyncWithdrawalFailed(
+                _withdrawalInfo.key,
+                address(VAULT_FACTORY()),
+                _reason
+            );
+        } catch (bytes memory /* _reason */) {
+            _eventEmitter().emitAsyncWithdrawalFailed(
+                _withdrawalInfo.key,
+                address(VAULT_FACTORY()),
+                /* _reason =  */ ""
+            );
+        }
+    }
+
+    function _executeWithdrawalCancellation(bytes32 _key) internal virtual {
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
+        _validateWithdrawalExists(withdrawalInfo);
+
+        IIsolationModeVaultFactory factory = VAULT_FACTORY();
+        IERC20(factory.UNDERLYING_TOKEN()).safeTransfer(
+            withdrawalInfo.vault,
+            withdrawalInfo.inputAmount
+        );
+
+        _updateVaultPendingAmount(
+            withdrawalInfo.vault,
+            withdrawalInfo.accountNumber,
+            withdrawalInfo.inputAmount,
+            /* _isPositive = */ false
+        );
+
+        // Setting inputAmount to 0 will clear the withdrawal
+        withdrawalInfo.inputAmount = 0;
+        _setWithdrawalInfo(_key, withdrawalInfo);
+        _eventEmitter().emitAsyncWithdrawalCancelled(_key, address(factory));
+    }
+
     function _callFunction(
         address /* _sender */,
         IDolomiteStructs.AccountInfo calldata _accountInfo,
@@ -472,7 +516,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
                 _validateOutputTokenForExchange(depositInfo.inputToken, _outputToken);
 
                 (uint256 inputAmountToCollect, uint256 outputAmountToCollect) = _getAmountsToCollect(
-                /* _structInputAmount = */ depositInfo.outputAmount,
+                    /* _structInputAmount = */ depositInfo.outputAmount,
                     inputAmountNeeded,
                     /* _structOutputAmount = */ depositInfo.inputAmount
                 );
@@ -530,50 +574,6 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         );
     }
 
-    function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual {
-        try AsyncIsolationModeTraderLib.swapExactInputForOutputForWithdrawal(/* _unwrapper = */ this, _withdrawalInfo) {
-            _eventEmitter().emitAsyncWithdrawalExecuted(
-                _withdrawalInfo.key,
-                address(VAULT_FACTORY())
-            );
-        } catch Error(string memory _reason) {
-            _eventEmitter().emitAsyncWithdrawalFailed(
-                _withdrawalInfo.key,
-                address(VAULT_FACTORY()),
-                _reason
-            );
-        } catch (bytes memory /* _reason */) {
-            _eventEmitter().emitAsyncWithdrawalFailed(
-                _withdrawalInfo.key,
-                address(VAULT_FACTORY()),
-                /* _reason =  */ ""
-            );
-        }
-    }
-
-    function _executeWithdrawalCancellation(bytes32 _key) internal virtual {
-        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
-        _validateWithdrawalExists(withdrawalInfo);
-
-        IIsolationModeVaultFactory factory = VAULT_FACTORY();
-        IERC20(factory.UNDERLYING_TOKEN()).safeTransfer(
-            withdrawalInfo.vault,
-            withdrawalInfo.inputAmount
-        );
-
-        _updateVaultPendingAmount(
-            withdrawalInfo.vault,
-            withdrawalInfo.accountNumber,
-            withdrawalInfo.inputAmount,
-            /* _isPositive = */ false
-        );
-
-        // Setting inputAmount to 0 will clear the withdrawal
-        withdrawalInfo.inputAmount = 0;
-        _setWithdrawalInfo(_key, withdrawalInfo);
-        _eventEmitter().emitAsyncWithdrawalCancelled(_key, address(factory));
-    }
-
     function _validateVaultExists(IIsolationModeVaultFactory _factory, address _vault) internal view {
         Require.that(
             _factory.getAccountByVault(_vault) != address(0),
@@ -583,33 +583,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         );
     }
 
-    function _getAmountsToCollect(
-        uint256 _structInputAmount,
-        uint256 _inputAmountNeeded,
-        uint256 _structOutputAmount
-    ) internal pure returns (uint256 _inputAmountToCollect, uint256 _outputAmountToCollect) {
-        _inputAmountToCollect = _structInputAmount >= _inputAmountNeeded
-            ? _inputAmountNeeded
-            : _structInputAmount;
-
-        // Reduce output amount by the ratio of the collected input amount. Almost always the ratio will be
-        // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
-        // collateral to the liquidator.
-        _outputAmountToCollect = _inputAmountNeeded < _structInputAmount
-            ? _structOutputAmount * _inputAmountNeeded / _structInputAmount
-            : _structOutputAmount;
-    }
-
     function _getWrapperTrader() internal view returns (IUpgradeableAsyncIsolationModeWrapperTrader) {
         return HANDLER_REGISTRY().getWrapperByToken(VAULT_FACTORY());
-    }
-
-    function _validateWithdrawalExists(WithdrawalInfo memory _withdrawalInfo) internal pure {
-        Require.that(
-            _withdrawalInfo.vault != address(0),
-            _FILE,
-            "Invalid withdrawal key"
-        );
     }
 
     function _validateIsBalanceSufficient(uint256 _inputAmount) internal virtual view {
@@ -629,6 +604,31 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         uint256 _desiredInputAmount,
         bytes memory _orderData
     ) internal virtual view returns (uint256);
+
+    function _validateWithdrawalExists(WithdrawalInfo memory _withdrawalInfo) internal pure {
+        Require.that(
+            _withdrawalInfo.vault != address(0),
+            _FILE,
+            "Invalid withdrawal key"
+        );
+    }
+
+    function _getAmountsToCollect(
+        uint256 _structInputAmount,
+        uint256 _inputAmountNeeded,
+        uint256 _structOutputAmount
+    ) internal pure returns (uint256 _inputAmountToCollect, uint256 _outputAmountToCollect) {
+        _inputAmountToCollect = _structInputAmount >= _inputAmountNeeded
+            ? _inputAmountNeeded
+            : _structInputAmount;
+
+        // Reduce output amount by the ratio of the collected input amount. Almost always the ratio will be
+        // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
+        // collateral to the liquidator.
+        _outputAmountToCollect = _inputAmountNeeded < _structInputAmount
+            ? _structOutputAmount * _inputAmountNeeded / _structInputAmount
+            : _structOutputAmount;
+    }
 
     function _getWithdrawalSlot(bytes32 _key) internal pure returns (WithdrawalInfo storage info) {
         bytes32 slot = keccak256(abi.encodePacked(_WITHDRAWAL_INFO_SLOT, _key));

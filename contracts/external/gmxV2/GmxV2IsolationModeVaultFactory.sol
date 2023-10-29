@@ -22,12 +22,8 @@ pragma solidity ^0.8.9;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
 import { FreezableIsolationModeVaultFactory } from "../proxies/abstract/FreezableIsolationModeVaultFactory.sol";
 
@@ -63,7 +59,6 @@ contract GmxV2IsolationModeVaultFactory is
     // ============ Field Variables ============
 
     IGmxV2Registry public override gmxV2Registry;
-    uint256 public override executionFee;
 
     // ============ Constructor ============
 
@@ -84,9 +79,12 @@ contract GmxV2IsolationModeVaultFactory is
         _borrowPositionProxyV2,
         _userVaultImplementation,
         _dolomiteMargin
-    ) {
+    )
+    FreezableIsolationModeVaultFactory(
+        _executionFee
+    )
+    {
         _ownerSetGmxV2Registry(_gmxV2Registry);
-        _ownerSetExecutionFee(_executionFee);
         INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
         INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
         SHORT_TOKEN = _tokenAndMarketAddresses.shortToken;
@@ -110,21 +108,6 @@ contract GmxV2IsolationModeVaultFactory is
     // ============ External Functions ============
     // ================================================
 
-    function depositIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        _depositIntoDolomiteMarginFromTokenConverter(
-            _vault,
-            _vaultAccountNumber,
-            _amountWei
-        );
-    }
-
     function ownerSetGmxV2Registry(
         address _gmxV2Registry
     )
@@ -132,35 +115,6 @@ contract GmxV2IsolationModeVaultFactory is
     override
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetGmxV2Registry(_gmxV2Registry);
-    }
-
-    function ownerSetExecutionFee(
-        uint256 _executionFee
-    )
-    external
-    override
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetExecutionFee(_executionFee);
-    }
-
-    function setIsVaultDepositSourceWrapper(
-        address _vault,
-        bool _isDepositSourceWrapper
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setIsVaultDepositSourceWrapper(_isDepositSourceWrapper);
-    }
-
-    function setShouldVaultSkipTransfer(
-        address _vault,
-        bool _shouldSkipTransfer
-    )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setShouldVaultSkipTransfer(_shouldSkipTransfer);
     }
 
     // ====================================================
@@ -172,45 +126,6 @@ contract GmxV2IsolationModeVaultFactory is
     ) internal {
         gmxV2Registry = IGmxV2Registry(_gmxV2Registry);
         emit GmxV2RegistrySet(_gmxV2Registry);
-    }
-
-    function _ownerSetExecutionFee(
-        uint256 _executionFee
-    ) internal {
-        Require.that(
-            _executionFee <= 1 ether,
-            _FILE,
-            "Invalid execution fee"
-        );
-        executionFee = _executionFee;
-        emit ExecutionFeeSet(_executionFee);
-    }
-
-    function _depositIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    ) internal virtual {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setIsVaultDepositSourceWrapper(/* _isDepositSourceWrapper = */ true);
-        _enqueueTransfer(
-            _vault,
-            address(DOLOMITE_MARGIN()),
-            _amountWei,
-            _vault
-        );
-        AccountActionLib.deposit(
-            DOLOMITE_MARGIN(),
-            /* _accountOwner = */ _vault,
-            /* _fromAccount = */ _vault,
-            _vaultAccountNumber,
-            marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            })
-        );
     }
 
     function _afterInitialize() internal override {

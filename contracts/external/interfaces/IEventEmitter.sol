@@ -42,25 +42,25 @@ interface IEventEmitter {
         IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo deposit
     );
 
-    event AsyncDepositExecuted(bytes32 indexed key);
+    event AsyncDepositExecuted(bytes32 indexed key, address indexed token);
 
-    event AsyncDepositFailed(bytes32 indexed key, string reason);
+    event AsyncDepositFailed(bytes32 indexed key, address indexed token, string reason);
 
-    event AsyncDepositCancelled(bytes32 indexed key);
+    event AsyncDepositCancelled(bytes32 indexed key, address indexed token);
 
-    event AsyncDepositCancelledFailed(bytes32 indexed key, string reason);
+    event AsyncDepositCancelledFailed(bytes32 indexed key, address indexed token, string reason);
 
     event AsyncWithdrawalCreated(
         bytes32 indexed key,
-        address token,
+        address indexed token,
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo withdrawal
     );
 
-    event AsyncWithdrawalExecuted(bytes32 indexed key);
+    event AsyncWithdrawalExecuted(bytes32 indexed key, address indexed token);
 
-    event AsyncWithdrawalFailed(bytes32 indexed key, string reason);
+    event AsyncWithdrawalFailed(bytes32 indexed key, address indexed token, string reason);
 
-    event AsyncWithdrawalCancelled(bytes32 indexed key);
+    event AsyncWithdrawalCancelled(bytes32 indexed key, address indexed token);
 
     // ================================================
     // ================== Functions ===================

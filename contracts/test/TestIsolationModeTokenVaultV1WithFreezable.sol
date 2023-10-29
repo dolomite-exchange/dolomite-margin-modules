@@ -35,24 +35,30 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
  */
 contract TestIsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1WithFreezable {
 
-    function initiateUnwrappingForLiquidation(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address /* _outputToken */,
-        uint256 /* _minOutputAmount */
-    ) external payable {
-        IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).updateVaultAccountPendingAmountForFrozenStatus(
-            /* _vault = */ address(this),
-            _tradeAccountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
-            /* _amountDeltaWei = */ IDolomiteStructs.Wei({
-                sign: true,
-                value: _inputAmount
-            })
-        );
-    }
+    // solhint-disable-next-line no-empty-blocks
+    constructor(address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {}
 
     function dolomiteRegistry() public override view returns (IDolomiteRegistry) {
         return TestSimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
+    }
+
+    function _initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address /* _outputToken */,
+        uint256 /* _minOutputAmount */,
+        bool _isLiquidation
+    ) internal override {
+        if (_isLiquidation) {
+            IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).updateVaultAccountPendingAmountForFrozenStatus(
+            /* _vault = */ address(this),
+                _tradeAccountNumber,
+                IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
+                /* _amountDeltaWei = */ IDolomiteStructs.Wei({
+                    sign: true,
+                    value: _inputAmount
+                })
+            );
+        }
     }
 }

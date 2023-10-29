@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { IGmxV2Registry } from "./IGmxV2Registry.sol";
 import { IGmxWithdrawalCallbackReceiver } from "./IGmxWithdrawalCallbackReceiver.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
-
 
 /**
  * @title   IGmxV2IsolationModeUnwrapperTraderV2
@@ -34,19 +34,5 @@ interface IGmxV2IsolationModeUnwrapperTraderV2 is
     IGmxWithdrawalCallbackReceiver
 {
 
-    // ===================================================
-    // ==================== Functions ====================
-    // ===================================================
-
-    /**
-     * Notifies the unwrapper that it'll be entered for a trade from the unwrapper. This allows it to modify the action
-     * length
-     */
-    function handleGmxCallbackFromWrapperBefore() external;
-
-    /**
-     * Reverts any changes made in `handleGmxCallbackFromWrapperBefore`. Can only be called by the
-     * IGmxV2IsolationModeWrapperTraderV2
-     */
-    function handleGmxCallbackFromWrapperAfter() external;
+    function GMX_REGISTRY_V2() external view returns (IGmxV2Registry);
 }

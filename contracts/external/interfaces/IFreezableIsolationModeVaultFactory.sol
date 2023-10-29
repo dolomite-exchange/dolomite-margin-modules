@@ -46,6 +46,7 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ========================= Events =========================
     // ==========================================================
 
+    event ExecutionFeeSet(uint256 _executionFee);
     event VaultAccountFrozen(
         address indexed vault,
         uint256 indexed accountNumber,
@@ -55,6 +56,13 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ===========================================================
     // ======================== Functions ========================
     // ===========================================================
+
+    /**
+     *
+     * @param  _executionFee    The amount of gas (in ETH) that should be sent with a position so the user can pay the
+     *                          gas fees to be liquidated. The gas fees are refunded when a position is closed.
+     */
+    function ownerSetExecutionFee(uint256 _executionFee) external;
 
     /**
      * @dev Sets whether or not the vault should use the GmxV2IsolationModeWrapperTraderV2 as the ERC20 transfer
@@ -82,8 +90,8 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
      * Performs the deposit from a token wrapper/unwrapper contract into the vault.
      *
      * @param  _vault               The address of the vault making the deposit
-     * @param _vaultAccountNumber   The account number (sub account) for the corresponding vault
-     * @param _amountWei            The amount of the token to deposit
+     * @param  _vaultAccountNumber  The account number (sub account) for the corresponding vault
+     * @param  _amountWei           The amount of the token to deposit
      */
     function depositIntoDolomiteMarginFromTokenConverter(
         address _vault,
@@ -154,4 +162,10 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
         address _vault,
         FreezeType _freezeType
     ) external view returns (uint256);
+
+    /**
+     * @dev     The amount of gas (in ETH) that should be sent with a position so the user can pay the gas fees to be
+     *          liquidated. The gas fees are refunded when a position is closed.
+     */
+    function executionFee() external view returns (uint256);
 }

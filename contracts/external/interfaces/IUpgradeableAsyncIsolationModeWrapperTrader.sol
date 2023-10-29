@@ -54,7 +54,7 @@ interface IUpgradeableAsyncIsolationModeWrapperTrader is IIsolationModeWrapperTr
     /**
      * This should be called by the vault to initiate a cancellation for a deposit.
      *
-     * @param _key The key of the deposit that should be cancelled
+     * @param  _key The key of the deposit that should be cancelled
      */
     function initiateCancelDeposit(bytes32 _key) external;
 

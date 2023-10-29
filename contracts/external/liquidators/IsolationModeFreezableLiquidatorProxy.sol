@@ -107,15 +107,6 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
             outputToken,
             _minOutputAmount
         );
-
-        DOLOMITE_REGISTRY.emitLiquidationEnqueued(
-            _liquidAccount.owner,
-            _liquidAccount.number,
-            _freezableMarketId,
-            _inputTokenAmount,
-            _outputMarketId,
-            _minOutputAmount
-        );
     }
 
     // ======================================================================

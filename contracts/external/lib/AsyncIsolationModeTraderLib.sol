@@ -21,17 +21,23 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { AccountBalanceLib } from "./AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
-import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
-import { UpgradeableAsyncIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
-import { AccountBalanceLib } from "./AccountBalanceLib.sol";
+import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { UpgradeableAsyncIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
+/**
+ * @title   AsyncIsolationModeTraderLib
+ * @author  Dolomite
+ *
+ * Reusable library for functions that save bytecode on the async unwrapper/wrapper contracts
+ */
 library AsyncIsolationModeTraderLib {
     using SafeERC20 for IERC20;
 
@@ -97,7 +103,7 @@ library AsyncIsolationModeTraderLib {
         uint256 outputAmount = _depositInfo.inputAmount;
         IERC20(_depositInfo.inputToken).safeApprove(traderParams[0].trader, outputAmount);
 
-        UpgradeableAsyncIsolationModeUnwrapperTrader(traderParams[0].trader).handleGmxCallbackFromWrapperBefore();
+        UpgradeableAsyncIsolationModeUnwrapperTrader(payable(traderParams[0].trader)).handleCallbackFromWrapperBefore();
         IIsolationModeTokenVaultV1(_depositInfo.vault).swapExactInputForOutput(
             _depositInfo.accountNumber,
             marketIdsPath,
@@ -107,6 +113,6 @@ library AsyncIsolationModeTraderLib {
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
         );
-        UpgradeableAsyncIsolationModeUnwrapperTrader(traderParams[0].trader).handleGmxCallbackFromWrapperAfter();
+        UpgradeableAsyncIsolationModeUnwrapperTrader(payable(traderParams[0].trader)).handleCallbackFromWrapperAfter();
     }
 }

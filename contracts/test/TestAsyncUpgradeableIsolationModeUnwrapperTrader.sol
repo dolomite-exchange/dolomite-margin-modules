@@ -36,6 +36,10 @@ contract TestAsyncUpgradeableIsolationModeUnwrapperTrader is UpgradeableAsyncIso
 
     bytes32 private constant _OUTPUT_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.outputToken")) - 1);
 
+    // ================== Storage ==================
+
+    mapping (address => uint256) private _vaultToNonceMap;
+
     // ================ Initializer ================
 
     function initialize(
@@ -50,10 +54,20 @@ contract TestAsyncUpgradeableIsolationModeUnwrapperTrader is UpgradeableAsyncIso
         super._initializeUnwrapperTrader(_vaultFactory, _dolomiteMargin);
     }
 
-    // ============ Public Functions ============
+    function handleCallbackFromWrapperBefore() external {
+        // solhint-disable-previous-line no-empty-blocks
+    }
 
-    function initializeUnwrapperTrader(address _vaultFactory, address _dolomiteMargin) external {
-        super._initializeUnwrapperTrader(_vaultFactory, _dolomiteMargin);
+    function handleCallbackFromWrapperAfter() external {
+        // solhint-disable-previous-line no-empty-blocks
+    }
+
+    function initiateCancelWithdrawal(bytes32 /* _key */) external {
+        // solhint-disable-previous-line no-empty-blocks
+    }
+
+    function getWithdrawalInfo(bytes32 /* _key */) external pure returns (WithdrawalInfo memory withdrawal) {
+        return withdrawal;
     }
 
     function isValidOutputToken(
@@ -67,6 +81,17 @@ contract TestAsyncUpgradeableIsolationModeUnwrapperTrader is UpgradeableAsyncIso
     }
 
     // ================ Internal Functions ================
+
+    function _createDepositWithExternalProtocol(
+        address _vault,
+        address /* _outputTokenUnderlying */,
+        uint256 /* _minOutputAmount */,
+        address /* _inputToken */,
+        uint256 /* _inputAmount */,
+        bytes memory /* _extraOrderData */
+    ) internal returns (bytes32 _depositKey) {
+        _depositKey = keccak256(abi.encode(_vault, _vaultToNonceMap[_vault]++));
+    }
 
     function _exchangeUnderlyingTokenToOutputToken(
         address,

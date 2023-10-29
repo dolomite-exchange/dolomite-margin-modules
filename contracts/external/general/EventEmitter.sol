@@ -74,7 +74,7 @@ contract EventEmitter is
         external
         onlyTrustedTokenConverter(_token, msg.sender)
     {
-        emit AsyncDepositCreated(_key, _deposit);
+        emit AsyncDepositCreated(_key, _token, _deposit);
     }
 
     function emitAsyncDepositExecuted(
@@ -84,7 +84,7 @@ contract EventEmitter is
         external
         onlyTrustedTokenConverter(_token, msg.sender)
     {
-        emit AsyncDepositExecuted(_key);
+        emit AsyncDepositExecuted(_key, _token);
     }
 
     function emitAsyncDepositFailed(
@@ -95,7 +95,7 @@ contract EventEmitter is
         external
         onlyTrustedTokenConverter(_token, msg.sender)
     {
-        emit AsyncDepositFailed(_key, _reason);
+        emit AsyncDepositFailed(_key, _token, _reason);
     }
 
     function emitAsyncDepositCancelled(
@@ -105,7 +105,7 @@ contract EventEmitter is
         external
         onlyTrustedTokenConverter(_token, msg.sender)
     {
-        emit AsyncDepositCancelled(_key);
+        emit AsyncDepositCancelled(_key, _token);
     }
 
     function emitAsyncDepositCancelledFailed(
@@ -116,7 +116,7 @@ contract EventEmitter is
         external
         onlyTrustedTokenConverter(_token, msg.sender)
     {
-        emit AsyncDepositCancelledFailed(_key, _reason);
+        emit AsyncDepositCancelledFailed(_key, _token, _reason);
     }
 
     function emitAsyncWithdrawalCreated(

@@ -22,12 +22,14 @@ pragma solidity ^0.8.9;
 
 import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
+import { IWETH } from "../../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
+
 
 /**
  * @title   IsolationModeTokenVaultV1WithFreezable
@@ -48,6 +50,15 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
 
     bytes32 private constant _FILE = "IsolationModeVaultV1Freezable"; // shortened to fit in 32 bytes
     bytes32 private constant _VIRTUAL_BALANCE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.virtualBalance")) - 1);
+    bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _POSITION_TO_EXECUTION_FEE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.positionToExecutionFee")) - 1); // solhint-disable-line max-line-length
+
+    // ==================================================================
+    // ====================== Immutable Variables =======================
+    // ==================================================================
+
+    IWETH public immutable override WETH; // solhint-disable-line var-name-mixedcase
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -123,9 +134,91 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _;
     }
 
+    modifier onlyLiquidator(address _from) {
+        _validateIsLiquidator(_from);
+        _;
+    }
+
+    // ==================================================================
+    // --======================== Constructors ==========================
+    // ==================================================================
+
+    constructor(address _weth) {
+        WETH = IWETH(_weth);
+    }
+
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
+
+    function setIsVaultDepositSourceWrapper(
+        bool _isDepositSourceWrapper
+    )
+    external
+    onlyVaultFactory(msg.sender) {
+        _setIsVaultDepositSourceWrapper(_isDepositSourceWrapper);
+    }
+
+    function setShouldVaultSkipTransfer(
+        bool _shouldSkipTransfer
+    )
+    external
+    onlyVaultFactory(msg.sender) {
+        _setShouldVaultSkipTransfer(_shouldSkipTransfer);
+    }
+
+    function initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    )
+        external
+        payable
+        nonReentrant
+        onlyVaultOwner(msg.sender)
+        requireNotFrozen
+    {
+        _initiateUnwrapping(
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount,
+            /* _isLiquidation = */ false
+        );
+    }
+
+    function initiateUnwrappingForLiquidation(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    )
+        external
+        payable
+        nonReentrant
+        onlyLiquidator(msg.sender)
+    {
+        _initiateUnwrapping(
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount,
+            /* _isLiquidation = */ true
+        );
+    }
+
+    function isDepositSourceWrapper() public view returns (bool) {
+        return _getUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT) == 1;
+    }
+
+    function shouldSkipTransfer() public view returns (bool) {
+        return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
+    }
+
+    function getExecutionFeeForAccountNumber(uint256 _accountNumber) public view returns (uint256) {
+        return _getUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)));
+    }
 
     function isVaultFrozen() public view returns (bool) {
         return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultFrozen(address(this));
@@ -375,12 +468,55 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     }
 
     // ==================================================================
-    // ======================== Private Functions =======================
+    // ======================== Internal Functions ======================
     // ==================================================================
+
+    function _setIsVaultDepositSourceWrapper(bool _isDepositSourceWrapper) internal {
+        _setUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT, _isDepositSourceWrapper ? 1 : 0);
+        emit IsDepositSourceWrapperSet(_isDepositSourceWrapper);
+    }
+
+    function _setShouldVaultSkipTransfer(bool _shouldSkipTransfer) internal {
+        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
+        emit ShouldSkipTransferSet(_shouldSkipTransfer);
+    }
+
+    function _setExecutionFeeForAccountNumber(
+        uint256 _accountNumber,
+        uint256 _executionFee
+    ) internal {
+        _setUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)), _executionFee);
+        emit ExecutionFeeSet(_accountNumber, _executionFee);
+    }
 
     function _setVirtualBalance(uint256 _balance) internal {
         _setUint256(_VIRTUAL_BALANCE_SLOT, _balance);
+        emit VirtualBalanceSet(_balance);
     }
+
+    function _initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bool _isLiquidation
+    ) internal virtual;
+
+    function _validateIsLiquidator(address _from) internal view {
+        Require.that(
+            dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(
+                IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).marketId(),
+                _from
+            ),
+            _FILE,
+            "Only liquidator can call",
+            _from
+        );
+    }
+
+    // ==================================================================
+    // ======================== Private Functions =======================
+    // ==================================================================
 
     function _requireNotFrozen() private view {
         Require.that(

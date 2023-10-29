@@ -22,7 +22,6 @@ pragma solidity ^0.8.9;
 
 import { IGmxV2Registry } from "./IGmxV2Registry.sol";
 import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
-import { IWETH } from "../../../protocol/interfaces/IWETH.sol";
 
 
 /**
@@ -32,36 +31,9 @@ import { IWETH } from "../../../protocol/interfaces/IWETH.sol";
  */
 interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezableAndPausable {
 
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
+    function cancelDeposit(bytes32 _key) external;
 
-    event IsDepositSourceWrapperSet(bool _isDepositSourceWrapper);
-    event ShouldSkipTransferSet(bool _shouldSkipTransfer);
-    event ExecutionFeeSet(uint256 _accountNumber, uint256 _executionFee);
-
-    // ===================================================
-    // ==================== Functions ====================
-    // ===================================================
-
-    function initiateUnwrapping(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount
-    ) external payable;
-
-    function setIsVaultDepositSourceWrapper(bool _isDepositSourceWrapper) external;
-
-    function setShouldVaultSkipTransfer(bool _shouldSkipTransfer) external;
-
-    function WETH() external view returns (IWETH);
-
-    function isDepositSourceWrapper() external view returns (bool);
-
-    function shouldSkipTransfer() external view returns (bool);
+    function cancelWithdrawal(bytes32 _key) external;
 
     function registry() external view returns (IGmxV2Registry);
-
-    function getExecutionFeeForAccountNumber(uint256 _accountNumber) external view returns (uint256);
 }

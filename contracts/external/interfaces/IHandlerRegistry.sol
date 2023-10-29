@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteRegistry } from "./IDolomiteRegistry.sol";
+import { IBaseRegistry } from "./IBaseRegistry.sol";
 import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "./IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "./IUpgradeableAsyncIsolationModeWrapperTrader.sol";
@@ -32,7 +32,7 @@ import { IUpgradeableAsyncIsolationModeWrapperTrader } from "./IUpgradeableAsync
  *
  * @notice  A registry contract for storing whether or not a handler is trusted for executing a function
  */
-interface IHandlerRegistry {
+interface IHandlerRegistry is IBaseRegistry {
 
     // ================================================
     // ==================== Events ====================
@@ -40,18 +40,12 @@ interface IHandlerRegistry {
 
     event HandlerSet(address _handler, bool _isTrusted);
     event CallbackGasLimitSet(uint256 _callbackGasLimit);
-    event DolomiteRegistrySet(address _dolomiteRegistry);
     event UnwrapperTraderSet(address _token, address _unwrapperTrader);
     event WrapperTraderSet(address _token, address _wrapperTrader);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
-
-    function ownerSetDolomiteRegistry(
-        address _dolomiteRegistry
-    )
-    external;
 
     function ownerSetIsHandler(
         address _handler,
@@ -75,8 +69,6 @@ interface IHandlerRegistry {
         IUpgradeableAsyncIsolationModeWrapperTrader _wrapperTrader
     )
     external;
-
-    function dolomiteRegistry() external view returns (IDolomiteRegistry);
 
     function isHandler(address _handler) external view returns (bool);
 

@@ -24,6 +24,7 @@ import { TestIsolationModeFactory } from "./TestIsolationModeFactory.sol";
 import { IDolomiteRegistry } from "../external/interfaces/IDolomiteRegistry.sol";
 import { IFreezableIsolationModeVaultFactory } from "../external/interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV1 } from "../external/proxies/abstract/IsolationModeTokenVaultV1.sol";
+import { IsolationModeTokenVaultV1WithFreezable } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
@@ -39,22 +40,8 @@ contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeT
     // solhint-disable-next-line max-line-length
     bytes32 private constant _IS_EXTERNAL_REDEMPTION_PAUSED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isExternalRedemptionPaused")) - 1);
 
-    function initiateUnwrappingForLiquidation(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address /* _outputToken */,
-        uint256 /* _minOutputAmount */
-    ) external payable {
-        IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).updateVaultAccountPendingAmountForFrozenStatus(
-            /* _vault = */ address(this),
-            _tradeAccountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
-            /* _amountDeltaWei = */ IDolomiteStructs.Wei({
-                sign: true,
-                value: _inputAmount
-            })
-        );
-    }
+    // solhint-disable-next-line no-empty-blocks
+    constructor(address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {}
 
     function setIsExternalRedemptionPaused(bool _newIsExternalRedemptionPaused) public {
         _setUint256(_IS_EXTERNAL_REDEMPTION_PAUSED_SLOT, _newIsExternalRedemptionPaused ? 1 : 0);
@@ -71,5 +58,25 @@ contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeT
 
     function isExternalRedemptionPaused() public override view returns (bool) {
         return _getUint256(_IS_EXTERNAL_REDEMPTION_PAUSED_SLOT) == 1;
+    }
+
+    function _initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address /* _outputToken */,
+        uint256 /* _minOutputAmount */,
+        bool _isLiquidation
+    ) internal override {
+        if (_isLiquidation) {
+            IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).updateVaultAccountPendingAmountForFrozenStatus(
+            /* _vault = */ address(this),
+                _tradeAccountNumber,
+                IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
+                /* _amountDeltaWei = */ IDolomiteStructs.Wei({
+                    sign: true,
+                    value: _inputAmount
+                })
+            );
+        }
     }
 }

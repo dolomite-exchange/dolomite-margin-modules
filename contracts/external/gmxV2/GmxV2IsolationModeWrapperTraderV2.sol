@@ -23,18 +23,14 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeWrapperTrader } from "../interfaces/IIsolationModeWrapperTrader.sol";
 import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
-import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
@@ -48,7 +44,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     IGmxV2IsolationModeWrapperTraderV2,
     UpgradeableAsyncIsolationModeWrapperTrader
 {
-    using InterestIndexLib for IDolomiteMargin;
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
 
@@ -175,7 +170,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     // ============ Internal Functions ============
     // ============================================
 
-    function _createDeposit(
+    function _createDepositWithExternalProtocol(
         address _vault,
         address _outputTokenUnderlying,
         uint256 _minOutputAmount,

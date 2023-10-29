@@ -48,15 +48,12 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
     // ================================================
 
     event GmxV2RegistrySet(address _gmxV2Registry);
-    event ExecutionFeeSet(uint256 _executionFee);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
     function ownerSetGmxV2Registry(address _gmxV2Registry) external;
-
-    function ownerSetExecutionFee(uint256 _executionFee) external;
 
     function INDEX_TOKEN() external view returns (address);
 
@@ -71,10 +68,4 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
     function LONG_TOKEN_MARKET_ID() external view returns (uint256);
 
     function gmxV2Registry() external view returns (IGmxV2Registry);
-
-    /**
-     * @dev     The amount of gas (in ETH) that should be sent with a position so the user can pay the gas fees to be
-     *          liquidated. The gas fees are refunded when a position is closed.
-     */
-    function executionFee() external view returns (uint256);
 }
