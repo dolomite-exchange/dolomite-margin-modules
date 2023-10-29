@@ -79,9 +79,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     )
     external
     onlyHandler(msg.sender) {
-        DepositInfo memory depositInfo = _getDepositSlot(_key);
-        _validateDepositExists(depositInfo);
-
         // @follow-up Switched to use 0 instead of len-1
         // @audit Don't use len - 1 but use index value
         GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[0];
@@ -92,48 +89,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             "Unexpected receivedMarketTokens"
         );
 
-        IERC20 underlyingToken = IERC20(VAULT_FACTORY().UNDERLYING_TOKEN());
-        // We just need to blind transfer the min amount to the vault
-        underlyingToken.safeTransfer(depositInfo.vault, _deposit.numbers.minMarketTokens);
-
-        if (receivedMarketTokens.value > _deposit.numbers.minMarketTokens) {
-            // We need to send the diff into the vault via `operate` and
-            uint256 diff = receivedMarketTokens.value - _deposit.numbers.minMarketTokens;
-
-            // The allowance is entirely spent in the call to `factory.depositIntoDolomiteMarginFromTokenConverter` or
-            // `_depositIntoDefaultPositionAndClearDeposit`
-            underlyingToken.safeApprove(depositInfo.vault, diff);
-
-            // @audit   The only way this try-catch should throw is if there wasn't enough gas passed into the callback
-            //          gas limit or if the user is underwater (after the deposit settles). We should always pass enough
-            //          gas, though. If the user goes underwater, we'll want to recover as reasonably as possible. The
-            //          way we do this is by initiating an unwrapping & then a liquidation via
-            //          `IsolationModeFreezableLiquidatorProxy.sol`
-            // @audit   This can also fail if the user pushes the GM token total supply on Dolomite past our supply cap
-            //          How do we mitigate this? We don't know ahead of time how many tokens the user will get...
-            // @audit   Are there any other "reasons" that the try-catch can fail that I'm missing here?
-            IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-            try
-                factory.depositIntoDolomiteMarginFromTokenConverter(
-                    depositInfo.vault,
-                    depositInfo.accountNumber,
-                    diff
-                )
-            {
-                _clearDepositAndUpdatePendingAmount(depositInfo);
-                emit DepositExecuted(_key);
-            } catch Error(string memory _reason) {
-                _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
-                emit DepositFailed(_key, _reason);
-            } catch (bytes memory /* _reason */) {
-                _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
-                emit DepositFailed(_key, "");
-            }
-        } else {
-            // There's nothing additional to send to the vault; clear out the deposit
-            _clearDepositAndUpdatePendingAmount(depositInfo);
-            emit DepositExecuted(_key);
-        }
+        _executeDepositExecution(_key, receivedMarketTokens.value, _deposit.numbers.minMarketTokens);
     }
 
     function afterDepositCancellation(
@@ -164,7 +120,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         _executeDepositCancellation(depositInfo);
     }
 
-    function cancelDeposit(bytes32 _key) external {
+    function initiateCancelDeposit(bytes32 _key) external {
         DepositInfo memory depositInfo = _getDepositSlot(_key);
         Require.that(
             msg.sender == depositInfo.vault || isHandler(msg.sender),
@@ -240,28 +196,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             _inputToken,
             _inputAmount
         );
-    }
-
-    function _executeDepositCancellation(
-        DepositInfo memory _depositInfo
-    ) internal {
-        _validateDepositExists(_depositInfo);
-
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
-        factory.setShouldVaultSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ true);
-
-        try GmxV2Library.swapExactInputForOutputForDepositCancellation(/* _wrapper = */ this, _depositInfo) {
-            // The deposit info is set via `swapExactInputForOutputForDepositCancellation` by the unwrapper
-            emit DepositCancelled(_depositInfo.key);
-        } catch Error(string memory _reason) {
-            _depositInfo.isRetryable = true;
-            _setDepositInfo(_depositInfo.key, _depositInfo);
-            emit DepositCancelledFailed(_depositInfo.key, _reason);
-        } catch (bytes memory /* _reason */) {
-            _depositInfo.isRetryable = true;
-            _setDepositInfo(_depositInfo.key, _depositInfo);
-            emit DepositCancelledFailed(_depositInfo.key, "");
-        }
     }
 
     function _getExchangeCost(

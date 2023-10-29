@@ -56,7 +56,7 @@ interface IUpgradeableAsyncIsolationModeWrapperTrader is IIsolationModeWrapperTr
      *
      * @param _key The key of the deposit that should be cancelled
      */
-    function cancelDeposit(bytes32 _key) external;
+    function initiateCancelDeposit(bytes32 _key) external;
 
     function setDepositInfoAndReducePendingAmountFromUnwrapper(
         bytes32 _key,

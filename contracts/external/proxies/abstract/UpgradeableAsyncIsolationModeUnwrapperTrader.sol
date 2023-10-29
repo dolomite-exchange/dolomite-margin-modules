@@ -121,7 +121,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         });
         _setWithdrawalInfo(_key, withdrawalInfo);
         _updateVaultPendingAmount(vault, _accountNumber, _inputAmount, /* _isPositive = */ true);
-        HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalCreated(
+        _eventEmitter().emitAsyncWithdrawalCreated(
             _key,
             address(VAULT_FACTORY()),
             withdrawalInfo
@@ -531,24 +531,47 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual {
-        try AsyncIsolationModeTraderLib.swapExactInputForOutputForWithdrawal(/* _unwrapper = this */, _withdrawalInfo) {
-            HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalExecuted(
+        try AsyncIsolationModeTraderLib.swapExactInputForOutputForWithdrawal(/* _unwrapper = */ this, _withdrawalInfo) {
+            _eventEmitter().emitAsyncWithdrawalExecuted(
                 _withdrawalInfo.key,
                 address(VAULT_FACTORY())
             );
         } catch Error(string memory _reason) {
-            HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalFailed(
+            _eventEmitter().emitAsyncWithdrawalFailed(
                 _withdrawalInfo.key,
                 address(VAULT_FACTORY()),
                 _reason
             );
         } catch (bytes memory /* _reason */) {
-            HANDLER_REGISTRY().dolomiteRegistry().eventEmitter().emitAsyncWithdrawalFailed(
+            _eventEmitter().emitAsyncWithdrawalFailed(
                 _withdrawalInfo.key,
                 address(VAULT_FACTORY()),
                 /* _reason =  */ ""
             );
         }
+    }
+
+    function _executeWithdrawalCancellation(bytes32 _key) internal virtual {
+        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
+        _validateWithdrawalExists(withdrawalInfo);
+
+        IIsolationModeVaultFactory factory = VAULT_FACTORY();
+        IERC20(factory.UNDERLYING_TOKEN()).safeTransfer(
+            withdrawalInfo.vault,
+            withdrawalInfo.inputAmount
+        );
+
+        _updateVaultPendingAmount(
+            withdrawalInfo.vault,
+            withdrawalInfo.accountNumber,
+            withdrawalInfo.inputAmount,
+            /* _isPositive = */ false
+        );
+
+        // Setting inputAmount to 0 will clear the withdrawal
+        withdrawalInfo.inputAmount = 0;
+        _setWithdrawalInfo(_key, withdrawalInfo);
+        _eventEmitter().emitAsyncWithdrawalCancelled(_key, address(factory));
     }
 
     function _validateVaultExists(IIsolationModeVaultFactory _factory, address _vault) internal view {

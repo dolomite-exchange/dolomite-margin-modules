@@ -80,7 +80,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     // ============= Public Functions =============
     // ============================================
 
-    function cancelWithdrawal(bytes32 _key) external {
+    function initiateCancelWithdrawal(bytes32 _key) external {
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         Require.that(
             msg.sender == withdrawalInfo.vault || isHandler(msg.sender),
@@ -149,25 +149,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     external
     nonReentrant
     onlyHandler(msg.sender) {
-        WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
-        _validateWithdrawalExists(withdrawalInfo);
-
-        IERC20(VAULT_FACTORY().UNDERLYING_TOKEN()).safeTransfer(
-            withdrawalInfo.vault,
-            withdrawalInfo.inputAmount
-        );
-
-        _updateVaultPendingAmount(
-            withdrawalInfo.vault,
-            withdrawalInfo.accountNumber,
-            withdrawalInfo.inputAmount,
-            /* _isPositive = */ false
-        );
-
-        // Setting inputAmount to 0 will clear the withdrawal
-        withdrawalInfo.inputAmount = 0;
-        _setWithdrawalInfo(_key, withdrawalInfo);
-        emit WithdrawalCancelled(_key);
+        _executeWithdrawalCancellation(_key);
     }
 
     function isValidOutputToken(

@@ -30,6 +30,7 @@ import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVault
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
+import { AsyncIsolationModeTraderLib } from "../../lib/AsyncIsolationModeTraderLib.sol";
 
 /**
  * @title   UpgradeableAsyncIsolationModeWrapperTrader
@@ -239,9 +240,11 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         // Account number is set by the Token Vault so we know it's safe to use
         (uint256 accountNumber, bytes memory _extraOrderData) = abi.decode(_orderData, (uint256, bytes));
 
+        IIsolationModeVaultFactory factory = VAULT_FACTORY();
+
         // Disallow the deposit if there's already an action waiting for it
         Require.that(
-            !IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).isVaultFrozen(_tradeOriginator),
+            !IFreezableIsolationModeVaultFactory(address(factory)).isVaultFrozen(_tradeOriginator),
             _FILE,
             "Vault is frozen",
             _tradeOriginator
@@ -256,27 +259,25 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             _extraOrderData
         );
 
-        _setDepositInfo(
-            depositKey,
-            DepositInfo({
-                key: depositKey,
-                vault: _tradeOriginator,
-                accountNumber: accountNumber,
-                inputToken: _inputToken,
-                inputAmount: _inputAmount,
-                outputAmount: _minOutputAmount,
-                isRetryable: false
-            })
-        );
+        DepositInfo memory depositInfo = DepositInfo({
+            key: depositKey,
+            vault: _tradeOriginator,
+            accountNumber: accountNumber,
+            inputToken: _inputToken,
+            inputAmount: _inputAmount,
+            outputAmount: _minOutputAmount,
+            isRetryable: false
+        });
+        _setDepositInfo(depositKey, depositInfo);
         _updateVaultPendingAmount(
             _tradeOriginator,
             accountNumber,
             _minOutputAmount,
             /* _isPositive = */ true
         );
-        emit DepositCreated(depositKey);
+        _eventEmitter().emitAsyncDepositCreated(depositKey, address(factory), depositInfo);
 
-        VAULT_FACTORY().setShouldVaultSkipTransfer(
+        factory.setShouldVaultSkipTransfer(
             _tradeOriginator,
             /* _shouldSkipTransfer = */ true
         );
@@ -290,6 +291,82 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     ) internal {
         VAULT_FACTORY().enqueueTransferIntoDolomiteMargin(_vault, _amount);
         IERC20(address(VAULT_FACTORY())).safeApprove(_receiver, _amount);
+    }
+
+    function _executeDepositExecution(
+        bytes32 _key,
+        uint256 _receivedMarketTokens,
+        uint256 _minMarketTokens
+    ) internal virtual {
+        DepositInfo memory depositInfo = _getDepositSlot(_key);
+        _validateDepositExists(depositInfo);
+
+        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
+        IERC20 underlyingToken = IERC20(factory.UNDERLYING_TOKEN());
+        // We just need to blind transfer the min amount to the vault
+        underlyingToken.safeTransfer(depositInfo.vault, _minMarketTokens);
+
+        if (_receivedMarketTokens > _minMarketTokens) {
+            // We need to send the diff into the vault via `operate` and
+            uint256 diff = _receivedMarketTokens - _minMarketTokens;
+
+            // The allowance is entirely spent in the call to `factory.depositIntoDolomiteMarginFromTokenConverter` or
+            // `_depositIntoDefaultPositionAndClearDeposit`
+            underlyingToken.safeApprove(depositInfo.vault, diff);
+
+            // @audit   The only way this try-catch should throw is if there wasn't enough gas passed into the callback
+            //          gas limit or if the user is underwater (after the deposit settles). We should always pass enough
+            //          gas, though. If the user goes underwater, we'll want to recover as reasonably as possible. The
+            //          way we do this is by initiating an unwrapping & then a liquidation via
+            //          `IsolationModeFreezableLiquidatorProxy.sol`
+            // @audit   This can also fail if the user pushes the GM token total supply on Dolomite past our supply cap
+            //          How do we mitigate this? We don't know ahead of time how many tokens the user will get...
+            // @audit   Are there any other "reasons" that the try-catch can fail that I'm missing here?
+            try factory.depositIntoDolomiteMarginFromTokenConverter(
+                depositInfo.vault,
+                depositInfo.accountNumber,
+                diff
+            )
+            {
+                _clearDepositAndUpdatePendingAmount(depositInfo);
+                _eventEmitter().emitAsyncDepositExecuted(_key, address(factory));
+            } catch Error(string memory _reason) {
+                _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
+                _eventEmitter().emitAsyncDepositFailed(_key, _reason);
+            } catch (bytes memory /* _reason */) {
+                _depositIntoDefaultPositionAndClearDeposit(factory, depositInfo, diff);
+                _eventEmitter().emitAsyncDepositFailed(_key, /* _reason = */ "");
+            }
+        } else {
+            // There's nothing additional to send to the vault; clear out the deposit
+            _clearDepositAndUpdatePendingAmount(depositInfo);
+            _eventEmitter().emitAsyncDepositExecuted(_key, address(factory));
+        }
+    }
+
+    function _executeDepositCancellation(
+        DepositInfo memory _depositInfo
+    ) internal virtual {
+        _validateDepositExists(_depositInfo);
+
+        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
+        factory.setShouldVaultSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ true);
+
+        try AsyncIsolationModeTraderLib.swapExactInputForOutputForDepositCancellation(
+            /* _wrapper = */ this,
+            _depositInfo
+        ) {
+            // The deposit info is set via `swapExactInputForOutputForDepositCancellation` by the unwrapper
+            _eventEmitter().emitAsyncDepositCancelled(_depositInfo.key, address(factory));
+        } catch Error(string memory _reason) {
+            _depositInfo.isRetryable = true;
+            _setDepositInfo(_depositInfo.key, _depositInfo);
+            _eventEmitter().emitAsyncDepositCancelledFailed(_depositInfo.key, address(factory), _reason);
+        } catch (bytes memory /* _reason */) {
+            _depositInfo.isRetryable = true;
+            _setDepositInfo(_depositInfo.key, _depositInfo);
+            _eventEmitter().emitAsyncDepositCancelledFailed(_depositInfo.key, address(factory), /* _reason = */ "");
+        }
     }
 
     function _depositIntoDefaultPositionAndClearDeposit(

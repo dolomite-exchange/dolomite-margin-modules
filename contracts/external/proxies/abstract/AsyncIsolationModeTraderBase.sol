@@ -26,6 +26,7 @@ import { IWETH } from "../../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { IAsyncIsolationModeTraderBase } from "../../interfaces/IAsyncIsolationModeTraderBase.sol";
+import { IEventEmitter } from "../../interfaces/IEventEmitter.sol";
 import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 
 
@@ -102,5 +103,9 @@ abstract contract AsyncIsolationModeTraderBase is
     ) internal initializer {
         _setAddress(_HANDLER_REGISTRY_SLOT, _registry);
         _setAddress(_WETH_SLOT, _weth);
+    }
+
+    function _eventEmitter() internal view returns (IEventEmitter) {
+        return HANDLER_REGISTRY().dolomiteRegistry().eventEmitter();
     }
 }

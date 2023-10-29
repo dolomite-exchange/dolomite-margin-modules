@@ -151,7 +151,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         IUpgradeableAsyncIsolationModeWrapperTrader wrapper =
                                 registry().getWrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
         _validateVaultOwnerForStruct(wrapper.getDepositInfo(_key).vault);
-        wrapper.cancelDeposit(_key);
+        wrapper.initiateCancelDeposit(_key);
     }
 
     /**
@@ -162,7 +162,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
                                 registry().getUnwrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
         _validateVaultOwnerForStruct(unwrapper.getWithdrawalInfo(_key).vault);
-        unwrapper.cancelWithdrawal(_key);
+        unwrapper.initiateCancelWithdrawal(_key);
     }
 
     function setIsVaultDepositSourceWrapper(

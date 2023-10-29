@@ -66,7 +66,7 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
      *
      * @param _key The key of the withdrawal that should be cancelled
      */
-    function cancelWithdrawal(bytes32 _key) external;
+    function initiateCancelWithdrawal(bytes32 _key) external;
 
     /**
      * Saves the follow withdrawal info as a struct. Only callable by the user's vault

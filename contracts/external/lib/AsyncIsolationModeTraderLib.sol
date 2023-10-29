@@ -25,7 +25,9 @@ import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
+import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { UpgradeableAsyncIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AccountBalanceLib } from "./AccountBalanceLib.sol";
 
@@ -34,7 +36,7 @@ library AsyncIsolationModeTraderLib {
     using SafeERC20 for IERC20;
 
     function swapExactInputForOutputForWithdrawal(
-        IUpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper,
+        UpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper,
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory _withdrawalInfo
     ) public {
         uint256[] memory marketIdsPath = new uint256[](2);
@@ -69,7 +71,7 @@ library AsyncIsolationModeTraderLib {
     }
 
     function swapExactInputForOutputForDepositCancellation(
-        IUpgradeableAsyncIsolationModeWrapperTrader _wrapper,
+        UpgradeableAsyncIsolationModeWrapperTrader _wrapper,
         IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory _depositInfo
     ) public {
         uint256[] memory marketIdsPath = new uint256[](2);
@@ -79,7 +81,7 @@ library AsyncIsolationModeTraderLib {
         IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
         traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
         traderParams[0].makerAccountIndex = 0;
-        traderParams[0].trader = address(_wrapper.GMX_REGISTRY_V2().gmxV2UnwrapperTrader());
+        traderParams[0].trader = address(_wrapper.HANDLER_REGISTRY().getUnwrapperByToken(_wrapper.VAULT_FACTORY()));
 
         IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes = new IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[](1); // solhint-disable-line max-line-length
         tradeTypes[0] = IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit;
@@ -95,7 +97,7 @@ library AsyncIsolationModeTraderLib {
         uint256 outputAmount = _depositInfo.inputAmount;
         IERC20(_depositInfo.inputToken).safeApprove(traderParams[0].trader, outputAmount);
 
-        IUpgradeableAsyncIsolationModeUnwrapperTrader(traderParams[0].trader).handleGmxCallbackFromWrapperBefore();
+        UpgradeableAsyncIsolationModeUnwrapperTrader(traderParams[0].trader).handleGmxCallbackFromWrapperBefore();
         IIsolationModeTokenVaultV1(_depositInfo.vault).swapExactInputForOutput(
             _depositInfo.accountNumber,
             marketIdsPath,
@@ -105,6 +107,6 @@ library AsyncIsolationModeTraderLib {
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
         );
-        IUpgradeableAsyncIsolationModeUnwrapperTrader(traderParams[0].trader).handleGmxCallbackFromWrapperAfter();
+        UpgradeableAsyncIsolationModeUnwrapperTrader(traderParams[0].trader).handleGmxCallbackFromWrapperAfter();
     }
 }
