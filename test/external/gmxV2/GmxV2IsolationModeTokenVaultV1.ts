@@ -6,22 +6,18 @@ import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
   CustomTestToken,
-  GmxV2Registry,
+  EventEmitterRegistry,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
+  GmxV2Registry,
   IGmxMarketToken,
   TestGmxReader,
   TestGmxReader__factory,
   TestGmxV2IsolationModeTokenVaultV1,
   TestGmxV2IsolationModeTokenVaultV1__factory,
 } from 'src/types';
-import {
-  createContractWithAbi,
-  createContractWithLibrary,
-  createTestToken,
-  depositIntoDolomiteMargin,
-} from 'src/utils/dolomite-utils';
+import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import {
@@ -32,11 +28,12 @@ import {
   expectWalletBalance,
 } from 'test/utils/assertions';
 import {
-  createGmxV2Registry,
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
   createGmxV2Library,
+  createGmxV2Registry,
+  createTestGmxV2IsolationModeTokenVaultV1,
   getInitiateUnwrappingParams,
   getInitiateWrappingParams,
 } from 'test/utils/ecosystem-token-utils/gmx';
@@ -52,7 +49,7 @@ import {
 } from 'test/utils/setup';
 import { getSimpleZapParams } from 'test/utils/zap-utils';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
-import { createSafeDelegateLibrary } from '../../utils/ecosystem-token-utils/general';
+import { createDolomiteRegistryImplementation, createEventEmitter } from '../../utils/dolomite';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -85,6 +82,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   let impersonatedFactory: SignerWithAddress;
   let impersonatedVault: SignerWithAddress;
   let testReader: TestGmxReader;
+  let eventEmitter: EventEmitterRegistry;
 
   let otherToken1: CustomTestToken;
   let otherToken2: CustomTestToken;
@@ -94,13 +92,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
-    const safeDelegateCallLibrary = await createSafeDelegateLibrary();
     const gmxV2Library = await createGmxV2Library();
-    const userVaultImplementation = await createContractWithLibrary<TestGmxV2IsolationModeTokenVaultV1>(
-      'TestGmxV2IsolationModeTokenVaultV1',
-      { GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address },
-      [core.tokens.weth.address],
-    );
+    const userVaultImplementation = await createTestGmxV2IsolationModeTokenVaultV1(core);
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
@@ -126,8 +119,6 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       gmxV2Library,
       gmxV2Registry,
     );
-    await gmxV2Registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
-    await gmxV2Registry.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
     // Use actual price oracle later
     await core.testEcosystem!.testPriceOracle!.setPrice(factory.address, '1000000000000000000000000000000');
@@ -160,6 +151,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+
+    await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
+    await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
 
     await factory.createVault(core.hhUser1.address);
     await factory.createVault(core.hhUser2.address);
@@ -195,6 +189,11 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.hhUser5.address);
     await core.dolomiteRegistry.ownerSetLiquidatorAssetRegistry(core.liquidatorAssetRegistry.address);
+
+    eventEmitter = await createEventEmitter(core);
+    const newRegistry = await createDolomiteRegistryImplementation();
+    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetEventEmitter(eventEmitter.address);
 
     impersonatedVault = await impersonate(vault.address, true);
 
@@ -241,8 +240,11 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
 
-      const filter = unwrapper.filters.WithdrawalCreated();
-      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+      const filter = eventEmitter.filters.AsyncWithdrawalCreated();
+      const eventArgs = (await eventEmitter.queryFilter(filter))[0].args;
+      expect(eventArgs.token).to.eq(factory.address);
+
+      const withdrawalKey = eventArgs.key;
       const withdrawal = await unwrapper.getWithdrawalInfo(withdrawalKey);
       expect(withdrawal.key).to.eq(withdrawalKey);
       expect(withdrawal.vault).to.eq(vault.address);
@@ -250,6 +252,15 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(withdrawal.inputAmount).to.eq(amountWei);
       expect(withdrawal.outputToken).to.eq(core.tokens.weth.address);
       expect(withdrawal.outputAmount).to.eq(ONE_BI);
+      expect(withdrawal.isRetryable).to.eq(false);
+
+      expect(eventArgs.withdrawal.key).to.eq(withdrawalKey);
+      expect(eventArgs.withdrawal.vault).to.eq(vault.address);
+      expect(eventArgs.withdrawal.accountNumber).to.eq(borrowAccountNumber);
+      expect(eventArgs.withdrawal.inputAmount).to.eq(amountWei);
+      expect(eventArgs.withdrawal.outputToken).to.eq(core.tokens.weth.address);
+      expect(eventArgs.withdrawal.outputAmount).to.eq(ONE_BI);
+      expect(eventArgs.withdrawal.isRetryable).to.eq(false);
     });
 
     it('should fail if output token is invalid', async () => {
@@ -303,6 +314,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if vault attempts to over withdraw', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await expectThrow(
         vault.initiateUnwrapping(
           borrowAccountNumber,
@@ -317,7 +330,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if vault is frozen', async () => {
       expect(await vault.isVaultFrozen()).to.be.false;
-      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
+      await factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Deposit,
@@ -336,14 +349,14 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         'IsolationModeVaultV1Freezable: Vault is frozen',
       );
 
-      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
+      await factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Deposit,
         toNegativeWeiStruct(ONE_BI),
       );
       expect(await vault.isVaultFrozen()).to.be.false;
-      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
+      await factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Withdrawal,
@@ -403,7 +416,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           ONE_BI,
           { value: parseEther('.01') },
         ),
-        `GmxV2IsolationModeVaultV1: Only liquidator can call <${core.hhUser1.address.toLowerCase()}>`,
+        `IsolationModeVaultV1Freezable: Only liquidator can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -453,15 +466,16 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         initiateWrappingParams.userConfig,
         { value: parseEther('.01') },
       );
-      const filter = wrapper.filters.DepositCreated();
-      const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
+      const filter = eventEmitter.filters.AsyncDepositCreated();
+      const depositKey = (await eventEmitter.queryFilter(filter))[0].args.key;
       expect(await vault.isVaultFrozen()).to.eq(true);
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
       const result = await vault.cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
-      await expectEvent(wrapper, result, 'DepositCancelled', {
+      await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
+        token: factory.address,
       });
 
       expect(await vault.isVaultFrozen()).to.eq(false);
@@ -495,8 +509,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         initiateWrappingParams.userConfig,
         { value: parseEther('.01') },
       );
-      const filter = wrapper.filters.DepositCreated();
-      const depositKey = (await wrapper.queryFilter(filter))[0].args.key;
+      const filter = eventEmitter.filters.AsyncDepositCreated();
+      const depositKey = (await eventEmitter.queryFilter(filter))[0].args.key;
       expect(await vault.isVaultFrozen()).to.eq(true);
 
       // Mine blocks so we can cancel deposit
@@ -529,8 +543,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
-      const filter = unwrapper.filters.WithdrawalCreated();
-      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+      const filter = eventEmitter.filters.AsyncWithdrawalCreated();
+      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
@@ -564,8 +578,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
-      const filter = unwrapper.filters.WithdrawalCreated();
-      const withdrawalKey = (await unwrapper.queryFilter(filter))[0].args.key;
+      const filter = eventEmitter.filters.AsyncWithdrawalCreated();
+      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
@@ -605,7 +619,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if transfer is skipped and vault is not frozen', async () => {
-      await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
+      await vault.connect(impersonatedFactory).setShouldVaultSkipTransfer(true);
       await expectThrow(
         vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI),
         'GmxV2IsolationModeVaultV1: Vault should be frozen',
@@ -647,7 +661,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if transfer is skipped and vault is not frozen', async () => {
-      await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
+      await vault.connect(impersonatedFactory).setShouldVaultSkipTransfer(true);
       await expectThrow(
         vault.connect(impersonatedFactory).executeWithdrawalFromVault(core.hhUser1.address, ZERO_BI),
         'GmxV2IsolationModeVaultV1: Vault should be frozen',
@@ -655,15 +669,15 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if virtual balance does not equal real balance', async () => {
-      await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
-      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
+      await vault.connect(impersonatedFactory).setShouldVaultSkipTransfer(true);
+      await factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Deposit,
         toPositiveWeiStruct(ONE_BI),
       );
       await vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI);
-      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
+      await factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Deposit,
@@ -939,7 +953,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail when caller is not unwrapper for unwrapping is frozen', async () => {
-      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
+      await factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Withdrawal,
@@ -1024,7 +1038,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
 
     it('should fail if vault is frozen and called by owner', async () => {
-      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
+      await factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Withdrawal,
@@ -1063,7 +1077,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
       const outputAmount = amountWei.div(2);
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, outputAmount, core);
-      await factory.connect(impersonatedVault).updateVaultAccountPendingAmountForFrozenStatus(
+      await factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Withdrawal,
@@ -1336,10 +1350,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     });
   });
 
-  describe('#setIsDepositSourceWrapper', () => {
+  describe('#setIsVaultDepositSourceWrapper', () => {
     it('should work normally', async () => {
       expect(await vault.shouldSkipTransfer()).to.eq(false);
-      const result = await vault.connect(impersonatedFactory).setIsDepositSourceWrapper(true);
+      const result = await vault.connect(impersonatedFactory).setIsVaultDepositSourceWrapper(true);
       await expectEvent(vault, result, 'IsDepositSourceWrapperSet', {
         isDepositSourceWrapper: true,
       });
@@ -1348,16 +1362,16 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if not called by factory', async () => {
       await expectThrow(
-        vault.setIsDepositSourceWrapper(true),
+        vault.setIsVaultDepositSourceWrapper(true),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
 
-  describe('#setShouldSkipTransfer', () => {
+  describe('#setShouldVaultSkipTransfer', () => {
     it('should work normally', async () => {
       expect(await vault.shouldSkipTransfer()).to.eq(false);
-      const result = await vault.connect(impersonatedFactory).setShouldSkipTransfer(true);
+      const result = await vault.connect(impersonatedFactory).setShouldVaultSkipTransfer(true);
       await expectEvent(vault, result, 'ShouldSkipTransferSet', {
         shouldSkipTransfer: true,
       });
@@ -1366,7 +1380,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should fail if not called by factory', async () => {
       await expectThrow(
-        vault.setShouldSkipTransfer(true),
+        vault.setShouldVaultSkipTransfer(true),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

@@ -21,7 +21,6 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { IGmxV2Registry } from "./GmxV2Registry.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
@@ -36,7 +35,6 @@ import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUp
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
@@ -46,14 +44,13 @@ import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/Isola
  * @title   GmxV2IsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the
- *          Eth-Usdc GMX Market token that can be used to credit a user's Dolomite balance.
+ * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds any GMX V2 Market token that and
+ *          can be used to credit a user's Dolomite balance.
  */
 contract GmxV2IsolationModeTokenVaultV1 is
     IGmxV2IsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithFreezableAndPausable
 {
-    using Address for address payable;
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
 
@@ -254,68 +251,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
     }
 
-    function _transferFromPositionWithUnderlyingToken(
-        uint256 _borrowAccountNumber,
-        uint256 _toAccountNumber,
-        uint256 _amountWei
-    )
-    internal
-    override {
-        super._transferFromPositionWithUnderlyingToken(
-            _borrowAccountNumber,
-            _toAccountNumber,
-            _amountWei
-        );
-        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
-    }
-
-    function _transferFromPositionWithOtherToken(
-        uint256 _borrowAccountNumber,
-        uint256 _toAccountNumber,
-        uint256 _marketId,
-        uint256 _amountWei,
-        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    )
-    internal
-    override {
-        super._transferFromPositionWithOtherToken(
-            _borrowAccountNumber,
-            _toAccountNumber,
-            _marketId,
-            _amountWei,
-            _balanceCheckFlag
-        );
-        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
-    }
-
-    function _closeBorrowPositionWithUnderlyingVaultToken(
-        uint256 _borrowAccountNumber,
-        uint256 _toAccountNumber
-    )
-    internal
-    override {
-        super._closeBorrowPositionWithUnderlyingVaultToken(
-            _borrowAccountNumber,
-            _toAccountNumber
-        );
-        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
-    }
-
-    function _closeBorrowPositionWithOtherTokens(
-        uint256 _borrowAccountNumber,
-        uint256 _toAccountNumber,
-        uint256[] calldata _collateralMarketIds
-    )
-    internal
-    override {
-        super._closeBorrowPositionWithOtherTokens(
-            _borrowAccountNumber,
-            _toAccountNumber,
-            _collateralMarketIds
-        );
-        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
-    }
-
     function _initiateUnwrapping(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
@@ -341,14 +276,15 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _setExecutionFeeForAccountNumber(_tradeAccountNumber, /* _executionFee = */ 0); // reset it to 0
         }
 
-        GmxV2Library.validateAndExecuteInitiateUnwrapping(
-            factory,
-            /* _vault = */ address(this),
+
+        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
+                                registry().getUnwrapperByToken(IIsolationModeVaultFactory(VAULT_FACTORY()));
+        IERC20(UNDERLYING_TOKEN()).safeApprove(address(unwrapper), _inputAmount);
+        unwrapper.vaultInitiateUnwrapping{ value: ethExecutionFee }(
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
             _minOutputAmount,
-            ethExecutionFee,
             _isLiquidation
         );
     }
@@ -383,19 +319,5 @@ contract GmxV2IsolationModeTokenVaultV1 is
         // solhint-disable-previous-line no-empty-blocks
         // Don't do any validation here. We check the msg.value conditionally in the `swapExactInputForOutput`
         // implementation
-    }
-
-    function _refundExecutionFeeIfNecessary(uint256 _borrowAccountNumber) private {
-        IDolomiteStructs.AccountInfo memory borrowAccountInfo = IDolomiteStructs.AccountInfo({
-            owner: address(this),
-            number: _borrowAccountNumber
-        });
-        if (DOLOMITE_MARGIN().getAccountNumberOfMarketsWithBalances(borrowAccountInfo) == 0) {
-            // There's no assets left in the position. Issue a refund for the execution fee
-            uint256 executionFee = getExecutionFeeForAccountNumber(_borrowAccountNumber);
-            _setExecutionFeeForAccountNumber(_borrowAccountNumber, /* _executionFee = */ 0);
-            // @audit: check for any reentrancy issues! No user-level functions on the vault should be reentered
-            payable(OWNER()).sendValue(executionFee);
-        }
     }
 }

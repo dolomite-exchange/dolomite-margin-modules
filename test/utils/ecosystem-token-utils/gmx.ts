@@ -62,7 +62,13 @@ import {
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
+import {
+  createAsyncIsolationModeUnwrapperTraderImpl,
+  createAsyncIsolationModeWrapperTraderImpl,
+  createIsolationModeTokenVaultV1ActionsImpl,
+} from '../dolomite';
 import { CoreProtocol } from '../setup';
+import { createSafeDelegateLibrary } from './general';
 
 export async function createGLPPriceOracleV1(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
@@ -183,21 +189,27 @@ export async function createGmxV2IsolationModeTokenVaultV1(
   core: CoreProtocol,
   library: GmxV2Library,
 ): Promise<GmxV2IsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<GmxV2IsolationModeTokenVaultV1>(
     'GmxV2IsolationModeTokenVaultV1',
-    { GmxV2Library: library.address },
+    { GmxV2Library: library.address, ...libraries },
     [core.tokens.weth.address],
   );
 }
 
 export async function createTestGmxV2IsolationModeTokenVaultV1(
   core: CoreProtocol,
-  gmxV2Library: GmxV2Library,
-  safeDelegateCallLibrary: BaseContract,
 ): Promise<TestGmxV2IsolationModeTokenVaultV1> {
-  return createContractWithLibrary<TestGmxV2IsolationModeTokenVaultV1>(
+  const actionsLib = await createIsolationModeTokenVaultV1ActionsImpl();
+  const safeDelegateCallLibrary = await createSafeDelegateLibrary();
+  const gmxV2Library = await createGmxV2Library();
+  return await createContractWithLibrary<TestGmxV2IsolationModeTokenVaultV1>(
     'TestGmxV2IsolationModeTokenVaultV1',
-    { GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address },
+    {
+      GmxV2Library: gmxV2Library.address,
+      SafeDelegateCallLib: safeDelegateCallLibrary.address,
+      IsolationModeTokenVaultV1ActionsImpl: Object.values(actionsLib)[0],
+    },
     [core.tokens.weth.address],
   );
 }
@@ -254,10 +266,11 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
   library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
+  const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
   const implementation = await createContractWithLibrary<GmxV2IsolationModeUnwrapperTraderV2>(
     'GmxV2IsolationModeUnwrapperTraderV2',
-    { GmxV2Library: library.address },
-    [],
+    { GmxV2Library: library.address, ...libraries },
+    [core.tokens.weth.address],
   );
 
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
@@ -284,7 +297,7 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
   const implementation = await createContractWithLibrary<TestGmxV2IsolationModeUnwrapperTraderV2>(
     'TestGmxV2IsolationModeUnwrapperTraderV2',
     { GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address },
-    [],
+    [core.tokens.weth.address],
   );
 
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
@@ -307,10 +320,11 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
   library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<GmxV2IsolationModeWrapperTraderV2> {
+  const libraries = await createAsyncIsolationModeWrapperTraderImpl();
   const implementation = await createContractWithLibrary<GmxV2IsolationModeWrapperTraderV2>(
     'GmxV2IsolationModeWrapperTraderV2',
-    { GmxV2Library: library.address },
-    [],
+    { GmxV2Library: library.address, ...libraries },
+    [core.tokens.weth.address],
   );
   const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
     IsolationModeTraderProxy__factory.abi,

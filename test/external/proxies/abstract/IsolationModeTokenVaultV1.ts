@@ -14,6 +14,7 @@ import {
 } from '../../../../src/types';
 import {
   createContractWithAbi,
+  createContractWithLibrary,
   createTestToken,
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
@@ -21,6 +22,7 @@ import {
 import { MAX_UINT_256_BI, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../../utils/assertions';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../../utils/dolomite';
 import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
@@ -58,9 +60,10 @@ describe('IsolationModeTokenVaultV1', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
-    userVaultImplementation = await createContractWithAbi<TestIsolationModeTokenVaultV1>(
-      TestIsolationModeTokenVaultV1__factory.abi,
-      TestIsolationModeTokenVaultV1__factory.bytecode,
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    userVaultImplementation = await createContractWithLibrary(
+      'TestIsolationModeTokenVaultV1',
+      libraries,
       [],
     );
     factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
@@ -212,7 +215,7 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should fail when toAccountNumber is not 0', async () => {
       await expectThrow(
         userVault.depositIntoVaultForDolomiteMargin('1', amountWei),
-        'IsolationModeTokenVaultV1: Invalid toAccountNumber <1>',
+        'IsolationModeVaultV1ActionsImpl: Invalid toAccountNumber <1>',
       );
     });
 
@@ -253,7 +256,7 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should fail when fromAccountNumber is not 0', async () => {
       await expectThrow(
         userVault.withdrawFromVaultForDolomiteMargin('1', amountWei),
-        'IsolationModeTokenVaultV1: Invalid fromAccountNumber <1>',
+        'IsolationModeVaultV1ActionsImpl: Invalid fromAccountNumber <1>',
       );
     });
 
@@ -305,14 +308,14 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should fail when fromAccountNumber != 0', async () => {
       await expectThrow(
         userVault.openBorrowPosition(borrowAccountNumber, defaultAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Invalid fromAccountNumber <${borrowAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid fromAccountNumber <${borrowAccountNumber}>`,
       );
     });
 
     it('should fail when toAccountNumber == 0', async () => {
       await expectThrow(
         userVault.openBorrowPosition(defaultAccountNumber, defaultAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Invalid toAccountNumber <${defaultAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid toAccountNumber <${defaultAccountNumber}>`,
       );
     });
   });
@@ -351,14 +354,14 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should fail when borrowAccountNumber != 0', async () => {
       await expectThrow(
         userVault.closeBorrowPositionWithUnderlyingVaultToken(defaultAccountNumber, borrowAccountNumber),
-        `IsolationModeTokenVaultV1: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
       );
     });
 
     it('should fail when toAccountNumber == 0', async () => {
       await expectThrow(
         userVault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, borrowAccountNumber),
-        `IsolationModeTokenVaultV1: Invalid toAccountNumber <${borrowAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid toAccountNumber <${borrowAccountNumber}>`,
       );
     });
   });
@@ -401,7 +404,7 @@ describe('IsolationModeTokenVaultV1', () => {
           defaultAccountNumber,
           [underlyingMarketId],
         ),
-        `IsolationModeTokenVaultV1: Cannot withdraw market to wallet <${underlyingMarketId.toString()}>`,
+        `IsolationModeVaultV1ActionsImpl: Cannot withdraw market to wallet <${underlyingMarketId.toString()}>`,
       );
     });
 
@@ -419,7 +422,7 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should fail when borrowAccountNumber != 0', async () => {
       await expectThrow(
         userVault.closeBorrowPositionWithOtherTokens(defaultAccountNumber, borrowAccountNumber, [otherMarketId1]),
-        `IsolationModeTokenVaultV1: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
       );
     });
   });
@@ -458,14 +461,14 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should fail when fromAccountNumber != 0', async () => {
       await expectThrow(
         userVault.transferIntoPositionWithUnderlyingToken(borrowAccountNumber, defaultAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Invalid fromAccountNumber <${borrowAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid fromAccountNumber <${borrowAccountNumber}>`,
       );
     });
 
     it('should fail when borrowAccountNumber == 0', async () => {
       await expectThrow(
         userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, defaultAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
       );
     });
   });
@@ -581,7 +584,7 @@ describe('IsolationModeTokenVaultV1', () => {
           amountWei,
           BalanceCheckFlag.Both,
         ),
-        `IsolationModeTokenVaultV1: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
       );
     });
 
@@ -594,7 +597,7 @@ describe('IsolationModeTokenVaultV1', () => {
           amountWei,
           BalanceCheckFlag.Both,
         ),
-        `IsolationModeTokenVaultV1: Invalid marketId <${underlyingMarketId.toString()}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid marketId <${underlyingMarketId.toString()}>`,
       );
     });
 
@@ -608,7 +611,7 @@ describe('IsolationModeTokenVaultV1', () => {
           otherAmountWei,
           BalanceCheckFlag.Both,
         ),
-        `IsolationModeTokenVaultV1: Market not allowed as collateral <${otherMarketId1.toString()}>`,
+        `IsolationModeVaultV1ActionsImpl: Market not allowed as collateral <${otherMarketId1.toString()}>`,
       );
     });
   });
@@ -648,14 +651,14 @@ describe('IsolationModeTokenVaultV1', () => {
     it('should fail when borrowAccountNumber != 0', async () => {
       await expectThrow(
         userVault.transferFromPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
       );
     });
 
     it('should fail when toAccountNumber == 0', async () => {
       await expectThrow(
         userVault.transferFromPositionWithUnderlyingToken(borrowAccountNumber, borrowAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Invalid toAccountNumber <${borrowAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid toAccountNumber <${borrowAccountNumber}>`,
       );
     });
   });
@@ -756,7 +759,7 @@ describe('IsolationModeTokenVaultV1', () => {
           amountWei,
           BalanceCheckFlag.Both,
         ),
-        'IsolationModeTokenVaultV1: Invalid borrowAccountNumber <0>',
+        'IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <0>',
       );
     });
 
@@ -769,7 +772,7 @@ describe('IsolationModeTokenVaultV1', () => {
           amountWei,
           BalanceCheckFlag.Both,
         ),
-        `IsolationModeTokenVaultV1: Invalid marketId <${underlyingMarketId.toString()}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid marketId <${underlyingMarketId.toString()}>`,
       );
     });
 
@@ -785,7 +788,7 @@ describe('IsolationModeTokenVaultV1', () => {
           otherAmountWei,
           BalanceCheckFlag.To,
         ),
-        `IsolationModeTokenVaultV1: Market not allowed as debt <${otherMarketId1}>`,
+        `IsolationModeVaultV1ActionsImpl: Market not allowed as debt <${otherMarketId1}>`,
       );
     });
   });
@@ -852,7 +855,7 @@ describe('IsolationModeTokenVaultV1', () => {
           underlyingMarketId,
           BalanceCheckFlag.Both,
         ),
-        'IsolationModeTokenVaultV1: Invalid borrowAccountNumber <0>',
+        'IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <0>',
       );
     });
 
@@ -864,7 +867,7 @@ describe('IsolationModeTokenVaultV1', () => {
           underlyingMarketId,
           BalanceCheckFlag.Both,
         ),
-        `IsolationModeTokenVaultV1: Invalid marketId <${underlyingMarketId.toString()}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid marketId <${underlyingMarketId.toString()}>`,
       );
     });
   });
@@ -929,6 +932,40 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, outputAmount);
     });
 
+    it('should work when input amount is set to ALL', async () => {
+      const inputAmount = otherAmountWei.div(2);
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        inputAmount,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, inputAmount);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, inputAmount);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, inputAmount, otherMarketId2, outputAmount, core);
+      await userVault.addCollateralAndSwapExactInputForOutput(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        MAX_UINT_256_BI,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, inputAmount);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, outputAmount);
+    });
+
     it('should work normally for isolation unwrapper', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
@@ -965,6 +1002,30 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, outputAmount);
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, otherAmountWei);
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
+    });
+
+    it('should fail if transfer all is for non-positive balance', async () => {
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(
+        core.marketIds.weth,
+        otherAmountWei,
+        otherMarketId2,
+        outputAmount,
+        core,
+      );
+      await expectThrow(
+        userVault.addCollateralAndSwapExactInputForOutput(
+          defaultAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          MAX_UINT_256_BI,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'IsolationModeVaultV1ActionsImpl: Invalid balance for transfer all',
+      );
     });
 
     it('should fail when reentrancy is triggered', async () => {
@@ -1377,6 +1438,57 @@ describe('IsolationModeTokenVaultV1', () => {
       );
     });
 
+    it('should work if input amount is set to ALL', async () => {
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId1,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        otherMarketId2,
+        otherAmountWei,
+        BalanceCheckFlag.Both,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId1, otherAmountWei);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, otherAmountWei);
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      await userVault.swapExactInputForOutput(
+        borrowAccountNumber,
+        zapParams.marketIdsPath,
+        MAX_UINT_256_BI,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        userVault,
+        borrowAccountNumber,
+        otherMarketId1,
+        ZERO_BI,
+      );
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId2, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        userVault,
+        borrowAccountNumber,
+        otherMarketId2,
+        otherAmountWei.add(outputAmount),
+      );
+    });
+
     it('should work normally if converter calls', async () => {
       await userVault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -1426,6 +1538,23 @@ describe('IsolationModeTokenVaultV1', () => {
         borrowAccountNumber,
         otherMarketId2,
         otherAmountWei.add(outputAmount),
+      );
+    });
+
+    it('should fail if transfer all is for non-positive balance', async () => {
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, outputAmount, core);
+      await expectThrow(
+        userVault.swapExactInputForOutput(
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          MAX_UINT_256_BI,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'IsolationModeVaultV1ActionsImpl: Invalid balance for transfer all',
       );
     });
 
@@ -1492,7 +1621,7 @@ describe('IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        'IsolationModeTokenVaultV1: Invalid tradeAccountNumber <0>',
+        'IsolationModeVaultV1ActionsImpl: Invalid tradeAccountNumber <0>',
       );
     });
 
@@ -1517,7 +1646,7 @@ describe('IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `IsolationModeTokenVaultV1: Market not allowed as collateral <${otherMarketId1.toString()}>`,
+        `IsolationModeVaultV1ActionsImpl: Market not allowed as collateral <${otherMarketId1.toString()}>`,
       );
     });
 
@@ -1542,7 +1671,7 @@ describe('IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `IsolationModeTokenVaultV1: Market not allowed as debt <${otherMarketId1.toString()}>`,
+        `IsolationModeVaultV1ActionsImpl: Market not allowed as debt <${otherMarketId1.toString()}>`,
       );
     });
 
@@ -1566,7 +1695,7 @@ describe('IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `IsolationModeTokenVaultV1: Market not allowed as collateral <${otherMarketId2.toString()}>`,
+        `IsolationModeVaultV1ActionsImpl: Market not allowed as collateral <${otherMarketId2.toString()}>`,
       );
     });
 
@@ -1604,7 +1733,7 @@ describe('IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `IsolationModeTokenVaultV1: Market not allowed as debt <${otherMarketId2.toString()}>`,
+        `IsolationModeVaultV1ActionsImpl: Market not allowed as debt <${otherMarketId2.toString()}>`,
       );
     });
   });

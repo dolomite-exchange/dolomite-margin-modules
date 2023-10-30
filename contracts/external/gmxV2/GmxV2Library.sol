@@ -129,7 +129,7 @@ library GmxV2Library {
         uint256 _minOutputAmount,
         uint256 _ethExecutionFee,
         bool _isLiquidation
-    ) public {
+    ) public returns (bytes32) {
         // Disallow the withdrawal if there's already a withdrawal waiting for it or if we're attempting to OVER
         // withdraw. This can happen due to a pending deposit OR if the user inputs a number that's too large)
         _validateWithdrawalAmountForUnwrapping(
@@ -142,14 +142,17 @@ library GmxV2Library {
 
         IGmxV2Registry registry = _factory.gmxV2Registry();
         IGmxExchangeRouter exchangeRouter = registry.gmxExchangeRouter();
-        address withdrawalVault = registry.gmxWithdrawalVault();
 
         address[] memory swapPath = new address[](1);
         swapPath[0] = _factory.UNDERLYING_TOKEN();
 
-        exchangeRouter.sendWnt{value: _ethExecutionFee}(withdrawalVault, _ethExecutionFee);
-        IERC20(swapPath[0]).safeApprove(address(registry.gmxRouter()), _inputAmount);
-        exchangeRouter.sendTokens(swapPath[0], withdrawalVault, _inputAmount);
+        // Change scope for stack too deep
+        {
+            address withdrawalVault = registry.gmxWithdrawalVault();
+            exchangeRouter.sendWnt{value: _ethExecutionFee}(withdrawalVault, _ethExecutionFee);
+            IERC20(swapPath[0]).safeApprove(address(registry.gmxRouter()), _inputAmount);
+            exchangeRouter.sendTokens(swapPath[0], withdrawalVault, _inputAmount);
+        }
 
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(_factory);
         IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
@@ -166,15 +169,7 @@ library GmxV2Library {
             /* callbackGasLimit = */ registry.callbackGasLimit()
         );
 
-        // TODO: move to unwrapper; that way we can verify cancellations + collect ETH fee refunds?
-        bytes32 withdrawalKey = exchangeRouter.createWithdrawal(withdrawalParams);
-        unwrapper.vaultCreateWithdrawalInfo(
-            withdrawalKey,
-            _tradeAccountNumber,
-            _inputAmount,
-            _outputToken,
-            _minOutputAmount
-        );
+        return exchangeRouter.createWithdrawal(withdrawalParams);
     }
 
     function depositAndApproveWethForWrapping(IGmxV2IsolationModeTokenVaultV1 _vault) public {

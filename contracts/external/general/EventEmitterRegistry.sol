@@ -24,20 +24,20 @@ import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
-import { IEventEmitter } from "../interfaces/IEventEmitter.sol";
+import { IEventEmitterRegistry } from "../interfaces/IEventEmitter.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable max-line-length
 
 
 /**
- * @title   EventEmitter
+ * @title   EventEmitterRegistry
  * @author  Dolomite
  *
  * @notice  Registry contract for storing ecosystem-related addresses
  */
-contract EventEmitter is
-    IEventEmitter,
+contract EventEmitterRegistry is
+    IEventEmitterRegistry,
     ProxyContractHelpers,
     OnlyDolomiteMarginForUpgradeable,
     Initializable
@@ -62,8 +62,9 @@ contract EventEmitter is
     // =================== Functions ==================
     // ================================================
 
-    function initialize(address _dolomiteMargin) external initializer {
-        _setDolomiteMarginViaSlot(_dolomiteMargin);
+    function initialize() external initializer {
+        // solhint-disable-previous-line no-empty-blocks
+        // DolomiteMargin is set in the proxy constructor
     }
 
     function emitAsyncDepositCreated(

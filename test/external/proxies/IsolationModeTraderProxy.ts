@@ -1,19 +1,23 @@
 import { expect } from 'chai';
-import { createContractWithAbi, createTestToken } from 'src/utils/dolomite-utils';
+import { createContractWithLibrary, createTestToken } from 'src/utils/dolomite-utils';
 import { createTestIsolationModeFactory } from 'test/utils/ecosystem-token-utils/testers';
 import {
   CustomTestToken,
   IsolationModeTraderProxy,
+  TestAsyncUpgradeableIsolationModeWrapperTrader,
+  TestAsyncUpgradeableIsolationModeWrapperTrader__factory,
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
-  TestIsolationModeTokenVaultV1__factory,
-  TestUpgradeableIsolationModeWrapperTrader,
-  TestUpgradeableIsolationModeWrapperTrader__factory,
 } from '../../../src/types';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
-import { createDolomiteRegistryImplementation, createIsolationModeTraderProxy } from '../../utils/dolomite';
+import {
+  createAsyncIsolationModeWrapperTraderImpl,
+  createDolomiteRegistryImplementation,
+  createIsolationModeTokenVaultV1ActionsImpl,
+  createIsolationModeTraderProxy,
+} from '../../utils/dolomite';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 describe('IsolationModeTraderProxy', () => {
@@ -22,7 +26,7 @@ describe('IsolationModeTraderProxy', () => {
   let core: CoreProtocol;
   let underlyingToken: CustomTestToken;
   let otherToken: CustomTestToken;
-  let implementation: TestUpgradeableIsolationModeWrapperTrader;
+  let implementation: TestAsyncUpgradeableIsolationModeWrapperTrader;
   let factory: TestIsolationModeFactory;
   let proxy: IsolationModeTraderProxy;
 
@@ -30,16 +34,18 @@ describe('IsolationModeTraderProxy', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
-    const userVaultImplementation = await createContractWithAbi<TestIsolationModeTokenVaultV1>(
-      TestIsolationModeTokenVaultV1__factory.abi,
-      TestIsolationModeTokenVaultV1__factory.bytecode,
+    const vaultLibraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    const userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1>(
+      'TestIsolationModeTokenVaultV1',
+      vaultLibraries,
       [],
     );
     factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
 
-    implementation = await createContractWithAbi(
-      TestUpgradeableIsolationModeWrapperTrader__factory.abi,
-      TestUpgradeableIsolationModeWrapperTrader__factory.bytecode,
+    const wrapperLibraries = await createAsyncIsolationModeWrapperTraderImpl();
+    implementation = await createContractWithLibrary<TestAsyncUpgradeableIsolationModeWrapperTrader>(
+      'TestAsyncUpgradeableIsolationModeWrapperTrader',
+      wrapperLibraries,
       [],
     );
     const calldata = await implementation.populateTransaction.initialize(
@@ -58,7 +64,7 @@ describe('IsolationModeTraderProxy', () => {
 
   describe('#fallback', () => {
     it('should work normally', async () => {
-      const trader = TestUpgradeableIsolationModeWrapperTrader__factory.connect(proxy.address, core.hhUser1);
+      const trader = TestAsyncUpgradeableIsolationModeWrapperTrader__factory.connect(proxy.address, core.hhUser1);
       expect(await trader.VAULT_FACTORY()).to.eq(factory.address);
     });
   });
@@ -122,9 +128,10 @@ describe('IsolationModeTraderProxy', () => {
     });
 
     it('should fail when call to the new implementation fails', async () => {
-      const newImplementation = await createContractWithAbi(
-        TestUpgradeableIsolationModeWrapperTrader__factory.abi,
-        TestUpgradeableIsolationModeWrapperTrader__factory.bytecode,
+      const libraries = await createAsyncIsolationModeWrapperTraderImpl();
+      const newImplementation = await createContractWithLibrary<TestAsyncUpgradeableIsolationModeWrapperTrader>(
+        'TestAsyncUpgradeableIsolationModeWrapperTrader',
+        libraries,
         [],
       );
       const calldata = await implementation.populateTransaction.getExchangeCost(

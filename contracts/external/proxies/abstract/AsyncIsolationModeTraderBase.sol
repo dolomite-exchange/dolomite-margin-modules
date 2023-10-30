@@ -26,7 +26,7 @@ import { IWETH } from "../../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { IAsyncIsolationModeTraderBase } from "../../interfaces/IAsyncIsolationModeTraderBase.sol";
-import { IEventEmitter } from "../../interfaces/IEventEmitter.sol";
+import { IEventEmitterRegistry } from "../../interfaces/IEventEmitter.sol";
 import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 
 
@@ -43,13 +43,19 @@ abstract contract AsyncIsolationModeTraderBase is
 {
     using SafeERC20 for IWETH;
 
-    // ============ Constants ============
+
+    // ===================================================
+    // ==================== Constants ====================
+    // ===================================================
 
     bytes32 private constant _FILE = "AsyncIsolationModeTraderBase";
-
-    bytes32 private constant _WETH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.weth")) - 1);
     bytes32 private constant _HANDLER_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlerRegistry")) - 1);
 
+    // ===================================================
+    // ==================== Immutable ====================
+    // ===================================================
+
+    IWETH public immutable override WETH; // solhint-disable-line var-name-mixedcase
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -65,6 +71,14 @@ abstract contract AsyncIsolationModeTraderBase is
         _;
     }
 
+    // ===================================================
+    // =================== Constructors ==================
+    // ===================================================
+
+    constructor(address _weth) {
+        WETH = IWETH(_weth);
+    }
+
     receive() external payable {
         // solhint-disable-previous-line no-empty-blocks
         // @audit - should we bother validating it comes from WETH or the router? We don't have much contract space
@@ -73,14 +87,9 @@ abstract contract AsyncIsolationModeTraderBase is
 
     function ownerWithdrawETH(address _receiver) external onlyDolomiteMarginOwner(msg.sender) {
         uint256 bal = address(this).balance;
-        IWETH weth = WETH();
-        weth.deposit{value: bal}();
-        weth.safeTransfer(_receiver, bal);
+        WETH.deposit{value: bal}();
+        WETH.safeTransfer(_receiver, bal);
         emit OwnerWithdrawETH(_receiver, bal);
-    }
-
-    function WETH() public view returns (IWETH) {
-        return IWETH(_getAddress(_WETH_SLOT));
     }
 
     function HANDLER_REGISTRY() public view returns (IHandlerRegistry) {
@@ -98,14 +107,12 @@ abstract contract AsyncIsolationModeTraderBase is
     // ========================= Internal Functions =========================
 
     function _initializeAsyncTraderBase(
-        address _registry,
-        address _weth
+        address _registry
     ) internal initializer {
         _setAddress(_HANDLER_REGISTRY_SLOT, _registry);
-        _setAddress(_WETH_SLOT, _weth);
     }
 
-    function _eventEmitter() internal view returns (IEventEmitter) {
+    function _eventEmitter() internal view returns (IEventEmitterRegistry) {
         return HANDLER_REGISTRY().dolomiteRegistry().eventEmitter();
     }
 }

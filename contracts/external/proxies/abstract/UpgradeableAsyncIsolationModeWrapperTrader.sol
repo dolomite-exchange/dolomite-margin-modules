@@ -30,7 +30,7 @@ import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezable
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { InterestIndexLib } from "../../lib/InterestIndexLib.sol";
-import { AsyncIsolationModeWrapperTraderLib } from "./impl/AsyncIsolationModeWrapperTraderLib.sol";
+import { AsyncIsolationModeWrapperTraderImpl } from "./impl/AsyncIsolationModeWrapperTraderImpl.sol";
 
 /**
  * @title   UpgradeableAsyncIsolationModeWrapperTrader
@@ -144,7 +144,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     override
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
-        return AsyncIsolationModeWrapperTraderLib.createActionsForWrapping(
+        return AsyncIsolationModeWrapperTraderImpl.createActionsForWrapping(
             /* wrapper = */ this,
             _primaryAccountId,
             _outputMarket,
@@ -336,7 +336,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
         factory.setShouldVaultSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ true);
 
-        try AsyncIsolationModeWrapperTraderLib.swapExactInputForOutputForDepositCancellation(
+        try AsyncIsolationModeWrapperTraderImpl.swapExactInputForOutputForDepositCancellation(
             /* _wrapper = */ this,
             _depositInfo
         ) {
@@ -419,7 +419,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         uint256 _amountDeltaWei,
         bool _isPositive
     ) internal {
-        IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).updateVaultAccountPendingAmountForFrozenStatus(
+        IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).setVaultAccountPendingAmountForFrozenStatus(
             _vault,
             _accountNumber,
             IFreezableIsolationModeVaultFactory.FreezeType.Deposit,

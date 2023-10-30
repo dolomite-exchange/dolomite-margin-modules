@@ -108,7 +108,7 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
      * @param  _amountDeltaWei  The amount that is pending for this sub account. Set to positive to add to the pending
      *                          amount or negative to subtract from it.
      */
-    function updateVaultAccountPendingAmountForFrozenStatus(
+    function setVaultAccountPendingAmountForFrozenStatus(
         address _vault,
         uint256 _accountNumber,
         FreezeType _freezeType,

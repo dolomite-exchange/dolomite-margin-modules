@@ -75,21 +75,21 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
     function handleCallbackFromWrapperAfter() external;
 
     /**
+     * Transfers underlying tokens from the vault (msg.sender) to this contract to initiate a redemption.
+     */
+    function vaultInitiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bool _isLiquidation
+    ) external payable;
+
+    /**
      *
      * @param  _key The key of the withdrawal that should be cancelled
      */
     function initiateCancelWithdrawal(bytes32 _key) external;
-
-    /**
-     * Saves the follow withdrawal info as a struct. Only callable by the user's vault
-     */
-    function vaultCreateWithdrawalInfo(
-        bytes32 _key,
-        uint256 _accountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount
-    ) external;
 
     function getWithdrawalInfo(bytes32 _key) external view returns (WithdrawalInfo memory);
 

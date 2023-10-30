@@ -30,7 +30,7 @@ import { IUpgradeableAsyncIsolationModeWrapperTrader } from "./IUpgradeableAsync
  *
  * Interface for a yield farming contract that's inspired by MasterChef
  */
-interface IEventEmitter {
+interface IEventEmitterRegistry {
 
     // ================================================
     // ==================== Events ====================

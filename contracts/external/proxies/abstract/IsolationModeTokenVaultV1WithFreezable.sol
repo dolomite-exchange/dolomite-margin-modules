@@ -20,8 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
@@ -41,6 +43,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     IIsolationModeTokenVaultV1WithFreezable,
     IsolationModeTokenVaultV1
 {
+    using Address for address payable;
 
     // ===================================================
     // ==================== Constants ====================
@@ -82,14 +85,16 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _;
     }
 
-    modifier _closeBorrowPositionWithUnderlyingVaultTokenFreezableValidator() {
+    modifier _closeBorrowPositionWithUnderlyingVaultTokenFreezableValidator(uint256 _borrowAccountNumber) {
         _requireNotFrozen();
         _;
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
-    modifier _closeBorrowPositionWithOtherTokensFreezableValidator() {
+    modifier _closeBorrowPositionWithOtherTokensFreezableValidator(uint256 _borrowAccountNumber) {
         _requireNotFrozen();
         _;
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
     modifier _transferIntoPositionWithUnderlyingTokenFreezableValidator() {
@@ -102,14 +107,16 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _;
     }
 
-    modifier _transferFromPositionWithUnderlyingTokenFreezableValidator() {
+    modifier _transferFromPositionWithUnderlyingTokenFreezableValidator(uint256 _borrowAccountNumber) {
         _requireNotFrozen();
         _;
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
-    modifier _transferFromPositionWithOtherTokenFreezableValidator() {
+    modifier _transferFromPositionWithOtherTokenFreezableValidator(uint256 _borrowAccountNumber) {
         _requireNotFrozen();
         _;
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
     modifier _repayAllForBorrowPositionFreezableValidator() {
@@ -122,9 +129,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _;
     }
 
-    modifier _swapExactInputForOutputAndRemoveCollateralFreezableValidator() {
+    modifier _swapExactInputForOutputAndRemoveCollateralFreezableValidator(uint256 _borrowAccountNumber) {
         _requireNotFrozen();
         _;
+        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
     modifier _swapExactInputForOutputFreezableValidator() {
@@ -286,7 +294,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _closeBorrowPositionWithUnderlyingVaultTokenFreezableValidator
+        _closeBorrowPositionWithUnderlyingVaultTokenFreezableValidator(_borrowAccountNumber)
     {
         super._closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
     }
@@ -299,7 +307,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _closeBorrowPositionWithOtherTokensFreezableValidator
+        _closeBorrowPositionWithOtherTokensFreezableValidator(_borrowAccountNumber)
     {
         super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
     }
@@ -346,7 +354,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _transferFromPositionWithUnderlyingTokenFreezableValidator
+        _transferFromPositionWithUnderlyingTokenFreezableValidator(_borrowAccountNumber)
     {
         super._transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
     }
@@ -361,7 +369,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _transferFromPositionWithOtherTokenFreezableValidator
+        _transferFromPositionWithOtherTokenFreezableValidator(_borrowAccountNumber)
     {
         super._transferFromPositionWithOtherToken(
             _borrowAccountNumber,
@@ -426,7 +434,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _swapExactInputForOutputAndRemoveCollateralFreezableValidator
+        _swapExactInputForOutputAndRemoveCollateralFreezableValidator(_borrowAccountNumber)
     {
         super._swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,
@@ -515,6 +523,20 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ==================================================================
     // ======================== Private Functions =======================
     // ==================================================================
+
+    function _refundExecutionFeeIfNecessary(uint256 _borrowAccountNumber) private {
+        IDolomiteStructs.AccountInfo memory borrowAccountInfo = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _borrowAccountNumber
+        });
+        uint256 executionFee = getExecutionFeeForAccountNumber(_borrowAccountNumber);
+        if (DOLOMITE_MARGIN().getAccountNumberOfMarketsWithBalances(borrowAccountInfo) == 0 && executionFee > 0) {
+            // There's no assets left in the position. Issue a refund for the execution fee
+            _setExecutionFeeForAccountNumber(_borrowAccountNumber, /* _executionFee = */ 0);
+            // @audit: check for any reentrancy issues! No user-level functions on the vault should be reentered
+            payable(OWNER()).sendValue(executionFee);
+        }
+    }
 
     function _requireNotFrozen() private view {
         Require.that(

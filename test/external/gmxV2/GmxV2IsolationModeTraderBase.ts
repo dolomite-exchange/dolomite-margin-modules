@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { GmxV2Registry, TestGmxV2IsolationModeTraderBase, TestGmxV2IsolationModeTraderBase__factory } from 'src/types';
+import { GmxV2Registry, TestAsyncIsolationModeTraderBase, TestAsyncIsolationModeTraderBase__factory } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { ONE_ETH_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
@@ -14,24 +14,23 @@ describe('GmxV2IsolationModeTraderBase', () => {
 
   let core: CoreProtocol;
   let gmxV2Registry: GmxV2Registry;
-  let trader: TestGmxV2IsolationModeTraderBase;
+  let trader: TestAsyncIsolationModeTraderBase;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
 
-    const implementation = await createContractWithAbi<TestGmxV2IsolationModeTraderBase>(
-      TestGmxV2IsolationModeTraderBase__factory.abi,
-      TestGmxV2IsolationModeTraderBase__factory.bytecode,
-      [],
+    const implementation = await createContractWithAbi<TestAsyncIsolationModeTraderBase>(
+      TestAsyncIsolationModeTraderBase__factory.abi,
+      TestAsyncIsolationModeTraderBase__factory.bytecode,
+      [core.tokens.weth.address],
     );
     const calldata = await implementation.populateTransaction.initialize(
       gmxV2Registry.address,
-      core.tokens.weth.address,
       core.dolomiteMargin.address,
     );
     const proxy = await createIsolationModeTraderProxy(implementation.address, calldata.data!, core);
-    trader = await TestGmxV2IsolationModeTraderBase__factory.connect(proxy.address, core.hhUser1);
+    trader = await TestAsyncIsolationModeTraderBase__factory.connect(proxy.address, core.hhUser1);
 
     snapshotId = await snapshot();
   });
@@ -43,7 +42,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
   describe('#initialize', () => {
     it('should initialize correctly', async () => {
       expect(await trader.WETH()).to.eq(core.tokens.weth.address);
-      expect(await trader.GMX_REGISTRY_V2()).to.eq(gmxV2Registry.address);
+      expect(await trader.HANDLER_REGISTRY()).to.eq(gmxV2Registry.address);
       expect(await trader.callbackGasLimit()).to.eq(GMX_V2_CALLBACK_GAS_LIMIT);
       expect(await trader.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
     });
@@ -52,7 +51,6 @@ describe('GmxV2IsolationModeTraderBase', () => {
       await expectThrow(
         trader.triggerInternalInitializer(
           gmxV2Registry.address,
-          core.tokens.weth.address,
         ),
         'Initializable: contract is already initialized',
       );
@@ -93,7 +91,7 @@ describe('GmxV2IsolationModeTraderBase', () => {
     it('should fail if not called by valid handler', async () => {
       await expectThrow(
         trader.connect(core.hhUser1).testOnlyHandler(),
-        `GmxV2IsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
+        `AsyncIsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

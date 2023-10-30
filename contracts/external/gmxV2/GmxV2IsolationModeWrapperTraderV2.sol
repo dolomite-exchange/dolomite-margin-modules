@@ -31,6 +31,7 @@ import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
+import { AsyncIsolationModeTraderBase } from "../proxies/abstract/AsyncIsolationModeTraderBase.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
@@ -47,25 +48,32 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
 
-    // ============ Constants ============
+    // =====================================================
+    // ===================== Constants =====================
+    // =====================================================
 
     bytes32 private constant _FILE = "GmxV2IsolationModeWrapperV2";
 
-    // ============ Initializer ============
+    // =====================================================
+    // ==================== Constructor ====================
+    // =====================================================
 
-    function initialize(
-        address _dGM,
-        address _dolomiteMargin,
-        address _gmxV2Registry,
-        address _weth
-    ) external initializer {
-        _initializeWrapperTrader(_dGM, _dolomiteMargin);
-        _initializeAsyncTraderBase(_gmxV2Registry, _weth);
+    constructor(address _weth) AsyncIsolationModeTraderBase(_weth) {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     // ============================================
     // ============= Public Functions =============
     // ============================================
+
+    function initialize(
+        address _dGM,
+        address _dolomiteMargin,
+        address _gmxV2Registry
+    ) external initializer {
+        _initializeWrapperTrader(_dGM, _dolomiteMargin);
+        _initializeAsyncTraderBase(_gmxV2Registry);
+    }
 
     function afterDepositExecution(
         bytes32 _key,
@@ -183,7 +191,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         return GmxV2Library.createDeposit(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             GMX_REGISTRY_V2(),
-            WETH(),
+            WETH,
             _vault,
             ethExecutionFee,
             _outputTokenUnderlying,

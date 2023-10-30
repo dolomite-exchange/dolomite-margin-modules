@@ -81,8 +81,6 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       gmxV2Library,
       gmxV2Registry,
     );
-    await gmxV2Registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
-    await gmxV2Registry.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
     gmPriceOracle = await createGmxV2MarketTokenPriceOracle(core, gmxV2Registry);
     await gmPriceOracle.connect(core.governance).ownerSetMarketToken(factory.address, true);
@@ -90,6 +88,9 @@ describe('GmxV2MarketTokenPriceOracle', () => {
     await setupTestMarket(core, factory, true, gmPriceOracle);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
+
+    await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
+    await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
 
     testReader = await createContractWithAbi(
       TestGmxReader__factory.abi,

@@ -139,7 +139,6 @@ export async function getGmxV2RegistryConstructorParams(
   }
 
   const calldata = await implementation.populateTransaction.initialize(
-    core.gmxEcosystemV2!.gmxEthUsdMarketToken.address,
     core.gmxEcosystemV2!.gmxDataStore.address,
     core.gmxEcosystemV2!.gmxDepositVault.address,
     core.gmxEcosystemV2!.gmxExchangeRouter.address,
@@ -199,7 +198,6 @@ export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
     dGM.address,
     core.dolomiteMargin.address,
     gmxRegistryV2.address,
-    core.tokens.weth.address,
   );
 
   return [
@@ -219,7 +217,6 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
     dGM.address,
     core.dolomiteMargin.address,
     gmxRegistryV2.address,
-    core.tokens.weth.address,
   );
 
   return [

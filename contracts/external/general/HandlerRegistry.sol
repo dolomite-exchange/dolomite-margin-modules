@@ -21,12 +21,14 @@
 pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable max-line-length
+import { ValidationLib } from "../lib/ValidationLib.sol";
 
 
 /**
@@ -131,6 +133,17 @@ abstract contract HandlerRegistry is
         IUpgradeableAsyncIsolationModeUnwrapperTrader _unwrapperTrader
     )
     internal {
+        _validateFactoryToken(_factoryToken);
+        bytes memory result = ValidationLib.callAndCheckSuccess(
+            address(_unwrapperTrader),
+            _unwrapperTrader.VAULT_FACTORY.selector,
+            /* _data = */ bytes("")
+        );
+        Require.that(
+            abi.decode(result, (address)) == address(_factoryToken),
+            _FILE,
+            "Invalid unwrapper trader"
+        );
         bytes32 slot = keccak256(abi.encodePacked(_UNWRAPPER_BY_TOKEN_SLOT, address(_factoryToken)));
         _setAddress(slot, address(_unwrapperTrader));
         emit UnwrapperTraderSet(address(_factoryToken), address(_unwrapperTrader));
@@ -141,8 +154,33 @@ abstract contract HandlerRegistry is
         IUpgradeableAsyncIsolationModeWrapperTrader _wrapperTrader
     )
     internal {
+        _validateFactoryToken(_factoryToken);
+        bytes memory result = ValidationLib.callAndCheckSuccess(
+            address(_wrapperTrader),
+            _wrapperTrader.VAULT_FACTORY.selector,
+            /* _data = */ bytes("")
+        );
+        Require.that(
+            abi.decode(result, (address)) == address(_factoryToken),
+            _FILE,
+            "Invalid wrapper trader"
+        );
+
         bytes32 slot = keccak256(abi.encodePacked(_WRAPPER_BY_TOKEN_SLOT, address(_factoryToken)));
         _setAddress(slot, address(_wrapperTrader));
         emit WrapperTraderSet(address(_factoryToken), address(_wrapperTrader));
+    }
+
+    function _validateFactoryToken(IIsolationModeVaultFactory _factoryToken) private view {
+        bytes memory result = ValidationLib.callAndCheckSuccess(
+            address(_factoryToken),
+            _factoryToken.marketId.selector,
+            /* _data = */ bytes("")
+        );
+        Require.that(
+            abi.decode(result, (uint256)) != 0,
+            _FILE,
+            "Invalid factory token"
+        );
     }
 }

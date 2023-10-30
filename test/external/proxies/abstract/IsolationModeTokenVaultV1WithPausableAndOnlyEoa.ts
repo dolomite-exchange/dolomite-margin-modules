@@ -6,20 +6,20 @@ import {
   TestDoAnything,
   TestDoAnything__factory,
   TestIsolationModeFactory,
-  TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
 } from '../../../../src/types';
 import {
-  createContractWithAbi,
+  createContractWithAbi, createContractWithLibrary,
   createTestToken,
   depositIntoDolomiteMargin,
 } from '../../../../src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../../../utils/assertions';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../../utils/dolomite';
 import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
@@ -44,7 +44,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let factory: TestIsolationModeFactory;
-  let userVaultImplementation: TestIsolationModeTokenVaultV1;
+  let userVaultImplementation: TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa;
   let eoaVault: TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa;
   let contractVault: TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa;
   let doAnything: TestDoAnything;
@@ -58,9 +58,10 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
-    userVaultImplementation = await createContractWithAbi<TestIsolationModeTokenVaultV1>(
-      TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory.abi,
-      TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory.bytecode,
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa>(
+      'TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa',
+      libraries,
       [],
     );
     factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
@@ -159,7 +160,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       await expectProtocolBalance(core, eoaVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
     });
 
-    it('should work normally an EOA calls factory for creation', async () => {
+    it('should work normally when an EOA calls factory for creation', async () => {
       const eoaVaultAddress = await factory.calculateVaultByAccount(core.hhUser4.address);
       await underlyingToken.connect(core.hhUser4).addBalance(core.hhUser4.address, amountWei);
       await underlyingToken.connect(core.hhUser4).approve(eoaVaultAddress, amountWei);
@@ -171,7 +172,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       await expectProtocolBalance(core, eoaVaultAddress, borrowAccountNumber, underlyingMarketId, ZERO_BI);
     });
 
-    it('should fail contract calls factory for creation', async () => {
+    it('should fail when a contract calls factory for creation', async () => {
       const doAnything = await createContractWithAbi<TestDoAnything>(
         TestDoAnything__factory.abi,
         TestDoAnything__factory.bytecode,

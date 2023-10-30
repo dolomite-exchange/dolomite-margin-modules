@@ -26,16 +26,17 @@ import { TypesLib } from "../../../../protocol/lib/TypesLib.sol";
 import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1 } from "../../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../../interfaces/IIsolationModeVaultFactory.sol";
+import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 
 
 /**
- * @title   IsolationModeTokenVaultV1ActionsLib
+ * @title   IsolationModeTokenVaultV1ActionsImpl
  * @author  Dolomite
  *
  * Reusable library for functions that save bytecode on the async unwrapper/wrapper contracts
  */
-library IsolationModeTokenVaultV1ActionsLib {
+library IsolationModeTokenVaultV1ActionsImpl {
     using TypesLib for IDolomiteMargin.Par;
     using TypesLib for IDolomiteMargin.Wei;
 
@@ -43,7 +44,7 @@ library IsolationModeTokenVaultV1ActionsLib {
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "IsolationModeVaultV1ActionsLib";
+    bytes32 private constant _FILE = "IsolationModeVaultV1ActionsImpl";
 
     // ===================================================
     // ==================== Functions ====================
@@ -268,7 +269,15 @@ library IsolationModeTokenVaultV1ActionsLib {
                 _inputAmountWei
             );
         } else {
-            // we always swap the exact amount out; no need to check `To`
+            if (_inputAmountWei == AccountActionLib.all()) {
+                _inputAmountWei = _getAndValidateBalanceForAllForMarket(
+                    _vault,
+                    _vault.OWNER(),
+                    _fromAccountNumber,
+                    _marketIdsPath[0]
+                );
+            }
+            // we always swap the exact amount out; no need to check `BalanceCheckFlag.To`
             transferIntoPositionWithOtherToken(
                 _vault,
                 _fromAccountNumber,
@@ -374,6 +383,15 @@ library IsolationModeTokenVaultV1ActionsLib {
             _tradeAccountNumber
         );
 
+        if (_inputAmountWei == AccountActionLib.all()) {
+            _inputAmountWei = _getAndValidateBalanceForAllForMarket(
+                _vault,
+                /* _accountOwner = */ address(_vault),
+                _tradeAccountNumber,
+                _marketIdsPath[0]
+            );
+        }
+
         _vault.dolomiteRegistry().genericTraderProxy().swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
@@ -398,6 +416,27 @@ library IsolationModeTokenVaultV1ActionsLib {
     // ===================================================
     // ==================== Private ======================
     // ===================================================
+
+    function _getAndValidateBalanceForAllForMarket(
+        IIsolationModeTokenVaultV1 _vault,
+        address _accountOwner,
+        uint256 _accountNumber,
+        uint256 _marketId
+    ) private view returns (uint256) {
+        IDolomiteStructs.Wei memory balanceWei = _vault.DOLOMITE_MARGIN().getAccountWei(
+            IDolomiteStructs.AccountInfo({
+                owner: _accountOwner,
+                number: _accountNumber
+            }),
+            _marketId
+        );
+        Require.that(
+            balanceWei.isPositive(),
+            _FILE,
+            "Invalid balance for transfer all"
+        );
+        return balanceWei.value;
+    }
 
     function _checkAllowableCollateralMarket(
         IIsolationModeTokenVaultV1 _vault,

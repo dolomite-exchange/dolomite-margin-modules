@@ -35,19 +35,19 @@ import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 
 
 /**
- * @title   AsyncIsolationModeUnwrapperTraderLib
+ * @title   AsyncIsolationModeUnwrapperTraderImpl
  * @author  Dolomite
  *
  * Reusable library for functions that save bytecode on the async unwrapper/wrapper contracts
  */
-library AsyncIsolationModeUnwrapperTraderLib {
+library AsyncIsolationModeUnwrapperTraderImpl {
     using SafeERC20 for IERC20;
 
     // ===================================================
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "AsyncIsolationModeUnwrapperLib";
+    bytes32 private constant _FILE = "AsyncIsolationModeUnwrapperImpl";
     uint256 private constant _ACTIONS_LENGTH_NORMAL = 4;
 
     // ===================================================

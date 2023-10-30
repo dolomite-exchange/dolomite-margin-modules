@@ -117,7 +117,7 @@ abstract contract FreezableIsolationModeVaultFactory is
         );
     }
 
-    function updateVaultAccountPendingAmountForFrozenStatus(
+    function setVaultAccountPendingAmountForFrozenStatus(
         address _vault,
         uint256 _accountNumber,
         FreezeType _freezeType,

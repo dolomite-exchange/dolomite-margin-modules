@@ -33,6 +33,10 @@ import { SafeDelegateCallLib } from "../external/lib/SafeDelegateCallLib.sol";
 contract TestGmxV2IsolationModeUnwrapperTraderV2 is GmxV2IsolationModeUnwrapperTraderV2 {
     using SafeDelegateCallLib for address;
 
+    constructor(address _weth) GmxV2IsolationModeUnwrapperTraderV2(_weth) {
+        // solhint-disable-previous-line no-empty-blocks
+    }
+
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector
     ) external payable nonReentrant {

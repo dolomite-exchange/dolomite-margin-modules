@@ -1,6 +1,6 @@
 import { BigNumberish } from 'ethers';
 import { CoreProtocol } from '../../../test/utils/setup';
-import { IERC20 } from '../../types';
+import { EventEmitterRegistry, IERC20 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
@@ -19,6 +19,14 @@ export function getIsolationModeTraderProxyConstructorParams(
   core: CoreProtocol,
 ): any[] {
   return [implementationAddress, core.dolomiteMargin.address, implementationCalldata];
+}
+
+export async function getEventEmitterRegistryConstructorParams(
+  core: CoreProtocol,
+  implementation: EventEmitterRegistry,
+): Promise<any[]> {
+  const initializationCallData = await implementation.populateTransaction.initialize();
+  return [implementation.address, core.dolomiteMargin.address, initializationCallData.data!];
 }
 
 type OwnerAddMarketParameters = [

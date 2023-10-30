@@ -30,6 +30,7 @@ import { GmxWithdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
+import { AsyncIsolationModeTraderBase } from "../proxies/abstract/AsyncIsolationModeTraderBase.sol";
 import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
@@ -45,33 +46,75 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
 {
     using SafeERC20 for IERC20;
 
-    // ============ Constants ============
+    // =====================================================
+    // ===================== Constants =====================
+    // =====================================================
 
     bytes32 private constant _FILE = "GmxV2IsolationModeUnwrapperV2";
 
-    // ============ Modifiers ============
+    // =====================================================
+    // ===================== Modifiers =====================
+    // =====================================================
 
     modifier onlyWrapperCaller(address _from) {
         _validateIsWrapper(_from);
         _;
     }
 
-    // ============ Initializer ============
+    // =====================================================
+    // ==================== Constructor ====================
+    // =====================================================
 
-    function initialize(
-        address _dGM,
-        address _dolomiteMargin,
-        address _gmxV2Registry,
-        address _weth
-    )
-    external initializer {
-        _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
-        _initializeAsyncTraderBase(_gmxV2Registry, _weth);
+    constructor(address _weth) AsyncIsolationModeTraderBase(_weth) {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     // ============================================
     // ============= Public Functions =============
     // ============================================
+
+    function initialize(
+        address _dGM,
+        address _dolomiteMargin,
+        address _gmxV2Registry
+    )
+    external initializer {
+        _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
+        _initializeAsyncTraderBase(_gmxV2Registry);
+    }
+
+    function vaultInitiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bool _isLiquidation
+    ) external payable {
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
+        address vault = msg.sender;
+        _validateVaultExists(factory, vault);
+
+        IERC20(factory.UNDERLYING_TOKEN()).safeTransferFrom(vault, address(this), _inputAmount);
+        bytes32 withdrawalKey = GmxV2Library.validateAndExecuteInitiateUnwrapping(
+            factory,
+            vault,
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount,
+            msg.value,
+            _isLiquidation
+        );
+
+        _vaultCreateWithdrawalInfo(
+            withdrawalKey,
+            vault,
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount
+        );
+    }
 
     function initiateCancelWithdrawal(bytes32 _key) external {
         GmxV2Library.initiateCancelWithdrawal(/* _unwrapper = */ this, _key);

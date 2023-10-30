@@ -50,7 +50,7 @@ contract TestIsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1
         bool _isLiquidation
     ) internal override {
         if (_isLiquidation) {
-            IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).updateVaultAccountPendingAmountForFrozenStatus(
+            IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setVaultAccountPendingAmountForFrozenStatus(
             /* _vault = */ address(this),
                 _tradeAccountNumber,
                 IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,

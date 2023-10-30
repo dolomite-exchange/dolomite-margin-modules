@@ -31,7 +31,7 @@ import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.so
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
-import { IsolationModeTokenVaultV1ActionsLib } from "./impl/IsolationModeTokenVaultV1ActionsLib.sol";
+import { IsolationModeTokenVaultV1ActionsImpl } from "./impl/IsolationModeTokenVaultV1ActionsImpl.sol";
 
 
 /**
@@ -390,7 +390,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         uint256 _toAccountNumber,
         uint256 _amountWei
     ) internal virtual {
-        IsolationModeTokenVaultV1ActionsLib.depositIntoVaultForDolomiteMargin(
+        IsolationModeTokenVaultV1ActionsImpl.depositIntoVaultForDolomiteMargin(
             /* _vault = */ this,
             _toAccountNumber,
             _amountWei
@@ -401,7 +401,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         uint256 _fromAccountNumber,
         uint256 _amountWei
     ) internal virtual {
-        IsolationModeTokenVaultV1ActionsLib.withdrawFromVaultForDolomiteMargin(
+        IsolationModeTokenVaultV1ActionsImpl.withdrawFromVaultForDolomiteMargin(
             /* _vault = */ this,
             _fromAccountNumber,
             _amountWei
@@ -416,7 +416,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         internal
         virtual
     {
-        IsolationModeTokenVaultV1ActionsLib.openBorrowPosition(
+        IsolationModeTokenVaultV1ActionsImpl.openBorrowPosition(
             /* _vault = */ this,
             _fromAccountNumber,
             _toAccountNumber,
@@ -431,7 +431,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         internal
         virtual
     {
-        IsolationModeTokenVaultV1ActionsLib.closeBorrowPositionWithUnderlyingVaultToken(
+        IsolationModeTokenVaultV1ActionsImpl.closeBorrowPositionWithUnderlyingVaultToken(
             /* _vault = */ this,
             _borrowAccountNumber,
             _toAccountNumber
@@ -446,7 +446,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         internal
         virtual
     {
-        IsolationModeTokenVaultV1ActionsLib.closeBorrowPositionWithOtherTokens(
+        IsolationModeTokenVaultV1ActionsImpl.closeBorrowPositionWithOtherTokens(
             /* _vault = */ this,
             _borrowAccountNumber,
             _toAccountNumber,
@@ -462,7 +462,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         internal
         virtual
     {
-        IsolationModeTokenVaultV1ActionsLib.transferIntoPositionWithUnderlyingToken(
+        IsolationModeTokenVaultV1ActionsImpl.transferIntoPositionWithUnderlyingToken(
             /* _vault = */ this,
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -480,7 +480,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         internal
         virtual
     {
-        IsolationModeTokenVaultV1ActionsLib.transferIntoPositionWithOtherToken(
+        IsolationModeTokenVaultV1ActionsImpl.transferIntoPositionWithOtherToken(
             /* _vault = */ this,
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -499,7 +499,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         internal
         virtual
     {
-        IsolationModeTokenVaultV1ActionsLib.transferFromPositionWithUnderlyingToken(
+        IsolationModeTokenVaultV1ActionsImpl.transferFromPositionWithUnderlyingToken(
             /* _vault = */ this,
             _borrowAccountNumber,
             _toAccountNumber,
@@ -517,7 +517,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         virtual
         internal
     {
-        IsolationModeTokenVaultV1ActionsLib.transferFromPositionWithOtherToken(
+        IsolationModeTokenVaultV1ActionsImpl.transferFromPositionWithOtherToken(
             /* _vault = */ this,
             _borrowAccountNumber,
             _toAccountNumber,
@@ -536,7 +536,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         internal
         virtual
     {
-        IsolationModeTokenVaultV1ActionsLib.repayAllForBorrowPosition(
+        IsolationModeTokenVaultV1ActionsImpl.repayAllForBorrowPosition(
             /* _vault = */ this,
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -555,7 +555,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     ) internal virtual {
-        IsolationModeTokenVaultV1ActionsLib.addCollateralAndSwapExactInputForOutput(
+        IsolationModeTokenVaultV1ActionsImpl.addCollateralAndSwapExactInputForOutput(
             /* _vault = */ this,
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -581,7 +581,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         internal
         virtual
     {
-        IsolationModeTokenVaultV1ActionsLib.swapExactInputForOutputAndRemoveCollateral(
+        IsolationModeTokenVaultV1ActionsImpl.swapExactInputForOutputAndRemoveCollateral(
             /* _vault = */ this,
             _toAccountNumber,
             _borrowAccountNumber,
@@ -606,7 +606,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         internal
         virtual
     {
-        IsolationModeTokenVaultV1ActionsLib.swapExactInputForOutput(
+        IsolationModeTokenVaultV1ActionsImpl.swapExactInputForOutput(
             /* _vault = */ this,
             _tradeAccountNumber,
             _marketIdsPath,

@@ -16,7 +16,7 @@ import { MAX_UINT_256_BI, Network, networkToNetworkNameMap } from './no-deps-con
 /**
  * @return  The deployed contract
  */
-export async function createContract<T extends BaseContract>(
+export async function createContractWithName<T extends BaseContract>(
   contractName: string,
   args: any[],
 ): Promise<T> {

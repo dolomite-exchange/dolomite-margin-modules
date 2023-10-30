@@ -80,8 +80,6 @@ describe('GmxV2IsolationModeVaultFactory', () => {
       gmxV2Library,
       gmxV2Registry,
     );
-    await gmxV2Registry.connect(core.governance).ownerSetGmxV2UnwrapperTrader(unwrapper.address);
-    await gmxV2Registry.connect(core.governance).ownerSetGmxV2WrapperTrader(wrapper.address);
 
     await core.testEcosystem!.testPriceOracle!.setPrice(factory.address, '1000000000000000000000000000000');
     marketId = await core.dolomiteMargin.getNumMarkets();
@@ -89,6 +87,9 @@ describe('GmxV2IsolationModeVaultFactory', () => {
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+
+    await gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(factory.address, unwrapper.address);
+    await gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(factory.address, wrapper.address);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -269,7 +270,7 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     it('should fail when execution fee is too large', async () => {
       await expectThrow(
         factory.connect(core.governance).ownerSetExecutionFee(parseEther('1.01')),
-        'GmxV2IsolationModeVaultFactory: Invalid execution fee',
+        'FreezableVaultFactory: Invalid execution fee',
       );
     });
   });
@@ -298,45 +299,45 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     });
   });
 
-  describe('#setIsDepositSourceWrapper', () => {
+  describe('#setIsVaultDepositSourceWrapper', () => {
     it('should work normally', async () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
-      await factory.connect(impersonatedWrapper).setIsDepositSourceWrapper(vault.address, true);
+      await factory.connect(impersonatedWrapper).setIsVaultDepositSourceWrapper(vault.address, true);
       expect(await vault.isDepositSourceWrapper()).to.eq(true);
     });
 
     it('should fail if not token converter', async () => {
       await expectThrow(
-        factory.connect(core.hhUser1).setIsDepositSourceWrapper(vault.address, true),
+        factory.connect(core.hhUser1).setIsVaultDepositSourceWrapper(vault.address, true),
         `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if invalid vault', async () => {
       await expectThrow(
-        factory.connect(impersonatedWrapper).setIsDepositSourceWrapper(core.hhUser1.address, false),
+        factory.connect(impersonatedWrapper).setIsVaultDepositSourceWrapper(core.hhUser1.address, false),
         `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
 
-  describe('#setShouldSkipTransfer', () => {
+  describe('#setShouldVaultSkipTransfer', () => {
     it('should work normally', async () => {
       expect(await vault.shouldSkipTransfer()).to.eq(false);
-      await factory.connect(impersonatedWrapper).setShouldSkipTransfer(vault.address, true);
+      await factory.connect(impersonatedWrapper).setShouldVaultSkipTransfer(vault.address, true);
       expect(await vault.shouldSkipTransfer()).to.eq(true);
     });
 
     it('should fail if not token converter', async () => {
       await expectThrow(
-        factory.connect(core.hhUser1).setShouldSkipTransfer(vault.address, true),
+        factory.connect(core.hhUser1).setShouldVaultSkipTransfer(vault.address, true),
         `IsolationModeVaultFactory: Caller is not a token converter <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail if invalid vault', async () => {
       await expectThrow(
-        factory.connect(impersonatedWrapper).setShouldSkipTransfer(core.hhUser1.address, false),
+        factory.connect(impersonatedWrapper).setShouldVaultSkipTransfer(core.hhUser1.address, false),
         `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

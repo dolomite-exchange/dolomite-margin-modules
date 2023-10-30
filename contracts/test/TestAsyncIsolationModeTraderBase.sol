@@ -33,20 +33,22 @@ contract TestAsyncIsolationModeTraderBase is AsyncIsolationModeTraderBase {
 
     bytes32 private constant _FILE = "TestAsyncIsolationModeTraderBase";
 
+    constructor(address _weth) AsyncIsolationModeTraderBase(_weth) {
+        // solhint-disable-previous-line no-empty-blocks
+    }
+
     function initialize(
         address _gmxV2Registry,
-        address _weth,
         address _dolomiteMargin
     ) external initializer {
-        _initializeAsyncTraderBase(_gmxV2Registry, _weth);
+        _initializeAsyncTraderBase(_gmxV2Registry);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
     }
 
     function triggerInternalInitializer(
-        address _gmxV2Registry,
-        address _weth
+        address _gmxV2Registry
     ) external {
-        _initializeAsyncTraderBase(_gmxV2Registry, _weth);
+        _initializeAsyncTraderBase(_gmxV2Registry);
     }
 
     function testOnlyHandler() external onlyHandler(msg.sender) {} // solhint-disable-line no-empty-blocks

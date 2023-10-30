@@ -1,6 +1,6 @@
 import { BaseContract } from 'ethers';
-import { createContract } from '../../../src/utils/dolomite-utils';
+import { createContractWithName } from '../../../src/utils/dolomite-utils';
 
 export async function createSafeDelegateLibrary(): Promise<BaseContract> {
-  return createContract('SafeDelegateCallLib', []);
+  return createContractWithName('SafeDelegateCallLib', []);
 }

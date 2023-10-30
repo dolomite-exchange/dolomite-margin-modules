@@ -32,7 +32,7 @@ import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsola
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; //solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
-import { AsyncIsolationModeUnwrapperTraderLib } from "./impl/AsyncIsolationModeUnwrapperTraderLib.sol";
+import { AsyncIsolationModeUnwrapperTraderImpl } from "./impl/AsyncIsolationModeUnwrapperTraderImpl.sol";
 
 /**
  * @title   UpgradeableAsyncIsolationModeUnwrapperTrader
@@ -90,37 +90,6 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
             "Withdrawal not retryable"
         );
         _executeWithdrawal(withdrawalInfo);
-    }
-
-    function vaultCreateWithdrawalInfo(
-        bytes32 _key,
-        uint256 _accountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount
-    ) external {
-        address vault = msg.sender;
-        _validateVaultExists(VAULT_FACTORY(), vault);
-
-        // Panic if the key is already used
-        assert(_getWithdrawalSlot(_key).vault == address(0));
-
-        WithdrawalInfo memory withdrawalInfo = WithdrawalInfo({
-            key: _key,
-            vault: vault,
-            accountNumber: _accountNumber,
-            inputAmount: _inputAmount,
-            outputToken: _outputToken,
-            outputAmount: _minOutputAmount,
-            isRetryable: false
-        });
-        _setWithdrawalInfo(_key, withdrawalInfo);
-        _updateVaultPendingAmount(vault, _accountNumber, _inputAmount, /* _isPositive = */ true);
-        _eventEmitter().emitAsyncWithdrawalCreated(
-            _key,
-            address(VAULT_FACTORY()),
-            withdrawalInfo
-        );
     }
 
     function callFunction(
@@ -210,7 +179,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     virtual
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
-        return AsyncIsolationModeUnwrapperTraderLib.createActionsForUnwrapping(
+        return AsyncIsolationModeUnwrapperTraderImpl.createActionsForUnwrapping(
             /* _unwrapper = */ this,
             _solidAccountId,
             _liquidAccountId,
@@ -285,6 +254,36 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         _setActionsLength(_ACTIONS_LENGTH_NORMAL);
     }
 
+    function _vaultCreateWithdrawalInfo(
+        bytes32 _key,
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    ) internal {
+
+        // Panic if the key is already used
+        assert(_getWithdrawalSlot(_key).vault == address(0));
+
+        WithdrawalInfo memory withdrawalInfo = WithdrawalInfo({
+            key: _key,
+            vault: _vault,
+            accountNumber: _accountNumber,
+            inputAmount: _inputAmount,
+            outputToken: _outputToken,
+            outputAmount: _minOutputAmount,
+            isRetryable: false
+        });
+        _setWithdrawalInfo(_key, withdrawalInfo);
+        _updateVaultPendingAmount(_vault, _accountNumber, _inputAmount, /* _isPositive = */ true);
+        _eventEmitter().emitAsyncWithdrawalCreated(
+            _key,
+            address(VAULT_FACTORY()),
+            withdrawalInfo
+        );
+    }
+
     function _handleCallbackBefore() internal {
         _setActionsLength(_ACTIONS_LENGTH_CALLBACK);
     }
@@ -294,7 +293,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual {
-        try AsyncIsolationModeUnwrapperTraderLib.swapExactInputForOutputForWithdrawal(
+        try AsyncIsolationModeUnwrapperTraderImpl.swapExactInputForOutputForWithdrawal(
             /* _unwrapper = */ this,
             _withdrawalInfo
         ) {
@@ -501,7 +500,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         uint256 _amountDeltaWei,
         bool _isPositive
     ) internal {
-        IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).updateVaultAccountPendingAmountForFrozenStatus(
+        IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).setVaultAccountPendingAmountForFrozenStatus(
             _vault,
             _accountNumber,
             IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,

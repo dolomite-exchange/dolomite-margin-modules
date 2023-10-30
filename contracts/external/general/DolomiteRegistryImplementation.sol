@@ -25,7 +25,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IEventEmitter } from "../interfaces/IEventEmitter.sol";
+import { IEventEmitterRegistry } from "../interfaces/IEventEmitter.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
@@ -125,8 +125,8 @@ contract DolomiteRegistryImplementation is
         return ILiquidatorAssetRegistry(_getAddress(_LIQUIDATOR_ASSET_REGISTRY_SLOT));
     }
 
-    function eventEmitter() external view returns (IEventEmitter) {
-        return IEventEmitter(_getAddress(_EVENT_EMITTER_SLOT));
+    function eventEmitter() external view returns (IEventEmitterRegistry) {
+        return IEventEmitterRegistry(_getAddress(_EVENT_EMITTER_SLOT));
     }
 
     function slippageToleranceForPauseSentinelBase() external pure returns (uint256) {
