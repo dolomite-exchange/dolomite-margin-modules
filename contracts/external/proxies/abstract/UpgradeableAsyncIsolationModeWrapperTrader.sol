@@ -29,9 +29,8 @@ import { Require } from "../../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
-import { AccountActionLib } from "../../lib/AccountActionLib.sol";
-import { AsyncIsolationModeTraderLib } from "../../lib/AsyncIsolationModeTraderLib.sol";
 import { InterestIndexLib } from "../../lib/InterestIndexLib.sol";
+import { AsyncIsolationModeWrapperTraderLib } from "./impl/AsyncIsolationModeWrapperTraderLib.sol";
 
 /**
  * @title   UpgradeableAsyncIsolationModeWrapperTrader
@@ -145,32 +144,15 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     override
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
-        Require.that(
-            isValidInputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket)),
-            _FILE,
-            "Invalid input market",
-            _inputMarket
-        );
-        Require.that(
-            DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(VAULT_FACTORY()),
-            _FILE,
-            "Invalid output market",
-            _outputMarket
-        );
-
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
-
-        actions[0] = AccountActionLib.encodeExternalSellAction(
+        return AsyncIsolationModeWrapperTraderLib.createActionsForWrapping(
+            /* wrapper = */ this,
             _primaryAccountId,
-            _inputMarket,
             _outputMarket,
-            /* _trader = */ address(this),
-            /* _amountInWei = */ _inputAmount,
-            /* _amountOutMinWei = */ _minAmountOut,
+            _inputMarket,
+            _minAmountOut,
+            _inputAmount,
             _orderData
         );
-
-        return actions;
     }
 
     function getExchangeCost(
@@ -354,7 +336,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
         factory.setShouldVaultSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ true);
 
-        try AsyncIsolationModeTraderLib.swapExactInputForOutputForDepositCancellation(
+        try AsyncIsolationModeWrapperTraderLib.swapExactInputForOutputForDepositCancellation(
             /* _wrapper = */ this,
             _depositInfo
         ) {

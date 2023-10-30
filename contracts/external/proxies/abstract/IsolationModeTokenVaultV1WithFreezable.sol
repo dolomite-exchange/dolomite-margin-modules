@@ -24,7 +24,6 @@ import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IWETH } from "../../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
-import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
@@ -40,8 +39,7 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  */
 abstract contract IsolationModeTokenVaultV1WithFreezable is
     IIsolationModeTokenVaultV1WithFreezable,
-    IsolationModeTokenVaultV1,
-    ProxyContractHelpers
+    IsolationModeTokenVaultV1
 {
 
     // ===================================================

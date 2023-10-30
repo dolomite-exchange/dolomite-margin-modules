@@ -67,7 +67,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     external initializer {
         _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
         _initializeAsyncTraderBase(_gmxV2Registry, _weth);
-        _setActionsLength(_ACTIONS_LENGTH_NORMAL);
     }
 
     // ============================================
@@ -169,16 +168,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         _handleCallbackBefore();
         super._executeWithdrawal(_withdrawalInfo);
         _handleCallbackAfter();
-    }
-
-    function _handleCallbackBefore() internal {
-        // For GMX callbacks, we restrict the # of actions to use less gas
-        _setActionsLength(_ACTIONS_LENGTH_CALLBACK);
-    }
-
-    function _handleCallbackAfter() internal {
-        // For GMX callbacks, we restrict the # of actions to use less gas
-        _setActionsLength(_ACTIONS_LENGTH_NORMAL);
     }
 
     function _validateIsBalanceSufficient(uint256 /* _inputAmount */) internal override view {

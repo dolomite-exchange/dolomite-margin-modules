@@ -23,7 +23,6 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { DolomiteMarginMath } from "../../protocol/lib/DolomiteMarginMath.sol";
-import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IPlutusVaultGLP } from "../interfaces/plutus/IPlutusVaultGLP.sol";
 import { IPlutusVaultGLPFarm } from "../interfaces/plutus/IPlutusVaultGLPFarm.sol";
@@ -45,8 +44,7 @@ import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/Isola
  */
 contract PlutusVaultGLPIsolationModeTokenVaultV1 is
     IPlutusVaultGLPIsolationModeTokenVaultV1,
-    IsolationModeTokenVaultV1WithPausable,
-    ProxyContractHelpers
+    IsolationModeTokenVaultV1WithPausable
 {
     using DolomiteMarginMath for uint256;
     using SafeERC20 for IERC20;

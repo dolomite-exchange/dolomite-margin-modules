@@ -21,65 +21,42 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { AccountBalanceLib } from "./AccountBalanceLib.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
-import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
-import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
-import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
-import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
-import { UpgradeableAsyncIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
+import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../UpgradeableAsyncIsolationModeUnwrapperTrader.sol";
+import { UpgradeableAsyncIsolationModeWrapperTrader } from "../UpgradeableAsyncIsolationModeWrapperTrader.sol";
+import { IDolomiteMargin } from "../../../../protocol/interfaces/IDolomiteMargin.sol";
+import { Require } from "../../../../protocol/lib/Require.sol";
+import { IGenericTraderBase } from "../../../interfaces/IGenericTraderBase.sol";
+import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
+import { IIsolationModeTokenVaultV1 } from "../../../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
+import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 
 
 /**
- * @title   AsyncIsolationModeTraderLib
+ * @title   AsyncIsolationModeWrapperTraderLib
  * @author  Dolomite
  *
  * Reusable library for functions that save bytecode on the async unwrapper/wrapper contracts
  */
-library AsyncIsolationModeTraderLib {
+library AsyncIsolationModeWrapperTraderLib {
     using SafeERC20 for IERC20;
 
-    function swapExactInputForOutputForWithdrawal(
-        UpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper,
-        IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory _withdrawalInfo
-    ) public {
-        uint256[] memory marketIdsPath = new uint256[](2);
-        marketIdsPath[0] = _unwrapper.VAULT_FACTORY().marketId();
-        marketIdsPath[1] = _unwrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_withdrawalInfo.outputToken);
+    // ===================================================
+    // ==================== Constants ====================
+    // ===================================================
 
-        IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
-        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
-        traderParams[0].makerAccountIndex = 0;
-        traderParams[0].trader = address(this);
+    bytes32 private constant _FILE = "AsyncIsolationModeWrapperLib";
 
-        IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes = new IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[](1); // solhint-disable-line max-line-length
-        tradeTypes[0] = IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromWithdrawal;
-        bytes32[] memory keys = new bytes32[](1);
-        keys[0] = _withdrawalInfo.key;
-        traderParams[0].tradeData = abi.encode(tradeTypes, keys);
-
-        IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
-            deadline: block.timestamp,
-            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None
-        });
-
-        IIsolationModeTokenVaultV1(_withdrawalInfo.vault).swapExactInputForOutput(
-            _withdrawalInfo.accountNumber,
-            marketIdsPath,
-            _withdrawalInfo.inputAmount,
-            _withdrawalInfo.outputAmount,
-            traderParams,
-            /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
-            userConfig
-        );
-    }
+    // ===================================================
+    // ==================== Functions ====================
+    // ===================================================
 
     function swapExactInputForOutputForDepositCancellation(
         UpgradeableAsyncIsolationModeWrapperTrader _wrapper,
-        IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory _depositInfo
-    ) public {
+        IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo calldata _depositInfo
+    ) external {
         uint256[] memory marketIdsPath = new uint256[](2);
         marketIdsPath[0] = _wrapper.VAULT_FACTORY().marketId();
         marketIdsPath[1] = _wrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_depositInfo.inputToken);
@@ -114,5 +91,43 @@ library AsyncIsolationModeTraderLib {
             userConfig
         );
         UpgradeableAsyncIsolationModeUnwrapperTrader(payable(traderParams[0].trader)).handleCallbackFromWrapperAfter();
+    }
+
+    function createActionsForWrapping(
+        UpgradeableAsyncIsolationModeWrapperTrader _wrapper,
+        uint256 _primaryAccountId,
+        uint256 _outputMarket,
+        uint256 _inputMarket,
+        uint256 _minAmountOut,
+        uint256 _inputAmount,
+        bytes calldata _orderData
+    ) external view returns (IDolomiteMargin.ActionArgs[] memory) {
+        IDolomiteMargin dolomiteMargin = _wrapper.DOLOMITE_MARGIN();
+        Require.that(
+            _wrapper.isValidInputToken(dolomiteMargin.getMarketTokenAddress(_inputMarket)),
+            _FILE,
+            "Invalid input market",
+            _inputMarket
+        );
+        Require.that(
+            dolomiteMargin.getMarketTokenAddress(_outputMarket) == address(_wrapper.VAULT_FACTORY()),
+            _FILE,
+            "Invalid output market",
+            _outputMarket
+        );
+
+        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_wrapper.actionsLength());
+
+        actions[0] = AccountActionLib.encodeExternalSellAction(
+            _primaryAccountId,
+            _inputMarket,
+            _outputMarket,
+            /* _trader = */ address(this),
+            /* _amountInWei = */ _inputAmount,
+            /* _amountOutMinWei = */ _minAmountOut,
+            _orderData
+        );
+
+        return actions;
     }
 }

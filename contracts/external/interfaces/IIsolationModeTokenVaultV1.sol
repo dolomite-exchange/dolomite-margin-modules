@@ -20,9 +20,11 @@
 
 pragma solidity ^0.8.9;
 
+import { IBorrowPositionProxyV2 } from "./IBorrowPositionProxyV2.sol";
 import { IDolomiteRegistry } from "./IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "./IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
@@ -272,5 +274,13 @@ interface IIsolationModeTokenVaultV1 {
      */
     function dolomiteRegistry() external view returns (IDolomiteRegistry);
 
+    function marketId() external view returns (uint256);
+
+    function BORROW_POSITION_PROXY() external view returns (IBorrowPositionProxyV2);
+
+    function DOLOMITE_MARGIN() external view returns (IDolomiteMargin);
+
     function VAULT_FACTORY() external view returns (address);
+
+    function OWNER() external view returns (address);
 }

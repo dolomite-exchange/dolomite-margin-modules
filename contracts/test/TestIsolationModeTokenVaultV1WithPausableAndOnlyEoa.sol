@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { TestIsolationModeFactory } from "./TestIsolationModeFactory.sol";
-import { ProxyContractHelpers } from "../external/helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../external/interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "../external/proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithPausableAndOnlyEoa } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithPausableAndOnlyEoa.sol"; // solhint-disable-line max-line-length
@@ -34,8 +33,7 @@ import { IsolationModeTokenVaultV1WithPausableAndOnlyEoa } from "../external/pro
  * @notice  A test contract for the TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa contract.
  */
 contract TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa is
-    IsolationModeTokenVaultV1WithPausableAndOnlyEoa,
-    ProxyContractHelpers
+    IsolationModeTokenVaultV1WithPausableAndOnlyEoa
 {
 
     // solhint-disable-next-line max-line-length

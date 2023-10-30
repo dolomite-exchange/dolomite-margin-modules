@@ -32,8 +32,7 @@ import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsola
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; //solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
-import { AccountActionLib } from "../../lib/AccountActionLib.sol";
-import { AsyncIsolationModeTraderLib } from "../../lib/AsyncIsolationModeTraderLib.sol";
+import { AsyncIsolationModeUnwrapperTraderLib } from "./impl/AsyncIsolationModeUnwrapperTraderLib.sol";
 
 /**
  * @title   UpgradeableAsyncIsolationModeUnwrapperTrader
@@ -69,11 +68,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
 
     modifier nonReentrant() {
         // On the first call to nonReentrant, _reentrancyGuard will be _NOT_ENTERED
-        Require.that(
-            _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
-            _FILE,
-            "Reentrant call"
-        );
+        _validateNotReentered();
 
         // Any calls to nonReentrant after this point will fail
         _setReentrancyGuard(_ENTERED);
@@ -203,8 +198,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     function createActionsForUnwrapping(
         uint256 _solidAccountId,
         uint256 _liquidAccountId,
-        address,
-        address,
+        address /* _primaryAccountOwner */,
+        address /* _otherAccountOwner */,
         uint256 _outputMarket,
         uint256 _inputMarket,
         uint256 _minAmountOut,
@@ -215,85 +210,16 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     virtual
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
-        Require.that(
-            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY()),
-            _FILE,
-            "Invalid input market",
-            _inputMarket
-        );
-        Require.that(
-            isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
-            _FILE,
-            "Invalid output market",
-            _outputMarket
-        );
-
-        (TradeType[] memory tradeTypes, bytes32[] memory keys) = abi.decode(_orderData, (TradeType[], bytes32[]));
-        Require.that(
-            tradeTypes.length == keys.length && keys.length > 0,
-            _FILE,
-            "Invalid unwrapping order data"
-        );
-
-        uint256 structInputAmount = 0;
-        // Realistically this array length will only ever be 1 or 2.
-        for (uint256 i; i < tradeTypes.length; ++i) {
-            // The withdrawal/deposit is authenticated & validated later in `_callFunction`
-            if (tradeTypes[i] == TradeType.FromWithdrawal) {
-                structInputAmount += _getWithdrawalSlot(keys[i]).inputAmount;
-            } else {
-                assert(tradeTypes[i] == TradeType.FromDeposit);
-                // The output amount for a deposit is the input amount for an unwrapping
-                structInputAmount += _getWrapperTrader().getDepositInfo(keys[i]).outputAmount;
-            }
-        }
-        Require.that(
-            structInputAmount >= _inputAmount && _inputAmount > 0,
-            _FILE,
-            "Invalid input amount"
-        );
-
-        // If the input amount doesn't match, we need to add 2 actions to settle the difference
-        IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](actionsLength());
-
-        // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
-        // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
-        actions[0] = AccountActionLib.encodeCallAction(
-            _liquidAccountId,
-            /* _callee */ address(this),
-            /* (transferAmount, tradeTypes, keys)[encoded] = */ abi.encode(_inputAmount, tradeTypes, keys)
-        );
-        actions[1] = AccountActionLib.encodeExternalSellAction(
+        return AsyncIsolationModeUnwrapperTraderLib.createActionsForUnwrapping(
+            /* _unwrapper = */ this,
             _solidAccountId,
-            _inputMarket,
+            _liquidAccountId,
             _outputMarket,
-            /* _trader = */ address(this),
-            /* _amountInWei = */ _inputAmount,
-            /* _amountOutMinWei = */ _minAmountOut,
+            _inputMarket,
+            _minAmountOut,
+            _inputAmount,
             _orderData
         );
-        if (actions.length == _ACTIONS_LENGTH_NORMAL) {
-            // We need to spend the whole withdrawal amount, so we need to add an extra sale to spend the difference.
-            // This can only happen during a liquidation
-
-            structInputAmount -= _inputAmount;
-            actions[2] = AccountActionLib.encodeCallAction(
-                _liquidAccountId,
-                /* _callee */ address(this),
-                /* (transferAmount, tradeTypes, keys)[encoded] = */ abi.encode(structInputAmount, tradeTypes, keys)
-            );
-            actions[3] = AccountActionLib.encodeExternalSellAction(
-                _liquidAccountId,
-                _inputMarket,
-                _outputMarket,
-                /* _trader = */ address(this),
-                /* _amountInWei = */ structInputAmount,
-                /* _amountOutMinWei = */ 1,
-                _orderData
-            );
-        }
-
-        return actions;
     }
 
     function actionsLength()
@@ -356,10 +282,22 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         _setVaultFactory(_vaultFactory);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
         _setReentrancyGuard(_NOT_ENTERED);
+        _setActionsLength(_ACTIONS_LENGTH_NORMAL);
+    }
+
+    function _handleCallbackBefore() internal {
+        _setActionsLength(_ACTIONS_LENGTH_CALLBACK);
+    }
+
+    function _handleCallbackAfter() internal {
+        _setActionsLength(_ACTIONS_LENGTH_NORMAL);
     }
 
     function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual {
-        try AsyncIsolationModeTraderLib.swapExactInputForOutputForWithdrawal(/* _unwrapper = */ this, _withdrawalInfo) {
+        try AsyncIsolationModeUnwrapperTraderLib.swapExactInputForOutputForWithdrawal(
+            /* _unwrapper = */ this,
+            _withdrawalInfo
+        ) {
             _eventEmitter().emitAsyncWithdrawalExecuted(
                 _withdrawalInfo.key,
                 address(VAULT_FACTORY())
@@ -646,6 +584,14 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
 
     function _setReentrancyGuard(uint256 _value) private {
         _setUint256(_REENTRANCY_GUARD_SLOT, _value);
+    }
+
+    function _validateNotReentered() private view {
+        Require.that(
+            _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
+            _FILE,
+            "Reentrant call"
+        );
     }
 
     function _validateOutputTokenForExchange(

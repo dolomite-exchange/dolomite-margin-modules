@@ -72,10 +72,10 @@ abstract contract IsolationModeTokenVaultV1WithPausableAndOnlyEoa is IsolationMo
         super._requireOnlyVaultOwnerOrVaultFactory(_from);
         // solhint-disable avoid-tx-origin
         Require.that(
-            _proxySelf().owner() == tx.origin,
+            OWNER() == tx.origin,
             _FILE,
             "Vault owner is not an EOA",
-            _proxySelf().owner()
+            OWNER()
         );
         // solhint-enable avoid-tx-origin
     }

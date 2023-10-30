@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { TestIsolationModeFactory } from "./TestIsolationModeFactory.sol";
-import { ProxyContractHelpers } from "../external/helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../external/interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "../external/proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol"; // solhint-disable-line max-line-length
@@ -33,7 +32,7 @@ import { IsolationModeTokenVaultV1WithPausable } from "../external/proxies/abstr
  *
  * @notice  A test contract for the TestIsolationModeTokenVaultV1WithPausable contract.
  */
-contract TestIsolationModeTokenVaultV1WithPausable is IsolationModeTokenVaultV1WithPausable, ProxyContractHelpers {
+contract TestIsolationModeTokenVaultV1WithPausable is IsolationModeTokenVaultV1WithPausable {
 
     // solhint-disable-next-line max-line-length
     bytes32 private constant _IS_EXTERNAL_REDEMPTION_PAUSED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isExternalRedemptionPaused")) - 1);

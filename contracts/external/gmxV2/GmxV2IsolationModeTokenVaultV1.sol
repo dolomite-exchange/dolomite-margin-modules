@@ -189,7 +189,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     )
     internal
     override {
-        GmxV2Library.validateExecutionFee(this, _toAccountNumber);
+        GmxV2Library.validateExecutionFee(/* _vault = */ this, _toAccountNumber);
         super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
         _setExecutionFeeForAccountNumber(_toAccountNumber, msg.value);
     }
@@ -395,7 +395,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
             uint256 executionFee = getExecutionFeeForAccountNumber(_borrowAccountNumber);
             _setExecutionFeeForAccountNumber(_borrowAccountNumber, /* _executionFee = */ 0);
             // @audit: check for any reentrancy issues! No user-level functions on the vault should be reentered
-            payable(_proxySelf().owner()).sendValue(executionFee);
+            payable(OWNER()).sendValue(executionFee);
         }
     }
 }
