@@ -87,23 +87,19 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount,
-        bool _isLiquidation
+        uint256 _minOutputAmount
     ) external payable {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         address vault = msg.sender;
         _validateVaultExists(factory, vault);
 
         IERC20(factory.UNDERLYING_TOKEN()).safeTransferFrom(vault, address(this), _inputAmount);
-        bytes32 withdrawalKey = GmxV2Library.validateAndExecuteInitiateUnwrapping(
+        bytes32 withdrawalKey = GmxV2Library.executeInitiateUnwrapping(
             factory,
-            vault,
-            _tradeAccountNumber,
             _inputAmount,
             _outputToken,
             _minOutputAmount,
-            msg.value,
-            _isLiquidation
+            msg.value
         );
 
         _vaultCreateWithdrawalInfo(

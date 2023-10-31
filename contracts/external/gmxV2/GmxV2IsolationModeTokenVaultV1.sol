@@ -27,7 +27,6 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
@@ -94,59 +93,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
                                 registry().getUnwrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
         _validateVaultOwnerForStruct(unwrapper.getWithdrawalInfo(_key).vault);
         unwrapper.initiateCancelWithdrawal(_key);
-    }
-
-    function executeDepositIntoVault(
-        address _from,
-        uint256 _amount
-    )
-    public
-    override
-    onlyVaultFactory(msg.sender) {
-        _setVirtualBalance(virtualBalance() + _amount);
-
-        if (!shouldSkipTransfer()) {
-            if (!isDepositSourceWrapper()) {
-                IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
-            } else {
-                IERC20(UNDERLYING_TOKEN()).safeTransferFrom(
-                    address(registry().getWrapperByToken(IIsolationModeVaultFactory(VAULT_FACTORY()))),
-                    address(this),
-                    _amount
-                );
-                _setIsVaultDepositSourceWrapper(/* _isDepositSourceWrapper = */ false);
-            }
-            _requireVirtualBalanceWithPendingMatchesRealBalance();
-        } else {
-            Require.that(
-                isVaultFrozen(),
-                _FILE,
-                "Vault should be frozen"
-            );
-            _setShouldVaultSkipTransfer(/* _shouldSkipTransfer = */ false);
-        }
-    }
-
-    function executeWithdrawalFromVault(
-        address _recipient,
-        uint256 _amount
-    )
-    public
-    override
-    onlyVaultFactory(msg.sender) {
-        _setVirtualBalance(virtualBalance() - _amount);
-
-        if (!shouldSkipTransfer()) {
-            IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
-            _requireVirtualBalanceWithPendingMatchesRealBalance();
-        } else {
-            Require.that(
-                isVaultFrozen(),
-                _FILE,
-                "Vault should be frozen"
-            );
-            _setShouldVaultSkipTransfer(false);
-        }
     }
 
     function isExternalRedemptionPaused()
@@ -276,7 +222,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _setExecutionFeeForAccountNumber(_tradeAccountNumber, /* _executionFee = */ 0); // reset it to 0
         }
 
-
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
                                 registry().getUnwrapperByToken(IIsolationModeVaultFactory(VAULT_FACTORY()));
         IERC20(UNDERLYING_TOKEN()).safeApprove(address(unwrapper), _inputAmount);
@@ -284,25 +229,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
-            _minOutputAmount,
-            _isLiquidation
-        );
-    }
-
-    function _requireVirtualBalanceWithPendingMatchesRealBalance() internal view {
-        address vault = address(this);
-        uint256 pendingDeposit = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).getPendingAmountByVault(
-            vault,
-            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
-        );
-        uint256 pendingWithdrawal = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()).getPendingAmountByVault(
-            vault,
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
-        );
-        Require.that(
-            virtualBalance() - pendingDeposit + pendingWithdrawal == IERC20(UNDERLYING_TOKEN()).balanceOf(vault),
-            _FILE,
-            "Virtual vs real balance mismatch"
+            _minOutputAmount
         );
     }
 

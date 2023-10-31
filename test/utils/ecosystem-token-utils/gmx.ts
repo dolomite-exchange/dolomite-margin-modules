@@ -58,7 +58,7 @@ import {
   getGmxV2IsolationModeVaultFactoryConstructorParams,
   getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
   getGmxV2MarketTokenPriceOracleConstructorParams,
-  getGmxV2RegistryConstructorParams,
+  getGmxV2RegistryConstructorParams, GMX_V2_CALLBACK_GAS_LIMIT,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
@@ -294,9 +294,10 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
   safeDelegateCallLibrary: BaseContract,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<TestGmxV2IsolationModeUnwrapperTraderV2> {
+  const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
   const implementation = await createContractWithLibrary<TestGmxV2IsolationModeUnwrapperTraderV2>(
     'TestGmxV2IsolationModeUnwrapperTraderV2',
-    { GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address },
+    { GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address, ...libraries },
     [core.tokens.weth.address],
   );
 
@@ -360,6 +361,7 @@ export function getInitiateWrappingParams(
   executionFee: BigNumberish,
 ): any {
   return {
+    accountNumber,
     amountIn,
     minAmountOut,
     marketPath: [marketId1, marketId2],
@@ -433,7 +435,7 @@ export function getWithdrawalObject(
   secondaryOutputToken: string,
   outputAmount: BigNumber = BigNumber.from('0'),
   secondaryOutputAmount: BigNumber = BigNumber.from('0'),
-  callbackGasLimit: BigNumber = BigNumber.from('1500000'),
+  callbackGasLimit: BigNumber = GMX_V2_CALLBACK_GAS_LIMIT,
 ) {
   const withdrawal = {
     addresses: {
@@ -553,7 +555,7 @@ export function getDepositObject(
   minMarketTokens: BigNumber,
   executionFee: BigNumber,
   receivedMarketToken: BigNumber = BigNumber.from('0'),
-  callbackGasLimit: BigNumber = BigNumber.from('1500000'),
+  callbackGasLimit: BigNumber = GMX_V2_CALLBACK_GAS_LIMIT,
 ) {
   const deposit = {
     addresses: {

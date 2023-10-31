@@ -28,7 +28,6 @@ import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { IAsyncIsolationModeTraderBase } from "../interfaces/IAsyncIsolationModeTraderBase.sol";
-import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
@@ -120,26 +119,13 @@ library GmxV2Library {
         _unwrapper.GMX_REGISTRY_V2().gmxExchangeRouter().cancelWithdrawal(_key);
     }
 
-    function validateAndExecuteInitiateUnwrapping(
+    function executeInitiateUnwrapping(
         IGmxV2IsolationModeVaultFactory _factory,
-        address _vault,
-        uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
-        uint256 _ethExecutionFee,
-        bool _isLiquidation
+        uint256 _ethExecutionFee
     ) public returns (bytes32) {
-        // Disallow the withdrawal if there's already a withdrawal waiting for it or if we're attempting to OVER
-        // withdraw. This can happen due to a pending deposit OR if the user inputs a number that's too large)
-        _validateWithdrawalAmountForUnwrapping(
-            _factory,
-            _vault,
-            _tradeAccountNumber,
-            _inputAmount,
-            _isLiquidation
-        );
-
         IGmxV2Registry registry = _factory.gmxV2Registry();
         IGmxExchangeRouter exchangeRouter = registry.gmxExchangeRouter();
 
@@ -314,51 +300,6 @@ library GmxV2Library {
     // ==================================================================
     // ======================== Private Functions ======================
     // ==================================================================
-
-    function _validateWithdrawalAmountForUnwrapping(
-        IGmxV2IsolationModeVaultFactory _factory,
-        address _vault,
-        uint256 _accountNumber,
-        uint256 _withdrawalAmount,
-        bool _isLiquidation
-    ) private view {
-        uint256 withdrawalPendingAmount = _factory.getPendingAmountByAccount(
-            _vault,
-            _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
-        );
-        uint256 depositPendingAmount = _factory.getPendingAmountByAccount(
-            _vault,
-            _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
-        );
-
-        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
-            owner: _vault,
-            number: _accountNumber
-        });
-        uint256 balance = _factory.DOLOMITE_MARGIN().getAccountWei(accountInfo, _factory.marketId()).value;
-
-        if (!_isLiquidation) {
-            // The requested withdrawal cannot be for more than the user's balance, minus any pending.
-            Require.that(
-                balance - (withdrawalPendingAmount + depositPendingAmount) >= _withdrawalAmount,
-                _FILE,
-                "Withdrawal too large",
-                _vault,
-                _accountNumber
-            );
-        } else {
-            // The requested withdrawal must be for the entirety of the user's balance
-            Require.that(
-                balance - (withdrawalPendingAmount + depositPendingAmount) == _withdrawalAmount,
-                _FILE,
-                "Liquidation must be full balance",
-                _vault,
-                _accountNumber
-            );
-        }
-    }
 
     function _getGmxMarketPrices(
         uint256 _indexTokenPrice,

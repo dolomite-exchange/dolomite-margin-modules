@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { IHandlerRegistry } from "./IHandlerRegistry.sol";
 import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-
 
 /**
  * @title   IFreezableIsolationModeVaultFactory
@@ -47,6 +47,7 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ==========================================================
 
     event ExecutionFeeSet(uint256 _executionFee);
+    event HandlerRegistrySet(address _handlerRegistry);
     event VaultAccountFrozen(
         address indexed vault,
         uint256 indexed accountNumber,
@@ -63,6 +64,12 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
      *                          gas fees to be liquidated. The gas fees are refunded when a position is closed.
      */
     function ownerSetExecutionFee(uint256 _executionFee) external;
+
+    /**
+     *
+     * @param  _handlerRegistry The new address of the handler registry contract
+     */
+    function ownerSetHandlerRegistry(address _handlerRegistry) external;
 
     /**
      * @dev Sets whether or not the vault should use the GmxV2IsolationModeWrapperTraderV2 as the ERC20 transfer
@@ -162,6 +169,12 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
         address _vault,
         FreezeType _freezeType
     ) external view returns (uint256);
+
+    /**
+     *
+     * @return The address of the handler registry contract
+     */
+    function handlerRegistry() external view returns (IHandlerRegistry);
 
     /**
      * @dev     The amount of gas (in ETH) that should be sent with a position so the user can pay the gas fees to be

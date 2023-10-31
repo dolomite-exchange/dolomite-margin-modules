@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { IHandlerRegistry } from "./IHandlerRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "./IIsolationModeTokenVaultV1.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
-
 
 /**
  * @title   IIsolationModeTokenVaultV1WithFreezable
@@ -58,7 +58,7 @@ interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 
     // ===========================================================
 
     /**
-     * @dev Throws if the VaultAccount is frozen, if the inputAmount is now the user's whole balance, or if the
+     * @dev Throws if the inputAmount is too large the user's whole balance, or if the
      *      outputToken is invalid.
      */
     function initiateUnwrappingForLiquidation(
@@ -105,6 +105,12 @@ interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 
 
     /**
      *
+     * @return The registry contract for this token vault
+     */
+    function handlerRegistry() external view returns (IHandlerRegistry);
+
+    /**
+     *
      * @param  _accountNumber   The sub account whose gas/execution fees should be retrieved
      * @return  The execution fee that's saved for the given account number
      */
@@ -126,12 +132,6 @@ interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 
      * @return The balance of the assets in this vault assuming no pending withdrawals (but includes pending deposits).
      */
     function virtualBalance() external view returns (uint256);
-
-    /**
-     * @return  Same as `virtualBalance` but subtracts withdrawals to give a more accurate representation of optimistic
-     *          balance assuming all pending changes are executed.
-     */
-    function virtualBalanceWithoutPendingWithdrawals() external view returns (uint256);
 
     function WETH() external view returns (IWETH);
 }

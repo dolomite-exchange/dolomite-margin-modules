@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
@@ -28,6 +30,8 @@ import { IWETH } from "../../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
+import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
+import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
@@ -44,6 +48,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     IsolationModeTokenVaultV1
 {
     using Address for address payable;
+    using SafeERC20 for IERC20;
 
     // ===================================================
     // ==================== Constants ====================
@@ -185,6 +190,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         onlyVaultOwner(msg.sender)
         requireNotFrozen
     {
+        _beforeInitiateUnwrapping(
+            _tradeAccountNumber,
+            _inputAmount,
+            /* _isLiquidation = */ false
+        );
         _initiateUnwrapping(
             _tradeAccountNumber,
             _inputAmount,
@@ -205,6 +215,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         nonReentrant
         onlyLiquidator(msg.sender)
     {
+        _beforeInitiateUnwrapping(
+            _tradeAccountNumber,
+            _inputAmount,
+            /* _isLiquidation = */ true
+        );
         _initiateUnwrapping(
             _tradeAccountNumber,
             _inputAmount,
@@ -214,12 +229,69 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         );
     }
 
+    function executeDepositIntoVault(
+        address _from,
+        uint256 _amount
+    )
+        public
+        override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
+        onlyVaultFactory(msg.sender)
+    {
+        _setVirtualBalance(virtualBalance() + _amount);
+
+        if (!shouldSkipTransfer()) {
+            if (!isDepositSourceWrapper()) {
+                IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
+            } else {
+                IERC20(UNDERLYING_TOKEN()).safeTransferFrom(
+                    address(handlerRegistry().getWrapperByToken(IFreezableIsolationModeVaultFactory(VAULT_FACTORY()))),
+                    address(this),
+                    _amount
+                );
+                _setIsVaultDepositSourceWrapper(/* _isDepositSourceWrapper = */ false);
+            }
+        } else {
+            Require.that(
+                isVaultFrozen(),
+                _FILE,
+                "Vault should be frozen"
+            );
+            _setShouldVaultSkipTransfer(/* _shouldSkipTransfer = */ false);
+        }
+    }
+
+    function executeWithdrawalFromVault(
+        address _recipient,
+        uint256 _amount
+    )
+        public
+        override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
+        onlyVaultFactory(msg.sender)
+    {
+        _setVirtualBalance(virtualBalance() - _amount);
+
+        if (!shouldSkipTransfer()) {
+            IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
+        } else {
+            Require.that(
+                isVaultFrozen(),
+                _FILE,
+                "Vault should be frozen"
+            );
+            _setShouldVaultSkipTransfer(false);
+        }
+    }
+
     function isDepositSourceWrapper() public view returns (bool) {
         return _getUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT) == 1;
     }
 
     function shouldSkipTransfer() public view returns (bool) {
         return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
+    }
+
+    function handlerRegistry() public view returns (IHandlerRegistry) {
+        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).handlerRegistry();
     }
 
     function getExecutionFeeForAccountNumber(uint256 _accountNumber) public view returns (uint256) {
@@ -236,14 +308,6 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
 
     function virtualBalance() public view returns (uint256) {
         return _getUint256(_VIRTUAL_BALANCE_SLOT);
-    }
-
-    function virtualBalanceWithoutPendingWithdrawals() public view returns (uint256) {
-        uint256 pendingWithdrawals = IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).getPendingAmountByVault(
-            /* _vault = */ address(this),
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
-        );
-        return virtualBalance() - pendingWithdrawals;
     }
 
     // ==================================================================
@@ -535,6 +599,78 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             _setExecutionFeeForAccountNumber(_borrowAccountNumber, /* _executionFee = */ 0);
             // @audit: check for any reentrancy issues! No user-level functions on the vault should be reentered
             payable(OWNER()).sendValue(executionFee);
+        }
+    }
+
+    function _beforeInitiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        bool _isLiquidation
+    ) private view {
+        // Disallow the withdrawal if we're attempting to OVER withdraw. This can happen due to a pending deposit OR if
+        // the user inputs a number that's too large
+        _validateWithdrawalAmountForUnwrapping(
+            _tradeAccountNumber,
+            _inputAmount,
+            _isLiquidation
+        );
+    }
+
+    function _validateWithdrawalAmountForUnwrapping(
+        uint256 _accountNumber,
+        uint256 _withdrawalAmount,
+        bool _isLiquidation
+    ) private view {
+        Require.that(
+            _withdrawalAmount > 0,
+            _FILE,
+            "Invalid withdrawal amount"
+        );
+
+        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(VAULT_FACTORY());
+        address vault = address(this);
+        uint256 withdrawalPendingAmount = factory.getPendingAmountByAccount(
+            vault,
+            _accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
+        );
+        uint256 depositPendingAmount = factory.getPendingAmountByAccount(
+            vault,
+            _accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
+        );
+
+        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
+            owner: vault,
+            number: _accountNumber
+        });
+        uint256 balance = factory.DOLOMITE_MARGIN().getAccountWei(accountInfo, factory.marketId()).value;
+
+        if (!_isLiquidation) {
+            // The requested withdrawal cannot be for more than the user's balance, minus any pending.
+            Require.that(
+                balance - (withdrawalPendingAmount + depositPendingAmount) >= _withdrawalAmount,
+                _FILE,
+                "Withdrawal too large",
+                vault,
+                _accountNumber
+            );
+        } else {
+            // The requested withdrawal must be for the entirety of the user's balance
+            Require.that(
+                balance - (withdrawalPendingAmount + depositPendingAmount) > 0,
+                _FILE,
+                "Account is frozen",
+                vault,
+                _accountNumber
+            );
+            Require.that(
+                balance - (withdrawalPendingAmount + depositPendingAmount) == _withdrawalAmount,
+                _FILE,
+                "Liquidation must be full balance",
+                vault,
+                _accountNumber
+            );
         }
     }
 

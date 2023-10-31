@@ -1,8 +1,11 @@
 import { BigNumberish } from 'ethers';
 import {
   CustomTestToken,
-  TestFreezableIsolationModeFactory,
-  TestFreezableIsolationModeFactory__factory,
+  HandlerRegistry,
+  TestFreezableIsolationModeVaultFactory,
+  TestFreezableIsolationModeVaultFactory__factory,
+  TestHandlerRegistry,
+  TestHandlerRegistry__factory,
   TestIsolationModeFactory,
   TestIsolationModeFactory__factory,
   TestIsolationModeTokenVaultV1,
@@ -12,6 +15,7 @@ import {
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
 } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { createRegistryProxy } from '../dolomite';
 import { CoreProtocol } from '../setup';
 
 type TestIsolationModeTokenVault =
@@ -41,17 +45,32 @@ type FreezableVault =
   TestIsolationModeTokenVaultV1WithFreezable
   | TestIsolationModeTokenVaultV1WithFreezableAndPausable;
 
-export async function createTestFreezableIsolationModeFactory(
+export async function createTestHandlerRegistry(
+  core: CoreProtocol,
+): Promise<TestHandlerRegistry> {
+  const implementation = await createContractWithAbi<TestHandlerRegistry>(
+    TestHandlerRegistry__factory.abi,
+    TestHandlerRegistry__factory.bytecode,
+    [],
+  );
+  const data = await implementation.populateTransaction.initialize(core.dolomiteRegistryProxy.address);
+  const proxy = await createRegistryProxy(implementation.address, data.data!, core);
+  return TestHandlerRegistry__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createTestFreezableIsolationModeVaultFactory(
   executionFee: BigNumberish,
+  registry: TestHandlerRegistry,
   core: CoreProtocol,
   underlyingToken: CustomTestToken,
   userVaultImplementation: FreezableVault,
-): Promise<TestFreezableIsolationModeFactory> {
-  return await createContractWithAbi<TestFreezableIsolationModeFactory>(
-    TestFreezableIsolationModeFactory__factory.abi,
-    TestFreezableIsolationModeFactory__factory.bytecode,
+): Promise<TestFreezableIsolationModeVaultFactory> {
+  return await createContractWithAbi<TestFreezableIsolationModeVaultFactory>(
+    TestFreezableIsolationModeVaultFactory__factory.abi,
+    TestFreezableIsolationModeVaultFactory__factory.bytecode,
     [
       executionFee,
+      registry.address,
       core.dolomiteRegistry.address,
       underlyingToken.address,
       core.borrowPositionProxyV2.address,

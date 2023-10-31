@@ -94,13 +94,6 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
 
         address outputToken = DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarketId);
         IIsolationModeTokenVaultV1WithFreezable vault = IIsolationModeTokenVaultV1WithFreezable(_liquidAccount.owner);
-        Require.that(
-            !vault.isVaultAccountFrozen(_liquidAccount.number),
-            _FILE,
-            "Account is frozen",
-            _liquidAccount.owner,
-            _liquidAccount.number
-        );
         vault.initiateUnwrappingForLiquidation{value: msg.value}(
             _liquidAccount.number,
             _inputTokenAmount,

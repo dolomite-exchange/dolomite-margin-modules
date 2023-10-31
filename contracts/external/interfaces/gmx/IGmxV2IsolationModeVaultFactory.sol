@@ -43,17 +43,9 @@ interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory
         address longToken;
     }
 
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event GmxV2RegistrySet(address _gmxV2Registry);
-
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
-
-    function ownerSetGmxV2Registry(address _gmxV2Registry) external;
 
     function INDEX_TOKEN() external view returns (address);
 

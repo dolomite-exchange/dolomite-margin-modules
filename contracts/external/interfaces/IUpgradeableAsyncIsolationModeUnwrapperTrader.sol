@@ -81,8 +81,7 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount,
-        bool _isLiquidation
+        uint256 _minOutputAmount
     ) external payable;
 
     /**

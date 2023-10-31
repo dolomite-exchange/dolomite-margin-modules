@@ -31,10 +31,11 @@ import { FreezableIsolationModeVaultFactory } from "../external/proxies/abstract
  *
  * @notice  This contract is used to test the FreezableIsolationModeVaultFactory contract.
  */
-contract TestFreezableIsolationModeFactory is TestIsolationModeFactory, FreezableIsolationModeVaultFactory {
+contract TestFreezableIsolationModeVaultFactory is TestIsolationModeFactory, FreezableIsolationModeVaultFactory {
 
     constructor(
         uint256 _executionFee,
+        address _handlerRegistry,
         address _dolomiteRegistry,
         address _underlyingToken,
         address _borrowPositionProxy,
@@ -49,7 +50,8 @@ contract TestFreezableIsolationModeFactory is TestIsolationModeFactory, Freezabl
         _dolomiteMargin
     )
     FreezableIsolationModeVaultFactory(
-        _executionFee
+        _executionFee,
+        _handlerRegistry
     )
     { /* solhint-disable-line no-empty-blocks */ }
 

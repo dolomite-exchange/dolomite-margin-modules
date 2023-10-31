@@ -56,10 +56,6 @@ contract GmxV2IsolationModeVaultFactory is
     uint256 public immutable SHORT_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
     uint256 public immutable LONG_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
-    // ============ Field Variables ============
-
-    IGmxV2Registry public override gmxV2Registry;
-
     // ============ Constructor ============
 
     constructor(
@@ -81,10 +77,10 @@ contract GmxV2IsolationModeVaultFactory is
         _dolomiteMargin
     )
     FreezableIsolationModeVaultFactory(
-        _executionFee
+        _executionFee,
+        _gmxV2Registry
     )
     {
-        _ownerSetGmxV2Registry(_gmxV2Registry);
         INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
         INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
         SHORT_TOKEN = _tokenAndMarketAddresses.shortToken;
@@ -104,29 +100,13 @@ contract GmxV2IsolationModeVaultFactory is
         );
     }
 
-    // ================================================
-    // ============ External Functions ============
-    // ================================================
-
-    function ownerSetGmxV2Registry(
-        address _gmxV2Registry
-    )
-    external
-    override
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetGmxV2Registry(_gmxV2Registry);
+    function gmxV2Registry() external view returns (IGmxV2Registry) {
+        return IGmxV2Registry(address(handlerRegistry));
     }
 
     // ====================================================
     // ================ Internal Functions ================
     // ====================================================
-
-    function _ownerSetGmxV2Registry(
-        address _gmxV2Registry
-    ) internal {
-        gmxV2Registry = IGmxV2Registry(_gmxV2Registry);
-        emit GmxV2RegistrySet(_gmxV2Registry);
-    }
 
     function _afterInitialize() internal override {
         _allowableCollateralMarketIds.push(marketId);

@@ -376,8 +376,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
             );
         }
 
-        uint256 underlyingVirtualBalance = IIsolationModeTokenVaultV1WithFreezable(vault)
-                .virtualBalanceWithoutPendingWithdrawals();
+        uint256 underlyingVirtualBalance = IIsolationModeTokenVaultV1WithFreezable(vault).virtualBalance();
         Require.that(
             underlyingVirtualBalance >= transferAmount,
             _FILE,

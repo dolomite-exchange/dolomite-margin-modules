@@ -25,6 +25,7 @@ import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 
@@ -59,13 +60,15 @@ abstract contract FreezableIsolationModeVaultFactory is
     mapping(address => mapping(FreezeType => uint256)) private _vaultToPendingAmountWeiMap;
 
     uint256 public override executionFee;
+    IHandlerRegistry public override handlerRegistry;
 
     // ===========================================================
     // ======================= Constructors ======================
     // ===========================================================
 
-    constructor(uint256 _executionFee) {
+    constructor(uint256 _executionFee, address _handlerRegistry) {
         _ownerSetExecutionFee(_executionFee);
+        _ownerSetHandlerRegistry(_handlerRegistry);
     }
 
     // ===========================================================
@@ -82,6 +85,16 @@ abstract contract FreezableIsolationModeVaultFactory is
         _ownerSetExecutionFee(_executionFee);
     }
 
+    function ownerSetHandlerRegistry(
+        address _handlerRegistry
+    )
+        external
+        override
+        onlyDolomiteMarginOwner(msg.sender)
+    {
+        _ownerSetHandlerRegistry(_handlerRegistry);
+    }
+
     function setIsVaultDepositSourceWrapper(
         address _vault,
         bool _isDepositSourceWrapper
@@ -89,7 +102,7 @@ abstract contract FreezableIsolationModeVaultFactory is
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IIsolationModeTokenVaultV1WithFreezable(_vault).setIsVaultDepositSourceWrapper(_isDepositSourceWrapper);
+        _setIsVaultDepositSourceWrapper(_vault, _isDepositSourceWrapper);
     }
 
     function setShouldVaultSkipTransfer(
@@ -185,14 +198,19 @@ abstract contract FreezableIsolationModeVaultFactory is
         emit ExecutionFeeSet(_executionFee);
     }
 
+    function _ownerSetHandlerRegistry(
+        address _handlerRegistry
+    ) internal {
+        handlerRegistry = IHandlerRegistry(_handlerRegistry);
+        emit HandlerRegistrySet(_handlerRegistry);
+    }
+
     function _depositIntoDolomiteMarginFromTokenConverter(
         address _vault,
         uint256 _vaultAccountNumber,
         uint256 _amountWei
     ) internal virtual {
-        IIsolationModeTokenVaultV1WithFreezable(_vault).setIsVaultDepositSourceWrapper(
-            /* _isDepositSourceWrapper = */ true
-        );
+        _setIsVaultDepositSourceWrapper(_vault, /* _isDepositSourceWrapper = */ true);
         _enqueueTransfer(
             _vault,
             address(DOLOMITE_MARGIN()),
@@ -212,5 +230,12 @@ abstract contract FreezableIsolationModeVaultFactory is
                 value: _amountWei
             })
         );
+    }
+
+    function _setIsVaultDepositSourceWrapper(
+        address _vault,
+        bool _isDepositSourceWrapper
+    ) internal {
+        IIsolationModeTokenVaultV1WithFreezable(_vault).setIsVaultDepositSourceWrapper(_isDepositSourceWrapper);
     }
 }

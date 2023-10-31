@@ -37,6 +37,24 @@ contract TestGmxV2IsolationModeUnwrapperTraderV2 is GmxV2IsolationModeUnwrapperT
         // solhint-disable-previous-line no-empty-blocks
     }
 
+    function vaultCreateWithdrawalInfo(
+        bytes32 _key,
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    ) external {
+        _vaultCreateWithdrawalInfo(
+            _key,
+            _vault,
+            _accountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount
+        );
+    }
+
     function callFunctionAndTriggerReentrancy(
         bytes calldata _callDataWithSelector
     ) external payable nonReentrant {

@@ -32,6 +32,7 @@ import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IU
 import { InterestIndexLib } from "../../lib/InterestIndexLib.sol";
 import { AsyncIsolationModeWrapperTraderImpl } from "./impl/AsyncIsolationModeWrapperTraderImpl.sol";
 
+
 /**
  * @title   UpgradeableAsyncIsolationModeWrapperTrader
  * @author  Dolomite
@@ -310,8 +311,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
                 depositInfo.vault,
                 depositInfo.accountNumber,
                 diff
-            )
-            {
+            ) {
                 _clearDepositAndUpdatePendingAmount(depositInfo);
                 _eventEmitter().emitAsyncDepositExecuted(_key, address(factory));
             } catch Error(string memory _reason) {
@@ -365,7 +365,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             value: DOLOMITE_MARGIN().getMarketTotalPar(marketId).supply
         });
 
-        if (DOLOMITE_MARGIN().parToWei(marketId, supplyPar).value + _depositAmountWei >= maxWei && maxWei != 0) {
+        if (maxWei != 0 && DOLOMITE_MARGIN().parToWei(marketId, supplyPar).value + _depositAmountWei >= maxWei) {
             // If the supplyPar is gte than the maxWei, then we should to transfer the deposit to the vault owner. It's
             // better to do this than to revert, since the user will be able to maintain control over the assets.
             IERC20 underlyingToken = IERC20(_factory.UNDERLYING_TOKEN());
@@ -424,9 +424,9 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             _accountNumber,
             IFreezableIsolationModeVaultFactory.FreezeType.Deposit,
             /* _amountDeltaWei = */ IDolomiteStructs.Wei({
-            sign: _isPositive,
-            value: _amountDeltaWei
-        })
+                sign: _isPositive,
+                value: _amountDeltaWei
+            })
         );
     }
 
