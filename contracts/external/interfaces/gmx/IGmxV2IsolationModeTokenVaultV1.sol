@@ -20,7 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length 
+import { IGmxV2Registry } from "./IGmxV2Registry.sol";
+import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -30,21 +31,9 @@ import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../IIsolatio
  */
 interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezableAndPausable {
 
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-    
-    event IsDepositSourceWrapperSet(bool _isDepositSourceWrapper);
+    function cancelDeposit(bytes32 _key) external;
 
-    event ShouldSkipTransferSet(bool _shouldSkipTransfer);
+    function cancelWithdrawal(bytes32 _key) external;
 
-    // ===================================================
-    // ==================== Functions ====================
-    // ===================================================
-
-    function setIsDepositSourceWrapper(bool _isDepositSourceWrapper) external;
-
-    function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
-
-    function virtualBalance() external view returns (uint256);
+    function registry() external view returns (IGmxV2Registry);
 }

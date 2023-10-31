@@ -22,7 +22,9 @@ pragma solidity ^0.8.9;
 
 import { TestSimpleIsolationModeVaultFactory } from "./TestSimpleIsolationModeVaultFactory.sol";
 import { IDolomiteRegistry } from "../external/interfaces/IDolomiteRegistry.sol";
+import { IFreezableIsolationModeVaultFactory } from "../external/interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../external/proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
@@ -33,7 +35,30 @@ import { IsolationModeTokenVaultV1WithFreezable } from "../external/proxies/abst
  */
 contract TestIsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1WithFreezable {
 
+    // solhint-disable-next-line no-empty-blocks
+    constructor(address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {}
+
     function dolomiteRegistry() public override view returns (IDolomiteRegistry) {
         return TestSimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
+    }
+
+    function _initiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address /* _outputToken */,
+        uint256 /* _minOutputAmount */,
+        bool _isLiquidation
+    ) internal override {
+        if (_isLiquidation) {
+            IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setVaultAccountPendingAmountForFrozenStatus(
+            /* _vault = */ address(this),
+                _tradeAccountNumber,
+                IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
+                /* _amountDeltaWei = */ IDolomiteStructs.Wei({
+                    sign: true,
+                    value: _inputAmount
+                })
+            );
+        }
     }
 }

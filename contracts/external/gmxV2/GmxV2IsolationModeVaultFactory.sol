@@ -20,16 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-import { IGmxRegistryV2 } from "../interfaces/gmx/IGmxRegistryV2.sol";
-import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
+import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeVaultFactory.sol";
+import { FreezableIsolationModeVaultFactory } from "../proxies/abstract/FreezableIsolationModeVaultFactory.sol";
 
 
 /**
@@ -41,30 +37,31 @@ import { SimpleIsolationModeVaultFactory } from "../proxies/SimpleIsolationModeV
  */
 contract GmxV2IsolationModeVaultFactory is
     IGmxV2IsolationModeVaultFactory,
+    FreezableIsolationModeVaultFactory,
     SimpleIsolationModeVaultFactory
 {
-    using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.UintSet;
+    using GmxV2Library for GmxV2IsolationModeVaultFactory;
 
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GmxV2IsolationModeVaultFactory"; // needed to be shortened to fit into 32 bytes
 
-    // ============ Field Variables ============
+    // ============ Immutable Variables ============
 
-    IGmxRegistryV2 public override gmxRegistryV2;
-    address public immutable marketToken;
-    address public immutable indexToken;
-    uint256 public immutable indexTokenMarketId;
-    address public immutable shortToken;
-    uint256 public immutable shortTokenMarketId;
-    address public immutable longToken;
-    uint256 public immutable longTokenMarketId;
+    address public immutable override SHORT_TOKEN; // solhint-disable-line var-name-mixedcase
+    address public immutable override LONG_TOKEN; // solhint-disable-line var-name-mixedcase
+    address public immutable override INDEX_TOKEN; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable INDEX_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable SHORT_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable LONG_TOKEN_MARKET_ID; // solhint-disable-line var-name-mixedcase
 
     // ============ Constructor ============
 
     constructor(
-        address _gmxRegistryV2,
-        TokenAndMarketAddresses memory _tokenAndMarketAddresses,
+        address _gmxV2Registry,
+        uint256 _executionFee,
+        MarketInfoConstructorParams memory _tokenAndMarketAddresses,
         uint256[] memory _initialAllowableDebtMarketIds,
         uint256[] memory _initialAllowableCollateralMarketIds,
         address _borrowPositionProxyV2,
@@ -78,200 +75,33 @@ contract GmxV2IsolationModeVaultFactory is
         _borrowPositionProxyV2,
         _userVaultImplementation,
         _dolomiteMargin
-    ) {
-        gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
-        marketToken = _tokenAndMarketAddresses.marketToken;
-        indexToken = _tokenAndMarketAddresses.indexToken;
-        indexTokenMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(indexToken);
-        shortToken = _tokenAndMarketAddresses.shortToken;
-        shortTokenMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(shortToken);
-        longToken = _tokenAndMarketAddresses.longToken;
-        longTokenMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(longToken);
-
-        Require.that(
-            _initialAllowableDebtMarketIds.length == 2,
-            _FILE,
-            "Invalid debt market ids"
-        );
-        Require.that(
-            (_initialAllowableDebtMarketIds[0] == longTokenMarketId 
-                && _initialAllowableDebtMarketIds[1] == shortTokenMarketId) 
-            || (_initialAllowableDebtMarketIds[0] == shortTokenMarketId 
-                && _initialAllowableDebtMarketIds[1] == longTokenMarketId),
-            _FILE,
-            "Invalid debt market ids"
-        );
-
-        Require.that(
-            _initialAllowableCollateralMarketIds.length == 2,
-            _FILE,
-            "Invalid collateral market ids"
-        );
-        Require.that(
-            (_initialAllowableCollateralMarketIds[0] == longTokenMarketId 
-                && _initialAllowableCollateralMarketIds[1] == shortTokenMarketId) 
-            || (_initialAllowableCollateralMarketIds[0] == shortTokenMarketId 
-                && _initialAllowableCollateralMarketIds[1] == longTokenMarketId),
-            _FILE,
-            "Invalid collateral market ids"
-        );
-    }
-
-    // ================================================
-    // ============ External Functions ============
-    // ================================================
-
-    function depositIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    ) 
-    external 
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setIsDepositSourceWrapper(true);
-        _enqueueTransfer(
-            _vault,
-            address(DOLOMITE_MARGIN()),
-            _amountWei,
-            _vault
-        );
-        AccountActionLib.deposit(
-            DOLOMITE_MARGIN(),
-            /* _accountOwner = */ _vault,
-            /* _fromAccount = */ _vault,
-            _vaultAccountNumber,
-            marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            })
-        );
-    }
-
-    function depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _otherMarketId,
-        uint256 _amountWei
     )
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        Require.that(
-            _otherMarketId != marketId,
-            _FILE,
-            "Invalid market",
-            _otherMarketId
-        );
-
-        IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](1);
-        accounts[0] = IDolomiteStructs.AccountInfo({
-            owner: _vault,
-            number: _vaultAccountNumber
-        });
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](1);
-
-        address token = DOLOMITE_MARGIN().getMarketTokenAddress(_otherMarketId);
-        IERC20(token).safeTransferFrom(msg.sender, address(this), _amountWei);
-        IERC20(token).safeApprove(address(DOLOMITE_MARGIN()), _amountWei);
-
-        actions[0] = AccountActionLib.encodeDepositAction(
-            /* _accountId = */ 0,
-            _otherMarketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            }),
-            /* _fromAccount = */ address(this)
-        );
-        DOLOMITE_MARGIN().operate(accounts, actions);
-    }
-
-    function withdrawFromDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    ) 
-    external
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        _enqueueTransfer(
-            address(DOLOMITE_MARGIN()),
-            _vault,
-            _amountWei,
-            _vault
-        );
-        AccountActionLib.withdraw(
-            DOLOMITE_MARGIN(),
-            _vault,
-            _vaultAccountNumber,
-            _vault,
-            marketId,
-            IDolomiteStructs.AssetAmount({
-                sign: false,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amountWei
-            }),
-            AccountBalanceLib.BalanceCheckFlag.From
-        );
-    }
-
-    function ownerSetGmxRegistryV2(
-        address _gmxRegistryV2
-    ) 
-    external 
-    override 
-    onlyDolomiteMarginOwner(msg.sender) {
-        gmxRegistryV2 = IGmxRegistryV2(_gmxRegistryV2);
-        emit GmxRegistryV2Set(_gmxRegistryV2);
-    }
-
-    function setIsVaultFrozen(
-        address _vault,
-        bool _isVaultFrozen
+    FreezableIsolationModeVaultFactory(
+        _executionFee,
+        _gmxV2Registry
     )
-    external 
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setIsVaultFrozen(_isVaultFrozen);
+    {
+        INDEX_TOKEN = _tokenAndMarketAddresses.indexToken;
+        INDEX_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(INDEX_TOKEN);
+        SHORT_TOKEN = _tokenAndMarketAddresses.shortToken;
+        SHORT_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(SHORT_TOKEN);
+        LONG_TOKEN = _tokenAndMarketAddresses.longToken;
+        LONG_TOKEN_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(LONG_TOKEN);
+
+        GmxV2Library.validateInitialMarketIds(
+            _initialAllowableDebtMarketIds,
+            LONG_TOKEN_MARKET_ID,
+            SHORT_TOKEN_MARKET_ID
+        );
+        GmxV2Library.validateInitialMarketIds(
+            _initialAllowableCollateralMarketIds,
+            LONG_TOKEN_MARKET_ID,
+            SHORT_TOKEN_MARKET_ID
+        );
     }
 
-    function setIsDepositSourceWrapper(
-        address _vault,
-        bool _isDepositSourceWrapper
-    ) 
-    external 
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setIsDepositSourceWrapper(_isDepositSourceWrapper);
-    }
-
-    function setShouldSkipTransfer(
-        address _vault,
-        bool _shouldSkipTransfer
-    ) 
-    external 
-    requireIsTokenConverter(msg.sender)
-    requireIsVault(_vault) {
-        IGmxV2IsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(_shouldSkipTransfer);
-    }
-
-    function getMarketInfo() external view returns (TokenAndMarketParams memory) {
-        return TokenAndMarketParams({
-            marketToken: UNDERLYING_TOKEN,
-            indexToken: indexToken,
-            indexTokenMarketId: indexTokenMarketId,
-            shortToken: shortToken,
-            shortTokenMarketId: shortTokenMarketId,
-            longToken: longToken,
-            longTokenMarketId: longTokenMarketId
-        });
+    function gmxV2Registry() external view returns (IGmxV2Registry) {
+        return IGmxV2Registry(address(handlerRegistry));
     }
 
     // ====================================================

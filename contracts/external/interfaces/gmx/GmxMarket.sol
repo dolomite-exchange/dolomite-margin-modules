@@ -31,7 +31,7 @@ import { GmxPrice } from "./GmxPrice.sol";
  */
 library GmxMarket {
 
-    struct Props {
+    struct MarketProps {
         address marketToken;
         address indexToken;
         address longToken;
@@ -39,8 +39,8 @@ library GmxMarket {
     }
 
     struct MarketPrices {
-        GmxPrice.Props indexTokenPrice;
-        GmxPrice.Props longTokenPrice;
-        GmxPrice.Props shortTokenPrice;
+        GmxPrice.PriceProps indexTokenPrice;
+        GmxPrice.PriceProps longTokenPrice;
+        GmxPrice.PriceProps shortTokenPrice;
     }
 }

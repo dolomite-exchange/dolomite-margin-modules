@@ -36,9 +36,9 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  * @notice  An abstract implementation of IsolationModeTokenVaultV1 that disallows borrows if the ecosystem integration
  *          is paused.
  */
-abstract contract IsolationModeTokenVaultV1WithPausable is 
+abstract contract IsolationModeTokenVaultV1WithPausable is
     IIsolationModeTokenVaultV1WithPausable,
-    IsolationModeTokenVaultV1 
+    IsolationModeTokenVaultV1
 {
     using TypesLib for IDolomiteMargin.Par;
     using TypesLib for IDolomiteMargin.Wei;
@@ -53,80 +53,42 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
     // ==================== Modifiers ====================
     // ===================================================
 
-    modifier requireNotPaused() {
-        Require.that(
-            !isExternalRedemptionPaused(),
-            _FILE,
-            "Cannot execute when paused"
-        );
-        _;
-    }
-
-    // ===================================================
-    // ==================== Functions ====================
-    // ===================================================
-
-    /**
-     * @return  true if redemptions (conversion) from this isolated token to its underlying are paused or are in a
-     *          distressed state. Resolving this function to true actives the Pause Sentinel, which prevents further
-     *          contamination of this market across Dolomite.
-     */
-    function isExternalRedemptionPaused() public virtual view returns (bool);
-
-    /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
-    function _openBorrowPosition(
+    modifier _openBorrowPositionPausableValidator(
         uint256 _fromAccountNumber,
         uint256 _toAccountNumber,
         uint256 _amountWei
-    )
-        internal
-        virtual
-        override
-        requireNotPaused
-    {
-        super._openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
+    ) {
+        _requireExternalRedemptionNotPaused();
+        _;
     }
 
-    /// @dev   Cannot reduce collateralization of a position when underlying is paused
-    function _closeBorrowPositionWithOtherTokens(
+    modifier _closeBorrowPositionWithOtherTokensPausableValidator(
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber,
         uint256[] calldata _collateralMarketIds
-    )
-        internal
-        override
-    {
-        super._closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
+    ) {
+        _;
         if (isExternalRedemptionPaused()) {
             _requireNumberOfMarketsWithDebtIsZero(_borrowAccountNumber);
         }
     }
 
-    /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
-    function _transferIntoPositionWithUnderlyingToken(
+    modifier _transferIntoPositionWithUnderlyingTokenPausableValidator(
         uint256 _fromAccountNumber,
         uint256 _borrowAccountNumber,
         uint256 _amountWei
-    )
-        internal
-        override
-        requireNotPaused
-    {
-        super._transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
+    ) {
+        _requireExternalRedemptionNotPaused();
+        _;
     }
 
-    /// @dev   Cannot reduce collateralization by withdrawing other tokens, when underlying is paused
-    function _transferFromPositionWithOtherToken(
+    modifier _transferFromPositionWithOtherTokenPausableValidator(
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
-    )
-        internal
-        virtual
-        override
-    {
+    ) {
         IDolomiteMargin.Par memory valueBefore = DOLOMITE_MARGIN().getAccountPar(
             IDolomiteStructs.AccountInfo({
                 owner: address(this),
@@ -135,13 +97,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             _marketId
         );
 
-        super._transferFromPositionWithOtherToken(
-            _borrowAccountNumber,
-            _toAccountNumber,
-            _marketId,
-            _amountWei,
-            _balanceCheckFlag
-        );
+        _;
 
         if (isExternalRedemptionPaused()) {
             Require.that(
@@ -157,26 +113,18 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         }
     }
 
-    function _swapExactInputForOutput(
+    modifier _swapExactInputForOutputPausableValidator(
         uint256 _tradeAccountNumber,
         uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
-    )
-        internal
-        virtual
-        override
-    {
+        uint256 _inputAmountWei
+    ) {
         bool isPaused = isExternalRedemptionPaused();
 
+        IDolomiteMargin.Wei memory outputBalanceBefore;
         IDolomiteStructs.AccountInfo memory tradeAccount = IDolomiteStructs.AccountInfo({
             owner: address(this),
             number: _tradeAccountNumber
         });
-        IDolomiteMargin.Wei memory outputBalanceBefore;
         if (isPaused) {
             uint256 outputMarket = _marketIdsPath[_marketIdsPath.length - 1];
             // If the ecosystem is paused, we cannot swap into more of the irredeemable asset
@@ -194,15 +142,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             );
         }
 
-        super._swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
-        );
+        _;
 
         if (isPaused) {
             IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
@@ -237,10 +177,152 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
     }
 
     // ===================================================
+    // ==================== Functions ====================
+    // ===================================================
+
+    /**
+     * @return  true if redemptions (conversion) from this isolated token to its underlying are paused or are in a
+     *          distressed state. Resolving this function to true actives the Pause Sentinel, which prevents further
+     *          contamination of this market across Dolomite.
+     */
+    function isExternalRedemptionPaused() public virtual view returns (bool);
+
+    /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
+    function _openBorrowPosition(
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _amountWei
+    )
+        internal
+        virtual
+        override
+        _openBorrowPositionPausableValidator(
+            _fromAccountNumber,
+            _toAccountNumber,
+            _amountWei
+        )
+    {
+        super._openBorrowPosition(
+            _fromAccountNumber,
+            _toAccountNumber,
+            _amountWei
+        );
+    }
+
+    /// @dev   Cannot reduce collateralization of a position when underlying is paused
+    function _closeBorrowPositionWithOtherTokens(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256[] calldata _collateralMarketIds
+    )
+        internal
+        virtual
+        override
+        _closeBorrowPositionWithOtherTokensPausableValidator(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _collateralMarketIds
+        )
+    {
+        super._closeBorrowPositionWithOtherTokens(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _collateralMarketIds
+        );
+    }
+
+    /// @dev   Cannot further collateralize a position with underlying, when underlying is paused
+    function _transferIntoPositionWithUnderlyingToken(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256 _amountWei
+    )
+        internal
+        virtual
+        override
+        _transferIntoPositionWithUnderlyingTokenPausableValidator(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _amountWei
+        )
+    {
+        super._transferIntoPositionWithUnderlyingToken(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _amountWei
+        );
+    }
+
+    /// @dev   Cannot reduce collateralization by withdrawing other tokens, when underlying is paused
+    function _transferFromPositionWithOtherToken(
+        uint256 _borrowAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _marketId,
+        uint256 _amountWei,
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+    )
+        internal
+        virtual
+        override
+        _transferFromPositionWithOtherTokenPausableValidator(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _marketId,
+            _amountWei,
+            _balanceCheckFlag
+        )
+    {
+        super._transferFromPositionWithOtherToken(
+            _borrowAccountNumber,
+            _toAccountNumber,
+            _marketId,
+            _amountWei,
+            _balanceCheckFlag
+        );
+    }
+
+    function _swapExactInputForOutput(
+        uint256 _tradeAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    )
+        internal
+        virtual
+        override
+        _swapExactInputForOutputPausableValidator(
+            _tradeAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei
+        )
+    {
+        IsolationModeTokenVaultV1._swapExactInputForOutput(
+            _tradeAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+    }
+
+    // ===================================================
     // =============== Private Functions =================
     // ===================================================
 
-    function _requireNumberOfMarketsWithDebtIsZero(uint256 _borrowAccountNumber) internal view {
+    function _requireExternalRedemptionNotPaused() private view {
+        Require.that(
+            !isExternalRedemptionPaused(),
+            _FILE,
+            "Cannot execute when paused"
+        );
+    }
+
+    function _requireNumberOfMarketsWithDebtIsZero(uint256 _borrowAccountNumber) private view {
         uint256 numberOfMarketsWithDebt = DOLOMITE_MARGIN().getAccountNumberOfMarketsWithDebt(
             IDolomiteStructs.AccountInfo({
                 owner: address(this),

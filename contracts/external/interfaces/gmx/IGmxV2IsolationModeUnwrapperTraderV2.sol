@@ -20,37 +20,19 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
-import { IUpgradeableIsolationModeUnwrapperTrader } from "../IUpgradeableIsolationModeUnwrapperTrader.sol";
-
+import { IGmxV2Registry } from "./IGmxV2Registry.sol";
+import { IGmxWithdrawalCallbackReceiver } from "./IGmxWithdrawalCallbackReceiver.sol";
+import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 
 /**
  * @title   IGmxV2IsolationModeUnwrapperTraderV2
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeUnwrapperTraderV2 is 
-    IGmxV2IsolationModeTraderBase,
-    IUpgradeableIsolationModeUnwrapperTrader 
+interface IGmxV2IsolationModeUnwrapperTraderV2 is
+    IUpgradeableAsyncIsolationModeUnwrapperTrader,
+    IGmxWithdrawalCallbackReceiver
 {
 
-    struct WithdrawalInfo {
-        address vault;
-        uint256 accountNumber;
-        address outputToken;
-    }
-
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event WithdrawalCreated(bytes32 indexed key);
-    event WithdrawalExecuted(bytes32 indexed key);
-    event WithdrawalCancelled(bytes32 indexed key);
-
-    // ===================================================
-    // ==================== Functions ====================
-    // ===================================================
-
-    function vaultSetWithdrawalInfo(bytes32 _key, uint256 _accountNumber, address _outputToken) external;
+    function GMX_REGISTRY_V2() external view returns (IGmxV2Registry);
 }

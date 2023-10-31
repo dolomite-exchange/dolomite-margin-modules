@@ -494,12 +494,15 @@ export async function setupUSDCBalance(
 
 export async function setupGMBalance(
   core: CoreProtocol,
-  signer: address,
+  signer: SignerWithAddress,
   amount: BigNumberish,
-  spender: { address: string },
+  spender?: { address: string },
 ) {
   const controller = await impersonate(core.gmxEcosystemV2!.gmxExchangeRouter.address, true);
-  await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(controller).mint(signer, amount);
+  await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(controller).mint(signer.address, amount);
+  if (spender) {
+    await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(signer).approve(spender.address, amount);
+  }
 }
 
 export async function setupGMXBalance(
@@ -530,6 +533,13 @@ export function getDefaultCoreProtocolConfig(network: Network): CoreProtocolConf
   return {
     network,
     blockNumber: NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[network],
+  };
+}
+
+export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig {
+  return {
+    network: Network.ArbitrumOne,
+    blockNumber: 131_050_900,
   };
 }
 

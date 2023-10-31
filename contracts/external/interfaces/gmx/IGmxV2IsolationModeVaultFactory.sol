@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxRegistryV2 } from "./IGmxRegistryV2.sol";
-import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
+import { IGmxV2Registry } from "./IGmxV2Registry.sol";
+import { IFreezableIsolationModeVaultFactory } from "../IFreezableIsolationModeVaultFactory.sol";
 
 
 /**
@@ -30,80 +30,34 @@ import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
  *
  * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for GM tokens.
  */
-interface IGmxV2IsolationModeVaultFactory is IIsolationModeVaultFactory {
+interface IGmxV2IsolationModeVaultFactory is IFreezableIsolationModeVaultFactory {
 
-    struct TokenAndMarketAddresses {
+    // ================================================
+    // ==================== Structs ===================
+    // ================================================
+
+    struct MarketInfoConstructorParams {
         address marketToken;
         address indexToken;
         address shortToken;
         address longToken;
     }
-
-    struct TokenAndMarketParams {
-        address marketToken;
-        address indexToken;
-        uint256 indexTokenMarketId;
-        address shortToken;
-        uint256 shortTokenMarketId;
-        address longToken;
-        uint256 longTokenMarketId;
-    }
-
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event GmxRegistryV2Set(address _gmxRegistryV2);
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
-    function depositIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    ) 
-    external;
+    function INDEX_TOKEN() external view returns (address);
 
-    function depositOtherTokenIntoDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _otherMarketId,
-        uint256 _amountWei
-    )
-    external;
+    function SHORT_TOKEN() external view returns (address);
 
-    function withdrawFromDolomiteMarginFromTokenConverter(
-        address _vault,
-        uint256 _vaultAccountNumber,
-        uint256 _amountWei
-    ) external;
+    function LONG_TOKEN() external view returns (address);
 
-    function ownerSetGmxRegistryV2(address _gmxRegistryV2) external;
+    function INDEX_TOKEN_MARKET_ID() external view returns (uint256);
 
-    function setIsVaultFrozen(address _vault, bool _isVaultFrozen) external;
+    function SHORT_TOKEN_MARKET_ID() external view returns (uint256);
 
-    function setIsDepositSourceWrapper(address _vault, bool _isDepositSourceWrapper) external;
+    function LONG_TOKEN_MARKET_ID() external view returns (uint256);
 
-    function setShouldSkipTransfer(address _vault, bool _shouldSkipTransfer) external;
-
-    function gmxRegistryV2() external view returns (IGmxRegistryV2);
-    
-    function marketToken() external view returns (address);
-
-    function indexToken() external view returns (address);
-
-    function indexTokenMarketId() external view returns (uint256);
-
-    function shortToken() external view returns (address);
-
-    function shortTokenMarketId() external view returns (uint256);
-
-    function longToken() external view returns (address);
-
-    function longTokenMarketId() external view returns (uint256);
-
-    function getMarketInfo() external view returns (TokenAndMarketParams memory);
-
+    function gmxV2Registry() external view returns (IGmxV2Registry);
 }

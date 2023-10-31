@@ -1,11 +1,11 @@
-import { BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import { CoreProtocol } from '../../../test/utils/setup';
 import {
-  ERC20,
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeVaultFactory,
   GmxRegistryV1,
-  GmxRegistryV2,
+  GmxV2Registry,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
@@ -15,11 +15,10 @@ import {
   IGLPIsolationModeVaultFactoryOld,
   IGmxMarketToken,
   IGmxRegistryV1,
-  IGmxRegistryV2,
+  IGmxV2Registry,
   IGmxV2IsolationModeVaultFactory,
   TestGLPIsolationModeTokenVaultV1,
 } from '../../types';
-import { IERC20 } from '@dolomite-exchange/dolomite-margin/dist/build/wrappers/IERC20';
 
 export function getGLPPriceOracleV1ConstructorParams(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
@@ -130,24 +129,23 @@ export async function getGmxRegistryConstructorParams(
   ];
 }
 
-export async function getGmxRegistryV2ConstructorParams(
+export async function getGmxV2RegistryConstructorParams(
   core: CoreProtocol,
-  implementation: GmxRegistryV2,
+  implementation: GmxV2Registry,
+  callbackGasLimit: BigNumberish,
 ): Promise<any[]> {
   if (!core.gmxEcosystem) {
     throw new Error('GMX ecosystem not initialized');
   }
 
   const calldata = await implementation.populateTransaction.initialize(
-    core.gmxEcosystemV2!.gmxEthUsdMarketToken.address,
     core.gmxEcosystemV2!.gmxDataStore.address,
-    core.gmxEcosystemV2!.gmxDepositHandler.address,
     core.gmxEcosystemV2!.gmxDepositVault.address,
     core.gmxEcosystemV2!.gmxExchangeRouter.address,
     core.gmxEcosystemV2!.gmxReader.address,
     core.gmxEcosystemV2!.gmxRouter.address,
-    core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
     core.gmxEcosystemV2!.gmxWithdrawalVault.address,
+    callbackGasLimit,
     core.dolomiteRegistry.address,
   );
 
@@ -158,9 +156,12 @@ export async function getGmxRegistryV2ConstructorParams(
   ];
 }
 
+export const GMX_V2_EXECUTION_FEE = parseEther('0.0075');
+export const GMX_V2_CALLBACK_GAS_LIMIT = BigNumber.from('2000000');
+
 export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   core: CoreProtocol,
-  gmxRegistry: IGmxRegistryV2,
+  gmxRegistry: IGmxV2Registry,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
   gmToken: IGmxMarketToken,
@@ -172,6 +173,7 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
 
   return [
     gmxRegistry.address,
+    GMX_V2_EXECUTION_FEE,
     [
       gmToken.address,
       core.tokens.weth.address,
@@ -190,17 +192,12 @@ export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
   core: CoreProtocol,
   implementation: GmxV2IsolationModeUnwrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
-  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+  gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
 ): Promise<any[]> {
-  if (!core.gmxEcosystem) {
-    throw new Error('Gmx ecosystem not initialized');
-  }
-
   const calldata = await implementation.populateTransaction.initialize(
-    gmxRegistryV2.address,
-    core.tokens.weth.address,
     dGM.address,
-    core.dolomiteMargin.address
+    core.dolomiteMargin.address,
+    gmxRegistryV2.address,
   );
 
   return [
@@ -214,17 +211,12 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
   core: CoreProtocol,
   implementation: GmxV2IsolationModeWrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
-  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+  gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
 ): Promise<any[]> {
-  if (!core.gmxEcosystem) {
-    throw new Error('Gmx ecosystem not initialized');
-  }
-
   const calldata = await implementation.populateTransaction.initialize(
-    gmxRegistryV2.address,
-    core.tokens.weth.address,
     dGM.address,
-    core.dolomiteMargin.address
+    core.dolomiteMargin.address,
+    gmxRegistryV2.address,
   );
 
   return [
@@ -236,7 +228,7 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
 
 export function getGmxV2MarketTokenPriceOracleConstructorParams(
   core: CoreProtocol,
-  gmxRegistryV2: IGmxRegistryV2 | GmxRegistryV2,
+  gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
 ): any[] {
   if (!core.gmxEcosystem) {
     throw new Error('Gmx ecosystem not initialized');

@@ -32,5 +32,5 @@ import { IIsolationModeTokenVaultV1WithPausable } from "./IIsolationModeTokenVau
  */
 interface IIsolationModeTokenVaultV1WithFreezableAndPausable is // solhint-disable-line no-empty-blocks
     IIsolationModeTokenVaultV1WithFreezable,
-    IIsolationModeTokenVaultV1WithPausable 
-{} 
+    IIsolationModeTokenVaultV1WithPausable
+{}

@@ -30,7 +30,7 @@ import { GmxOracleUtils } from "./GmxOracleUtils.sol";
 interface IGmxWithdrawalHandler {
 
     /**
-     * 
+     *
      * @param  receiver                 The address that will receive the withdrawal tokens.
      * @param  callbackContract         The contract that will be called back.
      * @param  market                   The market on which the withdrawal will be executed.
@@ -63,6 +63,8 @@ interface IGmxWithdrawalHandler {
         address[] primaryTokens;
         Props[] primaryPrices;
     }
+
+    error InsufficientWntAmount(uint256 wntAmount, uint256 executionFee);
 
     function createWithdrawal(address _account, CreateWithdrawalParams calldata _params) external returns (bytes32);
 

@@ -34,7 +34,7 @@ library GmxWithdrawal {
     // @param  addresses address values
     // @param  numbers number values
     // @param  flags boolean values
-    struct Props {
+    struct WithdrawalProps {
         Addresses addresses;
         Numbers numbers;
         Flags flags;
@@ -75,115 +75,115 @@ library GmxWithdrawal {
         bool shouldUnwrapNativeToken;
     }
 
-    function account(Props memory props) internal pure returns (address) {
+    function account(WithdrawalProps memory props) internal pure returns (address) {
         return props.addresses.account;
     }
 
-    function setAccount(Props memory props, address value) internal pure {
+    function setAccount(WithdrawalProps memory props, address value) internal pure {
         props.addresses.account = value;
     }
 
-    function receiver(Props memory props) internal pure returns (address) {
+    function receiver(WithdrawalProps memory props) internal pure returns (address) {
         return props.addresses.receiver;
     }
 
-    function setReceiver(Props memory props, address value) internal pure {
+    function setReceiver(WithdrawalProps memory props, address value) internal pure {
         props.addresses.receiver = value;
     }
 
-    function callbackContract(Props memory props) internal pure returns (address) {
+    function callbackContract(WithdrawalProps memory props) internal pure returns (address) {
         return props.addresses.callbackContract;
     }
 
-    function setCallbackContract(Props memory props, address value) internal pure {
+    function setCallbackContract(WithdrawalProps memory props, address value) internal pure {
         props.addresses.callbackContract = value;
     }
 
-    function uiFeeReceiver(Props memory props) internal pure returns (address) {
+    function uiFeeReceiver(WithdrawalProps memory props) internal pure returns (address) {
         return props.addresses.uiFeeReceiver;
     }
 
-    function setUiFeeReceiver(Props memory props, address value) internal pure {
+    function setUiFeeReceiver(WithdrawalProps memory props, address value) internal pure {
         props.addresses.uiFeeReceiver = value;
     }
 
-    function market(Props memory props) internal pure returns (address) {
+    function market(WithdrawalProps memory props) internal pure returns (address) {
         return props.addresses.market;
     }
 
-    function setMarket(Props memory props, address value) internal pure {
+    function setMarket(WithdrawalProps memory props, address value) internal pure {
         props.addresses.market = value;
     }
 
-    function longTokenSwapPath(Props memory props) internal pure returns (address[] memory) {
+    function longTokenSwapPath(WithdrawalProps memory props) internal pure returns (address[] memory) {
         return props.addresses.longTokenSwapPath;
     }
 
-    function setLongTokenSwapPath(Props memory props, address[] memory value) internal pure {
+    function setLongTokenSwapPath(WithdrawalProps memory props, address[] memory value) internal pure {
         props.addresses.longTokenSwapPath = value;
     }
 
-    function shortTokenSwapPath(Props memory props) internal pure returns (address[] memory) {
+    function shortTokenSwapPath(WithdrawalProps memory props) internal pure returns (address[] memory) {
         return props.addresses.shortTokenSwapPath;
     }
 
-    function setShortTokenSwapPath(Props memory props, address[] memory value) internal pure {
+    function setShortTokenSwapPath(WithdrawalProps memory props, address[] memory value) internal pure {
         props.addresses.shortTokenSwapPath = value;
     }
 
-    function marketTokenAmount(Props memory props) internal pure returns (uint256) {
+    function marketTokenAmount(WithdrawalProps memory props) internal pure returns (uint256) {
         return props.numbers.marketTokenAmount;
     }
 
-    function setMarketTokenAmount(Props memory props, uint256 value) internal pure {
+    function setMarketTokenAmount(WithdrawalProps memory props, uint256 value) internal pure {
         props.numbers.marketTokenAmount = value;
     }
 
-    function minLongTokenAmount(Props memory props) internal pure returns (uint256) {
+    function minLongTokenAmount(WithdrawalProps memory props) internal pure returns (uint256) {
         return props.numbers.minLongTokenAmount;
     }
 
-    function setMinLongTokenAmount(Props memory props, uint256 value) internal pure {
+    function setMinLongTokenAmount(WithdrawalProps memory props, uint256 value) internal pure {
         props.numbers.minLongTokenAmount = value;
     }
 
-    function minShortTokenAmount(Props memory props) internal pure returns (uint256) {
+    function minShortTokenAmount(WithdrawalProps memory props) internal pure returns (uint256) {
         return props.numbers.minShortTokenAmount;
     }
 
-    function setMinShortTokenAmount(Props memory props, uint256 value) internal pure {
+    function setMinShortTokenAmount(WithdrawalProps memory props, uint256 value) internal pure {
         props.numbers.minShortTokenAmount = value;
     }
 
-    function updatedAtBlock(Props memory props) internal pure returns (uint256) {
+    function updatedAtBlock(WithdrawalProps memory props) internal pure returns (uint256) {
         return props.numbers.updatedAtBlock;
     }
 
-    function setUpdatedAtBlock(Props memory props, uint256 value) internal pure {
+    function setUpdatedAtBlock(WithdrawalProps memory props, uint256 value) internal pure {
         props.numbers.updatedAtBlock = value;
     }
 
-    function executionFee(Props memory props) internal pure returns (uint256) {
+    function executionFee(WithdrawalProps memory props) internal pure returns (uint256) {
         return props.numbers.executionFee;
     }
 
-    function setExecutionFee(Props memory props, uint256 value) internal pure {
+    function setExecutionFee(WithdrawalProps memory props, uint256 value) internal pure {
         props.numbers.executionFee = value;
     }
 
-    function callbackGasLimit(Props memory props) internal pure returns (uint256) {
+    function callbackGasLimit(WithdrawalProps memory props) internal pure returns (uint256) {
         return props.numbers.callbackGasLimit;
     }
 
-    function setCallbackGasLimit(Props memory props, uint256 value) internal pure {
+    function setCallbackGasLimit(WithdrawalProps memory props, uint256 value) internal pure {
         props.numbers.callbackGasLimit = value;
     }
 
-    function shouldUnwrapNativeToken(Props memory props) internal pure returns (bool) {
+    function shouldUnwrapNativeToken(WithdrawalProps memory props) internal pure returns (bool) {
         return props.flags.shouldUnwrapNativeToken;
     }
 
-    function setShouldUnwrapNativeToken(Props memory props, bool value) internal pure {
+    function setShouldUnwrapNativeToken(WithdrawalProps memory props, bool value) internal pure {
         props.flags.shouldUnwrapNativeToken = value;
     }
 }

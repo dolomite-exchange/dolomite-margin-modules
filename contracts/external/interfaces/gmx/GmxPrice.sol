@@ -29,7 +29,7 @@ pragma solidity ^0.8.9;
  */
 library GmxPrice {
 
-    struct Props {
+    struct PriceProps {
         uint256 min;
         uint256 max;
     }

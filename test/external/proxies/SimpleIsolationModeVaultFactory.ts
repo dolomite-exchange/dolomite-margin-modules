@@ -3,7 +3,7 @@ import { BaseContract, BigNumber, ContractTransaction } from 'ethers';
 import {
   CustomTestToken,
   SimpleIsolationModeVaultFactory,
-  TestIsolationModeTokenVaultV1__factory,
+  TestIsolationModeTokenVaultV1,
   TestIsolationModeUnwrapperTraderV1,
   TestIsolationModeUnwrapperTraderV1__factory,
   TestIsolationModeWrapperTraderV1,
@@ -11,10 +11,11 @@ import {
   TestSimpleIsolationModeVaultFactory,
   TestSimpleIsolationModeVaultFactory__factory,
 } from '../../../src/types';
-import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectArrayEq, expectEvent, expectThrow } from '../../utils/assertions';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
 
 describe('SimpleIsolationModeVaultFactory', () => {
@@ -39,9 +40,10 @@ describe('SimpleIsolationModeVaultFactory', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
-    userVaultImplementation = await createContractWithAbi(
-      TestIsolationModeTokenVaultV1__factory.abi,
-      TestIsolationModeTokenVaultV1__factory.bytecode,
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1>(
+      'TestIsolationModeTokenVaultV1',
+      libraries,
       [],
     );
     const initialAllowableDebtMarketIds = [0, 1];

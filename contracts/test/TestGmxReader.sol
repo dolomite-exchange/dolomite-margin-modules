@@ -20,10 +20,13 @@
 
 pragma solidity ^0.8.9;
 
+import { GmxDeposit } from "../external/interfaces/gmx/GmxDeposit.sol";
 import { GmxMarket } from "../external/interfaces/gmx/GmxMarket.sol";
 import { GmxMarketPoolValueInfo } from "../external/interfaces/gmx/GmxMarketPoolValueInfo.sol";
 import { GmxPrice } from "../external/interfaces/gmx/GmxPrice.sol";
+import { GmxWithdrawal } from "../external/interfaces/gmx/GmxWithdrawal.sol";
 import { IGmxDataStore } from "../external/interfaces/gmx/IGmxDataStore.sol";
+import { IGmxReader } from "../external/interfaces/gmx/IGmxReader.sol";
 
 /**
  * @title   TestGmxReader
@@ -31,7 +34,7 @@ import { IGmxDataStore } from "../external/interfaces/gmx/IGmxDataStore.sol";
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestGmxReader {
+contract TestGmxReader is IGmxReader {
 
     bytes32 private constant _FILE = "TestGmxReader";
 
@@ -60,27 +63,53 @@ contract TestGmxReader {
 
     function getMarketTokenPrice(
         IGmxDataStore /* _dataStore */,
-        GmxMarket.Props memory /* _market */,
-        GmxPrice.Props memory /* _indexTokenPrice */,
-        GmxPrice.Props memory /* _longTokenPrice */,
-        GmxPrice.Props memory /* _shortTokenPrice */,
+        GmxMarket.MarketProps memory /* _market */,
+        GmxPrice.PriceProps memory /* _indexTokenPrice */,
+        GmxPrice.PriceProps memory /* _longTokenPrice */,
+        GmxPrice.PriceProps memory /* _shortTokenPrice */,
         bytes32 /* _pnlFactorType */,
         bool /* _maximize */
-    ) external view returns (int256, GmxMarketPoolValueInfo.Props memory) {
-        GmxMarketPoolValueInfo.Props memory props = GmxMarketPoolValueInfo.Props(
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        );
+    ) external view returns (int256, GmxMarketPoolValueInfo.PoolValueInfoProps memory) {
+        GmxMarketPoolValueInfo.PoolValueInfoProps memory props = GmxMarketPoolValueInfo.PoolValueInfoProps({
+            poolValue: 0,
+            longPnl: 0,
+            shortPnl: 0,
+            netPnl: 0,
+            longTokenAmount: 0,
+            shortTokenAmount: 0,
+            longTokenUsd: 0,
+            shortTokenUsd: 0,
+            totalBorrowingFees: 0,
+            borrowingFeePoolFactor: 0,
+            impactPoolAmount: 0
+        });
 
         return (marketPrice, props);
+    }
+
+    function getDeposit(
+        IGmxDataStore /* _dataStore */,
+        bytes32 /* _key */
+    ) external pure returns (GmxDeposit.DepositProps memory props) {
+        return props;
+    }
+
+    function getWithdrawal(
+        IGmxDataStore /* _dataStore */,
+        bytes32 /* _key */
+    ) external pure returns (GmxWithdrawal.WithdrawalProps memory props) {
+        return props;
+    }
+
+    function getSwapPriceImpact(
+        IGmxDataStore /* _dataStore */,
+        address /* _marketKey */,
+        address /* _tokenIn */,
+        address /* _tokenOut */,
+        uint256 /* _amountIn */,
+        GmxPrice.PriceProps memory /* _tokenInPrice */,
+        GmxPrice.PriceProps memory /* _tokenOutPrice */
+    ) external pure returns (int256, int256) {
+        return (0, 0);
     }
 }

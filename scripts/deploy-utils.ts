@@ -5,7 +5,7 @@ import { FormatTypes, ParamType } from 'ethers/lib/utils';
 import fs from 'fs';
 import { network, run } from 'hardhat';
 import { IERC20Metadata__factory } from '../src/types';
-import { createContract } from '../src/utils/dolomite-utils';
+import { createContractWithName } from '../src/utils/dolomite-utils';
 import { CoreProtocol } from '../test/utils/setup';
 
 type ChainId = string;
@@ -55,7 +55,7 @@ export async function deployContractAndSave(
 
   console.log(`Deploying ${usedContractName} to chainId ${chainId}...`);
 
-  const contract = await createContract(contractName, args);
+  const contract = await createContractWithName(contractName, args);
 
   file[usedContractName] = {
     ...file[usedContractName],

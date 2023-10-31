@@ -20,32 +20,19 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxV2IsolationModeTraderBase } from "./IGmxV2IsolationModeTraderBase.sol";
-
+import { IGmxDepositCallbackReceiver } from "./IGmxDepositCallbackReceiver.sol";
+import { IGmxV2Registry } from "./IGmxV2Registry.sol";
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../IUpgradeableAsyncIsolationModeWrapperTrader.sol";
 
 /**
  * @title   IGmxV2IsolationModeWrapperTraderV2
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeWrapperTraderV2 is IGmxV2IsolationModeTraderBase {
+interface IGmxV2IsolationModeWrapperTraderV2 is
+    IUpgradeableAsyncIsolationModeWrapperTrader,
+    IGmxDepositCallbackReceiver
+{
 
-    struct DepositInfo {
-        address vault;
-        uint256 accountNumber;
-    }
-
-    // ================================================
-    // ==================== Events ====================
-    // ================================================
-
-    event DepositCreated(bytes32 indexed key);
-    event DepositExecuted(bytes32 indexed key);
-    event DepositCancelled(bytes32 indexed key);
-
-    // ===================================================
-    // ==================== Functions ====================
-    // ===================================================
-
-    function cancelDeposit(bytes32 _key) external;
+    function GMX_REGISTRY_V2() external view returns (IGmxV2Registry);
 }

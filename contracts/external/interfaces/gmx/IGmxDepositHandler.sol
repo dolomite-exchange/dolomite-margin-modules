@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { GmxDeposit } from "./GmxDeposit.sol";
 import { GmxOracleUtils } from "./GmxOracleUtils.sol";
 
 
@@ -29,6 +30,8 @@ import { GmxOracleUtils } from "./GmxOracleUtils.sol";
  *
  */
 interface IGmxDepositHandler {
+
+    // ======== Structs =========
 
     // @dev CreateDepositParams struct used in createDeposit to avoid stack
     // too deep errors
@@ -61,6 +64,12 @@ interface IGmxDepositHandler {
         uint256 min;
         uint256 max;
     }
+
+    // ======== Events =========
+
+    event AfterDepositExecutionError(bytes32 key, GmxDeposit.DepositProps deposit);
+
+    // ======== Functions =========
 
     function createDeposit(address _account, CreateDepositParams calldata _params) external returns (bytes32);
 

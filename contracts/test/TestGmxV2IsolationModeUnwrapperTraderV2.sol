@@ -20,7 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { GmxV2IsolationModeUnwrapperTraderV2 } from "../external/gmxV2/GmxV2IsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
+import { GmxV2IsolationModeUnwrapperTraderV2 } from "../external/gmxV2/GmxV2IsolationModeUnwrapperTraderV2.sol";
+import { SafeDelegateCallLib } from "../external/lib/SafeDelegateCallLib.sol";
 
 
 /**
@@ -30,22 +31,33 @@ import { GmxV2IsolationModeUnwrapperTraderV2 } from "../external/gmxV2/GmxV2Isol
  * @notice  Test implementation for exposing areas for coverage testing
  */
 contract TestGmxV2IsolationModeUnwrapperTraderV2 is GmxV2IsolationModeUnwrapperTraderV2 {
+    using SafeDelegateCallLib for address;
 
-    bytes32 private constant _FILE = "TestGmxV2IsolationModeUnwrapper";
+    constructor(address _weth) GmxV2IsolationModeUnwrapperTraderV2(_weth) {
+        // solhint-disable-previous-line no-empty-blocks
+    }
 
-    function _exchangeUnderlyingTokenToOutputToken(
-        address,
-        address,
-        address,
-        uint256 _minOutputAmount,
-        address,
-        uint256,
-        bytes memory
-    ) 
-        internal
-        override
-        returns (uint256)
-    {
-        return _minOutputAmount - 1;
+    function vaultCreateWithdrawalInfo(
+        bytes32 _key,
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount
+    ) external {
+        _vaultCreateWithdrawalInfo(
+            _key,
+            _vault,
+            _accountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount
+        );
+    }
+
+    function callFunctionAndTriggerReentrancy(
+        bytes calldata _callDataWithSelector
+    ) external payable nonReentrant {
+        address(this).safeDelegateCall(_callDataWithSelector);
     }
 }
