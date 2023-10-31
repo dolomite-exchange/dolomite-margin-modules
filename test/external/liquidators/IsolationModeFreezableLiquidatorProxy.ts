@@ -419,7 +419,13 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         }
       } else {
         await expectProtocolBalance(core, vault.address, accountNumber, marketId, amountWei.add(depositMinAmountOut));
-        await expectProtocolBalance(core, vault.address, accountNumber, core.marketIds.weth, wethAmount.mul(-1));
+        await expectProtocolBalance(
+          core,
+          vault.address,
+          accountNumber,
+          core.marketIds.weth,
+          wethAmount.add(depositAmountIn).mul(-1),
+        );
         expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
         expect(await vault.isVaultAccountFrozen(accountNumber)).to.eq(true);
         expect(await vault.isVaultFrozen()).to.eq(true);

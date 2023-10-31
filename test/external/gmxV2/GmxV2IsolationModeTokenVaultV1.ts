@@ -309,7 +309,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           ONE_BI,
           { value: parseEther('.01') },
         ),
-        'GmxV2IsolationModeVaultV1: Invalid input amount',
+        'IsolationModeVaultV1Freezable: Invalid withdrawal amount',
       );
     });
 
@@ -324,7 +324,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           ONE_BI,
           { value: parseEther('.01') },
         ),
-        `GmxV2Library: Withdrawal too large <${vault.address.toLowerCase()}, ${borrowAccountNumber}>`,
+        `IsolationModeVaultV1Freezable: Withdrawal too large <${vault.address.toLowerCase()}, ${borrowAccountNumber}>`,
       );
     });
 
@@ -622,17 +622,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setShouldVaultSkipTransfer(true);
       await expectThrow(
         vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI),
-        'GmxV2IsolationModeVaultV1: Vault should be frozen',
-      );
-    });
-
-    it('should fail if virtual balance does not equal real balance', async () => {
-      await setupGMBalance(core, await impersonate(wrapper.address, true), ONE_ETH_BI, vault);
-      await setupGMBalance(core, await impersonate(vault.address, true), ONE_BI, wrapper);
-
-      await expectThrow(
-        vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI),
-        'GmxV2IsolationModeVaultV1: Virtual vs real balance mismatch',
+        'IsolationModeVaultV1Freezable: Vault should be frozen',
       );
     });
 
@@ -664,30 +654,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await vault.connect(impersonatedFactory).setShouldVaultSkipTransfer(true);
       await expectThrow(
         vault.connect(impersonatedFactory).executeWithdrawalFromVault(core.hhUser1.address, ZERO_BI),
-        'GmxV2IsolationModeVaultV1: Vault should be frozen',
-      );
-    });
-
-    it('should fail if virtual balance does not equal real balance', async () => {
-      await vault.connect(impersonatedFactory).setShouldVaultSkipTransfer(true);
-      await factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
-        vault.address,
-        defaultAccountNumber,
-        FreezeType.Deposit,
-        toPositiveWeiStruct(ONE_BI),
-      );
-      await vault.connect(impersonatedFactory).executeDepositIntoVault(wrapper.address, ONE_ETH_BI);
-      await factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
-        vault.address,
-        defaultAccountNumber,
-        FreezeType.Deposit,
-        toNegativeWeiStruct(ONE_BI),
-      );
-      await setupGMBalance(core, await impersonate(vault.address, true), parseEther('.5'), vault);
-
-      await expectThrow(
-        vault.connect(impersonatedFactory).executeWithdrawalFromVault(core.hhUser1.address, parseEther('.5')),
-        'GmxV2IsolationModeVaultV1: Virtual vs real balance mismatch',
+        'IsolationModeVaultV1Freezable: Vault should be frozen',
       );
     });
 

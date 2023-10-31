@@ -210,11 +210,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _FILE,
             "Invalid output token"
         );
-        Require.that(
-            _inputAmount > 0,
-            _FILE,
-            "Invalid input amount"
-        );
 
         uint256 ethExecutionFee = msg.value;
         if (_isLiquidation) {

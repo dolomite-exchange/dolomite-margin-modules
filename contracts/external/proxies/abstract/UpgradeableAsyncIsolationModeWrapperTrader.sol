@@ -333,23 +333,31 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     ) internal virtual {
         _validateDepositExists(_depositInfo);
 
-        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
-        factory.setShouldVaultSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ true);
-
         try AsyncIsolationModeWrapperTraderImpl.swapExactInputForOutputForDepositCancellation(
             /* _wrapper = */ this,
             _depositInfo
         ) {
             // The deposit info is set via `swapExactInputForOutputForDepositCancellation` by the unwrapper
-            _eventEmitter().emitAsyncDepositCancelled(_depositInfo.key, address(factory));
+            _eventEmitter().emitAsyncDepositCancelled(
+                _depositInfo.key,
+                address(VAULT_FACTORY())
+            );
         } catch Error(string memory _reason) {
             _depositInfo.isRetryable = true;
             _setDepositInfo(_depositInfo.key, _depositInfo);
-            _eventEmitter().emitAsyncDepositCancelledFailed(_depositInfo.key, address(factory), _reason);
+            _eventEmitter().emitAsyncDepositCancelledFailed(
+                _depositInfo.key,
+                address(VAULT_FACTORY()),
+                _reason
+            );
         } catch (bytes memory /* _reason */) {
             _depositInfo.isRetryable = true;
             _setDepositInfo(_depositInfo.key, _depositInfo);
-            _eventEmitter().emitAsyncDepositCancelledFailed(_depositInfo.key, address(factory), /* _reason = */ "");
+            _eventEmitter().emitAsyncDepositCancelledFailed(
+                _depositInfo.key,
+                address(VAULT_FACTORY()),
+                /* _reason = */ ""
+            );
         }
     }
 

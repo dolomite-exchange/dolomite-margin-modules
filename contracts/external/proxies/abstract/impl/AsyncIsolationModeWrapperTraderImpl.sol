@@ -25,6 +25,7 @@ import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../UpgradeableAsyn
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../UpgradeableAsyncIsolationModeWrapperTrader.sol";
 import { IDolomiteMargin } from "../../../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../../../protocol/lib/Require.sol";
+import { IFreezableIsolationModeVaultFactory } from "../../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderBase } from "../../../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1 } from "../../../interfaces/IIsolationModeTokenVaultV1.sol";
@@ -57,14 +58,19 @@ library AsyncIsolationModeWrapperTraderImpl {
         UpgradeableAsyncIsolationModeWrapperTrader _wrapper,
         IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo calldata _depositInfo
     ) external {
+        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(
+            address(_wrapper.VAULT_FACTORY())
+        );
+        factory.setShouldVaultSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ true);
+
         uint256[] memory marketIdsPath = new uint256[](2);
-        marketIdsPath[0] = _wrapper.VAULT_FACTORY().marketId();
+        marketIdsPath[0] = factory.marketId();
         marketIdsPath[1] = _wrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_depositInfo.inputToken);
 
         IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
         traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
         traderParams[0].makerAccountIndex = 0;
-        traderParams[0].trader = address(_wrapper.HANDLER_REGISTRY().getUnwrapperByToken(_wrapper.VAULT_FACTORY()));
+        traderParams[0].trader = address(_wrapper.HANDLER_REGISTRY().getUnwrapperByToken(factory));
 
         IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes = new IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[](1); // solhint-disable-line max-line-length
         tradeTypes[0] = IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit;

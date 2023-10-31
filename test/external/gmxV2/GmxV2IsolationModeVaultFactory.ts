@@ -233,18 +233,19 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     });
   });
 
-  describe('#ownerSetGmxV2Registry', () => {
+  describe('#ownerSetHandlerRegistry', () => {
     it('should work normally', async () => {
-      const result = await factory.connect(core.governance).ownerSetGmxV2Registry(OTHER_ADDRESS);
-      await expectEvent(factory, result, 'GmxV2RegistrySet', {
-        gmxV2Registry: OTHER_ADDRESS,
+      const result = await factory.connect(core.governance).ownerSetHandlerRegistry(OTHER_ADDRESS);
+      await expectEvent(factory, result, 'HandlerRegistrySet', {
+        handlerRegistry: OTHER_ADDRESS,
       });
+      expect(await factory.handlerRegistry()).to.eq(OTHER_ADDRESS);
       expect(await factory.gmxV2Registry()).to.eq(OTHER_ADDRESS);
     });
 
     it('should fail when not called by owner', async () => {
       await expectThrow(
-        factory.connect(core.hhUser1).ownerSetGmxV2Registry(OTHER_ADDRESS),
+        factory.connect(core.hhUser1).ownerSetHandlerRegistry(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
