@@ -84,11 +84,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     function executeWithdrawalForRetry(bytes32 _key) external onlyHandler(msg.sender) nonReentrant {
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         _validateWithdrawalExists(withdrawalInfo);
-        Require.that(
-            withdrawalInfo.isRetryable,
-            _FILE,
-            "Withdrawal not retryable"
-        );
+        _validateIsRetryable(withdrawalInfo.isRetryable);
         _executeWithdrawal(withdrawalInfo);
     }
 
@@ -276,7 +272,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
             isRetryable: false
         });
         _setWithdrawalInfo(_key, withdrawalInfo);
-        _updateVaultPendingAmount(_vault, _accountNumber, _inputAmount, /* _isPositive = */ true);
+        _updateVaultPendingAmount(_vault, _accountNumber, _inputAmount, /* _isPositive = */ true, _outputToken);
         _eventEmitter().emitAsyncWithdrawalCreated(
             _key,
             address(VAULT_FACTORY()),
@@ -330,7 +326,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
             withdrawalInfo.vault,
             withdrawalInfo.accountNumber,
             withdrawalInfo.inputAmount,
-            /* _isPositive = */ false
+            /* _isPositive = */ false,
+            withdrawalInfo.outputToken
         );
 
         // Setting inputAmount to 0 will clear the withdrawal
@@ -357,23 +354,29 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         address vault;
         uint256 inputAmount;
         for (uint256 i; i < tradeTypes.length; ++i) {
+            uint256 inputAmountForIteration;
             if (tradeTypes[i] == TradeType.FromWithdrawal) {
                 WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(keys[i]);
                 vault = withdrawalInfo.vault;
-                inputAmount += withdrawalInfo.inputAmount;
+                inputAmountForIteration = withdrawalInfo.inputAmount;
             } else {
                 assert(tradeTypes[i] == TradeType.FromDeposit);
                 IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo =
                                         _getWrapperTrader().getDepositInfo(keys[i]);
+
                 vault = depositInfo.vault;
-                inputAmount += depositInfo.outputAmount;
+                inputAmountForIteration = depositInfo.outputAmount;
             }
+
+            // Require that the vault is either the account owner or the input amount is 0 (meaning, it has been fully
+            // spent)
             Require.that(
-                vault == _accountInfo.owner,
+                (inputAmountForIteration == 0 && vault == address(0)) || vault == _accountInfo.owner,
                 _FILE,
                 "Invalid account owner",
                 _accountInfo.owner
             );
+            inputAmount += inputAmountForIteration;
         }
 
         uint256 underlyingVirtualBalance = IIsolationModeTokenVaultV1WithFreezable(vault).virtualBalance();
@@ -417,11 +420,15 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         assert(tradeTypes.length == keys.length && keys.length > 0);
 
         uint256 inputAmountNeeded = _inputAmount; // decays toward 0
-        uint256 outputAmount = 0;
-        for (uint256 i; i < tradeTypes.length; ++i) {
+        uint256 outputAmount;
+        for (uint256 i; i < tradeTypes.length && inputAmountNeeded > 0; ++i) {
             bytes32 key = keys[i];
             if (tradeTypes[i] == TradeType.FromWithdrawal) {
                 WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
+                if (withdrawalInfo.outputToken == address(0)) {
+                    // If the withdrawal was spent already, skip it
+                    continue;
+                }
                 _validateOutputTokenForExchange(withdrawalInfo.outputToken, _outputToken);
 
                 (uint256 inputAmountToCollect, uint256 outputAmountToCollect) = _getAmountsToCollect(
@@ -436,7 +443,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
                     withdrawalInfo.vault,
                     withdrawalInfo.accountNumber,
                     inputAmountToCollect,
-                    /* _isPositive = */ false
+                    /* _isPositive = */ false,
+                    withdrawalInfo.outputToken
                 );
 
                 inputAmountNeeded -= inputAmountToCollect;
@@ -447,6 +455,10 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
                 IUpgradeableAsyncIsolationModeWrapperTrader wrapperTrader = _getWrapperTrader();
                 IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo =
                                     wrapperTrader.getDepositInfo(key);
+                if (depositInfo.inputToken == address(0)) {
+                    // If the deposit was spent already, skip it
+                    continue;
+                }
 
                 // The input token for a deposit is the output token in this case
                 _validateOutputTokenForExchange(depositInfo.inputToken, _outputToken);
@@ -457,17 +469,18 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
                     /* _structOutputAmount = */ depositInfo.inputAmount
                 );
 
+                depositInfo.outputAmount -= inputAmountToCollect;
+                depositInfo.inputAmount -= outputAmountToCollect;
+                wrapperTrader.setDepositInfoAndReducePendingAmountFromUnwrapper(key, inputAmountToCollect, depositInfo);
+
                 IERC20(depositInfo.inputToken).safeTransferFrom(
                     address(wrapperTrader),
                     address(this),
                     outputAmountToCollect
                 );
-                depositInfo.outputAmount -= inputAmountToCollect;
-                depositInfo.inputAmount -= outputAmountToCollect;
-                wrapperTrader.setDepositInfoAndReducePendingAmountFromUnwrapper(key, inputAmountToCollect, depositInfo);
 
                 inputAmountNeeded -= inputAmountToCollect;
-                outputAmount = outputAmount + outputAmountToCollect;
+                outputAmount += outputAmountToCollect;
             }
         }
 
@@ -497,7 +510,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         address _vault,
         uint256 _accountNumber,
         uint256 _amountDeltaWei,
-        bool _isPositive
+        bool _isPositive,
+        address _outputToken
     ) internal {
         IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).setVaultAccountPendingAmountForFrozenStatus(
             _vault,
@@ -506,7 +520,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
             /* _amountWei = */ IDolomiteStructs.Wei({
                 sign: _isPositive,
                 value: _amountDeltaWei
-            })
+            }),
+            _outputToken
         );
     }
 
@@ -554,7 +569,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         uint256 _inputAmountNeeded,
         uint256 _structOutputAmount
     ) internal pure returns (uint256 _inputAmountToCollect, uint256 _outputAmountToCollect) {
-        _inputAmountToCollect = _structInputAmount >= _inputAmountNeeded
+        _inputAmountToCollect = _inputAmountNeeded < _structInputAmount
             ? _inputAmountNeeded
             : _structInputAmount;
 

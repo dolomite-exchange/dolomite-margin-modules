@@ -115,4 +115,12 @@ abstract contract AsyncIsolationModeTraderBase is
     function _eventEmitter() internal view returns (IEventEmitterRegistry) {
         return HANDLER_REGISTRY().dolomiteRegistry().eventEmitter();
     }
+
+    function _validateIsRetryable(bool _isRetryable) internal pure {
+        Require.that(
+            _isRetryable,
+            _FILE,
+            "Conversion is not retryable"
+        );
+    }
 }

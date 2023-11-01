@@ -1,6 +1,7 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -335,8 +336,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         FreezeType.Deposit,
         toPositiveWeiStruct(ONE_BI),
+        core.tokens.weth.address,
       );
       expect(await vault.isVaultFrozen()).to.be.true;
+      expect(await vault.getOutputTokenByVaultAccount(defaultAccountNumber)).to.eq(core.tokens.weth.address);
 
       await expectThrow(
         vault.initiateUnwrapping(
@@ -354,15 +357,19 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         FreezeType.Deposit,
         toNegativeWeiStruct(ONE_BI),
+        core.tokens.weth.address,
       );
       expect(await vault.isVaultFrozen()).to.be.false;
+      expect(await vault.getOutputTokenByVaultAccount(defaultAccountNumber)).to.eq(ZERO_ADDRESS);
       await factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
         vault.address,
         defaultAccountNumber,
         FreezeType.Withdrawal,
         toPositiveWeiStruct(ONE_BI),
+        core.tokens.weth.address,
       );
       expect(await vault.isVaultFrozen()).to.be.true;
+      expect(await vault.getOutputTokenByVaultAccount(defaultAccountNumber)).to.eq(core.tokens.weth.address);
 
       await expectThrow(
         vault.initiateUnwrapping(
@@ -925,6 +932,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         FreezeType.Withdrawal,
         toPositiveWeiStruct(ONE_BI),
+        core.tokens.weth.address,
       );
 
       const unwrappingParams = await getInitiateUnwrappingParams(
@@ -1010,6 +1018,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         FreezeType.Withdrawal,
         toPositiveWeiStruct(ONE_BI),
+        core.tokens.weth.address
       );
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
       await expectThrow(
@@ -1049,6 +1058,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         FreezeType.Withdrawal,
         toPositiveWeiStruct(ONE_BI),
+        core.tokens.weth.address,
       );
       const unwrapperImpersonator = await impersonate(unwrapper.address, true);
       await vault.connect(unwrapperImpersonator).swapExactInputForOutput(

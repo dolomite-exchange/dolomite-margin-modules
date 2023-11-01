@@ -45,19 +45,20 @@ contract TestIsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1
     function _initiateUnwrapping(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
-        address /* _outputToken */,
+        address _outputToken,
         uint256 /* _minOutputAmount */,
         bool _isLiquidation
     ) internal override {
         if (_isLiquidation) {
             IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setVaultAccountPendingAmountForFrozenStatus(
-            /* _vault = */ address(this),
+                /* _vault = */ address(this),
                 _tradeAccountNumber,
                 IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
                 /* _amountDeltaWei = */ IDolomiteStructs.Wei({
                     sign: true,
                     value: _inputAmount
-                })
+                }),
+                _outputToken
             );
         }
     }

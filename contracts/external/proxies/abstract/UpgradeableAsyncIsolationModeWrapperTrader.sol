@@ -57,10 +57,41 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _ACTIONS_LENGTH = 1;
 
-    // ======================== Field Variables ========================
-
-
     // ======================== External Functions ========================
+
+    function executeDepositCancellationForRetry(
+        bytes32 _key
+    )
+    external
+    onlyHandler(msg.sender) {
+        DepositInfo memory depositInfo = _getDepositSlot(_key);
+        _validateIsRetryable(depositInfo.isRetryable);
+
+        _executeDepositCancellation(depositInfo);
+    }
+
+    function setDepositInfoAndReducePendingAmountFromUnwrapper(
+        bytes32 _key,
+        uint256 _outputAmountDeltaWei,
+        DepositInfo calldata _depositInfo
+    ) external {
+        Require.that(
+            msg.sender == address(HANDLER_REGISTRY().getUnwrapperByToken(VAULT_FACTORY())),
+            _FILE,
+            "Only unwrapper can call",
+            msg.sender
+        );
+        _updateVaultPendingAmount(
+            _depositInfo.vault,
+            _depositInfo.accountNumber,
+            _outputAmountDeltaWei,
+            /* _isPositive = */ false,
+            _depositInfo.inputToken
+        );
+
+        uint256 deltaInputWei = _getDepositSlot(_key).inputAmount - _depositInfo.inputAmount;
+        IERC20(_depositInfo.inputToken).safeApprove(msg.sender, deltaInputWei);
+    }
 
     function exchange(
         address _tradeOriginator,
@@ -198,6 +229,10 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         return IIsolationModeVaultFactory(_getAddress(_VAULT_FACTORY_SLOT));
     }
 
+    function getDepositInfo(bytes32 _key) public pure returns (DepositInfo memory) {
+        return _getDepositSlot(_key);
+    }
+
     // ============ Internal Functions ============
 
     function _initializeWrapperTrader(
@@ -258,7 +293,8 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             _tradeOriginator,
             accountNumber,
             _minOutputAmount,
-            /* _isPositive = */ true
+            /* _isPositive = */ true,
+            depositInfo.inputToken
         );
         _eventEmitter().emitAsyncDepositCreated(depositKey, address(factory), depositInfo);
 
@@ -343,16 +379,14 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
                 address(VAULT_FACTORY())
             );
         } catch Error(string memory _reason) {
-            _depositInfo.isRetryable = true;
-            _setDepositInfo(_depositInfo.key, _depositInfo);
+            _setRetryableAndSaveDeposit(_depositInfo);
             _eventEmitter().emitAsyncDepositCancelledFailed(
                 _depositInfo.key,
                 address(VAULT_FACTORY()),
                 _reason
             );
         } catch (bytes memory /* _reason */) {
-            _depositInfo.isRetryable = true;
-            _setDepositInfo(_depositInfo.key, _depositInfo);
+            _setRetryableAndSaveDeposit(_depositInfo);
             _eventEmitter().emitAsyncDepositCancelledFailed(
                 _depositInfo.key,
                 address(VAULT_FACTORY()),
@@ -398,10 +432,16 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             _depositInfo.vault,
             _depositInfo.accountNumber,
             _depositInfo.outputAmount,
-            /* _isPositive = */ false
+            /* _isPositive = */ false,
+            _depositInfo.inputToken
         );
         // Setting the outputAmount to 0 clears it
         _depositInfo.outputAmount = 0;
+        _setDepositInfo(_depositInfo.key, _depositInfo);
+    }
+
+    function _setRetryableAndSaveDeposit(DepositInfo memory _depositInfo) internal {
+        _depositInfo.isRetryable = true;
         _setDepositInfo(_depositInfo.key, _depositInfo);
     }
 
@@ -425,16 +465,18 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         address _vault,
         uint256 _accountNumber,
         uint256 _amountDeltaWei,
-        bool _isPositive
+        bool _isPositive,
+        address _conversionToken
     ) internal {
         IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY())).setVaultAccountPendingAmountForFrozenStatus(
             _vault,
             _accountNumber,
             IFreezableIsolationModeVaultFactory.FreezeType.Deposit,
-            /* _amountDeltaWei = */ IDolomiteStructs.Wei({
+                /* _amountDeltaWei = */ IDolomiteStructs.Wei({
                 sign: _isPositive,
                 value: _amountDeltaWei
-            })
+            }),
+            _conversionToken
         );
     }
 

@@ -129,6 +129,15 @@ interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 
     function isVaultAccountFrozen(uint256 _accountNumber) external view returns (bool);
 
     /**
+     *
+     * @param  _accountNumber   The account number of the vault to check.
+     * @return                  The pending conversion token for this account. address(0) means nothing is pending.
+     *                          Users must do any follow-up conversions (for liquidations) using the same conversion
+     *                          token to maintain uniformity.
+     */
+    function getOutputTokenByVaultAccount(uint256 _accountNumber) external view returns (address);
+
+    /**
      * @return The balance of the assets in this vault assuming no pending withdrawals (but includes pending deposits).
      */
     function virtualBalance() external view returns (uint256);

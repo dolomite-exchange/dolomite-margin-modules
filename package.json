@@ -44,7 +44,7 @@
     "test:specific2": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/gmxV2/GmxV2IsolationModeUnwrapperTraderV2.ts",
     "test:specific3": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/gmxV2/GmxV2IsolationModeWrapperTraderV2.ts",
     "test:specific4": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/gmxV2/GmxV2IsolationModeTokenVaultV1.ts",
-    "test:specific5": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/gmxV2/GmxV2IsolationModeVaultFactory.ts",
+    "test:specific5": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/gmxV2/*.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
   "repository": {

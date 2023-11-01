@@ -84,7 +84,6 @@ library AsyncIsolationModeWrapperTraderImpl {
         });
 
         uint256 outputAmount = _depositInfo.inputAmount;
-        IERC20(_depositInfo.inputToken).safeApprove(traderParams[0].trader, outputAmount);
 
         UpgradeableAsyncIsolationModeUnwrapperTrader(payable(traderParams[0].trader)).handleCallbackFromWrapperBefore();
         IIsolationModeTokenVaultV1(_depositInfo.vault).swapExactInputForOutput(

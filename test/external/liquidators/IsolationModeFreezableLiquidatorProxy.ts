@@ -28,6 +28,7 @@ import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
+  expectWalletAllowance,
   expectWalletBalance,
 } from '../../utils/assertions';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../utils/dolomite';
@@ -62,6 +63,7 @@ const borrowAccountNumber2 = borrowAccountNumber.add(ONE_BI);
 const borrowAccountNumber3 = borrowAccountNumber2.add(ONE_BI);
 
 const amountWei = ONE_ETH_BI.mul('1234'); // 1,234
+const smallAmountWei = amountWei.mul(1).div(100);
 
 describe('IsolationModeFreezableLiquidatorProxy', () => {
   let snapshotId: string;
@@ -85,6 +87,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
   let depositKey: string | undefined;
   let depositAmountIn: BigNumber;
   let depositMinAmountOut: BigNumber;
+  let totalAmountWei: BigNumber;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
@@ -207,6 +210,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     depositKey = undefined;
     depositAmountIn = ZERO_BI;
     depositMinAmountOut = ZERO_BI;
+    totalAmountWei = amountWei;
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
@@ -214,15 +218,22 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     let wethAmount: BigNumber;
     let amountWeiForLiquidation: BigNumber;
 
+    enum ZapType {
+      None,
+      Deposit,
+      Withdraw,
+    }
+
     async function setupBalances(
       account: BigNumber,
       devalueCollateral: boolean = true,
       pushFullyUnderwater: boolean = true,
-      zapIntoBorrow: boolean = false,
+      performZapType: ZapType = ZapType.None,
     ) {
       // Create debt for the position
       let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
       let wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+      const usdcPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.nativeUsdc!)).value;
 
       wethAmount = amountWei.mul(gmPrice).div(wethPrice).mul(100).div(121);
       await vault.transferFromPositionWithOtherToken(
@@ -233,13 +244,14 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         BalanceCheckFlag.To,
       );
 
-      if (zapIntoBorrow) {
-        depositAmountIn = amountWei.mul(gmPrice).div(wethPrice).mul(10).div(100);
-        depositMinAmountOut = amountWei.mul(99).div(100).mul(10).div(100);
+      if (performZapType === ZapType.Deposit) {
+        depositAmountIn = amountWei.mul(gmPrice).div(usdcPrice).mul(1).div(100);
+        depositMinAmountOut = amountWei.mul(99).div(100).mul(1).div(100);
+        totalAmountWei = totalAmountWei.add(depositMinAmountOut);
 
         const initiateWrappingParams = await getInitiateWrappingParams(
           account,
-          core.marketIds.weth,
+          core.marketIds.nativeUsdc!,
           depositAmountIn,
           marketId,
           depositMinAmountOut,
@@ -256,6 +268,16 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           initiateWrappingParams.userConfig,
           { value: GMX_V2_EXECUTION_FEE },
         );
+      } else if (performZapType === ZapType.Withdraw) {
+        const result = await vault.initiateUnwrapping(
+          account,
+          smallAmountWei,
+          core.tokens.nativeUsdc!.address,
+          ONE_BI,
+          { value: GMX_V2_EXECUTION_FEE },
+        );
+        const filter = eventEmitter.filters.AsyncWithdrawalCreated();
+        withdrawalKeys.push((await eventEmitter.queryFilter(filter, result.blockNumber))[0].args.key);
       }
 
       if (devalueCollateral) {
@@ -271,10 +293,11 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, wethPrice);
         await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
       }
+
       amountWeiForLiquidation = wethAmount.mul(wethPrice).mul(105).div(100).div(gmPrice);
-      if (amountWeiForLiquidation.gt(amountWei)) {
+      if (amountWeiForLiquidation.gt(totalAmountWei)) {
         // Cap the size at amountWei
-        amountWeiForLiquidation = amountWei;
+        amountWeiForLiquidation = totalAmountWei;
       }
     }
 
@@ -316,11 +339,12 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       vaultErc20Balance: BigNumber = amountWei,
       outputAmount: BigNumber = ZERO_BI,
       isFrozenAfterLiquidation?: boolean,
+      outputAmountForSwap: BigNumber = ZERO_BI,
     ) {
       await expectWalletBalance(vault, underlyingToken, vaultErc20Balance);
 
       const withdrawals = await Promise.all(withdrawalKeys.map(key => unwrapper.getWithdrawalInfo(key)));
-      let totalOutputAmount = withdrawals.reduce((acc, withdrawal, i) => {
+      const partitionedTotalOutputAmount = withdrawals.reduce((acc, withdrawal, i) => {
         expect(withdrawal.key).to.eq(withdrawalKeys[i]);
         if (
           state === FinishState.WithdrawalSucceeded
@@ -332,24 +356,34 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           expect(withdrawal.inputAmount).to.eq(ZERO_BI);
           expect(withdrawal.outputToken).to.eq(ZERO_ADDRESS);
           expect(withdrawal.outputAmount).to.eq(ZERO_BI);
+          expect(withdrawal.isRetryable).to.eq(false);
         } else {
           expect(withdrawal.vault).to.eq(vault.address);
           expect(withdrawal.accountNumber).to.eq(borrowAccountNumber);
-          expect(withdrawal.inputAmount).to.eq(amountWei);
+          expect(
+            withdrawal.inputAmount.eq(amountWei)
+            || withdrawal.inputAmount.eq(smallAmountWei)
+            || withdrawal.inputAmount.eq(amountWei.sub(smallAmountWei)),
+          ).to.eq(true);
           expect(withdrawal.outputToken).to.eq(core.tokens.nativeUsdc!.address);
           expect(withdrawal.outputAmount).to.gt(ZERO_BI);
+          expect(withdrawal.isRetryable).to.eq(true);
         }
-        return acc.add(withdrawal.outputAmount);
-      }, ZERO_BI);
+        if (!acc[withdrawal.outputToken]) {
+          acc[withdrawal.outputToken] = ZERO_BI;
+        }
+        acc[withdrawal.outputToken] = acc[withdrawal.outputToken].add(withdrawal.outputAmount);
+        return acc;
+      }, {} as any);
 
       const deposit = depositKey ? await wrapper.getDepositInfo(depositKey) : undefined;
       if (deposit) {
-        totalOutputAmount = totalOutputAmount.add(deposit.inputAmount);
         expect(deposit.vault).to.eq(vault.address);
         expect(deposit.accountNumber).to.eq(borrowAccountNumber);
-        expect(deposit.inputToken).to.eq(core.tokens.weth!.address);
+        expect(deposit.inputToken).to.eq(core.tokens.nativeUsdc!.address);
         expect(deposit.inputAmount).to.eq(depositAmountIn);
         expect(deposit.outputAmount).to.eq(depositMinAmountOut);
+        expect(deposit.isRetryable).to.eq(true);
       }
 
       if (
@@ -375,7 +409,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
             vault.address,
             accountNumber,
             core.marketIds.nativeUsdc!,
-            outputAmount.sub(outputAmount.mul(amountWeiForLiquidation).div(amountWei)),
+            outputAmount.sub(outputAmountForSwap).sub(depositAmountIn),
           );
           await expectProtocolBalance(
             core,
@@ -418,13 +452,13 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           );
         }
       } else {
-        await expectProtocolBalance(core, vault.address, accountNumber, marketId, amountWei.add(depositMinAmountOut));
+        await expectProtocolBalance(core, vault.address, accountNumber, marketId, totalAmountWei);
         await expectProtocolBalance(
           core,
           vault.address,
           accountNumber,
           core.marketIds.weth,
-          wethAmount.add(depositAmountIn).mul(-1),
+          wethAmount.mul(-1),
         );
         expect(await vault.isVaultAccountFrozen(defaultAccountNumber)).to.eq(false);
         expect(await vault.isVaultAccountFrozen(accountNumber)).to.eq(true);
@@ -435,21 +469,39 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       }
 
       if (state === FinishState.WithdrawalFailed) {
-        expect(totalOutputAmount).to.be.gt(ZERO_BI);
-        if (withdrawals[0].outputToken === core.tokens.weth.address) {
-          await expectWalletBalance(unwrapper, core.tokens.weth, totalOutputAmount);
-          await expectWalletBalance(unwrapper, core.tokens.nativeUsdc!, ZERO_BI);
+        const weth = core.tokens.weth;
+        const usdc = core.tokens.nativeUsdc!;
+        if (withdrawals[0].outputToken === weth.address) {
+          expect(partitionedTotalOutputAmount).to.be.gt(ZERO_BI);
+          await expectWalletBalance(unwrapper, weth, partitionedTotalOutputAmount[weth.address]);
+          await expectWalletBalance(unwrapper, usdc, ZERO_BI);
         } else {
-          await expectWalletBalance(unwrapper, core.tokens.nativeUsdc!, totalOutputAmount);
-          await expectWalletBalance(unwrapper, core.tokens.weth, ZERO_BI);
+          await expectWalletBalance(unwrapper, usdc, partitionedTotalOutputAmount[usdc.address]);
+          await expectWalletBalance(unwrapper, weth, ZERO_BI);
+        }
+        if (deposit) {
+          if (deposit.inputToken === weth.address) {
+            expect(partitionedTotalOutputAmount).to.be.gt(ZERO_BI);
+            await expectWalletBalance(wrapper, weth, depositAmountIn);
+            await expectWalletBalance(wrapper, usdc, ZERO_BI);
+          } else {
+            await expectWalletBalance(wrapper, usdc, depositAmountIn);
+            await expectWalletBalance(wrapper, weth, ZERO_BI);
+          }
         }
       } else {
         await expectWalletBalance(unwrapper, core.tokens.weth, ZERO_BI);
         await expectWalletBalance(unwrapper, core.tokens.nativeUsdc!, ZERO_BI);
       }
+
+      await expectWalletAllowance(wrapper, unwrapper, core.tokens.weth, ZERO_BI);
+      await expectWalletAllowance(wrapper, unwrapper, core.tokens.nativeUsdc!, ZERO_BI);
     }
 
-    async function performLiquidationAndCheckState(vaultErc20Balance: BigNumber, isFrozen: boolean) {
+    async function performLiquidationAndCheckState(
+      vaultErc20Balance: BigNumber,
+      isFrozen: boolean,
+    ) {
       // Give the contract the WETH needed to complete the exchange
       const testTrader = await impersonate(core.testEcosystem!.testExchangeWrapper.address, true, wethAmount.mul(10));
       await setupWETHBalance(
@@ -469,12 +521,32 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       );
       const withdrawals = await Promise.all(withdrawalKeys.map(key => unwrapper.getWithdrawalInfo(key)));
       const deposit = depositKey ? await wrapper.getDepositInfo(depositKey) : undefined;
-      const totalOutputAmount = withdrawals.reduce((acc, withdrawal) => acc.add(withdrawal.outputAmount), ZERO_BI)
-        .add(deposit ? deposit.inputAmount : ZERO_BI);
-      const outputAmount = totalOutputAmount.mul(amountWeiForLiquidation).div(amountWei);
+      const allStructs = withdrawals
+        .map(w => ({ inputAmount: w.inputAmount, outputAmount: w.outputAmount }))
+        .concat(deposit ? [{ inputAmount: deposit.outputAmount, outputAmount: deposit.inputAmount }] : []);
+      const outputAmountForSwap = allStructs
+        .reduce((acc, struct) => {
+          if (acc.input.gt(ZERO_BI)) {
+            const inputAmount = acc.input.lt(struct.inputAmount)
+              ? acc.input
+              : struct.inputAmount;
+            const outputAmount = acc.input.lt(struct.inputAmount)
+              ? struct.outputAmount.mul(acc.input).div(struct.inputAmount)
+              : struct.outputAmount;
+
+            acc.input = acc.input.sub(inputAmount);
+            acc.output = acc.output.add(outputAmount);
+          }
+          return acc;
+        }, { output: ZERO_BI, input: amountWeiForLiquidation })
+        .output;
+      const totalOutputAmount = allStructs.reduce((acc, struct) => {
+        return acc.add(struct.outputAmount);
+      }, ZERO_BI);
+
       const zapParam = await getLiquidateIsolationModeZapPath(
         [marketId, core.marketIds.nativeUsdc!, core.marketIds.weth],
-        [amountWeiForLiquidation, outputAmount, wethAmount],
+        [amountWeiForLiquidation, outputAmountForSwap, wethAmount],
         unwrapper,
         core,
       );
@@ -492,6 +564,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         vaultErc20Balance,
         totalOutputAmount,
         isFrozen,
+        outputAmountForSwap,
       );
     }
 
@@ -602,7 +675,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     });
 
     it('should work for underwater account when there is already a pending deposit', async () => {
-      await setupBalances(borrowAccountNumber, true, true, true);
+      await setupBalances(borrowAccountNumber, true, true, ZapType.Deposit);
       await liquidatorProxy.prepareForLiquidation(
         liquidAccount,
         marketId,
@@ -629,6 +702,34 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     });
 
     it('should work for underwater account when there is already a pending withdrawal', async () => {
+      await setupBalances(borrowAccountNumber, true, true, ZapType.Withdraw);
+      const result1 = await performUnwrapping(withdrawalKeys[0]);
+      await expectEvent(eventEmitter, result1, 'AsyncWithdrawalFailed', {
+        key: withdrawalKeys[0],
+        token: factory.address,
+        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
+      });
+
+      const result2 = await liquidatorProxy.prepareForLiquidation(
+        liquidAccount,
+        marketId,
+        amountWei.sub(smallAmountWei),
+        core.marketIds.nativeUsdc!,
+        ONE_BI,
+        NO_EXPIRY,
+      );
+      const filter = eventEmitter.filters.AsyncWithdrawalCreated();
+      withdrawalKeys.push((await eventEmitter.queryFilter(filter, result2.blockNumber))[0].args.key);
+
+      const result3 = await performUnwrapping(withdrawalKeys[withdrawalKeys.length - 1]);
+      await expectEvent(eventEmitter, result3, 'AsyncWithdrawalFailed', {
+        key: withdrawalKeys[withdrawalKeys.length - 1],
+        token: factory.address,
+        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
+      });
+      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalFailed);
+
+      await performLiquidationAndCheckState(amountWei, false);
     });
 
     it('should fail when liquid account is not a valid vault', async () => {
@@ -743,6 +844,55 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           NO_EXPIRY,
         ),
         `IsolationModeVaultV1Freezable: Liquidation must be full balance <${liquidAccount.owner.toLowerCase()}, ${liquidAccount.number.toString()}>`,
+      );
+    });
+
+    it('should fail when vault attempts to create a withdrawal/deposit with a different conversion token', async () => {
+      await setupBalances(borrowAccountNumber, true, true, ZapType.Deposit);
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation(
+          liquidAccount,
+          marketId,
+          amountWei,
+          core.marketIds.weth,
+          ONE_BI,
+          NO_EXPIRY,
+        ),
+        `FreezableVaultFactory: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when vault attempts to create 2x withdrawals with a different conversion token', async () => {
+      await setupBalances(borrowAccountNumber, true, true, ZapType.Withdraw);
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation(
+          liquidAccount,
+          marketId,
+          amountWei.sub(smallAmountWei),
+          core.marketIds.weth,
+          ONE_BI,
+          NO_EXPIRY,
+        ),
+        `FreezableVaultFactory: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if the structs are not retryable', async () => {
+      await setupBalances(borrowAccountNumber, true, true);
+      const result = await liquidatorProxy.prepareForLiquidation(
+        liquidAccount,
+        marketId,
+        amountWei,
+        core.marketIds.nativeUsdc!,
+        ONE_BI,
+        NO_EXPIRY,
+      );
+      const filter = eventEmitter.filters.AsyncWithdrawalCreated();
+      withdrawalKeys.push((await eventEmitter.queryFilter(filter, result.blockNumber))[0].args.key);
+
+      await expectThrow(
+        performLiquidationAndCheckState(amountWei, false),
+        'AsyncIsolationModeUnwrapperImpl: All trades must be retryable',
       );
     });
   });

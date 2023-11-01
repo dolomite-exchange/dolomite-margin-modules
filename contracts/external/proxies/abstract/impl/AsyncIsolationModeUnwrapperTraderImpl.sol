@@ -125,16 +125,24 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             "Invalid unwrapping order data"
         );
 
+        bool[] memory isRetryableList = new bool[](tradeTypes.length);
         uint256 structInputAmount = 0;
         // Realistically this array length will only ever be 1 or 2.
         for (uint256 i; i < tradeTypes.length; ++i) {
             // The withdrawal/deposit is authenticated & validated later in `_callFunction`
             if (tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromWithdrawal) {
-                structInputAmount += _unwrapper.getWithdrawalInfo(keys[i]).inputAmount;
+                IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo =
+                                    _unwrapper.getWithdrawalInfo(keys[i]);
+                structInputAmount += withdrawalInfo.inputAmount;
+                isRetryableList[i] = withdrawalInfo.isRetryable;
             } else {
                 assert(tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit);
+                UpgradeableAsyncIsolationModeUnwrapperTrader unwrapperForStackTooDeep = _unwrapper;
+                IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo =
+                                        _getWrapperTrader(unwrapperForStackTooDeep).getDepositInfo(keys[i]);
                 // The output amount for a deposit is the input amount for an unwrapping
-                structInputAmount += _getWrapperTrader(_unwrapper).getDepositInfo(keys[i]).outputAmount;
+                structInputAmount += depositInfo.outputAmount;
+                isRetryableList[i] = depositInfo.isRetryable;
             }
         }
         Require.that(
@@ -165,6 +173,13 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         if (actions.length == _ACTIONS_LENGTH_NORMAL) {
             // We need to spend the whole withdrawal amount, so we need to add an extra sale to spend the difference.
             // This can only happen during a liquidation
+            for (uint256 i; i < isRetryableList.length; ++i) {
+                Require.that(
+                    isRetryableList[i],
+                    _FILE,
+                    "All trades must be retryable"
+                );
+            }
 
             structInputAmount -= _inputAmount;
             actions[2] = AccountActionLib.encodeCallAction(

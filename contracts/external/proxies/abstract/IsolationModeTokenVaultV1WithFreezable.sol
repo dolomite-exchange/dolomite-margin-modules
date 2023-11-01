@@ -306,6 +306,15 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultAccountFrozen(address(this), _accountNumber);
     }
 
+    function getOutputTokenByVaultAccount(
+        uint256 _accountNumber
+    ) public view returns (address) {
+        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).getOutputTokenByAccount(
+            address(this),
+            _accountNumber
+        );
+    }
+
     function virtualBalance() public view returns (uint256) {
         return _getUint256(_VIRTUAL_BALANCE_SLOT);
     }

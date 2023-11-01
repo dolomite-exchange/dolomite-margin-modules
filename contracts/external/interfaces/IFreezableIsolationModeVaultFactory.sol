@@ -114,12 +114,14 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
      * @param  _freezeType      The type of freeze that may have a pending callback amount (Deposit or Withdrawal)
      * @param  _amountDeltaWei  The amount that is pending for this sub account. Set to positive to add to the pending
      *                          amount or negative to subtract from it.
+     * @param  _conversionToken The token being used to convert into/from the freezable token
      */
     function setVaultAccountPendingAmountForFrozenStatus(
         address _vault,
         uint256 _accountNumber,
         FreezeType _freezeType,
-        IDolomiteStructs.Wei calldata _amountDeltaWei
+        IDolomiteStructs.Wei calldata _amountDeltaWei,
+        address _conversionToken
     ) external;
 
     /**
@@ -169,6 +171,19 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
         address _vault,
         FreezeType _freezeType
     ) external view returns (uint256);
+
+    /**
+     *
+     * @param  _vault           The address of the vault that may have a pending conversion token selected
+     * @param  _accountNumber   The account number (sub account) for the corresponding vault
+     * @return                  The pending conversion token for this account. address(0) means nothing is pending.
+     *                          Users must do any follow-up conversions (for liquidations) using the same conversion
+     *                          token to maintain uniformity.
+     */
+    function getOutputTokenByAccount(
+        address _vault,
+        uint256 _accountNumber
+    ) external view returns (address);
 
     /**
      *

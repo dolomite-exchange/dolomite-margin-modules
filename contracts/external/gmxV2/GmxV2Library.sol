@@ -121,11 +121,14 @@ library GmxV2Library {
 
     function executeInitiateUnwrapping(
         IGmxV2IsolationModeVaultFactory _factory,
+        address _vault,
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
         uint256 _ethExecutionFee
     ) public returns (bytes32) {
+        IERC20(_factory.UNDERLYING_TOKEN()).safeTransferFrom(_vault, address(this), _inputAmount);
+
         IGmxV2Registry registry = _factory.gmxV2Registry();
         IGmxExchangeRouter exchangeRouter = registry.gmxExchangeRouter();
 

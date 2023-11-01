@@ -20,8 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IIsolationModeUnwrapperTrader } from "../interfaces/IIsolationModeUnwrapperTrader.sol";
@@ -44,7 +42,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     IGmxV2IsolationModeUnwrapperTraderV2,
     UpgradeableAsyncIsolationModeUnwrapperTrader
 {
-    using SafeERC20 for IERC20;
 
     // =====================================================
     // ===================== Constants =====================
@@ -93,9 +90,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         address vault = msg.sender;
         _validateVaultExists(factory, vault);
 
-        IERC20(factory.UNDERLYING_TOKEN()).safeTransferFrom(vault, address(this), _inputAmount);
         bytes32 withdrawalKey = GmxV2Library.executeInitiateUnwrapping(
             factory,
+            vault,
             _inputAmount,
             _outputToken,
             _minOutputAmount,

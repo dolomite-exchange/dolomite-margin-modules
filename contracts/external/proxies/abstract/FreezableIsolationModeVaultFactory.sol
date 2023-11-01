@@ -56,6 +56,8 @@ abstract contract FreezableIsolationModeVaultFactory is
     /// Vault ==> Account Number ==> Freeze Type ==> Pending Amount
     mapping(address => mapping(uint256 => mapping(FreezeType => uint256))) private _accountInfoToPendingAmountWeiMap;
 
+    mapping(address => mapping(uint256 => address)) private _accountInfoToOutputTokenMap;
+
     /// Vault ==> Freeze Type ==> Pending Amount
     mapping(address => mapping(FreezeType => uint256)) private _vaultToPendingAmountWeiMap;
 
@@ -134,12 +136,21 @@ abstract contract FreezableIsolationModeVaultFactory is
         address _vault,
         uint256 _accountNumber,
         FreezeType _freezeType,
-        IDolomiteStructs.Wei calldata _amountDeltaWei
+        IDolomiteStructs.Wei calldata _amountDeltaWei,
+        address _conversionToken
     )
         external
         requireIsTokenConverterOrVault(msg.sender)
         requireIsVault(_vault)
     {
+        address expectedConversionToken = _accountInfoToOutputTokenMap[_vault][_accountNumber];
+        Require.that(
+            expectedConversionToken == address(0) || expectedConversionToken == _conversionToken,
+            _FILE,
+            "Invalid output token",
+            _conversionToken
+        );
+
         if (_amountDeltaWei.isNegative()) {
             _accountInfoToPendingAmountWeiMap[_vault][_accountNumber][_freezeType] -= _amountDeltaWei.value;
             _vaultToPendingAmountWeiMap[_vault][_freezeType] -= _amountDeltaWei.value;
@@ -149,6 +160,12 @@ abstract contract FreezableIsolationModeVaultFactory is
         }
 
         bool isFrozen = isVaultAccountFrozen(_vault, _accountNumber);
+        if (isFrozen) {
+            _accountInfoToOutputTokenMap[_vault][_accountNumber] = _conversionToken;
+        } else {
+            _accountInfoToOutputTokenMap[_vault][_accountNumber] = address(0);
+        }
+
         emit VaultAccountFrozen(_vault, _accountNumber, isFrozen);
     }
 
@@ -172,6 +189,13 @@ abstract contract FreezableIsolationModeVaultFactory is
         FreezeType _freezeType
     ) external view returns (uint256) {
         return _vaultToPendingAmountWeiMap[_vault][_freezeType];
+    }
+
+    function getOutputTokenByAccount(
+        address _vault,
+        uint256 _accountNumber
+    ) external view returns (address) {
+        return _accountInfoToOutputTokenMap[_vault][_accountNumber];
     }
 
     function isVaultAccountFrozen(

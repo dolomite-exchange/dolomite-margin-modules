@@ -20,10 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { GmxV2Library } from "./GmxV2Library.sol";
-import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IIsolationModeWrapperTrader } from "../interfaces/IIsolationModeWrapperTrader.sol";
 import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
@@ -45,8 +42,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     IGmxV2IsolationModeWrapperTraderV2,
     UpgradeableAsyncIsolationModeWrapperTrader
 {
-    using SafeERC20 for IERC20;
-    using SafeERC20 for IWETH;
 
     // =====================================================
     // ===================== Constants =====================
@@ -105,20 +100,8 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         assert(_deposit.numbers.initialLongTokenAmount == 0 || _deposit.numbers.initialShortTokenAmount == 0);
 
         DepositInfo memory depositInfo = _getDepositSlot(_key);
-        _executeDepositCancellation(depositInfo);
-    }
-
-    function executeDepositCancellationForRetry(
-        bytes32 _key
-    )
-    external
-    onlyHandler(msg.sender) {
-        DepositInfo memory depositInfo = _getDepositSlot(_key);
-        Require.that(
-            depositInfo.isRetryable,
-            _FILE,
-            "Deposit is not retryable"
-        );
+        depositInfo.isRetryable = true;
+        _setDepositInfo(_key, depositInfo);
 
         _executeDepositCancellation(depositInfo);
     }
@@ -131,26 +114,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
             "Only vault or handler can cancel"
         );
         GMX_REGISTRY_V2().gmxExchangeRouter().cancelDeposit(_key);
-    }
-
-    function setDepositInfoAndReducePendingAmountFromUnwrapper(
-        bytes32 _key,
-        uint256 _outputAmountDeltaWei,
-        DepositInfo calldata _depositInfo
-    ) external {
-        Require.that(
-            msg.sender == address(HANDLER_REGISTRY().getUnwrapperByToken(VAULT_FACTORY())),
-            _FILE,
-            "Only unwrapper can call",
-            msg.sender
-        );
-        _setDepositInfo(_key, _depositInfo);
-        _updateVaultPendingAmount(
-            _depositInfo.vault,
-            _depositInfo.accountNumber,
-            _outputAmountDeltaWei,
-            /* _isPositive = */ false
-        );
     }
 
     function isValidInputToken(
@@ -168,10 +131,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function GMX_REGISTRY_V2() public view returns (IGmxV2Registry) {
         return IGmxV2Registry(address(HANDLER_REGISTRY()));
-    }
-
-    function getDepositInfo(bytes32 _key) public pure returns (DepositInfo memory) {
-        return _getDepositSlot(_key);
     }
 
     // ============================================
