@@ -2,7 +2,7 @@ import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber, BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
   EventEmitterRegistry,
@@ -13,6 +13,7 @@ import {
   GmxV2MarketTokenPriceOracle,
   GmxV2Registry,
   IGmxMarketToken,
+  IGmxRoleStore__factory,
   TestGmxV2IsolationModeVaultFactory,
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
@@ -23,7 +24,8 @@ import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
-  expectWalletBalance, expectWalletBalanceIsGreaterThan,
+  expectWalletBalance,
+  expectWalletBalanceIsGreaterThan,
 } from 'test/utils/assertions';
 import {
   createGmxV2IsolationModeTokenVaultV1,
@@ -32,14 +34,17 @@ import {
   createGmxV2Library,
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
-  createTestGmxV2IsolationModeVaultFactory, getDepositObject,
-  getInitiateWrappingParams, getOracleParams,
+  createTestGmxV2IsolationModeVaultFactory,
+  getDepositObject,
+  getInitiateWrappingParams,
+  getOracleParams,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
   disableInterestAccrual,
   getDefaultCoreProtocolConfigForGmxV2,
-  setupCoreProtocol, setupGMBalance,
+  setupCoreProtocol,
+  setupGMBalance,
   setupNativeUSDCBalance,
   setupTestMarket,
   setupUserVaultProxy,
@@ -61,10 +66,15 @@ enum FreezeType {
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
-const executionFee = parseEther('.01');
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const minAmountOut = parseEther('1600');
+
+const executionFee = process.env.COVERAGE !== 'true' ? parseEther('0.01') : parseEther('0.1');
+const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
+const callbackGasLimit = process.env.COVERAGE !== 'true'
+  ? GMX_V2_CALLBACK_GAS_LIMIT
+  : GMX_V2_CALLBACK_GAS_LIMIT.mul(10);
 
 describe('GmxV2IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
@@ -86,7 +96,23 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     underlyingToken = core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(core.hhUser1);
     const library = await createGmxV2Library();
     const userVaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, library);
-    gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
+    gmxV2Registry = await createGmxV2Registry(core, callbackGasLimit);
+
+    if (process.env.COVERAGE === 'true') {
+      console.log('\tUsing coverage configuration...');
+      const dataStore = core.gmxEcosystemV2!.gmxDataStore;
+      const callbackKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
+        ['string'],
+        ['MAX_CALLBACK_GAS_LIMIT'],
+      ));
+      expect(await dataStore.getUint(callbackKey)).to.eq(callbackGasLimit.div(10));
+
+      const controllerKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['CONTROLLER']));
+      const roleStore = IGmxRoleStore__factory.connect(await dataStore.roleStore(), core.hhUser1);
+      const controllers = await roleStore.getRoleMembers(controllerKey, 0, 1);
+      const controller = await impersonate(controllers[0], true);
+      await dataStore.connect(controller).setUint(callbackKey, callbackGasLimit);
+    }
 
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createTestGmxV2IsolationModeVaultFactory(
@@ -637,7 +663,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      const result = await vault.cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
+      const result = await vault.cancelDeposit(depositKey, { gasLimit });
       await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
@@ -695,7 +721,11 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      await vault.cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
+      const result = await vault.cancelDeposit(depositKey, { gasLimit });
+      await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
+        key: depositKey,
+        token: factory.address,
+      });
 
       expect(await core.tokens.nativeUsdc!.balanceOf(core.dolomiteMargin.address)).to.eq(usdcBalanceBefore);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, 0);
@@ -807,7 +837,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       // Mine blocks, so we can cancel deposit
       await mine(1200);
-      const result = await vault.cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
+      const result = await vault.cancelDeposit(depositKey, { gasLimit });
       await expectEvent(
         eventEmitter,
         result,
@@ -858,7 +888,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      const result = await vault.cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
+      const result = await vault.cancelDeposit(depositKey, { gasLimit });
       await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
@@ -904,7 +934,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       // Mine blocks so we can cancel deposit
       await mine(1200);
       const result = await wrapper.connect(depositExecutor)
-        .initiateCancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
+        .initiateCancelDeposit(depositKey, { gasLimit });
       await expectEvent(eventEmitter, result, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
@@ -1012,7 +1042,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
       // Mine blocks so we can cancel deposit
       await mine(1200);
-      const result1 = await vault.cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
+      const result1 = await vault.cancelDeposit(depositKey, { gasLimit });
       await expectEvent(eventEmitter, result1, 'AsyncDepositCancelledFailed', {
         key: depositKey,
         token: factory.address,
@@ -1022,7 +1052,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, oldOracle);
 
       const result2 = await wrapper.connect(core.hhUser1)
-        .executeDepositCancellationForRetry(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
+        .executeDepositCancellationForRetry(depositKey, { gasLimit });
       await expectEvent(eventEmitter, result2, 'AsyncDepositCancelled', {
         key: depositKey,
         token: factory.address,
@@ -1094,7 +1124,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         marketId,
         minAmountOut,
         wrapper,
-        parseEther('.01'),
+        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -1104,7 +1134,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: parseEther('.01') },
+        { value: executionFee },
       );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
@@ -1123,7 +1153,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: parseEther('.01') },
+          { value: executionFee },
         ),
         `IsolationModeWrapperTraderV2: Vault is frozen <${vault.address.toLowerCase()}>`,
       );

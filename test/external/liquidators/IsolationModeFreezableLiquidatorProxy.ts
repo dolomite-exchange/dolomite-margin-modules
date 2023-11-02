@@ -65,6 +65,8 @@ const borrowAccountNumber3 = borrowAccountNumber2.add(ONE_BI);
 const amountWei = ONE_ETH_BI.mul('1234'); // 1,234
 const smallAmountWei = amountWei.mul(1).div(100);
 
+const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
+
 describe('IsolationModeFreezableLiquidatorProxy', () => {
   let snapshotId: string;
 
@@ -317,7 +319,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         .executeWithdrawal(
           withdrawalKeys[withdrawalKeys.length - 1],
           getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit: 10_000_000 },
+          { gasLimit },
         );
     }
 
