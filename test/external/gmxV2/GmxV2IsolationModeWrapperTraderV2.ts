@@ -16,15 +16,14 @@ import {
   TestGmxV2IsolationModeVaultFactory,
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
-import { BYTES_EMPTY, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
+import { BYTES_EMPTY, BYTES_ZERO, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import {
   expectEvent,
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
-  expectWalletBalance,
-  expectWalletBalanceIsGreaterThan,
+  expectWalletBalance, expectWalletBalanceIsGreaterThan,
 } from 'test/utils/assertions';
 import {
   createGmxV2IsolationModeTokenVaultV1,
@@ -33,17 +32,14 @@ import {
   createGmxV2Library,
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
-  createTestGmxV2IsolationModeVaultFactory,
-  getDepositObject,
-  getInitiateWrappingParams,
-  getOracleParams,
+  createTestGmxV2IsolationModeVaultFactory, getDepositObject,
+  getInitiateWrappingParams, getOracleParams,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
   disableInterestAccrual,
   getDefaultCoreProtocolConfigForGmxV2,
-  setupCoreProtocol,
-  setupGMBalance,
+  setupCoreProtocol, setupGMBalance,
   setupNativeUSDCBalance,
   setupTestMarket,
   setupUserVaultProxy,
@@ -825,7 +821,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
   });
 
-  describe('#cancelDeposit', () => {
+  describe('#initiateCancelDeposit', () => {
     it('should work normally', async () => {
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -956,6 +952,117 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
   });
 
+  describe('#executeDepositCancellationForRetry', () => {
+    it('should work normally', async () => {
+      await gmxV2Registry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ONE_ETH_BI,
+        BalanceCheckFlag.Both,
+      );
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.nativeUsdc!,
+        usdcAmount.div(2),
+        BalanceCheckFlag.None,
+      );
+
+      const minAmountOut = ONE_ETH_BI.mul(1000);
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc!,
+        usdcAmount,
+        marketId,
+        ONE_ETH_BI.mul(1000),
+        wrapper,
+        executionFee,
+      );
+      await vault.swapExactInputForOutput(
+        borrowAccountNumber,
+        initiateWrappingParams.marketPath,
+        initiateWrappingParams.amountIn,
+        initiateWrappingParams.minAmountOut,
+        initiateWrappingParams.traderParams,
+        initiateWrappingParams.makerAccounts,
+        initiateWrappingParams.userConfig,
+        { value: executionFee },
+      );
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc!,
+        ZERO_BI.sub(usdcAmount.mul(3).div(2)),
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
+
+      const filter = eventEmitter.filters.AsyncDepositCreated();
+      const eventArgs = (await eventEmitter.queryFilter(filter))[0].args;
+      expect(eventArgs.token).to.eq(factory.address);
+      const depositKey = eventArgs.key;
+
+      const oldOracle = await core.dolomiteMargin.getMarketPriceOracle(core.marketIds.weth);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, 1);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
+
+      // Mine blocks so we can cancel deposit
+      await mine(1200);
+      const result1 = await vault.cancelDeposit(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
+      await expectEvent(eventEmitter, result1, 'AsyncDepositCancelledFailed', {
+        key: depositKey,
+        token: factory.address,
+        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
+      });
+
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, oldOracle);
+
+      const result2 = await wrapper.connect(core.hhUser1)
+        .executeDepositCancellationForRetry(depositKey, { gasLimit: GMX_V2_CALLBACK_GAS_LIMIT.mul(2) });
+      await expectEvent(eventEmitter, result2, 'AsyncDepositCancelled', {
+        key: depositKey,
+        token: factory.address,
+      });
+
+      const deposit = await wrapper.getDepositInfo(depositKey);
+      expect(deposit.vault).to.eq(ZERO_ADDRESS);
+      expect(deposit.accountNumber).to.eq(ZERO_BI);
+      expect(deposit.inputToken).to.eq(ZERO_ADDRESS);
+      expect(deposit.inputAmount).to.eq(ZERO_BI);
+      expect(deposit.outputAmount).to.eq(ZERO_BI);
+      expect(deposit.isRetryable).to.eq(false);
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ONE_ETH_BI);
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc!,
+        ZERO_BI.sub(usdcAmount.div(2)),
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
+    });
+
+    it('should fail if not called by a handler', async () => {
+      await expectThrow(
+        wrapper.connect(core.hhUser1).executeDepositCancellationForRetry(BYTES_ZERO),
+        `AsyncIsolationModeTraderBase: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if the deposit is not retryable yet', async () => {
+      await gmxV2Registry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
+      await expectThrow(
+        wrapper.connect(core.hhUser1).executeDepositCancellationForRetry(BYTES_ZERO),
+        'AsyncIsolationModeTraderBase: Conversion is not retryable',
+      );
+    });
+  });
+
   describe('#isValidInputToken', () => {
     it('should work normally', async () => {
       expect(await wrapper.isValidInputToken(core.tokens.weth.address)).to.eq(true);
@@ -1048,7 +1155,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
             isRetryable: false,
           },
         ),
-        `GmxV2IsolationModeWrapperV2: Only unwrapper can call <${core.hhUser1.address.toLowerCase()}>`,
+        `IsolationModeWrapperTraderV2: Only unwrapper can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

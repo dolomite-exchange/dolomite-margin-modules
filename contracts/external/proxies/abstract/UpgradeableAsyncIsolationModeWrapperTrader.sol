@@ -89,8 +89,13 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             _depositInfo.inputToken
         );
 
+        // Get the delta by subtracting the old value (retrieved via `_getDepositSlot(_key)`) from the new one.
+        // We should never underflow because this is only ever called when the deposit is reduced in size (hence the
+        // function name)
         uint256 deltaInputWei = _getDepositSlot(_key).inputAmount - _depositInfo.inputAmount;
         IERC20(_depositInfo.inputToken).safeApprove(msg.sender, deltaInputWei);
+
+        _setDepositInfo(_key, _depositInfo);
     }
 
     function exchange(

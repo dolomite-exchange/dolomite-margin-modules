@@ -377,7 +377,18 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       }, {} as any);
 
       const deposit = depositKey ? await wrapper.getDepositInfo(depositKey) : undefined;
-      if (deposit) {
+      if (deposit &&
+        (state === FinishState.WithdrawalSucceeded ||
+          state === FinishState.Liquidated ||
+          state === FinishState.Expired)
+      ) {
+        expect(deposit.vault).to.eq(ZERO_ADDRESS);
+        expect(deposit.accountNumber).to.eq(ZERO_BI);
+        expect(deposit.inputToken).to.eq(ZERO_ADDRESS);
+        expect(deposit.inputAmount).to.eq(ZERO_BI);
+        expect(deposit.outputAmount).to.eq(ZERO_BI);
+        expect(deposit.isRetryable).to.eq(false);
+      } else if (deposit) {
         expect(deposit.vault).to.eq(vault.address);
         expect(deposit.accountNumber).to.eq(borrowAccountNumber);
         expect(deposit.inputToken).to.eq(core.tokens.nativeUsdc!.address);

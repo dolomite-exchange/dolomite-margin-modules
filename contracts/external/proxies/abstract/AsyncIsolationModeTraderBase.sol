@@ -62,12 +62,7 @@ abstract contract AsyncIsolationModeTraderBase is
     // ===================================================
 
     modifier onlyHandler(address _from) {
-        Require.that(
-            isHandler(_from),
-            _FILE,
-            "Only handler can call",
-            _from
-        );
+        _validateIsHandler(_from);
         _;
     }
 
@@ -114,6 +109,15 @@ abstract contract AsyncIsolationModeTraderBase is
 
     function _eventEmitter() internal view returns (IEventEmitterRegistry) {
         return HANDLER_REGISTRY().dolomiteRegistry().eventEmitter();
+    }
+
+    function _validateIsHandler(address _from) internal view {
+        Require.that(
+            isHandler(_from),
+            _FILE,
+            "Only handler can call",
+            _from
+        );
     }
 
     function _validateIsRetryable(bool _isRetryable) internal pure {
