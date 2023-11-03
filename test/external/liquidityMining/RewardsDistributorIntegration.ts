@@ -4,9 +4,8 @@ import { OARB, OARB__factory, RewardsDistributor, RewardsDistributor__factory } 
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { Network } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
-import { expectEvent, expectThrow } from 'test/utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
-import { MerkleTree } from 'merkletreejs';
+import { expectThrow } from 'test/utils/assertions';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
 
 const USER1 = '0x0321be949876c2545ac121379c620c2a0480b758';
 const USER2 = '0x1702acf734116cd8faf86d139aa91843f81510a1';
@@ -17,10 +16,8 @@ describe('RewardsDistributorIntegration', () => {
   let oARB: OARB;
   let rewardsDistributor: RewardsDistributor;
   let merkleRoot1: string;
-  let merkleRoot2: string;
   let validProof1: string[];
   let validProof2: string[];
-  let invalidProof: string[];
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
