@@ -74,6 +74,11 @@ export const DYT_GLP_2024_MAP: Record<Network, TokenWithMarketId | undefined> = 
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const GRAIL_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const LINK_MAP: Record<Network, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xf97f4df75117a78c1A5a0DBb814Af92458539FB4',
@@ -207,6 +212,16 @@ export const GMX_MAP: Record<Network, string | undefined> = {
 
 export const GMX_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x489ee077994B6658eAfA855C308275EAd8097C4A',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GRAIL_USDC_V3_POOL_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x8cc8093218bCaC8B1896A1EED4D925F6F6aB289F',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GRAIL_WETH_V3_POOL_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x60451B6aC55E3C5F0f3aeE31519670EcC62DC28f',
   [Network.ArbitrumGoerli]: undefined,
 };
 

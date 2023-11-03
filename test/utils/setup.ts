@@ -33,6 +33,8 @@ import {
   GLPIsolationModeWrapperTraderV1__factory,
   IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
+  ICamelotV3Pool,
+  ICamelotV3Pool__factory,
   IChainlinkPriceOracleOld,
   IChainlinkPriceOracleOld__factory,
   IChainlinkRegistry,
@@ -170,6 +172,9 @@ import {
   GMX_MAP,
   GMX_REWARD_ROUTER_MAP,
   GMX_VAULT_MAP,
+  GRAIL_MAP,
+  GRAIL_USDC_V3_POOL_MAP,
+  GRAIL_WETH_V3_POOL_MAP,
   JONES_ECOSYSTEM_GOVERNOR_MAP,
   JONES_GLP_ADAPTER_MAP,
   JONES_GLP_VAULT_ROUTER_MAP,
@@ -237,6 +242,12 @@ export interface AbraEcosystem {
 
 export interface AtlasEcosystem {
   siToken: IERC20;
+}
+
+export interface CamelotEcosystem {
+  grail: IERC20;
+  grailUsdcV3Pool: ICamelotV3Pool;
+  grailWethV3Pool: ICamelotV3Pool;
 }
 
 export interface GmxEcosystem {
@@ -353,6 +364,7 @@ export interface CoreProtocol {
   alwaysZeroInterestSetter: IDolomiteInterestSetter;
   atlasEcosystem: AtlasEcosystem | undefined;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
+  camelotEcosystem: CamelotEcosystem | undefined;
   chainlinkPriceOracleOld: IChainlinkPriceOracleOld | undefined;
   chainlinkRegistry: IChainlinkRegistry | undefined;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
@@ -606,6 +618,7 @@ export async function setupCoreProtocol(
 
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
+  const camelotEcosystem = await createCamelotEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
   const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
   const odosEcosystem = await createOdosEcosystem(config.network, hhUser1);
@@ -620,6 +633,7 @@ export async function setupCoreProtocol(
     alwaysZeroInterestSetter,
     atlasEcosystem,
     borrowPositionProxyV2,
+    camelotEcosystem,
     chainlinkRegistry,
     chainlinkPriceOracleOld,
     depositWithdrawalProxy,
@@ -792,6 +806,18 @@ async function createAtlasEcosystem(network: Network, signer: SignerWithAddress)
   return {
     siToken: getContract(ATLAS_SI_TOKEN_MAP[network] as string, IERC20__factory.connect, signer),
   };
+}
+
+async function createCamelotEcosystem(network: Network, signer: SignerWithAddress): Promise<CamelotEcosystem | undefined> {
+  if (!GRAIL_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    grail: getContract(GRAIL_MAP[network] as string, IERC20__factory.connect, signer),
+    grailUsdcV3Pool: getContract(GRAIL_USDC_V3_POOL_MAP[network] as string, ICamelotV3Pool__factory.connect, signer),
+    grailWethV3Pool: getContract(GRAIL_WETH_V3_POOL_MAP[network] as string, ICamelotV3Pool__factory.connect, signer),
+  }
 }
 
 async function createGmxEcosystem(network: Network, signer: SignerWithAddress): Promise<GmxEcosystem | undefined> {
