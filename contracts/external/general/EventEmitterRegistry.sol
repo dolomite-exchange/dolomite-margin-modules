@@ -24,7 +24,7 @@ import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
-import { IEventEmitterRegistry } from "../interfaces/IEventEmitter.sol";
+import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable max-line-length
@@ -167,6 +167,9 @@ contract EventEmitterRegistry is
     // =================================================
 
     function _validateOnlyTrustedConverter(address _token, address _from) internal view {
+        uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
+        assert(marketId != 0); // getMarketIdByTokenAddress throws if the token is not listed.
+
         Require.that(
             IIsolationModeVaultFactory(_token).isTokenConverterTrusted(_from),
             _FILE,

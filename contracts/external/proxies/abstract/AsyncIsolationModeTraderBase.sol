@@ -26,7 +26,7 @@ import { IWETH } from "../../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { IAsyncIsolationModeTraderBase } from "../../interfaces/IAsyncIsolationModeTraderBase.sol";
-import { IEventEmitterRegistry } from "../../interfaces/IEventEmitter.sol";
+import { IEventEmitterRegistry } from "../../interfaces/IEventEmitterRegistry.sol";
 import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 
 

@@ -38,7 +38,7 @@ interface IEventEmitterRegistry {
 
     event AsyncDepositCreated(
         bytes32 indexed key,
-        address token,
+        address indexed token,
         IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo deposit
     );
 
