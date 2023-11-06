@@ -30,16 +30,6 @@ import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOr
  */
 interface ITWAPPriceOracle is IDolomitePriceOracle {
 
-    enum PairVersion {
-        V2,
-        V3
-    }
-
-    struct PairInfo {
-        address pairAddress;
-        PairVersion pairVersion;
-    }
-
     // ============ Events ============
 
     event ObservationIntervalUpdated(uint256 observationInterval);

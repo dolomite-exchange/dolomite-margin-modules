@@ -19,14 +19,14 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { ITWAPPriceOracle } from "../interfaces/ITWAPPriceOracle.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-import { ICamelotV3Pool } from "../interfaces/camelot/ICamelotV3Pool.sol";
-import { OracleLibrary } from "../lib/OracleLibrary.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { OracleLibrary } from "../../utils/OracleLibrary.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { ITWAPPriceOracle } from "../interfaces/ITWAPPriceOracle.sol";
+import { ICamelotV3Pool } from "../interfaces/camelot/ICamelotV3Pool.sol";
 
 
 /**
@@ -47,27 +47,17 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     // ========================= Storage =========================
 
     EnumerableSet.AddressSet private _pairs;
-    mapping(address => PairVersion) private _pairToVersion;
 
     address public token;
     uint32 public observationInterval = 15 minutes;
 
     // ========================= Constructor =========================
 
-    /**
-     *
-     * @param  _token                  The tokens that are supported by this adapter.
-     * @param  _tokenPairs              The token against which this token's value is compared using the aggregator. The
-     *                                  zero address means USD.
-     * @param  _dolomiteMargin          The address of the DolomiteMargin contract.
-     */
     constructor(
         address _token,
-        PairInfo[] memory _tokenPairs,
+        address[] memory _tokenPairs,
         address _dolomiteMargin
-    )
-        OnlyDolomiteMargin(_dolomiteMargin)
-    {
+    ) OnlyDolomiteMargin(_dolomiteMargin) {
         token = _token;
         for (uint256 i; i < _tokenPairs.length; i++) {
             _ownerAddPair(_tokenPairs[i]);
@@ -86,7 +76,7 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     }
 
     function ownerAddPair(
-        PairInfo memory _pair
+        address _pair
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
@@ -103,13 +93,16 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
 
     // ========================= Public Functions =========================
 
+    function getPairs() external view returns (address[] memory) {
+        return _pairs.values();
+    }
+
     function getPrice(
         address _token
     )
     public
     view
-    returns (IDolomiteStructs.MonetaryPrice memory)
-    {
+    returns (IDolomiteStructs.MonetaryPrice memory) {
         uint256 len = _pairs.length();
         Require.that(
             _token == token,
@@ -120,36 +113,28 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
         Require.that(
             len > 0,
             _FILE,
-            'Oracle contains no pairs'
+            "Oracle contains no pairs"
         );
 
         uint256 totalPrice;
         for (uint256 i; i < len; i++) {
             ICamelotV3Pool currentPair = ICamelotV3Pool(_pairs.at(i));
 
-            if (_pairToVersion[address(currentPair)] == PairVersion.V3) {
-                address poolToken0 = currentPair.token0();
-                address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
-                uint8 tokenDecimals = IERC20Metadata(_token).decimals();
+            address poolToken0 = currentPair.token0();
+            address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
+            uint8 tokenDecimals = IERC20Metadata(_token).decimals();
 
-                int24 tick = OracleLibrary.consult(address(currentPair), observationInterval);
-                uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(10 ** tokenDecimals), _token, outputToken);
-                IDolomiteStructs.MonetaryPrice memory price = DOLOMITE_MARGIN().getMarketPrice(DOLOMITE_MARGIN().getMarketIdByTokenAddress(outputToken));
+            int24 tick = OracleLibrary.consult(address(currentPair), observationInterval);
+            uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(10 ** tokenDecimals), _token, outputToken);
+            IDolomiteStructs.MonetaryPrice memory price = 
+                DOLOMITE_MARGIN().getMarketPrice(DOLOMITE_MARGIN().getMarketIdByTokenAddress(outputToken));
 
-                totalPrice += standardizeNumberOfDecimals(tokenDecimals, price.value * quote, _ORACLE_VALUE_DECIMALS);
-            } else {
-                // @follow-up Do we want to do v2 pools since they don't have priceCumulative
-                revert();
-            }
+            totalPrice += standardizeNumberOfDecimals(tokenDecimals, price.value * quote, _ORACLE_VALUE_DECIMALS);
         }
 
         return IDolomiteStructs.MonetaryPrice({
             value: totalPrice / len
         });
-    }
-
-    function getPairs() external view returns (address[] memory) {
-        return _pairs.values();
     }
 
     function standardizeNumberOfDecimals(
@@ -159,8 +144,7 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     )
     public
     pure
-    returns (uint) 
-    {
+    returns (uint) {
         uint256 tokenDecimalsFactor = 10 ** uint256(_tokenDecimals);
         uint256 priceFactor = _ONE_DOLLAR / tokenDecimalsFactor;
         uint256 valueFactor = 10 ** uint256(_valueDecimals);
@@ -171,18 +155,17 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     // ========================= Internal Functions =========================
 
     function _ownerAddPair(
-        PairInfo memory _pair
+        address _pair
     )
     internal {
-        ICamelotV3Pool pool = ICamelotV3Pool(_pair.pairAddress);
+        ICamelotV3Pool pool = ICamelotV3Pool(_pair);
         Require.that(
             pool.token0() == token || pool.token1() == token,
             _FILE,
             "Pair must contain oracle token"
         );
-        _pairs.add(_pair.pairAddress);
-        _pairToVersion[_pair.pairAddress] = _pair.pairVersion;
-        emit PairAdded(_pair.pairAddress);
+        _pairs.add(_pair);
+        emit PairAdded(_pair);
     }
 
     function _ownerRemovePair(
@@ -190,15 +173,13 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     )
     internal {
         _pairs.remove(_pairAddress);
-        delete _pairToVersion[_pairAddress];
         emit PairRemoved(_pairAddress);
     }
 
     function _ownerSetObservationInterval(
         uint32 _observationInterval
     )
-    internal
-    {
+    internal {
         observationInterval = _observationInterval;
         emit ObservationIntervalUpdated(_observationInterval);
     }

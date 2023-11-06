@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.9;
 
-import "../interfaces/camelot/ICamelotV3Pool.sol";
-import "./TickMath.sol";
-import "./FullMath.sol";
+import { FullMath } from "./FullMath.sol";
+import { TickMath } from "./TickMath.sol";
+import { ICamelotV3Pool } from "../external/interfaces/camelot/ICamelotV3Pool.sol";
 
+/**
+ * @title   OracleLibrary
+ *
+ */
 library OracleLibrary {
 
     function consult(address _pool, uint32 _period) internal view returns (int24 timeWeightedAverageTick) {
-        require(_period != 0);
+        require(_period != 0); // solhint-disable-line reason-string
 
         uint32[] memory secondAgos = new uint32[](2);
         secondAgos[0] = _period;

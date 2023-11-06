@@ -12,14 +12,16 @@ import {
   Network,
   ONE_DAY_SECONDS,
 } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
 
-const WETH_PRICE = BigNumber.from('1883923360000000000000');
-// const BTC_PRICE = BigNumber.from('299800328339800000000000000000000');
-// const USDC_PRICE = BigNumber.from('999937000000000000000000000000');
-// const TEST_TOKEN_PRICE = WETH_PRICE.mul(1).div(10);
+const ARB_TOKEN = '0x912CE59144191C1204E64559FE8253a0e49E6548';
+const ARB_WETH_POOL = '0xe51635ae8136aBAc44906A8f230C2D235E9c195F';
+
+const GRAIL_USDC_PRICE = BigNumber.from('1314349704935686790000');
+const GRAIL_WETH_PRICE = BigNumber.from('1313105224024545793160');
+const ARB_WETH_PRICE = BigNumber.from('1109937600148875645');
 const FIFTEEN_MINUTES = BigNumber.from('900');
 
 describe('TWAPPriceOracle', () => {
@@ -29,7 +31,7 @@ describe('TWAPPriceOracle', () => {
   let oracle: TWAPPriceOracle;
 
   before(async () => {
-    const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
+    const blockNumber = 147_792_153;
     core = await setupCoreProtocol({
       blockNumber,
       network: Network.ArbitrumOne,
@@ -38,11 +40,7 @@ describe('TWAPPriceOracle', () => {
     oracle = (await createContractWithAbi<TWAPPriceOracle>(
       TWAPPriceOracle__factory.abi,
       TWAPPriceOracle__factory.bytecode,
-      [
-        core.camelotEcosystem!.grail.address,
-        [{pairAddress: core.camelotEcosystem!.grailUsdcV3Pool.address, pairVersion: 1}],
-        core.dolomiteMargin.address
-      ]
+      getTWAPPriceOracleParams(core, core.camelotEcosystem!.grail, [core.camelotEcosystem!.grailUsdcV3Pool.address])
     )).connect(core.governance);
 
     snapshotId = await snapshot();
@@ -64,41 +62,43 @@ describe('TWAPPriceOracle', () => {
   describe('#getPrice', () => {
     it('should work normally with usdc as output token', async () => {
       const price = await oracle.getPrice(core.camelotEcosystem!.grail.address);
-      console.log(price.value.toString());
+      expect(price.value).to.eq(GRAIL_USDC_PRICE);
     });
 
     it('should work normally with weth as output token', async () => {
       await oracle.ownerRemovePair(core.camelotEcosystem!.grailUsdcV3Pool.address);
-      await oracle.ownerAddPair({ pairAddress: core.camelotEcosystem!.grailWethV3Pool.address, pairVersion: 1});
+      await oracle.ownerAddPair(core.camelotEcosystem!.grailWethV3Pool.address);
       const price = await oracle.getPrice(core.camelotEcosystem!.grail.address);
-      console.log(price.value.toString());
+      expect(price.value).to.eq(GRAIL_WETH_PRICE);
     });
 
     it('should work normally with two pairs', async () => {
-      await oracle.ownerAddPair({ pairAddress: core.camelotEcosystem!.grailWethV3Pool.address, pairVersion: 1});
+      await oracle.ownerAddPair(core.camelotEcosystem!.grailWethV3Pool.address);
       const price = await oracle.getPrice(core.camelotEcosystem!.grail.address);
-      console.log(price.value.toString());
+      expect(price.value).to.eq(GRAIL_WETH_PRICE.add(GRAIL_USDC_PRICE).div(2));
     });
 
-    // No pool with GRAIL for this so using ETH and ARB pool
+    // No pool with GRAIL for this so testing with ETH and ARB pool
     it('should work normally when output token is token0', async () => {
-      const arb = '0x912CE59144191C1204E64559FE8253a0e49E6548';
       const otherOracle = await createContractWithAbi<TWAPPriceOracle>(
         TWAPPriceOracle__factory.abi,
         TWAPPriceOracle__factory.bytecode,
         [
-        arb,
-        [{pairAddress: '0xe51635ae8136aBAc44906A8f230C2D235E9c195F', pairVersion: 1}],
+        ARB_TOKEN,
+        [ARB_WETH_POOL],
         core.dolomiteMargin.address
         ]
       );
-      const price = await otherOracle.getPrice(arb);
-      console.log(price.value.toString());
-    });
-
-    // @follow-up Do we want to implement v2 pools
-    it('should fail if v2 pool', async () => {
-
+      const price = (await otherOracle.getPrice(ARB_TOKEN)).value;
+      expect(price).to.eq(ARB_WETH_PRICE);
+    
+      // Expect it to be within .35% of dolomite price
+      const dolomiteArbPrice = (await core.dolomiteMargin.getMarketPrice(7)).value;
+      if (dolomiteArbPrice.gt(price)) {
+        expect(dolomiteArbPrice.sub(price)).to.be.lt(dolomiteArbPrice.mul(35).div(10_000))
+      } else {
+        expect(price.sub(dolomiteArbPrice)).to.be.lt(price.mul(35).div(10_000))
+      }
     });
 
     it('should fail if invalid input token', async () => {
@@ -136,7 +136,7 @@ describe('TWAPPriceOracle', () => {
     it('can add a new pair if token is pair token0', async () => {
       await oracle.ownerRemovePair(core.camelotEcosystem!.grailUsdcV3Pool.address);
       expect(await oracle.getPairs()).to.deep.equal([]);
-      await oracle.ownerAddPair({ pairAddress: core.camelotEcosystem!.grailUsdcV3Pool.address, pairVersion: 1});
+      await oracle.ownerAddPair(core.camelotEcosystem!.grailUsdcV3Pool.address);
       expect(await oracle.getPairs()).to.deep.equal([core.camelotEcosystem!.grailUsdcV3Pool.address]);
     });
 
@@ -146,7 +146,7 @@ describe('TWAPPriceOracle', () => {
         TestPair__factory.bytecode,
         [core.tokens.weth.address, core.camelotEcosystem!.grail.address]
       )
-      await oracle.ownerAddPair({ pairAddress: myPair.address, pairVersion: 1});
+      await oracle.ownerAddPair(myPair.address);
       expect(await oracle.getPairs()).to.deep.equal([core.camelotEcosystem!.grailUsdcV3Pool.address, myPair.address]);
     });
 
@@ -157,14 +157,14 @@ describe('TWAPPriceOracle', () => {
         [core.tokens.weth.address, core.tokens.usdc.address]
       )
       await expectThrow(
-        oracle.connect(core.governance).ownerAddPair({ pairAddress: myPair.address, pairVersion: 1}),
+        oracle.connect(core.governance).ownerAddPair(myPair.address),
         'TWAPPriceOracle: Pair must contain oracle token',
       );
     });
 
     it('fails when invoked by non-admin', async () => {
       await expectThrow(
-        oracle.connect(core.hhUser1).ownerAddPair({ pairAddress: core.camelotEcosystem!.grailUsdcV3Pool.address, pairVersion: 1}),
+        oracle.connect(core.hhUser1).ownerAddPair(core.camelotEcosystem!.grailUsdcV3Pool.address),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
