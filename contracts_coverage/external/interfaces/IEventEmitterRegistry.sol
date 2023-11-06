@@ -38,8 +38,14 @@ interface IEventEmitterRegistry {
 
     event AsyncDepositCreated(
         bytes32 indexed key,
-        address token,
+        address indexed token,
         IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo deposit
+    );
+
+    event AsyncDepositOutputAmountUpdated(
+        bytes32 indexed key,
+        address indexed token,
+        uint256 outputAmount
     );
 
     event AsyncDepositExecuted(bytes32 indexed key, address indexed token);
@@ -54,6 +60,12 @@ interface IEventEmitterRegistry {
         bytes32 indexed key,
         address indexed token,
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo withdrawal
+    );
+
+    event AsyncWithdrawalOutputAmountUpdated(
+        bytes32 indexed key,
+        address indexed token,
+        uint256 outputAmount
     );
 
     event AsyncWithdrawalExecuted(bytes32 indexed key, address indexed token);
@@ -72,6 +84,12 @@ interface IEventEmitterRegistry {
         IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo calldata _deposit
     ) external;
 
+    function emitAsyncDepositOutputAmountUpdated(
+        bytes32 _key,
+        address _token,
+        uint256 _outputAmount
+    ) external;
+
     function emitAsyncDepositExecuted(bytes32 _key, address _token) external;
 
     function emitAsyncDepositFailed(bytes32 _key, address _token, string calldata _reason) external;
@@ -84,6 +102,12 @@ interface IEventEmitterRegistry {
         bytes32 _key,
         address _token,
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo calldata _withdrawal
+    ) external;
+
+    function emitAsyncWithdrawalOutputAmountUpdated(
+        bytes32 _key,
+        address _token,
+        uint256 _outputAmount
     ) external;
 
     function emitAsyncWithdrawalExecuted(bytes32 _key, address _token) external;

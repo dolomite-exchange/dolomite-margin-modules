@@ -24,7 +24,7 @@ import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
-import { IEventEmitterRegistry } from "../interfaces/IEventEmitter.sol";
+import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable max-line-length
@@ -76,6 +76,17 @@ contract EventEmitterRegistry is
         onlyTrustedTokenConverter(_token, msg.sender)
     {
         emit AsyncDepositCreated(_key, _token, _deposit);
+    }
+
+    function emitAsyncDepositOutputAmountUpdated(
+        bytes32 _key,
+        address _token,
+        uint256 _outputAmount
+    )
+        external
+        onlyTrustedTokenConverter(_token, msg.sender)
+    {
+        emit AsyncDepositOutputAmountUpdated(_key, _token, _outputAmount);
     }
 
     function emitAsyncDepositExecuted(
@@ -131,6 +142,17 @@ contract EventEmitterRegistry is
         emit AsyncWithdrawalCreated(_key, _token, _withdrawal);
     }
 
+    function emitAsyncWithdrawalOutputAmountUpdated(
+        bytes32 _key,
+        address _token,
+        uint256 _outputAmount
+    )
+        external
+        onlyTrustedTokenConverter(_token, msg.sender)
+    {
+        emit AsyncWithdrawalOutputAmountUpdated(_key, _token, _outputAmount);
+    }
+
     function emitAsyncWithdrawalExecuted(
         bytes32 _key,
         address _token
@@ -167,6 +189,9 @@ contract EventEmitterRegistry is
     // =================================================
 
     function _validateOnlyTrustedConverter(address _token, address _from) internal view {
+        uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
+        /*assert(marketId != 0);*/ // getMarketIdByTokenAddress throws if the token is not listed.
+
         if (IIsolationModeVaultFactory(_token).isTokenConverterTrusted(_from)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             IIsolationModeVaultFactory(_token).isTokenConverterTrusted(_from),

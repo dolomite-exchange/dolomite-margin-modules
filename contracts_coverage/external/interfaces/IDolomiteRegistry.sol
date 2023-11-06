@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IEventEmitterRegistry } from "./IEventEmitter.sol";
+import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
