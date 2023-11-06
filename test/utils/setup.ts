@@ -808,7 +808,10 @@ async function createAtlasEcosystem(network: Network, signer: SignerWithAddress)
   };
 }
 
-async function createCamelotEcosystem(network: Network, signer: SignerWithAddress): Promise<CamelotEcosystem | undefined> {
+async function createCamelotEcosystem(
+  network: Network,
+  signer: SignerWithAddress
+): Promise<CamelotEcosystem | undefined> {
   if (!GRAIL_MAP[network]) {
     return undefined;
   }
@@ -817,7 +820,7 @@ async function createCamelotEcosystem(network: Network, signer: SignerWithAddres
     grail: getContract(GRAIL_MAP[network] as string, IERC20__factory.connect, signer),
     grailUsdcV3Pool: getContract(GRAIL_USDC_V3_POOL_MAP[network] as string, ICamelotV3Pool__factory.connect, signer),
     grailWethV3Pool: getContract(GRAIL_WETH_V3_POOL_MAP[network] as string, ICamelotV3Pool__factory.connect, signer),
-  }
+  };
 }
 
 async function createGmxEcosystem(network: Network, signer: SignerWithAddress): Promise<GmxEcosystem | undefined> {
