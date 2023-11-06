@@ -78,6 +78,17 @@ contract EventEmitterRegistry is
         emit AsyncDepositCreated(_key, _token, _deposit);
     }
 
+    function emitAsyncDepositOutputAmountUpdated(
+        bytes32 _key,
+        address _token,
+        uint256 _outputAmount
+    )
+        external
+        onlyTrustedTokenConverter(_token, msg.sender)
+    {
+        emit AsyncDepositOutputAmountUpdated(_key, _token, _outputAmount);
+    }
+
     function emitAsyncDepositExecuted(
         bytes32 _key,
         address _token
@@ -129,6 +140,17 @@ contract EventEmitterRegistry is
         onlyTrustedTokenConverter(_token, msg.sender)
     {
         emit AsyncWithdrawalCreated(_key, _token, _withdrawal);
+    }
+
+    function emitAsyncWithdrawalOutputAmountUpdated(
+        bytes32 _key,
+        address _token,
+        uint256 _outputAmount
+    )
+        external
+        onlyTrustedTokenConverter(_token, msg.sender)
+    {
+        emit AsyncWithdrawalOutputAmountUpdated(_key, _token, _outputAmount);
     }
 
     function emitAsyncWithdrawalExecuted(
