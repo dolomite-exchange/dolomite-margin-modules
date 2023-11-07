@@ -5,7 +5,6 @@ import {
   ChainlinkPriceOracle,
   ChainlinkPriceOracle__factory,
   CustomTestToken,
-  IChainlinkPriceOracleOld__factory,
   TestChainlinkAggregator,
   TestChainlinkAggregator__factory,
 } from '../../../src/types';

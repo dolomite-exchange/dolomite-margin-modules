@@ -67,7 +67,8 @@ library AccountBalanceLib {
         });
         IDolomiteStructs.Par memory par = dolomiteMargin.getAccountPar(account, _marketId);
         if (par.isPositive() || par.isZero()) { /* FOR COVERAGE TESTING */ }
-        Require.that(par.isPositive() || par.isZero(),
+        Require.that(
+            par.isPositive() || par.isZero(),
             _FILE,
             "account cannot go negative",
             _accountOwner,

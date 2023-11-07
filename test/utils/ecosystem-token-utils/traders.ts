@@ -1,5 +1,6 @@
 import {
-  OdosAggregatorTrader, OdosAggregatorTrader__factory,
+  OdosAggregatorTrader,
+  OdosAggregatorTrader__factory,
   ParaswapAggregatorTrader,
   ParaswapAggregatorTrader__factory,
   ParaswapAggregatorTraderV2,

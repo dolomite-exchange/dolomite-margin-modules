@@ -58,6 +58,23 @@ contract TestIsolationModeTokenVaultV1 is SimpleIsolationModeTokenVaultV1 {
         }
     }
 
+    function testReentrancyOnOtherFunction(bytes memory _data) public nonReentrant {
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool isSuccessful, bytes memory result) = address(this).delegatecall(_data);
+        if (!isSuccessful) {
+            if (result.length < 68) {
+                revert("No reversion message!");
+            } else {
+                // solhint-disable-next-line no-inline-assembly
+                assembly {
+                    result := add(result, 0x04) // Slice the sighash.
+                }
+            }
+            (string memory errorMessage) = abi.decode(result, (string));
+            revert(errorMessage);
+        }
+    }
+
     function dolomiteRegistry() public override(IsolationModeTokenVaultV1) view returns (IDolomiteRegistry) {
         return TestSimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
     }

@@ -5,7 +5,6 @@ import { BigNumber } from 'ethers';
 import {
   CustomTestToken,
   TestIsolationModeFactory,
-  TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1WithPausable,
   TestIsolationModeTokenVaultV1WithPausable__factory,
   TestIsolationModeUnwrapperTraderV2,
@@ -15,12 +14,14 @@ import {
 } from '../../../../src/types';
 import {
   createContractWithAbi,
+  createContractWithLibrary,
   createTestToken,
   depositIntoDolomiteMargin,
 } from '../../../../src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectProtocolBalance, expectThrow } from '../../../utils/assertions';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../../utils/dolomite';
 import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
@@ -46,7 +47,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
   let factory: TestIsolationModeFactory;
-  let userVaultImplementation: TestIsolationModeTokenVaultV1;
+  let userVaultImplementation: TestIsolationModeTokenVaultV1WithPausable;
   let userVault: TestIsolationModeTokenVaultV1WithPausable;
 
   let solidUser: SignerWithAddress;
@@ -58,9 +59,10 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
-    userVaultImplementation = await createContractWithAbi<TestIsolationModeTokenVaultV1>(
-      TestIsolationModeTokenVaultV1WithPausable__factory.abi,
-      TestIsolationModeTokenVaultV1WithPausable__factory.bytecode,
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithPausable>(
+      'TestIsolationModeTokenVaultV1WithPausable',
+      libraries,
       [],
     );
     factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
@@ -169,14 +171,14 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
     it('should fail when fromAccountNumber != 0', async () => {
       await expectThrow(
         userVault.openBorrowPosition(borrowAccountNumber, defaultAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Invalid fromAccountNumber <${borrowAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid fromAccountNumber <${borrowAccountNumber}>`,
       );
     });
 
     it('should fail when toAccountNumber == 0', async () => {
       await expectThrow(
         userVault.openBorrowPosition(defaultAccountNumber, defaultAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Invalid toAccountNumber <${defaultAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid toAccountNumber <${defaultAccountNumber}>`,
       );
     });
   });
@@ -255,7 +257,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
           defaultAccountNumber,
           [underlyingMarketId],
         ),
-        `IsolationModeTokenVaultV1: Cannot withdraw market to wallet <${underlyingMarketId.toString()}>`,
+        `IsolationModeVaultV1ActionsImpl: Cannot withdraw market to wallet <${underlyingMarketId.toString()}>`,
       );
     });
 
@@ -303,14 +305,14 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
     it('should fail when fromAccountNumber != 0', async () => {
       await expectThrow(
         userVault.transferIntoPositionWithUnderlyingToken(borrowAccountNumber, defaultAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Invalid fromAccountNumber <${borrowAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid fromAccountNumber <${borrowAccountNumber}>`,
       );
     });
 
     it('should fail when borrowAccountNumber == 0', async () => {
       await expectThrow(
         userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, defaultAccountNumber, amountWei),
-        `IsolationModeTokenVaultV1: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid borrowAccountNumber <${defaultAccountNumber}>`,
       );
     });
   });
@@ -567,7 +569,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
           amountWei,
           BalanceCheckFlag.Both,
         ),
-        `IsolationModeTokenVaultV1: Invalid marketId <${underlyingMarketId.toString()}>`,
+        `IsolationModeVaultV1ActionsImpl: Invalid marketId <${underlyingMarketId.toString()}>`,
       );
     });
 
@@ -583,7 +585,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
           otherAmountWei,
           BalanceCheckFlag.To,
         ),
-        `IsolationModeTokenVaultV1: Market not allowed as debt <${otherMarketId1}>`,
+        `IsolationModeVaultV1ActionsImpl: Market not allowed as debt <${otherMarketId1}>`,
       );
     });
   });

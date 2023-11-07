@@ -13,12 +13,10 @@ import {
 import { AccountInfoStruct } from '../../../src/utils';
 import {
   BYTES_EMPTY,
-  LIQUIDATE_ALL,
   Network,
   NO_EXPIRY,
   NO_PARASWAP_TRADER_PARAM,
   ONE_BI,
-  SELL_ALL,
   ZERO_BI,
 } from '../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
@@ -30,9 +28,7 @@ import {
 } from '../../utils/assertions';
 import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from '../../utils/ecosystem-token-utils/gmx';
 import { setExpiry } from '../../utils/expiry-utils';
-import {
-  liquidateV4WithIsolationMode,
-} from '../../utils/liquidation-utils';
+import { liquidateV4WithIsolationMode } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
 import {
   checkForParaswapSuccess,
@@ -154,7 +150,6 @@ describe('GLPLiquidationWithUnwrapperV2', () => {
         solidAccountStruct,
         liquidAccountStruct,
         [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
         unwrapper,
       );
       const receipt = await txResult.wait();
@@ -256,7 +251,6 @@ describe('GLPLiquidationWithUnwrapperV2', () => {
           solidAccountStruct,
           liquidAccountStruct,
           [underlyingMarketId, core.marketIds.usdc, core.marketIds.weth],
-          [SELL_ALL, usdcOutputAmount, LIQUIDATE_ALL],
           unwrapper,
           BYTES_EMPTY,
           getParaswapTraderParamStruct(core, paraswapCalldata),
@@ -370,7 +364,6 @@ describe('GLPLiquidationWithUnwrapperV2', () => {
         solidAccountStruct,
         liquidAccountStruct,
         [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
         unwrapper,
         BYTES_EMPTY,
         NO_PARASWAP_TRADER_PARAM,
@@ -479,7 +472,6 @@ describe('GLPLiquidationWithUnwrapperV2', () => {
           solidAccountStruct,
           liquidAccountStruct,
           [underlyingMarketId, core.marketIds.usdc, core.marketIds.weth],
-          [SELL_ALL, usdcOutputAmount, LIQUIDATE_ALL],
           unwrapper,
           BYTES_EMPTY,
           getParaswapTraderParamStruct(core, paraswapCalldata),

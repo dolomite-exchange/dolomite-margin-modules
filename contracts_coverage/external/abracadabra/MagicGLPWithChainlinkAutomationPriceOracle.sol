@@ -60,13 +60,15 @@ contract MagicGLPWithChainlinkAutomationPriceOracle is ChainlinkAutomationPriceO
 
     function getPrice(address _token) public view returns (IDolomiteStructs.MonetaryPrice memory) {
         if (_token == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_token == address(MAGIC_GLP),
+        Require.that(
+            _token == address(MAGIC_GLP),
             _FILE,
             "Invalid token",
             _token
         );
         if (DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
-        Require.that(DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
+        Require.that(
+            DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
             _FILE,
             "magicGLP cannot be borrowable"
         );

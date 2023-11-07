@@ -1,5 +1,6 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
+import { BigNumber } from 'ethers';
 import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -22,6 +23,7 @@ describe('DolomiteRegistryImplementation', () => {
     const calldata = await implementation.populateTransaction.initialize(
       core.genericTraderProxy!.address,
       core.expiry!.address,
+      core.liquidatorAssetRegistry.address,
     );
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
     registry = DolomiteRegistryImplementation__factory.connect(registryProxy.address, core.governance);
@@ -44,6 +46,7 @@ describe('DolomiteRegistryImplementation', () => {
         registry.initialize(
           core.genericTraderProxy!.address,
           core.expiry!.address,
+          core.liquidatorAssetRegistry.address,
         ),
         'Initializable: contract is already initialized',
       );
@@ -53,38 +56,6 @@ describe('DolomiteRegistryImplementation', () => {
   describe('#slippageToleranceForPauseSentinelBase', () => {
     it('should return 1e18', async () => {
       expect(await registry.slippageToleranceForPauseSentinelBase()).to.equal('1000000000000000000');
-    });
-  });
-
-  describe('#ownerSetGenericTraderProxy', () => {
-    it('should work normally', async () => {
-      const genericTraderProxy = core.genericTraderProxy!.address;
-      const result = await registry.connect(core.governance).ownerSetGenericTraderProxy(genericTraderProxy);
-      await expectEvent(registry, result, 'GenericTraderProxySet', {
-        genericTraderProxy,
-      });
-      expect(await registry.genericTraderProxy()).to.equal(genericTraderProxy);
-    });
-
-    it('should fail if genericTraderProxy is invalid', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetGenericTraderProxy(OTHER_ADDRESS),
-        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetGenericTraderProxy(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetGenericTraderProxy(ZERO_ADDRESS),
-        'DolomiteRegistryImplementation: Invalid genericTraderProxy',
-      );
     });
   });
 
@@ -120,6 +91,70 @@ describe('DolomiteRegistryImplementation', () => {
     });
   });
 
+  describe('#ownerSetGenericTraderProxy', () => {
+    it('should work normally', async () => {
+      const genericTraderProxy = core.genericTraderProxy!.address;
+      const result = await registry.connect(core.governance).ownerSetGenericTraderProxy(genericTraderProxy);
+      await expectEvent(registry, result, 'GenericTraderProxySet', {
+        genericTraderProxy,
+      });
+      expect(await registry.genericTraderProxy()).to.equal(genericTraderProxy);
+    });
+
+    it('should fail if genericTraderProxy is invalid', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetGenericTraderProxy(OTHER_ADDRESS),
+        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetGenericTraderProxy(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetGenericTraderProxy(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid genericTraderProxy',
+      );
+    });
+  });
+
+  describe('#ownerSetLiquidatorAssetRegistry', () => {
+    it('should work normally', async () => {
+      const liquidatorAssetRegistry = core.liquidatorAssetRegistry!.address;
+      const result = await registry.connect(core.governance).ownerSetLiquidatorAssetRegistry(liquidatorAssetRegistry);
+      await expectEvent(registry, result, 'LiquidatorAssetRegistrySet', {
+        liquidatorAssetRegistry,
+      });
+      expect(await registry.liquidatorAssetRegistry()).to.equal(liquidatorAssetRegistry);
+    });
+
+    it('should fail if liquidatorAssetRegistry is invalid', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetLiquidatorAssetRegistry(OTHER_ADDRESS),
+        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetLiquidatorAssetRegistry(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetLiquidatorAssetRegistry(ZERO_ADDRESS),
+        'DolomiteRegistryImplementation: Invalid liquidatorAssetRegistry',
+      );
+    });
+  });
+
   describe('#ownerSetSlippageToleranceForPauseSentinel', () => {
     it('should work normally', async () => {
       const slippageTolerance = '123';
@@ -143,6 +178,41 @@ describe('DolomiteRegistryImplementation', () => {
     });
 
     it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetSlippageToleranceForPauseSentinel(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#emitLiquidationEnqueued', () => {
+    it('should work normally', async () => {
+      const liquidOwner = core.hhUser1.address;
+      const liquidNumber = BigNumber.from(1);
+      const heldMarketId = BigNumber.from(2);
+      const heldAmount = BigNumber.from(3);
+      const owedMarketId = BigNumber.from(4);
+      const minOutputAmount = BigNumber.from(5);
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.governance.address, true);
+      const result = await registry.connect(core.governance).emitLiquidationEnqueued(
+        liquidOwner,
+        liquidNumber,
+        heldMarketId,
+        heldAmount,
+        owedMarketId,
+        minOutputAmount,
+      );
+      await expectEvent(registry, result, 'LiquidationEnqueued', {
+        liquidOwner,
+        liquidNumber,
+        heldMarketId,
+        heldAmount,
+        owedMarketId,
+        minOutputAmount,
+      });
+    });
+
+    it('should fail when not called by global operator', async () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetSlippageToleranceForPauseSentinel(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,

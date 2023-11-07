@@ -22,11 +22,7 @@ import {
 } from '../../utils/assertions';
 import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from '../../utils/ecosystem-token-utils/gmx';
 import { setExpiry } from '../../utils/expiry-utils';
-import {
-  getLastZapAmountToBigNumber,
-  liquidateV4WithZap,
-  toZapBigNumber,
-} from '../../utils/liquidation-utils';
+import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
 import { checkForParaswapSuccess } from '../../utils/trader-utils';
 
@@ -69,7 +65,7 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
 
     heldMarketId = BigNumber.from(core.marketIds.dfsGlp!);
     glpApiToken = {
-      marketId: heldMarketId.toNumber(),
+      marketId: toZapBigNumber(heldMarketId),
       symbol: 'dfsGLP',
       name: 'Dolomite Isolation: Fee + Staked GLP',
       decimals: 18,

@@ -478,7 +478,7 @@ describe('AccountActionLib', () => {
           core.expiry.address,
           expiryTimeDelta,
         ),
-        'AccountActionLib: invalid expiry time',
+        'AccountActionLib: Invalid expiry time delta',
       );
     });
   });

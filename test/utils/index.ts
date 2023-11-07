@@ -12,6 +12,18 @@ export async function increaseToTimestamp(timestamp: number): Promise<void> {
   await time.increaseTo(timestamp);
 }
 
+export async function increaseByTimeDelta(delta: number): Promise<void> {
+  await time.increase(delta);
+}
+
+export async function advanceToTimestamp(timestamp: number): Promise<void> {
+  await time.increaseTo(timestamp);
+}
+
+export async function advanceByTimeDelta(delta: number): Promise<void> {
+  await time.increase(delta);
+}
+
 /**
  * Gets the most recent block number from the real network, NOT the forked network.
  * @param include32BlockBuffer Hardhat works better when there's > 31 block confirmations

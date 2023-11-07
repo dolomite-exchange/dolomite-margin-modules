@@ -155,7 +155,8 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
 
     function _ownerSetPendleRouter(address _pendleRouter) internal {
         if (_pendleRouter != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_pendleRouter != address(0),
+        Require.that(
+            _pendleRouter != address(0),
             _FILE,
             "Invalid pendleRouter address"
         );
@@ -165,7 +166,8 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
 
     function _ownerSetPtGlpMarket(address _ptGlpMarket) internal {
         if (_ptGlpMarket != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_ptGlpMarket != address(0),
+        Require.that(
+            _ptGlpMarket != address(0),
             _FILE,
             "Invalid ptGlpMarket address"
         );
@@ -175,7 +177,8 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
 
     function _ownerSetPtOracle(address _ptOracle) internal {
         if (_ptOracle != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_ptOracle != address(0),
+        Require.that(
+            _ptOracle != address(0),
             _FILE,
             "Invalid ptOracle address"
         );
@@ -185,7 +188,8 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
 
     function _ownerSetSyGlpToken(address _syGlpToken) internal {
         if (_syGlpToken != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_syGlpToken != address(0),
+        Require.that(
+            _syGlpToken != address(0),
             _FILE,
             "Invalid syGlpToken address"
         );
@@ -195,7 +199,8 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
 
     function _ownerSetPtGlpToken(address _ptGlpToken) internal {
         if (_ptGlpToken != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_ptGlpToken != address(0),
+        Require.that(
+            _ptGlpToken != address(0),
             _FILE,
             "Invalid ptGlpToken address"
         );
@@ -205,7 +210,8 @@ contract PendleGLPRegistry is IPendleGLPRegistry, BaseRegistry {
 
     function _ownerSetYtGlpToken(address _ytGlpToken) internal {
         if (_ytGlpToken != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_ytGlpToken != address(0),
+        Require.that(
+            _ytGlpToken != address(0),
             _FILE,
             "Invalid ytGlpToken address"
         );

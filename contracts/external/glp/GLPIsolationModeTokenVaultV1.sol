@@ -23,7 +23,6 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IGLPIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV1.sol";
@@ -46,8 +45,7 @@ import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeToke
  */
 contract GLPIsolationModeTokenVaultV1 is
     IGLPIsolationModeTokenVaultV1,
-    IsolationModeTokenVaultV1,
-    ProxyContractHelpers
+    IsolationModeTokenVaultV1
 {
     using SafeERC20 for IERC20;
 
@@ -162,7 +160,7 @@ contract GLPIsolationModeTokenVaultV1 is
         _setIsAcceptingFullAccountTransfer(true);
 
         // the amount of fsGLP being deposited is the current balance of fsGLP, since we should have started at 0.
-        uint amountWei = underlyingBalanceOf();
+        uint256 amountWei = underlyingBalanceOf();
         IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(/* _toAccountNumber = */ 0, amountWei);
 
         // reset the flag back to false
@@ -217,7 +215,7 @@ contract GLPIsolationModeTokenVaultV1 is
         if (super.underlyingBalanceOf() < _amount) {
             // There's not enough value in the vault to cover the withdrawal, so we need to withdraw from vGLP
             vGlp().withdraw();
-            _withdrawAllGmx(_proxySelf().owner());
+            _withdrawAllGmx(OWNER());
         }
 
         assert(_recipient != address(this));
