@@ -11,9 +11,9 @@ import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
 const ARB_TOKEN = '0x912CE59144191C1204E64559FE8253a0e49E6548';
 const ARB_WETH_POOL = '0xe51635ae8136aBAc44906A8f230C2D235E9c195F';
 
-const GRAIL_USDC_PRICE = BigNumber.from('1314349704935686790000');
-const GRAIL_WETH_PRICE = BigNumber.from('1313105224024545793160');
-const ARB_WETH_PRICE = BigNumber.from('1109937600148875645');
+const GRAIL_PRICE_USDC_POOL = BigNumber.from('789325473810421340000');
+const GRAIL_PRICE_WETH_POOL = BigNumber.from('792088096763836295510');
+const ARB_PRICE_WETH_POOL = BigNumber.from('920176763082082501');
 const FIFTEEN_MINUTES = BigNumber.from('900');
 
 describe('TWAPPriceOracle', () => {
@@ -23,7 +23,8 @@ describe('TWAPPriceOracle', () => {
   let oracle: TWAPPriceOracle;
 
   before(async () => {
-    const blockNumber = 147_792_153;
+    // Setting to block when ARB was not very volatile
+    const blockNumber = 144_700_000;
     core = await setupCoreProtocol({
       blockNumber,
       network: Network.ArbitrumOne,
@@ -54,20 +55,20 @@ describe('TWAPPriceOracle', () => {
   describe('#getPrice', () => {
     it('should work normally with usdc as output token', async () => {
       const price = await oracle.getPrice(core.camelotEcosystem!.grail.address);
-      expect(price.value).to.eq(GRAIL_USDC_PRICE);
+      expect(price.value).to.eq(GRAIL_PRICE_USDC_POOL);
     });
 
     it('should work normally with weth as output token', async () => {
       await oracle.connect(core.governance).ownerRemovePair(core.camelotEcosystem!.grailUsdcV3Pool.address);
       await oracle.connect(core.governance).ownerAddPair(core.camelotEcosystem!.grailWethV3Pool.address);
       const price = await oracle.getPrice(core.camelotEcosystem!.grail.address);
-      expect(price.value).to.eq(GRAIL_WETH_PRICE);
+      expect(price.value).to.eq(GRAIL_PRICE_WETH_POOL);
     });
 
     it('should work normally with two pairs', async () => {
       await oracle.connect(core.governance).ownerAddPair(core.camelotEcosystem!.grailWethV3Pool.address);
       const price = await oracle.getPrice(core.camelotEcosystem!.grail.address);
-      expect(price.value).to.eq(GRAIL_WETH_PRICE.add(GRAIL_USDC_PRICE).div(2));
+      expect(price.value).to.eq(GRAIL_PRICE_WETH_POOL.add(GRAIL_PRICE_USDC_POOL).div(2));
     });
 
     // No pool with GRAIL for this so testing with ETH and ARB pool
@@ -78,14 +79,14 @@ describe('TWAPPriceOracle', () => {
         [ARB_TOKEN, [ARB_WETH_POOL], core.dolomiteMargin.address]
       );
       const price = (await otherOracle.getPrice(ARB_TOKEN)).value;
-      expect(price).to.eq(ARB_WETH_PRICE);
+      expect(price).to.eq(ARB_PRICE_WETH_POOL);
 
-      // Expect it to be within .35% of dolomite price
+      // Expect it to be within .15% of dolomite price from chainlink
       const dolomiteArbPrice = (await core.dolomiteMargin.getMarketPrice(7)).value;
       if (dolomiteArbPrice.gt(price)) {
-        expect(dolomiteArbPrice.sub(price)).to.be.lt(dolomiteArbPrice.mul(35).div(10_000));
+        expect(dolomiteArbPrice.sub(price)).to.be.lt(dolomiteArbPrice.mul(15).div(10_000));
       } else {
-        expect(price.sub(dolomiteArbPrice)).to.be.lt(price.mul(35).div(10_000));
+        expect(price.sub(dolomiteArbPrice)).to.be.lt(price.mul(15).div(10_000));
       }
     });
 

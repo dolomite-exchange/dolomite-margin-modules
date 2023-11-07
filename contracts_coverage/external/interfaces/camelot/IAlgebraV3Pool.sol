@@ -22,12 +22,12 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   ICamelotV3Pool
+ * @title   IAlgebraV3Pool
  * @author  Dolomite
  *
- * @notice  Interface for camelot V3 pools
+ * @notice  Interface for Algebra V3 pools
  */
-interface ICamelotV3Pool {
+interface IAlgebraV3Pool {
 
     function getTimepoints(
         uint32[] calldata secondsAgos

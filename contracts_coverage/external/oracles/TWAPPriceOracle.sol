@@ -26,7 +26,7 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { OracleLibrary } from "../../utils/OracleLibrary.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { ITWAPPriceOracle } from "../interfaces/ITWAPPriceOracle.sol";
-import { ICamelotV3Pool } from "../interfaces/camelot/ICamelotV3Pool.sol";
+import { IAlgebraV3Pool } from "../interfaces/camelot/IAlgebraV3Pool.sol";
 
 
 /**
@@ -118,7 +118,7 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
 
         uint256 totalPrice;
         for (uint256 i; i < len; i++) {
-            ICamelotV3Pool currentPair = ICamelotV3Pool(_pairs.at(i));
+            IAlgebraV3Pool currentPair = IAlgebraV3Pool(_pairs.at(i));
 
             address poolToken0 = currentPair.token0();
             address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
@@ -158,7 +158,7 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
         address _pair
     )
     internal {
-        ICamelotV3Pool pool = ICamelotV3Pool(_pair);
+        IAlgebraV3Pool pool = IAlgebraV3Pool(_pair);
         if (pool.token0() == token || pool.token1() == token) { /* FOR COVERAGE TESTING */ }
         Require.that(pool.token0() == token || pool.token1() == token,
             _FILE,

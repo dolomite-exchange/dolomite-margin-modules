@@ -33,8 +33,8 @@ import {
   GLPIsolationModeWrapperTraderV1__factory,
   IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
-  ICamelotV3Pool,
-  ICamelotV3Pool__factory,
+  IAlgebraV3Pool,
+  IAlgebraV3Pool__factory,
   IChainlinkPriceOracleOld,
   IChainlinkPriceOracleOld__factory,
   IChainlinkRegistry,
@@ -246,8 +246,8 @@ export interface AtlasEcosystem {
 
 export interface CamelotEcosystem {
   grail: IERC20;
-  grailUsdcV3Pool: ICamelotV3Pool;
-  grailWethV3Pool: ICamelotV3Pool;
+  grailUsdcV3Pool: IAlgebraV3Pool;
+  grailWethV3Pool: IAlgebraV3Pool;
 }
 
 export interface GmxEcosystem {
@@ -818,8 +818,8 @@ async function createCamelotEcosystem(
 
   return {
     grail: getContract(GRAIL_MAP[network] as string, IERC20__factory.connect, signer),
-    grailUsdcV3Pool: getContract(GRAIL_USDC_V3_POOL_MAP[network] as string, ICamelotV3Pool__factory.connect, signer),
-    grailWethV3Pool: getContract(GRAIL_WETH_V3_POOL_MAP[network] as string, ICamelotV3Pool__factory.connect, signer),
+    grailUsdcV3Pool: getContract(GRAIL_USDC_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
+    grailWethV3Pool: getContract(GRAIL_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
   };
 }
 

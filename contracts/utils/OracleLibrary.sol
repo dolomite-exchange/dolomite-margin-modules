@@ -3,7 +3,8 @@ pragma solidity ^0.8.9;
 
 import { FullMath } from "./FullMath.sol";
 import { TickMath } from "./TickMath.sol";
-import { ICamelotV3Pool } from "../external/interfaces/camelot/ICamelotV3Pool.sol";
+import { IAlgebraV3Pool } from "../external/interfaces/camelot/IAlgebraV3Pool.sol";
+
 
 /**
  * @title   OracleLibrary
@@ -18,7 +19,7 @@ library OracleLibrary {
         secondAgos[0] = _period;
         secondAgos[1] = 0;
 
-        (int56[] memory tickCumulatives, , ,) = ICamelotV3Pool(_pool).getTimepoints(secondAgos);
+        (int56[] memory tickCumulatives, , ,) = IAlgebraV3Pool(_pool).getTimepoints(secondAgos);
         int56 tickCumulativesDelta = tickCumulatives[1] - tickCumulatives[0];
         timeWeightedAverageTick = int24(tickCumulativesDelta / int32(_period));
 
