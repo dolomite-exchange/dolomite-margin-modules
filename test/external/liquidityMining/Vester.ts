@@ -86,6 +86,12 @@ describe('Vester', () => {
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, WETH_BALANCE);
     await oARB.connect(core.hhUser1).approve(vester.address, ONE_ETH_BI);
 
+    await expectWalletBalance(core.governance, core.tokens.weth, ZERO_BI);
+    await expectWalletBalance(core.governance, core.tokens.arb, ZERO_BI);
+    await expectWalletBalance(core.governance, oARB, ZERO_BI);
+    await expectProtocolBalance(core, core.governance, defaultAccountNumber, core.marketIds.weth, ZERO_BI);
+    await expectProtocolBalance(core, core.governance, defaultAccountNumber, core.marketIds.arb, ZERO_BI);
+
     snapshotId = await snapshot();
   });
 
@@ -274,7 +280,7 @@ describe('Vester', () => {
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
-        core.hhUser1.address,
+        core.hhUser1,
         defaultAccountNumber,
         core.marketIds.arb,
         parseEther('2'),
@@ -315,7 +321,7 @@ describe('Vester', () => {
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
-        core.hhUser1.address,
+        core.hhUser1,
         defaultAccountNumber,
         core.marketIds.arb,
         parseEther('2'),
@@ -357,7 +363,7 @@ describe('Vester', () => {
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
-        core.hhUser1.address,
+        core.hhUser1,
         defaultAccountNumber,
         core.marketIds.arb,
         parseEther('2'),
@@ -398,7 +404,7 @@ describe('Vester', () => {
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
-        core.hhUser1.address,
+        core.hhUser1,
         defaultAccountNumber,
         core.marketIds.arb,
         parseEther('2'),
@@ -439,7 +445,7 @@ describe('Vester', () => {
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
-        core.hhUser1.address,
+        core.hhUser1,
         defaultAccountNumber,
         core.marketIds.arb,
         parseEther('2'),
@@ -480,14 +486,14 @@ describe('Vester', () => {
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
-        core.hhUser1.address,
+        core.hhUser1,
         defaultAccountNumber,
         core.marketIds.weth,
         parseEther('9.2'),
       );
       await expectProtocolBalance(
         core,
-        core.hhUser1.address,
+        core.hhUser1,
         defaultAccountNumber,
         core.marketIds.arb,
         parseEther('2'),
@@ -584,7 +590,7 @@ describe('Vester', () => {
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
-        core.hhUser1.address,
+        core.hhUser1,
         defaultAccountNumber,
         core.marketIds.arb,
         parseEther('.95'),
@@ -616,7 +622,7 @@ describe('Vester', () => {
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
-        core.hhUser1.address,
+        core.hhUser1,
         defaultAccountNumber,
         core.marketIds.arb,
         ONE_ETH_BI,
@@ -706,13 +712,21 @@ describe('Vester', () => {
       await expectWalletBalance(core.governance.address, core.tokens.arb, ZERO_BI);
       await expectProtocolBalance(
         core,
-        core.hhUser1.address,
+        core.hhUser1,
         defaultAccountNumber,
         core.marketIds.arb,
         parseEther('.95'),
       );
       await expectWalletBalance(vester, oARB, ZERO_BI);
       await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        core.governance,
+        defaultAccountNumber,
+        core.marketIds.arb,
+        parseEther('.05'),
+      );
+      await expectWalletBalance(core.governance, core.tokens.arb, ZERO_BI);
       expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
       expect(await vester.availableArbTokens()).to.eq(ONE_ETH_BI);
 
