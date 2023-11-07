@@ -77,9 +77,9 @@ contract Vester is
     bytes32 private constant _EMERGENCY_WITHDRAW_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.emergencyWithdrawTax")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_VESTING_ACTIVE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isVestingActive")) - 1); // solhint-disable-line max-line-length
 
-    // ===================================================
+    // =========================================================
     // ==================== State Variables ====================
-    // ===================================================
+    // =========================================================
 
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line
     IWETH public immutable WETH; // solhint-disable-line
@@ -87,9 +87,9 @@ contract Vester is
     IERC20 public immutable ARB; // solhint-disable-line
     uint256 public immutable ARB_MARKET_ID; // solhint-disable-line
 
-    // ==================================================================
+    // =========================================================
     // ======================= Modifiers =======================
-    // ==================================================================
+    // =========================================================
 
     modifier requireVestingActive() {
         Require.that(
@@ -100,9 +100,9 @@ contract Vester is
         _;
     }
 
-    // ==================================================================
+    // ===========================================================
     // ======================= Initializer =======================
-    // ==================================================================
+    // ===========================================================
 
     constructor(
         address _dolomiteMargin,
