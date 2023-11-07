@@ -7,9 +7,9 @@ import {
   EmitterMultipleRewardTokens,
   EmitterMultipleRewardTokens__factory,
   OARB,
+  OARB__factory,
   OARBStorageVault,
   OARBStorageVault__factory,
-  OARB__factory,
 } from 'src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
@@ -49,33 +49,33 @@ describe('EmitterMultipleRewardTokens', () => {
     oARB = await createContractWithAbi<OARB>(
       OARB__factory.abi,
       OARB__factory.bytecode,
-      [core.dolomiteMargin.address]
+      [core.dolomiteMargin.address],
     );
     oARB2 = await createContractWithAbi<OARB>(
       OARB__factory.abi,
       OARB__factory.bytecode,
-      [core.dolomiteMargin.address]
+      [core.dolomiteMargin.address],
     );
     oARBStorageVault = await createContractWithAbi<OARBStorageVault>(
       OARBStorageVault__factory.abi,
       OARBStorageVault__factory.bytecode,
-      [core.dolomiteMargin.address, oARB.address]
+      [core.dolomiteMargin.address, oARB.address],
     );
     oARBStorageVault2 = await createContractWithAbi<OARBStorageVault>(
       OARBStorageVault__factory.abi,
       OARBStorageVault__factory.bytecode,
-      [core.dolomiteMargin.address, oARB2.address]
+      [core.dolomiteMargin.address, oARB2.address],
     );
     startTime = (await getBlockTimestamp(await ethers.provider.getBlockNumber())) + 200;
     emitter = await createContractWithAbi<EmitterMultipleRewardTokens>(
       EmitterMultipleRewardTokens__factory.abi,
       EmitterMultipleRewardTokens__factory.bytecode,
-      [core.dolomiteMargin.address, core.dolomiteRegistry.address, ONE_ETH_BI, startTime]
+      [core.dolomiteMargin.address, core.dolomiteRegistry.address, ONE_ETH_BI, startTime],
     );
 
     await core.testEcosystem!.testPriceOracle.setPrice(
       oARB.address,
-      '1000000000000000000' // $1.00
+      '1000000000000000000', // $1.00
     );
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(3), core.dolomiteMargin);
@@ -115,7 +115,7 @@ describe('EmitterMultipleRewardTokens', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.weth,
-        wethAmount
+        wethAmount,
       );
 
       const pool = await emitter.poolInfo(core.marketIds.weth);
@@ -141,10 +141,10 @@ describe('EmitterMultipleRewardTokens', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.weth,
-        wethAmount.mul(2)
+        wethAmount.mul(2),
       );
       expect(await emitter.userRewardDebt(core.marketIds.weth, core.hhUser1.address, oARB.address)).to.eq(
-        ONE_ETH_BI.mul(2)
+        ONE_ETH_BI.mul(2),
       );
       expect(await emitter.poolLastRewardTime(core.marketIds.weth, oARB.address)).to.eq(startTime + 1);
       expect(await emitter.poolAccRewardTokenPerShares(core.marketIds.weth, oARB.address)).to.eq(ONE_ETH_BI);
@@ -199,7 +199,7 @@ describe('EmitterMultipleRewardTokens', () => {
         core.hhUser1.address,
         defaultAccountNumber,
         core.marketIds.weth,
-        wethAmount.mul(3)
+        wethAmount.mul(3),
       );
       expect(await emitter.userRewardDebt(core.marketIds.weth, core.hhUser1.address, oARB.address)).to.eq(0);
       expect(await emitter.poolLastRewardTime(core.marketIds.weth, oARB.address)).to.eq(startTime + 1);
@@ -220,7 +220,7 @@ describe('EmitterMultipleRewardTokens', () => {
         core.hhUser1.address,
         defaultAccountNumber,
         core.marketIds.weth,
-        wethAmount.mul(3)
+        wethAmount.mul(3),
       );
       expect(await emitter.userRewardDebt(core.marketIds.weth, core.hhUser1.address, oARB.address)).to.eq(0);
       expect(await emitter.poolLastRewardTime(core.marketIds.weth, oARB.address)).to.eq(startTime + 1);
@@ -240,7 +240,7 @@ describe('EmitterMultipleRewardTokens', () => {
         core.hhUser1.address,
         defaultAccountNumber,
         core.marketIds.weth,
-        wethAmount.mul(3)
+        wethAmount.mul(3),
       );
       expect(await emitter.userRewardDebt(core.marketIds.weth, core.hhUser1.address, oARB.address)).to.eq(0);
       expect(await emitter.poolLastRewardTime(core.marketIds.weth, oARB.address)).to.eq(startTime + 1);
@@ -284,7 +284,7 @@ describe('EmitterMultipleRewardTokens', () => {
         core.hhUser1.address,
         defaultAccountNumber,
         core.marketIds.weth,
-        wethAmount.mul(3)
+        wethAmount.mul(3),
       );
       expect(await emitter.userRewardDebt(core.marketIds.weth, core.hhUser1.address, oARB.address)).to.eq(0);
       expect(await emitter.poolLastRewardTime(core.marketIds.weth, oARB.address)).to.eq(startTime);
@@ -355,7 +355,7 @@ describe('EmitterMultipleRewardTokens', () => {
       const testEmitter = await createContractWithAbi<EmitterMultipleRewardTokens>(
         EmitterMultipleRewardTokens__factory.abi,
         EmitterMultipleRewardTokens__factory.bytecode,
-        [core.dolomiteMargin.address, core.dolomiteRegistry.address, ONE_ETH_BI, startTime]
+        [core.dolomiteMargin.address, core.dolomiteRegistry.address, ONE_ETH_BI, startTime],
       );
       await testEmitter.connect(core.governance).ownerAddRewardToken(oARB.address, oARBStorageVault.address, true);
       await testEmitter.connect(core.governance).ownerAddPool(core.marketIds.weth, defaultAllocPoint, false);
@@ -413,7 +413,7 @@ describe('EmitterMultipleRewardTokens', () => {
       const testEmitter = await createContractWithAbi<EmitterMultipleRewardTokens>(
         EmitterMultipleRewardTokens__factory.abi,
         EmitterMultipleRewardTokens__factory.bytecode,
-        [core.dolomiteMargin.address, core.dolomiteRegistry.address, ONE_ETH_BI, startTime]
+        [core.dolomiteMargin.address, core.dolomiteRegistry.address, ONE_ETH_BI, startTime],
       );
       await testEmitter.connect(core.governance).ownerAddRewardToken(oARB.address, oARBStorageVault.address, true);
       await setNextBlockTimestamp(startTime + 500);
@@ -538,7 +538,7 @@ describe('EmitterMultipleRewardTokens', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.weth,
-        wethAmount
+        wethAmount,
       );
 
       await setNextBlockTimestamp(startTime + 1);
@@ -567,7 +567,7 @@ describe('EmitterMultipleRewardTokens', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.weth,
-        wethAmount
+        wethAmount,
       );
 
       await setNextBlockTimestamp(startTime + 1);
@@ -590,7 +590,7 @@ describe('EmitterMultipleRewardTokens', () => {
       await emitter.connect(core.hhUser1).withdraw(core.marketIds.weth, ZERO_BI);
       await expectWalletBalance(core.hhUser1.address, oARB, parseEther('2'));
       expect(await emitter.userRewardDebt(core.marketIds.weth, core.hhUser1.address, oARB.address)).to.eq(
-        parseEther('2')
+        parseEther('2'),
       );
       expect(await emitter.poolLastRewardTime(core.marketIds.weth, oARB.address)).to.eq(startTime + 11);
       expect(await emitter.poolAccRewardTokenPerShares(core.marketIds.weth, oARB.address)).to.eq(parseEther('2'));
@@ -623,7 +623,7 @@ describe('EmitterMultipleRewardTokens', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.usdc,
-        usdcAmount
+        usdcAmount,
       );
 
       await setNextBlockTimestamp(startTime + 1);
@@ -649,7 +649,7 @@ describe('EmitterMultipleRewardTokens', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.usdc,
-        usdcAmount
+        usdcAmount,
       );
 
       await setNextBlockTimestamp(startTime + 1);
@@ -683,7 +683,7 @@ describe('EmitterMultipleRewardTokens', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.usdc,
-        usdcAmount
+        usdcAmount,
       );
 
       await setNextBlockTimestamp(startTime + 1);
@@ -711,7 +711,7 @@ describe('EmitterMultipleRewardTokens', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.usdc,
-        usdcAmount
+        usdcAmount,
       );
 
       await setNextBlockTimestamp(startTime + 1);

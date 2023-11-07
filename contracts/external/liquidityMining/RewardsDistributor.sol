@@ -68,7 +68,7 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
 
     function claim(ClaimInfo[] calldata _claimInfo) external {
         uint256 len = _claimInfo.length;
-        for (uint256 i; i < len; i++) {
+        for (uint256 i; i < len; ++i) {
             Require.that(
                 _verifyMerkleProof(_claimInfo[i]),
                 _FILE,
@@ -82,7 +82,6 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
 
             claimStatus[msg.sender][_claimInfo[i].epoch] = true;
             oARB.mint(_claimInfo[i].amount);
-            // @follow-up Don't really need safeTransfer here, can remove if you'd like
             oARB.safeTransfer(msg.sender, _claimInfo[i].amount);
 
             emit Claimed(msg.sender, _claimInfo[i].epoch, _claimInfo[i].amount);

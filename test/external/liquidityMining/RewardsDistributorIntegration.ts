@@ -24,12 +24,12 @@ describe('RewardsDistributorIntegration', () => {
     oARB = await createContractWithAbi<OARB>(
       OARB__factory.abi,
       OARB__factory.bytecode,
-      [core.dolomiteMargin.address]
+      [core.dolomiteMargin.address],
     );
     rewardsDistributor = await createContractWithAbi<RewardsDistributor>(
       RewardsDistributor__factory.abi,
       RewardsDistributor__factory.bytecode,
-      [core.dolomiteMargin.address, oARB.address]
+      [core.dolomiteMargin.address, oARB.address],
     );
     await core.dolomiteMargin.ownerSetGlobalOperator(rewardsDistributor.address, true);
 
@@ -37,12 +37,12 @@ describe('RewardsDistributorIntegration', () => {
     validProof1 = [
       '0x54b08bab290ab198d3ad792784163f3395d516b459604cbeab5099e14683cb1a',
       '0xa27b9dfbcffb8eb0ffd6cf0ceee05200dc8b55c2d8d50556cbd91434d091af5b',
-      '0x3f4321f91ea8f1e898f305b20c4395371b58d925a088152d5d50ad2a5e472d6a'
+      '0x3f4321f91ea8f1e898f305b20c4395371b58d925a088152d5d50ad2a5e472d6a',
     ];
     validProof2 = [
       '0xd89d0d59610da141f8c2ae808d945ab1e4e7e53ccdc50ab4171e8e15c63584da',
       '0x8057fd79c67c1e40e80485281c1ac3f7039fc3a4bd9f63a9d9e5bfacaeac0353',
-      '0xb8d42e7277d449205bc2c2009784b5bb6cf557e3f08d5c1fdd1b3cd7ebc1bae0'
+      '0xb8d42e7277d449205bc2c2009784b5bb6cf557e3f08d5c1fdd1b3cd7ebc1bae0',
     ];
 
     await rewardsDistributor.connect(core.governance).ownerSetMerkleRoot(1, merkleRoot1);
@@ -78,14 +78,14 @@ describe('RewardsDistributorIntegration', () => {
       const user1 = await impersonate(USER1, true);
       await expectThrow(
         rewardsDistributor.connect(user1).claim([{ epoch: 1, amount: parseEther('2000'), proof: validProof1 }]),
-        'RewardsDistributor: Invalid merkle proof'
+        'RewardsDistributor: Invalid merkle proof',
       );
     });
 
     it('should fail with invalid user', async () => {
       await expectThrow(
         rewardsDistributor.connect(core.hhUser1).claim([{ epoch: 1, amount: parseEther('1000'), proof: validProof1 }]),
-        'RewardsDistributor: Invalid merkle proof'
+        'RewardsDistributor: Invalid merkle proof',
       );
     });
 
@@ -94,14 +94,14 @@ describe('RewardsDistributorIntegration', () => {
       await rewardsDistributor.connect(user1).claim([{ epoch: 1, amount: parseEther('1000'), proof: validProof1 }]);
       await expectThrow(
         rewardsDistributor.connect(user1).claim([{ epoch: 1, amount: parseEther('1000'), proof: validProof1 }]),
-        'RewardsDistributor: Already claimed'
+        'RewardsDistributor: Already claimed',
       );
     });
 
     it('should fail if invalid merkle proof', async () => {
       await expectThrow(
         rewardsDistributor.connect(core.hhUser3).claim([{ epoch: 1, amount: parseEther('1000'), proof: validProof1 }]),
-        'RewardsDistributor: Invalid merkle proof'
+        'RewardsDistributor: Invalid merkle proof',
       );
     });
   });

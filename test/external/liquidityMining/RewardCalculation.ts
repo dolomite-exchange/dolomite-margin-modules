@@ -1,6 +1,5 @@
 import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
@@ -8,15 +7,13 @@ import { Emitter, Emitter__factory, OARB, OARB__factory } from 'src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from 'test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
+import { expectProtocolBalance, expectWalletBalance } from 'test/utils/assertions';
 import {
   CoreProtocol,
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupDAIBalance,
-  setupGMXBalance,
-  setupUSDCBalance,
   setupWETHBalance,
 } from 'test/utils/setup';
 
@@ -50,7 +47,7 @@ describe('Reward Calculation', () => {
 
     await core.testEcosystem!.testPriceOracle.setPrice(
       oARB.address,
-      '1000000000000000000' // $1.00
+      '1000000000000000000', // $1.00
     );
 
     await setupWETHBalance(core, core.hhUser1, wethAmount.mul(3), core.dolomiteMargin);
@@ -66,19 +63,21 @@ describe('Reward Calculation', () => {
       core.hhUser1.address,
       defaultAccountNumber,
       core.marketIds.weth,
-      wethAmount.mul(3)
+      wethAmount.mul(3),
     );
-    await expectProtocolBalance(core,
+    await expectProtocolBalance(
+      core,
       core.hhUser2.address,
       defaultAccountNumber,
       core.marketIds.weth,
-      wethAmount.mul(3)
+      wethAmount.mul(3),
     );
-    await expectProtocolBalance(core,
+    await expectProtocolBalance(
+      core,
       core.hhUser2.address,
       defaultAccountNumber,
       core.marketIds.dai!,
-      daiAmount.mul(3)
+      daiAmount.mul(3),
     );
 
     snapshotId = await snapshot();

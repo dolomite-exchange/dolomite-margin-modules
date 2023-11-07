@@ -1,12 +1,15 @@
 import { expect } from 'chai';
 import { defaultAbiCoder, keccak256 } from 'ethers/lib/utils';
+import { MerkleTree } from 'merkletreejs';
 import { OARB, OARB__factory, RewardsDistributor, RewardsDistributor__factory } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
-import { Network } from 'src/utils/no-deps-constants';
+import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
-import { MerkleTree } from 'merkletreejs';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
+
+const user1Rewards = [10, 20];
+const user2Rewards = [15, 25];
 
 describe('RewardsDistributor', () => {
   let snapshotId: string;
@@ -24,28 +27,28 @@ describe('RewardsDistributor', () => {
     oARB = await createContractWithAbi<OARB>(
       OARB__factory.abi,
       OARB__factory.bytecode,
-      [core.dolomiteMargin.address]
+      [core.dolomiteMargin.address],
     );
     rewardsDistributor = await createContractWithAbi<RewardsDistributor>(
       RewardsDistributor__factory.abi,
       RewardsDistributor__factory.bytecode,
-      [core.dolomiteMargin.address, oARB.address]
+      [core.dolomiteMargin.address, oARB.address],
     );
     await core.dolomiteMargin.ownerSetGlobalOperator(rewardsDistributor.address, true);
 
     const rewards1 = [
-      { address: core.hhUser1.address, rewards: 10 },
-      { address: core.hhUser2.address, rewards: 10 },
+      { address: core.hhUser1.address, rewards: user1Rewards[0] },
+      { address: core.hhUser2.address, rewards: user2Rewards[0] },
     ];
     const rewards2 = [
-      { address: core.hhUser1.address, rewards: 20 },
-      { address: core.hhUser2.address, rewards: 20 },
+      { address: core.hhUser1.address, rewards: user1Rewards[1] },
+      { address: core.hhUser2.address, rewards: user2Rewards[1] },
     ];
     const leaves1 = rewards1.map((account) =>
-      keccak256(defaultAbiCoder.encode(['address', 'uint256'], [account.address, account.rewards]))
+      keccak256(defaultAbiCoder.encode(['address', 'uint256'], [account.address, account.rewards])),
     );
     const leaves2 = rewards2.map((account) =>
-      keccak256(defaultAbiCoder.encode(['address', 'uint256'], [account.address, account.rewards]))
+      keccak256(defaultAbiCoder.encode(['address', 'uint256'], [account.address, account.rewards])),
     );
     const invalidLeaf = keccak256(defaultAbiCoder.encode(['address', 'uint256'], [core.hhUser3.address, 10]));
     const tree1 = new MerkleTree(leaves1, keccak256, { sort: true });
@@ -76,37 +79,61 @@ describe('RewardsDistributor', () => {
 
   describe('#claim', () => {
     it('should work normally', async () => {
-      await rewardsDistributor.connect(core.hhUser1).claim([{ epoch: 1, amount: 10, proof: validProof1 }]);
-      expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(10);
-      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, 1)).to.be.true;
+      const epoch1 = 1;
+      const epoch2 = 2;
+      await rewardsDistributor.connect(core.hhUser1).claim(
+        [{ epoch: epoch1, amount: user1Rewards[0], proof: validProof1 }],
+      );
+      expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(user1Rewards[0]);
+      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, epoch1)).to.be.true;
+      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, epoch2)).to.be.false;
+
+      expect(await oARB.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
+      expect(await rewardsDistributor.claimStatus(core.hhUser2.address, epoch1)).to.be.false;
+      expect(await rewardsDistributor.claimStatus(core.hhUser2.address, epoch2)).to.be.false;
+
+      await rewardsDistributor.connect(core.hhUser2).claim(
+        [{ epoch: epoch2, amount: user2Rewards[1], proof: validProof2 }],
+      );
+      expect(await oARB.balanceOf(core.hhUser2.address)).to.eq(user2Rewards[1]);
+      expect(await rewardsDistributor.claimStatus(core.hhUser2.address, epoch1)).to.be.false;
+      expect(await rewardsDistributor.claimStatus(core.hhUser2.address, epoch2)).to.be.true;
     });
 
     it('should work with multiple epochs', async () => {
+      const epoch1 = 1;
+      const epoch2 = 2;
       await rewardsDistributor.connect(core.hhUser1).claim([
-        { epoch: 1, amount: 10, proof: validProof1 },
-        { epoch: 2, amount: 20, proof: validProof2 },
+        { epoch: epoch1, amount: user1Rewards[0], proof: validProof1 },
+        { epoch: epoch2, amount: user1Rewards[1], proof: validProof2 },
       ]);
-      expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(30);
-      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, 1)).to.be.true;
-      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, 2)).to.be.true;
+      expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(user1Rewards[0] + user1Rewards[1]);
+      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, epoch1)).to.be.true;
+      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, epoch2)).to.be.true;
     });
 
     it('should fail if tokens already claimed', async () => {
       await rewardsDistributor.connect(core.hhUser1).claim([{ epoch: 1, amount: 10, proof: validProof1 }]);
       await expectThrow(
         rewardsDistributor.connect(core.hhUser1).claim([{ epoch: 1, amount: 10, proof: validProof1 }]),
-        'RewardsDistributor: Already claimed'
+        'RewardsDistributor: Already claimed',
       );
     });
 
     it('should fail if invalid merkle proof', async () => {
+      const epoch = 1;
+      const amount = user1Rewards[0];
       await expectThrow(
-        rewardsDistributor.connect(core.hhUser3).claim([{ epoch: 1, amount: 10, proof: invalidProof }]),
-        'RewardsDistributor: Invalid merkle proof'
+        rewardsDistributor.connect(core.hhUser3).claim([{ epoch, amount, proof: invalidProof }]),
+        'RewardsDistributor: Invalid merkle proof',
       );
       await expectThrow(
-        rewardsDistributor.connect(core.hhUser3).claim([{ epoch: 1, amount: 10, proof: validProof1 }]),
-        'RewardsDistributor: Invalid merkle proof'
+        rewardsDistributor.connect(core.hhUser3).claim([{ epoch, amount, proof: validProof1 }]),
+        'RewardsDistributor: Invalid merkle proof',
+      );
+      await expectThrow(
+        rewardsDistributor.connect(core.hhUser1).claim([{ epoch, amount: user1Rewards[1], proof: validProof1 }]),
+        'RewardsDistributor: Invalid merkle proof',
       );
     });
   });
@@ -125,7 +152,7 @@ describe('RewardsDistributor', () => {
     it('should fail when not called by dolomite margin owner', async () => {
       await expectThrow(
         rewardsDistributor.connect(core.hhUser1).ownerSetMerkleRoot(1, merkleRoot2),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -135,7 +162,7 @@ describe('RewardsDistributor', () => {
       const newOARB = await createContractWithAbi<OARB>(
         OARB__factory.abi,
         OARB__factory.bytecode,
-        [core.dolomiteMargin.address]
+        [core.dolomiteMargin.address],
       );
       expect(await rewardsDistributor.oARB()).to.eq(oARB.address);
       const result = await rewardsDistributor.connect(core.governance).ownerSetOARB(newOARB.address);
@@ -148,7 +175,7 @@ describe('RewardsDistributor', () => {
     it('should fail when not called by dolomite margin owner', async () => {
       await expectThrow(
         rewardsDistributor.connect(core.hhUser1).ownerSetOARB(core.hhUser1.address),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

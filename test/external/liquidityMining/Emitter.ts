@@ -42,12 +42,12 @@ describe('Emitter', () => {
         oARB.address,
         ONE_ETH_BI,
         startTime,
-      ]
+      ],
     );
 
     await core.testEcosystem!.testPriceOracle.setPrice(
       oARB.address,
-      '1000000000000000000' // $1.00
+      '1000000000000000000', // $1.00
     );
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(3), core.dolomiteMargin);
@@ -90,7 +90,7 @@ describe('Emitter', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.usdc,
-        usdcAmount
+        usdcAmount,
       );
     });
 
@@ -103,7 +103,7 @@ describe('Emitter', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.usdc,
-        usdcAmount
+        usdcAmount,
       );
 
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
@@ -115,7 +115,7 @@ describe('Emitter', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.usdc,
-        usdcAmount.mul(2)
+        usdcAmount.mul(2),
       );
     });
 
@@ -131,7 +131,7 @@ describe('Emitter', () => {
       await expect(() => emitter.connect(core.hhUser1).deposit(
         defaultAccountNumber,
         core.marketIds.usdc,
-        usdcAmount.div(2)
+        usdcAmount.div(2),
       )).to.changeTokenBalance(oARB, core.hhUser1, ZERO_BI);
       expect((await emitter.poolInfo(core.marketIds.usdc)).accOARBPerShare).to.eq(ZERO_BI);
       expect((await emitter.userInfo(core.marketIds.usdc, core.hhUser1.address)).rewardDebt).to.eq(ZERO_BI);
@@ -147,7 +147,7 @@ describe('Emitter', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.usdc,
-        usdcAmount
+        usdcAmount,
       );
 
       await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
@@ -162,7 +162,7 @@ describe('Emitter', () => {
     it('should fail if pool is not initialized', async () => {
       await expectThrow(
         emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount),
-        'Emitter: Pool not initialized'
+        'Emitter: Pool not initialized',
       );
     });
 
@@ -170,7 +170,7 @@ describe('Emitter', () => {
       await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await expectThrow(
         emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, ZERO_BI),
-        'Emitter: Invalid amount'
+        'Emitter: Invalid amount',
       );
     });
   });
@@ -236,7 +236,7 @@ describe('Emitter', () => {
         emitter.address,
         BigNumber.from(core.hhUser1.address),
         core.marketIds.usdc,
-        usdcAmount
+        usdcAmount,
       );
 
       await setNextBlockTimestamp(startTime + 1);
@@ -250,7 +250,7 @@ describe('Emitter', () => {
     it('should fail if pool is not initialized', async () => {
       await expectThrow(
         emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, usdcAmount),
-        'Emitter: Pool not initialized'
+        'Emitter: Pool not initialized',
       );
     });
 
@@ -259,7 +259,7 @@ describe('Emitter', () => {
       await emitter.connect(core.hhUser1).deposit(defaultAccountNumber, core.marketIds.usdc, usdcAmount);
       await expectThrow(
         emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, usdcAmount.add(1)),
-        'Emitter: Insufficient balance'
+        'Emitter: Insufficient balance',
       );
     });
   });
@@ -282,7 +282,7 @@ describe('Emitter', () => {
       await emitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await expectThrow(
         emitter.connect(core.hhUser1).emergencyWithdraw(core.marketIds.usdc),
-        'Emitter: Insufficient balance'
+        'Emitter: Insufficient balance',
       );
     });
   });
@@ -335,7 +335,7 @@ describe('Emitter', () => {
           oARB.address,
           ONE_ETH_BI,
           startTime,
-        ]
+        ],
       );
       await testEmitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
       await testEmitter.updatePool(core.marketIds.usdc);
@@ -381,7 +381,7 @@ describe('Emitter', () => {
           oARB.address,
           ONE_ETH_BI,
           startTime,
-        ]
+        ],
       );
       await setNextBlockTimestamp(startTime + 500);
       await testEmitter.connect(core.governance).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false);
@@ -399,7 +399,7 @@ describe('Emitter', () => {
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         emitter.connect(core.hhUser1).ownerAddPool(core.marketIds.usdc, defaultAllocPoint, false),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -425,7 +425,7 @@ describe('Emitter', () => {
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         emitter.connect(core.hhUser1).ownerSetPool(core.marketIds.usdc, defaultAllocPoint),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -440,7 +440,7 @@ describe('Emitter', () => {
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         emitter.connect(core.hhUser1).ownerSetOARBPerSecond(15),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -461,7 +461,7 @@ describe('Emitter', () => {
       expect(pool.lastRewardTime).to.eq(startTime + 100);
       expect(pool.accOARBPerShare).to.eq(0);
 
-      await emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc , ZERO_BI);
+      await emitter.connect(core.hhUser1).withdraw(core.marketIds.usdc, ZERO_BI);
       pool = await emitter.poolInfo(core.marketIds.usdc);
       expect(pool.lastRewardTime).to.eq(startTime + 100);
       expect(pool.accOARBPerShare).to.eq(0);
@@ -478,7 +478,7 @@ describe('Emitter', () => {
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         emitter.connect(core.hhUser1).ownerCreateNewCampaign(startTime, core.tokens.link.address),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

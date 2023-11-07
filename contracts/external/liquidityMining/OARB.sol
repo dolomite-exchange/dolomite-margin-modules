@@ -51,7 +51,6 @@ contract OARB is ERC20, OnlyDolomiteMargin, IOARB {
     // ======================= External Functions =======================
     // ==================================================================
 
-    // @follow-up Do we want to add address parameter?
     function mint(uint256 _amount) external onlyDolomiteMarginGlobalOperator(msg.sender) {
         _mint(msg.sender, _amount);
     }

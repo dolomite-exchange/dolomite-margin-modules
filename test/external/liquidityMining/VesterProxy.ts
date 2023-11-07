@@ -11,11 +11,7 @@ import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-} from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
 
 describe('VesterProxy', () => {
   let snapshotId: string;
@@ -42,13 +38,13 @@ describe('VesterProxy', () => {
     );
 
     const calldata = await implementation.populateTransaction.initialize(
-      oARB.address
+      oARB.address,
     );
 
     proxy = await createContractWithAbi<VesterProxy>(
       VesterProxy__factory.abi,
       VesterProxy__factory.bytecode,
-      [implementation.address, core.dolomiteMargin.address, calldata.data!]
+      [implementation.address, core.dolomiteMargin.address, calldata.data!],
     );
 
     snapshotId = await snapshot();
@@ -81,7 +77,7 @@ describe('VesterProxy', () => {
         proxy,
         await proxy.connect(core.governance).upgradeTo(newImplementation.address),
         'ImplementationSet',
-        { newImplementation: newImplementation.address }
+        { newImplementation: newImplementation.address },
       );
       expect(await proxy.implementation()).to.equal(newImplementation.address);
     });
@@ -89,14 +85,14 @@ describe('VesterProxy', () => {
     it('should fail when not called by owner', async () => {
       await expectThrow(
         proxy.connect(core.hhUser1).upgradeTo(implementation.address),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
     it('should fail when new implementation is not a contract', async () => {
       await expectThrow(
         proxy.connect(core.governance).upgradeTo(core.hhUser1.address),
-        'IsolationModeVesterProxy: Implementation is not a contract'
+        'IsolationModeVesterProxy: Implementation is not a contract',
       );
     });
   });
@@ -114,13 +110,13 @@ describe('VesterProxy', () => {
         ],
       );
       const calldata = await newImplementation.populateTransaction.ownerSetForceClosePositionTax(
-        100
+        100,
       );
       await expectEvent(
         proxy,
         await proxy.connect(core.governance).upgradeToAndCall(newImplementation.address, calldata.data!),
         'ImplementationSet',
-        { newImplementation: newImplementation.address }
+        { newImplementation: newImplementation.address },
       );
       expect(await proxy.implementation()).to.equal(newImplementation.address);
     });
@@ -129,7 +125,7 @@ describe('VesterProxy', () => {
       const calldata = await implementation.populateTransaction.forceClosePositionTax();
       await expectThrow(
         proxy.connect(core.hhUser1).upgradeToAndCall(implementation.address, calldata.data!),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -137,7 +133,7 @@ describe('VesterProxy', () => {
       const calldata = await implementation.populateTransaction.forceClosePositionTax();
       await expectThrow(
         proxy.connect(core.governance).upgradeToAndCall(core.hhUser1.address, calldata.data!),
-        'IsolationModeVesterProxy: Implementation is not a contract'
+        'IsolationModeVesterProxy: Implementation is not a contract',
       );
     });
 
@@ -153,7 +149,7 @@ describe('VesterProxy', () => {
         ],
       );
       const calldata = await implementation.populateTransaction.ownerSetForceClosePositionTax(
-        10000000
+        10000000,
       );
       await expectThrow(
         proxy.connect(core.governance).upgradeToAndCall(newImplementation.address, calldata.data!),

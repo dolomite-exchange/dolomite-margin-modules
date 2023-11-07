@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IOARB } from "./IOARB.sol";
+
 
 /**
  * @title   IVester
@@ -47,24 +49,28 @@ interface IVester {
     // ================================================
 
     event Vesting(address indexed owner, uint256 duration, uint256 amount, uint256 vestingId);
-    event PositionClosed(address indexed owner, uint256 vestingId);
+    event PositionClosed(address indexed owner, uint256 vestingId, uint256 ethCostPaid);
+    event PositionForceClosed(address indexed owner, uint256 vestingId);
     event EmergencyWithdraw(address indexed owner, uint256 vestingId);
     event VestingActiveSet(bool vestingActive);
     event OARBSet(address oARB);
     event ClosePositionWindowSet(uint256 _closePositionWindow);
     event EmergencyWithdrawTaxSet(uint256 _emergencyWithdrawTax);
     event ForceClosePositionTaxSet(uint256 _forceClosePositionTax);
+    event PromisedArbTokensSet(uint256 _promisedArbTokensSet);
+    event VestingPositionCreated(VestingPosition _vestingPosition);
+    event VestingPositionCleared(uint256 _id);
 
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
 
     /**
-     * @notice  Sets vestingActive. Callable by Dolomite Margin owner
+     * @notice  Sets isVestingActive. Callable by Dolomite Margin owner
      *
-     * @param  _vestingActive   The id of the position to emergency withdraw
+     * @param  _isVestingActive   True if creating new vests is allowed, or false to disable it
      */
-    function ownerSetVestingActive(bool _vestingActive) external;
+    function ownerSetIsVestingActive(bool _isVestingActive) external;
 
     /**
      * @notice  Sets the oARB token address. Callable by Dolomite Margin owner
@@ -120,9 +126,17 @@ interface IVester {
     /**
      * @notice  Burns the vested oARB tokens and sends vested and newly purchased ARB to user's dolomite balance
      *
-     * @param  _id  The id of the position that is fully vested
+     * @param  _id                  The id of the position that is fully vested
+     * @param  _fromAccountNumber   The account number from which payment will be made
+     * @param  _toAccountNumber     The account number to which the ARB will be sent
+     * @param  _maxPaymentAmount    The maximum amount of ETH to pay for the position
      */
-    function closePositionAndBuyTokens(uint256 _id, uint256 _fromAccountNumber) external;
+    function closePositionAndBuyTokens(
+        uint256 _id,
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _maxPaymentAmount
+    ) external;
 
     /**
      * @notice  Burns the vested oARB tokens and sends vested ARB back to position owner's dolomite balance
@@ -142,4 +156,20 @@ interface IVester {
     // =================================================
     // ================= View Functions ================
     // =================================================
+
+    function availableArbTokens() external view returns (uint256);
+
+    function promisedArbTokens() external view returns (uint256);
+
+    function oARB() external view returns (IOARB);
+
+    function closePositionWindow() external view returns (uint256);
+
+    function forceClosePositionTax() external view returns (uint256);
+
+    function emergencyWithdrawTax() external view returns (uint256);
+
+    function isVestingActive() external view returns (bool);
+
+    function vestingPositions(uint256 _id) external view returns (VestingPosition memory);
 }

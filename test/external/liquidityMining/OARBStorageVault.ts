@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { OARB, OARBStorageVault, OARBStorageVault__factory, OARB__factory } from 'src/types';
+import { OARB, OARB__factory, OARBStorageVault, OARBStorageVault__factory } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
@@ -15,14 +15,14 @@ describe('OARBStorageVault', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     oARB = await createContractWithAbi<OARB>(
-        OARB__factory.abi,
-        OARB__factory.bytecode,
-        [core.dolomiteMargin.address]
+      OARB__factory.abi,
+      OARB__factory.bytecode,
+      [core.dolomiteMargin.address],
     );
     oARBStorageVault = await createContractWithAbi<OARBStorageVault>(
-        OARBStorageVault__factory.abi,
-        OARBStorageVault__factory.bytecode,
-        [core.dolomiteMargin.address, oARB.address],
+      OARBStorageVault__factory.abi,
+      OARBStorageVault__factory.bytecode,
+      [core.dolomiteMargin.address, oARB.address],
     );
     await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
     await core.dolomiteMargin.ownerSetGlobalOperator(oARBStorageVault.address, true);
@@ -51,7 +51,7 @@ describe('OARBStorageVault', () => {
     it('should fail if not called by operator', async () => {
       await expectThrow(
         oARBStorageVault.connect(core.hhUser1).pullTokensFromVault(ONE_ETH_BI),
-        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
