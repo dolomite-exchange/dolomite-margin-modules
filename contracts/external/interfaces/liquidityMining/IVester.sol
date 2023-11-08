@@ -207,7 +207,7 @@ interface IVester {
     /**
      * @return  True if vesting is active, false otherwise
      */
-    function vestingActive() external view returns (bool);
+    function isVestingActive() external view returns (bool);
 
     /**
      *
