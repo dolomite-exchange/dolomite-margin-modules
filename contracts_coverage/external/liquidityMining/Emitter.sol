@@ -101,12 +101,14 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         });
 
         if (_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_pools.contains(_marketId),
+        Require.that(
+            _pools.contains(_marketId),
             _FILE,
             "Pool not initialized"
         );
         if (_amountWei > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_amountWei > 0,
+        Require.that(
+            _amountWei > 0,
             _FILE,
             "Invalid amount"
         );
@@ -156,7 +158,8 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         });
 
         if (_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_pools.contains(_marketId),
+        Require.that(
+            _pools.contains(_marketId),
             _FILE,
             "Pool not initialized"
         );
@@ -167,7 +170,8 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         }
         else {
             if ((DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value >= _amountWei) { /* FOR COVERAGE TESTING */ }
-            Require.that((DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value >= _amountWei,
+            Require.that(
+                (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value >= _amountWei,
                 _FILE,
                 "Insufficient balance"
             );
@@ -218,7 +222,8 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
 
         uint256 amountWei = (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value;
         if (amountWei > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(amountWei > 0,
+        Require.that(
+            amountWei > 0,
             _FILE,
             "Insufficient balance"
         );
@@ -277,7 +282,8 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         bool _withUpdate
     ) external onlyDolomiteMarginOwner(msg.sender) {
         if (!_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
-        Require.that(!_pools.contains(_marketId),
+        Require.that(
+            !_pools.contains(_marketId),
             _FILE,
             "Pool already exists"
         );
@@ -303,7 +309,8 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         uint256 _allocPoint
     ) external onlyDolomiteMarginOwner(msg.sender) {
         if (_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_pools.contains(_marketId),
+        Require.that(
+            _pools.contains(_marketId),
             _FILE,
             "Pool not initialized"
         );
@@ -316,7 +323,8 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         IOARB _oARB
     ) external onlyDolomiteMarginOwner(msg.sender) {
         if (_startTime >= block.timestamp) { /* FOR COVERAGE TESTING */ }
-        Require.that(_startTime >= block.timestamp,
+        Require.that(
+            _startTime >= block.timestamp,
             _FILE,
             "Invalid startTime"
         );

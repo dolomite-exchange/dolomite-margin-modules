@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IOARB } from "./IOARB.sol";
+
 
 /**
  * @title   IVester
@@ -46,25 +48,44 @@ interface IVester {
     // ==================== Events ====================
     // ================================================
 
-    event Vesting(address indexed owner, uint256 duration, uint256 amount, uint256 vestingId);
-    event PositionClosed(address indexed owner, uint256 vestingId);
-    event EmergencyWithdraw(address indexed owner, uint256 vestingId);
+    event VestingStarted(address indexed owner, uint256 duration, uint256 amount, uint256 vestingId);
+    event PositionClosed(address indexed owner, uint256 vestingId, uint256 ethCostPaid);
+    event PositionForceClosed(address indexed owner, uint256 vestingId, uint256 arbTax);
+    event EmergencyWithdraw(address indexed owner, uint256 vestingId, uint256 arbTax);
     event VestingActiveSet(bool vestingActive);
     event OARBSet(address oARB);
-    event ClosePositionWindowSet(uint256 _closePositionWindow);
-    event EmergencyWithdrawTaxSet(uint256 _emergencyWithdrawTax);
-    event ForceClosePositionTaxSet(uint256 _forceClosePositionTax);
+    event ClosePositionWindowSet(uint256 closePositionWindow);
+    event EmergencyWithdrawTaxSet(uint256 emergencyWithdrawTax);
+    event ForceClosePositionTaxSet(uint256 forceClosePositionTax);
+    event PromisedArbTokensSet(uint256 promisedArbTokensSet);
+    event VestingPositionCreated(VestingPosition vestingPosition);
+    event VestingPositionCleared(uint256 id);
 
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
 
     /**
-     * @notice  Sets vestingActive. Callable by Dolomite Margin owner
+     * @notice Allows the owner to withdraw ARB from the contract, potentially bypassing any reserved amounts
      *
-     * @param  _vestingActive   The id of the position to emergency withdraw
+     * @param  _to                              The address to send the ARB to
+     * @param  _amount                          The amount of ARB to send
+     * @param  _shouldBypassAvailableAmounts    True if the available balance should be checked first, false otherwise.
+     *                                          Bypassing should only be used under emergency scenarios in which the
+     *                                          owner needs to pull all of the funds
      */
-    function ownerSetVestingActive(bool _vestingActive) external;
+    function ownerWithdrawArb(
+        address _to,
+        uint256 _amount,
+        bool _shouldBypassAvailableAmounts
+    ) external;
+
+    /**
+     * @notice  Sets isVestingActive. Callable by Dolomite Margin owner
+     *
+     * @param  _isVestingActive   True if creating new vests is allowed, or false to disable it
+     */
+    function ownerSetIsVestingActive(bool _isVestingActive) external;
 
     /**
      * @notice  Sets the oARB token address. Callable by Dolomite Margin owner
@@ -97,7 +118,7 @@ interface IVester {
     function ownerSetForceClosePositionTax(uint256 _forceClosePositionTax) external;
 
     // ======================================================
-    // ================== User Functions ===================
+    // ================== User Functions ====================
     // ======================================================
 
     /**
@@ -120,9 +141,17 @@ interface IVester {
     /**
      * @notice  Burns the vested oARB tokens and sends vested and newly purchased ARB to user's dolomite balance
      *
-     * @param  _id  The id of the position that is fully vested
+     * @param  _id                  The id of the position that is fully vested
+     * @param  _fromAccountNumber   The account number from which payment will be made
+     * @param  _toAccountNumber     The account number to which the ARB will be sent
+     * @param  _maxPaymentAmount    The maximum amount of ETH to pay for the position
      */
-    function closePositionAndBuyTokens(uint256 _id, uint256 _fromAccountNumber) external;
+    function closePositionAndBuyTokens(
+        uint256 _id,
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _maxPaymentAmount
+    ) external;
 
     /**
      * @notice  Burns the vested oARB tokens and sends vested ARB back to position owner's dolomite balance
@@ -142,4 +171,48 @@ interface IVester {
     // =================================================
     // ================= View Functions ================
     // =================================================
+
+    /**
+     * @return The amount of ARB tokens available for vesting. Vesting ARB tokens is reserved by pairing with oARB.
+     */
+    function availableArbTokens() external view returns (uint256);
+
+    /**
+     * @return The amount of ARB tokens committed to active oARB vesting positions
+     */
+    function promisedArbTokens() external view returns (uint256);
+
+    /**
+     *  @return The oARB token contract address
+     */
+    function oARB() external view returns (IOARB);
+
+    /**
+     * @return The duration in seconds that users may execute the matured positions before it becomes force-closed
+     */
+    function closePositionWindow() external view returns (uint256);
+
+    /**
+     * @return The tax rate the user incurs when a position is force closed after the `closePositionWindow`. Measured in
+     *          basis points (10_000 = 100%).
+     */
+    function forceClosePositionTax() external view returns (uint256);
+
+    /**
+     * @return  The tax rate the user incurs when they emergency exit/withdraw from a position. Measured in basis points
+     *          (10_000 = 100%).
+     */
+    function emergencyWithdrawTax() external view returns (uint256);
+
+    /**
+     * @return  True if vesting is active, false otherwise
+     */
+    function vestingActive() external view returns (bool);
+
+    /**
+     *
+     * @param  _id  The id of the position to get
+     * @return      The vesting position
+     */
+    function vestingPositions(uint256 _id) external pure returns (VestingPosition memory);
 }

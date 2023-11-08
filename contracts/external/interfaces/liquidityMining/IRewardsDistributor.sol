@@ -31,23 +31,37 @@ import { IOARB } from "./IOARB.sol";
  */
 interface IRewardsDistributor {
 
+    // ======================================================
+    // ======================== Structs =====================
+    // ======================================================
+
     struct ClaimInfo {
         uint256 epoch;
         uint256 amount;
         bytes32[] proof;
     }
-    
+
+    // ======================================================
+    // ======================== Events ======================
+    // ======================================================
+
     event MerkleRootSet(uint256 epoch, bytes32 merkleRoot);
+
     event OARBSet(IOARB oARB);
+
     event Claimed(address indexed user, uint256 epoch, uint256 amount);
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
-    function claim(ClaimInfo[] calldata _claimInfo) external;
-
     function ownerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) external;
 
     function ownerSetOARB(IOARB _oARB) external;
+
+    /**
+     *
+     * @param  _claimInfo  Array of ClaimInfo structs used to claim oARB for the given user
+     */
+    function claim(ClaimInfo[] calldata _claimInfo) external;
 }

@@ -68,11 +68,11 @@ interface IVester {
     /**
      * @notice Allows the owner to withdraw ARB from the contract, potentially bypassing any reserved amounts
      *
-     * @param  _to                          The address to send the ARB to
-     * @param  _amount                      The amount of ARB to send
-     * @param _shouldBypassAvailableAmounts True if the available balance should be checked first, false otherwise.
-     *                                      Bypassing should only be used under emergency scenarios in which the owner
-     *                                      needs to pull all of the funds
+     * @param  _to                              The address to send the ARB to
+     * @param  _amount                          The amount of ARB to send
+     * @param  _shouldBypassAvailableAmounts    True if the available balance should be checked first, false otherwise.
+     *                                          Bypassing should only be used under emergency scenarios in which the
+     *                                          owner needs to pull all of the funds
      */
     function ownerWithdrawArb(
         address _to,
@@ -118,7 +118,7 @@ interface IVester {
     function ownerSetForceClosePositionTax(uint256 _forceClosePositionTax) external;
 
     // ======================================================
-    // ================== User Functions ===================
+    // ================== User Functions ====================
     // ======================================================
 
     /**
@@ -172,19 +172,47 @@ interface IVester {
     // ================= View Functions ================
     // =================================================
 
+    /**
+     * @return The amount of ARB tokens available for vesting. Vesting ARB tokens is reserved by pairing with oARB.
+     */
     function availableArbTokens() external view returns (uint256);
 
+    /**
+     * @return The amount of ARB tokens committed to active oARB vesting positions
+     */
     function promisedArbTokens() external view returns (uint256);
 
+    /**
+     *  @return The oARB token contract address
+     */
     function oARB() external view returns (IOARB);
 
+    /**
+     * @return The duration in seconds that users may execute the matured positions before it becomes force-closed
+     */
     function closePositionWindow() external view returns (uint256);
 
+    /**
+     * @return The tax rate the user incurs when a position is force closed after the `closePositionWindow`. Measured in
+     *          basis points (10_000 = 100%).
+     */
     function forceClosePositionTax() external view returns (uint256);
 
+    /**
+     * @return  The tax rate the user incurs when they emergency exit/withdraw from a position. Measured in basis points
+     *          (10_000 = 100%).
+     */
     function emergencyWithdrawTax() external view returns (uint256);
 
-    function isVestingActive() external view returns (bool);
+    /**
+     * @return  True if vesting is active, false otherwise
+     */
+    function vestingActive() external view returns (bool);
 
-    function vestingPositions(uint256 _id) external view returns (VestingPosition memory);
+    /**
+     *
+     * @param  _id  The id of the position to get
+     * @return      The vesting position
+     */
+    function vestingPositions(uint256 _id) external pure returns (VestingPosition memory);
 }

@@ -104,12 +104,14 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         });
 
         if (_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_pools.contains(_marketId),
+        Require.that(
+            _pools.contains(_marketId),
             _FILE,
             "Pool not initialized"
         );
         if (_amountWei > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_amountWei > 0,
+        Require.that(
+            _amountWei > 0,
             _FILE,
             "Invalid amount"
         );
@@ -163,7 +165,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         });
 
         if (_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_pools.contains(_marketId),
+        Require.that(
+            _pools.contains(_marketId),
             _FILE,
             "Pool not initialized"
         );
@@ -174,7 +177,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
         }
         else {
             if ((DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value >= _amountWei) { /* FOR COVERAGE TESTING */ }
-            Require.that((DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value >= _amountWei,
+            Require.that(
+                (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value >= _amountWei,
                 _FILE,
                 "Insufficient balance"
             );
@@ -231,7 +235,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
 
         uint256 amountWei = (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value;
         if (amountWei > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(amountWei > 0,
+        Require.that(
+            amountWei > 0,
             _FILE,
             "Insufficient balance"
         );
@@ -332,7 +337,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     external
     onlyDolomiteMarginOwner(msg.sender) {
         if (!_rewardTokens.contains(_token)) { /* FOR COVERAGE TESTING */ }
-        Require.that(!_rewardTokens.contains(_token),
+        Require.that(
+            !_rewardTokens.contains(_token),
             _FILE,
             "Reward token already exists"
         );
@@ -352,7 +358,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     external
     onlyDolomiteMarginOwner(msg.sender) {
         if (_rewardTokens.contains(_token)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_rewardTokens.contains(_token),
+        Require.that(
+            _rewardTokens.contains(_token),
             _FILE,
             "Reward token does not exist"
         );
@@ -368,7 +375,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     external
     onlyDolomiteMarginOwner(msg.sender) {
         if (_rewardTokens.contains(_token)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_rewardTokens.contains(_token),
+        Require.that(
+            _rewardTokens.contains(_token),
             _FILE,
             "Reward token does not exist"
         );
@@ -383,7 +391,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     external
     onlyDolomiteMarginOwner(msg.sender) {
         if (_rewardTokens.contains(_token)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_rewardTokens.contains(_token),
+        Require.that(
+            _rewardTokens.contains(_token),
             _FILE,
             "Reward token does not exist"
         );
@@ -399,7 +408,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     external
     onlyDolomiteMarginOwner(msg.sender) {
         if (!_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
-        Require.that(!_pools.contains(_marketId),
+        Require.that(
+            !_pools.contains(_marketId),
             _FILE,
             "Pool already exists"
         );
@@ -429,7 +439,8 @@ contract EmitterMultipleRewardTokens is OnlyDolomiteMargin, IEmitterMultipleRewa
     external
     onlyDolomiteMarginOwner(msg.sender) {
         if (_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_pools.contains(_marketId),
+        Require.that(
+            _pools.contains(_marketId),
             _FILE,
             "Pool not initialized"
         );

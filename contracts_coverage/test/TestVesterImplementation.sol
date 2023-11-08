@@ -21,26 +21,24 @@
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { Vester } from "../external/liquidityMining/Vester.sol";
+import { VesterImplementation } from "../external/liquidityMining/VesterImplementation.sol";
 import { IWETH } from "../protocol/interfaces/IWETH.sol";
 
 
 /**
- * @title   TestVester
+ * @title   TestVesterImplementation
  * @author  Dolomite
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestVester is Vester {
-
-    bytes32 private constant _FILE = "TestVester";
+contract TestVesterImplementation is VesterImplementation {
 
     constructor(
         address _dolomiteMargin,
         address _dolomiteRegistry,
         IWETH _weth,
         IERC20 _arb
-    ) Vester(
+    ) VesterImplementation(
         _dolomiteMargin,
         _dolomiteRegistry,
         _weth,
@@ -49,14 +47,18 @@ contract TestVester is Vester {
 
     function callClosePositionAndBuyTokensAndTriggerReentrancy(
         uint256 _id,
-        uint256 _fromAccountNumber
+        uint256 _fromAccountNumber,
+        uint256 _toAccountNumber,
+        uint256 _maxPaymentAmount
     ) external payable nonReentrant {
         // solhint-disable-next-line avoid-low-level-calls
         (bool isSuccessful, bytes memory result) = address(this).delegatecall(
-            abi.encodeWithSignature(
-                "closePositionAndBuyTokens(uint256,uint256)",
+            abi.encodeWithSelector(
+                this.closePositionAndBuyTokens.selector,
                 _id,
-                _fromAccountNumber
+                _fromAccountNumber,
+                _toAccountNumber,
+                _maxPaymentAmount
             )
         );
         if (!isSuccessful) {
