@@ -12,6 +12,7 @@ type ChainId = string;
 
 export async function verifyContract(address: string, constructorArguments: any[]) {
   try {
+    console.log('Verifying contract...');
     await run('verify:verify', {
       address,
       constructorArguments,

@@ -40,13 +40,13 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
 /**
- * @title   Vester
+ * @title   VesterImplementation
  * @author  Dolomite
  *
  * An implementation of the IVester interface that allows users to buy ARB at a discount if they vest ARB and oARB for a
  * certain amount of time
  */
-contract Vester is
+contract VesterImplementation is
     ProxyContractHelpers,
     OnlyDolomiteMargin,
     ReentrancyGuard,
@@ -61,7 +61,7 @@ contract Vester is
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "Vester";
+    bytes32 private constant _FILE = "VesterImplementation";
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _BASE = 10_000;
 
@@ -178,7 +178,7 @@ contract Vester is
             /* amount */ _amount
         );
 
-        emit Vesting(msg.sender, _duration, _amount, nftId);
+        emit VestingStarted(msg.sender, _duration, _amount, nftId);
         return nftId;
     }
 
@@ -266,7 +266,7 @@ contract Vester is
         _closePosition(position);
 
         // Burn oARB and transfer ARB tokens back to user"s dolomite account minus tax amount
-        uint256 tax = position.amount * forceClosePositionTax() / _BASE;
+        uint256 arbTax = position.amount * forceClosePositionTax() / _BASE;
         oARB().burn(position.amount);
         _transfer(
             /* _fromAccount = */ address(this),
@@ -274,21 +274,21 @@ contract Vester is
             /* _toAccount = */ positionOwner,
             /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
             /* _marketId = */ ARB_MARKET_ID,
-            /* _amountWei */ position.amount - tax
+            /* _amountWei */ position.amount - arbTax
         );
 
-        if (tax > 0) {
+        if (arbTax > 0) {
             _transfer(
                 /* _fromAccount = */ address(this),
                 /* _fromAccountNumber = */ accountNumber,
                 /* _toAccount = */ DOLOMITE_MARGIN().owner(),
                 /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
                 /* _marketId = */ ARB_MARKET_ID,
-                /* _amountWei */ tax
+                /* _amountWei */ arbTax
             );
         }
 
-        emit PositionForceClosed(positionOwner, _id);
+        emit PositionForceClosed(positionOwner, _id, arbTax);
     }
 
     // WARNING: This will forfeit all vesting progress and burn any locked oARB
@@ -304,35 +304,52 @@ contract Vester is
 
         // Transfer arb back to the user and burn ARB
         oARB().burn(position.amount);
-        uint256 tax = position.amount * emergencyWithdrawTax() / _BASE;
+        uint256 arbTax = position.amount * emergencyWithdrawTax() / _BASE;
         _transfer(
             /* _fromAccount = */ address(this),
             /* _fromAccountNumber = */ accountNumber,
             /* _toAccount = */ owner,
             /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
             /* _marketId = */ ARB_MARKET_ID,
-            /* _amountWei */ position.amount - tax
+            /* _amountWei */ position.amount - arbTax
         );
 
         _closePosition(position);
 
-        if (tax > 0) {
+        if (arbTax > 0) {
             _transfer(
                 /* _fromAccount = */ address(this),
                 /* _fromAccountNumber = */ accountNumber,
                 /* _toAccount = */ DOLOMITE_MARGIN().owner(),
                 /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
                 /* _marketId = */ ARB_MARKET_ID,
-                /* _amountWei */ tax
+                /* _amountWei */ arbTax
             );
         }
 
-        emit EmergencyWithdraw(owner, _id);
+        emit EmergencyWithdraw(owner, _id, arbTax);
     }
 
     // ==================================================================
     // ======================= Admin Functions ==========================
     // ==================================================================
+
+    function ownerWithdrawArb(
+        address _to,
+        uint256 _amount,
+        bool _shouldBypassAvailableAmounts
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        if (!_shouldBypassAvailableAmounts) {
+            Require.that(
+                _amount <= availableArbTokens(),
+                _FILE,
+                "Insufficient available tokens"
+            );
+        }
+        ARB.safeTransfer(_to, _amount);
+    }
 
     function ownerSetIsVestingActive(
         bool _isVestingActive

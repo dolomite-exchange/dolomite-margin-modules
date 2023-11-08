@@ -48,22 +48,37 @@ interface IVester {
     // ==================== Events ====================
     // ================================================
 
-    event Vesting(address indexed owner, uint256 duration, uint256 amount, uint256 vestingId);
+    event VestingStarted(address indexed owner, uint256 duration, uint256 amount, uint256 vestingId);
     event PositionClosed(address indexed owner, uint256 vestingId, uint256 ethCostPaid);
-    event PositionForceClosed(address indexed owner, uint256 vestingId);
-    event EmergencyWithdraw(address indexed owner, uint256 vestingId);
+    event PositionForceClosed(address indexed owner, uint256 vestingId, uint256 arbTax);
+    event EmergencyWithdraw(address indexed owner, uint256 vestingId, uint256 arbTax);
     event VestingActiveSet(bool vestingActive);
     event OARBSet(address oARB);
-    event ClosePositionWindowSet(uint256 _closePositionWindow);
-    event EmergencyWithdrawTaxSet(uint256 _emergencyWithdrawTax);
-    event ForceClosePositionTaxSet(uint256 _forceClosePositionTax);
-    event PromisedArbTokensSet(uint256 _promisedArbTokensSet);
-    event VestingPositionCreated(VestingPosition _vestingPosition);
-    event VestingPositionCleared(uint256 _id);
+    event ClosePositionWindowSet(uint256 closePositionWindow);
+    event EmergencyWithdrawTaxSet(uint256 emergencyWithdrawTax);
+    event ForceClosePositionTaxSet(uint256 forceClosePositionTax);
+    event PromisedArbTokensSet(uint256 promisedArbTokensSet);
+    event VestingPositionCreated(VestingPosition vestingPosition);
+    event VestingPositionCleared(uint256 id);
 
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
+
+    /**
+     * @notice Allows the owner to withdraw ARB from the contract, potentially bypassing any reserved amounts
+     *
+     * @param  _to                          The address to send the ARB to
+     * @param  _amount                      The amount of ARB to send
+     * @param _shouldBypassAvailableAmounts True if the available balance should be checked first, false otherwise.
+     *                                      Bypassing should only be used under emergency scenarios in which the owner
+     *                                      needs to pull all of the funds
+     */
+    function ownerWithdrawArb(
+        address _to,
+        uint256 _amount,
+        bool _shouldBypassAvailableAmounts
+    ) external;
 
     /**
      * @notice  Sets isVestingActive. Callable by Dolomite Margin owner

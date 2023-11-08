@@ -251,6 +251,13 @@
       "isVerified": true
     }
   },
+  "OARB": {
+    "42161": {
+      "address": "0xCBED801b4162bf2A19B06968663438b5165A6A93",
+      "transaction": "0x9cca6a2fe1ebe8a3433b7700e6bd9f02c0954c9610b3d909735a66a3bc67d33b",
+      "isVerified": true
+    }
+  },
   "OdosAggregatorTrader": {
     "42161": {
       "address": "0x2cdBb25b4aca98a55F6B1A0f67d9f43455e67f3c",
@@ -451,6 +458,27 @@
     "421613": {
       "address": "0xB54b35897388d0E022a66DDf4ec71B01049c403D",
       "transaction": "0x3893a6904daab16ed655b05ec9631066a27cb948a2a1c42b0d8c7b952fceb95e",
+      "isVerified": true
+    }
+  },
+  "VesterExploder": {
+    "42161": {
+      "address": "0xC34C2FC2d1B6514fe9998D966Dc843748E7E503a",
+      "transaction": "0x6f3f5db8eaaf331dd02ae07717d1bdd07dca60fad67edc63dd100d1e38f2953b",
+      "isVerified": true
+    }
+  },
+  "VesterImplementationV1": {
+    "42161": {
+      "address": "0xbf08A2Fdda494C2a27DF96385f957F2173C1BDDc",
+      "transaction": "0x87efb3118ad3e10af6eed7a4b989b22385820cca9a006dffafa0b4f3c7831147",
+      "isVerified": true
+    }
+  },
+  "VesterProxy": {
+    "42161": {
+      "address": "0xA8e31F2B9e4c91f41A19f82beDEFca86d8B2efcd",
+      "transaction": "0xa961d5942dfec4eb9992a1193537a6c7e594ac6f7fc62470cb7dfcdb893bb105",
       "isVerified": true
     }
   }

@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { OARB, OARB__factory, TestVester, TestVester__factory, VesterProxy, VesterProxy__factory } from 'src/types';
+import { OARB, OARB__factory, TestVesterImplementation } from 'src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin, withdrawFromDolomiteMargin } from 'src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
@@ -18,6 +18,8 @@ import {
   setupUSDCBalance,
   setupWETHBalance,
 } from 'test/utils/setup';
+import { getOARBConstructorParams } from '../../../src/utils/constructors/liquidity-mining';
+import { createTestVesterProxy } from '../../utils/ecosystem-token-utils/liquidity-mining';
 import { expectEmptyPosition } from './liquidityMining-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
@@ -34,7 +36,7 @@ describe('Vester', () => {
 
   let core: CoreProtocol;
 
-  let vester: TestVester;
+  let vester: TestVesterImplementation;
   let oARB: OARB;
 
   before(async () => {
@@ -43,30 +45,9 @@ describe('Vester', () => {
     await disableInterestAccrual(core, core.marketIds.arb);
     await disableInterestAccrual(core, core.marketIds.weth);
 
-    oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
+    oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, getOARBConstructorParams(core));
 
-    const implementation = await createContractWithAbi<TestVester>(
-      TestVester__factory.abi,
-      TestVester__factory.bytecode,
-      [
-        core.dolomiteMargin.address,
-        core.dolomiteRegistry.address,
-        core.tokens.weth.address,
-        core.tokens.arb.address,
-      ],
-    );
-
-    const calldata = await implementation.populateTransaction.initialize(
-      oARB.address,
-    );
-
-    const vesterProxy = await createContractWithAbi<VesterProxy>(
-      VesterProxy__factory.abi,
-      VesterProxy__factory.bytecode,
-      [implementation.address, core.dolomiteMargin.address, calldata.data!],
-    );
-
-    vester = TestVester__factory.connect(vesterProxy.address, core.hhUser1);
+    vester = await createTestVesterProxy(core, oARB);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
@@ -123,7 +104,7 @@ describe('Vester', () => {
   describe('#vest', () => {
     it('should work normally', async () => {
       const result = await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
-      await expectEvent(vester, result, 'Vesting', {
+      await expectEvent(vester, result, 'VestingStarted', {
         owner: core.hhUser1.address,
         duration: ONE_WEEK,
         amount: ONE_ETH_BI,
@@ -220,28 +201,28 @@ describe('Vester', () => {
       await core.tokens.arb.connect(vesterSigner).transfer(core.hhUser2.address, parseEther('.5'));
       await expectThrow(
         vester.connect(core.hhUser1).vest(defaultAccountNumber, ONE_WEEK.mul(4), ONE_ETH_BI),
-        'Vester: Not enough ARB tokens available',
+        'VesterImplementation: Not enough ARB tokens available',
       );
     });
 
     it('should fail if duration is less than 1 week', async () => {
       await expectThrow(
         vester.vest(defaultAccountNumber, ONE_WEEK.sub(1), ZERO_BI),
-        'Vester: Invalid duration',
+        'VesterImplementation: Invalid duration',
       );
     });
 
     it('should fail if duration is more than 4 weeks', async () => {
       await expectThrow(
         vester.vest(defaultAccountNumber, ONE_WEEK.mul(4).sub(1), ZERO_BI),
-        'Vester: Invalid duration',
+        'VesterImplementation: Invalid duration',
       );
     });
 
     it('should fail if duration not 1 week interval', async () => {
       await expectThrow(
         vester.vest(defaultAccountNumber, ONE_WEEK.mul(2).add(1), ZERO_BI),
-        'Vester: Invalid duration',
+        'VesterImplementation: Invalid duration',
       );
     });
 
@@ -249,7 +230,7 @@ describe('Vester', () => {
       await vester.connect(core.governance).ownerSetIsVestingActive(false);
       await expectThrow(
         vester.vest(defaultAccountNumber, ONE_WEEK.mul(2).add(1), ZERO_BI),
-        'Vester: Vesting not active',
+        'VesterImplementation: Vesting not active',
       );
     });
   });
@@ -516,7 +497,7 @@ describe('Vester', () => {
       await increase(ONE_WEEK);
       await expectThrow(
         vester.closePositionAndBuyTokens(1, defaultAccountNumber, defaultAccountNumber, ONE_BI),
-        'Vester: Cost exceeds max payment amount',
+        'VesterImplementation: Cost exceeds max payment amount',
       );
     });
 
@@ -535,7 +516,7 @@ describe('Vester', () => {
       await expectThrow(
         vester.connect(core.hhUser2)
           .closePositionAndBuyTokens(1, defaultAccountNumber, defaultAccountNumber, MAX_UINT_256_BI),
-        'Vester: Invalid position owner',
+        'VesterImplementation: Invalid position owner',
       );
     });
 
@@ -544,7 +525,7 @@ describe('Vester', () => {
       await expectThrow(
         vester.connect(core.hhUser1)
           .closePositionAndBuyTokens(1, defaultAccountNumber, defaultAccountNumber, MAX_UINT_256_BI),
-        'Vester: Position not vested',
+        'VesterImplementation: Position not vested',
       );
     });
 
@@ -554,7 +535,7 @@ describe('Vester', () => {
       await expectThrow(
         vester.connect(core.hhUser1)
           .closePositionAndBuyTokens(1, defaultAccountNumber, defaultAccountNumber, MAX_UINT_256_BI),
-        'Vester: Position expired',
+        'VesterImplementation: Position expired',
       );
     });
 
@@ -585,6 +566,7 @@ describe('Vester', () => {
       await expectEvent(vester, result, 'PositionForceClosed', {
         owner: core.hhUser1.address,
         id: 1,
+        arbTax: parseEther('0.05'),
       });
 
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
@@ -647,7 +629,7 @@ describe('Vester', () => {
       await increase(ONE_WEEK.mul(2).sub(2)); // Not sure why this is off by a bit
       await expectThrow(
         vester.connect(core.hhUser5).forceClosePosition(1),
-        'Vester: Position not expired',
+        'VesterImplementation: Position not expired',
       );
     });
 
@@ -675,6 +657,7 @@ describe('Vester', () => {
       await expectEvent(vester, result, 'EmergencyWithdraw', {
         owner: core.hhUser1.address,
         vestingId: ONE_BI,
+        arbTax: ZERO_BI,
       });
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.arb, ONE_ETH_BI);
@@ -706,6 +689,7 @@ describe('Vester', () => {
       await expectEvent(vester, result, 'EmergencyWithdraw', {
         owner: core.hhUser1.address,
         vestingId: ONE_BI,
+        arbTax: parseEther('0.05'),
       });
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
       await expectProtocolBalance(core, core.governance, ZERO_BI, core.marketIds.arb, parseEther('.05'));
@@ -745,7 +729,37 @@ describe('Vester', () => {
       await vester.connect(core.hhUser1).vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
       await expectThrow(
         vester.connect(core.hhUser2).emergencyWithdraw(1),
-        'Vester: Invalid position owner',
+        'VesterImplementation: Invalid position owner',
+      );
+    });
+  });
+
+  describe('#ownerWithdrawArb', () => {
+    it('should work normally when bypasses available amount', async () => {
+      await expectWalletBalance(vester, core.tokens.arb, ONE_ETH_BI);
+      await vester.connect(core.governance).ownerWithdrawArb(core.governance.address, ONE_ETH_BI, true);
+      await expectWalletBalance(vester, core.tokens.arb, ZERO_BI);
+    });
+
+    it('should work normally when bypasses available amount', async () => {
+      await expectWalletBalance(vester, core.tokens.arb, ONE_ETH_BI);
+      await expectWalletBalance(core.hhUser3, core.tokens.arb, ZERO_BI);
+
+      await vester.connect(core.hhUser1).vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI.div(2));
+      await vester.connect(core.governance).ownerWithdrawArb(core.hhUser3.address, ONE_ETH_BI.div(2), false);
+      await expectWalletBalance(vester, core.tokens.arb, ONE_ETH_BI.div(2));
+      await expectWalletBalance(core.hhUser3, core.tokens.arb, ONE_ETH_BI.div(2));
+
+      await expectThrow(
+        vester.connect(core.governance).ownerWithdrawArb(core.governance.address, ONE_ETH_BI.div(2), false),
+        'VesterImplementation: Insufficient available tokens',
+      );
+    });
+
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        vester.connect(core.hhUser1).ownerWithdrawArb(core.governance.address, ONE_ETH_BI, true),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -781,7 +795,7 @@ describe('Vester', () => {
       await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
       await expectThrow(
         vester.connect(core.governance).ownerSetOARB(OTHER_ADDRESS),
-        'Vester: Outstanding vesting positions',
+        'VesterImplementation: Outstanding vesting positions',
       );
     });
 
@@ -805,7 +819,7 @@ describe('Vester', () => {
     it('should fail less than min duration', async () => {
       await expectThrow(
         vester.connect(core.governance).ownerSetClosePositionWindow(ONE_WEEK.sub(1)),
-        'Vester: Invalid close position window',
+        'VesterImplementation: Invalid close position window',
       );
     });
 
@@ -829,7 +843,7 @@ describe('Vester', () => {
     it('should fail if outside of range', async () => {
       await expectThrow(
         vester.connect(core.governance).ownerSetEmergencyWithdrawTax(10_001),
-        'Vester: Invalid emergency withdrawal tax',
+        'VesterImplementation: Invalid emergency withdrawal tax',
       );
     });
 
@@ -853,7 +867,7 @@ describe('Vester', () => {
     it('should fail if outside of range', async () => {
       await expectThrow(
         vester.connect(core.governance).ownerSetForceClosePositionTax(10_001),
-        'Vester: Invalid force close position tax',
+        'VesterImplementation: Invalid force close position tax',
       );
     });
 
