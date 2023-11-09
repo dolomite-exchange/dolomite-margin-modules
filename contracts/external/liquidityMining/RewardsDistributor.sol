@@ -47,9 +47,10 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     // ==================== State Variables ====================
     // ===================================================
 
-    mapping(uint256 => bytes32) public merkleRoots;
-    mapping(address => mapping(uint256 => bool)) public claimStatus;
-    IOARB public oARB;
+    IOARB public override oARB;
+
+    mapping(uint256 => bytes32) private _epochToMerkleRootMap;
+    mapping(address => mapping(uint256 => bool)) private _userToEpochToClaimStatusMap;
 
     // ==================================================================
     // ======================= Constructor =======================
@@ -62,9 +63,23 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
         oARB = _oARB;
     }
 
-    // ==================================================================
-    // ======================= External Functions =======================
-    // ==================================================================
+    // ======================================================
+    // ================== Admin Functions ===================
+    // ======================================================
+
+    function ownerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) external onlyDolomiteMarginOwner(msg.sender) {
+        _epochToMerkleRootMap[_epoch] = _merkleRoot;
+        emit MerkleRootSet(_epoch, _merkleRoot);
+    }
+
+    function ownerSetOARB(IOARB _oARB) external onlyDolomiteMarginOwner(msg.sender) {
+        oARB = _oARB;
+        emit OARBSet(_oARB);
+    }
+
+    // ==============================================================
+    // ======================= User Functions =======================
+    // ==============================================================
 
     function claim(ClaimInfo[] calldata _claimInfo) external {
         uint256 len = _claimInfo.length;
@@ -75,12 +90,12 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
                 "Invalid merkle proof"
             );
             Require.that(
-                !claimStatus[msg.sender][_claimInfo[i].epoch],
+                !_userToEpochToClaimStatusMap[msg.sender][_claimInfo[i].epoch],
                 _FILE,
                 "Already claimed"
             );
 
-            claimStatus[msg.sender][_claimInfo[i].epoch] = true;
+            _userToEpochToClaimStatusMap[msg.sender][_claimInfo[i].epoch] = true;
             oARB.mint(_claimInfo[i].amount);
             oARB.safeTransfer(msg.sender, _claimInfo[i].amount);
 
@@ -88,18 +103,16 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
         }
     }
 
-    // ======================================================
-    // ================== Admin Functions ===================
-    // ======================================================
+    // ==============================================================
+    // ======================= View Functions =======================
+    // ==============================================================
 
-    function ownerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) external onlyDolomiteMarginOwner(msg.sender) {
-        merkleRoots[_epoch] = _merkleRoot;
-        emit MerkleRootSet(_epoch, _merkleRoot);
+    function getMerkleRootByEpoch(uint256 _epoch) external view returns (bytes32) {
+        return _epochToMerkleRootMap[_epoch];
     }
 
-    function ownerSetOARB(IOARB _oARB) external onlyDolomiteMarginOwner(msg.sender) {
-        oARB = _oARB;
-        emit OARBSet(_oARB);
+    function getClaimStatusByUserAndEpoch(address _user, uint256 _epoch) external view returns (bool) {
+        return _userToEpochToClaimStatusMap[_user][_epoch];
     }
 
     // ==================================================================
@@ -108,6 +121,6 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
 
     function _verifyMerkleProof(ClaimInfo calldata _claimInfo) internal view returns (bool) {
         bytes32 leaf = keccak256(abi.encode(msg.sender, _claimInfo.amount));
-        return MerkleProof.verifyCalldata(_claimInfo.proof, merkleRoots[_claimInfo.epoch], leaf);
+        return MerkleProof.verifyCalldata(_claimInfo.proof, _epochToMerkleRootMap[_claimInfo.epoch], leaf);
     }
 }

@@ -36,3 +36,10 @@ export function getVesterExploderConstructorParams(
     ['0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2'],
   ];
 }
+
+export function getRewardsDistributorConstructorParams(
+  core: CoreProtocol,
+  oARB: OARB,
+): any[] {
+  return [core.dolomiteMargin.address, oARB.address];
+}

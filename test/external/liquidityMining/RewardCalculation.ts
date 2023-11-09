@@ -3,7 +3,7 @@ import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { Emitter, Emitter__factory, OARB, OARB__factory } from 'src/types';
+import { Emitter, Emitter__factory, OARB } from 'src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from 'test/utils';
@@ -16,6 +16,7 @@ import {
   setupDAIBalance,
   setupWETHBalance,
 } from 'test/utils/setup';
+import { createOARB } from '../../utils/ecosystem-token-utils/liquidity-mining';
 
 const defaultAccountNumber = ZERO_BI;
 const defaultAllocPoint = BigNumber.from('100');
@@ -35,7 +36,7 @@ describe('Reward Calculation', () => {
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.dai!);
 
-    oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
+    oARB = await createOARB(core);
     startTime = (await getBlockTimestamp(await ethers.provider.getBlockNumber())) + 200;
     emitter = await createContractWithAbi<Emitter>(Emitter__factory.abi, Emitter__factory.bytecode, [
       core.dolomiteMargin.address,

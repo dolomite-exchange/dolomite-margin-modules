@@ -1,10 +1,11 @@
 import { expect } from 'chai';
-import { OARB, OARB__factory, OARBStorageVault, OARBStorageVault__factory } from 'src/types';
+import { OARB, OARBStorageVault, OARBStorageVault__factory } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectThrow } from 'test/utils/assertions';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
+import { createOARB } from '../../utils/ecosystem-token-utils/liquidity-mining';
 
 describe('OARBStorageVault', () => {
   let snapshotId: string;
@@ -14,11 +15,7 @@ describe('OARBStorageVault', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    oARB = await createContractWithAbi<OARB>(
-      OARB__factory.abi,
-      OARB__factory.bytecode,
-      [core.dolomiteMargin.address],
-    );
+    oARB = await createOARB(core);
     oARBStorageVault = await createContractWithAbi<OARBStorageVault>(
       OARBStorageVault__factory.abi,
       OARBStorageVault__factory.bytecode,

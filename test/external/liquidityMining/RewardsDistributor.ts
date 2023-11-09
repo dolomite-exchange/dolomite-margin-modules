@@ -1,12 +1,13 @@
 import { expect } from 'chai';
 import { defaultAbiCoder, keccak256 } from 'ethers/lib/utils';
 import { MerkleTree } from 'merkletreejs';
-import { OARB, OARB__factory, RewardsDistributor, RewardsDistributor__factory } from 'src/types';
+import { OARB, OARB__factory, RewardsDistributor } from 'src/types';
 import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
+import { createOARB, createRewardsDistributor } from '../../utils/ecosystem-token-utils/liquidity-mining';
 
 const user1Rewards = [10, 20];
 const user2Rewards = [15, 25];
@@ -18,22 +19,15 @@ describe('RewardsDistributor', () => {
   let rewardsDistributor: RewardsDistributor;
   let merkleRoot1: string;
   let merkleRoot2: string;
-  let validProof1: string[];
-  let validProof2: string[];
+  let validProofUser1Epoch1: string[];
+  let validProofUser1Epoch2: string[];
+  let validProofUser2Epoch2: string[];
   let invalidProof: string[];
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    oARB = await createContractWithAbi<OARB>(
-      OARB__factory.abi,
-      OARB__factory.bytecode,
-      [core.dolomiteMargin.address],
-    );
-    rewardsDistributor = await createContractWithAbi<RewardsDistributor>(
-      RewardsDistributor__factory.abi,
-      RewardsDistributor__factory.bytecode,
-      [core.dolomiteMargin.address, oARB.address],
-    );
+    oARB = await createOARB(core);
+    rewardsDistributor = await createRewardsDistributor(core, oARB);
     await core.dolomiteMargin.ownerSetGlobalOperator(rewardsDistributor.address, true);
 
     const rewards1 = [
@@ -56,8 +50,9 @@ describe('RewardsDistributor', () => {
 
     merkleRoot1 = tree1.getHexRoot();
     merkleRoot2 = tree2.getHexRoot();
-    validProof1 = await tree1.getHexProof(leaves1[0]);
-    validProof2 = await tree2.getHexProof(leaves2[0]);
+    validProofUser1Epoch1 = await tree1.getHexProof(leaves1[0]);
+    validProofUser1Epoch2 = await tree2.getHexProof(leaves2[0]);
+    validProofUser2Epoch2 = await tree2.getHexProof(leaves2[1]);
     invalidProof = await tree1.getHexProof(invalidLeaf);
 
     await rewardsDistributor.connect(core.governance).ownerSetMerkleRoot(1, merkleRoot1);
@@ -82,40 +77,40 @@ describe('RewardsDistributor', () => {
       const epoch1 = 1;
       const epoch2 = 2;
       await rewardsDistributor.connect(core.hhUser1).claim(
-        [{ epoch: epoch1, amount: user1Rewards[0], proof: validProof1 }],
+        [{ epoch: epoch1, amount: user1Rewards[0], proof: validProofUser1Epoch1 }],
       );
       expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(user1Rewards[0]);
-      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, epoch1)).to.be.true;
-      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, epoch2)).to.be.false;
+      expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser1.address, epoch1)).to.be.true;
+      expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser1.address, epoch2)).to.be.false;
 
       expect(await oARB.balanceOf(core.hhUser2.address)).to.eq(ZERO_BI);
-      expect(await rewardsDistributor.claimStatus(core.hhUser2.address, epoch1)).to.be.false;
-      expect(await rewardsDistributor.claimStatus(core.hhUser2.address, epoch2)).to.be.false;
+      expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser2.address, epoch1)).to.be.false;
+      expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser2.address, epoch2)).to.be.false;
 
       await rewardsDistributor.connect(core.hhUser2).claim(
-        [{ epoch: epoch2, amount: user2Rewards[1], proof: validProof2 }],
+        [{ epoch: epoch2, amount: user2Rewards[1], proof: validProofUser2Epoch2 }],
       );
       expect(await oARB.balanceOf(core.hhUser2.address)).to.eq(user2Rewards[1]);
-      expect(await rewardsDistributor.claimStatus(core.hhUser2.address, epoch1)).to.be.false;
-      expect(await rewardsDistributor.claimStatus(core.hhUser2.address, epoch2)).to.be.true;
+      expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser2.address, epoch1)).to.be.false;
+      expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser2.address, epoch2)).to.be.true;
     });
 
     it('should work with multiple epochs', async () => {
       const epoch1 = 1;
       const epoch2 = 2;
       await rewardsDistributor.connect(core.hhUser1).claim([
-        { epoch: epoch1, amount: user1Rewards[0], proof: validProof1 },
-        { epoch: epoch2, amount: user1Rewards[1], proof: validProof2 },
+        { epoch: epoch1, amount: user1Rewards[0], proof: validProofUser1Epoch1 },
+        { epoch: epoch2, amount: user1Rewards[1], proof: validProofUser1Epoch2 },
       ]);
       expect(await oARB.balanceOf(core.hhUser1.address)).to.eq(user1Rewards[0] + user1Rewards[1]);
-      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, epoch1)).to.be.true;
-      expect(await rewardsDistributor.claimStatus(core.hhUser1.address, epoch2)).to.be.true;
+      expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser1.address, epoch1)).to.be.true;
+      expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(core.hhUser1.address, epoch2)).to.be.true;
     });
 
     it('should fail if tokens already claimed', async () => {
-      await rewardsDistributor.connect(core.hhUser1).claim([{ epoch: 1, amount: 10, proof: validProof1 }]);
+      await rewardsDistributor.connect(core.hhUser1).claim([{ epoch: 1, amount: 10, proof: validProofUser1Epoch1 }]);
       await expectThrow(
-        rewardsDistributor.connect(core.hhUser1).claim([{ epoch: 1, amount: 10, proof: validProof1 }]),
+        rewardsDistributor.connect(core.hhUser1).claim([{ epoch: 1, amount: 10, proof: validProofUser1Epoch1 }]),
         'RewardsDistributor: Already claimed',
       );
     });
@@ -128,11 +123,12 @@ describe('RewardsDistributor', () => {
         'RewardsDistributor: Invalid merkle proof',
       );
       await expectThrow(
-        rewardsDistributor.connect(core.hhUser3).claim([{ epoch, amount, proof: validProof1 }]),
+        rewardsDistributor.connect(core.hhUser3).claim([{ epoch, amount, proof: validProofUser1Epoch1 }]),
         'RewardsDistributor: Invalid merkle proof',
       );
       await expectThrow(
-        rewardsDistributor.connect(core.hhUser1).claim([{ epoch, amount: user1Rewards[1], proof: validProof1 }]),
+        rewardsDistributor.connect(core.hhUser1)
+          .claim([{ epoch, amount: user1Rewards[1], proof: validProofUser1Epoch1 }]),
         'RewardsDistributor: Invalid merkle proof',
       );
     });
@@ -140,13 +136,13 @@ describe('RewardsDistributor', () => {
 
   describe('#setMerkleRoot', () => {
     it('should work normally', async () => {
-      expect(await rewardsDistributor.merkleRoots(1)).to.eq(merkleRoot1);
+      expect(await rewardsDistributor.getMerkleRootByEpoch(1)).to.eq(merkleRoot1);
       const result = await rewardsDistributor.connect(core.governance).ownerSetMerkleRoot(1, merkleRoot2);
       await expectEvent(rewardsDistributor, result, 'MerkleRootSet', {
         epoch: 1,
         merkleRoot: merkleRoot2,
       });
-      expect(await rewardsDistributor.merkleRoots(1)).to.eq(merkleRoot2);
+      expect(await rewardsDistributor.getMerkleRootByEpoch(1)).to.eq(merkleRoot2);
     });
 
     it('should fail when not called by dolomite margin owner', async () => {

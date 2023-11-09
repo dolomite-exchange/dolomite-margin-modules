@@ -7,7 +7,6 @@ import {
   EmitterMultipleRewardTokens,
   EmitterMultipleRewardTokens__factory,
   OARB,
-  OARB__factory,
   OARBStorageVault,
   OARBStorageVault__factory,
 } from 'src/types';
@@ -23,6 +22,7 @@ import {
   setupUSDCBalance,
   setupWETHBalance,
 } from 'test/utils/setup';
+import { createOARB } from '../../utils/ecosystem-token-utils/liquidity-mining';
 
 const defaultAccountNumber = ZERO_BI;
 const defaultAllocPoint = BigNumber.from('100');
@@ -46,16 +46,8 @@ describe('EmitterMultipleRewardTokens', () => {
     await disableInterestAccrual(core, core.marketIds.usdc);
     await disableInterestAccrual(core, core.marketIds.weth);
 
-    oARB = await createContractWithAbi<OARB>(
-      OARB__factory.abi,
-      OARB__factory.bytecode,
-      [core.dolomiteMargin.address],
-    );
-    oARB2 = await createContractWithAbi<OARB>(
-      OARB__factory.abi,
-      OARB__factory.bytecode,
-      [core.dolomiteMargin.address],
-    );
+    oARB = await createOARB(core);
+    oARB2 = await createOARB(core);
     oARBStorageVault = await createContractWithAbi<OARBStorageVault>(
       OARBStorageVault__factory.abi,
       OARBStorageVault__factory.bytecode,

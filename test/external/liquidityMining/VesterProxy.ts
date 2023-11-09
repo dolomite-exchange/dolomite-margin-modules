@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import {
   OARB,
   OARB__factory,
-  TestVester,
-  TestVester__factory,
+  TestVesterImplementation,
+  TestVesterImplementation__factory,
   VesterProxy,
   VesterProxy__factory,
 } from '../../../src/types';
@@ -17,7 +17,7 @@ describe('VesterProxy', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let implementation: TestVester;
+  let implementation: TestVesterImplementation;
   let oARB: OARB;
 
   let proxy: VesterProxy;
@@ -26,9 +26,9 @@ describe('VesterProxy', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
 
-    implementation = await createContractWithAbi<TestVester>(
-      TestVester__factory.abi,
-      TestVester__factory.bytecode,
+    implementation = await createContractWithAbi<TestVesterImplementation>(
+      TestVesterImplementation__factory.abi,
+      TestVesterImplementation__factory.bytecode,
       [
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
@@ -56,16 +56,16 @@ describe('VesterProxy', () => {
 
   describe('#fallback', () => {
     it('should work normally', async () => {
-      const vester = TestVester__factory.connect(proxy.address, core.hhUser1);
+      const vester = TestVesterImplementation__factory.connect(proxy.address, core.hhUser1);
       expect(await vester.oARB()).to.eq(oARB.address);
     });
   });
 
   describe('#upgradeTo', () => {
     it('should work normally', async () => {
-      const newImplementation = await createContractWithAbi<TestVester>(
-        TestVester__factory.abi,
-        TestVester__factory.bytecode,
+      const newImplementation = await createContractWithAbi<TestVesterImplementation>(
+        TestVesterImplementation__factory.abi,
+        TestVesterImplementation__factory.bytecode,
         [
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,
@@ -99,9 +99,9 @@ describe('VesterProxy', () => {
 
   describe('#upgradeToAndCall', () => {
     it('should work normally', async () => {
-      const newImplementation = await createContractWithAbi<TestVester>(
-        TestVester__factory.abi,
-        TestVester__factory.bytecode,
+      const newImplementation = await createContractWithAbi<TestVesterImplementation>(
+        TestVesterImplementation__factory.abi,
+        TestVesterImplementation__factory.bytecode,
         [
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,
@@ -138,9 +138,9 @@ describe('VesterProxy', () => {
     });
 
     it('should fail when call to the new implementation fails', async () => {
-      const newImplementation = await createContractWithAbi<TestVester>(
-        TestVester__factory.abi,
-        TestVester__factory.bytecode,
+      const newImplementation = await createContractWithAbi<TestVesterImplementation>(
+        TestVesterImplementation__factory.abi,
+        TestVesterImplementation__factory.bytecode,
         [
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,
@@ -153,7 +153,7 @@ describe('VesterProxy', () => {
       );
       await expectThrow(
         proxy.connect(core.governance).upgradeToAndCall(newImplementation.address, calldata.data!),
-        'Vester: Invalid force close position tax',
+        'VesterImplementation: Invalid force close position tax',
       );
     });
   });

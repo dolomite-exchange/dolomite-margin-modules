@@ -114,7 +114,7 @@ import {
   IParaswapAugustusRouter,
   IParaswapAugustusRouter__factory,
   IParaswapFeeClaimer,
-  IParaswapFeeClaimer__factory,
+  IParaswapFeeClaimer__factory, IPartiallyDelayedMultiSig, IPartiallyDelayedMultiSig__factory,
   IPendleGLPRegistry,
   IPendleGLPRegistry__factory,
   IPendlePtMarket,
@@ -397,6 +397,7 @@ export interface CoreProtocol {
   chainlinkPriceOracleOld: IChainlinkPriceOracleOld | undefined;
   chainlinkPriceOracle: IChainlinkPriceOracle | undefined;
   chainlinkRegistry: IChainlinkRegistry | undefined;
+  delayedMultiSig: IPartiallyDelayedMultiSig;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteAmmFactory: IDolomiteAmmFactory;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
@@ -624,6 +625,11 @@ export async function setupCoreProtocol(
     governance,
   );
 
+  const delayedMultiSig = IPartiallyDelayedMultiSig__factory.connect(
+    await DOLOMITE_MARGIN.connect(hhUser1).owner(),
+    governance,
+  );
+
   const depositWithdrawalProxy = IDepositWithdrawalProxy__factory.connect(
     DepositWithdrawalProxyJson.networks[config.network].address,
     governance,
@@ -732,6 +738,7 @@ export async function setupCoreProtocol(
     chainlinkRegistry,
     chainlinkPriceOracleOld,
     chainlinkPriceOracle,
+    delayedMultiSig,
     depositWithdrawalProxy,
     dolomiteAmmFactory,
     dolomiteAmmRouterProxy,

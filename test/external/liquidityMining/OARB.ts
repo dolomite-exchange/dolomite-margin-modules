@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { OARB, OARB__factory } from 'src/types';
-import { createContractWithAbi } from 'src/utils/dolomite-utils';
+import { OARB } from 'src/types';
 import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectThrow } from 'test/utils/assertions';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
+import { createOARB } from '../../utils/ecosystem-token-utils/liquidity-mining';
 
 describe('OARB', () => {
   let snapshotId: string;
@@ -13,7 +13,7 @@ describe('OARB', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
+    oARB = await createOARB(core);
     await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
 
     snapshotId = await snapshot();

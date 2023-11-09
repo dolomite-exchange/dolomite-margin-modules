@@ -4,8 +4,8 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { OARB, OARB__factory, TestVesterImplementation } from 'src/types';
-import { createContractWithAbi, depositIntoDolomiteMargin, withdrawFromDolomiteMargin } from 'src/utils/dolomite-utils';
+import { OARB, TestVesterImplementation } from 'src/types';
+import { depositIntoDolomiteMargin, withdrawFromDolomiteMargin } from 'src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
@@ -18,8 +18,7 @@ import {
   setupUSDCBalance,
   setupWETHBalance,
 } from 'test/utils/setup';
-import { getOARBConstructorParams } from '../../../src/utils/constructors/liquidity-mining';
-import { createTestVesterProxy } from '../../utils/ecosystem-token-utils/liquidity-mining';
+import { createOARB, createTestVesterProxy } from '../../utils/ecosystem-token-utils/liquidity-mining';
 import { expectEmptyPosition } from './liquidityMining-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
@@ -45,7 +44,7 @@ describe('Vester', () => {
     await disableInterestAccrual(core, core.marketIds.arb);
     await disableInterestAccrual(core, core.marketIds.weth);
 
-    oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, getOARBConstructorParams(core));
+    oARB = await createOARB(core);
 
     vester = await createTestVesterProxy(core, oARB);
 

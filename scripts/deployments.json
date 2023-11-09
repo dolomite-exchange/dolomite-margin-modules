@@ -440,6 +440,13 @@
       "isVerified": true
     }
   },
+  "RewardsDistributor": {
+    "42161": {
+      "address": "0xfb47dC009c12eCF8a6785bD5568163C5850D8360",
+      "transaction": "0x48f7770a43f60207dc3a4e17a284c2ec0081a844a8657932020bcdbffe74a310",
+      "isVerified": true
+    }
+  },
   "Stablecoin6L94ULinearStepFunctionInterestSetter": {
     "42161": {
       "address": "0xD3D3803177bd12cC8735cB360Ec1C06208d4a94a",

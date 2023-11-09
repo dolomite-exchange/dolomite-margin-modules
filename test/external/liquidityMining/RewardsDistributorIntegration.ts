@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { parseEther } from 'ethers/lib/utils';
-import { OARB, OARB__factory, RewardsDistributor, RewardsDistributor__factory } from 'src/types';
-import { createContractWithAbi } from 'src/utils/dolomite-utils';
+import { OARB, RewardsDistributor } from 'src/types';
 import { Network } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectThrow } from 'test/utils/assertions';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
+import { createOARB, createRewardsDistributor } from '../../utils/ecosystem-token-utils/liquidity-mining';
 
 const USER1 = '0x0321be949876c2545ac121379c620c2a0480b758';
 const USER2 = '0x1702acf734116cd8faf86d139aa91843f81510a1';
@@ -21,16 +21,8 @@ describe('RewardsDistributorIntegration', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    oARB = await createContractWithAbi<OARB>(
-      OARB__factory.abi,
-      OARB__factory.bytecode,
-      [core.dolomiteMargin.address],
-    );
-    rewardsDistributor = await createContractWithAbi<RewardsDistributor>(
-      RewardsDistributor__factory.abi,
-      RewardsDistributor__factory.bytecode,
-      [core.dolomiteMargin.address, oARB.address],
-    );
+    oARB = await createOARB(core);
+    rewardsDistributor = await createRewardsDistributor(core, oARB);
     await core.dolomiteMargin.ownerSetGlobalOperator(rewardsDistributor.address, true);
 
     merkleRoot1 = '0x9d5f7ae4fabaf5a6425cfd830814e1cafa1c28c9be28c07366ff488af1a84e8b';
@@ -66,12 +58,12 @@ describe('RewardsDistributorIntegration', () => {
       const user1 = await impersonate(USER1, true);
       await rewardsDistributor.connect(user1).claim([{ epoch: 1, amount: parseEther('1000'), proof: validProof1 }]);
       expect(await oARB.balanceOf(user1.address)).to.eq(parseEther('1000'));
-      expect(await rewardsDistributor.claimStatus(user1.address, 1)).to.be.true;
+      expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(user1.address, 1)).to.be.true;
 
       const user2 = await impersonate(USER2, true);
       await rewardsDistributor.connect(user2).claim([{ epoch: 1, amount: parseEther('2250'), proof: validProof2 }]);
       expect(await oARB.balanceOf(user2.address)).to.eq(parseEther('2250'));
-      expect(await rewardsDistributor.claimStatus(user2.address, 1)).to.be.true;
+      expect(await rewardsDistributor.getClaimStatusByUserAndEpoch(user2.address, 1)).to.be.true;
     });
 
     it('should fail with incorrect amount', async () => {

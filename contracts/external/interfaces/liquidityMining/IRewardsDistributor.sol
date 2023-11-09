@@ -64,4 +64,21 @@ interface IRewardsDistributor {
      * @param  _claimInfo  Array of ClaimInfo structs used to claim oARB for the given user
      */
     function claim(ClaimInfo[] calldata _claimInfo) external;
+
+    /**
+     *
+     * @param  _epoch   Epoch to get the merkle root for
+     * @return          Merkle root for the given epoch
+     */
+    function getMerkleRootByEpoch(uint256 _epoch) external view returns (bytes32);
+
+    /**
+     *
+     * @param  _user    User to get the claim status for
+     * @param  _epoch   Epoch to get the claim status for
+     * @return          True if the user has claimed for the given epoch, false otherwise
+     */
+    function getClaimStatusByUserAndEpoch(address _user, uint256 _epoch) external view returns (bool);
+
+    function oARB() external view returns (IOARB);
 }
