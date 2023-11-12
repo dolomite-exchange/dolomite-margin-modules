@@ -1,4 +1,11 @@
 {
+  "Altcoin14L86ULinearStepFunctionInterestSetter": {
+    "42161": {
+      "address": "0x36D9B05c13Af6C86e9100F05a9AFeaB766fd1930",
+      "transaction": "0x71895c6cacea2da300f1c7de6e4c8bfc6d0b30c339eac2bbca8730cc2b638e75",
+      "isVerified": true
+    }
+  },
   "AtlasSIUserVaultFactory": {
     "421613": {
       "address": "0x823F4f7582fcBbe4eB1239430191C29C494Dd51c",
@@ -143,6 +150,13 @@
     "42161": {
       "address": "0x39f39051c115d909d25021F5A18137B18AbcE7Ad",
       "transaction": "0x3262e0df91ec5adc6fe51d542a3ebfc0cf1db1ade5211ef9cc135be4585ad1f2",
+      "isVerified": true
+    }
+  },
+  "GrailTWAPPriceOracleV1": {
+    "42161": {
+      "address": "0x8dDfA821EC6000E589de93D17b75687C9ebF8b21",
+      "transaction": "0x1704961573e5588207dca6f5d61169d5da2f9474236cbedbcbfef1385e7b7f9c",
       "isVerified": true
     }
   },

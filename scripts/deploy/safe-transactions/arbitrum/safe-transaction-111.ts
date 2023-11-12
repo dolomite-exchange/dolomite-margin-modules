@@ -8,8 +8,8 @@ import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../
 
 /**
  * This script encodes the following transactions:
- * - Creates the VesterImplementationV1 contract
- * - Creates the VesterProxy contract
+ * - Creates the RewardsDistributor contract
+ * - Allows the delayed multisig to invoke `ownerSetMerkleRoot` instantly on the RewardsDistributor contract
  */
 async function main() {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
