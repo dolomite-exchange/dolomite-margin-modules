@@ -72,25 +72,29 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, O
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
         if (VAULT_FACTORY.getAccountByVault(_tradeOriginator) != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(VAULT_FACTORY.getAccountByVault(_tradeOriginator) != address(0),
+        Require.that(
+            VAULT_FACTORY.getAccountByVault(_tradeOriginator) != address(0),
             _FILE,
             "Invalid trade originator",
             _tradeOriginator
         );
         if (isValidInputToken(_inputToken)) { /* FOR COVERAGE TESTING */ }
-        Require.that(isValidInputToken(_inputToken),
+        Require.that(
+            isValidInputToken(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         if (_outputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_outputToken == address(VAULT_FACTORY),
+        Require.that(
+            _outputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputAmount > 0,
+        Require.that(
+            _inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -107,7 +111,8 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, O
             _extraOrderData
         );
         if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
-        Require.that(outputAmount >= minOutputAmount,
+        Require.that(
+            outputAmount >= minOutputAmount,
             _FILE,
             "Insufficient output amount",
             outputAmount,
@@ -124,10 +129,10 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, O
     }
 
     function createActionsForWrapping(
-        uint256 _solidAccountId,
-        uint256,
-        address,
-        address,
+        uint256 _primaryAccountId,
+        uint256 /* _otherAccountId */,
+        address /* _primaryAccountOwner */,
+        address /* _otherAccountOwner */,
         uint256 _outputMarket,
         uint256 _inputMarket,
         uint256 _minAmountOut,
@@ -139,13 +144,15 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, O
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
         if (isValidInputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket))) { /* FOR COVERAGE TESTING */ }
-        Require.that(isValidInputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket)),
+        Require.that(
+            isValidInputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket)),
             _FILE,
             "Invalid input market",
             _inputMarket
         );
         if (DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
-        Require.that(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(VAULT_FACTORY),
+        Require.that(
+            DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(VAULT_FACTORY),
             _FILE,
             "Invalid output market",
             _outputMarket
@@ -154,7 +161,7 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, O
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
 
         actions[0] = AccountActionLib.encodeExternalSellAction(
-            _solidAccountId,
+            _primaryAccountId,
             _inputMarket,
             _outputMarket,
             /* _trader = */ address(this),
@@ -181,19 +188,22 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, O
     view
     returns (uint256) {
         if (isValidInputToken(_inputToken)) { /* FOR COVERAGE TESTING */ }
-        Require.that(isValidInputToken(_inputToken),
+        Require.that(
+            isValidInputToken(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
         if (_outputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_outputToken == address(VAULT_FACTORY),
+        Require.that(
+            _outputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid output token",
             _outputToken
         );
         if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_desiredInputAmount > 0,
+        Require.that(
+            _desiredInputAmount > 0,
             _FILE,
             "Invalid desired input amount"
         );

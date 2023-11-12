@@ -25,11 +25,7 @@ import {
   expectWalletBalanceOrDustyIfZero,
 } from '../../utils/assertions';
 import { setExpiry } from '../../utils/expiry-utils';
-import {
-  getLastZapAmountToBigNumber,
-  liquidateV4WithZap,
-  toZapBigNumber,
-} from '../../utils/liquidation-utils';
+import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
 import { checkForParaswapSuccess } from '../../utils/trader-utils';
 

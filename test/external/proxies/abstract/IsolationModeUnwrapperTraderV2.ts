@@ -13,7 +13,11 @@ import {
   TestIsolationModeUnwrapperTraderV2__factory,
 } from '../../../../src/types';
 import { AccountInfoStruct } from '../../../../src/utils';
-import { createContractWithAbi, createTestToken } from '../../../../src/utils/dolomite-utils';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+  createTestToken,
+} from '../../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
@@ -22,6 +26,7 @@ import {
   snapshot,
 } from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../../utils/dolomite';
 import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
@@ -54,9 +59,10 @@ describe('IsolationModeUnwrapperTraderV2', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     otherToken = await createTestToken();
-    const userVaultImplementation = await createContractWithAbi<TestIsolationModeTokenVaultV1>(
-      TestIsolationModeTokenVaultV1__factory.abi,
-      TestIsolationModeTokenVaultV1__factory.bytecode,
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    const userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1>(
+      'TestIsolationModeTokenVaultV1',
+      libraries,
       [],
     );
     factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);

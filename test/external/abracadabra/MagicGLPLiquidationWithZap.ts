@@ -1,4 +1,9 @@
-import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk/dist';
+import {
+  ApiToken,
+  BigNumber as ZapBigNumber,
+  DolomiteZap,
+  Network as ZapNetwork,
+} from '@dolomite-exchange/zap-sdk/dist';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -16,11 +21,7 @@ import {
 } from '../../utils/assertions';
 import { createMagicGLPUnwrapperTraderV2 } from '../../utils/ecosystem-token-utils/abracadabra';
 import { setExpiry } from '../../utils/expiry-utils';
-import {
-  getLastZapAmountToBigNumber,
-  liquidateV4WithZap,
-  toZapBigNumber,
-} from '../../utils/liquidation-utils';
+import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 import { checkForParaswapSuccess } from '../../utils/trader-utils';
 
@@ -57,7 +58,7 @@ describe('MagicGLPLiquidationWithZap', () => {
 
     heldMarketId = BigNumber.from(core.marketIds.magicGlp!);
     magicGlpApiToken = {
-      marketId: heldMarketId.toNumber(),
+      marketId: new ZapBigNumber(heldMarketId.toNumber()),
       symbol: 'mGLP',
       name: 'magicGLP',
       decimals: 18,

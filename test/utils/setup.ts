@@ -35,6 +35,8 @@ import {
   IBorrowPositionProxyV2__factory,
   IAlgebraV3Pool,
   IAlgebraV3Pool__factory,
+  IChainlinkPriceOracle,
+  IChainlinkPriceOracle__factory,
   IChainlinkPriceOracleOld,
   IChainlinkPriceOracleOld__factory,
   IChainlinkRegistry,
@@ -67,14 +69,28 @@ import {
   IGLPManager__factory,
   IGLPRewardsRouterV2,
   IGLPRewardsRouterV2__factory,
+  IGmxDataStore,
+  IGmxDataStore__factory,
+  IGmxDepositHandler,
+  IGmxDepositHandler__factory,
+  IGmxExchangeRouter,
+  IGmxExchangeRouter__factory,
+  IGmxMarketToken,
+  IGmxMarketToken__factory,
+  IGmxReader,
+  IGmxReader__factory,
   IGmxRegistryV1,
   IGmxRegistryV1__factory,
   IGmxRewardRouterV2,
   IGmxRewardRouterV2__factory,
+  IGmxRouter,
+  IGmxRouter__factory,
   IGmxVault,
   IGmxVault__factory,
   IGmxVester,
   IGmxVester__factory,
+  IGmxWithdrawalHandler,
+  IGmxWithdrawalHandler__factory,
   IJonesGLPAdapter,
   IJonesGLPAdapter__factory,
   IJonesGLPVaultRouter,
@@ -100,7 +116,7 @@ import {
   IParaswapAugustusRouter,
   IParaswapAugustusRouter__factory,
   IParaswapFeeClaimer,
-  IParaswapFeeClaimer__factory,
+  IParaswapFeeClaimer__factory, IPartiallyDelayedMultiSig, IPartiallyDelayedMultiSig__factory,
   IPendleGLPRegistry,
   IPendleGLPRegistry__factory,
   IPendlePtMarket,
@@ -154,7 +170,9 @@ import {
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
+  ARB_MAP,
   ATLAS_SI_TOKEN_MAP,
+  CHAINLINK_PRICE_ORACLE_MAP,
   CHAINLINK_PRICE_ORACLE_OLD_MAP,
   CHAINLINK_REGISTRY_MAP,
   DAI_MAP,
@@ -169,9 +187,19 @@ import {
   GLP_MANAGER_MAP,
   GLP_MAP,
   GLP_REWARD_ROUTER_MAP,
+  GMX_DATASTORE_MAP,
+  GMX_DEPOSIT_HANDLER_MAP,
+  GMX_DEPOSIT_VAULT_MAP,
+  GMX_ETH_USD_MARKET_TOKEN_MAP,
+  GMX_EXCHANGE_ROUTER_MAP,
+  GMX_EXECUTOR_MAP,
   GMX_MAP,
+  GMX_READER_MAP,
   GMX_REWARD_ROUTER_MAP,
+  GMX_ROUTER_MAP,
   GMX_VAULT_MAP,
+  GMX_WITHDRAWAL_HANDLER_MAP,
+  GMX_WITHDRAWAL_VAULT_MAP,
   GRAIL_MAP,
   GRAIL_USDC_V3_POOL_MAP,
   GRAIL_WETH_V3_POOL_MAP,
@@ -273,6 +301,19 @@ export interface GmxEcosystem {
   };
 }
 
+export interface GmxEcosystemV2 {
+  gmxDataStore: IGmxDataStore;
+  gmxDepositHandler: IGmxDepositHandler;
+  gmxDepositVault: SignerWithAddress;
+  gmxEthUsdMarketToken: IGmxMarketToken;
+  gmxExchangeRouter: IGmxExchangeRouter;
+  gmxExecutor: SignerWithAddress;
+  gmxReader: IGmxReader;
+  gmxRouter: IGmxRouter;
+  gmxWithdrawalHandler: IGmxWithdrawalHandler;
+  gmxWithdrawalVault: SignerWithAddress;
+}
+
 export interface JonesEcosystem {
   glpAdapter: IJonesGLPAdapter;
   glpVaultRouter: IJonesGLPVaultRouter;
@@ -366,7 +407,9 @@ export interface CoreProtocol {
   borrowPositionProxyV2: IBorrowPositionProxyV2;
   camelotEcosystem: CamelotEcosystem | undefined;
   chainlinkPriceOracleOld: IChainlinkPriceOracleOld | undefined;
+  chainlinkPriceOracle: IChainlinkPriceOracle | undefined;
   chainlinkRegistry: IChainlinkRegistry | undefined;
+  delayedMultiSig: IPartiallyDelayedMultiSig;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteAmmFactory: IDolomiteAmmFactory;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
@@ -376,6 +419,7 @@ export interface CoreProtocol {
   expiry: IExpiry;
   genericTraderProxy: IGenericTraderProxyV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
+  gmxEcosystemV2: GmxEcosystemV2 | undefined;
   jonesEcosystem: JonesEcosystem | undefined;
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
@@ -397,6 +441,7 @@ export interface CoreProtocol {
    * A mapping from token's symbol to its market ID
    */
   marketIds: {
+    arb: BigNumberish;
     dai: BigNumberish | undefined;
     dfsGlp: BigNumberish | undefined;
     djUSDC: BigNumberish | undefined;
@@ -417,6 +462,8 @@ export interface CoreProtocol {
     weth: ApiToken;
   };
   tokens: {
+    arb: IERC20;
+    dai: IERC20;
     dfsGlp: IERC20 | undefined;
     dPtGlp: IERC20 | undefined;
     dYtGlp: IERC20 | undefined;
@@ -442,6 +489,42 @@ export async function setupWETHBalance(
   await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupARBBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xf3fc178157fb3c87548baa86f9d24ba38e649b58'; // ARB Treasury
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.arb.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.arb.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupDAIBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x489ee077994b6658eafa855c308275ead8097c4a'; // GMX Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.dai.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.dai.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupNativeUSDCBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x3dd1d15b3c78d6acfd75a254e857cbe5b9ff0af2'; // Radiant USDC pool
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.nativeUsdc!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.nativeUsdc!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
 export async function setupUSDCBalance(
   core: CoreProtocol,
   signer: SignerWithAddress,
@@ -452,6 +535,19 @@ export async function setupUSDCBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.usdc.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.usdc.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupGMBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender?: { address: string },
+) {
+  const controller = await impersonate(core.gmxEcosystemV2!.gmxExchangeRouter.address, true);
+  await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(controller).mint(signer.address, amount);
+  if (spender) {
+    await core.gmxEcosystemV2!.gmxEthUsdMarketToken.connect(signer).approve(spender.address, amount);
+  }
 }
 
 export async function setupGMXBalance(
@@ -482,6 +578,13 @@ export function getDefaultCoreProtocolConfig(network: Network): CoreProtocolConf
   return {
     network,
     blockNumber: NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[network],
+  };
+}
+
+export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig {
+  return {
+    network: Network.ArbitrumOne,
+    blockNumber: 131_050_900,
   };
 }
 
@@ -522,9 +625,20 @@ export async function setupCoreProtocol(
     governance,
   );
 
+  const chainlinkPriceOracle = getContractOpt(
+    CHAINLINK_PRICE_ORACLE_MAP[config.network],
+    IChainlinkPriceOracle__factory.connect,
+    governance,
+  );
+
   const chainlinkRegistry = getContractOpt(
     CHAINLINK_REGISTRY_MAP[config.network],
     IChainlinkRegistry__factory.connect,
+    governance,
+  );
+
+  const delayedMultiSig = IPartiallyDelayedMultiSig__factory.connect(
+    await DOLOMITE_MARGIN.connect(hhUser1).owner(),
     governance,
   );
 
@@ -620,6 +734,7 @@ export async function setupCoreProtocol(
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const camelotEcosystem = await createCamelotEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
+  const gmxEcosystemV2 = await createGmxEcosystemV2(config.network, hhUser1);
   const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
   const odosEcosystem = await createOdosEcosystem(config.network, hhUser1);
   const paraswapEcosystem = await createParaswapEcosystem(config.network, hhUser1);
@@ -636,6 +751,8 @@ export async function setupCoreProtocol(
     camelotEcosystem,
     chainlinkRegistry,
     chainlinkPriceOracleOld,
+    chainlinkPriceOracle,
+    delayedMultiSig,
     depositWithdrawalProxy,
     dolomiteAmmFactory,
     dolomiteAmmRouterProxy,
@@ -645,6 +762,7 @@ export async function setupCoreProtocol(
     expiry,
     genericTraderProxy,
     gmxEcosystem,
+    gmxEcosystemV2,
     governance,
     jonesEcosystem,
     liquidatorAssetRegistry,
@@ -686,6 +804,7 @@ export async function setupCoreProtocol(
       },
     },
     marketIds: {
+      arb: ARB_MAP[config.network].marketId,
       dai: DAI_MAP[config.network]?.marketId,
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
       djUSDC: DJ_USDC[config.network]?.marketId,
@@ -702,6 +821,8 @@ export async function setupCoreProtocol(
       weth: WETH_MAP[config.network].marketId,
     },
     tokens: {
+      arb: IERC20__factory.connect(ARB_MAP[config.network].address, hhUser1),
+      dai: IERC20__factory.connect(DAI_MAP[config.network].address, hhUser1),
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
       dPtGlp: createIERC20Opt(DPT_GLP_2024_MAP[config.network]?.address, hhUser1),
       dYtGlp: createIERC20Opt(DYT_GLP_2024_MAP[config.network]?.address, hhUser1),
@@ -846,12 +967,12 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
       IGLPRewardsRouterV2__factory.connect,
       signer,
     ),
+    gmx: getContract(GMX_MAP[network] as string, IERC20__factory.connect, signer),
     gmxRewardsRouter: getContract(
       GMX_REWARD_ROUTER_MAP[network] as string,
       IGmxRewardRouterV2__factory.connect,
       signer,
     ),
-    gmx: getContract(GMX_MAP[network] as string, IERC20__factory.connect, signer),
     gmxVault: getContract(GMX_VAULT_MAP[network] as string, IGmxVault__factory.connect, signer),
     sGlp: getContract(S_GLP_MAP[network] as string, IERC20__factory.connect, signer),
     sGmx: getContract(S_GMX_MAP[network] as string, ISGMX__factory.connect, signer),
@@ -924,6 +1045,41 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
         signer,
       ),
     },
+  };
+}
+
+async function createGmxEcosystemV2(network: Network, signer: SignerWithAddress): Promise<GmxEcosystemV2 | undefined> {
+  return {
+    gmxDepositHandler: getContract(
+      GMX_DEPOSIT_HANDLER_MAP[network] as string,
+      IGmxDepositHandler__factory.connect,
+      signer,
+    ),
+    gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network] as string, true, signer),
+    gmxEthUsdMarketToken: getContract(
+      GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
+      IGmxMarketToken__factory.connect,
+      signer,
+    ),
+    gmxDataStore: getContract(
+      GMX_DATASTORE_MAP[network] as string,
+      IGmxDataStore__factory.connect,
+      signer,
+    ),
+    gmxExchangeRouter: getContract(
+      GMX_EXCHANGE_ROUTER_MAP[network] as string,
+      IGmxExchangeRouter__factory.connect,
+      signer,
+    ),
+    gmxExecutor: await impersonateOrFallback(GMX_EXECUTOR_MAP[network] as string, true, signer),
+    gmxReader: getContract(GMX_READER_MAP[network] as string, IGmxReader__factory.connect, signer),
+    gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, IGmxRouter__factory.connect, signer),
+    gmxWithdrawalHandler: getContract(
+      GMX_WITHDRAWAL_HANDLER_MAP[network] as string,
+      IGmxWithdrawalHandler__factory.connect,
+      signer,
+    ),
+    gmxWithdrawalVault: await impersonateOrFallback(GMX_WITHDRAWAL_VAULT_MAP[network] as string, true, signer),
   };
 }
 

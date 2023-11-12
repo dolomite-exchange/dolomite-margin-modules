@@ -127,7 +127,7 @@ contract TestIsolationModeFactory is IsolationModeVaultFactory {
         address _owner,
         address _spender,
         uint256 _amount
-    ) internal override {
+    ) internal virtual override {
         if (_shouldSpendAllowance) {
             super._spendAllowance(_owner, _spender, _amount);
         }

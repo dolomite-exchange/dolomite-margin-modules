@@ -13,9 +13,25 @@ interface TokenWithMarketId {
   marketId: number;
 }
 
+export const ARB_MAP: Record<Network, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x912CE59144191C1204E64559FE8253a0e49E6548',
+    marketId: 7,
+  },
+  [Network.ArbitrumGoerli]: {
+    address: '0xF861378B543525ae0C47d33C90C954Dc774Ac1F9',
+    marketId: 7,
+  },
+};
+
 export const CHAINLINK_PRICE_ORACLE_OLD_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xeA3Fe12d8CC2E87f99e985EE271971C808006531',
   [Network.ArbitrumGoerli]: '0x1BEC3A1331d36e57Ef3b1A8ccf1946c8cfe3Fef0',
+};
+
+export const CHAINLINK_PRICE_ORACLE_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xA07e80C08D8bae7fFA3e46534eaBdBb6Ca98da1D',
+  [Network.ArbitrumGoerli]: undefined,
 };
 
 export const CHAINLINK_REGISTRY_MAP: Record<Network, string | undefined> = {
@@ -23,7 +39,7 @@ export const CHAINLINK_REGISTRY_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: '0x291093864bafc9aA517eF90ce954dD7D95D68C80',
 };
 
-export const DAI_MAP: Record<Network, TokenWithMarketId | undefined> = {
+export const DAI_MAP: Record<Network, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
     marketId: 1,
@@ -200,8 +216,48 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const GMX_DEPOSIT_HANDLER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xD9AebEA68DE4b4A3B58833e1bc2AEB9682883AB0',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_DEPOSIT_VAULT_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xF89e77e8Dc11691C9e8757e84aaFbCD8A67d7A55',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_DATASTORE_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xFD70de6b91282D8017aA4E741e9Ae325CAb992d8',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_EXCHANGE_ROUTER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x3B070aA6847bd0fB56eFAdB351f49BBb7619dbc2',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_EXECUTOR_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xC539cB358a58aC67185BaAD4d5E3f7fCfc903700',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_ETH_USD_MARKET_TOKEN_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x70d95587d40A2caf56bd97485aB3Eec10Bee6336',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const GMX_REWARD_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_READER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x38d91ED96283d62182Fc6d990C24097A918a4d9b',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_ROUTER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6',
   [Network.ArbitrumGoerli]: undefined,
 };
 
@@ -212,6 +268,16 @@ export const GMX_MAP: Record<Network, string | undefined> = {
 
 export const GMX_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x489ee077994B6658eAfA855C308275EAd8097C4A',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_WITHDRAWAL_HANDLER_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x79B99855676dB97e488F33CF52DaCF552102A950',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x0628d46b5d145f183adb6ef1f2c97ed1c4701c55',
   [Network.ArbitrumGoerli]: undefined,
 };
 

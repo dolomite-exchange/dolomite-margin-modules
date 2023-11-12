@@ -71,7 +71,8 @@ contract GLPPriceOracleV1 is IDolomitePriceOracle {
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         if (_token == address(DFS_GLP)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_token == address(DFS_GLP),
+        Require.that(
+            _token == address(DFS_GLP),
             _FILE,
             "invalid token"
         );

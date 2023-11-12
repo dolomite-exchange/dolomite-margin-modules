@@ -76,7 +76,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         address _unwrapperTraderForZap
     ) external {
         if (unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0),
+        Require.that(
+            unwrapperTraderForLiquidation() == address(0) && unwrapperTraderForZap() == address(0),
             _FILE,
             "Already initialized"
         );
@@ -176,7 +177,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     function _ownerSetGlpAdapter(address _glpAdapter) internal {
         if (_glpAdapter != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_glpAdapter != address(0),
+        Require.that(
+            _glpAdapter != address(0),
             _FILE,
             "Invalid glpAdapter address"
         );
@@ -186,7 +188,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     function _ownerSetGlpVaultRouter(address _glpVaultRouter) internal {
         if (_glpVaultRouter != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_glpVaultRouter != address(0),
+        Require.that(
+            _glpVaultRouter != address(0),
             _FILE,
             "Invalid glpVaultRouter address"
         );
@@ -196,7 +199,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     function _ownerSetWhitelistController(address _whitelistController) internal {
         if (_whitelistController != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_whitelistController != address(0),
+        Require.that(
+            _whitelistController != address(0),
             _FILE,
             "Invalid whitelist address"
         );
@@ -206,7 +210,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     function _ownerSetUsdcReceiptToken(address _usdcReceiptToken) internal {
         if (_usdcReceiptToken != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_usdcReceiptToken != address(0),
+        Require.that(
+            _usdcReceiptToken != address(0),
             _FILE,
             "Invalid usdcReceiptToken address"
         );
@@ -216,7 +221,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     function _ownerSetJUSDC(address _jUSDC) internal {
         if (_jUSDC != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_jUSDC != address(0),
+        Require.that(
+            _jUSDC != address(0),
             _FILE,
             "Invalid jUSDC address"
         );
@@ -226,7 +232,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     function _setUnwrapperTraderForLiquidation(address _unwrapperTraderForLiquidation) internal {
         if (_unwrapperTraderForLiquidation != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_unwrapperTraderForLiquidation != address(0),
+        Require.that(
+            _unwrapperTraderForLiquidation != address(0),
             _FILE,
             "Invalid unwrapperTrader address"
         );
@@ -236,7 +243,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     function _setUnwrapperTraderForZap(address _unwrapperTraderForZap) internal {
         if (_unwrapperTraderForZap != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_unwrapperTraderForZap != address(0),
+        Require.that(
+            _unwrapperTraderForZap != address(0),
             _FILE,
             "Invalid unwrapperTrader address"
         );

@@ -80,7 +80,7 @@ interface IParaswapAugustusRouter {
     struct Route {
         uint256 index; //Adapter at which index needs to be used
         address targetExchange;
-        uint percent;
+        uint256 percent;
         bytes payload;
         uint256 networkFee; //Network fee is associated with 0xv3 trades
     }

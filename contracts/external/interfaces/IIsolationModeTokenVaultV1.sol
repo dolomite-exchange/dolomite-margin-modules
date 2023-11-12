@@ -20,9 +20,11 @@
 
 pragma solidity ^0.8.9;
 
+import { IBorrowPositionProxyV2 } from "./IBorrowPositionProxyV2.sol";
 import { IDolomiteRegistry } from "./IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "./IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
@@ -60,7 +62,7 @@ interface IIsolationModeTokenVaultV1 {
         uint256 _fromAccountNumber,
         uint256 _toAccountNumber,
         uint256 _amountWei
-    ) external;
+    ) external payable;
 
     /**
      * @notice  End-user function for closing a borrow position involving the vault factory's underlying token. Should
@@ -175,7 +177,7 @@ interface IIsolationModeTokenVaultV1 {
         IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
-    external;
+    external payable;
 
     /**
      * @dev     End-user function for removing collateral from the vault (in the case where `_marketIdsPath[last]` is
@@ -210,7 +212,7 @@ interface IIsolationModeTokenVaultV1 {
         IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
-    external;
+    external payable;
 
     /**
      * @dev     End-user function for swapping an exact amount of input for a minimum amount of output. Reverts if
@@ -240,8 +242,9 @@ interface IIsolationModeTokenVaultV1 {
         IDolomiteStructs.AccountInfo[] calldata _makerAccounts,
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
-    external;
+    external payable;
 
+    // ==================== Does not modify balances ====================
 
     /**
      * @notice  Attempts to deposit assets into this vault from the vault's owner. Reverts if the caller is not the
@@ -270,4 +273,14 @@ interface IIsolationModeTokenVaultV1 {
      * @return The registry used to discover important addresses for Dolomite
      */
     function dolomiteRegistry() external view returns (IDolomiteRegistry);
+
+    function marketId() external view returns (uint256);
+
+    function BORROW_POSITION_PROXY() external view returns (IBorrowPositionProxyV2);
+
+    function DOLOMITE_MARGIN() external view returns (IDolomiteMargin);
+
+    function VAULT_FACTORY() external view returns (address);
+
+    function OWNER() external view returns (address);
 }

@@ -1,3 +1,4 @@
+import { address } from '@dolomite-exchange/dolomite-margin';
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumber, BigNumberish, BytesLike } from 'ethers';
@@ -15,7 +16,7 @@ import { MAX_UINT_256_BI, Network, networkToNetworkNameMap } from './no-deps-con
 /**
  * @return  The deployed contract
  */
-export async function createContract<T extends BaseContract>(
+export async function createContractWithName<T extends BaseContract>(
   contractName: string,
   args: any[],
 ): Promise<T> {
@@ -29,6 +30,17 @@ export async function createContractWithAbi<T extends BaseContract>(
   args: (number | string | BigNumberish | object)[],
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(abi as any[], bytecode);
+  return await ContractFactory.deploy(...args) as T;
+}
+
+export type LibraryName = string;
+
+export async function createContractWithLibrary<T extends BaseContract>(
+  name: string,
+  libraries: Record<LibraryName, address>,
+  args: (number | string | BigNumberish | object)[],
+): Promise<T> {
+  const ContractFactory = await ethers.getContractFactory(name, { libraries });
   return await ContractFactory.deploy(...args) as T;
 }
 

@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IUmamiAssetVault } from "../interfaces/umami/IUmamiAssetVault.sol";
 import { IUmamiAssetVaultIsolationModeTokenVaultV1 } from "../interfaces/umami/IUmamiAssetVaultIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IUmamiAssetVaultIsolationModeVaultFactory } from "../interfaces/umami/IUmamiAssetVaultIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
@@ -59,7 +58,7 @@ contract UmamiAssetVaultIsolationModeTokenVaultV1 is
 
     function dolomiteRegistry()
         public
-        override(IsolationModeTokenVaultV1, IIsolationModeTokenVaultV1)
+        override
         view
         returns (IDolomiteRegistry)
     {

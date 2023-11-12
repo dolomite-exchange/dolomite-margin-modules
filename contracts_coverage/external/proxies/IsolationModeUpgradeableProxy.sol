@@ -49,7 +49,8 @@ contract IsolationModeUpgradeableProxy is
 
     modifier requireIsInitialized() {
         if (isInitialized()) { /* FOR COVERAGE TESTING */ }
-        Require.that(isInitialized(),
+        Require.that(
+            isInitialized(),
             _FILE,
             "Not initialized"
         );
@@ -64,8 +65,10 @@ contract IsolationModeUpgradeableProxy is
 
     // ============ Functions ============
 
+    receive() external payable {} // solhint-disable-line no-empty-blocks
+
     // solhint-disable-next-line payable-fallback
-    fallback() external requireIsInitialized {
+    fallback() external payable requireIsInitialized {
         _callImplementation(implementation());
     }
 
@@ -73,12 +76,14 @@ contract IsolationModeUpgradeableProxy is
         address _account
     ) external {
         if (!isInitialized()) { /* FOR COVERAGE TESTING */ }
-        Require.that(!isInitialized(),
+        Require.that(
+            !isInitialized(),
             _FILE,
             "Already initialized"
         );
         if (IIsolationModeVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this)) { /* FOR COVERAGE TESTING */ }
-        Require.that(IIsolationModeVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this),
+        Require.that(
+            IIsolationModeVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this),
             _FILE,
             "Invalid account",
             _account

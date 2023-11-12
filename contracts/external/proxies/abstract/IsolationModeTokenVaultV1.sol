@@ -23,16 +23,15 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
-import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
+import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
 import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
-import { IIsolationModeUpgradeableProxy } from "../../interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
+import { IsolationModeTokenVaultV1ActionsImpl } from "./impl/IsolationModeTokenVaultV1ActionsImpl.sol";
 
 
 /**
@@ -42,16 +41,16 @@ import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
  * @notice  Abstract implementation (for an upgradeable proxy) for wrapping tokens via a per-user vault that can be used
  *          with DolomiteMargin
  */
-abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
+abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, ProxyContractHelpers {
     using SafeERC20 for IERC20;
-    using TypesLib for IDolomiteMargin.Par;
-    using TypesLib for IDolomiteMargin.Wei;
 
     // ===================================================
     // ==================== Constants ====================
     // ===================================================
 
     bytes32 private constant _FILE = "IsolationModeTokenVaultV1";
+    bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
+    bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
 
@@ -66,17 +65,17 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     // ===================================================
 
     modifier onlyVaultFactory(address _from) {
-        Require.that(
-            _from == address(VAULT_FACTORY()),
-            _FILE,
-            "Only factory can call",
-            _from
-        );
+        _requireOnlyVaultFactory(_from);
         _;
     }
 
     modifier onlyVaultOwner(address _from) {
         _requireOnlyVaultOwner(_from);
+        _;
+    }
+
+    modifier onlyVaultOwnerOrConverter(address _from) {
+        _requireOnlyVaultOwnerOrConverter(_from);
         _;
     }
 
@@ -126,6 +125,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     )
     external
+    nonReentrant
     onlyVaultOwnerOrVaultFactory(msg.sender) {
         _depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
     }
@@ -135,6 +135,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
     }
@@ -145,7 +146,10 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     )
     external
+    payable
+    nonReentrant
     onlyVaultOwner(msg.sender) {
+        _checkMsgValue();
         _openBorrowPosition(_fromAccountNumber, _toAccountNumber, _amountWei);
     }
 
@@ -154,6 +158,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _toAccountNumber
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _closeBorrowPositionWithUnderlyingVaultToken(_borrowAccountNumber, _toAccountNumber);
     }
@@ -164,6 +169,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256[] calldata _collateralMarketIds
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _closeBorrowPositionWithOtherTokens(_borrowAccountNumber, _toAccountNumber, _collateralMarketIds);
     }
@@ -174,6 +180,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _transferIntoPositionWithUnderlyingToken(_fromAccountNumber, _borrowAccountNumber, _amountWei);
     }
@@ -186,6 +193,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _transferIntoPositionWithOtherToken(
             _fromAccountNumber,
@@ -202,6 +210,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _amountWei
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _transferFromPositionWithUnderlyingToken(_borrowAccountNumber, _toAccountNumber, _amountWei);
     }
@@ -214,6 +223,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _transferFromPositionWithOtherToken(
             _borrowAccountNumber,
@@ -231,6 +241,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     )
     external
+    nonReentrant
     onlyVaultOwner(msg.sender) {
         _repayAllForBorrowPosition(
             _fromAccountNumber,
@@ -251,7 +262,10 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
     external
-    onlyVaultOwner(msg.sender) {
+    payable
+    nonReentrant
+    onlyVaultOwnerOrConverter(msg.sender) {
+        _checkMsgValue();
         _addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
             _borrowAccountNumber,
@@ -275,7 +289,10 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
     external
-    onlyVaultOwner(msg.sender) {
+    payable
+    nonReentrant
+    onlyVaultOwnerOrConverter(msg.sender) {
+        _checkMsgValue();
         _swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,
             _borrowAccountNumber,
@@ -299,7 +316,10 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         IGenericTraderProxyV1.UserConfig calldata _userConfig
     )
     external
-    onlyVaultOwner(msg.sender) {
+    payable
+    nonReentrant
+    onlyVaultOwnerOrConverter(msg.sender) {
+        _checkMsgValue();
         _swapExactInputForOutput(
             _tradeAccountNumber,
             _marketIdsPath,
@@ -346,8 +366,12 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         return IIsolationModeVaultFactory(VAULT_FACTORY()).BORROW_POSITION_PROXY();
     }
 
-    function VAULT_FACTORY() public virtual view returns (address) {
-        return _proxySelf().vaultFactory();
+    function VAULT_FACTORY() public view returns (address) {
+        return _getAddress(_VAULT_FACTORY_SLOT);
+    }
+
+    function OWNER() public override view returns (address) {
+        return _getAddress(_OWNER_SLOT);
     }
 
     function marketId() public view returns (uint256) {
@@ -365,29 +389,23 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
     function _depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
-    ) internal {
-        // This implementation requires we deposit into index 0
-        Require.that(
-            _toAccountNumber == 0,
-            _FILE,
-            "Invalid toAccountNumber",
-            _toAccountNumber
+    ) internal virtual {
+        IsolationModeTokenVaultV1ActionsImpl.depositIntoVaultForDolomiteMargin(
+            /* _vault = */ this,
+            _toAccountNumber,
+            _amountWei
         );
-        IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(_toAccountNumber, _amountWei);
     }
 
     function _withdrawFromVaultForDolomiteMargin(
         uint256 _fromAccountNumber,
         uint256 _amountWei
-    ) internal {
-        // This implementation requires we withdraw from index 0
-        Require.that(
-            _fromAccountNumber == 0,
-            _FILE,
-            "Invalid fromAccountNumber",
-            _fromAccountNumber
+    ) internal virtual {
+        IsolationModeTokenVaultV1ActionsImpl.withdrawFromVaultForDolomiteMargin(
+            /* _vault = */ this,
+            _fromAccountNumber,
+            _amountWei
         );
-        IIsolationModeVaultFactory(VAULT_FACTORY()).withdrawFromDolomiteMargin(_fromAccountNumber, _amountWei);
     }
 
     function _openBorrowPosition(
@@ -398,25 +416,11 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _fromAccountNumber == 0,
-            _FILE,
-            "Invalid fromAccountNumber",
-            _fromAccountNumber
-        );
-        Require.that(
-            _toAccountNumber != 0,
-            _FILE,
-            "Invalid toAccountNumber",
-            _toAccountNumber
-        );
-
-        BORROW_POSITION_PROXY().openBorrowPosition(
+        IsolationModeTokenVaultV1ActionsImpl.openBorrowPosition(
+            /* _vault = */ this,
             _fromAccountNumber,
             _toAccountNumber,
-            marketId(),
-            _amountWei,
-            AccountBalanceLib.BalanceCheckFlag.Both
+            _amountWei
         );
     }
 
@@ -427,28 +431,10 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-        Require.that(
-            _toAccountNumber == 0,
-            _FILE,
-            "Invalid toAccountNumber",
-            _toAccountNumber
-        );
-
-        uint256[] memory collateralMarketIds = new uint256[](1);
-        collateralMarketIds[0] = marketId();
-
-        BORROW_POSITION_PROXY().closeBorrowPositionWithDifferentAccounts(
-        /* _borrowAccountOwner = */ address(this),
+        IsolationModeTokenVaultV1ActionsImpl.closeBorrowPositionWithUnderlyingVaultToken(
+            /* _vault = */ this,
             _borrowAccountNumber,
-            /* _toAccountOwner = */ address(this),
-            _toAccountNumber,
-            collateralMarketIds
+            _toAccountNumber
         );
     }
 
@@ -460,26 +446,9 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-        uint256 underlyingMarketId = marketId();
-        for (uint256 i = 0; i < _collateralMarketIds.length; i++) {
-            Require.that(
-                _collateralMarketIds[i] != underlyingMarketId,
-                _FILE,
-                "Cannot withdraw market to wallet",
-                underlyingMarketId
-            );
-        }
-
-        BORROW_POSITION_PROXY().closeBorrowPositionWithDifferentAccounts(
-            /* _borrowAccountOwner = */ address(this),
+        IsolationModeTokenVaultV1ActionsImpl.closeBorrowPositionWithOtherTokens(
+            /* _vault = */ this,
             _borrowAccountNumber,
-            /* _toAccountOwner = */ msg.sender,
             _toAccountNumber,
             _collateralMarketIds
         );
@@ -493,25 +462,11 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _fromAccountNumber == 0,
-            _FILE,
-            "Invalid fromAccountNumber",
-            _fromAccountNumber
-        );
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-
-        BORROW_POSITION_PROXY().transferBetweenAccounts(
+        IsolationModeTokenVaultV1ActionsImpl.transferIntoPositionWithUnderlyingToken(
+            /* _vault = */ this,
             _fromAccountNumber,
             _borrowAccountNumber,
-            marketId(),
-            _amountWei,
-            AccountBalanceLib.BalanceCheckFlag.Both
+            _amountWei
         );
     }
 
@@ -525,30 +480,15 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-        Require.that(
-            _marketId != marketId(),
-            _FILE,
-            "Invalid marketId",
-            _marketId
-        );
-
-        BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-            /* _fromAccountOwner = */ msg.sender,
+        IsolationModeTokenVaultV1ActionsImpl.transferIntoPositionWithOtherToken(
+            /* _vault = */ this,
             _fromAccountNumber,
-            /* _toAccountOwner = */ address(this),
             _borrowAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            /* _checkAllowableCollateralMarketFlag =  */ true
         );
-
-        _checkAllowableCollateralMarket(address(this), _borrowAccountNumber, _marketId);
     }
 
     function _transferFromPositionWithUnderlyingToken(
@@ -556,28 +496,14 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         uint256 _toAccountNumber,
         uint256 _amountWei
     )
-        virtual
         internal
+        virtual
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-        Require.that(
-            _toAccountNumber == 0,
-            _FILE,
-            "Invalid toAccountNumber",
-            _toAccountNumber
-        );
-
-        BORROW_POSITION_PROXY().transferBetweenAccounts(
+        IsolationModeTokenVaultV1ActionsImpl.transferFromPositionWithUnderlyingToken(
+            /* _vault = */ this,
             _borrowAccountNumber,
             _toAccountNumber,
-            marketId(),
-            _amountWei,
-            AccountBalanceLib.BalanceCheckFlag.Both
+            _amountWei
         );
     }
 
@@ -591,30 +517,14 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         virtual
         internal
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-        Require.that(
-            _marketId != marketId(),
-            _FILE,
-            "Invalid marketId",
-            _marketId
-        );
-
-        BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
-            /* _fromAccountOwner = */ address(this),
+        IsolationModeTokenVaultV1ActionsImpl.transferFromPositionWithOtherToken(
+            /* _vault = */ this,
             _borrowAccountNumber,
-            /* _toAccountOwner = */ msg.sender,
             _toAccountNumber,
             _marketId,
             _amountWei,
             _balanceCheckFlag
         );
-
-        _checkAllowableDebtMarket(address(this), _borrowAccountNumber, _marketId);
     }
 
     function _repayAllForBorrowPosition(
@@ -626,22 +536,9 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
-        Require.that(
-            _marketId != marketId(),
-            _FILE,
-            "Invalid marketId",
-            _marketId
-        );
-        BORROW_POSITION_PROXY().repayAllForBorrowPositionWithDifferentAccounts(
-            /* _fromAccountOwner = */ msg.sender,
+        IsolationModeTokenVaultV1ActionsImpl.repayAllForBorrowPosition(
+            /* _vault = */ this,
             _fromAccountNumber,
-            /* _borrowAccountOwner = */ address(this),
             _borrowAccountNumber,
             _marketId,
             _balanceCheckFlag
@@ -658,24 +555,9 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     ) internal virtual {
-        if (_marketIdsPath[0] == marketId()) {
-            _transferIntoPositionWithUnderlyingToken(
-                _fromAccountNumber,
-                _borrowAccountNumber,
-                _inputAmountWei
-            );
-        } else {
-            // we always swap the exact amount out; no need to check `To`
-            _transferIntoPositionWithOtherToken(
-                _fromAccountNumber,
-                _borrowAccountNumber,
-                _marketIdsPath[0],
-                _inputAmountWei,
-                AccountBalanceLib.BalanceCheckFlag.From
-            );
-        }
-
-        _swapExactInputForOutput(
+        IsolationModeTokenVaultV1ActionsImpl.addCollateralAndSwapExactInputForOutput(
+            /* _vault = */ this,
+            _fromAccountNumber,
             _borrowAccountNumber,
             _marketIdsPath,
             _inputAmountWei,
@@ -699,16 +581,9 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        IDolomiteStructs.AccountInfo memory borrowAccount = IDolomiteStructs.AccountInfo({
-            owner: address(this),
-            number: _borrowAccountNumber
-        });
-        uint256 outputMarketId = _marketIdsPath[_marketIdsPath.length - 1];
-        // Validate the output balance before executing the swap
-        IDolomiteStructs.Wei memory balanceBefore = dolomiteMargin.getAccountWei(borrowAccount, outputMarketId);
-
-        _swapExactInputForOutput(
+        IsolationModeTokenVaultV1ActionsImpl.swapExactInputForOutputAndRemoveCollateral(
+            /* _vault = */ this,
+            _toAccountNumber,
             _borrowAccountNumber,
             _marketIdsPath,
             _inputAmountWei,
@@ -717,29 +592,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
             _makerAccounts,
             _userConfig
         );
-
-        IDolomiteStructs.Wei memory balanceDelta = dolomiteMargin
-            .getAccountWei(borrowAccount, outputMarketId)
-            .sub(balanceBefore);
-
-        // Panic if the balance delta is not positive
-        assert(balanceDelta.isPositive());
-
-        if (outputMarketId == marketId()) {
-            _transferFromPositionWithUnderlyingToken(
-                _borrowAccountNumber,
-                _toAccountNumber,
-                balanceDelta.value
-            );
-        } else {
-            _transferFromPositionWithOtherToken(
-                _borrowAccountNumber,
-                _toAccountNumber,
-                outputMarketId,
-                balanceDelta.value,
-                AccountBalanceLib.BalanceCheckFlag.None // we always transfer the exact amount out; no need to check
-            );
-        }
     }
 
     function _swapExactInputForOutput(
@@ -754,125 +606,74 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
         internal
         virtual
     {
-        Require.that(
-            _tradeAccountNumber != 0,
-            _FILE,
-            "Invalid tradeAccountNumber",
-            _tradeAccountNumber
-        );
-
-        dolomiteRegistry().genericTraderProxy().swapExactInputForOutput(
+        IsolationModeTokenVaultV1ActionsImpl.swapExactInputForOutput(
+            /* _vault = */ this,
             _tradeAccountNumber,
             _marketIdsPath,
             _inputAmountWei,
             _minOutputAmountWei,
             _tradersPath,
             _makerAccounts,
-            _userConfig
+            _userConfig,
+            /* _checkOutputMarketIdFlag = */ true
         );
+    }
 
-        uint256 inputMarketId = _marketIdsPath[0];
-        uint256 outputMarketId = _marketIdsPath[_marketIdsPath.length - 1];
-        address tradeAccountOwner = address(this);
-        _checkAllowableCollateralMarket(tradeAccountOwner, _tradeAccountNumber, inputMarketId);
-        _checkAllowableCollateralMarket(tradeAccountOwner, _tradeAccountNumber, outputMarketId);
-        _checkAllowableDebtMarket(tradeAccountOwner, _tradeAccountNumber, inputMarketId);
-        _checkAllowableDebtMarket(tradeAccountOwner, _tradeAccountNumber, outputMarketId);
+    function _requireOnlyVaultFactory(address _from) internal view {
+        Require.that(
+            _from == address(VAULT_FACTORY()),
+            _FILE,
+            "Only factory can call",
+            _from
+        );
     }
 
     function _requireOnlyVaultOwner(address _from) internal virtual view {
         Require.that(
-            _from == _proxySelf().owner(),
+            _from == OWNER(),
             _FILE,
             "Only owner can call",
             _from
         );
     }
 
+    function _requireOnlyVaultOwnerOrConverter(address _from) internal virtual view {
+        Require.that(
+            _from == address(OWNER())
+                || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
+            _FILE,
+            "Only owner or converter can call",
+            _from
+        );
+    }
+
     function _requireOnlyVaultOwnerOrVaultFactory(address _from) internal virtual view {
         Require.that(
-            _from == address(_proxySelf().owner()) || _from == VAULT_FACTORY(),
+            _from == address(OWNER()) || _from == VAULT_FACTORY(),
             _FILE,
             "Only owner or factory can call",
             _from
         );
     }
 
-    function _checkAllowableCollateralMarket(
-        address _accountOwner,
-        uint256 _accountNumber,
-        uint256 _marketId
-    ) internal view {
-        // If the balance is positive, check that the collateral is for an allowable market. We use the Par balance
-        // because, it uses less gas than getting the Wei balance, and we're only checking whether the balance is
-        // positive.
-        IDolomiteStructs.Par memory balancePar = DOLOMITE_MARGIN().getAccountPar(
-            IDolomiteStructs.AccountInfo({
-                owner: _accountOwner,
-                number: _accountNumber
-            }),
-            _marketId
+    function _requireOnlyConverter(address _from) internal virtual view {
+        Require.that(
+            IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
+            _FILE,
+            "Only converter can call",
+            _from
         );
-        if (balancePar.isPositive()) {
-            // Check the allowable collateral markets for the position:
-            IIsolationModeVaultFactory vaultFactory = IIsolationModeVaultFactory(VAULT_FACTORY());
-            uint256[] memory allowableCollateralMarketIds = vaultFactory.allowableCollateralMarketIds();
-            uint256 allowableCollateralsLength = allowableCollateralMarketIds.length;
-            if (allowableCollateralsLength != 0) {
-                bool isAllowable = false;
-                for (uint256 i = 0; i < allowableCollateralsLength; i++) {
-                    if (allowableCollateralMarketIds[i] == _marketId) {
-                        isAllowable = true;
-                        break;
-                    }
-                }
-                Require.that(
-                    isAllowable,
-                    _FILE,
-                    "Market not allowed as collateral",
-                    _marketId
-                );
-            }
-        }
     }
 
-    function _proxySelf() internal view returns (IIsolationModeUpgradeableProxy) {
-        return IIsolationModeUpgradeableProxy(address(this));
-    }
-
-    function _checkAllowableDebtMarket(
-        address _accountOwner,
-        uint256 _accountNumber,
-        uint256 _marketId
-    ) internal view {
-        // If the balance is negative, check that the debt is for an allowable market. We use the Par balance because,
-        // it uses less gas than getting the Wei balance, and we're only checking whether the balance is negative.
-        IDolomiteStructs.Par memory balancePar = DOLOMITE_MARGIN().getAccountPar(
-            IDolomiteStructs.AccountInfo({
-                owner: _accountOwner,
-                number: _accountNumber
-            }),
-            _marketId
+    /**
+     *  Called within `swapExactInputForOutput` to check that the caller send the right amount of ETH with the
+     *  transaction.
+     */
+    function _checkMsgValue() internal virtual view {
+        Require.that(
+            msg.value == 0,
+            _FILE,
+            "Cannot send ETH"
         );
-        if (balancePar.isNegative()) {
-            // Check the allowable debt markets for the position:
-            IIsolationModeVaultFactory vaultFactory = IIsolationModeVaultFactory(VAULT_FACTORY());
-            uint256[] memory allowableDebtMarketIds = vaultFactory.allowableDebtMarketIds();
-            if (allowableDebtMarketIds.length != 0) {
-                bool isAllowable = false;
-                for (uint256 i = 0; i < allowableDebtMarketIds.length; i++) {
-                    if (allowableDebtMarketIds[i] == _marketId) {
-                        isAllowable = true;
-                        break;
-                    }
-                }
-                Require.that(
-                    isAllowable,
-                    _FILE,
-                    "Market not allowed as debt",
-                    _marketId
-                );
-            }
-        }
     }
 }
