@@ -97,4 +97,8 @@ contract TestChainlinkAggregator is IChainlinkAggregator, IChainlinkAccessContro
     function decimals() external view returns (uint8) {
         return _decimals;
     }
+
+    function description() external pure returns (string memory) {
+        return "Test / USD";
+    }
 }

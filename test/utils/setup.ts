@@ -33,6 +33,10 @@ import {
   GLPIsolationModeWrapperTraderV1__factory,
   IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
+  IAlgebraV3Pool,
+  IAlgebraV3Pool__factory,
+  IChainlinkPriceOracle,
+  IChainlinkPriceOracle__factory,
   IChainlinkPriceOracleOld,
   IChainlinkPriceOracleOld__factory,
   IChainlinkRegistry,
@@ -112,7 +116,7 @@ import {
   IParaswapAugustusRouter,
   IParaswapAugustusRouter__factory,
   IParaswapFeeClaimer,
-  IParaswapFeeClaimer__factory,
+  IParaswapFeeClaimer__factory, IPartiallyDelayedMultiSig, IPartiallyDelayedMultiSig__factory,
   IPendleGLPRegistry,
   IPendleGLPRegistry__factory,
   IPendlePtMarket,
@@ -166,14 +170,16 @@ import {
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
+  ARB_MAP,
   ATLAS_SI_TOKEN_MAP,
+  CHAINLINK_PRICE_ORACLE_MAP,
   CHAINLINK_PRICE_ORACLE_OLD_MAP,
   CHAINLINK_REGISTRY_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
   DJ_USDC,
   DPLV_GLP_MAP,
-  DPT_GLP_2024_MAP,
+  DPT_GLP_2024_MAP, DPX_MAP,
   DYT_GLP_2024_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
   ES_GMX_MAP,
@@ -194,6 +200,9 @@ import {
   GMX_VAULT_MAP,
   GMX_WITHDRAWAL_HANDLER_MAP,
   GMX_WITHDRAWAL_VAULT_MAP,
+  GRAIL_MAP,
+  GRAIL_USDC_V3_POOL_MAP,
+  GRAIL_WETH_V3_POOL_MAP,
   JONES_ECOSYSTEM_GOVERNOR_MAP,
   JONES_GLP_ADAPTER_MAP,
   JONES_GLP_VAULT_ROUTER_MAP,
@@ -201,13 +210,13 @@ import {
   JONES_JUSDC_RECEIPT_TOKEN_MAP,
   JONES_WHITELIST_CONTROLLER_MAP,
   LINK_MAP,
-  MAGIC_GLP_MAP,
+  MAGIC_GLP_MAP, MAGIC_MAP,
   MIM_MAP,
   NATIVE_USDC_MAP,
   ODOS_ROUTER_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
   PARASWAP_FEE_CLAIMER_MAP,
-  PARASWAP_TRANSFER_PROXY_MAP,
+  PARASWAP_TRANSFER_PROXY_MAP, PENDLE_MAP,
   PENDLE_PT_GLP_2024_MARKET_MAP,
   PENDLE_PT_GLP_2024_TOKEN_MAP,
   PENDLE_PT_ORACLE_MAP,
@@ -261,6 +270,11 @@ export interface AbraEcosystem {
 
 export interface AtlasEcosystem {
   siToken: IERC20;
+}
+
+export interface CamelotEcosystem {
+  grailUsdcV3Pool: IAlgebraV3Pool;
+  grailWethV3Pool: IAlgebraV3Pool;
 }
 
 export interface GmxEcosystem {
@@ -390,8 +404,11 @@ export interface CoreProtocol {
   alwaysZeroInterestSetter: IDolomiteInterestSetter;
   atlasEcosystem: AtlasEcosystem | undefined;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
+  camelotEcosystem: CamelotEcosystem | undefined;
   chainlinkPriceOracleOld: IChainlinkPriceOracleOld | undefined;
+  chainlinkPriceOracle: IChainlinkPriceOracle | undefined;
   chainlinkRegistry: IChainlinkRegistry | undefined;
+  delayedMultiSig: IPartiallyDelayedMultiSig;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteAmmFactory: IDolomiteAmmFactory;
   dolomiteAmmRouterProxy: IDolomiteAmmRouterProxy;
@@ -423,16 +440,21 @@ export interface CoreProtocol {
    * A mapping from token's symbol to its market ID
    */
   marketIds: {
+    arb: BigNumberish;
     dai: BigNumberish | undefined;
     dfsGlp: BigNumberish | undefined;
     djUSDC: BigNumberish | undefined;
     dplvGlp: BigNumberish | undefined;
     dPtGlp: BigNumberish | undefined;
+    dpx: BigNumberish | undefined;
     dYtGlp: BigNumberish | undefined;
+    grail: BigNumberish | undefined;
     link: BigNumberish;
+    magic: BigNumberish | undefined;
     magicGlp: BigNumberish | undefined;
     mim: BigNumberish | undefined;
     nativeUsdc: BigNumberish | undefined;
+    pendle: BigNumberish | undefined;
     usdc: BigNumberish;
     usdt: BigNumberish | undefined;
     wbtc: BigNumberish;
@@ -443,11 +465,17 @@ export interface CoreProtocol {
     weth: ApiToken;
   };
   tokens: {
+    arb: IERC20;
+    dai: IERC20;
     dfsGlp: IERC20 | undefined;
     dPtGlp: IERC20 | undefined;
+    dpx: IERC20 | undefined;
     dYtGlp: IERC20 | undefined;
+    grail: IERC20 | undefined;
     link: IERC20;
+    magic: IERC20 | undefined;
     nativeUsdc: IERC20 | undefined;
+    pendle: IERC20 | undefined;
     usdc: IERC20;
     wbtc: IERC20;
     weth: IWETH;
@@ -466,6 +494,30 @@ export async function setupWETHBalance(
 ) {
   await core.tokens.weth.connect(signer).deposit({ value: amount });
   await core.tokens.weth.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupARBBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xf3fc178157fb3c87548baa86f9d24ba38e649b58'; // ARB Treasury
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.arb.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.arb.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupDAIBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0x489ee077994b6658eafa855c308275ead8097c4a'; // GMX Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.dai.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.dai.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupNativeUSDCBalance(
@@ -580,9 +632,20 @@ export async function setupCoreProtocol(
     governance,
   );
 
+  const chainlinkPriceOracle = getContractOpt(
+    CHAINLINK_PRICE_ORACLE_MAP[config.network],
+    IChainlinkPriceOracle__factory.connect,
+    governance,
+  );
+
   const chainlinkRegistry = getContractOpt(
     CHAINLINK_REGISTRY_MAP[config.network],
     IChainlinkRegistry__factory.connect,
+    governance,
+  );
+
+  const delayedMultiSig = IPartiallyDelayedMultiSig__factory.connect(
+    await DOLOMITE_MARGIN.connect(hhUser1).owner(),
     governance,
   );
 
@@ -676,6 +739,7 @@ export async function setupCoreProtocol(
 
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
+  const camelotEcosystem = await createCamelotEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
   const gmxEcosystemV2 = await createGmxEcosystemV2(config.network, hhUser1);
   const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
@@ -691,8 +755,11 @@ export async function setupCoreProtocol(
     alwaysZeroInterestSetter,
     atlasEcosystem,
     borrowPositionProxyV2,
+    camelotEcosystem,
     chainlinkRegistry,
     chainlinkPriceOracleOld,
+    chainlinkPriceOracle,
+    delayedMultiSig,
     depositWithdrawalProxy,
     dolomiteAmmFactory,
     dolomiteAmmRouterProxy,
@@ -744,27 +811,38 @@ export async function setupCoreProtocol(
       },
     },
     marketIds: {
+      arb: ARB_MAP[config.network].marketId,
       dai: DAI_MAP[config.network]?.marketId,
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
       djUSDC: DJ_USDC[config.network]?.marketId,
       dplvGlp: DPLV_GLP_MAP[config.network]?.marketId,
       dPtGlp: DPT_GLP_2024_MAP[config.network]?.marketId,
+      dpx: DPX_MAP[config.network]?.marketId,
       dYtGlp: DYT_GLP_2024_MAP[config.network]?.marketId,
+      grail: GRAIL_MAP[config.network]?.marketId,
       link: LINK_MAP[config.network].marketId,
+      magic: MAGIC_MAP[config.network]?.marketId,
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       mim: MIM_MAP[config.network]?.marketId,
       nativeUsdc: NATIVE_USDC_MAP[config.network]?.marketId,
+      pendle: PENDLE_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
       usdt: USDT_MAP[config.network]?.marketId,
       wbtc: WBTC_MAP[config.network].marketId,
       weth: WETH_MAP[config.network].marketId,
     },
     tokens: {
+      arb: IERC20__factory.connect(ARB_MAP[config.network].address, hhUser1),
+      dai: IERC20__factory.connect(DAI_MAP[config.network].address, hhUser1),
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
       dPtGlp: createIERC20Opt(DPT_GLP_2024_MAP[config.network]?.address, hhUser1),
+      dpx: createIERC20Opt(DPX_MAP[config.network]?.address, hhUser1),
       dYtGlp: createIERC20Opt(DYT_GLP_2024_MAP[config.network]?.address, hhUser1),
+      grail: createIERC20Opt(GRAIL_MAP[config.network]?.address, hhUser1),
       link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
+      magic: createIERC20Opt(MAGIC_MAP[config.network]?.address, hhUser1),
       nativeUsdc: createIERC20Opt(NATIVE_USDC_MAP[config.network]?.address, hhUser1),
+      pendle: createIERC20Opt(PENDLE_MAP[config.network]?.address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
       wbtc: IERC20__factory.connect(WBTC_MAP[config.network].address, hhUser1),
       weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
@@ -863,6 +941,20 @@ async function createAtlasEcosystem(network: Network, signer: SignerWithAddress)
 
   return {
     siToken: getContract(ATLAS_SI_TOKEN_MAP[network] as string, IERC20__factory.connect, signer),
+  };
+}
+
+async function createCamelotEcosystem(
+  network: Network,
+  signer: SignerWithAddress
+): Promise<CamelotEcosystem | undefined> {
+  if (!GRAIL_WETH_V3_POOL_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    grailUsdcV3Pool: getContract(GRAIL_USDC_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
+    grailWethV3Pool: getContract(GRAIL_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
   };
 }
 

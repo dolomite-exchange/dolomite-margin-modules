@@ -25,10 +25,10 @@ import { IUpgradeableAsyncIsolationModeWrapperTrader } from "./IUpgradeableAsync
 
 
 /**
- * @title   IEventEmitter
+ * @title   IEventEmitterRegistry
  * @author  Dolomite
  *
- * Interface for a yield farming contract that's inspired by MasterChef
+ * Interface for a a singleton event emission contract, which makes tracking events easier for the Subgraph.
  */
 interface IEventEmitterRegistry {
 

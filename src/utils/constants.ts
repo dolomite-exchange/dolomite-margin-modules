@@ -13,9 +13,25 @@ interface TokenWithMarketId {
   marketId: number;
 }
 
+export const ARB_MAP: Record<Network, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0x912CE59144191C1204E64559FE8253a0e49E6548',
+    marketId: 7,
+  },
+  [Network.ArbitrumGoerli]: {
+    address: '0xF861378B543525ae0C47d33C90C954Dc774Ac1F9',
+    marketId: 7,
+  },
+};
+
 export const CHAINLINK_PRICE_ORACLE_OLD_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xeA3Fe12d8CC2E87f99e985EE271971C808006531',
   [Network.ArbitrumGoerli]: '0x1BEC3A1331d36e57Ef3b1A8ccf1946c8cfe3Fef0',
+};
+
+export const CHAINLINK_PRICE_ORACLE_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xA07e80C08D8bae7fFA3e46534eaBdBb6Ca98da1D',
+  [Network.ArbitrumGoerli]: undefined,
 };
 
 export const CHAINLINK_REGISTRY_MAP: Record<Network, string | undefined> = {
@@ -23,7 +39,7 @@ export const CHAINLINK_REGISTRY_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: '0x291093864bafc9aA517eF90ce954dD7D95D68C80',
 };
 
-export const DAI_MAP: Record<Network, TokenWithMarketId | undefined> = {
+export const DAI_MAP: Record<Network, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
     marketId: 1,
@@ -66,10 +82,26 @@ export const DPT_GLP_2024_MAP: Record<Network, TokenWithMarketId | undefined> = 
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const DPX_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x6C2C06790b3E3E3c38e12Ee22F8183b37a13EE55',
+    marketId: 18,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const DYT_GLP_2024_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x851729Df6C39BDB6E92721f2ADf750023D967eE8',
     marketId: 16,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GRAIL_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8',
+    marketId: 19,
   },
   [Network.ArbitrumGoerli]: undefined,
 };
@@ -83,6 +115,14 @@ export const LINK_MAP: Record<Network, TokenWithMarketId> = {
     address: '0x2d3B3F17d6694d5AA643Cb89A82Ac9214a41536d',
     marketId: 3,
   },
+};
+
+export const MAGIC_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x539bdE0d7Dbd336b79148AA742883198BBF60342',
+    marketId: 20,
+  },
+  [Network.ArbitrumGoerli]: undefined,
 };
 
 export const MAGIC_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
@@ -116,6 +156,14 @@ export const NATIVE_USDC_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
     marketId: 17,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const PENDLE_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8',
+    marketId: 21,
   },
   [Network.ArbitrumGoerli]: undefined,
 };
@@ -257,6 +305,16 @@ export const GMX_WITHDRAWAL_HANDLER_MAP: Record<Network, string | undefined> = {
 
 export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x0628d46b5d145f183adb6ef1f2c97ed1c4701c55',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GRAIL_USDC_V3_POOL_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x8cc8093218bCaC8B1896A1EED4D925F6F6aB289F',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GRAIL_WETH_V3_POOL_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x60451B6aC55E3C5F0f3aeE31519670EcC62DC28f',
   [Network.ArbitrumGoerli]: undefined,
 };
 

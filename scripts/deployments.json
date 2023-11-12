@@ -1,4 +1,11 @@
 {
+  "Altcoin14L86ULinearStepFunctionInterestSetter": {
+    "42161": {
+      "address": "0x36D9B05c13Af6C86e9100F05a9AFeaB766fd1930",
+      "transaction": "0x71895c6cacea2da300f1c7de6e4c8bfc6d0b30c339eac2bbca8730cc2b638e75",
+      "isVerified": true
+    }
+  },
   "AtlasSIUserVaultFactory": {
     "421613": {
       "address": "0x823F4f7582fcBbe4eB1239430191C29C494Dd51c",
@@ -146,6 +153,13 @@
       "isVerified": true
     }
   },
+  "GrailTWAPPriceOracleV1": {
+    "42161": {
+      "address": "0x8dDfA821EC6000E589de93D17b75687C9ebF8b21",
+      "transaction": "0x1704961573e5588207dca6f5d61169d5da2f9474236cbedbcbfef1385e7b7f9c",
+      "isVerified": true
+    }
+  },
   "JonesUSDCIsolationModeTokenVaultV1": {
     "42161": {
       "address": "0x27968252a14B30b2F459Cf51e90D7a77706c9032",
@@ -248,6 +262,13 @@
     "42161": {
       "address": "0x298a07c4A5B6BC32e1eF37Bf5cCB3a17C106224d",
       "transaction": "0xea1808406618555a384ad69f524f892a0655191ea908863e000fb5bfefd7673d",
+      "isVerified": true
+    }
+  },
+  "OARB": {
+    "42161": {
+      "address": "0xCBED801b4162bf2A19B06968663438b5165A6A93",
+      "transaction": "0x9cca6a2fe1ebe8a3433b7700e6bd9f02c0954c9610b3d909735a66a3bc67d33b",
       "isVerified": true
     }
   },
@@ -433,6 +454,13 @@
       "isVerified": true
     }
   },
+  "RewardsDistributor": {
+    "42161": {
+      "address": "0xfb47dC009c12eCF8a6785bD5568163C5850D8360",
+      "transaction": "0x48f7770a43f60207dc3a4e17a284c2ec0081a844a8657932020bcdbffe74a310",
+      "isVerified": true
+    }
+  },
   "Stablecoin6L94ULinearStepFunctionInterestSetter": {
     "42161": {
       "address": "0xD3D3803177bd12cC8735cB360Ec1C06208d4a94a",
@@ -451,6 +479,27 @@
     "421613": {
       "address": "0xB54b35897388d0E022a66DDf4ec71B01049c403D",
       "transaction": "0x3893a6904daab16ed655b05ec9631066a27cb948a2a1c42b0d8c7b952fceb95e",
+      "isVerified": true
+    }
+  },
+  "VesterExploder": {
+    "42161": {
+      "address": "0xC34C2FC2d1B6514fe9998D966Dc843748E7E503a",
+      "transaction": "0x6f3f5db8eaaf331dd02ae07717d1bdd07dca60fad67edc63dd100d1e38f2953b",
+      "isVerified": true
+    }
+  },
+  "VesterImplementationV1": {
+    "42161": {
+      "address": "0xbf08A2Fdda494C2a27DF96385f957F2173C1BDDc",
+      "transaction": "0x87efb3118ad3e10af6eed7a4b989b22385820cca9a006dffafa0b4f3c7831147",
+      "isVerified": true
+    }
+  },
+  "VesterProxy": {
+    "42161": {
+      "address": "0xA8e31F2B9e4c91f41A19f82beDEFca86d8B2efcd",
+      "transaction": "0xa961d5942dfec4eb9992a1193537a6c7e594ac6f7fc62470cb7dfcdb893bb105",
       "isVerified": true
     }
   }

@@ -1,17 +1,19 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { sleep } from '@openzeppelin/upgrades';
 import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
-import { FormatTypes, ParamType } from 'ethers/lib/utils';
+import { FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
 import { network, run } from 'hardhat';
-import { IERC20Metadata__factory } from '../src/types';
+import { IChainlinkAggregator__factory, IERC20, IERC20Metadata__factory } from '../src/types';
 import { createContractWithName } from '../src/utils/dolomite-utils';
+import { ADDRESS_ZERO } from '../src/utils/no-deps-constants';
 import { CoreProtocol } from '../test/utils/setup';
 
 type ChainId = string;
 
 export async function verifyContract(address: string, constructorArguments: any[]) {
   try {
+    console.log('Verifying contract...');
     await run('verify:verify', {
       address,
       constructorArguments,
@@ -73,6 +75,37 @@ export async function deployContractAndSave(
   await prettyPrintAndVerifyContract(file, chainId, usedContractName, args);
 
   return contract.address;
+}
+
+export enum InterestSetterType {
+  Altcoin = 'Altcoin',
+  Stablecoin = 'Stablecoin',
+}
+
+const ONE_PERCENT = parseEther('0.01');
+
+export async function deployLinearInterestSetterAndSave(
+  chainId: number,
+  interestSetterType: InterestSetterType,
+  lowerOptimal: BigNumber,
+  upperOptimal: BigNumber,
+): Promise<address> {
+  if (
+    lowerOptimal.lt(ONE_PERCENT)
+    || upperOptimal.lt(ONE_PERCENT)
+    || !lowerOptimal.add(upperOptimal).eq(ONE_PERCENT.mul(100))
+  ) {
+    return Promise.reject(new Error('Invalid lowerOptimal and upperOptimal'));
+  }
+  const lowerName = lowerOptimal.div(ONE_PERCENT).toString().concat('L');
+  const upperName = upperOptimal.div(ONE_PERCENT).toString().concat('U');
+
+  return deployContractAndSave(
+    chainId,
+    'LinearStepFunctionInterestSetter',
+    [lowerOptimal, upperOptimal],
+    `${interestSetterType}${lowerName}${upperName}LinearStepFunctionInterestSetter`,
+  );
 }
 
 export function sortFile(file: Record<string, Record<ChainId, any>>) {
@@ -144,19 +177,43 @@ async function getFormattedMarketName(core: CoreProtocol, marketId: BigNumberish
   return marketName;
 }
 
-const tokenAddressToMarketNameCache: Record<string, string | undefined> = {};
+const addressToNameCache: Record<string, string | undefined> = {};
 
 async function getFormattedTokenName(core: CoreProtocol, tokenAddress: string): Promise<string> {
-  const cachedName = tokenAddressToMarketNameCache[tokenAddress.toLowerCase()];
+  if (tokenAddress === ADDRESS_ZERO) {
+    return 'None';
+  }
+
+  const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
     return cachedName;
   }
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
-    tokenAddressToMarketNameCache[tokenAddress.toLowerCase()] = `(${await token.symbol()})`;
-    return tokenAddressToMarketNameCache[tokenAddress.toLowerCase()]!;
+    addressToNameCache[tokenAddress.toLowerCase()] = `(${await token.symbol()})`;
+    return addressToNameCache[tokenAddress.toLowerCase()]!;
   } catch (e) {
-    tokenAddressToMarketNameCache[tokenAddress.toLowerCase()] = '';
+    addressToNameCache[tokenAddress.toLowerCase()] = '';
+    return '';
+  }
+}
+
+async function getFormattedChainlinkAggregatorName(core: CoreProtocol, aggregatorAddress: string): Promise<string> {
+  if (aggregatorAddress === ADDRESS_ZERO) {
+    return 'None';
+  }
+
+  const cachedName = addressToNameCache[aggregatorAddress.toString().toLowerCase()];
+  if (typeof cachedName !== 'undefined') {
+    return cachedName;
+  }
+
+  const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.hhUser1);
+  try {
+    addressToNameCache[aggregatorAddress.toLowerCase()] = `(${await aggregator.description()})`;
+    return addressToNameCache[aggregatorAddress.toLowerCase()]!;
+  } catch (e) {
+    addressToNameCache[aggregatorAddress.toLowerCase()] = '';
     return '';
   }
 }
@@ -166,7 +223,12 @@ function isMarketIdParam(paramType: ParamType): boolean {
 }
 
 function isTokenParam(paramType: ParamType): boolean {
-  return paramType.name.includes('token') || paramType.name.includes('Token');
+  return (paramType.name.includes('token') || paramType.name.includes('Token'))
+    && !paramType.name.toLowerCase().includes('decimals');
+}
+
+function isChainlinkAggregatorParam(paramType: ParamType): boolean {
+  return paramType.name.includes('chainlinkAggregator');
 }
 
 export async function prettyPrintEncodedDataWithTypeSafety<
@@ -185,60 +247,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
   const fragment = contract.interface.getFunction(methodName.toString());
   const mappedArgs = await Promise.all((args as any[]).map(async (arg, i) => {
-    const inputParam = fragment.inputs[i];
-    const formattedInputParamName = inputParam.format(FormatTypes.full);
-    if (BigNumber.isBigNumber(arg)) {
-      if (isMarketIdParam(inputParam)) {
-        return `${formattedInputParamName} = ${arg.toString()} ${await getFormattedMarketName(core, arg)}`;
-      }
-      return `${formattedInputParamName} = ${arg.toString()}`;
-    }
-
-    if (Array.isArray(arg)) {
-      if (isMarketIdParam(inputParam)) {
-        const formattedArgs = await Promise.all(arg.map(async marketId => {
-          return `${marketId} ${await getFormattedMarketName(core, marketId)}`;
-        }));
-        return `${formattedInputParamName} = [\n\t\t\t\t${formattedArgs.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
-      }
-      if (isTokenParam(inputParam)) {
-        const formattedArgs = await Promise.all(arg.map(async tokenAddress => {
-          return `${tokenAddress} ${await getFormattedTokenName(core, tokenAddress)}`;
-        }));
-        return `${formattedInputParamName} = [\n\t\t\t\t${formattedArgs.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
-      }
-      return `${formattedInputParamName} = [\n\t\t\t\t${arg.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
-    }
-
-    if (typeof arg === 'object') {
-      if (fragment.inputs[i].baseType !== 'tuple') {
-        return Promise.reject(new Error('Object type is not tuple'));
-      }
-      const values = Object.keys(arg).reduce<string[]>((memo, key, j) => {
-        const component = fragment.inputs[i].components[j];
-        const name = component.format(FormatTypes.full);
-        let value: string;
-        if (isMarketIdParam(component)) {
-          value = `${arg[key].toString()} ${getFormattedMarketName(core, arg[key])}`;
-        } else if (isTokenParam(component)) {
-          value = `${arg[key]} ${getFormattedTokenName(core, arg[key])}`;
-        } else {
-          value = arg[key];
-        }
-        memo.push(`${name} = ${value}`);
-        return memo;
-      }, []);
-      return `${formattedInputParamName} = {\n\t\t\t\t${values.join(' ,\n\t\t\t\t')}\n\t\t\t}`;
-    }
-
-    if (isMarketIdParam(inputParam)) {
-      return `${formattedInputParamName} = ${arg} ${await getFormattedMarketName(core, arg)}`;
-    }
-    if (isTokenParam(inputParam)) {
-      return `${formattedInputParamName} = ${arg} ${await getFormattedTokenName(core, arg)}`;
-    }
-
-    return `${formattedInputParamName} = ${arg}`;
+    return getReadableArg(core, fragment.inputs[i], arg);
   }));
   console.log(''); // add a new line
   console.log(`=================================== ${counter++} - ${key}.${methodName} ===================================`);
@@ -247,6 +256,75 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   console.log('Data:\t\t', transaction.data);
   console.log('='.repeat(76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length));
   console.log(''); // add a new line
+}
+
+async function getReadableArg(core: CoreProtocol, inputParamType: ParamType, arg: any): Promise<string> {
+  const formattedInputParamName = inputParamType.format(FormatTypes.full);
+  if (BigNumber.isBigNumber(arg)) {
+    if (isMarketIdParam(inputParamType)) {
+      return `${formattedInputParamName} = ${arg.toString()} ${await getFormattedMarketName(core, arg)}`;
+    }
+    return `${formattedInputParamName} = ${arg.toString()}`;
+  }
+
+  if (Array.isArray(arg)) {
+    // remove the [] at the end
+    const subParamType = ParamType.fromString(
+      `${inputParamType.type.substring(0, inputParamType.type.length - 2)} ${inputParamType.name}`,
+      false,
+    );
+    const formattedArgs = await Promise.all(arg.map(async value => {
+      return await getReadableArg(core, subParamType, value);
+    }));
+    return `${formattedInputParamName} = [\n\t\t\t\t${formattedArgs.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
+  }
+
+  if (typeof arg === 'object') {
+    if (inputParamType.baseType !== 'tuple') {
+      return Promise.reject(new Error('Object type is not tuple'));
+    }
+    const values: string[] = [];
+    const keys = Object.keys(arg);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const componentPiece = inputParamType.components[i];
+      values.push(await getReadableArg(core, componentPiece, arg[key]));
+    }
+    return `${formattedInputParamName} = {\n\t\t\t\t${values.join(' ,\n\t\t\t\t')}\n\t\t\t}`;
+  }
+
+  if (isMarketIdParam(inputParamType)) {
+    return `${formattedInputParamName} = ${arg} ${await getFormattedMarketName(core, arg)}`;
+  }
+  if (isTokenParam(inputParamType)) {
+    return `${formattedInputParamName} = ${arg} ${await getFormattedTokenName(core, arg)}`;
+  }
+  if (isChainlinkAggregatorParam(inputParamType)) {
+    return `${formattedInputParamName} = ${arg} ${await getFormattedChainlinkAggregatorName(core, arg)}`;
+  }
+
+  return `${formattedInputParamName} = ${arg}`;
+}
+
+export async function prettyPrintEncodeInsertChainlinkOracle(
+  core: CoreProtocol,
+  token: IERC20,
+  chainlinkAggregatorAddress: address,
+  tokenPairAddress: address,
+): Promise<void> {
+  const tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  await prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { chainlinkPriceOracle: core.chainlinkPriceOracle! },
+    'chainlinkPriceOracle',
+    'ownerInsertOrUpdateOracleToken',
+    [
+      token.address,
+      tokenDecimals,
+      chainlinkAggregatorAddress,
+      tokenPairAddress,
+    ],
+  );
 }
 
 export function writeFile(file: Record<string, Record<ChainId, any>>) {
