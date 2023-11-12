@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { TWAPPriceOracle, TWAPPriceOracle__factory, TestPair, TestPair__factory } from '../../../src/types';
-import { getTWAPPriceOracleParams } from '../../../src/utils/constructors/oracles';
+import { parseEther } from 'ethers/lib/utils';
+import { TestPair, TestPair__factory, TWAPPriceOracle, TWAPPriceOracle__factory } from '../../../src/types';
+import { getTWAPPriceOracleConstructorParams } from '../../../src/utils/constructors/oracles';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { Network, ONE_DAY_SECONDS } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -33,7 +34,11 @@ describe('TWAPPriceOracle', () => {
     oracle = await createContractWithAbi<TWAPPriceOracle>(
       TWAPPriceOracle__factory.abi,
       TWAPPriceOracle__factory.bytecode,
-      getTWAPPriceOracleParams(core, core.camelotEcosystem!.grail, [core.camelotEcosystem!.grailUsdcV3Pool.address])
+      getTWAPPriceOracleConstructorParams(
+        core,
+        core.camelotEcosystem!.grail,
+        [core.camelotEcosystem!.grailUsdcV3Pool.address],
+      ),
     );
 
     snapshotId = await snapshot();
@@ -45,7 +50,8 @@ describe('TWAPPriceOracle', () => {
 
   describe('#constructor', () => {
     it('should work normally', async () => {
-      expect(await oracle.token()).to.eq(core.camelotEcosystem!.grail.address);
+      expect(await oracle.TOKEN()).to.eq(core.camelotEcosystem!.grail.address);
+      expect(await oracle.TOKEN_DECIMALS_FACTOR()).to.eq(parseEther('1'));
       expect(await oracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await oracle.observationInterval()).to.eq(FIFTEEN_MINUTES);
       expect(await oracle.getPairs()).to.deep.equal([core.camelotEcosystem!.grailUsdcV3Pool.address]);
@@ -76,7 +82,7 @@ describe('TWAPPriceOracle', () => {
       const otherOracle = await createContractWithAbi<TWAPPriceOracle>(
         TWAPPriceOracle__factory.abi,
         TWAPPriceOracle__factory.bytecode,
-        [ARB_TOKEN, [ARB_WETH_POOL], core.dolomiteMargin.address]
+        [ARB_TOKEN, [ARB_WETH_POOL], core.dolomiteMargin.address],
       );
       const price = (await otherOracle.getPrice(ARB_TOKEN)).value;
       expect(price).to.eq(ARB_PRICE_WETH_POOL);
@@ -93,7 +99,7 @@ describe('TWAPPriceOracle', () => {
     it('should fail if invalid input token', async () => {
       await expectThrow(
         oracle.connect(core.hhUser1).getPrice(core.tokens.weth.address),
-        `TWAPPriceOracle: Invalid token <${core.tokens.weth.address.toLowerCase()}>`
+        `TWAPPriceOracle: Invalid token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 
@@ -101,7 +107,7 @@ describe('TWAPPriceOracle', () => {
       await oracle.connect(core.governance).ownerRemovePair(core.camelotEcosystem!.grailUsdcV3Pool.address);
       await expectThrow(
         oracle.connect(core.hhUser1).getPrice(core.camelotEcosystem!.grail.address),
-        'TWAPPriceOracle: Oracle contains no pairs'
+        'TWAPPriceOracle: Oracle contains no pairs',
       );
     });
   });
@@ -116,7 +122,7 @@ describe('TWAPPriceOracle', () => {
     it('fails when invoked by non-admin', async () => {
       await expectThrow(
         oracle.connect(core.hhUser1).ownerSetObservationInterval(ONE_DAY_SECONDS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -136,7 +142,7 @@ describe('TWAPPriceOracle', () => {
         [
           core.tokens.weth.address,
           core.camelotEcosystem!.grail.address,
-        ]
+        ],
       );
       await oracle.connect(core.governance).ownerAddPair(myPair.address);
       expect(await oracle.getPairs()).to.deep.equal([core.camelotEcosystem!.grailUsdcV3Pool.address, myPair.address]);
@@ -149,18 +155,18 @@ describe('TWAPPriceOracle', () => {
         [
           core.tokens.weth.address,
           core.tokens.usdc.address,
-        ]
+        ],
       );
       await expectThrow(
         oracle.connect(core.governance).ownerAddPair(myPair.address),
-        'TWAPPriceOracle: Pair must contain oracle token'
+        'TWAPPriceOracle: Pair must contain oracle token',
       );
     });
 
     it('fails when invoked by non-admin', async () => {
       await expectThrow(
         oracle.connect(core.hhUser1).ownerAddPair(core.camelotEcosystem!.grailUsdcV3Pool.address),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -174,7 +180,7 @@ describe('TWAPPriceOracle', () => {
     it('fails when invoked by non-admin', async () => {
       await expectThrow(
         oracle.connect(core.hhUser1).ownerRemovePair(core.camelotEcosystem!.grailUsdcV3Pool.address),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

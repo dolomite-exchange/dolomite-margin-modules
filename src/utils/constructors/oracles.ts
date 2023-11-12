@@ -24,7 +24,7 @@ export async function getChainlinkPriceOracleParams(
   return [tokens, aggregators, tokenDecimals, tokenPairs, core.dolomiteMargin.address];
 }
 
-export function getTWAPPriceOracleParams(
+export function getTWAPPriceOracleConstructorParams(
   core: CoreProtocol,
   token: IERC20,
   tokenPairs: string[],
