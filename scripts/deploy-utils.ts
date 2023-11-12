@@ -1,11 +1,12 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { sleep } from '@openzeppelin/upgrades';
 import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
-import { FormatTypes, ParamType } from 'ethers/lib/utils';
+import { FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
 import { network, run } from 'hardhat';
-import { IERC20Metadata__factory } from '../src/types';
+import { IERC20, IERC20Metadata__factory } from '../src/types';
 import { createContractWithName } from '../src/utils/dolomite-utils';
+import { ADDRESS_ZERO } from '../src/utils/no-deps-constants';
 import { CoreProtocol } from '../test/utils/setup';
 
 type ChainId = string;
@@ -74,6 +75,37 @@ export async function deployContractAndSave(
   await prettyPrintAndVerifyContract(file, chainId, usedContractName, args);
 
   return contract.address;
+}
+
+export enum InterestSetterType {
+  Altcoin = 'Altcoin',
+  Stablecoin = 'Stablecoin',
+}
+
+const ONE_PERCENT = parseEther('0.01');
+
+export async function deployLinearInterestSetterAndSave(
+  chainId: number,
+  interestSetterType: InterestSetterType,
+  lowerOptimal: BigNumber,
+  upperOptimal: BigNumber,
+): Promise<address> {
+  if (
+    lowerOptimal.lt(ONE_PERCENT)
+    || upperOptimal.lt(ONE_PERCENT)
+    || !lowerOptimal.add(upperOptimal).eq(ONE_PERCENT.mul(100))
+  ) {
+    return Promise.reject(new Error('Invalid lowerOptimal and upperOptimal'));
+  }
+  const lowerName = lowerOptimal.div(ONE_PERCENT).toString().concat('L');
+  const upperName = upperOptimal.div(ONE_PERCENT).toString().concat('U');
+
+  return deployContractAndSave(
+    chainId,
+    'LinearStepFunctionInterestSetter',
+    [lowerOptimal, upperOptimal],
+    `${interestSetterType}${lowerName}${upperName}LinearStepFunctionInterestSetter`,
+  );
 }
 
 export function sortFile(file: Record<string, Record<ChainId, any>>) {
@@ -148,7 +180,11 @@ async function getFormattedMarketName(core: CoreProtocol, marketId: BigNumberish
 const tokenAddressToMarketNameCache: Record<string, string | undefined> = {};
 
 async function getFormattedTokenName(core: CoreProtocol, tokenAddress: string): Promise<string> {
-  const cachedName = tokenAddressToMarketNameCache[tokenAddress.toLowerCase()];
+  if (tokenAddress === ADDRESS_ZERO) {
+    return 'None';
+  }
+
+  const cachedName = tokenAddressToMarketNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
     return cachedName;
   }
@@ -167,7 +203,8 @@ function isMarketIdParam(paramType: ParamType): boolean {
 }
 
 function isTokenParam(paramType: ParamType): boolean {
-  return paramType.name.includes('token') || paramType.name.includes('Token');
+  return (paramType.name.includes('token') || paramType.name.includes('Token'))
+    && !paramType.name.toLowerCase().includes('decimals');
 }
 
 export async function prettyPrintEncodedDataWithTypeSafety<
@@ -248,6 +285,27 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   console.log('Data:\t\t', transaction.data);
   console.log('='.repeat(76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length));
   console.log(''); // add a new line
+}
+
+export async function prettyPrintEncodeInsertChainlinkOracle(
+  core: CoreProtocol,
+  token: IERC20,
+  chainlinkAggregatorAddress: address,
+  tokenPairAddress: address,
+): Promise<void> {
+  const tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  await prettyPrintEncodedDataWithTypeSafety(
+    core,
+    { chainlinkPriceOracle: core.chainlinkPriceOracle! },
+    'chainlinkPriceOracle',
+    'ownerInsertOrUpdateOracleToken',
+    [
+      token.address,
+      tokenDecimals,
+      chainlinkAggregatorAddress,
+      tokenPairAddress,
+    ],
+  );
 }
 
 export function writeFile(file: Record<string, Record<ChainId, any>>) {

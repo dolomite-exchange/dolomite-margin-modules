@@ -179,7 +179,7 @@ import {
   DFS_GLP_MAP,
   DJ_USDC,
   DPLV_GLP_MAP,
-  DPT_GLP_2024_MAP,
+  DPT_GLP_2024_MAP, DPX_MAP,
   DYT_GLP_2024_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
   ES_GMX_MAP,
@@ -210,13 +210,13 @@ import {
   JONES_JUSDC_RECEIPT_TOKEN_MAP,
   JONES_WHITELIST_CONTROLLER_MAP,
   LINK_MAP,
-  MAGIC_GLP_MAP,
+  MAGIC_GLP_MAP, MAGIC_MAP,
   MIM_MAP,
   NATIVE_USDC_MAP,
   ODOS_ROUTER_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
   PARASWAP_FEE_CLAIMER_MAP,
-  PARASWAP_TRANSFER_PROXY_MAP,
+  PARASWAP_TRANSFER_PROXY_MAP, PENDLE_MAP,
   PENDLE_PT_GLP_2024_MARKET_MAP,
   PENDLE_PT_GLP_2024_TOKEN_MAP,
   PENDLE_PT_ORACLE_MAP,
@@ -273,7 +273,6 @@ export interface AtlasEcosystem {
 }
 
 export interface CamelotEcosystem {
-  grail: IERC20;
   grailUsdcV3Pool: IAlgebraV3Pool;
   grailWethV3Pool: IAlgebraV3Pool;
 }
@@ -447,11 +446,15 @@ export interface CoreProtocol {
     djUSDC: BigNumberish | undefined;
     dplvGlp: BigNumberish | undefined;
     dPtGlp: BigNumberish | undefined;
+    dpx: BigNumberish | undefined;
     dYtGlp: BigNumberish | undefined;
+    grail: BigNumberish | undefined;
     link: BigNumberish;
+    magic: BigNumberish | undefined;
     magicGlp: BigNumberish | undefined;
     mim: BigNumberish | undefined;
     nativeUsdc: BigNumberish | undefined;
+    pendle: BigNumberish | undefined;
     usdc: BigNumberish;
     usdt: BigNumberish | undefined;
     wbtc: BigNumberish;
@@ -466,9 +469,13 @@ export interface CoreProtocol {
     dai: IERC20;
     dfsGlp: IERC20 | undefined;
     dPtGlp: IERC20 | undefined;
+    dpx: IERC20 | undefined;
     dYtGlp: IERC20 | undefined;
+    grail: IERC20 | undefined;
     link: IERC20;
+    magic: IERC20 | undefined;
     nativeUsdc: IERC20 | undefined;
+    pendle: IERC20 | undefined;
     usdc: IERC20;
     wbtc: IERC20;
     weth: IWETH;
@@ -810,11 +817,15 @@ export async function setupCoreProtocol(
       djUSDC: DJ_USDC[config.network]?.marketId,
       dplvGlp: DPLV_GLP_MAP[config.network]?.marketId,
       dPtGlp: DPT_GLP_2024_MAP[config.network]?.marketId,
+      dpx: DPX_MAP[config.network]?.marketId,
       dYtGlp: DYT_GLP_2024_MAP[config.network]?.marketId,
+      grail: GRAIL_MAP[config.network]?.marketId,
       link: LINK_MAP[config.network].marketId,
+      magic: MAGIC_MAP[config.network]?.marketId,
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       mim: MIM_MAP[config.network]?.marketId,
       nativeUsdc: NATIVE_USDC_MAP[config.network]?.marketId,
+      pendle: PENDLE_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
       usdt: USDT_MAP[config.network]?.marketId,
       wbtc: WBTC_MAP[config.network].marketId,
@@ -825,9 +836,13 @@ export async function setupCoreProtocol(
       dai: IERC20__factory.connect(DAI_MAP[config.network].address, hhUser1),
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
       dPtGlp: createIERC20Opt(DPT_GLP_2024_MAP[config.network]?.address, hhUser1),
+      dpx: createIERC20Opt(DPX_MAP[config.network]?.address, hhUser1),
       dYtGlp: createIERC20Opt(DYT_GLP_2024_MAP[config.network]?.address, hhUser1),
+      grail: createIERC20Opt(GRAIL_MAP[config.network]?.address, hhUser1),
       link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
+      magic: createIERC20Opt(MAGIC_MAP[config.network]?.address, hhUser1),
       nativeUsdc: createIERC20Opt(NATIVE_USDC_MAP[config.network]?.address, hhUser1),
+      pendle: createIERC20Opt(PENDLE_MAP[config.network]?.address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
       wbtc: IERC20__factory.connect(WBTC_MAP[config.network].address, hhUser1),
       weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
@@ -933,12 +948,11 @@ async function createCamelotEcosystem(
   network: Network,
   signer: SignerWithAddress
 ): Promise<CamelotEcosystem | undefined> {
-  if (!GRAIL_MAP[network]) {
+  if (!GRAIL_WETH_V3_POOL_MAP[network]) {
     return undefined;
   }
 
   return {
-    grail: getContract(GRAIL_MAP[network] as string, IERC20__factory.connect, signer),
     grailUsdcV3Pool: getContract(GRAIL_USDC_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
     grailWethV3Pool: getContract(GRAIL_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
   };
