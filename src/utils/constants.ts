@@ -85,7 +85,7 @@ export const DPT_GLP_2024_MAP: Record<Network, TokenWithMarketId | undefined> = 
 export const DPX_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x6C2C06790b3E3E3c38e12Ee22F8183b37a13EE55',
-    marketId: 18,
+    marketId: 20,
   },
   [Network.ArbitrumGoerli]: undefined,
 };
@@ -101,7 +101,7 @@ export const DYT_GLP_2024_MAP: Record<Network, TokenWithMarketId | undefined> = 
 export const GRAIL_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x3d9907F9a368ad0a51Be60f7Da3b97cf940982D8',
-    marketId: 19,
+    marketId: 18,
   },
   [Network.ArbitrumGoerli]: undefined,
 };
@@ -120,7 +120,7 @@ export const LINK_MAP: Record<Network, TokenWithMarketId> = {
 export const MAGIC_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x539bdE0d7Dbd336b79148AA742883198BBF60342',
-    marketId: 20,
+    marketId: 19,
   },
   [Network.ArbitrumGoerli]: undefined,
 };
