@@ -187,13 +187,22 @@ import {
   PENDLE_PT_GLP_2024_MARKET_MAP,
   PENDLE_PT_GLP_2024_TOKEN_MAP,
   PENDLE_PT_ORACLE_MAP,
+  PENDLE_PT_RETH_MARKET_MAP,
+  PENDLE_PT_RETH_TOKEN_MAP,
+  PENDLE_PT_WST_ETH_2024_MARKET_MAP,
+  PENDLE_PT_WST_ETH_2024_TOKEN_MAP,
+  PENDLE_PT_WST_ETH_2025_MARKET_MAP,
+  PENDLE_PT_WST_ETH_2025_TOKEN_MAP,
   PENDLE_ROUTER_MAP,
   PENDLE_SY_GLP_2024_TOKEN_MAP,
+  PENDLE_SY_RETH_TOKEN_MAP,
+  PENDLE_SY_WST_ETH_TOKEN_MAP,
   PENDLE_YT_GLP_2024_TOKEN_MAP,
   PLS_TOKEN_MAP,
   PLV_GLP_FARM_MAP,
   PLV_GLP_MAP,
   PLV_GLP_ROUTER_MAP,
+  RETH_MAP,
   S_GLP_MAP,
   S_GMX_MAP,
   SBF_GMX_MAP,
@@ -210,6 +219,7 @@ import {
   V_GMX_MAP,
   WBTC_MAP,
   WETH_MAP,
+  WST_ETH_MAP,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { createDolomiteRegistryImplementation } from './dolomite';
@@ -289,8 +299,16 @@ export interface PendleEcosystem {
   pendleRouter: IPendleRouter;
   ptGlpMarket: IPendlePtMarket;
   ptGlpToken: IPendlePtToken;
+  ptRETHMarket: IPendlePtMarket;
+  ptRETHToken: IPendlePtToken;
+  ptWstEth2024Market: IPendlePtMarket;
+  ptWstEth2025Market: IPendlePtMarket;
+  ptWstEth2024Token: IPendlePtToken;
+  ptWstEth2025Token: IPendlePtToken;
   ptOracle: IPendlePtOracle;
   syGlpToken: IPendleSyToken;
+  syRETHToken: IPendleSyToken;
+  syWstEthToken: IPendleSyToken;
   ytGlpToken: IPendleYtToken;
   live: {
     pendleGLP2024Registry: IPendleGLPRegistry
@@ -395,10 +413,12 @@ export interface CoreProtocol {
     magicGlp: BigNumberish | undefined;
     mim: BigNumberish | undefined;
     nativeUsdc: BigNumberish | undefined;
+    rEth: BigNumberish | undefined;
     usdc: BigNumberish;
     usdt: BigNumberish | undefined;
     wbtc: BigNumberish;
     weth: BigNumberish;
+    wstEth: BigNumberish | undefined;
   };
   apiTokens: {
     usdc: ApiToken;
@@ -410,9 +430,11 @@ export interface CoreProtocol {
     dYtGlp: IERC20 | undefined;
     link: IERC20;
     nativeUsdc: IERC20 | undefined;
+    rEth: IERC20 | undefined;
     usdc: IERC20;
     wbtc: IERC20;
     weth: IWETH;
+    wstEth: IERC20 | undefined;
   };
 }
 
@@ -452,6 +474,30 @@ export async function setupGMXBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.gmxEcosystem?.gmx.connect(whaleSigner).transfer(signer.address, amount);
   await core.gmxEcosystem?.gmx.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupRETHBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xba12222222228d8ba445958a75a0704d566bf2c8'; // Balancer Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.rEth!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.rEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupWstETHBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xba12222222228d8ba445958a75a0704d566bf2c8'; // Balancer Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.wstEth!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.wstEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export function setupUserVaultProxy<T extends BaseContract>(
@@ -682,10 +728,12 @@ export async function setupCoreProtocol(
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       mim: MIM_MAP[config.network]?.marketId,
       nativeUsdc: NATIVE_USDC_MAP[config.network]?.marketId,
+      rEth: RETH_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
       usdt: USDT_MAP[config.network]?.marketId,
       wbtc: WBTC_MAP[config.network].marketId,
       weth: WETH_MAP[config.network].marketId,
+      wstEth: WST_ETH_MAP[config.network]?.marketId,
     },
     tokens: {
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
@@ -693,9 +741,11 @@ export async function setupCoreProtocol(
       dYtGlp: createIERC20Opt(DYT_GLP_2024_MAP[config.network]?.address, hhUser1),
       link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
       nativeUsdc: createIERC20Opt(NATIVE_USDC_MAP[config.network]?.address, hhUser1),
+      rEth: createIERC20Opt(RETH_MAP[config.network]?.address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
       wbtc: IERC20__factory.connect(WBTC_MAP[config.network].address, hhUser1),
       weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
+      wstEth: createIERC20Opt(WST_ETH_MAP[config.network]?.address, hhUser1),
     },
   };
 }
@@ -955,14 +1005,54 @@ async function createPendleEcosystem(
       IPendlePtOracle__factory.connect,
       signer,
     ),
+    ptRETHMarket: getContract(
+      PENDLE_PT_RETH_MARKET_MAP[network] as string,
+      IPendlePtMarket__factory.connect,
+      signer,
+    ),
+    ptRETHToken: getContract(
+      PENDLE_PT_RETH_TOKEN_MAP[network] as string,
+      IPendlePtToken__factory.connect,
+      signer,
+    ),
+    ptWstEth2024Token: getContract(
+      PENDLE_PT_WST_ETH_2024_TOKEN_MAP[network] as string,
+      IPendlePtToken__factory.connect,
+      signer,
+    ),
+    ptWstEth2025Token: getContract(
+      PENDLE_PT_WST_ETH_2025_TOKEN_MAP[network] as string,
+      IPendlePtToken__factory.connect,
+      signer,
+    ),
     syGlpToken: getContract(
       PENDLE_SY_GLP_2024_TOKEN_MAP[network] as string,
+      IPendleSyToken__factory.connect,
+      signer,
+    ),
+    syRETHToken: getContract(
+      PENDLE_SY_RETH_TOKEN_MAP[network] as string,
+      IPendleSyToken__factory.connect,
+      signer,
+    ),
+    syWstEthToken: getContract(
+      PENDLE_SY_WST_ETH_TOKEN_MAP[network] as string,
       IPendleSyToken__factory.connect,
       signer,
     ),
     ytGlpToken: getContract(
       PENDLE_YT_GLP_2024_TOKEN_MAP[network] as string,
       IPendleYtToken__factory.connect,
+      signer,
+    ),
+    ptWstEth2024Market: getContract(
+      PENDLE_PT_WST_ETH_2024_MARKET_MAP[network] as string,
+      IPendlePtMarket__factory.connect,
+      signer,
+    ),
+    ptWstEth2025Market: getContract(
+      PENDLE_PT_WST_ETH_2025_MARKET_MAP[network] as string,
+      IPendlePtMarket__factory.connect,
       signer,
     ),
     live: {

@@ -9,10 +9,11 @@ export async function encodeSwapExactPtForTokens(
   core: CoreProtocol,
   ptAmountIn: BigNumberish,
   slippageTolerance: number = ONE_TENTH_OF_ONE_BIPS_NUMBER,
+  market: string = core.pendleEcosystem!.ptGlpMarket.address,
   tokenOut: string = core.gmxEcosystem!.sGlp.address,
 ): Promise<{ extraOrderData: string; tokenOutput: TokenOutput }> {
   const [, , , tokenOutput] = await router.swapExactPtForToken(
-    core.pendleEcosystem!.ptGlpMarket.address as any,
+    market as any,
     ptAmountIn,
     tokenOut as any,
     slippageTolerance,
@@ -46,10 +47,11 @@ export async function encodeSwapExactTokensForPt(
   core: CoreProtocol,
   tokenAmountIn: BigNumberish,
   slippageTolerance: number = ONE_TENTH_OF_ONE_BIPS_NUMBER,
+  marketIn: string = core.pendleEcosystem!.ptGlpMarket.address,
   tokenIn: string = core.gmxEcosystem!.sGlp.address,
 ): Promise<{ extraOrderData: string; tokenInput: TokenInput, approxParams: ApproxParamsStruct }> {
   const [, , , approxParams, tokenInput] = await router.swapExactTokenForPt(
-    core.pendleEcosystem!.ptGlpMarket.address as any,
+    marketIn as any,
     tokenIn as any,
     tokenAmountIn,
     slippageTolerance,

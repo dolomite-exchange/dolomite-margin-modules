@@ -112,8 +112,6 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
       signer: core.hhUser1,
     });
 
-    const usdcAmount = amountWei.div(1e12).mul(8);
-    const usableUsdcAmount = usdcAmount.div(2);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
       .mintAndStakeGlp(core.tokens.usdc.address, usableUsdcAmount, 0, 0);
