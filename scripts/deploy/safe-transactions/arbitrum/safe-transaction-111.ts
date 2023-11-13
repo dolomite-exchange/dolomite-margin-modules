@@ -18,7 +18,12 @@ async function main() {
   const rewardsDistributorAddress = await deployContractAndSave(
     Number(network),
     'RewardsDistributor',
-    getRewardsDistributorConstructorParams(core, oARB),
+    getRewardsDistributorConstructorParams(
+      core,
+      oARB,
+      ['0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761', '0xbDEf2b2051E2aE113297ee8301e011FD71A83738'],
+    ),
+    'OARBRewardsDistributor',
   );
   const rewardsDistributor = RewardsDistributor__factory.connect(rewardsDistributorAddress, core.hhUser1);
 

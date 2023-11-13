@@ -272,6 +272,13 @@
       "isVerified": true
     }
   },
+  "OARBRewardsDistributor": {
+    "42161": {
+      "address": "0x66Cd7D0cC677F42f6662622C60A5E60EF573db67",
+      "transaction": "0xd78e3e709baad2fb3625f74c15d5b7f2ef81d57148fb72cdf870b7bef73e7719",
+      "isVerified": true
+    }
+  },
   "OdosAggregatorTrader": {
     "42161": {
       "address": "0x2cdBb25b4aca98a55F6B1A0f67d9f43455e67f3c",
@@ -451,13 +458,6 @@
     "42161": {
       "address": "0x704ed087825D8Be4Dd842eA778d90D7a072Ed8F3",
       "transaction": "0x492c417f209174734caef7396b1af0c1c1dea826c0abc285903d8c5472b20580",
-      "isVerified": true
-    }
-  },
-  "RewardsDistributor": {
-    "42161": {
-      "address": "0xfb47dC009c12eCF8a6785bD5568163C5850D8360",
-      "transaction": "0x48f7770a43f60207dc3a4e17a284c2ec0081a844a8657932020bcdbffe74a310",
       "isVerified": true
     }
   },

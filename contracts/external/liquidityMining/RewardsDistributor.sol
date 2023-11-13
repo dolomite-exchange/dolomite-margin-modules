@@ -44,32 +44,59 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     bytes32 private constant _FILE = "RewardsDistributor";
 
     // ===================================================
-    // ==================== State Variables ====================
+    // ==================== State Variables ==============
     // ===================================================
 
     IOARB public override oARB;
 
+    mapping(address => bool) private _handlerMap;
     mapping(uint256 => bytes32) private _epochToMerkleRootMap;
     mapping(address => mapping(uint256 => bool)) private _userToEpochToClaimStatusMap;
 
-    // ==================================================================
+    // ===========================================================
     // ======================= Constructor =======================
-    // ==================================================================
+    // ===========================================================
+
+    modifier onlyHandler(address _from) {
+        Require.that(
+            _handlerMap[_from],
+            _FILE,
+            "Only handler can call",
+            _from
+        );
+        _;
+    }
+
+    // ===========================================================
+    // ======================= Constructor =======================
+    // ===========================================================
 
     constructor(
         address _dolomiteMargin,
-        IOARB _oARB
+        IOARB _oARB,
+        address[] memory _initialHandlers
     ) OnlyDolomiteMargin(_dolomiteMargin) {
         oARB = _oARB;
+
+        for (uint256 i; i < _initialHandlers.length; ++i) {
+            _ownerSetHandler(_initialHandlers[i], /* _isHandler = */ true);
+        }
     }
 
     // ======================================================
     // ================== Admin Functions ===================
     // ======================================================
 
+    function ownerSetHandler(address _handler, bool _isHandler) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetHandler(_handler, _isHandler);
+    }
+
     function ownerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) external onlyDolomiteMarginOwner(msg.sender) {
-        _epochToMerkleRootMap[_epoch] = _merkleRoot;
-        emit MerkleRootSet(_epoch, _merkleRoot);
+        _ownerSetMerkleRoot(_epoch, _merkleRoot);
+    }
+
+    function handlerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) external onlyHandler(msg.sender) {
+        _ownerSetMerkleRoot(_epoch, _merkleRoot);
     }
 
     function ownerSetOARB(IOARB _oARB) external onlyDolomiteMarginOwner(msg.sender) {
@@ -107,6 +134,10 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     // ======================= View Functions =======================
     // ==============================================================
 
+    function isHandler(address _from) external view returns (bool) {
+        return _handlerMap[_from];
+    }
+
     function getMerkleRootByEpoch(uint256 _epoch) external view returns (bytes32) {
         return _epochToMerkleRootMap[_epoch];
     }
@@ -118,6 +149,16 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
+
+    function _ownerSetHandler(address _handler, bool _isHandler) internal {
+        _handlerMap[_handler] = _isHandler;
+        emit HandlerSet(_handler, _isHandler);
+    }
+
+    function _ownerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) internal {
+        _epochToMerkleRootMap[_epoch] = _merkleRoot;
+        emit MerkleRootSet(_epoch, _merkleRoot);
+    }
 
     function _verifyMerkleProof(ClaimInfo calldata _claimInfo) internal view returns (bool) {
         bytes32 leaf = keccak256(abi.encode(msg.sender, _claimInfo.amount));

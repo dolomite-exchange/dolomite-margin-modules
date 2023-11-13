@@ -40,6 +40,7 @@ export function getVesterExploderConstructorParams(
 export function getRewardsDistributorConstructorParams(
   core: CoreProtocol,
   oARB: OARB,
+  initialHandlers: string[],
 ): any[] {
-  return [core.dolomiteMargin.address, oARB.address];
+  return [core.dolomiteMargin.address, oARB.address, initialHandlers];
 }

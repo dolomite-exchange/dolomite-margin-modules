@@ -45,6 +45,8 @@ interface IRewardsDistributor {
     // ======================== Events ======================
     // ======================================================
 
+    event HandlerSet(address indexed handler, bool isHandler);
+
     event MerkleRootSet(uint256 epoch, bytes32 merkleRoot);
 
     event OARBSet(IOARB oARB);
@@ -55,7 +57,11 @@ interface IRewardsDistributor {
     // ================== External Functions ================
     // ======================================================
 
+    function ownerSetHandler(address _handler, bool _isHandler) external;
+
     function ownerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) external;
+
+    function handlerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) external;
 
     function ownerSetOARB(IOARB _oARB) external;
 
@@ -64,6 +70,13 @@ interface IRewardsDistributor {
      * @param  _claimInfo  Array of ClaimInfo structs used to claim oARB for the given user
      */
     function claim(ClaimInfo[] calldata _claimInfo) external;
+
+    /**
+     *
+     * @param  _from    The address tp check if it is a handler
+     * @return          True if the address is a handler, false otherwise
+     */
+    function isHandler(address _from) external view returns (bool);
 
     /**
      *

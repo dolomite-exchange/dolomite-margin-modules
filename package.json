@@ -44,7 +44,7 @@
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "sort:contracts": "hardhat --network hardhat run scripts/sort-contract.ts",
     "test": "hardhat --network hardhat test",
-    "test:specific": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/oracles/TWAPPriceOracle.ts",
+    "test:specific": "TEST_SPECIFIC=true hardhat --max-memory 32768 --network hardhat test test/external/liquidityMining/RewardsDistributorIntegration.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
   "repository": {

@@ -40,10 +40,14 @@ export async function createOARB(core: CoreProtocol): Promise<OARB> {
   );
 }
 
-export async function createRewardsDistributor(core: CoreProtocol, oARB: OARB): Promise<RewardsDistributor> {
+export async function createRewardsDistributor(
+  core: CoreProtocol,
+  oARB: OARB,
+  initialHandlers: string[],
+): Promise<RewardsDistributor> {
   return createContractWithAbi<RewardsDistributor>(
     RewardsDistributor__factory.abi,
     RewardsDistributor__factory.bytecode,
-    getRewardsDistributorConstructorParams(core, oARB),
+    getRewardsDistributorConstructorParams(core, oARB, initialHandlers),
   );
 }

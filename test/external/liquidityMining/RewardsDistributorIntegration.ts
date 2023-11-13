@@ -22,7 +22,7 @@ describe('RewardsDistributorIntegration', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     oARB = await createOARB(core);
-    rewardsDistributor = await createRewardsDistributor(core, oARB);
+    rewardsDistributor = await createRewardsDistributor(core, oARB, [core.hhUser5.address]);
     await core.dolomiteMargin.ownerSetGlobalOperator(rewardsDistributor.address, true);
 
     merkleRoot1 = '0x9d5f7ae4fabaf5a6425cfd830814e1cafa1c28c9be28c07366ff488af1a84e8b';

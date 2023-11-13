@@ -27,7 +27,7 @@ describe('RewardsDistributor', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     oARB = await createOARB(core);
-    rewardsDistributor = await createRewardsDistributor(core, oARB);
+    rewardsDistributor = await createRewardsDistributor(core, oARB, [core.hhUser5.address]);
     await core.dolomiteMargin.ownerSetGlobalOperator(rewardsDistributor.address, true);
 
     const rewards1 = [
@@ -69,6 +69,7 @@ describe('RewardsDistributor', () => {
     it('should work normally', async () => {
       expect(await rewardsDistributor.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
       expect(await rewardsDistributor.oARB()).to.eq(oARB.address);
+      expect(await rewardsDistributor.isHandler(core.hhUser5.address)).to.eq(true);
     });
   });
 
@@ -135,7 +136,7 @@ describe('RewardsDistributor', () => {
   });
 
   describe('#setMerkleRoot', () => {
-    it('should work normally', async () => {
+    it('should work normally for owner', async () => {
       expect(await rewardsDistributor.getMerkleRootByEpoch(1)).to.eq(merkleRoot1);
       const result = await rewardsDistributor.connect(core.governance).ownerSetMerkleRoot(1, merkleRoot2);
       await expectEvent(rewardsDistributor, result, 'MerkleRootSet', {
@@ -149,6 +150,23 @@ describe('RewardsDistributor', () => {
       await expectThrow(
         rewardsDistributor.connect(core.hhUser1).ownerSetMerkleRoot(1, merkleRoot2),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should work normally for handler', async () => {
+      expect(await rewardsDistributor.getMerkleRootByEpoch(1)).to.eq(merkleRoot1);
+      const result = await rewardsDistributor.connect(core.hhUser5).handlerSetMerkleRoot(1, merkleRoot2);
+      await expectEvent(rewardsDistributor, result, 'MerkleRootSet', {
+        epoch: 1,
+        merkleRoot: merkleRoot2,
+      });
+      expect(await rewardsDistributor.getMerkleRootByEpoch(1)).to.eq(merkleRoot2);
+    });
+
+    it('should fail when not called by dolomite margin owner', async () => {
+      await expectThrow(
+        rewardsDistributor.connect(core.hhUser1).handlerSetMerkleRoot(1, merkleRoot2),
+        `RewardsDistributor: Only handler can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
