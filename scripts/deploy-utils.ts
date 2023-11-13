@@ -1,6 +1,6 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { sleep } from '@openzeppelin/upgrades';
-import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, ethers, PopulatedTransaction } from 'ethers';
 import { FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
 import { network, run } from 'hardhat';
@@ -8,6 +8,7 @@ import { IChainlinkAggregator__factory, IERC20, IERC20Metadata__factory } from '
 import { createContractWithName } from '../src/utils/dolomite-utils';
 import { ADDRESS_ZERO } from '../src/utils/no-deps-constants';
 import { CoreProtocol } from '../test/utils/setup';
+import * as deployments from './deployments.json';
 
 type ChainId = string;
 
@@ -303,7 +304,16 @@ async function getReadableArg(core: CoreProtocol, inputParamType: ParamType, arg
     return `${formattedInputParamName} = ${arg} ${await getFormattedChainlinkAggregatorName(core, arg)}`;
   }
 
-  return `${formattedInputParamName} = ${arg}`;
+  let specialName: string = '';
+  if (inputParamType.type === 'address') {
+    const chainId = core.config.network;
+    Object.keys(deployments).forEach(key => {
+      if ((deployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
+        specialName = ` (${key})`;
+      }
+    });
+  }
+  return `${formattedInputParamName} = ${arg}${specialName}`;
 }
 
 export async function prettyPrintEncodeInsertChainlinkOracle(
