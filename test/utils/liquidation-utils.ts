@@ -5,6 +5,7 @@ import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { AccountInfoStruct, GenericTraderParamStruct } from '../../src/utils';
 import { BYTES_EMPTY, MAX_UINT_256_BI, NO_EXPIRY, NO_PARASWAP_TRADER_PARAM } from '../../src/utils/no-deps-constants';
 import { CoreProtocol } from './setup';
+import { ZapParam } from './zap-utils';
 
 export function toZapBigNumber(amount: BigNumberish): ZapBigNumber {
   return new ZapBigNumber(amount.toString());
@@ -19,7 +20,6 @@ export async function liquidateV4WithIsolationMode(
   solidAccountStruct: AccountInfoStruct,
   liquidAccountStruct: AccountInfoStruct,
   marketIdsPath: BigNumberish[],
-  amountWeisPath: BigNumberish[],
   unwrapper: { address: address },
   unwrapperTradeData: string = BYTES_EMPTY,
   paraswapTraderParam: GenericTraderParamStruct | undefined = NO_PARASWAP_TRADER_PARAM,
@@ -112,4 +112,23 @@ export async function liquidateV4WithZap(
   }
 
   return Promise.reject(latestError);
+}
+
+export async function liquidateV4WithZapParam(
+  core: CoreProtocol,
+  solidAccountStruct: AccountInfoStruct,
+  liquidAccountStruct: AccountInfoStruct,
+  zapParam: ZapParam,
+  expiry: BigNumberish = NO_EXPIRY,
+): Promise<ContractTransaction> {
+  return await core.liquidatorProxyV4!.connect(core.hhUser5).liquidate(
+    solidAccountStruct,
+    liquidAccountStruct,
+    zapParam.marketIdsPath,
+    MAX_UINT_256_BI,
+    MAX_UINT_256_BI,
+    zapParam.tradersPath,
+    zapParam.makerAccounts,
+    expiry,
+  );
 }

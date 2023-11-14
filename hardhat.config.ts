@@ -17,7 +17,9 @@ import { DEFAULT_BLOCK_NUMBER, NetworkName } from './src/utils/no-deps-constants
 
 chai.use(solidity);
 require('dotenv').config();
-require('hardhat-tracer');
+if (process.env.COVERAGE !== 'true') {
+  require('hardhat-tracer');
+}
 
 const arbitrumOneWeb3Url = process.env.ARBITRUM_ONE_WEB3_PROVIDER_URL;
 if (!arbitrumOneWeb3Url) {
@@ -38,6 +40,8 @@ export const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
+      gas: 50_000_000,
+      blockGasLimit: 100000000429720,
       forking: {
         url: arbitrumOneWeb3Url,
         blockNumber: DEFAULT_BLOCK_NUMBER,
@@ -62,7 +66,7 @@ export const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 10000,
+            runs: 200,
             details: {
               yul: false, // To fix some extraneous "stack too deep" errors that don't make sense, set this to false.
             },

@@ -1876,15 +1876,15 @@
   dependencies:
     "@types/bignumber.js" "^5.0.0"
 
-"@openzeppelin/contracts-ethereum-package@^3.0.0":
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-ethereum-package/-/contracts-ethereum-package-3.0.0.tgz#d5db971a177c3b37733db2ee4ebdb79c67575d64"
-  integrity sha512-Xg33RtX7FGbSK/YnroLhcGNAvH30/C84NRW8KvbSdXXYiLA8YqM1bOA9sAeLjmQxXqYUn/YL4AUVTgDnG51NOw==
-
 "@openzeppelin/contracts-upgradeable@4.7.3":
   version "4.7.3"
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.7.3.tgz#f1d606e2827d409053f3e908ba4eb8adb1dd6995"
   integrity sha512-+wuegAMaLcZnLCJIvrVUDzA9z/Wp93f0Dla/4jJvIhijRrPabjQbZe6fWiECLaJyfn5ci9fqf9vTw3xpQOad2A==
+
+"@openzeppelin/contracts-upgradeable@4.9.3":
+  version "4.9.3"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.9.3.tgz#ff17a80fb945f5102571f8efecb5ce5915cc4811"
+  integrity sha512-jjaHAVRMrE4UuZNfDwjlLGDxTHWIOwTJS2ldnc278a0gevfXfPr8hxKEVBGFBE96kl2G3VHDZhUimw/+G3TG2A==
 
 "@openzeppelin/contracts-upgradeable@^4.7.3":
   version "4.9.0"
@@ -1901,10 +1901,10 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.7.3.tgz#939534757a81f8d69cc854c7692805684ff3111e"
   integrity sha512-dGRS0agJzu8ybo44pCIf3xBaPQN/65AIXNgK8+4gzKd5kbvlqyxryUYVLJv7fK98Seyd2hDZzVEHSWAh0Bt1Yw==
 
-"@openzeppelin/contracts@4.8.3":
-  version "4.8.3"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.8.3.tgz#cbef3146bfc570849405f59cba18235da95a252a"
-  integrity sha512-bQHV8R9Me8IaJoJ2vPG4rXcL7seB7YVuskr4f+f5RyOStSZetwzkWtoqDMl5erkBJy0lDRUnIR2WIkPiC0GJlg==
+"@openzeppelin/contracts@4.9.3":
+  version "4.9.3"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.9.3.tgz#00d7a8cf35a475b160b3f0293a6403c511099364"
+  integrity sha512-He3LieZ1pP2TNt5JbkPA4PNT9WC3gOTOlDcFGJW4Le4QKqwmiNJCRt44APfxMxvq7OugU/cqYuPcSBzOw38DAg==
 
 "@openzeppelin/contracts@^2.5.1":
   version "2.5.1"
@@ -2204,18 +2204,18 @@
     lodash "^4.17.15"
     ts-essentials "^7.0.1"
 
-"@typechain/ethers-v5@^11.0.0":
-  version "11.0.0"
-  resolved "https://registry.yarnpkg.com/@typechain/ethers-v5/-/ethers-v5-11.0.0.tgz#8a11b34a386a30eed34375d05a09f893f7df838f"
-  integrity sha512-JDAvOjtzGuEQukgArIEseHznS2+v+vG3TpfODjNj4tu1kgmVu66G9gk7THOO04HJ5q+OJSLx9b46lc3GRGPIVA==
+"@typechain/ethers-v5@^11.1.1":
+  version "11.1.1"
+  resolved "https://registry.yarnpkg.com/@typechain/ethers-v5/-/ethers-v5-11.1.1.tgz#23a358135a302140cf89a186592464dd6bbf1f98"
+  integrity sha512-D9WyUrCJ4Z5Gg8T00HWLpuqn1CqSDXlCiUOOpLaWoCbnZrE2jSIOUwR9blBZNo6LE5058e3niVu6xk205Et7tg==
   dependencies:
     lodash "^4.17.15"
     ts-essentials "^7.0.1"
 
-"@typechain/hardhat@^8.0.0":
-  version "8.0.0"
-  resolved "https://registry.yarnpkg.com/@typechain/hardhat/-/hardhat-8.0.0.tgz#60568b7a2d0260cc741fb0830a8caee8eb06ac64"
-  integrity sha512-XUVbqlMx8tJTOmzZCD/r196CidtNWAnTBZRcYxjLTKgcJMvc/kHQpWBnVMMB5QHxVKpYpCiz8g07FYCpG8rrjA==
+"@typechain/hardhat@^8.0.3":
+  version "8.0.3"
+  resolved "https://registry.yarnpkg.com/@typechain/hardhat/-/hardhat-8.0.3.tgz#a114825f130405bbb8e535314003733b7ce3f91c"
+  integrity sha512-MytSmJJn+gs7Mqrpt/gWkTCOpOQ6ZDfRrRT2gtZL0rfGe4QrU4x9ZdW15fFbVM/XTa+5EsKiOMYXhRABibNeng==
   dependencies:
     fs-extra "^9.1.0"
 
@@ -7036,37 +7036,7 @@ mnemonist@^0.38.0:
   dependencies:
     obliterator "^2.0.0"
 
-mocha@7.1.2:
-  version "7.1.2"
-  resolved "https://registry.yarnpkg.com/mocha/-/mocha-7.1.2.tgz#8e40d198acf91a52ace122cd7599c9ab857b29e6"
-  integrity sha512-o96kdRKMKI3E8U0bjnfqW4QMk12MwZ4mhdBTf+B5a1q9+aq2HRnj+3ZdJu0B/ZhJeK78MgYuv6L8d/rA5AeBJA==
-  dependencies:
-    ansi-colors "3.2.3"
-    browser-stdout "1.3.1"
-    chokidar "3.3.0"
-    debug "3.2.6"
-    diff "3.5.0"
-    escape-string-regexp "1.0.5"
-    find-up "3.0.0"
-    glob "7.1.3"
-    growl "1.10.5"
-    he "1.2.0"
-    js-yaml "3.13.1"
-    log-symbols "3.0.0"
-    minimatch "3.0.4"
-    mkdirp "0.5.5"
-    ms "2.1.1"
-    node-environment-flags "1.0.6"
-    object.assign "4.1.0"
-    strip-json-comments "2.0.1"
-    supports-color "6.0.0"
-    which "1.3.1"
-    wide-align "1.1.3"
-    yargs "13.3.2"
-    yargs-parser "13.1.2"
-    yargs-unparser "1.6.0"
-
-mocha@^10.0.0:
+mocha@10.2.0, mocha@^10.0.0:
   version "10.2.0"
   resolved "https://registry.yarnpkg.com/mocha/-/mocha-10.2.0.tgz#1fd4a7c32ba5ac372e03a17eef435bd00e5c68b8"
   integrity sha512-IDY7fl/BecMwFHzoqF2sg/SHHANeBoMMXFlS9r0OXKDssYE1M5O43wUY/9BVPeIvfH2zmEbBfseqN9gBQZzXkg==
@@ -8472,10 +8442,10 @@ solhint@^3.4.0:
   optionalDependencies:
     prettier "^2.8.3"
 
-solidity-coverage@^0.8.4:
-  version "0.8.4"
-  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.8.4.tgz#c57a21979f5e86859c5198de9fbae2d3bc6324a5"
-  integrity sha512-xeHOfBOjdMF6hWTbt42iH4x+7j1Atmrf5OldDPMxI+i/COdExUxszOswD9qqvcBTaLGiOrrpnh9UZjSpt4rBsg==
+solidity-coverage@^0.8.5:
+  version "0.8.5"
+  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.8.5.tgz#64071c3a0c06a0cecf9a7776c35f49edc961e875"
+  integrity sha512-6C6N6OV2O8FQA0FWA95FdzVH+L16HU94iFgg5wAFZ29UpLFkgNI/DRR2HotG1bC0F4gAc/OMs2BJI44Q/DYlKQ==
   dependencies:
     "@ethersproject/abi" "^5.0.9"
     "@solidity-parser/parser" "^0.16.0"
@@ -8489,7 +8459,7 @@ solidity-coverage@^0.8.4:
     globby "^10.0.1"
     jsonschema "^1.2.4"
     lodash "^4.17.15"
-    mocha "7.1.2"
+    mocha "10.2.0"
     node-emoji "^1.10.0"
     pify "^4.0.1"
     recursive-readdir "^2.2.2"

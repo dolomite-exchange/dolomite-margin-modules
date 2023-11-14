@@ -227,9 +227,10 @@ library AccountActionLib {
         uint256 _expiryTimeDelta
     ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
         if (_expiryTimeDelta == uint32(_expiryTimeDelta)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_expiryTimeDelta == uint32(_expiryTimeDelta),
+        Require.that(
+            _expiryTimeDelta == uint32(_expiryTimeDelta),
             _FILE,
-            "invalid expiry time"
+            "Invalid expiry time delta"
         );
 
         IExpiry.SetExpiryArg[] memory expiryArgs = new IExpiry.SetExpiryArg[](1);

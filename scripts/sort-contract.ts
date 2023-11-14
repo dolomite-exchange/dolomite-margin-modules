@@ -1,10 +1,10 @@
 import fs from 'fs';
-import { writeFile } from './deploy-utils';
+import { writeDeploymentFile } from './deploy-utils';
 
 async function main() {
   const fileBuffer = fs.readFileSync('./scripts/deployments.json');
   const file = JSON.parse(fileBuffer.toString());
-  writeFile(file);
+  writeDeploymentFile(file);
 }
 
 main()

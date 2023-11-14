@@ -79,5 +79,5 @@ interface IIsolationModeUnwrapperTrader is IDolomiteMarginExchangeWrapper {
     /**
      * @return  The number of actions used to unwrap the isolation mode token.
      */
-    function actionsLength() external pure returns (uint256);
+    function actionsLength() external view returns (uint256);
 }

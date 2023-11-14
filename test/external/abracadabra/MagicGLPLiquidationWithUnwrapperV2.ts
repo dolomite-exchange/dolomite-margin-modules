@@ -24,9 +24,7 @@ import {
 } from '../../utils/assertions';
 import { createMagicGLPUnwrapperTraderV2 } from '../../utils/ecosystem-token-utils/abracadabra';
 import { setExpiry } from '../../utils/expiry-utils';
-import {
-  liquidateV4WithLiquidityToken,
-} from '../../utils/liquidation-utils';
+import { liquidateV4WithLiquidityToken } from '../../utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
 import {
   checkForParaswapSuccess,

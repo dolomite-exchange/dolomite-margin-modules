@@ -93,13 +93,12 @@ export async function expectEvent(
   contractTransaction: ContractTransaction,
   eventName: string,
   args: object,
-) {
+): Promise<void> {
   const argsArray = Object.values(args);
   if (argsArray.length > 0) {
-    await expect(contractTransaction).to.emit(contract, eventName).withArgs(...argsArray);
-  } else {
-    await expect(contractTransaction).to.emit(contract, eventName);
+    return expect(contractTransaction).to.emit(contract, eventName).withArgs(...argsArray);
   }
+  return expect(contractTransaction).to.emit(contract, eventName);
 }
 
 export async function expectProtocolBalance(
@@ -115,7 +114,11 @@ export async function expectProtocolBalance(
   };
   const rawBalanceWei = await core.dolomiteMargin.getAccountWei(account, marketId);
   const balanceWei = rawBalanceWei.sign ? rawBalanceWei.value : rawBalanceWei.value.mul(-1);
-  expect(balanceWei).eq(amountWei);
+  expect(balanceWei)
+    .eq(
+      amountWei,
+      `Expected ${balanceWei.toString()} to equal ${amountWei.toString()} for ${accountOwner} ${accountNumber} ${marketId}`,
+    );
 }
 
 export async function expectProtocolBalanceDustyOrZero(
@@ -137,20 +140,32 @@ export async function expectProtocolBalanceDustyOrZero(
 
 export async function expectWalletBalance(
   accountOwner: { address: address } | address,
-  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber> },
+  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>, address: address },
   amount: BigNumberish,
 ) {
   const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
-  expect(await token.balanceOf(owner)).eq(amount);
+  const balance = await token.balanceOf(owner);
+  expect(balance)
+    .eq(
+      amount,
+      `Expected ${balance.toString()} to equal ${amount.toString()} for ${accountOwner} ${owner} ${token.address}`,
+    );
 }
 
 export async function expectWalletBalanceIsGreaterThan(
   accountOwner: { address: address } | address,
-  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber> },
+  token: { balanceOf(account: string, overrides?: CallOverrides): Promise<BigNumber>, address: address },
   amount: BigNumberish,
 ) {
   const owner = typeof accountOwner === 'object' ? accountOwner.address : accountOwner;
-  expect(await token.balanceOf(owner)).to.be.gt(amount);
+  const balance = await token.balanceOf(owner);
+  expect(balance)
+    .to
+    .be
+    .gt(
+      amount,
+      `Expected ${balance.toString()} to be gt ${amount.toString()} for ${accountOwner} ${owner} ${token.address}`,
+    );
 }
 
 export async function expectVaultBalanceToMatchAccountBalances(

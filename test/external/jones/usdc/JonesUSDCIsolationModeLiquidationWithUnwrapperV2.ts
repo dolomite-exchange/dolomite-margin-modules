@@ -16,11 +16,9 @@ import { AccountInfoStruct } from '../../../../src/utils';
 import { depositIntoDolomiteMargin } from '../../../../src/utils/dolomite-utils';
 import {
   BYTES_EMPTY,
-  LIQUIDATE_ALL,
   Network,
   NO_PARASWAP_TRADER_PARAM,
   ONE_BI,
-  SELL_ALL,
   ZERO_BI,
 } from '../../../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../../utils';
@@ -196,7 +194,6 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         solidAccountStruct,
         liquidAccountStruct,
         [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
         unwrapperForLiquidation,
       );
       const receipt = await txResult.wait();
@@ -298,7 +295,6 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
         solidAccountStruct,
         liquidAccountStruct,
         [underlyingMarketId, core.marketIds.usdc],
-        [SELL_ALL, LIQUIDATE_ALL],
         unwrapperForLiquidation,
         BYTES_EMPTY,
         NO_PARASWAP_TRADER_PARAM,

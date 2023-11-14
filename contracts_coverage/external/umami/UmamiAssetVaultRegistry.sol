@@ -72,7 +72,8 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
 
     function _ownerSetStorageViewer(address _storageViewer) internal {
         if (_storageViewer != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(_storageViewer != address(0),
+        Require.that(
+            _storageViewer != address(0),
             _FILE,
             "Invalid storageViewer address"
         );

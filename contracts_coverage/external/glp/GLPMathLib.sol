@@ -66,7 +66,8 @@ library GLPMathLib {
         uint256 _inputAmount
     ) internal view returns (uint256 usdgAmount) {
         if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(_inputAmount > 0,
+        Require.that(
+            _inputAmount > 0,
             _FILE,
             "Input amount must be gt than 0"
         );
