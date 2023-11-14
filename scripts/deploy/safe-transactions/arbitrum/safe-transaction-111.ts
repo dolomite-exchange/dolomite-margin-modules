@@ -1,4 +1,3 @@
-import path from 'path';
 import deployments from '../../../../scripts/deployments.json';
 import { OARB__factory, RewardsDistributor__factory } from '../../../../src/types';
 import { getRewardsDistributorConstructorParams } from '../../../../src/utils/constructors/liquidity-mining';

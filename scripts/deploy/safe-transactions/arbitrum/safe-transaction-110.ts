@@ -13,7 +13,8 @@ import {
   DenJsonUpload,
   deployContractAndSave,
   EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety, writeDeploymentFile, writeFile,
+  prettyPrintEncodedDataWithTypeSafety,
+  writeFile,
 } from '../../../deploy-utils';
 
 /**

@@ -1,6 +1,5 @@
 import { BigNumber } from 'ethers/lib/ethers';
 import { parseEther } from 'ethers/lib/utils';
-import path from 'path';
 import { LinearStepFunctionInterestSetter__factory, TWAPPriceOracle__factory } from '../../../../src/types';
 import { getOwnerAddMarketParameters } from '../../../../src/utils/constructors/dolomite';
 import { getTWAPPriceOracleConstructorParams } from '../../../../src/utils/constructors/oracles';
@@ -12,7 +11,9 @@ import {
   deployContractAndSave,
   deployLinearInterestSetterAndSave,
   InterestSetterType,
-  prettyPrintEncodedDataWithTypeSafety, prettyPrintEncodeInsertChainlinkOracle, writeFile,
+  prettyPrintEncodedDataWithTypeSafety,
+  prettyPrintEncodeInsertChainlinkOracle,
+  writeFile,
 } from '../../../deploy-utils';
 
 /**
