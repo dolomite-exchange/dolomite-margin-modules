@@ -1,5 +1,6 @@
 import { BigNumber } from 'ethers/lib/ethers';
 import { parseEther } from 'ethers/lib/utils';
+import path from 'path';
 import { LinearStepFunctionInterestSetter__factory, TWAPPriceOracle__factory } from '../../../../src/types';
 import { getOwnerAddMarketParameters } from '../../../../src/utils/constructors/dolomite';
 import { getTWAPPriceOracleConstructorParams } from '../../../../src/utils/constructors/oracles';
@@ -7,10 +8,11 @@ import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils
 import { ADDRESS_ZERO, Network } from '../../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../test/utils/setup';
 import {
+  createFolder,
   deployContractAndSave,
   deployLinearInterestSetterAndSave,
   InterestSetterType,
-  prettyPrintEncodedDataWithTypeSafety, prettyPrintEncodeInsertChainlinkOracle,
+  prettyPrintEncodedDataWithTypeSafety, prettyPrintEncodeInsertChainlinkOracle, writeFile,
 } from '../../../deploy-utils';
 
 /**
@@ -139,7 +141,14 @@ async function main() {
 }
 
 main()
-  .then(() => process.exit(0))
+  .then(jsonUpload => {
+    const path = require('path');
+    const scriptName = path.basename(__filename).slice(0, -3);
+    const dir = `${__dirname}/output`;
+    createFolder(dir);
+    writeFile(`${dir}/${scriptName}.json`, JSON.stringify(jsonUpload, null, 2));
+    process.exit(0);
+  })
   .catch((error) => {
     console.error(error);
     process.exit(1);

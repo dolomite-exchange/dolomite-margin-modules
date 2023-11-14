@@ -19,12 +19,11 @@
 
 pragma solidity ^0.8.9;
 
-import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { ERC721EnumerableUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol"; // solhint-disable-line max-line-length
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
@@ -50,8 +49,7 @@ contract VesterImplementation is
     ProxyContractHelpers,
     OnlyDolomiteMargin,
     ReentrancyGuard,
-    ERC721Enumerable,
-    Initializable,
+    ERC721EnumerableUpgradeable,
     IVester
 {
     using SafeERC20 for IERC20;
@@ -76,6 +74,7 @@ contract VesterImplementation is
     bytes32 private constant _FORCE_CLOSE_POSITION_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.forceClosePositionTax")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _EMERGENCY_WITHDRAW_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.emergencyWithdrawTax")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_VESTING_ACTIVE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isVestingActive")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _BASE_URI_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseURI")) - 1); // solhint-disable-line max-line-length
 
     // =========================================================
     // ==================== State Variables ====================
@@ -109,7 +108,7 @@ contract VesterImplementation is
         address _dolomiteRegistry,
         IWETH _weth,
         IERC20 _arb
-    ) OnlyDolomiteMargin(_dolomiteMargin) ERC721("Dolomite oARB Vesting", "voARB") {
+    ) OnlyDolomiteMargin(_dolomiteMargin) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
         WETH = _weth;
         WETH_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_weth));
@@ -118,13 +117,16 @@ contract VesterImplementation is
     }
 
     function initialize(
-        address _oARB
+        address _oARB,
+        string memory _baseUri
     ) external initializer {
         _ownerSetIsVestingActive(true);
         _ownerSetOARB(_oARB);
         _ownerSetClosePositionWindow(1 weeks);
         _ownerSetForceClosePositionTax(500); // 5%
         _ownerSetEmergencyWithdrawTax(0); // 0%
+        _ownerSetBaseURI(_baseUri);
+        __ERC721_init("Dolomite oARB Vesting", "voARB");
     }
 
     // ==================================================================
@@ -391,6 +393,14 @@ contract VesterImplementation is
         _ownerSetForceClosePositionTax(_forceClosePositionTax);
     }
 
+    function ownerSetBaseURI(
+        string memory _baseUri
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetBaseURI(_baseUri);
+    }
+
     // ==================================================================
     // ======================= View Functions ===========================
     // ==================================================================
@@ -421,6 +431,15 @@ contract VesterImplementation is
 
     function isVestingActive() public view returns (bool) {
         return _getUint256(_IS_VESTING_ACTIVE_SLOT) == 1;
+    }
+
+    function tokenURI(uint256 _tokenId) public view override returns (string memory) {
+        _requireMinted(_tokenId);
+        return baseURI();
+    }
+
+    function baseURI() public view returns (string memory) {
+        return _baseURI();
     }
 
     function vestingPositions(uint256 _id) public pure returns (VestingPosition memory) {
@@ -480,6 +499,17 @@ contract VesterImplementation is
         );
         _setUint256(_EMERGENCY_WITHDRAW_TAX_SLOT, _emergencyWithdrawTax);
         emit EmergencyWithdrawTaxSet(_emergencyWithdrawTax);
+    }
+
+    function _ownerSetBaseURI(string memory _baseUri) internal {
+        bytes32 slot = _BASE_URI_SLOT;
+        BaseUriStorage storage baseUriStorage;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            baseUriStorage.slot := slot
+        }
+        baseUriStorage.baseUri = _baseUri;
+        emit BaseURISet(_baseUri);
     }
 
     function _closePosition(VestingPosition memory _position) internal {
@@ -559,6 +589,16 @@ contract VesterImplementation is
 
     function _setNextId(uint256 _id) internal {
         _setUint256(_NEXT_ID_SLOT, _id);
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        bytes32 slot = _BASE_URI_SLOT;
+        BaseUriStorage storage baseUriStorage;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            baseUriStorage.slot := slot
+        }
+        return baseUriStorage.baseUri;
     }
 
     function _nextId() internal view returns (uint256) {

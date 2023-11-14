@@ -1,18 +1,26 @@
 import {
-  OARB, OARB__factory, RewardsDistributor, RewardsDistributor__factory,
+  OARB,
+  OARB__factory,
+  RewardsDistributor,
+  RewardsDistributor__factory,
   TestVesterImplementation,
   TestVesterImplementation__factory,
   VesterProxy,
   VesterProxy__factory,
 } from '../../../src/types';
 import {
-  getOARBConstructorParams, getRewardsDistributorConstructorParams,
+  getOARBConstructorParams,
+  getRewardsDistributorConstructorParams,
   getVesterImplementationConstructorParams,
 } from '../../../src/utils/constructors/liquidity-mining';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
 
-export async function createTestVesterProxy(core: CoreProtocol, oARB: OARB): Promise<TestVesterImplementation> {
+export async function createTestVesterProxy(
+  core: CoreProtocol,
+  oARB: OARB,
+  baseUri: string,
+): Promise<TestVesterImplementation> {
   const implementation = await createContractWithAbi<TestVesterImplementation>(
     TestVesterImplementation__factory.abi,
     TestVesterImplementation__factory.bytecode,
@@ -21,6 +29,7 @@ export async function createTestVesterProxy(core: CoreProtocol, oARB: OARB): Pro
 
   const calldata = await implementation.populateTransaction.initialize(
     oARB.address,
+    baseUri,
   );
 
   const vesterProxy = await createContractWithAbi<VesterProxy>(

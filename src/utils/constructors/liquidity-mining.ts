@@ -14,9 +14,11 @@ export async function getVesterProxyConstructorParams(
   core: CoreProtocol,
   vesterImplementation: VesterImplementation,
   oARB: OARB,
+  baseUri: string
 ): Promise<any[]> {
   const calldata = await vesterImplementation.populateTransaction.initialize(
     oARB.address,
+    baseUri,
   );
 
   return [vesterImplementation.address, core.dolomiteMargin.address, calldata.data!];

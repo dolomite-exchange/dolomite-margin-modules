@@ -27,6 +27,7 @@ const usdcAmount = BigNumber.from('100816979'); // Makes par value 100000000
 const ONE_WEEK = BigNumber.from('604800');
 const FORCE_CLOSE_POSITION_TAX = BigNumber.from('500');
 const EMERGENCY_WITHDRAW_TAX = BigNumber.from('0');
+const BASE_URI = 'oARB LIQUIDITY MINING RULEZ';
 
 const WETH_BALANCE = parseEther('10');
 
@@ -46,7 +47,7 @@ describe('Vester', () => {
 
     oARB = await createOARB(core);
 
-    vester = await createTestVesterProxy(core, oARB);
+    vester = await createTestVesterProxy(core, oARB, BASE_URI);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
@@ -90,11 +91,12 @@ describe('Vester', () => {
       expect(await vester.isVestingActive()).to.be.true;
       expect(await vester.forceClosePositionTax()).to.eq(FORCE_CLOSE_POSITION_TAX);
       expect(await vester.emergencyWithdrawTax()).to.eq(EMERGENCY_WITHDRAW_TAX);
+      expect(await vester.baseURI()).to.eq(BASE_URI);
     });
 
     it('should fail if already initialized', async () => {
       await expectThrow(
-        vester.connect(core.governance).initialize(ZERO_ADDRESS),
+        vester.connect(core.governance).initialize(ZERO_ADDRESS, 'hello there'),
         'Initializable: contract is already initialized',
       );
     });
@@ -854,25 +856,19 @@ describe('Vester', () => {
     });
   });
 
-  describe('#ownerSetForceClosePositionTax', () => {
+  describe('#ownerSetBaseURI', () => {
+    const baseURI = 'hello';
     it('should work normally', async () => {
-      const result = await vester.connect(core.governance).ownerSetForceClosePositionTax(100);
-      await expectEvent(vester, result, 'ForceClosePositionTaxSet', {
-        forceClosePositionTax: 100,
+      const result = await vester.connect(core.governance).ownerSetBaseURI(baseURI);
+      await expectEvent(vester, result, 'BaseURISet', {
+        baseURI,
       });
-      expect(await vester.forceClosePositionTax()).to.eq(100);
-    });
-
-    it('should fail if outside of range', async () => {
-      await expectThrow(
-        vester.connect(core.governance).ownerSetForceClosePositionTax(10_001),
-        'VesterImplementation: Invalid force close position tax',
-      );
+      expect(await vester.baseURI()).to.eq(baseURI);
     });
 
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
-        vester.connect(core.hhUser1).ownerSetForceClosePositionTax(100),
+        vester.connect(core.hhUser1).ownerSetBaseURI(baseURI),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });

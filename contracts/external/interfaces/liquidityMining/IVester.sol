@@ -44,6 +44,10 @@ interface IVester {
         uint256 amount;
     }
 
+    struct BaseUriStorage {
+        string baseUri;
+    }
+
     // ================================================
     // ==================== Events ====================
     // ================================================
@@ -60,6 +64,7 @@ interface IVester {
     event PromisedArbTokensSet(uint256 promisedArbTokensSet);
     event VestingPositionCreated(VestingPosition vestingPosition);
     event VestingPositionCleared(uint256 id);
+    event BaseURISet(string baseURI);
 
     // ======================================================
     // ================== Admin Functions ===================
@@ -117,6 +122,13 @@ interface IVester {
      */
     function ownerSetForceClosePositionTax(uint256 _forceClosePositionTax) external;
 
+    /**
+     * @notice  Sets the base URI for the NFT's metadata. Callable by Dolomite Margin owner
+     *
+     * @param  _baseUri The URI that will be used for getting the NFT's image
+     */
+    function ownerSetBaseURI(string memory _baseUri) external;
+
     // ======================================================
     // ================== User Functions ====================
     // ======================================================
@@ -125,8 +137,9 @@ interface IVester {
      * @notice  Initializes the oARB address
      *
      * @param  _oARB    oARB token address
+     * @param  _baseUri The URI that will be used for getting the NFT's image
      */
-    function initialize(address _oARB) external;
+    function initialize(address _oARB, string calldata _baseUri) external;
 
     /**
      * @notice  Transfers ARB and oARB from user's dolomite balance to the contract and begins vesting
@@ -208,6 +221,13 @@ interface IVester {
      * @return  True if vesting is active, false otherwise
      */
     function isVestingActive() external view returns (bool);
+
+    /**
+     * @dev Base URI for computing {tokenURI}. If set, the resulting URI for each
+     * token will be the concatenation of the `baseURI` and the `tokenId`. Empty
+     * by default, can be overridden in child contracts.
+     */
+    function baseURI() external view returns (string memory);
 
     /**
      *

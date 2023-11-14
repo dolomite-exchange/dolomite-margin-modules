@@ -47,4 +47,18 @@ interface IPartiallyDelayedMultiSig {
         bytes4 selector,
         bool approved
     ) external;
+
+    /**
+     * Allows an owner to submit and confirm a transaction.
+     *
+     * @param  destination  Transaction target address.
+     * @param  value        Transaction ether value.
+     * @param  data         Transaction data payload.
+     * @return              Transaction ID.
+     */
+    function submitTransaction(
+        address destination,
+        uint256 value,
+        bytes memory data
+    ) external returns (uint256);
 }

@@ -1,10 +1,16 @@
+import path from 'path';
 import deployments from '../../../../scripts/deployments.json';
 import { OARB__factory, RewardsDistributor__factory } from '../../../../src/types';
 import { getRewardsDistributorConstructorParams } from '../../../../src/utils/constructors/liquidity-mining';
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
 import { BYTES_ZERO, Network } from '../../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../test/utils/setup';
-import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../deploy-utils';
+import {
+  createFolder,
+  deployContractAndSave,
+  prettyPrintEncodedDataWithTypeSafety,
+  writeFile,
+} from '../../../deploy-utils';
 
 /**
  * This script encodes the following transactions:
@@ -39,7 +45,14 @@ async function main() {
 }
 
 main()
-  .then(() => process.exit(0))
+  .then(jsonUpload => {
+    const path = require('path');
+    const scriptName = path.basename(__filename).slice(0, -3);
+    const dir = `${__dirname}/output`;
+    createFolder(dir);
+    writeFile(`${dir}/${scriptName}.json`, JSON.stringify(jsonUpload, null, 2));
+    process.exit(0);
+  })
   .catch((error) => {
     console.error(error);
     process.exit(1);

@@ -1,14 +1,13 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { sleep } from '@openzeppelin/upgrades';
-import { BaseContract, BigNumber, BigNumberish, ethers, PopulatedTransaction } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish } from 'ethers';
 import { FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
 import { network, run } from 'hardhat';
 import { IChainlinkAggregator__factory, IERC20, IERC20Metadata__factory } from '../src/types';
 import { createContractWithName } from '../src/utils/dolomite-utils';
-import { ADDRESS_ZERO } from '../src/utils/no-deps-constants';
+import { ADDRESS_ZERO, ZERO_BI } from '../src/utils/no-deps-constants';
 import { CoreProtocol } from '../test/utils/setup';
-import * as deployments from './deployments.json';
 
 type ChainId = string;
 
@@ -70,7 +69,7 @@ export async function deployContractAndSave(
   };
 
   if (network.name !== 'hardhat') {
-    writeFile(file);
+    writeDeploymentFile(file);
   }
 
   await prettyPrintAndVerifyContract(file, chainId, usedContractName, args);
@@ -135,7 +134,7 @@ async function prettyPrintAndVerifyContract(
     await sleep(5000);
     await verifyContract(contract.address, [...args]);
     file[contractName][chainId].isVerified = true;
-    writeFile(file);
+    writeDeploymentFile(file);
   } else {
     console.log('Skipping Etherscan verification...');
   }
@@ -144,7 +143,7 @@ async function prettyPrintAndVerifyContract(
 let counter = 1;
 
 export async function prettyPrintEncodedData(
-  transactionPromise: Promise<PopulatedTransaction>,
+  transactionPromise: Promise<EncodedTransaction>,
   methodName: string,
 ): Promise<void> {
   const transaction = await transactionPromise;
@@ -232,6 +231,17 @@ function isChainlinkAggregatorParam(paramType: ParamType): boolean {
   return paramType.name.includes('chainlinkAggregator');
 }
 
+export interface EncodedTransaction {
+  to: string;
+  value: string;
+  data: string;
+}
+
+export interface DenJsonUpload {
+  chainId: string;
+  transactions: EncodedTransaction[];
+}
+
 export async function prettyPrintEncodedDataWithTypeSafety<
   T extends V[K],
   U extends keyof T['populateTransaction'],
@@ -243,7 +253,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   key: K,
   methodName: U,
   args: Parameters<T['populateTransaction'][U]>,
-): Promise<void> {
+): Promise<EncodedTransaction> {
   const contract = liveMap[key];
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
   const fragment = contract.interface.getFunction(methodName.toString());
@@ -257,6 +267,31 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   console.log('Data:\t\t', transaction.data);
   console.log('='.repeat(76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length));
   console.log(''); // add a new line
+
+  if (
+    typeof methodName === 'string'
+    && methodName.startsWith('owner')
+    && await core.dolomiteMargin.owner() === core.delayedMultiSig.address
+  ) {
+    // All owner ... functions must go to Dolomite governance first
+    const outerTransaction = await core.delayedMultiSig.populateTransaction.submitTransaction(
+      transaction.to!,
+      transaction.value ?? ZERO_BI,
+      transaction.data!,
+    );
+    return {
+      to: outerTransaction.to!,
+      value: outerTransaction.value?.toString() ?? '0',
+      data: outerTransaction.data!,
+    };
+  }
+
+  return {
+    to: transaction.to!,
+    value: transaction.value?.toString() ?? '0',
+    data: transaction.data!,
+  };
+
 }
 
 async function getReadableArg(core: CoreProtocol, inputParamType: ParamType, arg: any): Promise<string> {
@@ -307,8 +342,9 @@ async function getReadableArg(core: CoreProtocol, inputParamType: ParamType, arg
   let specialName: string = '';
   if (inputParamType.type === 'address') {
     const chainId = core.config.network;
-    Object.keys(deployments).forEach(key => {
-      if ((deployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
+    const freshDeployments = await import('./deployments.json');
+    Object.keys(freshDeployments).forEach(key => {
+      if ((freshDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
         specialName = ` (${key})`;
       }
     });
@@ -337,10 +373,30 @@ export async function prettyPrintEncodeInsertChainlinkOracle(
   );
 }
 
-export function writeFile(file: Record<string, Record<ChainId, any>>) {
+export const DEPLOYMENT_FILE_NAME = './scripts/deployments.json';
+
+export function writeDeploymentFile(
+  fileContent: Record<string, Record<ChainId, any>>,
+) {
+  writeFile(
+    DEPLOYMENT_FILE_NAME,
+    JSON.stringify(sortFile(fileContent), null, 2),
+  );
+}
+
+export function createFolder(dir: string) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+  }
+}
+
+export function writeFile(
+  fileName: string,
+  fileContent: string,
+) {
   fs.writeFileSync(
-    './scripts/deployments.json',
-    JSON.stringify(sortFile(file), null, 2),
+    fileName,
+    fileContent,
     { encoding: 'utf8', flag: 'w' },
   );
 }

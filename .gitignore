@@ -22,3 +22,5 @@ coverage/
 coverage_2/
 
 dist/
+
+output/

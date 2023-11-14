@@ -484,22 +484,22 @@
   },
   "VesterExploder": {
     "42161": {
-      "address": "0xC34C2FC2d1B6514fe9998D966Dc843748E7E503a",
-      "transaction": "0x6f3f5db8eaaf331dd02ae07717d1bdd07dca60fad67edc63dd100d1e38f2953b",
+      "address": "0x2c9052bB57898C3C2c6239F3d69567FC5962CB62",
+      "transaction": "0x19dfcd7612b6abe1f3e3c1de98354015cc7e263e262838b9bdc34cfc0da96a6c",
       "isVerified": true
     }
   },
   "VesterImplementationV1": {
     "42161": {
-      "address": "0xbf08A2Fdda494C2a27DF96385f957F2173C1BDDc",
-      "transaction": "0x87efb3118ad3e10af6eed7a4b989b22385820cca9a006dffafa0b4f3c7831147",
+      "address": "0xd086c37E84146F6A03baCaB54f80dB3B2691bA80",
+      "transaction": "0x1f8981538f847e6c966fb34276d984109879df1cd76e03344d5f8a8cc441be17",
       "isVerified": true
     }
   },
   "VesterProxy": {
     "42161": {
-      "address": "0xA8e31F2B9e4c91f41A19f82beDEFca86d8B2efcd",
-      "transaction": "0xa961d5942dfec4eb9992a1193537a6c7e594ac6f7fc62470cb7dfcdb893bb105",
+      "address": "0x531BC6E97b65adF8B3683240bd594932Cfb63797",
+      "transaction": "0xb120e987446a66ef0def072fb79c06df6ea5ea6872254e0377ec615716686d93",
       "isVerified": true
     }
   }
