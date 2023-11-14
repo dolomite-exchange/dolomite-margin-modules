@@ -57,7 +57,7 @@ contract PendlePtRETHIsolationModeTokenVaultV1 is
 
     function dolomiteRegistry()
         public
-        override(IsolationModeTokenVaultV1, IIsolationModeTokenVaultV1)
+        override
         view
         returns (IDolomiteRegistry)
     {
