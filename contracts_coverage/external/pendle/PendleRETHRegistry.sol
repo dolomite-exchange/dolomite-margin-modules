@@ -22,14 +22,12 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
-
-import { IPendleRETHRegistry } from "../interfaces/pendle/IPendleRETHRegistry.sol";
 import { IPendlePtMarket } from "../interfaces/pendle/IPendlePtMarket.sol";
 import { IPendlePtOracle } from "../interfaces/pendle/IPendlePtOracle.sol";
 import { IPendlePtToken } from "../interfaces/pendle/IPendlePtToken.sol";
+import { IPendleRETHRegistry } from "../interfaces/pendle/IPendleRETHRegistry.sol";
 import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IPendleSyToken } from "../interfaces/pendle/IPendleSyToken.sol";
-import { IPendleYtToken } from "../interfaces/pendle/IPendleYtToken.sol";
 
 
 /**

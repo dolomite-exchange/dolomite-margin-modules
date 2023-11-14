@@ -69,7 +69,6 @@ describe('PendlePtRETHIsolationModeVaultFactory', () => {
     });
   });
 
-  // @todo Double check allowable debt and collateral market ids
   describe('#allowableCollateralMarketIds', () => {
     it('should work normally', async () => {
       expect(await factory.allowableCollateralMarketIds()).to.deep.equal([]);

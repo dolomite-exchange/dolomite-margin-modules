@@ -22,18 +22,16 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
-
-import { IPendleWstETHRegistry } from "../interfaces/pendle/IPendleWstETHRegistry.sol";
 import { IPendlePtMarket } from "../interfaces/pendle/IPendlePtMarket.sol";
 import { IPendlePtOracle } from "../interfaces/pendle/IPendlePtOracle.sol";
 import { IPendlePtToken } from "../interfaces/pendle/IPendlePtToken.sol";
 import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IPendleSyToken } from "../interfaces/pendle/IPendleSyToken.sol";
-import { IPendleYtToken } from "../interfaces/pendle/IPendleYtToken.sol";
+import { IPendleWstETHRegistry } from "../interfaces/pendle/IPendleWstETHRegistry.sol";
 
 
 /**
- * @title   PendleWSTETHRegistry
+ * @title   PendleWstETHRegistry
  * @author  Dolomite
  *
  * @notice  Implementation for a registry that contains all of the Pendle-related addresses. This registry is needed
@@ -46,13 +44,13 @@ contract PendleWstETHRegistry is IPendleWstETHRegistry, BaseRegistry {
 
     bytes32 private constant _FILE = "PendleWstETHRegistry";
 
-    bytes32 private constant _PENDLE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendleRouter")) - 1);
-    bytes32 private constant _PENDLE_PT_WSTETH_2024_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2024Market")) - 1);
-    bytes32 private constant _PENDLE_PT_WSTETH_2024_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2024Token")) - 1);
-    bytes32 private constant _PENDLE_PT_WSTETH_2025_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2025Market")) - 1);
-    bytes32 private constant _PENDLE_PT_WSTETH_2025_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2025Token")) - 1);
-    bytes32 private constant _PENDLE_PT_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ptOracle")) - 1);
-    bytes32 private constant _PENDLE_SY_WSTETH_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.syWSTETHToken")) - 1);
+    bytes32 private constant _PENDLE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendleRouter")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _PENDLE_PT_WSTETH_2024_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2024Market")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _PENDLE_PT_WSTETH_2024_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2024Token")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _PENDLE_PT_WSTETH_2025_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2025Market")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _PENDLE_PT_WSTETH_2025_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2025Token")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _PENDLE_PT_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ptOracle")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _PENDLE_SY_WSTETH_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.syWSTETHToken")) - 1); // solhint-disable-line max-line-length
 
     // ==================== Initializer ====================
 

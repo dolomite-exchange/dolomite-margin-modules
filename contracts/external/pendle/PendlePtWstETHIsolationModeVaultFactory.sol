@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IPendlePtMarket } from "../interfaces/pendle/IPendlePtMarket.sol";
 import { IPendlePtWstETHIsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtWstETHIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleWstETHRegistry } from "../interfaces/pendle/IPendleWstETHRegistry.sol";
 import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
@@ -43,11 +44,13 @@ contract PendlePtWstETHIsolationModeVaultFactory is
     // ============ Field Variables ============
 
     IPendleWstETHRegistry public override pendleWstETHRegistry;
+    IPendlePtMarket public override pendlePtWstEthMarket;
 
     // ============ Constructor ============
 
     constructor(
         address _pendleWstETHRegistry,
+        address _ptWstEthMarket,
         address _ptWstEth, // this serves as the underlying token
         address _borrowPositionProxy,
         address _userVaultImplementation,
@@ -60,6 +63,7 @@ contract PendlePtWstETHIsolationModeVaultFactory is
         _dolomiteMargin
     ) {
         pendleWstETHRegistry = IPendleWstETHRegistry(_pendleWstETHRegistry);
+        pendlePtWstEthMarket = IPendlePtMarket(_ptWstEthMarket);
     }
 
     // ============ External Functions ============

@@ -31,7 +31,8 @@ describe('PendlePtWstETHIsolationModeVaultFactory', () => {
     factory = await createPendlePtWstETHIsolationModeVaultFactory(
       core,
       pendleRegistry,
-      core.pendleEcosystem!.ptGlpToken,
+      core.pendleEcosystem!.ptWstEth2024Market,
+      core.pendleEcosystem!.ptWstEth2024Token,
       vaultImplementation,
     );
 
@@ -45,7 +46,8 @@ describe('PendlePtWstETHIsolationModeVaultFactory', () => {
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
       expect(await factory.pendleWstETHRegistry()).to.equal(pendleRegistry.address);
-      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.pendleEcosystem!.ptGlpToken.address);
+      expect(await factory.pendlePtWstEthMarket()).to.equal(core.pendleEcosystem!.ptWstEth2024Market.address);
+      expect(await factory.UNDERLYING_TOKEN()).to.equal(core.pendleEcosystem!.ptWstEth2024Token.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
       expect(await factory.userVaultImplementation()).to.equal(vaultImplementation.address);
       expect(await factory.DOLOMITE_MARGIN()).to.equal(core.dolomiteMargin.address);
@@ -69,7 +71,6 @@ describe('PendlePtWstETHIsolationModeVaultFactory', () => {
     });
   });
 
-  // @todo Double check allowable debt and collateral market ids
   describe('#allowableCollateralMarketIds', () => {
     it('should work normally', async () => {
       expect(await factory.allowableCollateralMarketIds()).to.deep.equal([]);

@@ -3,6 +3,7 @@ import {
   IPendleGLPRegistry,
   IPendlePtGLP2024IsolationModeTokenVaultV1,
   IPendlePtGLP2024IsolationModeVaultFactory,
+  IPendlePtMarket,
   IPendlePtRETHIsolationModeTokenVaultV1,
   IPendlePtRETHIsolationModeVaultFactory,
   IPendlePtToken,
@@ -204,7 +205,8 @@ export function createPendlePtWstETHIsolationModeTokenVaultV1(): Promise<PendleP
 export function createPendlePtWstETHIsolationModeVaultFactory(
   core: CoreProtocol,
   registry: IPendleWstETHRegistry | PendleWstETHRegistry,
-  ptWstEthToken: IPendlePtToken,
+  underlyingPtMarket: IPendlePtMarket,
+  underlyingPtToken: IPendlePtToken,
   userVaultImplementation: IPendlePtWstETHIsolationModeTokenVaultV1 | PendlePtWstETHIsolationModeTokenVaultV1,
 ): Promise<PendlePtWstETHIsolationModeVaultFactory> {
   return createContractWithAbi(
@@ -213,7 +215,8 @@ export function createPendlePtWstETHIsolationModeVaultFactory(
     getPendlePtWstETHIsolationModeVaultFactoryConstructorParams(
       core,
       registry,
-      ptWstEthToken,
+      underlyingPtMarket,
+      underlyingPtToken,
       userVaultImplementation,
     ),
   );

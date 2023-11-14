@@ -25,10 +25,10 @@ import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
 
 
 /**
- * @title   IPendlePtWstETHIsolationModeVaultFactory
+ * @title   IPendlePtRETHIsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ptWstETH tokens.
+ * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for ptRETH tokens.
  */
 interface IPendlePtRETHIsolationModeVaultFactory is IIsolationModeVaultFactory {
 

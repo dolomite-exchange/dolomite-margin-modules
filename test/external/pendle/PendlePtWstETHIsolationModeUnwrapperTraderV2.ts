@@ -71,6 +71,7 @@ describe('PendlePtWstETHIsolationModeUnwrapperTraderV2', () => {
     factory = await createPendlePtWstETHIsolationModeVaultFactory(
       core,
       pendleRegistry,
+      core.pendleEcosystem!.ptWstEth2024Market,
       underlyingToken,
       userVaultImplementation,
     );

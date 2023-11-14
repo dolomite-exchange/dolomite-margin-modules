@@ -28,16 +28,16 @@ import { IPendlePtWstETHIsolationModeVaultFactory } from "../interfaces/pendle/I
 import { IPendleWstETHRegistry } from "../interfaces/pendle/IPendleWstETHRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
+// solhint-enable max-line-length
 
 
 /**
  * @title   PendlePtWstETHIsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the ptWstETH (June 2024 & June 2025 expiration)
- *          token that can be used to credit a user's Dolomite balance.
+ * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the ptWstETH
+ *  (June 2024 & June 2025 expiration) token that can be used to credit a user's Dolomite balance.
  */
-// solhint-enable max-line-length
 contract PendlePtWstETHIsolationModeTokenVaultV1 is
     IPendlePtWstETHIsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithPausable

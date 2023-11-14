@@ -20,13 +20,13 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendleRETHRegistry } from "../interfaces/pendle/IPendleRETHRegistry.sol";
 import { IPendlePtRETHIsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtRETHIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPendleRETHRegistry } from "../interfaces/pendle/IPendleRETHRegistry.sol";
 import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
 
 
 /**
- * @title   PendlePtGLP2024IsolationModeVaultFactory
+ * @title   PendlePtRETHIsolationModeVaultFactory
  * @author  Dolomite
  *
  * @notice  The wrapper around the ptRETH token that is used to create user vaults and manage the entry points that a

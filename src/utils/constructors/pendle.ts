@@ -23,6 +23,7 @@ import {
   IPendleRETHRegistry,
   PendlePtRETHIsolationModeVaultFactory,
   IPendlePtRETHIsolationModeVaultFactory,
+  IPendlePtMarket,
 } from '../../types';
 
 export function getPendlePtGLPPriceOracleConstructorParams(
@@ -207,7 +208,8 @@ export function getPendlePtRETHIsolationModeUnwrapperTraderV2ConstructorParams(
 export function getPendlePtWstETHIsolationModeVaultFactoryConstructorParams(
   core: CoreProtocol,
   registry: IPendleWstETHRegistry | PendleWstETHRegistry,
-  ptWstEthToken: IPendlePtToken,
+  underlyingPtMarket: IPendlePtMarket,
+  underlyingPtToken: IPendlePtToken,
   userVaultImplementation: IPendlePtWstETHIsolationModeTokenVaultV1 | PendlePtWstETHIsolationModeTokenVaultV1,
 ): any[] {
   if (!core.pendleEcosystem) {
@@ -216,7 +218,8 @@ export function getPendlePtWstETHIsolationModeVaultFactoryConstructorParams(
 
   return [
     registry.address,
-    ptWstEthToken.address,
+    underlyingPtMarket.address,
+    underlyingPtToken.address,
     core.borrowPositionProxyV2.address,
     userVaultImplementation.address,
     core.dolomiteMargin.address,

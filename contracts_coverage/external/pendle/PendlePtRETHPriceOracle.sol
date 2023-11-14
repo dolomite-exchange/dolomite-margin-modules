@@ -33,7 +33,7 @@ import { IPendleRETHRegistry } from "../interfaces/pendle/IPendleRETHRegistry.so
  * @title   PendlePtRETHPriceOracle
  * @author  Dolomite
  *
- * @notice  An implementation of the IDolomitePriceOracle interface that gets Pendle's ptGLP price in USD terms.
+ * @notice  An implementation of the IDolomitePriceOracle interface that gets Pendle's ptRETH price in USD terms.
  */
 contract PendlePtRETHPriceOracle is IDolomitePriceOracle {
 

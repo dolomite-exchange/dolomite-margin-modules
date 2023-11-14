@@ -20,21 +20,23 @@
 
 pragma solidity ^0.8.9;
 
+// solhint-disable max-line-length
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IPendlePtWstETHIsolationModeTokenVaultV1 } from "../interfaces/pendle/IPendlePtWstETHIsolationModeTokenVaultV1.sol";
+import { IPendlePtWstETHIsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtWstETHIsolationModeVaultFactory.sol";
 import { IPendleWstETHRegistry } from "../interfaces/pendle/IPendleWstETHRegistry.sol";
-import { IPendlePtWstETHIsolationModeTokenVaultV1 } from "../interfaces/pendle/IPendlePtWstETHIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IPendlePtWstETHIsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtWstETHIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
+// solhint-enable max-line-length
 
 
 /**
- * @title   PendlePtGLP2024IsolationModeTokenVaultV1
+ * @title   PendlePtWstETHIsolationModeTokenVaultV1
  * @author  Dolomite
  *
- * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the ptGLP (March 2024 expiration)
- *          token that can be used to credit a user's Dolomite balance.
+ * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the ptWstETH
+ *  (June 2024 & June 2025 expiration) token that can be used to credit a user's Dolomite balance.
  */
 contract PendlePtWstETHIsolationModeTokenVaultV1 is
     IPendlePtWstETHIsolationModeTokenVaultV1,

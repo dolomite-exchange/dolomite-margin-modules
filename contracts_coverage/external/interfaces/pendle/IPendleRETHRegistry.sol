@@ -25,7 +25,6 @@ import { IPendlePtOracle } from "./IPendlePtOracle.sol";
 import { IPendlePtToken } from "./IPendlePtToken.sol";
 import { IPendleRouter } from "./IPendleRouter.sol";
 import { IPendleSyToken } from "./IPendleSyToken.sol";
-import { IPendleYtToken } from "./IPendleYtToken.sol";
 import { IBaseRegistry } from "../IBaseRegistry.sol";
 
 
@@ -33,8 +32,8 @@ import { IBaseRegistry } from "../IBaseRegistry.sol";
  * @title   IPendleRETHRegistry
  * @author  Dolomite
  *
- * @notice  A registry contract for storing all of the addresses that can interact with the Pendle ecosystem for wstETH
- *          (June 2024 & June 2025).
+ * @notice  A registry contract for storing all of the addresses that can interact with the Pendle ecosystem for RETH
+ *          (June 2025).
  */
 interface IPendleRETHRegistry is IBaseRegistry {
     // ========================================================

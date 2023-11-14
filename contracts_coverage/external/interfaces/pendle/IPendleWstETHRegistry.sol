@@ -25,7 +25,6 @@ import { IPendlePtOracle } from "./IPendlePtOracle.sol";
 import { IPendlePtToken } from "./IPendlePtToken.sol";
 import { IPendleRouter } from "./IPendleRouter.sol";
 import { IPendleSyToken } from "./IPendleSyToken.sol";
-import { IPendleYtToken } from "./IPendleYtToken.sol";
 import { IBaseRegistry } from "../IBaseRegistry.sol";
 
 

@@ -24,6 +24,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IPendlePtToken } from "../interfaces/pendle/IPendlePtToken.sol";
+import { IPendlePtWstETHIsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtWstETHIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IPendleWstETHRegistry } from "../interfaces/pendle/IPendleWstETHRegistry.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
@@ -97,10 +98,11 @@ contract PendlePtWstETHIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperT
 
         // redeem ptWstETH for wstETH
         IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
-        PENDLE_REGISTRY.ptWstEth2024Token().safeApprove(address(pendleRouter), _inputAmount);
+        IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).safeApprove(address(pendleRouter), _inputAmount);
+
         (uint256 wstETHAmount,) = pendleRouter.swapExactPtForToken(
             /* _receiver */ address(this),
-            address(PENDLE_REGISTRY.ptWstEth2024Market()),
+            address(IPendlePtWstETHIsolationModeVaultFactory(address(VAULT_FACTORY)).pendlePtWstEthMarket()),
             _inputAmount,
             tokenOutput
         );

@@ -48,6 +48,7 @@ describe('PendlePtWstETHPriceOracle', () => {
     factory = await createPendlePtWstETHIsolationModeVaultFactory(
       core,
       pendleRegistry,
+      core.pendleEcosystem!.ptWstEth2024Market,
       core.pendleEcosystem!.ptWstEth2024Token,
       userVaultImplementation,
     );

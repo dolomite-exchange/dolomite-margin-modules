@@ -23,8 +23,8 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IPendleRETHRegistry } from "../interfaces/pendle/IPendleRETHRegistry.sol";
 import { IPendlePtToken } from "../interfaces/pendle/IPendlePtToken.sol";
+import { IPendleRETHRegistry } from "../interfaces/pendle/IPendleRETHRegistry.sol";
 import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
 
@@ -33,8 +33,7 @@ import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationMod
  * @title   PendlePtRETHIsolationModeUnwrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for unwrapping ptGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
- *          USDC).
+ * @notice  Used for unwrapping ptRETH (via swapping against the Pendle AMM)
  */
 contract PendlePtRETHIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
     using SafeERC20 for IERC20;
@@ -106,6 +105,7 @@ contract PendlePtRETHIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTra
             tokenOutput
         );
 
+        // @follow-up Is this check necessary?
         if (rETHAmount >= _minOutputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(rETHAmount >= _minOutputAmount,
             _FILE,

@@ -1,10 +1,8 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
-  IERC20,
   IPendlePtToken,
   IPendleSyToken__factory,
-  IPlutusVaultGLPFarm,
   PendlePtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeTokenVaultV1__factory,
   PendlePtWstETHIsolationModeTokenVaultV1,
@@ -43,8 +41,6 @@ describe('PendlePtWstETHIsolationModeTokenVaultV1', () => {
   let factory: PendlePtWstETHIsolationModeVaultFactory;
   let vault: PendlePtWstETHIsolationModeTokenVaultV1;
   let underlyingMarketId: BigNumber;
-  let rewardToken: IERC20;
-  let farm: IPlutusVaultGLPFarm;
 
   before(async () => {
     const blockNumber = 148_468_519;
@@ -54,14 +50,13 @@ describe('PendlePtWstETHIsolationModeTokenVaultV1', () => {
     });
 
     underlyingToken = core.pendleEcosystem!.ptWstEth2024Token.connect(core.hhUser1);
-    rewardToken = core.plutusEcosystem!.plsToken.connect(core.hhUser1);
-    farm = core.plutusEcosystem!.plvGlpFarm.connect(core.hhUser1);
     const userVaultImplementation = await createPendlePtWstETHIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleWstETHRegistry(core);
     factory = await createPendlePtWstETHIsolationModeVaultFactory(
       core,
       pendleRegistry,
-      underlyingToken,
+      core.pendleEcosystem!.ptWstEth2024Market,
+      core.pendleEcosystem!.ptWstEth2024Token,
       userVaultImplementation,
     );
     unwrapper = await createPendlePtWstETHIsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);

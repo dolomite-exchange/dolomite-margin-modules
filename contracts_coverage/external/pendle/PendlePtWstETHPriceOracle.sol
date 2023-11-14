@@ -23,9 +23,8 @@ pragma solidity ^0.8.9;
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-
 import { Require } from "../../protocol/lib/Require.sol";
-
+import { IPendlePtWstETHIsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtWstETHIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleWstETHRegistry } from "../interfaces/pendle/IPendleWstETHRegistry.sol";
 
 
@@ -33,7 +32,7 @@ import { IPendleWstETHRegistry } from "../interfaces/pendle/IPendleWstETHRegistr
  * @title   PendlePtWstETHPriceOracle
  * @author  Dolomite
  *
- * @notice  An implementation of the IDolomitePriceOracle interface that gets Pendle's ptGLP price in USD terms.
+ * @notice  An implementation of the IDolomitePriceOracle interface that gets Pendle's ptWstETH price in USD terms.
  */
 contract PendlePtWstETHPriceOracle is IDolomitePriceOracle {
 
@@ -66,8 +65,10 @@ contract PendlePtWstETHPriceOracle is IDolomitePriceOracle {
         (
             bool increaseCardinalityRequired,,
             bool oldestObservationSatisfied
-        ) = REGISTRY.ptOracle().getOracleState(address(REGISTRY.ptWstEth2024Market()), TWAP_DURATION);
-        // @follow-up Handle different markets
+        ) = REGISTRY.ptOracle().getOracleState(
+            address(IPendlePtWstETHIsolationModeVaultFactory(_dptWstEth).pendlePtWstEthMarket()),
+            TWAP_DURATION
+        );
 
         if (!increaseCardinalityRequired && oldestObservationSatisfied) { /* FOR COVERAGE TESTING */ }
         Require.that(!increaseCardinalityRequired && oldestObservationSatisfied,
@@ -103,8 +104,9 @@ contract PendlePtWstETHPriceOracle is IDolomitePriceOracle {
 
     function _getCurrentPrice() internal view returns (uint256) {
         uint256 wstEthPrice = DOLOMITE_MARGIN.getMarketPrice(WST_ETH_MARKET_ID).value;
-        // @follow-up How to handle different markets
-        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptWstEth2024Market()), TWAP_DURATION);
+        uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(
+            address(IPendlePtWstETHIsolationModeVaultFactory(DPT_WST_ETH).pendlePtWstEthMarket()), TWAP_DURATION
+        );
         return wstEthPrice * ptExchangeRate / PT_ASSET_SCALE;
     }
 }

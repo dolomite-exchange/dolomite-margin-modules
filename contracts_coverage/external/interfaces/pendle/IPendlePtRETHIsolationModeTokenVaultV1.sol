@@ -29,7 +29,7 @@ import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
  * @author  Dolomite
  *
  * @notice  Interface for a subclass of IsolationModeTokenVaultV1 that serves as the implementation for the user's proxy
- *          vault for ptGLP tokens.
+ *          vault for ptRETH tokens.
  */
 interface IPendlePtRETHIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1 {
 

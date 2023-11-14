@@ -27,12 +27,12 @@ import { IPendleRETHRegistry } from "../interfaces/pendle/IPendleRETHRegistry.so
 import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 
+
 /**
  * @title   PendlePtRETHIsolationModeWrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for wrapping ptGLP (via swapping against the Pendle AMM then redeeming the underlying GLP to
- *          USDC).
+ * @notice  Used for wrapping ptRETH (via swapping against the Pendle AMM)
  */
 contract PendlePtRETHIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     using SafeERC20 for IERC20;

@@ -23,9 +23,11 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Require } from "../../protocol/lib/Require.sol";
+import { IPendlePtWstETHIsolationModeVaultFactory } from "../interfaces/pendle/IPendlePtWstETHIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleRouter } from "../interfaces/pendle/IPendleRouter.sol";
 import { IPendleWstETHRegistry } from "../interfaces/pendle/IPendleWstETHRegistry.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
+
 
 /**
  * @title   PendlePtWstETHIsolationModeWrapperTraderV2
@@ -97,7 +99,7 @@ contract PendlePtWstETHIsolationModeWrapperTraderV2 is IsolationModeWrapperTrade
         WST_ETH.safeApprove(address(pendleRouter), _inputAmount);
         (uint256 ptWstEthAmount,) = pendleRouter.swapExactTokenForPt(
             /* _receiver = */ address(this),
-            address(PENDLE_REGISTRY.ptWstEth2024Market()),
+            address(IPendlePtWstETHIsolationModeVaultFactory(address(VAULT_FACTORY)).pendlePtWstEthMarket()),
             _minOutputAmount,
             guessPtOut,
             tokenInput

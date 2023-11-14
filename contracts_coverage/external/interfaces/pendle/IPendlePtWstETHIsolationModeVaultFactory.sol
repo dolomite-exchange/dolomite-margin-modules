@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IPendlePtMarket } from "./IPendlePtMarket.sol";
 import { IPendleWstETHRegistry } from "./IPendleWstETHRegistry.sol";
 import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
 
@@ -45,4 +46,6 @@ interface IPendlePtWstETHIsolationModeVaultFactory is IIsolationModeVaultFactory
     function ownerSetPendleWstETHRegistry(address _pendleWstETHRegistry) external;
 
     function pendleWstETHRegistry() external view returns (IPendleWstETHRegistry);
+
+    function pendlePtWstEthMarket() external view returns (IPendlePtMarket);
 }
