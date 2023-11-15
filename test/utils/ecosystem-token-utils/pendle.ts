@@ -84,8 +84,9 @@ import {
   getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendleYtGLPPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/pendle';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../dolomite';
 
 export async function createPendleGLPRegistry(core: CoreProtocol): Promise<PendleGLPRegistry> {
   const implementation = await createContractWithAbi<PendleGLPRegistry>(
@@ -132,10 +133,11 @@ export async function createPendleRETHRegistry(core: CoreProtocol): Promise<Pend
   return PendleRETHRegistry__factory.connect(registry.address, core.hhUser1);
 }
 
-export function createPendlePtRETHIsolationModeTokenVaultV1(): Promise<PendlePtRETHIsolationModeTokenVaultV1> {
-  return createContractWithAbi(
-    PendlePtRETHIsolationModeTokenVaultV1__factory.abi,
-    PendlePtRETHIsolationModeTokenVaultV1__factory.bytecode,
+export async function createPendlePtRETHIsolationModeTokenVaultV1(): Promise<PendlePtRETHIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<PendlePtRETHIsolationModeTokenVaultV1>(
+    'PendlePtRETHIsolationModeTokenVaultV1',
+    { ...libraries},
     [],
   );
 }
@@ -194,10 +196,11 @@ export function createPendlePtRETHPriceOracle(
   );
 }
 
-export function createPendlePtWstETHIsolationModeTokenVaultV1(): Promise<PendlePtWstETHIsolationModeTokenVaultV1> {
-  return createContractWithAbi(
-    PendlePtWstETHIsolationModeTokenVaultV1__factory.abi,
-    PendlePtWstETHIsolationModeTokenVaultV1__factory.bytecode,
+export async function createPendlePtWstETHIsolationModeTokenVaultV1(): Promise<PendlePtWstETHIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<PendlePtWstETHIsolationModeTokenVaultV1>(
+    'PendlePtWstETHIsolationModeTokenVaultV1',
+    { ...libraries},
     [],
   );
 }

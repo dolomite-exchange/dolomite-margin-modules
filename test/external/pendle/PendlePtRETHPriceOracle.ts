@@ -19,8 +19,9 @@ import {
   createPendleRETHRegistry,
 } from '../../utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
-const PT_RETH_PRICE = BigNumber.from('1968646855458458050647'); //
+const PT_RETH_PRICE = BigNumber.from('1968646858895243740410'); //
 
 describe('PendlePtRETHPriceOracle', () => {
   let snapshotId: string;
@@ -102,6 +103,7 @@ describe('PendlePtRETHPriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for dptRETH', async () => {
+      await setNextBlockTimestamp(1700000000);
       const price = await ptRETHOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_RETH_PRICE);
     });

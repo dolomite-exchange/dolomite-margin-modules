@@ -41,10 +41,6 @@ interface IPendleWstETHRegistry is IBaseRegistry {
     // ========================================================
 
     event PendleRouterSet(address indexed _pendleRouter);
-    event PtWstEth2024MarketSet(address indexed _ptWstEth2024Market);
-    event PtWstEth2024TokenSet(address indexed _ptWstEth2024Token);
-    event PtWstEth2025MarketSet(address indexed _ptWstEth2025Market);
-    event PtWstEth2025TokenSet(address indexed _ptWstEth2025Token);
     event PtOracleSet(address indexed _ptOracle);
     event SyWstEthTokenSet(address indexed _syWstEthToken);
 
@@ -53,14 +49,6 @@ interface IPendleWstETHRegistry is IBaseRegistry {
     // ========================================================
 
     function ownerSetPendleRouter(address _pendleRouter) external;
-
-    function ownerSetPtWstEth2024Market(address _ptWstEth2024Market) external;
-
-    function ownerSetPtWstEth2024Token(address _ptWstEth2024Token) external;
-
-    function ownerSetPtWstEth2025Market(address _ptWstEth2025Market) external;
-
-    function ownerSetPtWstEth2025Token(address _ptWstEth2025Token) external;
 
     function ownerSetPtOracle(address _ptOracle) external;
 
@@ -71,12 +59,6 @@ interface IPendleWstETHRegistry is IBaseRegistry {
     // ========================================================
 
     function pendleRouter() external view returns (IPendleRouter);
-
-    function ptWstEth2024Market() external view returns (IPendlePtMarket);
-
-    function ptWstEth2024Token() external view returns (IPendlePtToken);
-
-    function ptWstEth2025Token() external view returns (IPendlePtToken);
 
     function ptOracle() external view returns (IPendlePtOracle);
 

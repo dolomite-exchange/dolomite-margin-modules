@@ -95,10 +95,6 @@ export async function getPendleWstETHRegistryConstructorParams(
 
   const calldata = await implementation.populateTransaction.initialize(
     core.pendleEcosystem!.pendleRouter.address,
-    core.pendleEcosystem!.ptWstEth2024Market.address,
-    core.pendleEcosystem!.ptWstEth2024Token.address,
-    core.pendleEcosystem!.ptWstEth2025Market.address,
-    core.pendleEcosystem!.ptWstEth2025Token.address,
     core.pendleEcosystem!.ptOracle.address,
     core.pendleEcosystem!.syWstEthToken.address,
     core.dolomiteRegistry.address

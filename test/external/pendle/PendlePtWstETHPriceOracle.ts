@@ -10,7 +10,7 @@ import {
 } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, increaseToTimestamp, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
   createPendlePtWstETHIsolationModeTokenVaultV1,
@@ -18,14 +18,15 @@ import {
   createPendleWstETHPriceOracle,
   createPendleWstETHRegistry,
 } from '../../utils/ecosystem-token-utils/pendle';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
 /**
  * This is the expected price at the following timestamp: 1700000000
  *
  * Keep in mind that Pendle's prices tick upward each second.
  */
-const PT_WST_ETH_PRICE = BigNumber.from('2116436798535440687058'); // $0.915069158541073688
+const PT_WST_ETH_PRICE = BigNumber.from('2116436801030652594370');
 
 describe('PendlePtWstETHPriceOracle', () => {
   let snapshotId: string;
@@ -108,6 +109,7 @@ describe('PendlePtWstETHPriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for dptWstEth', async () => {
+      await setNextBlockTimestamp(1700000000);
       const price = await ptWstETHOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_WST_ETH_PRICE);
     });

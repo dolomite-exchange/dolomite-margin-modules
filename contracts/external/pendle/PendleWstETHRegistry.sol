@@ -45,10 +45,6 @@ contract PendleWstETHRegistry is IPendleWstETHRegistry, BaseRegistry {
     bytes32 private constant _FILE = "PendleWstETHRegistry";
 
     bytes32 private constant _PENDLE_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.pendleRouter")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _PENDLE_PT_WSTETH_2024_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2024Market")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _PENDLE_PT_WSTETH_2024_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2024Token")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _PENDLE_PT_WSTETH_2025_MARKET_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2025Market")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _PENDLE_PT_WSTETH_2025_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.wstETH2025Token")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _PENDLE_PT_ORACLE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.ptOracle")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _PENDLE_SY_WSTETH_TOKEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.syWSTETHToken")) - 1); // solhint-disable-line max-line-length
 
@@ -56,19 +52,11 @@ contract PendleWstETHRegistry is IPendleWstETHRegistry, BaseRegistry {
 
     function initialize(
         address _pendleRouter,
-        address _ptWstEth2024Market,
-        address _ptWstEth2024Token,
-        address _ptWstEth2025Market,
-        address _ptWstEth2025Token,
         address _ptOracle,
         address _syWstEthToken,
         address _dolomiteRegistry
     ) external initializer {
         _ownerSetPendleRouter(_pendleRouter);
-        _ownerSetPtWstEth2024Market(_ptWstEth2024Market);
-        _ownerSetPtWstEth2024Token(_ptWstEth2024Token);
-        _ownerSetPtWstEth2025Market(_ptWstEth2025Market);
-        _ownerSetPtWstEth2025Token(_ptWstEth2025Token);
         _ownerSetPtOracle(_ptOracle);
         _ownerSetSyWstEthToken(_syWstEthToken);
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
@@ -82,38 +70,6 @@ contract PendleWstETHRegistry is IPendleWstETHRegistry, BaseRegistry {
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetPendleRouter(_pendleRouter);
-    }
-
-    function ownerSetPtWstEth2024Market(
-        address _ptWstEth2024Market
-    ) 
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetPtWstEth2024Market(_ptWstEth2024Market);
-    }
-
-    function ownerSetPtWstEth2024Token(
-        address _ptWstEth2024Token
-    ) 
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetPtWstEth2024Token(_ptWstEth2024Token);
-    }
-
-    function ownerSetPtWstEth2025Market(
-        address _ptWstEth2025Market
-    ) 
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetPtWstEth2025Market(_ptWstEth2025Market);
-    }
-
-    function ownerSetPtWstEth2025Token(
-        address _ptWstEth2025Token
-    ) 
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetPtWstEth2025Token(_ptWstEth2025Token);
     }
 
     function ownerSetPtOracle(
@@ -138,22 +94,6 @@ contract PendleWstETHRegistry is IPendleWstETHRegistry, BaseRegistry {
         return IPendleRouter(_getAddress(_PENDLE_ROUTER_SLOT));
     }
 
-    function ptWstEth2024Market() external view returns (IPendlePtMarket) {
-        return IPendlePtMarket(_getAddress(_PENDLE_PT_WSTETH_2024_MARKET_SLOT));
-    }
-
-    function ptWstEth2024Token() external view returns (IPendlePtToken) {
-        return IPendlePtToken(_getAddress(_PENDLE_PT_WSTETH_2024_TOKEN_SLOT));
-    }
-
-    function ptWstEth2025Market() external view returns (IPendlePtMarket) {
-        return IPendlePtMarket(_getAddress(_PENDLE_PT_WSTETH_2025_MARKET_SLOT));
-    }
-
-    function ptWstEth2025Token() external view returns (IPendlePtToken) {
-        return IPendlePtToken(_getAddress(_PENDLE_PT_WSTETH_2025_TOKEN_SLOT));
-    }
-
     function ptOracle() external view returns (IPendlePtOracle) {
         return IPendlePtOracle(_getAddress(_PENDLE_PT_ORACLE_SLOT));
     }
@@ -174,46 +114,6 @@ contract PendleWstETHRegistry is IPendleWstETHRegistry, BaseRegistry {
         );
         _setAddress(_PENDLE_ROUTER_SLOT, _pendleRouter);
         emit PendleRouterSet(_pendleRouter);
-    }
-
-    function _ownerSetPtWstEth2024Market(address _ptWstEth2024Market) internal {
-        Require.that(
-            _ptWstEth2024Market != address(0),
-            _FILE,
-            "Invalid ptWstEthMarket address"
-        );
-        _setAddress(_PENDLE_PT_WSTETH_2024_MARKET_SLOT, _ptWstEth2024Market);
-        emit PtWstEth2024MarketSet(_ptWstEth2024Market);
-    }
-
-    function _ownerSetPtWstEth2024Token(address _ptWstEth2024Token) internal {
-        Require.that(
-            _ptWstEth2024Token != address(0),
-            _FILE,
-            "Invalid ptWstEthToken address"
-        );
-        _setAddress(_PENDLE_PT_WSTETH_2024_TOKEN_SLOT, _ptWstEth2024Token);
-        emit PtWstEth2024TokenSet(_ptWstEth2024Token);
-    }
-
-    function _ownerSetPtWstEth2025Market(address _ptWstEth2025Market) internal {
-        Require.that(
-            _ptWstEth2025Market != address(0),
-            _FILE,
-            "Invalid ptWstEthMarket address"
-        );
-        _setAddress(_PENDLE_PT_WSTETH_2025_MARKET_SLOT, _ptWstEth2025Market);
-        emit PtWstEth2025MarketSet(_ptWstEth2025Market);
-    }
-
-    function _ownerSetPtWstEth2025Token(address _ptWstEth2025Token) internal {
-        Require.that(
-            _ptWstEth2025Token != address(0),
-            _FILE,
-            "Invalid ptWstEthToken address"
-        );
-        _setAddress(_PENDLE_PT_WSTETH_2025_TOKEN_SLOT, _ptWstEth2025Token);
-        emit PtWstEth2025TokenSet(_ptWstEth2025Token);
     }
 
     function _ownerSetPtOracle(address _ptOracle) internal {

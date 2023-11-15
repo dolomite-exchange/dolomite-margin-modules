@@ -29,10 +29,6 @@ describe('PendleWstETHRegistry', () => {
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
       expect(await registry.pendleRouter()).to.equal(core.pendleEcosystem!.pendleRouter.address);
-      expect(await registry.ptWstEth2024Market()).to.equal(core.pendleEcosystem!.ptWstEth2024Market.address);
-      expect(await registry.ptWstEth2024Token()).to.equal(core.pendleEcosystem!.ptWstEth2024Token.address);
-      expect(await registry.ptWstEth2025Market()).to.equal(core.pendleEcosystem!.ptWstEth2025Market.address);
-      expect(await registry.ptWstEth2025Token()).to.equal(core.pendleEcosystem!.ptWstEth2025Token.address);
       expect(await registry.ptOracle()).to.equal(core.pendleEcosystem!.ptOracle.address);
       expect(await registry.syWstEthToken()).to.equal(core.pendleEcosystem!.syWstEthToken.address);
       expect(await registry.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
@@ -42,10 +38,6 @@ describe('PendleWstETHRegistry', () => {
       await expectThrow(
         registry.initialize(
           core.pendleEcosystem!.pendleRouter.address,
-          core.pendleEcosystem!.ptWstEth2024Market.address,
-          core.pendleEcosystem!.ptWstEth2024Token.address,
-          core.pendleEcosystem!.ptWstEth2025Market.address,
-          core.pendleEcosystem!.ptWstEth2025Token.address,
           core.pendleEcosystem!.ptOracle.address,
           core.pendleEcosystem!.syWstEthToken.address,
           core.dolomiteRegistry.address
@@ -75,102 +67,6 @@ describe('PendleWstETHRegistry', () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetPendleRouter(ZERO_ADDRESS),
         'PendleWstETHRegistry: Invalid pendleRouter address',
-      );
-    });
-  });
-
-  describe('#ownerSetPtWstEth2024Market', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetPtWstEth2024Market(OTHER_ADDRESS);
-      await expectEvent(registry, result, 'PtWstEth2024MarketSet', {
-        ptWstEth2024Market: OTHER_ADDRESS,
-      });
-      expect(await registry.ptWstEth2024Market()).to.equal(OTHER_ADDRESS);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetPtWstEth2024Market(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetPtWstEth2024Market(ZERO_ADDRESS),
-        'PendleWstETHRegistry: Invalid ptWstEthMarket address',
-      );
-    });
-  });
-
-  describe('#ownerSetPtWstEth2024Token', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetPtWstEth2024Token(OTHER_ADDRESS);
-      await expectEvent(registry, result, 'PtWstEth2024TokenSet', {
-        ptWstEth2024Token: OTHER_ADDRESS,
-      });
-      expect(await registry.ptWstEth2024Token()).to.equal(OTHER_ADDRESS);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetPtWstEth2024Token(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetPtWstEth2024Token(ZERO_ADDRESS),
-        'PendleWstETHRegistry: Invalid ptWstEthToken address',
-      );
-    });
-  });
-
-  describe('#ownerSetPtWstEth2025Market', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetPtWstEth2025Market(OTHER_ADDRESS);
-      await expectEvent(registry, result, 'PtWstEth2025MarketSet', {
-        ptWstEth2025Market: OTHER_ADDRESS,
-      });
-      expect(await registry.ptWstEth2025Market()).to.equal(OTHER_ADDRESS);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetPtWstEth2025Market(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetPtWstEth2025Market(ZERO_ADDRESS),
-        'PendleWstETHRegistry: Invalid ptWstEthMarket address',
-      );
-    });
-  });
-
-  describe('#ownerSetPtWstEth2025Token', () => {
-    it('should work normally', async () => {
-      const result = await registry.connect(core.governance).ownerSetPtWstEth2025Token(OTHER_ADDRESS);
-      await expectEvent(registry, result, 'PtWstEth2025TokenSet', {
-        ptWstEth2025Token: OTHER_ADDRESS,
-      });
-      expect(await registry.ptWstEth2025Token()).to.equal(OTHER_ADDRESS);
-    });
-
-    it('should fail when not called by owner', async () => {
-      await expectThrow(
-        registry.connect(core.hhUser1).ownerSetPtWstEth2025Token(OTHER_ADDRESS),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if zero address is set', async () => {
-      await expectThrow(
-        registry.connect(core.governance).ownerSetPtWstEth2025Token(ZERO_ADDRESS),
-        'PendleWstETHRegistry: Invalid ptWstEthToken address',
       );
     });
   });
