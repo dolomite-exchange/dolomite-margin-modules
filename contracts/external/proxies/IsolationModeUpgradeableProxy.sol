@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 
@@ -85,6 +86,7 @@ contract IsolationModeUpgradeableProxy is
             "Invalid account",
             _account
         );
+        _safeDelegateCall(implementation(), abi.encodePacked(IIsolationModeTokenVaultV1.initialize.selector));
         _setUint256(_IS_INITIALIZED_SLOT, 1);
         _setAddress(_OWNER_SLOT, _account);
     }
@@ -103,5 +105,13 @@ contract IsolationModeUpgradeableProxy is
 
     function owner() public override view returns (address) {
         return _getAddress(_OWNER_SLOT);
+    }
+
+    function _safeDelegateCall(address _target, bytes memory _calldata) internal returns (bytes memory) {
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool isSuccessful, bytes memory result) = _target.delegatecall(_calldata);
+        assert(isSuccessful);
+
+        return result;
     }
 }
