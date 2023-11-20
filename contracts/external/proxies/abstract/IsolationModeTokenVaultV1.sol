@@ -51,14 +51,14 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     bytes32 private constant _FILE = "IsolationModeTokenVaultV1";
     bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
-    uint256 private constant _NOT_ENTERED = 1;
-    uint256 private constant _ENTERED = 2;
+    uint256 internal constant _NOT_ENTERED = 1;
+    uint256 internal constant _ENTERED = 2;
 
     // =================================================
     // ================ Field Variables ================
     // =================================================
 
-    uint256 private _reentrancyGuard;
+    uint256 internal _reentrancyGuard;
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -110,7 +110,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     // ==================== Functions ====================
     // ===================================================
 
-    function initialize() external {
+    function initialize() external virtual {
         Require.that(
             _reentrancyGuard == 0,
             _FILE,

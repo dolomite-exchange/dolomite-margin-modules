@@ -24,6 +24,8 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGLPManager } from "./IGLPManager.sol";
 import { IGLPRewardsRouterV2 } from "./IGLPRewardsRouterV2.sol";
+import { IGLPIsolationModeVaultFactory } from "./IGLPIsolationModeVaultFactory.sol";
+import { IGMXIsolationModeVaultFactory } from "./IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./IGmxRewardRouterV2.sol";
 import { IGmxVault } from "./IGmxVault.sol";
@@ -47,9 +49,11 @@ interface IGmxRegistryV1 is IBaseRegistry {
     event GlpSet(address _glp);
     event GlpManagerSet(address _glpManager);
     event GlpRewardsRouterSet(address _glpRewardsRouter);
+    event GlpVaultFactorySet(address _glpVaultFactory);
     event GmxSet(address _gmx);
     event GmxRewardsRouterSet(address _gmxRewardsRouter);
-    event GmxVaultSet(address _gmxVaultSet);
+    event GmxVaultSet(address _gmxVault);
+    event GmxVaultFactorySet(address _gmxVaultFactory);
     event SGlpSet(address _sGlp);
     event SGmxSet(address _sGmx);
     event SbfGmxSet(address _sbfGmx);
@@ -70,11 +74,15 @@ interface IGmxRegistryV1 is IBaseRegistry {
 
     function ownerSetGlpRewardsRouter(address _glpRewardsRouter) external;
 
+    function ownerSetGlpVaultFactory(address _glpVaultFactory) external;
+
     function ownerSetGmx(address _gmx) external;
 
     function ownerSetGmxRewardsRouter(address _gmxRewardsRouter) external;
 
     function ownerSetGmxVault(address _gmxVault) external;
+
+    function ownerSetGmxVaultFactory(address _gmxVaultFactory) external;
 
     function ownerSetSGlp(address _sGlp) external;
 
@@ -96,11 +104,15 @@ interface IGmxRegistryV1 is IBaseRegistry {
 
     function glpRewardsRouter() external view returns (IGLPRewardsRouterV2);
 
+    function glpVaultFactory() external view returns (IGLPIsolationModeVaultFactory);
+
     function gmx() external view returns (IERC20);
 
     function gmxRewardsRouter() external view returns (IGmxRewardRouterV2);
 
     function gmxVault() external view returns (IGmxVault);
+
+    function gmxVaultFactory() external view returns (IGMXIsolationModeVaultFactory);
 
     function sGlp() external view returns (address);
 

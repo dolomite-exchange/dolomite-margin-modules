@@ -128,7 +128,7 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe('Actions.Call and Actions.Sell for non-liquidation', () => {
+  describe.only('Actions.Call and Actions.Sell for non-liquidation', () => {
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;

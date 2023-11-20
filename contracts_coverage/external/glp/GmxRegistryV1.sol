@@ -25,6 +25,8 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { BaseRegistry } from "../general/BaseRegistry.sol";
 import { IGLPManager } from "../interfaces/gmx/IGLPManager.sol";
 import { IGLPRewardsRouterV2 } from "../interfaces/gmx/IGLPRewardsRouterV2.sol";
+import { IGLPIsolationModeVaultFactory } from "../interfaces/gmx/IGLPIsolationModeVaultFactory.sol";
+import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "../interfaces/gmx/IGmxRewardRouterV2.sol";
 import { IGmxVault } from "../interfaces/gmx/IGmxVault.sol";
@@ -68,9 +70,11 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     bytes32 private constant _GLP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glp")) - 1);
     bytes32 private constant _GLP_MANAGER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glpManager")) - 1);
     bytes32 private constant _GLP_REWARDS_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glpRewardsRouter")) - 1);
+    bytes32 private constant _GLP_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glpVaultFactory")) - 1);
     bytes32 private constant _GMX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmx")) - 1);
     bytes32 private constant _GMX_REWARDS_ROUTER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxRewardsRouter")) - 1);
     bytes32 private constant _GMX_VAULT_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxVault")) - 1);
+    bytes32 private constant _GMX_VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.gmxVaultFactory")) - 1);
     bytes32 private constant _S_GLP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.sGlp")) - 1);
     bytes32 private constant _S_GMX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.sGmx")) - 1);
     bytes32 private constant _SBF_GMX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.sbfGmx")) - 1);
@@ -123,6 +127,10 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         _ownerSetGlpRewardsRouter(_glpRewardsRouter);
     }
 
+    function ownerSetGlpVaultFactory(address _glpVaultFactory) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetGlpVaultFactory(_glpVaultFactory);
+    }
+
     function ownerSetGmx(address _gmx) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetGmx(_gmx);
     }
@@ -133,6 +141,10 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
 
     function ownerSetGmxVault(address _gmxVault) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetGmxVault(_gmxVault);
+    }
+
+    function ownerSetGmxVaultFactory(address _gmxVaultFactory) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetGmxVaultFactory(_gmxVaultFactory);
     }
 
     function ownerSetSGlp(address _sGlp) external override onlyDolomiteMarginOwner(msg.sender) {
@@ -175,6 +187,10 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         return IGLPRewardsRouterV2(_getAddress(_GLP_REWARDS_ROUTER_SLOT));
     }
 
+    function glpVaultFactory() external view returns (IGLPIsolationModeVaultFactory) {
+        return IGLPIsolationModeVaultFactory(_getAddress(_GLP_VAULT_FACTORY_SLOT));
+    }
+
     function gmx() external view returns (IERC20) {
         return IERC20(_getAddress(_GMX_SLOT));
     }
@@ -185,6 +201,10 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
 
     function gmxVault() external view returns (IGmxVault) {
         return IGmxVault(_getAddress(_GMX_VAULT_SLOT));
+    }
+
+    function gmxVaultFactory() external view returns (IGMXIsolationModeVaultFactory) {
+        return IGMXIsolationModeVaultFactory(_getAddress(_GMX_VAULT_FACTORY_SLOT));
     }
 
     function sGlp() external view returns (address) {
@@ -264,6 +284,17 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         emit GlpRewardsRouterSet(_glpRewardsRouter);
     }
 
+    function _ownerSetGlpVaultFactory(address _glpVaultFactory) internal {
+        if (_glpVaultFactory != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _glpVaultFactory != address(0),
+            _FILE,
+            "Invalid glpVaultFactory address"
+        );
+        _setAddress(_GLP_VAULT_FACTORY_SLOT, _glpVaultFactory);
+        emit GlpVaultFactorySet(_glpVaultFactory);
+    }
+
     function _ownerSetGmx(address _gmx) internal {
         if (_gmx != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
@@ -295,6 +326,17 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         );
         _setAddress(_GMX_VAULT_SLOT, _gmxVault);
         emit GmxVaultSet(_gmxVault);
+    }
+
+    function _ownerSetGmxVaultFactory(address _gmxVaultFactory) internal {
+        if (_gmxVaultFactory != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _gmxVaultFactory != address(0),
+            _FILE,
+            "Invalid gmxVault address"
+        );
+        _setAddress(_GMX_VAULT_FACTORY_SLOT, _gmxVaultFactory);
+        emit GmxVaultFactorySet(_gmxVaultFactory);
     }
 
     function _ownerSetSGlp(address _sGlp) internal {

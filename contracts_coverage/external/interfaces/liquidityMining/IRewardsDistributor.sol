@@ -31,23 +31,67 @@ import { IOARB } from "./IOARB.sol";
  */
 interface IRewardsDistributor {
 
+    // ======================================================
+    // ======================== Structs =====================
+    // ======================================================
+
     struct ClaimInfo {
         uint256 epoch;
         uint256 amount;
         bytes32[] proof;
     }
 
+    // ======================================================
+    // ======================== Events ======================
+    // ======================================================
+
+    event HandlerSet(address indexed handler, bool isHandler);
+
     event MerkleRootSet(uint256 epoch, bytes32 merkleRoot);
+
     event OARBSet(IOARB oARB);
+
     event Claimed(address indexed user, uint256 epoch, uint256 amount);
 
     // ======================================================
     // ================== External Functions ================
     // ======================================================
 
-    function claim(ClaimInfo[] calldata _claimInfo) external;
+    function ownerSetHandler(address _handler, bool _isHandler) external;
 
     function ownerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) external;
 
+    function handlerSetMerkleRoot(uint256 _epoch, bytes32 _merkleRoot) external;
+
     function ownerSetOARB(IOARB _oARB) external;
+
+    /**
+     *
+     * @param  _claimInfo  Array of ClaimInfo structs used to claim oARB for the given user
+     */
+    function claim(ClaimInfo[] calldata _claimInfo) external;
+
+    /**
+     *
+     * @param  _from    The address tp check if it is a handler
+     * @return          True if the address is a handler, false otherwise
+     */
+    function isHandler(address _from) external view returns (bool);
+
+    /**
+     *
+     * @param  _epoch   Epoch to get the merkle root for
+     * @return          Merkle root for the given epoch
+     */
+    function getMerkleRootByEpoch(uint256 _epoch) external view returns (bytes32);
+
+    /**
+     *
+     * @param  _user    User to get the claim status for
+     * @param  _epoch   Epoch to get the claim status for
+     * @return          True if the user has claimed for the given epoch, false otherwise
+     */
+    function getClaimStatusByUserAndEpoch(address _user, uint256 _epoch) external view returns (bool);
+
+    function oARB() external view returns (IOARB);
 }

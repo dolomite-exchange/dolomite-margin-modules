@@ -43,8 +43,9 @@ import {
   getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendleYtGLPPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/pendle';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../dolomite';
 
 export async function createPendleGLPRegistry(core: CoreProtocol): Promise<PendleGLPRegistry> {
   const implementation = await createContractWithAbi<PendleGLPRegistry>(
@@ -61,10 +62,11 @@ export async function createPendleGLPRegistry(core: CoreProtocol): Promise<Pendl
   return PendleGLPRegistry__factory.connect(registry.address, core.hhUser1);
 }
 
-export function createPendlePtGLP2024IsolationModeTokenVaultV1(): Promise<PendlePtGLP2024IsolationModeTokenVaultV1> {
-  return createContractWithAbi(
-    PendlePtGLP2024IsolationModeTokenVaultV1__factory.abi,
-    PendlePtGLP2024IsolationModeTokenVaultV1__factory.bytecode,
+export async function createPendlePtGLP2024IsolationModeTokenVaultV1(): Promise<PendlePtGLP2024IsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<PendlePtGLP2024IsolationModeTokenVaultV1>(
+    'PendlePtGLP2024IsolationModeTokenVaultV1',
+    libraries,
     [],
   );
 }

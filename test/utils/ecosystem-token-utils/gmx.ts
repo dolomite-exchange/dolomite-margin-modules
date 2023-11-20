@@ -5,6 +5,7 @@ import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
 import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV1__factory,
+  GLPIsolationModeTokenVaultV2,
   GLPIsolationModeUnwrapperTraderV1,
   GLPIsolationModeUnwrapperTraderV1__factory,
   GLPIsolationModeUnwrapperTraderV2,
@@ -17,6 +18,9 @@ import {
   GLPIsolationModeWrapperTraderV2__factory,
   GLPPriceOracleV1,
   GLPPriceOracleV1__factory,
+  GMXIsolationModeTokenVaultV1,
+  GMXIsolationModeVaultFactory,
+  GMXIsolationModeVaultFactory__factory,
   GmxRegistryV1,
   GmxRegistryV1__factory,
   GmxV2IsolationModeTokenVaultV1,
@@ -41,6 +45,8 @@ import {
   IsolationModeTraderProxy__factory,
   RegistryProxy,
   RegistryProxy__factory,
+  TestGLPIsolationModeTokenVaultV1,
+  TestGLPIsolationModeTokenVaultV2,
   TestGmxV2IsolationModeTokenVaultV1,
   TestGmxV2IsolationModeUnwrapperTraderV2,
   TestGmxV2IsolationModeUnwrapperTraderV2__factory,
@@ -53,6 +59,7 @@ import {
   getGLPUnwrapperTraderV2ConstructorParams,
   getGLPWrapperTraderV1ConstructorParams,
   getGLPWrapperTraderV2ConstructorParams,
+  getGMXIsolationModeVaultFactoryConstructorParams,
   getGmxRegistryConstructorParams,
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
   getGmxV2IsolationModeVaultFactoryConstructorParams,
@@ -106,9 +113,37 @@ export async function createGLPUnwrapperTraderV2(
 }
 
 export async function createGLPIsolationModeTokenVaultV1(): Promise<GLPIsolationModeTokenVaultV1> {
-  return createContractWithAbi<GLPIsolationModeTokenVaultV1>(
-    GLPIsolationModeTokenVaultV1__factory.abi,
-    GLPIsolationModeTokenVaultV1__factory.bytecode,
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<GLPIsolationModeTokenVaultV1>(
+    'GLPIsolationModeTokenVaultV1',
+    libraries,
+    [],
+  );
+}
+
+export async function createGLPIsolationModeTokenVaultV2(): Promise<GLPIsolationModeTokenVaultV2> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<GLPIsolationModeTokenVaultV2>(
+    'GLPIsolationModeTokenVaultV2',
+    libraries,
+    [],
+  );
+}
+
+export async function createTestGLPIsolationModeTokenVaultV1(): Promise<TestGLPIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<TestGLPIsolationModeTokenVaultV1>(
+    'TestGLPIsolationModeTokenVaultV1',
+    libraries,
+    [],
+  );
+}
+
+export async function createTestGLPIsolationModeTokenVaultV2(): Promise<TestGLPIsolationModeTokenVaultV2> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<TestGLPIsolationModeTokenVaultV2>(
+    'TestGLPIsolationModeTokenVaultV2',
+    libraries,
     [],
   );
 }
@@ -161,6 +196,27 @@ export async function createGmxRegistry(core: CoreProtocol): Promise<GmxRegistry
     await getGmxRegistryConstructorParams(implementation, core),
   );
   return GmxRegistryV1__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createGMXIsolationModeTokenVaultV1(): Promise<GMXIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<GMXIsolationModeTokenVaultV1>(
+    'GMXIsolationModeTokenVaultV1',
+    libraries,
+    [],
+  );
+}
+
+export async function createGMXIsolationModeVaultFactory(
+  core: CoreProtocol,
+  gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
+  userVaultImplementation: GMXIsolationModeTokenVaultV1,
+): Promise<GMXIsolationModeVaultFactory> {
+  return createContractWithAbi<GMXIsolationModeVaultFactory>(
+    GMXIsolationModeVaultFactory__factory.abi,
+    GMXIsolationModeVaultFactory__factory.bytecode,
+    getGMXIsolationModeVaultFactoryConstructorParams(core, gmxRegistry, userVaultImplementation),
+  );
 }
 
 export async function createGmxV2Registry(core: CoreProtocol, callbackGasLimit: BigNumberish): Promise<GmxV2Registry> {

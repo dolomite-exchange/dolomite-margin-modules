@@ -48,8 +48,10 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
 
     EnumerableSet.AddressSet private _pairs;
 
-    address public token;
-    uint32 public observationInterval = 15 minutes;
+    uint32 public observationInterval;
+
+    address public immutable TOKEN; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable TOKEN_DECIMALS_FACTOR; // solhint-disable-line var-name-mixedcase
 
     // ========================= Constructor =========================
 
@@ -58,10 +60,13 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
         address[] memory _tokenPairs,
         address _dolomiteMargin
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        token = _token;
-        for (uint256 i; i < _tokenPairs.length; i++) {
+        TOKEN = _token;
+        for (uint256 i; i < _tokenPairs.length; ++i) {
             _ownerAddPair(_tokenPairs[i]);
         }
+        _ownerSetObservationInterval(15 minutes);
+
+        TOKEN_DECIMALS_FACTOR = 10 ** IERC20Metadata(_token).decimals();
     }
 
     // ========================= Admin Functions =========================
@@ -69,8 +74,8 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     function ownerSetObservationInterval(
         uint32 _observationInterval
     )
-    external
-    onlyDolomiteMarginOwner(msg.sender)
+        external
+        onlyDolomiteMarginOwner(msg.sender)
     {
         _ownerSetObservationInterval(_observationInterval);
     }
@@ -78,16 +83,18 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     function ownerAddPair(
         address _pair
     )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
+        external
+        onlyDolomiteMarginOwner(msg.sender)
+    {
         _ownerAddPair(_pair);
     }
 
     function ownerRemovePair(
         address _pairAddress
     )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
+        external
+        onlyDolomiteMarginOwner(msg.sender)
+    {
         _ownerRemovePair(_pairAddress);
     }
 
@@ -104,53 +111,39 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         uint256 len = _pairs.length();
-        if (_token == token) { /* FOR COVERAGE TESTING */ }
-        Require.that(_token == token,
+        if (_token == TOKEN) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _token == TOKEN,
             _FILE,
             "Invalid token",
             _token
         );
         if (len > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(len > 0,
+        Require.that(
+            len > 0,
             _FILE,
             "Oracle contains no pairs"
         );
 
         uint256 totalPrice;
-        for (uint256 i; i < len; i++) {
+        for (uint256 i; i < len; ++i) {
             IAlgebraV3Pool currentPair = IAlgebraV3Pool(_pairs.at(i));
 
             address poolToken0 = currentPair.token0();
             address outputToken = poolToken0 == _token ? currentPair.token1() : poolToken0;
-            uint8 tokenDecimals = IERC20Metadata(_token).decimals();
 
             int24 tick = OracleLibrary.consult(address(currentPair), observationInterval);
-            uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(10 ** tokenDecimals), _token, outputToken);
+            uint256 quote = OracleLibrary.getQuoteAtTick(tick, uint128(TOKEN_DECIMALS_FACTOR), _token, outputToken);
             IDolomiteStructs.MonetaryPrice memory price =
                 DOLOMITE_MARGIN().getMarketPrice(DOLOMITE_MARGIN().getMarketIdByTokenAddress(outputToken));
 
-            totalPrice += standardizeNumberOfDecimals(tokenDecimals, price.value * quote, _ORACLE_VALUE_DECIMALS);
+            totalPrice += _standardizeNumberOfDecimals(price.value * quote, _ORACLE_VALUE_DECIMALS);
         }
 
         return IDolomiteStructs.MonetaryPrice({
             value: totalPrice / len
         });
     }
-
-    function standardizeNumberOfDecimals(
-        uint8 _tokenDecimals,
-        uint256 _value,
-        uint8 _valueDecimals
-    )
-    public
-    pure
-    returns (uint) {
-        uint256 tokenDecimalsFactor = 10 ** uint256(_tokenDecimals);
-        uint256 priceFactor = _ONE_DOLLAR / tokenDecimalsFactor;
-        uint256 valueFactor = 10 ** uint256(_valueDecimals);
-        return _value * priceFactor / valueFactor;
-    }
-
 
     // ========================= Internal Functions =========================
 
@@ -159,8 +152,9 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     )
     internal {
         IAlgebraV3Pool pool = IAlgebraV3Pool(_pair);
-        if (pool.token0() == token || pool.token1() == token) { /* FOR COVERAGE TESTING */ }
-        Require.that(pool.token0() == token || pool.token1() == token,
+        if (pool.token0() == TOKEN || pool.token1() == TOKEN) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            pool.token0() == TOKEN || pool.token1() == TOKEN,
             _FILE,
             "Pair must contain oracle token"
         );
@@ -182,5 +176,14 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     internal {
         observationInterval = _observationInterval;
         emit ObservationIntervalUpdated(_observationInterval);
+    }
+
+    function _standardizeNumberOfDecimals(
+        uint256 _value,
+        uint8 _valueDecimals
+    ) internal view returns (uint) {
+        uint256 priceFactor = _ONE_DOLLAR / TOKEN_DECIMALS_FACTOR;
+        uint256 valueFactor = 10 ** uint256(_valueDecimals);
+        return _value * priceFactor / valueFactor;
     }
 }

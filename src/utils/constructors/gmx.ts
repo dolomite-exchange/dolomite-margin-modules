@@ -18,6 +18,7 @@ import {
   IGmxV2Registry,
   IGmxV2IsolationModeVaultFactory,
   TestGLPIsolationModeTokenVaultV1,
+  GMXIsolationModeTokenVaultV1,
 } from '../../types';
 
 export function getGLPPriceOracleV1ConstructorParams(
@@ -126,6 +127,22 @@ export async function getGmxRegistryConstructorParams(
     implementation.address,
     core.dolomiteMargin.address,
     (await implementation.populateTransaction.initialize(initializer, core.dolomiteRegistry.address)).data!,
+  ];
+}
+
+export function getGMXIsolationModeVaultFactoryConstructorParams(
+  core: CoreProtocol,
+  gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
+  userVaultImplementation: GMXIsolationModeTokenVaultV1,
+): any[] {
+  return [
+    core.tokens.weth.address,
+    core.marketIds.weth,
+    gmxRegistry.address,
+    core.gmxEcosystem!.gmx.address,
+    core.borrowPositionProxyV2.address,
+    userVaultImplementation.address,
+    core.dolomiteMargin.address,
   ];
 }
 

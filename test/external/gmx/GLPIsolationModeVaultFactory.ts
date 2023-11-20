@@ -12,7 +12,7 @@ import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
-import { createGLPIsolationModeVaultFactory, createGmxRegistry } from '../../utils/ecosystem-token-utils/gmx';
+import { createGLPIsolationModeVaultFactory, createGmxRegistry, createTestGLPIsolationModeTokenVaultV1 } from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
@@ -35,11 +35,7 @@ describe('GLPIsolationModeVaultFactory', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     gmxRegistry = await createGmxRegistry(core);
-    vaultImplementation = await createContractWithAbi<TestGLPIsolationModeTokenVaultV1>(
-      TestGLPIsolationModeTokenVaultV1__factory.abi,
-      TestGLPIsolationModeTokenVaultV1__factory.bytecode,
-      [],
-    );
+    vaultImplementation = await createTestGLPIsolationModeTokenVaultV1();
     factory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, vaultImplementation);
 
     snapshotId = await snapshot();

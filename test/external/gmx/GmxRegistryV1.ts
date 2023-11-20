@@ -188,6 +188,23 @@ describe('GmxRegistryV1', () => {
     });
   });
 
+  describe('#ownerSetGlpVaultFactory', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetGlpVaultFactory(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'GlpVaultFactorySet', {
+        glpVaultFactory: OTHER_ADDRESS,
+      });
+      expect(await registry.glpVaultFactory()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetGlpVaultFactory(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetGmx', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetGmx(OTHER_ADDRESS);
@@ -255,6 +272,30 @@ describe('GmxRegistryV1', () => {
     it('should fail if zero address is set', async () => {
       await expectThrow(
         registry.connect(core.governance).ownerSetGmxVault(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid gmxVault address',
+      );
+    });
+  });
+
+  describe('#ownerSetGmxVaultFactory', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetGmxVaultFactory(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'GmxVaultFactorySet', {
+        gmxVaultFactory: OTHER_ADDRESS,
+      });
+      expect(await registry.gmxVaultFactory()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetGmxVaultFactory(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetGmxVaultFactory(ZERO_ADDRESS),
         'GmxRegistryV1: Invalid gmxVault address',
       );
     });
