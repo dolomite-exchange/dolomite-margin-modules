@@ -424,6 +424,11 @@ export const PENDLE_PT_WST_ETH_2025_TOKEN_MAP: Record<Network, string | undefine
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const PENDLE_PT_GLP_ORACLE_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x43D03031FAb845065e9CEfE89Dd122d63F72011F',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const PENDLE_PT_ORACLE_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x1f6Cee6740e1492C279532348137FF40E0f23D05',
   [Network.ArbitrumGoerli]: undefined,

@@ -121,7 +121,6 @@ import {
   IPendleGLPRegistry__factory,
   IPendlePtMarket,
   IPendlePtMarket__factory,
-  IPendlePtOracle,
   IPendlePtOracle__factory,
   IPendlePtToken,
   IPendlePtToken__factory,
@@ -166,7 +165,7 @@ import {
   TestInterestSetter,
   TestInterestSetter__factory,
   TestPriceOracle,
-  TestPriceOracle__factory,
+  TestPriceOracle__factory, IPendlePtOracle,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
@@ -219,7 +218,7 @@ import {
   PARASWAP_TRANSFER_PROXY_MAP, PENDLE_MAP,
   PENDLE_PT_GLP_2024_MARKET_MAP,
   PENDLE_PT_GLP_2024_TOKEN_MAP,
-  PENDLE_PT_ORACLE_MAP,
+  PENDLE_PT_GLP_ORACLE_MAP, PENDLE_PT_ORACLE_MAP,
   PENDLE_PT_RETH_MARKET_MAP,
   PENDLE_PT_RETH_TOKEN_MAP,
   PENDLE_PT_WST_ETH_2024_MARKET_MAP,
@@ -348,19 +347,30 @@ export interface ParaswapEcosystem {
 
 export interface PendleEcosystem {
   pendleRouter: IPendleRouter;
-  ptGlpMarket: IPendlePtMarket;
-  ptGlpToken: IPendlePtToken;
-  ptRETHMarket: IPendlePtMarket;
-  ptRETHToken: IPendlePtToken;
-  ptWstEth2024Market: IPendlePtMarket;
-  ptWstEth2025Market: IPendlePtMarket;
-  ptWstEth2024Token: IPendlePtToken;
-  ptWstEth2025Token: IPendlePtToken;
-  ptOracle: IPendlePtOracle;
+  glpMar2024: {
+    ptGlpMarket: IPendlePtMarket;
+    ptGlpToken: IPendlePtToken;
+    ptOracle: IPendlePtOracle;
+    ytGlpToken: IPendleYtToken;
+  };
+  rEthJun2025: {
+    ptOracle: IPendlePtOracle;
+    ptREthMarket: IPendlePtMarket;
+    ptREthToken: IPendlePtToken;
+  };
+  wstEthJun2024: {
+    ptOracle: IPendlePtOracle;
+    ptWstEthMarket: IPendlePtMarket;
+    ptWstEthToken: IPendlePtToken;
+  };
+  wstEthJun2025: {
+    ptOracle: IPendlePtOracle;
+    ptWstEthMarket: IPendlePtMarket;
+    ptWstEthToken: IPendlePtToken;
+  };
   syGlpToken: IPendleSyToken;
-  syRETHToken: IPendleSyToken;
+  syREthToken: IPendleSyToken;
   syWstEthToken: IPendleSyToken;
-  ytGlpToken: IPendleYtToken;
   live: {
     pendleGLP2024Registry: IPendleGLPRegistry
     pendleGLP2024RegistryProxy: RegistryProxy
@@ -1189,47 +1199,85 @@ async function createPendleEcosystem(
       IPendleRouter__factory.connect,
       signer,
     ),
-    ptGlpMarket: getContract(
-      PENDLE_PT_GLP_2024_MARKET_MAP[network] as string,
-      IPendlePtMarket__factory.connect,
-      signer,
-    ),
-    ptGlpToken: getContract(
-      PENDLE_PT_GLP_2024_TOKEN_MAP[network] as string,
-      IPendlePtToken__factory.connect,
-      signer,
-    ),
-    ptOracle: getContract(
-      PENDLE_PT_ORACLE_MAP[network] as string,
-      IPendlePtOracle__factory.connect,
-      signer,
-    ),
-    ptRETHMarket: getContract(
-      PENDLE_PT_RETH_MARKET_MAP[network] as string,
-      IPendlePtMarket__factory.connect,
-      signer,
-    ),
-    ptRETHToken: getContract(
-      PENDLE_PT_RETH_TOKEN_MAP[network] as string,
-      IPendlePtToken__factory.connect,
-      signer,
-    ),
-    ptWstEth2024Token: getContract(
-      PENDLE_PT_WST_ETH_2024_TOKEN_MAP[network] as string,
-      IPendlePtToken__factory.connect,
-      signer,
-    ),
-    ptWstEth2025Token: getContract(
-      PENDLE_PT_WST_ETH_2025_TOKEN_MAP[network] as string,
-      IPendlePtToken__factory.connect,
-      signer,
-    ),
+    glpMar2024: {
+      ptGlpMarket: getContract(
+        PENDLE_PT_GLP_2024_MARKET_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptGlpToken: getContract(
+        PENDLE_PT_GLP_2024_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+      ptOracle: getContract(
+        PENDLE_PT_GLP_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      ytGlpToken: getContract(
+        PENDLE_YT_GLP_2024_TOKEN_MAP[network] as string,
+        IPendleYtToken__factory.connect,
+        signer,
+      ),
+    },
+    rEthJun2025: {
+      ptOracle: getContract(
+        PENDLE_PT_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      ptREthMarket: getContract(
+        PENDLE_PT_RETH_MARKET_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptREthToken: getContract(
+        PENDLE_PT_RETH_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+    },
+    wstEthJun2024: {
+      ptOracle: getContract(
+        PENDLE_PT_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      ptWstEthMarket: getContract(
+        PENDLE_PT_WST_ETH_2024_MARKET_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptWstEthToken: getContract(
+        PENDLE_PT_WST_ETH_2024_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+    },
+    wstEthJun2025: {
+      ptOracle: getContract(
+        PENDLE_PT_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      ptWstEthMarket: getContract(
+        PENDLE_PT_WST_ETH_2025_MARKET_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptWstEthToken: getContract(
+        PENDLE_PT_WST_ETH_2025_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+    },
     syGlpToken: getContract(
       PENDLE_SY_GLP_2024_TOKEN_MAP[network] as string,
       IPendleSyToken__factory.connect,
       signer,
     ),
-    syRETHToken: getContract(
+    syREthToken: getContract(
       PENDLE_SY_RETH_TOKEN_MAP[network] as string,
       IPendleSyToken__factory.connect,
       signer,
@@ -1237,21 +1285,6 @@ async function createPendleEcosystem(
     syWstEthToken: getContract(
       PENDLE_SY_WST_ETH_TOKEN_MAP[network] as string,
       IPendleSyToken__factory.connect,
-      signer,
-    ),
-    ytGlpToken: getContract(
-      PENDLE_YT_GLP_2024_TOKEN_MAP[network] as string,
-      IPendleYtToken__factory.connect,
-      signer,
-    ),
-    ptWstEth2024Market: getContract(
-      PENDLE_PT_WST_ETH_2024_MARKET_MAP[network] as string,
-      IPendlePtMarket__factory.connect,
-      signer,
-    ),
-    ptWstEth2025Market: getContract(
-      PENDLE_PT_WST_ETH_2025_MARKET_MAP[network] as string,
-      IPendlePtMarket__factory.connect,
       signer,
     ),
     live: {
