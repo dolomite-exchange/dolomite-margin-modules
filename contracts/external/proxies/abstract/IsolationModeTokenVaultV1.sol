@@ -49,16 +49,13 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     // ===================================================
 
     bytes32 private constant _FILE = "IsolationModeTokenVaultV1";
-    bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
+    bytes32 private constant _IS_INITIALIZED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isInitialized")) - 1);
     bytes32 private constant _OWNER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.owner")) - 1);
+    bytes32 private constant _REENTRANCY_GUARD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.reentrancyGuard")) - 1);
+    bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
+
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
-
-    // =================================================
-    // ================ Field Variables ================
-    // =================================================
-
-    uint256 private _reentrancyGuard;
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -92,18 +89,18 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     modifier nonReentrant() {
         // On the first call to nonReentrant, _reentrancyGuard will be _NOT_ENTERED
         Require.that(
-            _reentrancyGuard != _ENTERED,
+            _getUint256(_REENTRANCY_GUARD_SLOT) == _NOT_ENTERED,
             _FILE,
             "Reentrant call"
         );
 
         // Any calls to nonReentrant after this point will fail
-        _reentrancyGuard = _ENTERED;
+        _setUint256(_REENTRANCY_GUARD_SLOT, _ENTERED);
 
         _;
 
         // By storing the original value once again, a refund is triggered (see https://eips.ethereum.org/EIPS/eip-2200)
-        _reentrancyGuard = _NOT_ENTERED;
+        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
     }
 
     // ===================================================
@@ -112,12 +109,12 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
 
     function initialize() external {
         Require.that(
-            _reentrancyGuard == 0,
+            _getUint256(_IS_INITIALIZED_SLOT) == 0,
             _FILE,
             "Already initialized"
         );
 
-        _reentrancyGuard = _NOT_ENTERED;
+        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
     }
 
     function depositIntoVaultForDolomiteMargin(

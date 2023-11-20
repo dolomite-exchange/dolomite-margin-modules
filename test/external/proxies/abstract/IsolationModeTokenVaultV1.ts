@@ -113,7 +113,6 @@ describe('IsolationModeTokenVaultV1', () => {
       TestIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
-    await userVault.initialize();
 
     await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
     await underlyingToken.connect(core.hhUser1).approve(vaultAddress, amountWei);

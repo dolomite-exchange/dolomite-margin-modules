@@ -13,6 +13,10 @@ import {
   PendleGLPRegistry,
   IPendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeVaultFactory,
+  PendleRegistry,
+  IPendleRegistry,
+  PendlePtIsolationModeVaultFactory,
+  IPendlePtIsolationModeVaultFactory, IERC20, IPendlePtMarket, IPendleSyToken, IPendlePtOracle,
 } from '../../types';
 
 export function getPendlePtGLPPriceOracleConstructorParams(
@@ -42,11 +46,11 @@ export async function getPendleGLPRegistryConstructorParams(
 
   const calldata = await implementation.populateTransaction.initialize(
     core.pendleEcosystem!.pendleRouter.address,
-    core.pendleEcosystem!.ptGlpMarket.address,
-    core.pendleEcosystem!.ptGlpToken.address,
-    core.pendleEcosystem!.ptOracle.address,
+    core.pendleEcosystem!.glpMar2024.ptGlpMarket.address,
+    core.pendleEcosystem!.glpMar2024.ptGlpToken.address,
+    core.pendleEcosystem!.glpMar2024.ptOracle.address,
     core.pendleEcosystem!.syGlpToken.address,
-    core.pendleEcosystem!.ytGlpToken.address,
+    core.pendleEcosystem!.glpMar2024.ytGlpToken.address,
     core.dolomiteRegistry.address
   );
 
@@ -54,6 +58,105 @@ export async function getPendleGLPRegistryConstructorParams(
     implementation.address,
     core.dolomiteMargin.address,
     calldata.data
+  ];
+}
+
+export async function getPendleRegistryConstructorParams(
+  implementation: PendleRegistry,
+  core: CoreProtocol,
+  ptMarket: IPendlePtMarket,
+  ptOracle: IPendlePtOracle,
+  syToken: IPendleSyToken,
+): Promise<any[]> {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  const calldata = await implementation.populateTransaction.initialize(
+    core.pendleEcosystem!.pendleRouter.address,
+    ptMarket.address,
+    ptOracle.address,
+    syToken.address,
+    core.dolomiteRegistry.address
+  );
+
+  return [
+    implementation.address,
+    core.dolomiteMargin.address,
+    calldata.data
+  ];
+}
+
+export function getPendlePtIsolationModeVaultFactoryConstructorParams(
+  core: CoreProtocol,
+  registry: IPendleRegistry | PendleRegistry,
+  ptToken: IPendlePtToken,
+  userVaultImplementation: IPendlePtGLP2024IsolationModeTokenVaultV1 | PendlePtGLP2024IsolationModeTokenVaultV1,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    registry.address,
+    ptToken.address,
+    core.borrowPositionProxyV2.address,
+    userVaultImplementation.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getPendlePtPriceOracleConstructorParams(
+  core: CoreProtocol,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingMarketId: BigNumberish,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    dptToken.address,
+    pendleRegistry.address,
+    underlyingMarketId,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
+  core: CoreProtocol,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingToken: IERC20,
+  dptFactory: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    pendleRegistry.address,
+    underlyingToken.address,
+    dptFactory.address,
+    core.dolomiteMargin.address
+  ];
+}
+
+export function getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
+  core: CoreProtocol,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingToken: IERC20,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    pendleRegistry.address,
+    underlyingToken.address,
+    dptToken.address,
+    core.dolomiteMargin.address
   ];
 }
 

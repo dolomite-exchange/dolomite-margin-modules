@@ -121,7 +121,6 @@ import {
   IPendleGLPRegistry__factory,
   IPendlePtMarket,
   IPendlePtMarket__factory,
-  IPendlePtOracle,
   IPendlePtOracle__factory,
   IPendlePtToken,
   IPendlePtToken__factory,
@@ -166,7 +165,7 @@ import {
   TestInterestSetter,
   TestInterestSetter__factory,
   TestPriceOracle,
-  TestPriceOracle__factory,
+  TestPriceOracle__factory, IPendlePtOracle,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
@@ -219,14 +218,23 @@ import {
   PARASWAP_TRANSFER_PROXY_MAP, PENDLE_MAP,
   PENDLE_PT_GLP_2024_MARKET_MAP,
   PENDLE_PT_GLP_2024_TOKEN_MAP,
-  PENDLE_PT_ORACLE_MAP,
+  PENDLE_PT_GLP_ORACLE_MAP, PENDLE_PT_ORACLE_MAP,
+  PENDLE_PT_RETH_MARKET_MAP,
+  PENDLE_PT_RETH_TOKEN_MAP,
+  PENDLE_PT_WST_ETH_2024_MARKET_MAP,
+  PENDLE_PT_WST_ETH_2024_TOKEN_MAP,
+  PENDLE_PT_WST_ETH_2025_MARKET_MAP,
+  PENDLE_PT_WST_ETH_2025_TOKEN_MAP,
   PENDLE_ROUTER_MAP,
   PENDLE_SY_GLP_2024_TOKEN_MAP,
+  PENDLE_SY_RETH_TOKEN_MAP,
+  PENDLE_SY_WST_ETH_TOKEN_MAP,
   PENDLE_YT_GLP_2024_TOKEN_MAP,
   PLS_TOKEN_MAP,
   PLV_GLP_FARM_MAP,
   PLV_GLP_MAP,
   PLV_GLP_ROUTER_MAP,
+  RETH_MAP,
   S_GLP_MAP,
   S_GMX_MAP,
   SBF_GMX_MAP,
@@ -243,6 +251,7 @@ import {
   V_GMX_MAP,
   WBTC_MAP,
   WETH_MAP,
+  WST_ETH_MAP,
 } from '../../src/utils/constants';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { createDolomiteRegistryImplementation } from './dolomite';
@@ -338,11 +347,30 @@ export interface ParaswapEcosystem {
 
 export interface PendleEcosystem {
   pendleRouter: IPendleRouter;
-  ptGlpMarket: IPendlePtMarket;
-  ptGlpToken: IPendlePtToken;
-  ptOracle: IPendlePtOracle;
+  glpMar2024: {
+    ptGlpMarket: IPendlePtMarket;
+    ptGlpToken: IPendlePtToken;
+    ptOracle: IPendlePtOracle;
+    ytGlpToken: IPendleYtToken;
+  };
+  rEthJun2025: {
+    ptOracle: IPendlePtOracle;
+    ptREthMarket: IPendlePtMarket;
+    ptREthToken: IPendlePtToken;
+  };
+  wstEthJun2024: {
+    ptOracle: IPendlePtOracle;
+    ptWstEthMarket: IPendlePtMarket;
+    ptWstEthToken: IPendlePtToken;
+  };
+  wstEthJun2025: {
+    ptOracle: IPendlePtOracle;
+    ptWstEthMarket: IPendlePtMarket;
+    ptWstEthToken: IPendlePtToken;
+  };
   syGlpToken: IPendleSyToken;
-  ytGlpToken: IPendleYtToken;
+  syREthToken: IPendleSyToken;
+  syWstEthToken: IPendleSyToken;
   live: {
     pendleGLP2024Registry: IPendleGLPRegistry
     pendleGLP2024RegistryProxy: RegistryProxy
@@ -454,11 +482,13 @@ export interface CoreProtocol {
     magicGlp: BigNumberish | undefined;
     mim: BigNumberish | undefined;
     nativeUsdc: BigNumberish | undefined;
+    rEth: BigNumberish | undefined;
     pendle: BigNumberish | undefined;
     usdc: BigNumberish;
     usdt: BigNumberish | undefined;
     wbtc: BigNumberish;
     weth: BigNumberish;
+    wstEth: BigNumberish | undefined;
   };
   apiTokens: {
     usdc: ApiToken;
@@ -475,10 +505,12 @@ export interface CoreProtocol {
     link: IERC20;
     magic: IERC20 | undefined;
     nativeUsdc: IERC20 | undefined;
+    rEth: IERC20 | undefined;
     pendle: IERC20 | undefined;
     usdc: IERC20;
     wbtc: IERC20;
     weth: IWETH;
+    wstEth: IERC20 | undefined;
   };
 }
 
@@ -567,6 +599,30 @@ export async function setupGMXBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.gmxEcosystem?.gmx.connect(whaleSigner).transfer(signer.address, amount);
   await core.gmxEcosystem?.gmx.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupRETHBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xba12222222228d8ba445958a75a0704d566bf2c8'; // Balancer Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.rEth!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.rEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupWstETHBalance(
+  core: CoreProtocol,
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xba12222222228d8ba445958a75a0704d566bf2c8'; // Balancer Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.wstEth!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.wstEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export function setupUserVaultProxy<T extends BaseContract>(
@@ -825,11 +881,13 @@ export async function setupCoreProtocol(
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       mim: MIM_MAP[config.network]?.marketId,
       nativeUsdc: NATIVE_USDC_MAP[config.network]?.marketId,
+      rEth: RETH_MAP[config.network]?.marketId,
       pendle: PENDLE_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
       usdt: USDT_MAP[config.network]?.marketId,
       wbtc: WBTC_MAP[config.network].marketId,
       weth: WETH_MAP[config.network].marketId,
+      wstEth: WST_ETH_MAP[config.network]?.marketId,
     },
     tokens: {
       arb: IERC20__factory.connect(ARB_MAP[config.network].address, hhUser1),
@@ -842,10 +900,12 @@ export async function setupCoreProtocol(
       link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
       magic: createIERC20Opt(MAGIC_MAP[config.network]?.address, hhUser1),
       nativeUsdc: createIERC20Opt(NATIVE_USDC_MAP[config.network]?.address, hhUser1),
+      rEth: createIERC20Opt(RETH_MAP[config.network]?.address, hhUser1),
       pendle: createIERC20Opt(PENDLE_MAP[config.network]?.address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
       wbtc: IERC20__factory.connect(WBTC_MAP[config.network].address, hhUser1),
       weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
+      wstEth: createIERC20Opt(WST_ETH_MAP[config.network]?.address, hhUser1),
     },
   };
 }
@@ -1139,29 +1199,92 @@ async function createPendleEcosystem(
       IPendleRouter__factory.connect,
       signer,
     ),
-    ptGlpMarket: getContract(
-      PENDLE_PT_GLP_2024_MARKET_MAP[network] as string,
-      IPendlePtMarket__factory.connect,
-      signer,
-    ),
-    ptGlpToken: getContract(
-      PENDLE_PT_GLP_2024_TOKEN_MAP[network] as string,
-      IPendlePtToken__factory.connect,
-      signer,
-    ),
-    ptOracle: getContract(
-      PENDLE_PT_ORACLE_MAP[network] as string,
-      IPendlePtOracle__factory.connect,
-      signer,
-    ),
+    glpMar2024: {
+      ptGlpMarket: getContract(
+        PENDLE_PT_GLP_2024_MARKET_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptGlpToken: getContract(
+        PENDLE_PT_GLP_2024_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+      ptOracle: getContract(
+        PENDLE_PT_GLP_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      ytGlpToken: getContract(
+        PENDLE_YT_GLP_2024_TOKEN_MAP[network] as string,
+        IPendleYtToken__factory.connect,
+        signer,
+      ),
+    },
+    rEthJun2025: {
+      ptOracle: getContract(
+        PENDLE_PT_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      ptREthMarket: getContract(
+        PENDLE_PT_RETH_MARKET_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptREthToken: getContract(
+        PENDLE_PT_RETH_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+    },
+    wstEthJun2024: {
+      ptOracle: getContract(
+        PENDLE_PT_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      ptWstEthMarket: getContract(
+        PENDLE_PT_WST_ETH_2024_MARKET_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptWstEthToken: getContract(
+        PENDLE_PT_WST_ETH_2024_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+    },
+    wstEthJun2025: {
+      ptOracle: getContract(
+        PENDLE_PT_ORACLE_MAP[network] as string,
+        IPendlePtOracle__factory.connect,
+        signer,
+      ),
+      ptWstEthMarket: getContract(
+        PENDLE_PT_WST_ETH_2025_MARKET_MAP[network] as string,
+        IPendlePtMarket__factory.connect,
+        signer,
+      ),
+      ptWstEthToken: getContract(
+        PENDLE_PT_WST_ETH_2025_TOKEN_MAP[network] as string,
+        IPendlePtToken__factory.connect,
+        signer,
+      ),
+    },
     syGlpToken: getContract(
       PENDLE_SY_GLP_2024_TOKEN_MAP[network] as string,
       IPendleSyToken__factory.connect,
       signer,
     ),
-    ytGlpToken: getContract(
-      PENDLE_YT_GLP_2024_TOKEN_MAP[network] as string,
-      IPendleYtToken__factory.connect,
+    syREthToken: getContract(
+      PENDLE_SY_RETH_TOKEN_MAP[network] as string,
+      IPendleSyToken__factory.connect,
+      signer,
+    ),
+    syWstEthToken: getContract(
+      PENDLE_SY_WST_ETH_TOKEN_MAP[network] as string,
+      IPendleSyToken__factory.connect,
       signer,
     ),
     live: {
