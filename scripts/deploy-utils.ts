@@ -5,7 +5,7 @@ import { FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
 import { network, run } from 'hardhat';
 import { IChainlinkAggregator__factory, IERC20, IERC20Metadata__factory } from '../src/types';
-import { createContractWithName } from '../src/utils/dolomite-utils';
+import { createContractWithLibrary, createContractWithName } from '../src/utils/dolomite-utils';
 import { ADDRESS_ZERO, ZERO_BI } from '../src/utils/no-deps-constants';
 import { CoreProtocol } from '../test/utils/setup';
 
@@ -35,6 +35,7 @@ export async function deployContractAndSave(
   contractName: string,
   args: ConstructorArgument[],
   contractRename?: string,
+  libraries?: Record<string, string>,
 ): Promise<address> {
   const fileBuffer = fs.readFileSync('./scripts/deployments.json');
 
@@ -57,7 +58,9 @@ export async function deployContractAndSave(
 
   console.log(`Deploying ${usedContractName} to chainId ${chainId}...`);
 
-  const contract = await createContractWithName(contractName, args);
+  const contract = libraries
+    ? await createContractWithLibrary(contractName, libraries, args)
+    : await createContractWithName(contractName, args);
 
   file[usedContractName] = {
     ...file[usedContractName],

@@ -1,4 +1,5 @@
-import { BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import { CoreProtocol } from '../../../test/utils/setup';
 import { EventEmitterRegistry, IERC20 } from '../../types';
 import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
@@ -58,6 +59,35 @@ export function getOwnerAddMarketParameters(
     isClosing,
     isRecyclable,
   ];
+}
+
+export enum TargetCollateralization {
+  _120 = '1.20',
+  _125 = '1.25',
+  _150 = '1.50',
+}
+
+export function getMarginPremiumForTargetCollateralization(
+  targetCollateralization: TargetCollateralization,
+): BigNumber {
+  const one = parseEther('1');
+  const baseCollateralization = parseEther('1.15');
+  return parseEther(targetCollateralization).mul(one).div(baseCollateralization).sub(one);
+}
+
+export enum TargetLiquidationPremium {
+  _6 = '0.06',
+  _7 = '0.07',
+  _10 = '0.10',
+  _15 = '0.15',
+}
+
+export function getLiquidationPremiumForTargetCollateralization(
+  targetPremium: TargetLiquidationPremium,
+): BigNumber {
+  const one = parseEther('1');
+  const baseAmount = parseEther('0.05');
+  return parseEther(targetPremium).mul(one).div(baseAmount).sub(one);
 }
 
 export function getOwnerAddMarketParametersForIsolationMode(

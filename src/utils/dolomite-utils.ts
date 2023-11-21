@@ -38,7 +38,7 @@ export type LibraryName = string;
 export async function createContractWithLibrary<T extends BaseContract>(
   name: string,
   libraries: Record<LibraryName, address>,
-  args: (number | string | BigNumberish | object)[],
+  args: (number | string | BigNumberish | boolean | object)[],
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(name, { libraries });
   return await ContractFactory.deploy(...args) as T;
