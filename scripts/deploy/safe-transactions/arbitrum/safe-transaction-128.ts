@@ -1,4 +1,3 @@
-import path from 'path';
 import { EventEmitterRegistry, EventEmitterRegistry__factory } from '../../../../src/types';
 import { getRegistryProxyConstructorParams } from '../../../../src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
@@ -8,7 +7,8 @@ import {
   createFolder,
   DenJsonUpload,
   deployContractAndSave,
-  prettyPrintEncodedDataWithTypeSafety, writeFile,
+  prettyPrintEncodedDataWithTypeSafety,
+  writeFile,
 } from '../../../deploy-utils';
 
 /**
