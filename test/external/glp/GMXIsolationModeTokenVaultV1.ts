@@ -142,15 +142,20 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await gmxVault.connect(core.hhUser1).stakeGmx(gmxAmount);
       expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(gmxAmount);
+      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, gmxAmount);
+      await expectWalletBalance(gmxVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
     });
 
     it('should work when GMX is already approved for staking', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
       await glpVault.setApprovalForGmxForStaking(gmxAmount.div(2)); // use an amount < gmxAmount
+
       await gmxVault.stakeGmx(gmxAmount);
       expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(gmxAmount);
+      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, gmxAmount);
+      await expectWalletBalance(gmxVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
     });
 
     it('should fail if not called by the vault owner', async () => {
@@ -223,7 +228,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       );
     });
 
-    it('should faile when no GLP vault is created', async () => {
+    it('should fail when no GLP vault is created', async () => {
       await expectThrow(
         gmxVault2.connect(core.hhUser2).vestGmx(esGmxAmount),
         'GMXIsolationModeTokenVaultV1: GLP vault not created',
@@ -231,7 +236,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     });
   });
 
-  // @todo Make sure I check all state changes to both vaults
   describe('#unvestGmx', () => {
     it('should work when GMX is re-staked', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);

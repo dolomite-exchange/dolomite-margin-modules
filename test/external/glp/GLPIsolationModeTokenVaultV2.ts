@@ -185,6 +185,8 @@ describe('GLPIsolationModeTokenVaultV2', () => {
 
       expect(await core.gmxEcosystem!.esGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
+      expect(await vault.gmxBalanceOf()).to.eq(gmxAmount);
+      await expectProtocolBalance(core, gmxVault.address, 0, underlyingGmxMarketId, gmxAmount);
 
       // The user has not vested any esGMX into GMX, so the balance should be 0
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
@@ -745,26 +747,65 @@ describe('GLPIsolationModeTokenVaultV2', () => {
   });
 
   describe('#unvestGlp', () => {
-    it('should work GLP is staked', async () => {
+    it('should work GLP is staked and no gmx vault exists', async () => {
       await doHandleRewardsWithWaitTime(30);
       await vault.vestGlp(esGmxAmount);
       await waitDays(366);
       expect(await vault.gmxBalanceOf()).to.eq(ZERO_BI);
       await vault.unvestGlp(true);
       expect((await vault.gmxBalanceOf()).eq(ZERO_BI)).to.eq(false);
+
+      const gmxVaultAddress = await gmxFactory.calculateVaultByAccount(core.hhUser1.address);
+      await expectProtocolBalance(core, gmxVaultAddress, 0, underlyingGmxMarketId, esGmxAmount);
+      expect(await vault.hasSynced()).to.be.true;
       expect((await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address)).eq(ZERO_BI)).to.eq(false);
       expect((await core.gmxEcosystem!.gmx.balanceOf(vault.address))).to.eq(ZERO_BI);
       expect((await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address))).to.eq(ZERO_BI);
     });
 
-    it('should work GLP is withdrawn', async () => {
-      const gmxVaultAddress = await gmxFactory.calculateVaultByAccount(core.hhUser1.address);
+    it('should work GLP is withdrawn and no gmx vault exists', async () => {
       await doHandleRewardsWithWaitTime(30);
       await vault.vestGlp(esGmxAmount);
       await waitDays(366);
       expect(await vault.gmxBalanceOf()).to.eq(ZERO_BI);
       await vault.unvestGlp(false);
       expect(await vault.gmxBalanceOf()).to.eq(ZERO_BI);
+
+      const gmxVaultAddress = await gmxFactory.calculateVaultByAccount(core.hhUser1.address);
+      await expectProtocolBalance(core, gmxVaultAddress, 0, underlyingGmxMarketId, esGmxAmount);
+      expect(await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await core.gmxEcosystem!.gmx.balanceOf(gmxVaultAddress)).eq(ZERO_BI)).to.eq(false);
+    });
+
+    it('should work GLP is staked and gmx vault exists', async () => {
+      await gmxFactory.createVault(core.hhUser1.address);
+      await doHandleRewardsWithWaitTime(30);
+      await vault.vestGlp(esGmxAmount);
+      await waitDays(366);
+      expect(await vault.gmxBalanceOf()).to.eq(ZERO_BI);
+      await vault.unvestGlp(true);
+      expect((await vault.gmxBalanceOf()).eq(ZERO_BI)).to.eq(false);
+
+      const gmxVaultAddress = await gmxFactory.calculateVaultByAccount(core.hhUser1.address);
+      await expectProtocolBalance(core, gmxVaultAddress, 0, underlyingGmxMarketId, esGmxAmount);
+      expect(await vault.hasSynced()).to.be.true;
+      expect((await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address)).eq(ZERO_BI)).to.eq(false);
+      expect((await core.gmxEcosystem!.gmx.balanceOf(vault.address))).to.eq(ZERO_BI);
+      expect((await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address))).to.eq(ZERO_BI);
+    });
+
+    it('should work GLP is withdrawn and gmx vault exists', async () => {
+      await gmxFactory.createVault(core.hhUser1.address);
+      await doHandleRewardsWithWaitTime(30);
+      await vault.vestGlp(esGmxAmount);
+      await waitDays(366);
+      expect(await vault.gmxBalanceOf()).to.eq(ZERO_BI);
+      await vault.unvestGlp(false);
+      expect(await vault.gmxBalanceOf()).to.eq(ZERO_BI);
+
+      const gmxVaultAddress = await gmxFactory.calculateVaultByAccount(core.hhUser1.address);
+      await expectProtocolBalance(core, gmxVaultAddress, 0, underlyingGmxMarketId, esGmxAmount);
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(vault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.eq(ZERO_BI);
       expect((await core.gmxEcosystem!.gmx.balanceOf(gmxVaultAddress)).eq(ZERO_BI)).to.eq(false);
