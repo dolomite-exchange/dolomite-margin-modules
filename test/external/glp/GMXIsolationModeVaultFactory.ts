@@ -12,7 +12,14 @@ import {
 import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
-import { createGMXIsolationModeVaultFactory, createGMXIsolationModeTokenVaultV1, createGmxRegistry, createGLPIsolationModeVaultFactory, createGLPIsolationModeTokenVaultV1, createGLPIsolationModeTokenVaultV2 } from '../../utils/ecosystem-token-utils/gmx';
+import {
+  createGMXIsolationModeVaultFactory,
+  createGMXIsolationModeTokenVaultV1,
+  createGmxRegistry,
+  createGLPIsolationModeVaultFactory,
+  createGLPIsolationModeTokenVaultV1,
+  createGLPIsolationModeTokenVaultV2
+} from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
@@ -22,7 +29,6 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { BigNumber, ContractTransaction } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
@@ -41,7 +47,6 @@ describe('GMXIsolationModeVaultFactory', () => {
   let factory: GMXIsolationModeVaultFactory;
   let glpFactory: GLPIsolationModeVaultFactory;
   let glpAmount: BigNumber;
-  let underlyingMarketIdGlp: BigNumber;
   let underlyingMarketIdGmx: BigNumber;
 
   before(async () => {
@@ -53,7 +58,6 @@ describe('GMXIsolationModeVaultFactory', () => {
     vaultImplementation = await createGMXIsolationModeTokenVaultV1();
     factory = await createGMXIsolationModeVaultFactory(core, gmxRegistry, vaultImplementation);
 
-    underlyingMarketIdGlp = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(glpFactory.address, '1000000000000000000');
     await setupTestMarket(core, glpFactory, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(glpFactory.address, true);
@@ -104,11 +108,8 @@ describe('GMXIsolationModeVaultFactory', () => {
     expect(await vaultContract.owner()).to.eq(core.hhUser1.address);
   }
 
-
   describe('#contructor', () => {
     it('should initialize variables properly', async () => {
-      expect(await factory.WETH()).to.equal(core.tokens.weth.address);
-      expect(await factory.WETH_MARKET_ID()).to.equal(core.marketIds.weth);
       expect(await factory.gmxRegistry()).to.equal(gmxRegistry.address);
       expect(await factory.UNDERLYING_TOKEN()).to.equal(core.gmxEcosystem!.gmx.address);
       expect(await factory.BORROW_POSITION_PROXY()).to.equal(core.borrowPositionProxyV2.address);
@@ -250,45 +251,6 @@ describe('GMXIsolationModeVaultFactory', () => {
       );
     });
   });
-
-  // describe('#createVaultAndAcceptFullAccountTransfer', () => {
-  //   it('should work normally', async () => {
-  //     const usdcAmount = BigNumber.from('100000000'); // 100 USDC
-  //     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
-  //     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1).mintAndStakeGlp(
-  //       core.tokens.usdc.address,
-  //       usdcAmount,
-  //       ONE_BI,
-  //       ONE_BI,
-  //     );
-  //     // use sGLP for approvals/transfers and fsGLP for checking balances
-  //     const glpAmount = await core.gmxEcosystem!.fsGlp.connect(core.hhUser1).balanceOf(core.hhUser1.address);
-  //     const vaultAddress = await factory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
-  //     await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).signalTransfer(vaultAddress);
-
-  //     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '1000000000000000000');
-  //     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-  //     await setupTestMarket(core, factory, true);
-  //     await factory.connect(core.governance).ownerInitialize([]);
-
-  //     await factory.connect(core.hhUser2).createVaultAndAcceptFullAccountTransfer(core.hhUser1.address);
-  //     const vault = setupUserVaultProxy<GLPIsolationModeTokenVaultV1>(
-  //       vaultAddress,
-  //       GLPIsolationModeTokenVaultV1__factory,
-  //       core.hhUser2,
-  //     );
-  //     expect(await core.gmxEcosystem!.fsGlp.connect(core.hhUser1).balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
-  //     expect(await core.gmxEcosystem!.fsGlp.connect(core.hhUser1).balanceOf(vaultAddress)).to.eq(glpAmount);
-  //     expect(await vault.underlyingBalanceOf()).to.eq(glpAmount);
-  //   });
-
-  //   it('should fail when not initialized yet', async () => {
-  //     await expectThrow(
-  //       factory.connect(core.hhUser2).createVaultAndAcceptFullAccountTransfer(core.hhUser1.address),
-  //       'IsolationModeVaultFactory: Not initialized',
-  //     );
-  //   });
-  // });
 
   describe('#setGmxRegistry', () => {
     it('should work normally', async () => {

@@ -21,17 +21,16 @@
 pragma solidity ^0.8.9;
 
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
-import { IsolationModeUpgradeableProxy } from "../proxies/IsolationModeUpgradeableProxy.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
-import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV2.sol";
+import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
 import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
-import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-import { IGLPIsolationModeVaultFactory } from "../interfaces/gmx/IGLPIsolationModeVaultFactory.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IsolationModeUpgradeableProxy } from "../proxies/IsolationModeUpgradeableProxy.sol";
+import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
 
 
 /**
@@ -51,8 +50,6 @@ contract GMXIsolationModeVaultFactory is
 
     // ============ Field Variables ============
 
-    address public immutable override WETH; // solhint-disable-line var-name-mixedcase
-    uint256 public immutable override WETH_MARKET_ID; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public override gmxRegistry;
 
     // ============ Modifiers ============
@@ -69,8 +66,6 @@ contract GMXIsolationModeVaultFactory is
     // ============ Constructor ============
 
     constructor(
-        address _weth,
-        uint256 _wethMarketId,
         address _gmxRegistry,
         address _gmx, // this serves as the underlying token
         address _borrowPositionProxy,
@@ -83,8 +78,6 @@ contract GMXIsolationModeVaultFactory is
         _userVaultImplementation,
         _dolomiteMargin
     ) {
-        WETH = _weth;
-        WETH_MARKET_ID = _wethMarketId;
         gmxRegistry = IGmxRegistryV1(_gmxRegistry);
     }
 
@@ -95,7 +88,7 @@ contract GMXIsolationModeVaultFactory is
         uint256 _vaultAccountNumber,
         uint256 _amountWei
     ) external onlyGLPVault(msg.sender, _vault) {
-        // @todo Should this be flag instead?
+        // @follow-up Should this be flag instead?
         IGMXIsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(true);
         _enqueueTransfer(
             _vault,

@@ -34,8 +34,6 @@ import { IGmxVester } from "../interfaces/gmx/IGmxVester.sol";
 import { ISGMX } from "../interfaces/gmx/ISGMX.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 
-import "hardhat/console.sol";
-
 
 /**
  * @title   GLPIsolationModeTokenVaultV1
@@ -86,8 +84,7 @@ contract GLPIsolationModeTokenVaultV2 is
         );
 
         _reentrancyGuard = _NOT_ENTERED;
-        address gmxVault = _getGmxVaultOrCreate(OWNER());
-        _sync(gmxVault);
+        _getGmxVaultOrCreate(OWNER());
     }
 
     function handleRewards(
@@ -192,6 +189,21 @@ contract GLPIsolationModeTokenVaultV2 is
         uint256 amountWei = underlyingBalanceOf();
         IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(/* _toAccountNumber = */ 0, amountWei);
 
+        uint256 amountGmx = gmxBalanceOf();
+        address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
+        if (gmxVault == address(0)) {
+            gmxVault = registry().gmxVaultFactory().createVault(OWNER());
+        } else if (!hasSynced()) {
+            _sync(gmxVault);
+        } else {
+            /*assert(amountGmx > 0);*/
+            registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
+                gmxVault,
+                0,
+                amountGmx
+            );
+        }
+
         // reset the flag back to false
         _setIsAcceptingFullAccountTransfer(false);
 
@@ -216,10 +228,9 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function sync(address _gmxVault) external {
-        if (msg.sender == address(registry().gmxVaultFactory()) || msg.sender == address(registry().glpVaultFactory())) { /* FOR COVERAGE TESTING */ }
+        if (msg.sender == address(registry().gmxVaultFactory())) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            msg.sender == address(registry().gmxVaultFactory()) ||
-                msg.sender == address(registry().glpVaultFactory()),
+            msg.sender == address(registry().gmxVaultFactory()),
             _FILE,
             "Only GMX or GLP factory can sync",
             msg.sender
@@ -388,6 +399,7 @@ contract GLPIsolationModeTokenVaultV2 is
         );
 
         IERC20 _gmx = gmx();
+        // @follow-up I don't fully understand the rewards stuff
         uint256 bal = _gmx.balanceOf(address(this));
         if (bal > 0) {
             registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
@@ -437,13 +449,13 @@ contract GLPIsolationModeTokenVaultV2 is
         IERC20 _gmx = gmx();
 
         uint256 bal = _gmx.balanceOf(address(this));
-        if (bal > 0) {
-            registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
-                gmxVault,
-                0,
-                _gmx.balanceOf(address(this))
-            );
-        }
+        // @follow-up Is this ok as an assert?
+        /*assert(bal > 0);*/
+        registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
+            gmxVault,
+            0,
+            bal
+        );
         if (_shouldStakeGmx) {
             _stakeGmx(_gmx, bal);
         } else {
@@ -490,6 +502,8 @@ contract GLPIsolationModeTokenVaultV2 is
         address gmxVault = registry().gmxVaultFactory().getVaultByAccount(_account);
         if (gmxVault == address(0)) {
             gmxVault = registry().gmxVaultFactory().createVault(_account);
+        } else if (!hasSynced()) {
+            _sync(gmxVault);
         }
         return gmxVault;
     }

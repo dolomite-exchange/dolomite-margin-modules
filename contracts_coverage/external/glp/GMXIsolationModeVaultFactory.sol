@@ -51,8 +51,6 @@ contract GMXIsolationModeVaultFactory is
 
     // ============ Field Variables ============
 
-    address public immutable override WETH; // solhint-disable-line var-name-mixedcase
-    uint256 public immutable override WETH_MARKET_ID; // solhint-disable-line var-name-mixedcase
     IGmxRegistryV1 public override gmxRegistry;
 
     // ============ Modifiers ============
@@ -70,8 +68,6 @@ contract GMXIsolationModeVaultFactory is
     // ============ Constructor ============
 
     constructor(
-        address _weth,
-        uint256 _wethMarketId,
         address _gmxRegistry,
         address _gmx, // this serves as the underlying token
         address _borrowPositionProxy,
@@ -84,8 +80,6 @@ contract GMXIsolationModeVaultFactory is
         _userVaultImplementation,
         _dolomiteMargin
     ) {
-        WETH = _weth;
-        WETH_MARKET_ID = _wethMarketId;
         gmxRegistry = IGmxRegistryV1(_gmxRegistry);
     }
 
@@ -96,7 +90,7 @@ contract GMXIsolationModeVaultFactory is
         uint256 _vaultAccountNumber,
         uint256 _amountWei
     ) external onlyGLPVault(msg.sender, _vault) {
-        // @todo Should this be flag instead?
+        // @follow-up Should this be flag instead?
         IGMXIsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(true);
         _enqueueTransfer(
             _vault,

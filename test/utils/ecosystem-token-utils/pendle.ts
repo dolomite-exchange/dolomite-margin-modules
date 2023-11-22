@@ -62,7 +62,8 @@ export async function createPendleGLPRegistry(core: CoreProtocol): Promise<Pendl
   return PendleGLPRegistry__factory.connect(registry.address, core.hhUser1);
 }
 
-export async function createPendlePtGLP2024IsolationModeTokenVaultV1(): Promise<PendlePtGLP2024IsolationModeTokenVaultV1> {
+export async function createPendlePtGLP2024IsolationModeTokenVaultV1(
+): Promise<PendlePtGLP2024IsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<PendlePtGLP2024IsolationModeTokenVaultV1>(
     'PendlePtGLP2024IsolationModeTokenVaultV1',

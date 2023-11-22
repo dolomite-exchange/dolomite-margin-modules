@@ -21,14 +21,14 @@
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
-import { IGLPIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV1.sol";
-import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
-import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
-import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IGLPIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV1.sol";
+import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
+import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
+import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
+import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 
 
 /**
@@ -51,7 +51,7 @@ contract GMXIsolationModeTokenVaultV1 is
     // ==================================================================
 
     bytes32 private constant _FILE = "GMXIsolationModeTokenVaultV1";
-    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1);
+    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
 
     // ==================================================================
     // ======================== Public Functions ========================
@@ -76,7 +76,6 @@ contract GMXIsolationModeTokenVaultV1 is
             _FILE,
             "GLP vault not created"
         );
-
         IGLPIsolationModeTokenVaultV1(glpVault).unstakeGmx(_amount);
     }
 
@@ -87,7 +86,6 @@ contract GMXIsolationModeTokenVaultV1 is
             _FILE,
             "GLP vault not created"
         );
-
         IGLPIsolationModeTokenVaultV1(glpVault).vestGmx(_esGmxAmount);
     }
 
@@ -98,8 +96,11 @@ contract GMXIsolationModeTokenVaultV1 is
             _FILE,
             "GLP vault not created"
         );
-
         IGLPIsolationModeTokenVaultV1(glpVault).unvestGmx(_shouldStakeGmx);
+    }
+
+    function setShouldSkipTransfer(bool _shouldSkipTransfer) external onlyVaultFactory(msg.sender) {
+        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
     }
 
     function executeDepositIntoVault(
@@ -115,10 +116,6 @@ contract GMXIsolationModeTokenVaultV1 is
         else {
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
         }
-    }
-
-    function setShouldSkipTransfer(bool _shouldSkipTransfer) external onlyVaultFactory(msg.sender) {
-        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
     }
 
     function registry() public view returns (IGmxRegistryV1) {

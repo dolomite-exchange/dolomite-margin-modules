@@ -78,7 +78,6 @@ contract GMXIsolationModeTokenVaultV1 is
             _FILE,
             "GLP vault not created"
         );
-
         IGLPIsolationModeTokenVaultV1(glpVault).unstakeGmx(_amount);
     }
 
@@ -90,7 +89,6 @@ contract GMXIsolationModeTokenVaultV1 is
             _FILE,
             "GLP vault not created"
         );
-
         IGLPIsolationModeTokenVaultV1(glpVault).vestGmx(_esGmxAmount);
     }
 
@@ -102,7 +100,6 @@ contract GMXIsolationModeTokenVaultV1 is
             _FILE,
             "GLP vault not created"
         );
-
         IGLPIsolationModeTokenVaultV1(glpVault).unvestGmx(_shouldStakeGmx);
     }
 

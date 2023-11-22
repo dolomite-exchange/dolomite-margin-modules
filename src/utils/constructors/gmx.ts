@@ -136,8 +136,6 @@ export function getGMXIsolationModeVaultFactoryConstructorParams(
   userVaultImplementation: GMXIsolationModeTokenVaultV1,
 ): any[] {
   return [
-    core.tokens.weth.address,
-    core.marketIds.weth,
     gmxRegistry.address,
     core.gmxEcosystem!.gmx.address,
     core.borrowPositionProxyV2.address,

@@ -1,28 +1,27 @@
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
-  GLPIsolationModeTokenVaultV1,
-  GLPIsolationModeTokenVaultV1__factory,
   GLPIsolationModeVaultFactory,
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeTokenVaultV1__factory,
   GMXIsolationModeVaultFactory,
   GmxRegistryV1,
   TestGLPIsolationModeTokenVaultV1,
-  TestGLPIsolationModeTokenVaultV1__factory,
   TestGLPIsolationModeTokenVaultV2,
   TestGLPIsolationModeTokenVaultV2__factory,
 } from '../../../src/types';
-import { AccountInfoStruct } from '../../../src/utils';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
-import { createGLPIsolationModeTokenVaultV1, createGLPIsolationModeVaultFactory, createGMXIsolationModeTokenVaultV1, createGMXIsolationModeVaultFactory, createGmxRegistry, createTestGLPIsolationModeTokenVaultV1, createTestGLPIsolationModeTokenVaultV2 } from '../../utils/ecosystem-token-utils/gmx';
+import {
+  createGLPIsolationModeVaultFactory,
+  createGMXIsolationModeTokenVaultV1,
+  createGMXIsolationModeVaultFactory,
+  createGmxRegistry,
+  createTestGLPIsolationModeTokenVaultV2
+} from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupGMXBalance,
   setupTestMarket,
@@ -212,7 +211,8 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       expect(await core.gmxEcosystem!.vGmx.pairAmounts(glpVault.address)).to.eq(gmxAmountVested);
       // the amount of GMX in the vault should be unchanged if some of it moves into vesting
       expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
-      expect((await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).gt(gmxAmount.sub(gmxAmountVested))).to.eq(true);
+      expect((await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address))
+        .gt(gmxAmount.sub(gmxAmountVested))).to.eq(true);
       await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, gmxAmount);
     });
 
@@ -249,7 +249,13 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await gmxVault.unvestGmx(true);
 
       expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount.add(esGmxAmount));
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, gmxAmount.add(esGmxAmount));
+      await expectProtocolBalance(
+        core,
+        gmxVault.address,
+        accountNumber,
+        underlyingMarketIdGmx,
+        gmxAmount.add(esGmxAmount)
+      );
     });
 
     it('should work when vested GMX is withdrawn', async () => {
@@ -269,7 +275,13 @@ describe('GMXIsolationModeTokenVaultV1', () => {
 
       expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
       expect(await core.gmxEcosystem!.gmx.balanceOf(gmxVault.address)).to.eq(esGmxAmount);
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, gmxAmount.add(esGmxAmount));
+      await expectProtocolBalance(
+        core,
+        gmxVault.address,
+        accountNumber,
+        underlyingMarketIdGmx,
+        gmxAmount.add(esGmxAmount)
+      );
     });
 
     it('should fail when not called by vault owner', async () => {
@@ -329,7 +341,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
-  })
+  });
 
   describe('#dolomiteRegistry', () => {
     it('should work', async () => {

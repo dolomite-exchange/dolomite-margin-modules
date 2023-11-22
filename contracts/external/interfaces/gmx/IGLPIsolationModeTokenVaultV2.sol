@@ -153,9 +153,15 @@ interface IGLPIsolationModeTokenVaultV2 {
     function unvestGmx(bool _shouldStakeGmx) external;
 
     /**
+     * @notice  Syncs the vault's GMX balance with the GMX vault. This function must be called by the GMX vault factory.
+     *          All GMX tokens will remain in this vault, but the GMX vault will be updated with the vault's balance.
+     *
+     * @param  _gmxVault  Matching GMX vault address for GLP vault owner
+     */
+    function sync(address _gmxVault) external;
+
+    /**
      * @return The registry used to get addresses from the GMX ecosystem
      */
     function registry() external view returns (IGmxRegistryV1);
-
-    function sync(address _gmxVault) external;
 }

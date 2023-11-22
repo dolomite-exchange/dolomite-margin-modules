@@ -50,9 +50,5 @@ interface IGMXIsolationModeVaultFactory is IIsolationModeVaultFactory {
         uint256 _amount
     ) external;
 
-    function WETH() external view returns (address);
-
-    function WETH_MARKET_ID() external view returns (uint256);
-
     function gmxRegistry() external view returns (IGmxRegistryV1);
 }

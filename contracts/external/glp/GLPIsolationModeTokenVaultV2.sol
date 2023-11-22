@@ -27,18 +27,15 @@ import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV2.sol";
 import { IGLPIsolationModeVaultFactory } from "../interfaces/gmx/IGLPIsolationModeVaultFactory.sol";
-import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "../interfaces/gmx/IGmxRewardRouterV2.sol";
 import { IGmxVester } from "../interfaces/gmx/IGmxVester.sol";
 import { ISGMX } from "../interfaces/gmx/ISGMX.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 
-import "hardhat/console.sol";
-
 
 /**
- * @title   GLPIsolationModeTokenVaultV1
+ * @title   GLPIsolationModeTokenVaultV2
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the sGLP token that can be used to
@@ -84,8 +81,7 @@ contract GLPIsolationModeTokenVaultV2 is
         );
 
         _reentrancyGuard = _NOT_ENTERED;
-        address gmxVault = _getGmxVaultOrCreate(OWNER());
-        _sync(gmxVault);
+        _getGmxVaultOrCreate(OWNER());
     }
 
     function handleRewards(
@@ -187,6 +183,21 @@ contract GLPIsolationModeTokenVaultV2 is
         // the amount of fsGLP being deposited is the current balance of fsGLP, since we should have started at 0.
         uint256 amountWei = underlyingBalanceOf();
         IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(/* _toAccountNumber = */ 0, amountWei);
+
+        uint256 amountGmx = gmxBalanceOf();
+        address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
+        if (gmxVault == address(0)) {
+            gmxVault = registry().gmxVaultFactory().createVault(OWNER());
+        } else if (!hasSynced()) {
+            _sync(gmxVault);
+        } else {
+            assert(amountGmx > 0);
+            registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
+                gmxVault,
+                0,
+                amountGmx
+            );
+        }
 
         // reset the flag back to false
         _setIsAcceptingFullAccountTransfer(false);
@@ -381,13 +392,15 @@ contract GLPIsolationModeTokenVaultV2 is
         );
 
         IERC20 _gmx = gmx();
+        // @follow-up If with bal here instead of assert?
         uint256 bal = _gmx.balanceOf(address(this));
-        assert(bal > 0);
-        registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
-            gmxVault,
-            0,
-            bal
-        );
+        if (bal > 0) {
+            registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
+                gmxVault,
+                0,
+                bal
+            );
+        }
         if (_shouldStakeGmx) {
             // we can reset the allowance back to 0 here
             _approveGmxForStaking(_gmx, 0);
@@ -429,12 +442,12 @@ contract GLPIsolationModeTokenVaultV2 is
         IERC20 _gmx = gmx();
 
         uint256 bal = _gmx.balanceOf(address(this));
-        // @follow-up Should this be an assert or put deposit into if statement
+        // @follow-up Is this ok as an assert?
         assert(bal > 0);
         registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
             gmxVault,
             0,
-            _gmx.balanceOf(address(this))
+            bal
         );
         if (_shouldStakeGmx) {
             _stakeGmx(_gmx, bal);
@@ -481,6 +494,8 @@ contract GLPIsolationModeTokenVaultV2 is
         address gmxVault = registry().gmxVaultFactory().getVaultByAccount(_account);
         if (gmxVault == address(0)) {
             gmxVault = registry().gmxVaultFactory().createVault(_account);
+        } else if (!hasSynced()) {
+            _sync(gmxVault);
         }
         return gmxVault;
     }
