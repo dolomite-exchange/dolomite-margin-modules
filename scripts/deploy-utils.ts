@@ -273,7 +273,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
   if (
     typeof methodName === 'string'
-    && methodName.startsWith('owner')
+    && (methodName.startsWith('owner') || methodName === 'upgradeTo')
     && await core.dolomiteMargin.owner() === core.delayedMultiSig.address
   ) {
     // All owner ... functions must go to Dolomite governance first
