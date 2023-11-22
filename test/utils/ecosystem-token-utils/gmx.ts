@@ -19,8 +19,12 @@ import {
   GLPPriceOracleV1,
   GLPPriceOracleV1__factory,
   GMXIsolationModeTokenVaultV1,
+  GMXIsolationModeUnwrapperTraderV2,
+  GMXIsolationModeUnwrapperTraderV2__factory,
   GMXIsolationModeVaultFactory,
   GMXIsolationModeVaultFactory__factory,
+  GMXIsolationModeWrapperTraderV2,
+  GMXIsolationModeWrapperTraderV2__factory,
   GmxRegistryV1,
   GmxRegistryV1__factory,
   GmxV2IsolationModeTokenVaultV1,
@@ -37,6 +41,7 @@ import {
   GmxV2Registry__factory,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
+  IGMXIsolationModeVaultFactory,
   IGmxMarketToken,
   IGmxRegistryV1,
   IGmxV2IsolationModeVaultFactory,
@@ -61,11 +66,12 @@ import {
   getGLPWrapperTraderV2ConstructorParams,
   getGMXIsolationModeVaultFactoryConstructorParams,
   getGmxRegistryConstructorParams,
+  getGMXUnwrapperTraderV2ConstructorParams,
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
   getGmxV2IsolationModeVaultFactoryConstructorParams,
   getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
   getGmxV2MarketTokenPriceOracleConstructorParams,
-  getGmxV2RegistryConstructorParams, GMX_V2_CALLBACK_GAS_LIMIT,
+  getGmxV2RegistryConstructorParams, getGMXWrapperTraderV2ConstructorParams, GMX_V2_CALLBACK_GAS_LIMIT,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
@@ -217,6 +223,30 @@ export async function createGMXIsolationModeVaultFactory(
     GMXIsolationModeVaultFactory__factory.bytecode,
     getGMXIsolationModeVaultFactoryConstructorParams(core, gmxRegistry, userVaultImplementation),
   );
+}
+
+export async function createGMXUnwrapperTraderV2(
+  core: CoreProtocol,
+  factory: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
+  registry: IGmxRegistryV1 | GmxRegistryV1,
+): Promise<GMXIsolationModeUnwrapperTraderV2> {
+    return createContractWithAbi<GMXIsolationModeUnwrapperTraderV2>(
+      GMXIsolationModeUnwrapperTraderV2__factory.abi,
+      GMXIsolationModeUnwrapperTraderV2__factory.bytecode,
+      getGMXUnwrapperTraderV2ConstructorParams(core, factory, registry),
+    );
+}
+
+export async function createGMXWrapperTraderV2(
+  core: CoreProtocol,
+  factory: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
+  registry: IGmxRegistryV1 | GmxRegistryV1,
+): Promise<GMXIsolationModeWrapperTraderV2> {
+    return createContractWithAbi<GMXIsolationModeWrapperTraderV2>(
+      GMXIsolationModeWrapperTraderV2__factory.abi,
+      GMXIsolationModeWrapperTraderV2__factory.bytecode,
+      getGMXWrapperTraderV2ConstructorParams(core, factory, registry),
+    );
 }
 
 export async function createGmxV2Registry(core: CoreProtocol, callbackGasLimit: BigNumberish): Promise<GmxV2Registry> {

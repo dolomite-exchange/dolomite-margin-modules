@@ -21,23 +21,23 @@
 pragma solidity ^0.8.9;
 
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
-import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
+import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 
 
 /**
- * @title   GMXIsolationModeUnwrapperTraderV2
+ * @title   GMXIsolationModeWrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for unwrapping dGMX into any supported token. Upon settlement,
- *          the GMX is sent from the user's vault to this contract and dGMX is burned from `DolomiteMargin`.
+ * @notice  Used for wrapping GLP (via minting from the GLPRewardsRouter) from USDC. Upon settlement, the minted GLP is
+ *          sent to the user's vault and dfsGLP is minted to `DolomiteMargin`.
  */
-contract GMXIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
+contract GMXIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "GMXIsolationModeUnwrapperV2";
+    bytes32 private constant _FILE = "GMXIsolationModeWrapperV2";
 
-    // ============ Immutable State Variables ============
+    // ============ Constructor ============
 
     IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
 
@@ -48,26 +48,22 @@ contract GMXIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         address _dGmx,
         address _dolomiteMargin
     )
-    IsolationModeUnwrapperTraderV2(
+    IsolationModeWrapperTraderV2(
         _dGmx,
         _dolomiteMargin
     ) {
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }
 
-    // ==========================================
-    // ============ Public Functions ============
-    // ==========================================
+    // ============ External Functions ============
 
-    function isValidOutputToken(address _outputToken) public override view returns (bool) {
-        return _outputToken == address(GMX_REGISTRY.gmx());
+    function isValidInputToken(address _inputToken) public override view returns (bool) {
+        return _inputToken == address(GMX_REGISTRY.gmx());
     }
 
-    // ============================================
     // ============ Internal Functions ============
-    // ============================================
 
-    function _exchangeUnderlyingTokenToOutputToken(
+    function _exchangeIntoUnderlyingToken(
         address,
         address,
         address,

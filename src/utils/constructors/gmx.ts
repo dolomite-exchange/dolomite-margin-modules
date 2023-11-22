@@ -19,6 +19,8 @@ import {
   IGmxV2IsolationModeVaultFactory,
   TestGLPIsolationModeTokenVaultV1,
   GMXIsolationModeTokenVaultV1,
+  IGMXIsolationModeVaultFactory,
+  GMXIsolationModeVaultFactory,
 } from '../../types';
 
 export function getGLPPriceOracleV1ConstructorParams(
@@ -95,6 +97,30 @@ export function getGLPWrapperTraderV2ConstructorParams(
   return [
     gmxRegistry.address,
     dfsGlp.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getGMXWrapperTraderV2ConstructorParams(
+  core: CoreProtocol,
+  dGmx: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
+  gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
+): any[] {
+  return [
+    gmxRegistry.address,
+    dGmx.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getGMXUnwrapperTraderV2ConstructorParams(
+  core: CoreProtocol,
+  dGmx: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
+  gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
+): any[] {
+  return [
+    gmxRegistry.address,
+    dGmx.address,
     core.dolomiteMargin.address,
   ];
 }
