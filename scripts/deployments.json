@@ -55,6 +55,13 @@
       "isVerified": true
     }
   },
+  "DolomiteRegistryImplementationV5": {
+    "42161": {
+      "address": "0x0315c50Fe76C0f69090F4195fe68f18368a269b9",
+      "transaction": "0x79853d83fd824fc1534e7447dd70a121a56634321535bdbeea2a222b7361ed09",
+      "isVerified": true
+    }
+  },
   "DolomiteRegistryProxy": {
     "42161": {
       "address": "0x2A059D6d682e5fB1226eB8bC2977b512698C2404",
@@ -393,8 +400,8 @@
   },
   "PendlePtREthJun2025PriceOracle": {
     "42161": {
-      "address": "0x35467721F3fd9DE06c462E50C3FF81579892aFCa",
-      "transaction": "0xe740d3a850687e19454c6ef78fd3bbc5e5c18e6bc3b597494b2eb7565cf47e5d",
+      "address": "0x8abe244D76BEbCDDCc63889F030dE57C29E2A35b",
+      "transaction": "0xa9f46efe7db3ac3b8a0da3dbcc44cfc7b67da7fa9e7f866a3f4c7399237b5352",
       "isVerified": true
     }
   },
@@ -428,8 +435,8 @@
   },
   "PendlePtWstEthJun2024PriceOracle": {
     "42161": {
-      "address": "0x49c947475ca9d283721eBcD1b1744075ca7A8BA0",
-      "transaction": "0x9c350181439da94d901a998de662d7886896d94912b8f910a589f800eb49cb0c",
+      "address": "0x099587687D2B20f67e29B308f45C9c6468530541",
+      "transaction": "0x257b13115db9c5ce303045c0e0237fea731bc9f23427c6f8dd12cc2f562a6861",
       "isVerified": true
     }
   },
@@ -463,8 +470,8 @@
   },
   "PendlePtWstEthJun2025PriceOracle": {
     "42161": {
-      "address": "0x6E9C12471A2A5A6eA65DB17d243230Ebb0ee0A37",
-      "transaction": "0x439223a3981429ae9b419108ab1bed53093c5d51e6e721bd143129e8d292c127",
+      "address": "0xc7F72F3ce10dCD0562799598021eAC43FCa4FB8A",
+      "transaction": "0x56987cdcddd569bf4db5178f577cc5086cd91da2096ff0b7df8581fa306744ff",
       "isVerified": true
     }
   },

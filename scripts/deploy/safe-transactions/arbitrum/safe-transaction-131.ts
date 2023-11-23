@@ -1,3 +1,4 @@
+import { parseEther } from 'ethers/lib/utils';
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network } from '../../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../test/utils/setup';
@@ -120,6 +121,33 @@ async function main(): Promise<DenJsonUpload> {
       'dolomiteMargin',
       'ownerSetPriceOracle',
       [core.marketIds.dPtWstEthJun2025!, ptWstEthJun2025OracleAddress],
+    ),
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteMargin',
+      'ownerSetMaxWei',
+      [core.marketIds.dPtREthJun2025!, parseEther('1000')],
+    ),
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteMargin',
+      'ownerSetMaxWei',
+      [core.marketIds.dPtWstEthJun2024!, parseEther('1000')],
+    ),
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteMargin',
+      'ownerSetMaxWei',
+      [core.marketIds.dPtWstEthJun2025!, parseEther('750')],
     ),
   );
 

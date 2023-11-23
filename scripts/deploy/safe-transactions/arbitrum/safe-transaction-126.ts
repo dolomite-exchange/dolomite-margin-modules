@@ -116,11 +116,10 @@ async function deployPendlePtSystem(
     `PendlePt${ptName}IsolationModeWrapperTraderV2`,
   );
 
-  const underlyingMarketId = await core.dolomiteMargin.getMarketIdByTokenAddress(underlyingToken.address);
   const oracleAddress = await deployContractAndSave(
     Number(network),
     'PendlePtPriceOracle',
-    getPendlePtPriceOracleConstructorParams(core, factory, registry, underlyingMarketId),
+    getPendlePtPriceOracleConstructorParams(core, factory, registry, underlyingToken),
     `PendlePt${ptName}PriceOracle`,
   );
   const oracle = PendlePtPriceOracle__factory.connect(oracleAddress, core.governance);
