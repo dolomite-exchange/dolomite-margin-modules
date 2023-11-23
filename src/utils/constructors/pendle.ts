@@ -110,7 +110,7 @@ export function getPendlePtPriceOracleConstructorParams(
   core: CoreProtocol,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
   pendleRegistry: IPendleRegistry | PendleRegistry,
-  underlyingMarketId: BigNumberish,
+  underlyingToken: IERC20,
 ): any[] {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
@@ -119,7 +119,7 @@ export function getPendlePtPriceOracleConstructorParams(
   return [
     dptToken.address,
     pendleRegistry.address,
-    underlyingMarketId,
+    underlyingToken.address,
     core.dolomiteMargin.address,
   ];
 }

@@ -48,7 +48,7 @@ contract PendlePtPriceOracle is IDolomitePriceOracle {
     address immutable public DPT_TOKEN; // solhint-disable-line var-name-mixedcase
     IPendleRegistry immutable public REGISTRY; // solhint-disable-line var-name-mixedcase
     IDolomiteMargin immutable public DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
-    uint256 immutable public UNDERLYING_MARKET_ID; // solhint-disable-line var-name-mixedcase
+    address immutable public UNDERLYING_TOKEN; // solhint-disable-line var-name-mixedcase
     uint256 immutable public PT_ASSET_SCALE; // solhint-disable-line var-name-mixedcase
 
     // ============================ Constructor ============================
@@ -56,12 +56,12 @@ contract PendlePtPriceOracle is IDolomitePriceOracle {
     constructor(
         address _dptToken,
         address _pendleRegistry,
-        uint256 _underlyingMarketId,
+        address _underlyingToken,
         address _dolomiteMargin
     ) {
         DPT_TOKEN = _dptToken;
         REGISTRY = IPendleRegistry(_pendleRegistry);
-        UNDERLYING_MARKET_ID = _underlyingMarketId;
+        UNDERLYING_TOKEN = _underlyingToken;
         DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         PT_ASSET_SCALE = uint256(10) ** uint256(IERC20Metadata(DPT_TOKEN).decimals());
 
@@ -103,7 +103,7 @@ contract PendlePtPriceOracle is IDolomitePriceOracle {
     // ============================ Internal Functions ============================
 
     function _getCurrentPrice() internal view returns (uint256) {
-        uint256 underlyingPrice = DOLOMITE_MARGIN.getMarketPrice(UNDERLYING_MARKET_ID).value;
+        uint256 underlyingPrice = REGISTRY.dolomiteRegistry().chainlinkPriceOracle().getPrice(UNDERLYING_TOKEN).value;
         uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptMarket()), TWAP_DURATION);
         return underlyingPrice * ptExchangeRate / PT_ASSET_SCALE;
     }

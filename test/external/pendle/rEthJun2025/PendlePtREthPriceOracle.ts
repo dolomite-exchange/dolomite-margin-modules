@@ -3,6 +3,9 @@ import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+  IERC20,
   PendlePtIsolationModeVaultFactory,
   PendlePtPriceOracle,
   PendleRegistry,
@@ -11,7 +14,7 @@ import {
 } from '../../../../src/types';
 import { createContractWithAbi } from '../../../../src/utils/dolomite-utils';
 import { Network } from '../../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import { expectThrow } from '../../../utils/assertions';
 import {
   createPendlePtIsolationModeTokenVaultV1,
@@ -21,7 +24,7 @@ import {
 } from '../../../utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../../utils/setup';
 
-const PT_RETH_PRICE = BigNumber.from('1968646864050422287409');
+const PT_RETH_PRICE = BigNumber.from('1808539032753997677827');
 
 describe('PendlePtREthJun2025PriceOracle', () => {
   let snapshotId: string;
@@ -31,7 +34,7 @@ describe('PendlePtREthJun2025PriceOracle', () => {
   let pendleRegistry: PendleRegistry;
   let factory: PendlePtIsolationModeVaultFactory;
   let marketId: BigNumberish;
-  let underlyingMarketId: BigNumberish;
+  let underlyingToken: IERC20;
 
   before(async () => {
     const blockNumber = 148_468_519;
@@ -40,7 +43,17 @@ describe('PendlePtREthJun2025PriceOracle', () => {
       network: Network.ArbitrumOne,
     });
 
-    underlyingMarketId = core.marketIds.rEth!;
+    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
+      DolomiteRegistryImplementation__factory.abi,
+      DolomiteRegistryImplementation__factory.bytecode,
+      [],
+    );
+    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
+      core.chainlinkPriceOracle!.address,
+    );
+
+    underlyingToken = core.tokens.weth;
     pendleRegistry = await createPendleRegistry(
       core,
       core.pendleEcosystem!.rEthJun2025.ptREthMarket,
@@ -58,7 +71,7 @@ describe('PendlePtREthJun2025PriceOracle', () => {
       core,
       factory,
       pendleRegistry,
-      underlyingMarketId,
+      underlyingToken,
     );
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, ptOracle);
@@ -75,7 +88,7 @@ describe('PendlePtREthJun2025PriceOracle', () => {
       expect(await ptOracle.DPT_TOKEN()).to.eq(factory.address);
       expect(await ptOracle.REGISTRY()).to.eq(pendleRegistry.address);
       expect(await ptOracle.DOLOMITE_MARGIN()).to.eq(core.dolomiteMargin.address);
-      expect(await ptOracle.UNDERLYING_MARKET_ID()).to.eq(underlyingMarketId);
+      expect(await ptOracle.UNDERLYING_TOKEN()).to.eq(underlyingToken.address);
     });
 
     it('should fail when oracle is not ready yet', async () => {
@@ -88,30 +101,30 @@ describe('PendlePtREthJun2025PriceOracle', () => {
 
       await testPtOracle.setOracleState(true, 0, false);
       await expectThrow(
-        createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingMarketId),
+        createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken),
         'PendlePtPriceOracle: Oracle not ready yet',
       );
 
       await testPtOracle.setOracleState(false, 0, false);
       await expectThrow(
-        createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingMarketId),
+        createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken),
         'PendlePtPriceOracle: Oracle not ready yet',
       );
 
       await testPtOracle.setOracleState(true, 0, true);
       await expectThrow(
-        createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingMarketId),
+        createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken),
         'PendlePtPriceOracle: Oracle not ready yet',
       );
 
       await testPtOracle.setOracleState(false, 0, true);
-      await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingMarketId); // should work now
+      await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken); // should work now
     });
   });
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
-      await setNextBlockTimestamp(1700000000);
+      await advanceToTimestamp(1699549200);
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_RETH_PRICE);
     });

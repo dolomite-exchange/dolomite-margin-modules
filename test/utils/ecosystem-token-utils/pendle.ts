@@ -161,12 +161,12 @@ export function createPendlePtPriceOracle(
   core: CoreProtocol,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
   pendleRegistry: IPendleRegistry | PendleRegistry,
-  underlyingMarketId: BigNumberish,
+  underlyingToken: IERC20,
 ): Promise<PendlePtPriceOracle> {
   return createContractWithAbi(
     PendlePtPriceOracle__factory.abi,
     PendlePtPriceOracle__factory.bytecode,
-    getPendlePtPriceOracleConstructorParams(core, dptToken, pendleRegistry, underlyingMarketId),
+    getPendlePtPriceOracleConstructorParams(core, dptToken, pendleRegistry, underlyingToken),
   );
 }
 

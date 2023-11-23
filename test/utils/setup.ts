@@ -21,7 +21,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkName } from 'src/utils/no-deps-constants';
-import Deployments from '../../scripts/deployments.json';
+import Deployments, * as deployments from '../../scripts/deployments.json';
 import {
   DolomiteCompatibleWhitelistForPlutusDAO,
   DolomiteCompatibleWhitelistForPlutusDAO__factory,
@@ -31,10 +31,10 @@ import {
   GLPIsolationModeUnwrapperTraderV1__factory,
   GLPIsolationModeWrapperTraderV1,
   GLPIsolationModeWrapperTraderV1__factory,
-  IBorrowPositionProxyV2,
-  IBorrowPositionProxyV2__factory,
   IAlgebraV3Pool,
   IAlgebraV3Pool__factory,
+  IBorrowPositionProxyV2,
+  IBorrowPositionProxyV2__factory,
   IChainlinkPriceOracle,
   IChainlinkPriceOracle__factory,
   IChainlinkPriceOracleOld,
@@ -116,14 +116,19 @@ import {
   IParaswapAugustusRouter,
   IParaswapAugustusRouter__factory,
   IParaswapFeeClaimer,
-  IParaswapFeeClaimer__factory, IPartiallyDelayedMultiSig, IPartiallyDelayedMultiSig__factory,
+  IParaswapFeeClaimer__factory,
+  IPartiallyDelayedMultiSig,
+  IPartiallyDelayedMultiSig__factory,
   IPendleGLPRegistry,
   IPendleGLPRegistry__factory,
   IPendlePtMarket,
   IPendlePtMarket__factory,
+  IPendlePtOracle,
   IPendlePtOracle__factory,
   IPendlePtToken,
   IPendlePtToken__factory,
+  IPendleRegistry,
+  IPendleRegistry__factory,
   IPendleRouter,
   IPendleRouter__factory,
   IPendleSyToken,
@@ -152,6 +157,8 @@ import {
   ParaswapAggregatorTrader__factory,
   PendlePtGLP2024IsolationModeVaultFactory,
   PendlePtGLP2024IsolationModeVaultFactory__factory,
+  PendlePtIsolationModeVaultFactory,
+  PendlePtIsolationModeVaultFactory__factory,
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeVaultFactory__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1,
@@ -165,7 +172,7 @@ import {
   TestInterestSetter,
   TestInterestSetter__factory,
   TestPriceOracle,
-  TestPriceOracle__factory, IPendlePtOracle,
+  TestPriceOracle__factory,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
@@ -178,7 +185,11 @@ import {
   DFS_GLP_MAP,
   DJ_USDC,
   DPLV_GLP_MAP,
-  DPT_GLP_2024_MAP, DPX_MAP,
+  DPT_GLP_2024_MAP,
+  DPT_R_ETH_JUN_2025_MAP,
+  DPT_WST_ETH_JUN_2024_MAP,
+  DPT_WST_ETH_JUN_2025_MAP,
+  DPX_MAP,
   DYT_GLP_2024_MAP,
   ES_GMX_DISTRIBUTOR_MAP,
   ES_GMX_MAP,
@@ -209,16 +220,19 @@ import {
   JONES_JUSDC_RECEIPT_TOKEN_MAP,
   JONES_WHITELIST_CONTROLLER_MAP,
   LINK_MAP,
-  MAGIC_GLP_MAP, MAGIC_MAP,
+  MAGIC_GLP_MAP,
+  MAGIC_MAP,
   MIM_MAP,
   NATIVE_USDC_MAP,
   ODOS_ROUTER_MAP,
   PARASWAP_AUGUSTUS_ROUTER_MAP,
   PARASWAP_FEE_CLAIMER_MAP,
-  PARASWAP_TRANSFER_PROXY_MAP, PENDLE_MAP,
+  PARASWAP_TRANSFER_PROXY_MAP,
+  PENDLE_MAP,
   PENDLE_PT_GLP_2024_MARKET_MAP,
   PENDLE_PT_GLP_2024_TOKEN_MAP,
-  PENDLE_PT_GLP_ORACLE_MAP, PENDLE_PT_ORACLE_MAP,
+  PENDLE_PT_GLP_ORACLE_MAP,
+  PENDLE_PT_ORACLE_MAP,
   PENDLE_PT_RETH_MARKET_MAP,
   PENDLE_PT_RETH_TOKEN_MAP,
   PENDLE_PT_WST_ETH_2024_MARKET_MAP,
@@ -226,7 +240,7 @@ import {
   PENDLE_PT_WST_ETH_2025_MARKET_MAP,
   PENDLE_PT_WST_ETH_2025_TOKEN_MAP,
   PENDLE_ROUTER_MAP,
-  PENDLE_SY_GLP_2024_TOKEN_MAP,
+  PENDLE_SY_GLP_TOKEN_MAP,
   PENDLE_SY_RETH_TOKEN_MAP,
   PENDLE_SY_WST_ETH_TOKEN_MAP,
   PENDLE_YT_GLP_2024_TOKEN_MAP,
@@ -238,6 +252,7 @@ import {
   S_GLP_MAP,
   S_GMX_MAP,
   SBF_GMX_MAP,
+  ST_ETH_MAP,
   UMAMI_CONFIGURATOR_MAP,
   UMAMI_LINK_VAULT_MAP,
   UMAMI_STORAGE_VIEWER_MAP,
@@ -354,16 +369,22 @@ export interface PendleEcosystem {
     ytGlpToken: IPendleYtToken;
   };
   rEthJun2025: {
+    dPtREthJun2025: PendlePtIsolationModeVaultFactory;
+    pendleRegistry: IPendleRegistry;
     ptOracle: IPendlePtOracle;
     ptREthMarket: IPendlePtMarket;
     ptREthToken: IPendlePtToken;
   };
   wstEthJun2024: {
+    dPtWstEthJun2024: PendlePtIsolationModeVaultFactory;
+    pendleRegistry: IPendleRegistry;
     ptOracle: IPendlePtOracle;
     ptWstEthMarket: IPendlePtMarket;
     ptWstEthToken: IPendlePtToken;
   };
   wstEthJun2025: {
+    dPtWstEthJun2025: PendlePtIsolationModeVaultFactory;
+    pendleRegistry: IPendleRegistry;
     ptOracle: IPendlePtOracle;
     ptWstEthMarket: IPendlePtMarket;
     ptWstEthToken: IPendlePtToken;
@@ -474,6 +495,9 @@ export interface CoreProtocol {
     djUSDC: BigNumberish | undefined;
     dplvGlp: BigNumberish | undefined;
     dPtGlp: BigNumberish | undefined;
+    dPtREthJun2025: BigNumberish | undefined;
+    dPtWstEthJun2024: BigNumberish | undefined;
+    dPtWstEthJun2025: BigNumberish | undefined;
     dpx: BigNumberish | undefined;
     dYtGlp: BigNumberish | undefined;
     grail: BigNumberish | undefined;
@@ -499,6 +523,9 @@ export interface CoreProtocol {
     dai: IERC20;
     dfsGlp: IERC20 | undefined;
     dPtGlp: IERC20 | undefined;
+    dPtREthJun2025: IERC20 | undefined;
+    dPtWstEthJun2024: IERC20 | undefined;
+    dPtWstEthJun2025: IERC20 | undefined;
     dpx: IERC20 | undefined;
     dYtGlp: IERC20 | undefined;
     grail: IERC20 | undefined;
@@ -507,6 +534,7 @@ export interface CoreProtocol {
     nativeUsdc: IERC20 | undefined;
     rEth: IERC20 | undefined;
     pendle: IERC20 | undefined;
+    stEth: IERC20 | undefined;
     usdc: IERC20;
     wbtc: IERC20;
     weth: IWETH;
@@ -873,6 +901,9 @@ export async function setupCoreProtocol(
       djUSDC: DJ_USDC[config.network]?.marketId,
       dplvGlp: DPLV_GLP_MAP[config.network]?.marketId,
       dPtGlp: DPT_GLP_2024_MAP[config.network]?.marketId,
+      dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[config.network]?.marketId,
+      dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[config.network]?.marketId,
+      dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[config.network]?.marketId,
       dpx: DPX_MAP[config.network]?.marketId,
       dYtGlp: DYT_GLP_2024_MAP[config.network]?.marketId,
       grail: GRAIL_MAP[config.network]?.marketId,
@@ -894,6 +925,9 @@ export async function setupCoreProtocol(
       dai: IERC20__factory.connect(DAI_MAP[config.network].address, hhUser1),
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
       dPtGlp: createIERC20Opt(DPT_GLP_2024_MAP[config.network]?.address, hhUser1),
+      dPtREthJun2025: createIERC20Opt(DPT_R_ETH_JUN_2025_MAP[config.network]?.address, hhUser1),
+      dPtWstEthJun2024: createIERC20Opt(DPT_WST_ETH_JUN_2024_MAP[config.network]?.address, hhUser1),
+      dPtWstEthJun2025: createIERC20Opt(DPT_WST_ETH_JUN_2025_MAP[config.network]?.address, hhUser1),
       dpx: createIERC20Opt(DPX_MAP[config.network]?.address, hhUser1),
       dYtGlp: createIERC20Opt(DYT_GLP_2024_MAP[config.network]?.address, hhUser1),
       grail: createIERC20Opt(GRAIL_MAP[config.network]?.address, hhUser1),
@@ -902,6 +936,7 @@ export async function setupCoreProtocol(
       nativeUsdc: createIERC20Opt(NATIVE_USDC_MAP[config.network]?.address, hhUser1),
       rEth: createIERC20Opt(RETH_MAP[config.network]?.address, hhUser1),
       pendle: createIERC20Opt(PENDLE_MAP[config.network]?.address, hhUser1),
+      stEth: createIERC20Opt(ST_ETH_MAP[config.network]?.address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
       wbtc: IERC20__factory.connect(WBTC_MAP[config.network].address, hhUser1),
       weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
@@ -1222,6 +1257,16 @@ async function createPendleEcosystem(
       ),
     },
     rEthJun2025: {
+      dPtREthJun2025: getContract(
+        deployments.PendlePtREthJun2025IsolationModeVaultFactory[network as '42161'].address,
+        PendlePtIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
+      pendleRegistry: getContract(
+        deployments.PendleREthJun2025RegistryProxy[network as '42161'].address,
+        IPendleRegistry__factory.connect,
+        signer,
+      ),
       ptOracle: getContract(
         PENDLE_PT_ORACLE_MAP[network] as string,
         IPendlePtOracle__factory.connect,
@@ -1239,6 +1284,16 @@ async function createPendleEcosystem(
       ),
     },
     wstEthJun2024: {
+      dPtWstEthJun2024: getContract(
+        deployments.PendlePtWstEthJun2024IsolationModeVaultFactory[network as '42161'].address,
+        PendlePtIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
+      pendleRegistry: getContract(
+        deployments.PendleWstEthJun2024RegistryProxy[network as '42161'].address,
+        IPendleRegistry__factory.connect,
+        signer,
+      ),
       ptOracle: getContract(
         PENDLE_PT_ORACLE_MAP[network] as string,
         IPendlePtOracle__factory.connect,
@@ -1256,6 +1311,16 @@ async function createPendleEcosystem(
       ),
     },
     wstEthJun2025: {
+      dPtWstEthJun2025: getContract(
+        deployments.PendlePtWstEthJun2025IsolationModeVaultFactory[network as '42161'].address,
+        PendlePtIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
+      pendleRegistry: getContract(
+        deployments.PendleWstEthJun2025RegistryProxy[network as '42161'].address,
+        IPendleRegistry__factory.connect,
+        signer,
+      ),
       ptOracle: getContract(
         PENDLE_PT_ORACLE_MAP[network] as string,
         IPendlePtOracle__factory.connect,
@@ -1273,7 +1338,7 @@ async function createPendleEcosystem(
       ),
     },
     syGlpToken: getContract(
-      PENDLE_SY_GLP_2024_TOKEN_MAP[network] as string,
+      PENDLE_SY_GLP_TOKEN_MAP[network] as string,
       IPendleSyToken__factory.connect,
       signer,
     ),

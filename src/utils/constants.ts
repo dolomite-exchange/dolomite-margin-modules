@@ -82,6 +82,30 @@ export const DPT_GLP_2024_MAP: Record<Network, TokenWithMarketId | undefined> = 
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const DPT_R_ETH_JUN_2025_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0xC9375EF7635fe556F613AB528C9a2ed946BD075d',
+    marketId: 22,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const DPT_WST_ETH_JUN_2024_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x1bE165864C918527F2e3e131c2ADc4da9B8c619B',
+    marketId: 23,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const DPT_WST_ETH_JUN_2025_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0xfeF14a3A1Ec46D4eB18c784BC1E61297FC68bbc8',
+    marketId: 24,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const DPX_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x6C2C06790b3E3E3c38e12Ee22F8183b37a13EE55',
@@ -172,6 +196,14 @@ export const PENDLE_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8',
     marketId: 21,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const ST_ETH_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',
+    marketId: -1,
   },
   [Network.ArbitrumGoerli]: undefined,
 };
@@ -439,7 +471,7 @@ export const PENDLE_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
-export const PENDLE_SY_GLP_2024_TOKEN_MAP: Record<Network, string | undefined> = {
+export const PENDLE_SY_GLP_TOKEN_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x2066a650AF4b6895f72E618587Aad5e8120B7790',
   [Network.ArbitrumGoerli]: undefined,
 };
@@ -545,5 +577,10 @@ export const V_GLP_MAP: Record<Network, string | undefined> = {
  */
 export const V_GMX_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x199070DDfd1CFb69173aa2F7e20906F26B363004',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const ST_ETH_CHAINLINK_FEED_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x07c5b924399cc23c24a95c8743de4006a32b7f2a',
   [Network.ArbitrumGoerli]: undefined,
 };
