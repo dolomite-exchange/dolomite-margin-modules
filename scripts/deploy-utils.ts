@@ -1,11 +1,11 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { sleep } from '@openzeppelin/upgrades';
 import { BaseContract, BigNumber, BigNumberish } from 'ethers';
-import { FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
+import { formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
 import { network, run } from 'hardhat';
 import { IChainlinkAggregator__factory, IERC20, IERC20Metadata__factory } from '../src/types';
-import { createContractWithName } from '../src/utils/dolomite-utils';
+import { createContractWithLibrary, createContractWithName } from '../src/utils/dolomite-utils';
 import { ADDRESS_ZERO, ZERO_BI } from '../src/utils/no-deps-constants';
 import { CoreProtocol } from '../test/utils/setup';
 
@@ -35,6 +35,7 @@ export async function deployContractAndSave(
   contractName: string,
   args: ConstructorArgument[],
   contractRename?: string,
+  libraries?: Record<string, string>,
 ): Promise<address> {
   const fileBuffer = fs.readFileSync('./scripts/deployments.json');
 
@@ -57,7 +58,9 @@ export async function deployContractAndSave(
 
   console.log(`Deploying ${usedContractName} to chainId ${chainId}...`);
 
-  const contract = await createContractWithName(contractName, args);
+  const contract = libraries
+    ? await createContractWithLibrary(contractName, libraries, args)
+    : await createContractWithName(contractName, args);
 
   file[usedContractName] = {
     ...file[usedContractName],
@@ -190,6 +193,7 @@ async function getFormattedTokenName(core: CoreProtocol, tokenAddress: string): 
   }
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
+    mostRecentTokenDecimals = await token.decimals();
     addressToNameCache[tokenAddress.toLowerCase()] = `(${await token.symbol()})`;
     return addressToNameCache[tokenAddress.toLowerCase()]!;
   } catch (e) {
@@ -231,6 +235,12 @@ function isChainlinkAggregatorParam(paramType: ParamType): boolean {
   return paramType.name.includes('chainlinkAggregator');
 }
 
+function isMaxWeiParam(paramType: ParamType): boolean {
+  return paramType.name.includes('maxWei')
+    || paramType.name.includes('maxSupplyWei')
+    || paramType.name.includes('maxBorrowWei');
+}
+
 export interface EncodedTransaction {
   to: string;
   value: string;
@@ -270,7 +280,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
   if (
     typeof methodName === 'string'
-    && methodName.startsWith('owner')
+    && (methodName.startsWith('owner') || methodName === 'upgradeTo')
     && await core.dolomiteMargin.owner() === core.delayedMultiSig.address
   ) {
     // All owner ... functions must go to Dolomite governance first
@@ -294,14 +304,10 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
 }
 
+let mostRecentTokenDecimals: number | undefined = undefined;
+
 async function getReadableArg(core: CoreProtocol, inputParamType: ParamType, arg: any): Promise<string> {
   const formattedInputParamName = inputParamType.format(FormatTypes.full);
-  if (BigNumber.isBigNumber(arg)) {
-    if (isMarketIdParam(inputParamType)) {
-      return `${formattedInputParamName} = ${arg.toString()} ${await getFormattedMarketName(core, arg)}`;
-    }
-    return `${formattedInputParamName} = ${arg.toString()}`;
-  }
 
   if (Array.isArray(arg)) {
     // remove the [] at the end
@@ -313,6 +319,32 @@ async function getReadableArg(core: CoreProtocol, inputParamType: ParamType, arg
       return await getReadableArg(core, subParamType, value);
     }));
     return `${formattedInputParamName} = [\n\t\t\t\t${formattedArgs.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
+  }
+
+  if (isMarketIdParam(inputParamType)) {
+    return `${formattedInputParamName} = ${arg} ${await getFormattedMarketName(core, arg)}`;
+  }
+  if (isTokenParam(inputParamType)) {
+    return `${formattedInputParamName} = ${arg} ${await getFormattedTokenName(core, arg)}`;
+  }
+  if (isChainlinkAggregatorParam(inputParamType)) {
+    return `${formattedInputParamName} = ${arg} ${await getFormattedChainlinkAggregatorName(core, arg)}`;
+  }
+  if (isMaxWeiParam(inputParamType) && typeof mostRecentTokenDecimals !== 'undefined') {
+    const scaleTo18Decimals = BigNumber.from(10).pow(18 - mostRecentTokenDecimals);
+    const decimal = formatEther(BigNumber.from(arg).mul(scaleTo18Decimals));
+    return `${formattedInputParamName} = ${arg} (${decimal})`;
+  }
+
+  let specialName: string = '';
+  if (inputParamType.type === 'address') {
+    const chainId = core.config.network;
+    const freshDeployments = JSON.parse(fs.readFileSync(`${__dirname}/deployments.json`).toString());
+    Object.keys(freshDeployments).forEach(key => {
+      if ((freshDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
+        specialName = ` (${key})`;
+      }
+    });
   }
 
   if (typeof arg === 'object') {
@@ -329,26 +361,6 @@ async function getReadableArg(core: CoreProtocol, inputParamType: ParamType, arg
     return `${formattedInputParamName} = {\n\t\t\t\t${values.join(' ,\n\t\t\t\t')}\n\t\t\t}`;
   }
 
-  if (isMarketIdParam(inputParamType)) {
-    return `${formattedInputParamName} = ${arg} ${await getFormattedMarketName(core, arg)}`;
-  }
-  if (isTokenParam(inputParamType)) {
-    return `${formattedInputParamName} = ${arg} ${await getFormattedTokenName(core, arg)}`;
-  }
-  if (isChainlinkAggregatorParam(inputParamType)) {
-    return `${formattedInputParamName} = ${arg} ${await getFormattedChainlinkAggregatorName(core, arg)}`;
-  }
-
-  let specialName: string = '';
-  if (inputParamType.type === 'address') {
-    const chainId = core.config.network;
-    const freshDeployments = await import('./deployments.json');
-    Object.keys(freshDeployments).forEach(key => {
-      if ((freshDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
-        specialName = ` (${key})`;
-      }
-    });
-  }
   return `${formattedInputParamName} = ${arg}${specialName}`;
 }
 
@@ -359,6 +371,7 @@ export async function prettyPrintEncodeInsertChainlinkOracle(
   tokenPairAddress: address,
 ): Promise<void> {
   const tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  mostRecentTokenDecimals = tokenDecimals;
   await prettyPrintEncodedDataWithTypeSafety(
     core,
     { chainlinkPriceOracle: core.chainlinkPriceOracle! },

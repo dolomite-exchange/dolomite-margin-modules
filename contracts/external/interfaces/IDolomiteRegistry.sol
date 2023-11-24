@@ -24,6 +24,8 @@ import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
+import { IDolomitePriceOracle } from "../../protocol/interfaces/IDolomitePriceOracle.sol";
+
 
 /**
  * @title   IDolomiteRegistry
@@ -42,6 +44,7 @@ interface IDolomiteRegistry {
     event SlippageToleranceForPauseSentinelSet(uint256 _slippageTolerance);
     event LiquidatorAssetRegistrySet(address indexed _liquidatorAssetRegistry);
     event EventEmitterSet(address indexed _eventEmitter);
+    event ChainlinkPriceOracleSet(address indexed _chainlinkPriceOracle);
 
     // ========================================================
     // =================== Admin Functions ====================
@@ -78,6 +81,13 @@ interface IDolomiteRegistry {
      */
     function ownerSetEventEmitter(address _eventEmitter) external;
 
+    /**
+     *
+     * @param  _chainlinkPriceOracle    The new address of the Chainlink price oracle that's compatible with
+     *                                  DolomiteMargin.
+     */
+    function ownerSetChainlinkPriceOracle(address _chainlinkPriceOracle) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
@@ -106,6 +116,11 @@ interface IDolomiteRegistry {
      * @return The address of the emitter contract that can emit certain events for indexing
      */
     function eventEmitter() external view returns (IEventEmitterRegistry);
+
+    /**
+     * @return The address of the Chainlink price oracle that's compatible with DolomiteMargin
+     */
+    function chainlinkPriceOracle() external view returns (IDolomitePriceOracle);
 
     /**
      * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
