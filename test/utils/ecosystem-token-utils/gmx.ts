@@ -230,11 +230,11 @@ export async function createGMXUnwrapperTraderV2(
   factory: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
   registry: IGmxRegistryV1 | GmxRegistryV1,
 ): Promise<GMXIsolationModeUnwrapperTraderV2> {
-    return createContractWithAbi<GMXIsolationModeUnwrapperTraderV2>(
-      GMXIsolationModeUnwrapperTraderV2__factory.abi,
-      GMXIsolationModeUnwrapperTraderV2__factory.bytecode,
-      getGMXUnwrapperTraderV2ConstructorParams(core, factory, registry),
-    );
+  return createContractWithAbi<GMXIsolationModeUnwrapperTraderV2>(
+    GMXIsolationModeUnwrapperTraderV2__factory.abi,
+    GMXIsolationModeUnwrapperTraderV2__factory.bytecode,
+    getGMXUnwrapperTraderV2ConstructorParams(core, factory, registry),
+  );
 }
 
 export async function createGMXWrapperTraderV2(
@@ -242,11 +242,11 @@ export async function createGMXWrapperTraderV2(
   factory: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
   registry: IGmxRegistryV1 | GmxRegistryV1,
 ): Promise<GMXIsolationModeWrapperTraderV2> {
-    return createContractWithAbi<GMXIsolationModeWrapperTraderV2>(
-      GMXIsolationModeWrapperTraderV2__factory.abi,
-      GMXIsolationModeWrapperTraderV2__factory.bytecode,
-      getGMXWrapperTraderV2ConstructorParams(core, factory, registry),
-    );
+  return createContractWithAbi<GMXIsolationModeWrapperTraderV2>(
+    GMXIsolationModeWrapperTraderV2__factory.abi,
+    GMXIsolationModeWrapperTraderV2__factory.bytecode,
+    getGMXWrapperTraderV2ConstructorParams(core, factory, registry),
+  );
 }
 
 export async function createGmxV2Registry(core: CoreProtocol, callbackGasLimit: BigNumberish): Promise<GmxV2Registry> {

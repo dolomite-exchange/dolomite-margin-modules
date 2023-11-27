@@ -21,17 +21,18 @@
 pragma solidity ^0.8.9;
 
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
-import { IsolationModeUpgradeableProxy } from "../proxies/IsolationModeUpgradeableProxy.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
-import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV2.sol";
+import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
 import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
-import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
-import { Require } from "../../protocol/lib/Require.sol";
-import { IGLPIsolationModeVaultFactory } from "../interfaces/gmx/IGLPIsolationModeVaultFactory.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IsolationModeUpgradeableProxy } from "../proxies/IsolationModeUpgradeableProxy.sol";
+import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
 
 
 /**
@@ -45,6 +46,7 @@ contract GMXIsolationModeVaultFactory is
     IGMXIsolationModeVaultFactory,
     IsolationModeVaultFactory
 {
+    using SafeERC20 for IERC20;
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GMXIsolationModeVaultFactory";
@@ -56,9 +58,9 @@ contract GMXIsolationModeVaultFactory is
     // ============ Modifiers ============
 
     modifier onlyGLPVault(address _glpVault, address _vault) {
-        if (_vaultToUserMap[_vault] == gmxRegistry.glpVaultFactory().getAccountByVault(_glpVault)) { /* FOR COVERAGE TESTING */ }
+        if (gmxRegistry.glpVaultFactory().getAccountByVault(_glpVault) == _vaultToUserMap[_vault]) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _vaultToUserMap[_vault] == gmxRegistry.glpVaultFactory().getAccountByVault(_glpVault),
+            gmxRegistry.glpVaultFactory().getAccountByVault(_glpVault) == _vaultToUserMap[_vault],
             _FILE,
             "Invalid GLP vault"
         );
@@ -88,15 +90,19 @@ contract GMXIsolationModeVaultFactory is
     function executeDepositIntoVaultFromGLPVault(
         address _vault,
         uint256 _vaultAccountNumber,
-        uint256 _amountWei
+        uint256 _amountWei,
+        bool _shouldSkipTransfer
     ) external onlyGLPVault(msg.sender, _vault) {
-        // @follow-up Should this be flag instead?
-        IGMXIsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(true);
+        if (_shouldSkipTransfer) {
+            IGMXIsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(true);
+        } else {
+            IGMXIsolationModeTokenVaultV1(_vault).setIsDepositSourceGLPVault(true);
+        }
         _enqueueTransfer(
-            _vault,
-            address(DOLOMITE_MARGIN()),
-            _amountWei,
-            _vault
+            /* from = */ _vault,
+            /* to = */ address(DOLOMITE_MARGIN()),
+            /* amount = */ _amountWei,
+            /* vault = */_vault
         );
         AccountActionLib.deposit(
             DOLOMITE_MARGIN(),
@@ -131,34 +137,13 @@ contract GMXIsolationModeVaultFactory is
     // ============ Overrides ============
 
     function _createVault(address _account) internal override returns (address) {
-        if (_account != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _account != address(0),
-            _FILE,
-            "Invalid account"
-        );
-        if (_userToVaultMap[_account] == address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _userToVaultMap[_account] == address(0),
-            _FILE,
-            "Vault already exists"
-        );
-        address vault = Create2.deploy(
-            /* amount = */ 0,
-            keccak256(abi.encodePacked(_account)),
-            type(IsolationModeUpgradeableProxy).creationCode
-        );
-        /*assert(vault != address(0));*/
-        emit VaultCreated(_account, vault);
-        _vaultToUserMap[vault] = _account;
-        _userToVaultMap[_account] = vault;
-        IIsolationModeUpgradeableProxy(vault).initialize(_account);
-        BORROW_POSITION_PROXY.setIsCallerAuthorized(vault, true);
+        address vault = super._createVault(_account);
 
         address glpVault = gmxRegistry.glpVaultFactory().getVaultByAccount(_account);
-        if (glpVault != address(0)) {
-            IGLPIsolationModeTokenVaultV2(glpVault).sync(vault);
+        if (glpVault == address(0)) {
+            glpVault = gmxRegistry.glpVaultFactory().createVault(_account);
         }
+        IGLPIsolationModeTokenVaultV2(glpVault).sync(vault);
 
         return vault;
     }

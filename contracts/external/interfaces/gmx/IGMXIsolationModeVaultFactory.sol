@@ -47,7 +47,8 @@ interface IGMXIsolationModeVaultFactory is IIsolationModeVaultFactory {
     function executeDepositIntoVaultFromGLPVault(
         address _gmxVault,
         uint256 _accountNumber,
-        uint256 _amount
+        uint256 _amountWei,
+        bool _shouldSkipTransfer
     ) external;
 
     function gmxRegistry() external view returns (IGmxRegistryV1);

@@ -33,6 +33,7 @@ import {
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
 import { AccountInfoStruct } from 'src/utils';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -69,14 +70,13 @@ describe('GMXIsolationModeUnwrapperTraderV2', () => {
     glpFactory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, glpVaultImplementation);
 
     // Setup GMX market
-    gmxMarketId = await core.dolomiteMargin.getNumMarkets();
-    await core.testEcosystem!.testPriceOracle.setPrice(core.gmxEcosystem!.gmx.address, '1000000000000000000');
-    await setupTestMarket(core, core.gmxEcosystem!.gmx, true);
-
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '1000000000000000000');
     await setupTestMarket(core, factory, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(underlyingMarketId, core.testEcosystem!.testPriceOracle.address);
+
+    gmxMarketId = await core.dolomiteMargin.getNumMarkets();
+    await core.testEcosystem!.testPriceOracle.setPrice(core.gmxEcosystem!.gmx.address, '1000000000000000000');
+    await setupTestMarket(core, core.gmxEcosystem!.gmx, false);
 
     unwrapper = await createGMXUnwrapperTraderV2(core, factory, gmxRegistry);
     wrapper = await createGMXWrapperTraderV2(core, factory, gmxRegistry);
@@ -99,6 +99,37 @@ describe('GMXIsolationModeUnwrapperTraderV2', () => {
 
   beforeEach(async () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
+  });
+
+  describe.only('Call and Exchange for non-liquidation sale', () => {
+    it('should work when called with the normal conditions', async () => {
+      await setupGMXBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
+      await core.gmxEcosystem!.gmx.connect(core.hhUser1).transfer(core.dolomiteMargin.address, amountWei);
+      const solidAccountId = 0;
+      const liquidAccountId = 0;
+      const actions = await wrapper.createActionsForWrapping(
+        solidAccountId,
+        liquidAccountId,
+        ZERO_ADDRESS,
+        ZERO_ADDRESS,
+        underlyingMarketId,
+        gmxMarketId,
+        ZERO_BI,
+        amountWei,
+        BYTES_EMPTY,
+      );
+
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await core.dolomiteMargin.connect(core.hhUser5).operate([defaultAccount], actions);
+
+      // const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
+      // expect(underlyingBalanceWei.value).to.eq(amountWei.add(TEN));
+      // expect(await vault.underlyingBalanceOf()).to.eq(amountWei.add(TEN));
+
+      // const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, otherMarketId);
+      // expect(otherBalanceWei.sign).to.eq(false);
+      // expect(otherBalanceWei.value).to.eq(otherAmountWei);
+    });
   });
 
   describe('#exchange', () => {

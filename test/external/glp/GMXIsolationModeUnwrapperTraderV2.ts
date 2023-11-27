@@ -81,7 +81,10 @@ describe('GMXIsolationModeUnwrapperTraderV2', () => {
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '1000000000000000000');
     await setupTestMarket(core, factory, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(underlyingMarketId, core.testEcosystem!.testPriceOracle.address);
+    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(
+      underlyingMarketId,
+      core.testEcosystem!.testPriceOracle.address
+    );
 
     unwrapper = await createGMXUnwrapperTraderV2(core, factory, gmxRegistry);
     wrapper = await createGMXWrapperTraderV2(core, factory, gmxRegistry);

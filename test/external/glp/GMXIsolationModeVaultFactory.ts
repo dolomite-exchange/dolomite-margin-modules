@@ -52,7 +52,7 @@ describe('GMXIsolationModeVaultFactory', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
-    const glpVaultImplementation = await createGLPIsolationModeTokenVaultV1();
+    const glpVaultImplementation = await createGLPIsolationModeTokenVaultV2();
     gmxRegistry = await createGmxRegistry(core);
     glpFactory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, glpVaultImplementation);
     vaultImplementation = await createGMXIsolationModeTokenVaultV1();
@@ -120,10 +120,6 @@ describe('GMXIsolationModeVaultFactory', () => {
 
   describe('#createVault', () => {
     it('should work properly with GLP vault with no balance', async () => {
-      // Upgrade GLP vault factory
-      const glpV2VaultImplemenation = await createGLPIsolationModeTokenVaultV2();
-      await glpFactory.connect(core.governance).ownerSetUserVaultImplementation(glpV2VaultImplemenation.address);
-
       await glpFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
       const glpVault = await glpFactory.getVaultByAccount(core.hhUser1.address);
       const glpVaultContract = GLPIsolationModeTokenVaultV2__factory.connect(
@@ -142,6 +138,10 @@ describe('GMXIsolationModeVaultFactory', () => {
     });
 
     it('should work properly with Glp vault with balance', async () => {
+      // Reset glp vault to V1
+      const glpV1VaultImplemenation = await createGLPIsolationModeTokenVaultV1();
+      await glpFactory.connect(core.governance).ownerSetUserVaultImplementation(glpV1VaultImplemenation.address);
+
       // Create and deposit GLP into vault
       const glpVaultAddress = await glpFactory.calculateVaultByAccount(core.hhUser1.address);
       await core.gmxEcosystem!.sGlp.connect(core.hhUser1).approve(glpVaultAddress, MAX_UINT_256_BI);
@@ -162,7 +162,7 @@ describe('GMXIsolationModeVaultFactory', () => {
       expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(gmxAmount);
 
-      // Upgrade GLP vault factory
+      // Upgrade GLP vault factory to V2
       const glpV2VaultImplemenation = await createGLPIsolationModeTokenVaultV2();
       await glpFactory.connect(core.governance).ownerSetUserVaultImplementation(glpV2VaultImplemenation.address);
 
@@ -186,7 +186,7 @@ describe('GMXIsolationModeVaultFactory', () => {
     it('should fail when account passed is the zero address', async () => {
       await expectThrow(
         factory.createVault(ZERO_ADDRESS),
-        'GMXIsolationModeVaultFactory: Invalid account',
+        'IsolationModeVaultFactory: Invalid account',
       );
     });
 
@@ -196,7 +196,7 @@ describe('GMXIsolationModeVaultFactory', () => {
 
       await expectThrow(
         factory.createVault(core.hhUser1.address),
-        'GMXIsolationModeVaultFactory: Vault already exists',
+        'IsolationModeVaultFactory: Vault already exists',
       );
     });
 
@@ -210,31 +210,47 @@ describe('GMXIsolationModeVaultFactory', () => {
   });
 
   describe('#executeDepositIntoVaultFromGLPVault', () => {
-    it('should work normally', async () => {
-      const glpV2VaultImplemenation = await createGLPIsolationModeTokenVaultV2();
-      await glpFactory.connect(core.governance).ownerSetUserVaultImplementation(glpV2VaultImplemenation.address);
-      await glpFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
-      const glpVault = await glpFactory.getVaultByAccount(core.hhUser1.address);
-      const glpVaultImpersonator = await impersonate(glpVault, true);
-
+    it('should work normally with shouldSkipTransfer is true', async () => {
       await factory.connect(core.hhUser1).createVault(core.hhUser1.address);
       const gmxVaultAddress = await factory.calculateVaultByAccount(core.hhUser1.address);
       const gmxVault = GMXIsolationModeTokenVaultV1__factory.connect(
         gmxVaultAddress,
         core.hhUser1,
       );
+      const glpVaultImpersonator = await impersonate(await glpFactory.getVaultByAccount(core.hhUser1.address), true);
 
       await factory.connect(glpVaultImpersonator).executeDepositIntoVaultFromGLPVault(
         gmxVault.address,
         toAccountNumber,
-        gmxAmount
+        gmxAmount,
+        true
+      );
+      expect(await gmxVault.shouldSkipTransfer()).to.be.false;
+      await expectProtocolBalance(core, gmxVault.address, toAccountNumber, underlyingMarketIdGmx, gmxAmount);
+    });
+
+    it('should work normally with shouldSkipTransfer is false', async () => {
+      await factory.connect(core.hhUser1).createVault(core.hhUser1.address);
+      const gmxVaultAddress = await factory.calculateVaultByAccount(core.hhUser1.address);
+      const gmxVault = GMXIsolationModeTokenVaultV1__factory.connect(
+        gmxVaultAddress,
+        core.hhUser1,
+      );
+      const glpVaultImpersonator = await impersonate(await glpFactory.getVaultByAccount(core.hhUser1.address), true);
+      await setupGMXBalance(core, glpVaultImpersonator, gmxAmount, gmxVault);
+
+      await factory.connect(glpVaultImpersonator).executeDepositIntoVaultFromGLPVault(
+        gmxVault.address,
+        toAccountNumber,
+        gmxAmount,
+        false
       );
       expect(await gmxVault.shouldSkipTransfer()).to.be.false;
       await expectProtocolBalance(core, gmxVault.address, toAccountNumber, underlyingMarketIdGmx, gmxAmount);
     });
 
     it('should fail if not called by GLP vault', async () => {
-      const result = await factory.connect(core.hhUser1).createVault(core.hhUser1.address);
+      await factory.connect(core.hhUser1).createVault(core.hhUser1.address);
       const gmxVaultAddress = await factory.calculateVaultByAccount(core.hhUser1.address);
       const gmxVault = GMXIsolationModeTokenVaultV1__factory.connect(
         gmxVaultAddress,
@@ -246,6 +262,7 @@ describe('GMXIsolationModeVaultFactory', () => {
           gmxVault.address,
           toAccountNumber,
           parseEther('10'),
+          true
         ),
         'GMXIsolationModeVaultFactory: Invalid GLP vault',
       );

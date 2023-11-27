@@ -54,11 +54,10 @@ contract GLPIsolationModeTokenVaultV2 is
     // ==================================================================
 
     bytes32 private constant _FILE = "GLPIsolationModeTokenVaultV2";
-    bytes32 private constant _IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT =
-        bytes32(uint256(keccak256("eip1967.proxy.isAcceptingFullAccountTransfer")) - 1);
-    bytes32 private constant _HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT =
-        bytes32(uint256(keccak256("eip1967.proxy.hasAcceptedFullAccountTransfer")) - 1);
+    bytes32 private constant _IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isAcceptingFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.hasAcceptedFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _HAS_SYNCED = bytes32(uint256(keccak256("eip1967.proxy.hasSynced")) - 1);
+    uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     modifier onlyGmxVault(address _sender) {
         Require.that(
@@ -105,7 +104,7 @@ contract GLPIsolationModeTokenVaultV2 is
             _shouldStakeMultiplierPoints,
             _shouldClaimWeth,
             _shouldDepositWethIntoDolomite,
-            /* _depositAccountNumberForWeth = */ 0
+            /* _depositAccountNumberForWeth = */ _DEFAULT_ACCOUNT_NUMBER
         );
     }
 
@@ -184,19 +183,17 @@ contract GLPIsolationModeTokenVaultV2 is
         uint256 amountWei = underlyingBalanceOf();
         IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(/* _toAccountNumber = */ 0, amountWei);
 
-        uint256 amountGmx = gmxBalanceOf();
-        address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
-        if (gmxVault == address(0)) {
-            gmxVault = registry().gmxVaultFactory().createVault(OWNER());
-        } else if (!hasSynced()) {
-            _sync(gmxVault);
-        } else {
+        if (hasSynced()) {
+            // @follow-up Are asserts ok here?
+            uint256 amountGmx = gmxBalanceOf();
+            address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
             assert(amountGmx > 0);
-            registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
-                gmxVault,
-                0,
-                amountGmx
-            );
+            assert(gmxVault != address(0));
+
+            _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, amountGmx, /* shouldSkipTransfer = */ true);
+        } else {
+            // This will automatically sync the balances
+            _getGmxVaultOrCreate(OWNER());
         }
 
         // reset the flag back to false
@@ -226,7 +223,7 @@ contract GLPIsolationModeTokenVaultV2 is
         Require.that(
             msg.sender == address(registry().gmxVaultFactory()),
             _FILE,
-            "Only GMX or GLP factory can sync",
+            "Only GMX factory can sync",
             msg.sender
         );
         _sync(_gmxVault);
@@ -261,7 +258,6 @@ contract GLPIsolationModeTokenVaultV2 is
         if (super.underlyingBalanceOf() < _amount) {
             // There's not enough value in the vault to cover the withdrawal, so we need to withdraw from vGLP
             vGlp().withdraw();
-            _withdrawAllGmx(OWNER());
         }
 
         assert(_recipient != address(this));
@@ -369,7 +365,6 @@ contract GLPIsolationModeTokenVaultV2 is
         bool _shouldDepositWethIntoDolomite,
         uint256 _depositAccountNumberForWeth
     ) internal {
-        // @follow-up Does this need to be before or after handle rewards or does it matter?
         address gmxVault = _getGmxVaultOrCreate(OWNER());
         Require.that(
             (!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
@@ -392,21 +387,15 @@ contract GLPIsolationModeTokenVaultV2 is
         );
 
         IERC20 _gmx = gmx();
-        // @follow-up If with bal here instead of assert?
+        // @follow-up I don't think this balance is correct since restaked rewards are not accounted for
         uint256 bal = _gmx.balanceOf(address(this));
-        if (bal > 0) {
-            registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
-                gmxVault,
-                0,
-                bal
-            );
-        }
         if (_shouldStakeGmx) {
             // we can reset the allowance back to 0 here
             _approveGmxForStaking(_gmx, 0);
         } else {
-            // If the user isn't staking GMX, transfer it to the user's GMX vault
-            _withdrawAllGmx(gmxVault);
+            if (bal > 0) {
+                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ false);
+            }
         }
 
         if (_shouldClaimWeth) {
@@ -440,19 +429,15 @@ contract GLPIsolationModeTokenVaultV2 is
 
         _vester.withdraw();
         IERC20 _gmx = gmx();
-
         uint256 bal = _gmx.balanceOf(address(this));
-        // @follow-up Is this ok as an assert?
+        // @follow-up I don't think this can ever be zero
         assert(bal > 0);
-        registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
-            gmxVault,
-            0,
-            bal
-        );
+
         if (_shouldStakeGmx) {
+            _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
             _stakeGmx(_gmx, bal);
         } else {
-            _withdrawAllGmx(gmxVault);
+            _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ false);
         }
     }
 
@@ -467,11 +452,6 @@ contract GLPIsolationModeTokenVaultV2 is
         _gmx.safeApprove(_sGmx, _amount);
     }
 
-    function _withdrawAllGmx(address _recipient) internal {
-        IERC20 _gmx = gmx();
-        _gmx.safeTransfer(_recipient, _gmx.balanceOf(address(this)));
-    }
-
     function _sync(address _gmxVault) internal {
         Require.that(
             _getUint256(_HAS_SYNCED) == 0,
@@ -482,11 +462,7 @@ contract GLPIsolationModeTokenVaultV2 is
 
         uint256 bal = gmxBalanceOf();
         if (bal > 0) {
-            registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
-                _gmxVault,
-                0,
-                bal
-            );
+            _depositIntoGMXVault(_gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
         }
     }
 
@@ -494,10 +470,25 @@ contract GLPIsolationModeTokenVaultV2 is
         address gmxVault = registry().gmxVaultFactory().getVaultByAccount(_account);
         if (gmxVault == address(0)) {
             gmxVault = registry().gmxVaultFactory().createVault(_account);
-        } else if (!hasSynced()) {
-            _sync(gmxVault);
         }
         return gmxVault;
+    }
+
+    function _depositIntoGMXVault(
+        address _gmxVault,
+        uint256 _accountNumber,
+        uint256 _amountWei,
+        bool _shouldSkipTransfer
+    ) internal {
+        if (!_shouldSkipTransfer) {
+            gmx().safeApprove(_gmxVault, _amountWei);
+        }
+        registry().gmxVaultFactory().executeDepositIntoVaultFromGLPVault(
+            _gmxVault,
+            _accountNumber,
+            _amountWei,
+            _shouldSkipTransfer
+        );
     }
 
     function _setIsAcceptingFullAccountTransfer(bool _isAcceptingFullAccountTransfer) internal {
@@ -507,6 +498,21 @@ contract GLPIsolationModeTokenVaultV2 is
     function _setHasAcceptedFullAccountTransfer(bool _hasAcceptingFullAccountTransfer) internal {
         _setUint256(_HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT, _hasAcceptingFullAccountTransfer ? 1 : 0);
     }
+
+    function _withdrawFromVaultForDolomiteMargin(
+        uint256 _fromAccountNumber,
+        uint256 _amountWei
+    ) internal override {
+        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+
+        _depositIntoGMXVault(
+            _getGmxVaultOrCreate(OWNER()),
+            _DEFAULT_ACCOUNT_NUMBER,
+            gmx().balanceOf(address(this)),
+            /* shouldSkipTransfer = */ false
+        );
+    } 
+
 
     function _getPairAmountNeededForEsGmxVesting(
         IGmxVester _vester,

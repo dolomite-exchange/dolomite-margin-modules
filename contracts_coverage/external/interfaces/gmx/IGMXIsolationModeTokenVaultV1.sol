@@ -20,7 +20,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
 
 
 /**
@@ -32,5 +31,19 @@ import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
  */
 interface IGMXIsolationModeTokenVaultV1 {
 
+    function stakeGmx(uint256 _amount) external;
+
+    function unstakeGmx(uint256 _amount) external;
+
+    function vestGmx(uint256 _esGmxAmount) external;
+
+    function unvestGmx(bool _shouldStakeGmx) external;
+
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
+
+    function setIsDepositSourceGLPVault(bool _isDepositSourceGLPVault) external;
+
+    function shouldSkipTransfer() external view returns (bool);
+
+    function isDepositSourceGLPVault() external view returns (bool);
 }

@@ -150,7 +150,6 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     it('should work normally with existing vault', async () => {
       await gmxFactory.createVault(core.hhUser2.address);
 
-      await factory.createVault(core.hhUser2.address);
       const vault2 = setupUserVaultProxy<TestGLPIsolationModeTokenVaultV2>(
         await factory.getVaultByAccount(core.hhUser2.address),
         TestGLPIsolationModeTokenVaultV2__factory,
@@ -972,7 +971,6 @@ describe('GLPIsolationModeTokenVaultV2', () => {
 
       const vaultAddress = await factory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
       await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).signalTransfer(vaultAddress);
-      await factory.createVault(core.hhUser2.address);
 
       const newVault = setupUserVaultProxy<GLPIsolationModeTokenVaultV2>(
         vaultAddress,
@@ -1026,17 +1024,12 @@ describe('GLPIsolationModeTokenVaultV2', () => {
 
       const vaultAddress = await factory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
       await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).signalTransfer(vaultAddress);
-      await factory.createVault(core.hhUser2.address);
 
       const newVault = setupUserVaultProxy<GLPIsolationModeTokenVaultV2>(
         vaultAddress,
         GLPIsolationModeTokenVaultV2__factory,
         core.hhUser2,
       );
-      const factoryImpersonator = await impersonate(gmxFactory.address, true);
-      await newVault.connect(factoryImpersonator).sync(gmxVault.address);
-      expect(await newVault.hasSynced()).to.be.true;
-
       await newVault.acceptFullAccountTransfer(core.hhUser1.address);
 
       expect(await core.gmxEcosystem!.fsGlp.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
@@ -1150,12 +1143,13 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const glpInVesting = await core.gmxEcosystem!.vGlp.pairAmounts(vault.address);
       expect(glpInVesting.eq(ZERO_BI)).to.eq(false);
       expect(await core.gmxEcosystem!.fsGlp.balanceOf(vault.address)).to.eq(amountWei.sub(glpInVesting));
+      const gmxVaultAddress = await gmxFactory.getVaultByAccount(core.hhUser1.address);
 
       await vault.withdrawFromVaultForDolomiteMargin(accountNumber, amountWei);
       expect(await vault.underlyingBalanceOf()).to.equal(ZERO_BI);
       expect(await core.gmxEcosystem!.fsGlp.balanceOf(core.hhUser1.address)).to.equal(glpAmount);
       expect(await core.gmxEcosystem!.gmx.balanceOf(vault.address)).to.equal(ZERO_BI);
-      expect((await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).eq(ZERO_BI)).to.equal(false);
+      expect((await core.gmxEcosystem!.gmx.balanceOf(gmxVaultAddress)).eq(ZERO_BI)).to.equal(false);
     });
 
     it('should fail when not called by vault factory', async () => {
@@ -1185,7 +1179,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     it('should fail when not called by gmx vault factory', async () => {
       await expectThrow(
         vault.connect(core.hhUser1).sync(core.hhUser1.address),
-        `GLPIsolationModeTokenVaultV2: Only GMX or GLP factory can sync <${core.hhUser1.address.toLowerCase()}>`,
+        `GLPIsolationModeTokenVaultV2: Only GMX factory can sync <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

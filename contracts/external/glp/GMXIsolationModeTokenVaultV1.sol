@@ -22,7 +22,6 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGLPIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV1.sol";
 import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
@@ -52,6 +51,7 @@ contract GMXIsolationModeTokenVaultV1 is
 
     bytes32 private constant _FILE = "GMXIsolationModeTokenVaultV1";
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _IS_DEPOSIT_SOURCE_GLP_VAULT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceGLPVault")) - 1); // solhint-disable-line max-line-length
 
     // ==================================================================
     // ======================== Public Functions ========================
@@ -59,11 +59,8 @@ contract GMXIsolationModeTokenVaultV1 is
 
     function stakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
-        Require.that(
-            glpVault != address(0),
-            _FILE,
-            "GLP vault not created"
-        );
+        assert(glpVault != address(0));
+
         IERC20 gmx = IERC20(registry().gmx());
         gmx.approve(glpVault, _amount);
         IGLPIsolationModeTokenVaultV1(glpVault).stakeGmx(_amount);
@@ -71,36 +68,31 @@ contract GMXIsolationModeTokenVaultV1 is
 
     function unstakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
-        Require.that(
-            glpVault != address(0),
-            _FILE,
-            "GLP vault not created"
-        );
+        assert(glpVault != address(0));
+
         IGLPIsolationModeTokenVaultV1(glpVault).unstakeGmx(_amount);
     }
 
     function vestGmx(uint256 _esGmxAmount) external onlyVaultOwner(msg.sender) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
-        Require.that(
-            glpVault != address(0),
-            _FILE,
-            "GLP vault not created"
-        );
+        assert(glpVault != address(0));
+
         IGLPIsolationModeTokenVaultV1(glpVault).vestGmx(_esGmxAmount);
     }
 
     function unvestGmx(bool _shouldStakeGmx) external onlyVaultOwner(msg.sender) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
-        Require.that(
-            glpVault != address(0),
-            _FILE,
-            "GLP vault not created"
-        );
+        assert(glpVault != address(0));
+
         IGLPIsolationModeTokenVaultV1(glpVault).unvestGmx(_shouldStakeGmx);
     }
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external onlyVaultFactory(msg.sender) {
         _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
+    }
+
+    function setIsDepositSourceGLPVault(bool _isDepositSourceGLPVault) external onlyVaultFactory(msg.sender) {
+        _setUint256(_IS_DEPOSIT_SOURCE_GLP_VAULT, _isDepositSourceGLPVault ? 1 : 0);
     }
 
     function executeDepositIntoVault(
@@ -112,8 +104,11 @@ contract GMXIsolationModeTokenVaultV1 is
     onlyVaultFactory(msg.sender) {
         if(shouldSkipTransfer()) {
             _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, 0);
-        }
-        else {
+        } else if (isDepositSourceGLPVault()) {
+            address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
+            IERC20(UNDERLYING_TOKEN()).safeTransferFrom(glpVault, address(this), _amount);
+            _setUint256(_IS_DEPOSIT_SOURCE_GLP_VAULT, 0);
+        } else {
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
         }
     }
@@ -124,6 +119,10 @@ contract GMXIsolationModeTokenVaultV1 is
 
     function shouldSkipTransfer() public view returns (bool) {
         return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
+    }
+
+    function isDepositSourceGLPVault() public view returns (bool) {
+        return _getUint256(_IS_DEPOSIT_SOURCE_GLP_VAULT) == 1;
     }
 
     function dolomiteRegistry()
