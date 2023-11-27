@@ -4,6 +4,11 @@
       "address": "0x36D9B05c13Af6C86e9100F05a9AFeaB766fd1930",
       "transaction": "0x71895c6cacea2da300f1c7de6e4c8bfc6d0b30c339eac2bbca8730cc2b638e75",
       "isVerified": true
+    },
+    "421613": {
+      "address": "0x68c4FA76926A211AC5456E5C1358D82Dd868f1B6",
+      "transaction": "0x7fd43ab81e5a3095bac712d26b3b8e66ff474af3dfe8b71f2c31b90026eb7bb8",
+      "isVerified": true
     }
   },
   "AtlasSIUserVaultFactory": {
@@ -171,6 +176,13 @@
     "42161": {
       "address": "0x7B9F5Dfee29383D266FAdDCad0C0A70EAd9057A7",
       "transaction": "0x1d389360d411027055e65d21a3bb1612eba56542667efc7c50f5a7629362dffb",
+      "isVerified": true
+    }
+  },
+  "JonesTWAPPriceOracle": {
+    "42161": {
+      "address": "0x7Dc900EE1ada0Cb1B45c3C10B829682187d5e127",
+      "transaction": "0x80724c2774551409ca22856d44d29bd7b2bd7255acb91912dbf2eb95bc44da9e",
       "isVerified": true
     }
   },
@@ -608,10 +620,22 @@
       "isVerified": true
     }
   },
+  "PremiaTWAPPriceOracle": {
+    "42161": {
+      "address": "0x1093e0E82EC11080D6239538a5D5c60d155aF851",
+      "transaction": "0xcd4520f4d9b6869fdcfbd687c08882eb59676a59b38e2b775f1e0029562b0fb9",
+      "isVerified": true
+    }
+  },
   "Stablecoin6L94ULinearStepFunctionInterestSetter": {
     "42161": {
       "address": "0xD3D3803177bd12cC8735cB360Ec1C06208d4a94a",
       "transaction": "0xcb917ae8109a407089912e7710e1eccc05aa34a399b2ebc312591281c0f31c60",
+      "isVerified": true
+    },
+    "421613": {
+      "address": "0x48dDadaC3d47035926C82480CB6eBc15EbBbE0fF",
+      "transaction": "0x35c70c5fe066259a69698bee6faf76e480f82e13653011eda36c3784cf1652e1",
       "isVerified": true
     }
   },
@@ -619,6 +643,11 @@
     "42161": {
       "address": "0xad9F52c7E9c8b3cF0ae85cCf71b51b47cAB3D48b",
       "transaction": "0xd37eb92f872dfbd311ce27d16cf649f62a298a2cc28d7bbb603deae2b64a62a2",
+      "isVerified": true
+    },
+    "421613": {
+      "address": "0x8A5B9528E17BE5f263aAe5603D69043B4902687E",
+      "transaction": "0xdbe96679fe7803b74bbc40daaea0744169fbce979817d620e3c02806273a86b6",
       "isVerified": true
     }
   },
