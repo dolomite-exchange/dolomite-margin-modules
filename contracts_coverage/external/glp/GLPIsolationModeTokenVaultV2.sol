@@ -33,6 +33,7 @@ import { IGmxVester } from "../interfaces/gmx/IGmxVester.sol";
 import { ISGMX } from "../interfaces/gmx/ISGMX.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   GLPIsolationModeTokenVaultV2
@@ -144,6 +145,7 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function unstakeGmx(uint256 _amount) external override onlyGmxVault(msg.sender) {
+        console.log(address(gmxRewardsRouter()));
         gmxRewardsRouter().unstakeGmx(_amount);
 
         gmx().safeTransfer(msg.sender, _amount);
@@ -188,7 +190,7 @@ contract GLPIsolationModeTokenVaultV2 is
         IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(/* _toAccountNumber = */ 0, amountWei);
 
         if (hasSynced()) {
-            // @follow-up Are asserts ok here?
+            // @follow-up Are asserts ok here and is balance correct
             uint256 amountGmx = gmxBalanceOf();
             address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
             /*assert(amountGmx > 0);*/
@@ -251,20 +253,6 @@ contract GLPIsolationModeTokenVaultV2 is
         } else {
             sGlp().safeTransferFrom(_from, address(this), _amount);
         }
-    }
-
-    function _withdrawFromVaultForDolomiteMargin(
-        uint256 _fromAccountNumber,
-        uint256 _amountWei
-    ) internal override {
-        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
-
-        _depositIntoGMXVault(
-            _getGmxVaultOrCreate(OWNER()),
-            _DEFAULT_ACCOUNT_NUMBER,
-            gmx().balanceOf(address(this)),
-            /* shouldSkipTransfer = */ false
-        );
     }
 
     function executeWithdrawalFromVault(
@@ -396,6 +384,8 @@ contract GLPIsolationModeTokenVaultV2 is
             // we don't know how much GMX will be staked, so we have to approve all
             _approveGmxForStaking(gmx(), type(uint256).max);
         }
+
+        uint256 preBal = gmxBalanceOf() + gmx().balanceOf(address(this));
         gmxRewardsRouter().handleRewards(
             _shouldClaimGmx,
             _shouldStakeGmx,
@@ -405,16 +395,21 @@ contract GLPIsolationModeTokenVaultV2 is
             _shouldClaimWeth,
             /* _shouldConvertWethToEth = */ false
         );
+        uint256 bal = gmxBalanceOf() + gmx().balanceOf(address(this)) - preBal;
 
         IERC20 _gmx = gmx();
-        // @follow-up I don't think this balance is correct since restaked rewards are not accounted for
-        uint256 bal = _gmx.balanceOf(address(this));
         if (_shouldStakeGmx) {
             // we can reset the allowance back to 0 here
             _approveGmxForStaking(_gmx, 0);
+            if (bal > 0) {
+                // @follow-up Is blind transfer ok or is it worth determining if can do actual transfer
+                gmx().transfer(gmxVault, gmx().balanceOf(address(this)));
+                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
+            }
         } else {
             if (bal > 0) {
-                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ false);
+                gmx().transfer(gmxVault, gmx().balanceOf(address(this)));
+                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
             }
         }
 
@@ -449,6 +444,7 @@ contract GLPIsolationModeTokenVaultV2 is
 
         _vester.withdraw();
         IERC20 _gmx = gmx();
+        // @follow-up Double check the gmxBalanceOf function here
         uint256 bal = _gmx.balanceOf(address(this));
         // @follow-up I don't think this can ever be zero
         /*assert(bal > 0);*/
@@ -519,6 +515,21 @@ contract GLPIsolationModeTokenVaultV2 is
     function _setHasAcceptedFullAccountTransfer(bool _hasAcceptingFullAccountTransfer) internal {
         _setUint256(_HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT, _hasAcceptingFullAccountTransfer ? 1 : 0);
     }
+
+    function _withdrawFromVaultForDolomiteMargin(
+        uint256 _fromAccountNumber,
+        uint256 _amountWei
+    ) internal override {
+        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+
+        _depositIntoGMXVault(
+            _getGmxVaultOrCreate(OWNER()),
+            _DEFAULT_ACCOUNT_NUMBER,
+            gmx().balanceOf(address(this)),
+            /* shouldSkipTransfer = */ false
+        );
+    }
+
 
     function _getPairAmountNeededForEsGmxVesting(
         IGmxVester _vester,

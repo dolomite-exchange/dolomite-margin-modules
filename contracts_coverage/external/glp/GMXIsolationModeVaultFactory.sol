@@ -20,18 +20,15 @@
 
 pragma solidity ^0.8.9;
 
-import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV2.sol";
 import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
 import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { IsolationModeUpgradeableProxy } from "../proxies/IsolationModeUpgradeableProxy.sol";
 import { IsolationModeVaultFactory } from "../proxies/abstract/IsolationModeVaultFactory.sol";
 
 

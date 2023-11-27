@@ -164,4 +164,7 @@ interface IGLPIsolationModeTokenVaultV2 {
      * @return The registry used to get addresses from the GMX ecosystem
      */
     function registry() external view returns (IGmxRegistryV1);
+
+    // @todo NatSpec
+    function gmxBalanceOf() external view returns (uint256);
 }

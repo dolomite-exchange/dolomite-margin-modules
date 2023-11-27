@@ -23,7 +23,7 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IGLPIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV1.sol";
+import { IGLPIsolationModeTokenVaultV2 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV2.sol";
 import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
 import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
@@ -63,28 +63,28 @@ contract GMXIsolationModeTokenVaultV1 is
 
         IERC20 gmx = IERC20(registry().gmx());
         gmx.approve(glpVault, _amount);
-        IGLPIsolationModeTokenVaultV1(glpVault).stakeGmx(_amount);
+        IGLPIsolationModeTokenVaultV2(glpVault).stakeGmx(_amount);
     }
 
     function unstakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
         assert(glpVault != address(0));
 
-        IGLPIsolationModeTokenVaultV1(glpVault).unstakeGmx(_amount);
+        IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(_amount);
     }
 
     function vestGmx(uint256 _esGmxAmount) external onlyVaultOwner(msg.sender) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
         assert(glpVault != address(0));
 
-        IGLPIsolationModeTokenVaultV1(glpVault).vestGmx(_esGmxAmount);
+        IGLPIsolationModeTokenVaultV2(glpVault).vestGmx(_esGmxAmount);
     }
 
     function unvestGmx(bool _shouldStakeGmx) external onlyVaultOwner(msg.sender) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
         assert(glpVault != address(0));
 
-        IGLPIsolationModeTokenVaultV1(glpVault).unvestGmx(_shouldStakeGmx);
+        IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(_shouldStakeGmx);
     }
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external onlyVaultFactory(msg.sender) {
@@ -102,6 +102,8 @@ contract GMXIsolationModeTokenVaultV1 is
     public
     override
     onlyVaultFactory(msg.sender) {
+        // @audit Make sure that shouldSkipTransfer and isDepositSourceGLPVault are always reset
+        // There was issue with a test where if 0 was depositted from the GLP vault, it would not be reset
         if(shouldSkipTransfer()) {
             _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, 0);
         } else if (isDepositSourceGLPVault()) {
@@ -111,6 +113,25 @@ contract GMXIsolationModeTokenVaultV1 is
         } else {
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
         }
+    }
+
+    function executeWithdrawalFromVault(
+        address _recipient,
+        uint256 _amount
+    )
+    public
+    override
+    onlyVaultFactory(msg.sender) {
+        uint256 underlyingBal = super.underlyingBalanceOf();
+        if (underlyingBal < _amount) {
+            address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
+            assert(glpVault != address(0));
+
+            IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(_amount - underlyingBal);
+        }
+
+        assert(_recipient != address(this));
+        IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
     function registry() public view returns (IGmxRegistryV1) {
