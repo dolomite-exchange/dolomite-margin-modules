@@ -33,7 +33,6 @@ import { IGmxVester } from "../interfaces/gmx/IGmxVester.sol";
 import { ISGMX } from "../interfaces/gmx/ISGMX.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   GLPIsolationModeTokenVaultV2
@@ -44,6 +43,14 @@ import "hardhat/console.sol";
  *          it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held in the same
  *          position as other "isolated" tokens.
  */
+interface IRewardTracker {
+    function claim(address _recipient) external returns (uint256);
+
+    function depositBalances(address _account, address _token) external returns (uint256);
+
+    function stake(address _depositToken, uint256 _amount) external;
+}
+
 contract GLPIsolationModeTokenVaultV2 is
     IGLPIsolationModeTokenVaultV2,
     IsolationModeTokenVaultV1
@@ -143,7 +150,6 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function unstakeGmx(uint256 _amount) external override onlyGmxVault(msg.sender) {
-        console.log(address(gmxRewardsRouter()));
         gmxRewardsRouter().unstakeGmx(_amount);
 
         gmx().safeTransfer(msg.sender, _amount);
@@ -155,6 +161,22 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function unstakeEsGmx(uint256 _amount) external override onlyVaultOwner(msg.sender) {
         gmxRewardsRouter().unstakeEsGmx(_amount);
+    }
+
+    function claimAndStakeBnGmx() external onlyGmxVault(msg.sender) returns (uint256){
+        _handleRewards(
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            _DEFAULT_ACCOUNT_NUMBER
+        );
+
+        address bnGmx = registry().bnGmx();
+        return IRewardTracker(registry().sbfGmx()).depositBalances(address(this), bnGmx);
     }
 
     function acceptFullAccountTransfer(
@@ -210,15 +232,15 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function unvestGlp(bool _shouldStakeGmx) external override onlyVaultOwner(msg.sender) {
-        _unvestEsGmx(vGlp(), _shouldStakeGmx);
+        _unvestEsGmx(vGlp(), _shouldStakeGmx, true);
     }
 
     function vestGmx(uint256 _esGmxAmount) external override onlyGmxVault(msg.sender) {
         _vestEsGmx(vGmx(), _esGmxAmount);
     }
 
-    function unvestGmx(bool _shouldStakeGmx) external override onlyGmxVault(msg.sender) {
-        _unvestEsGmx(vGmx(), _shouldStakeGmx);
+    function unvestGmx(bool _shouldStakeGmx, bool _addDepositIntoDolomite) external override onlyGmxVault(msg.sender) {
+        _unvestEsGmx(vGmx(), _shouldStakeGmx, _addDepositIntoDolomite);
     }
 
     function sync(address _gmxVault) external {
@@ -266,6 +288,10 @@ contract GLPIsolationModeTokenVaultV2 is
         // we can't use the fsGLP because it's not transferable. sGLP contains the authorization and logic for
         // transferring fsGLP tokens.
         sGlp().safeTransfer(_recipient, _amount);
+    }
+
+    function sweep() external onlyGmxVault(msg.sender) {
+        _depositIntoGMXVault(msg.sender, _DEFAULT_ACCOUNT_NUMBER, gmx().balanceOf(address(this)), /* shouldSkipTransfer = */ false);
     }
 
     function esGmx() public view returns (IERC20) {
@@ -433,21 +459,23 @@ contract GLPIsolationModeTokenVaultV2 is
         _vester.deposit(_esGmxAmount);
     }
 
-    function _unvestEsGmx(IGmxVester _vester, bool _shouldStakeGmx) internal {
+    function _unvestEsGmx(IGmxVester _vester, bool _shouldStakeGmx, bool _addDepositIntoDolomite) internal {
         address gmxVault = _getGmxVaultOrCreate(OWNER());
 
         _vester.withdraw();
         IERC20 _gmx = gmx();
-        // @follow-up Double check the gmxBalanceOf function here
         uint256 bal = _gmx.balanceOf(address(this));
         // @follow-up I don't think this can ever be zero
         assert(bal > 0);
 
-        if (_shouldStakeGmx) {
-            _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
-            _stakeGmx(_gmx, bal);
-        } else {
-            _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ false);
+        if (_addDepositIntoDolomite) {
+            if (_shouldStakeGmx) {
+                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
+                _stakeGmx(_gmx, bal);
+            }
+            else {
+                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ false);
+            }
         }
     }
 

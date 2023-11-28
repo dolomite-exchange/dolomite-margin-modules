@@ -210,6 +210,11 @@ export const ATLAS_SI_TOKEN_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: '0x10EB11cFf6Eb909528Dba768040a63Eb904261c2',
 };
 
+export const BN_GMX_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x35247165119B69A40edD5304969560D0ef486921',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const ES_GMX_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xf42Ae1D54fd613C9bb14810b0588FaAa09a426cA',
   [Network.ArbitrumGoerli]: undefined,

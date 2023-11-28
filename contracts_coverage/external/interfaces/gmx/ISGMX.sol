@@ -34,4 +34,6 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface ISGMX is IERC20 {
 
     function depositBalances(address _account, address _depositToken) external view returns (uint256);
+
+    function stakedAmounts(address _account) external view returns (uint256);
 }

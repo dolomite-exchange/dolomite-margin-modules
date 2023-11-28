@@ -954,7 +954,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
   describe('#unvestGmx', () => {
     it('should fail when not called by gmx vault', async () => {
       await expectThrow(
-        vault.connect(core.hhUser1).unvestGmx(true),
+        vault.connect(core.hhUser1).unvestGmx(true, true),
         'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
       );
     });
@@ -1306,6 +1306,36 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         `GLPIsolationModeTokenVaultV2: Only GMX factory can sync <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
+  });
+
+  describe('#claimAndStakeBnGmx', () => {
+    it('should fail if not called by gmx vault', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser1).claimAndStakeBnGmx(),
+        'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
+      );
+    });
+  });
+
+  describe('#sweep', () => {
+    it('should work normally', async () => {
+      await gmxFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, vault);
+      await core.gmxEcosystem!.gmx.connect(core.hhUser1).transfer(vault.address, gmxAmount);
+
+      const gmxVaultAddress = await gmxFactory.getVaultByAccount(core.hhUser1.address);
+      const gmxVaultImpersonator = await impersonate(gmxVaultAddress, true);
+      await vault.connect(gmxVaultImpersonator).sweep();
+
+      await expectProtocolBalance(core, gmxVaultAddress, 0, underlyingGmxMarketId, gmxAmount);
+    });
+
+    it('should fail if not called by gmx vault', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser1).sweep(),
+        'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
+      );
+    })
   });
 
   describe('#gmxRewardsRouter', () => {

@@ -46,6 +46,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     // ============ Structs ============
 
     struct Initializer {
+        address bnGmx;
         address esGmx;
         address fsGlp;
         address glp;
@@ -65,6 +66,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
 
     // solhint-disable max-line-length
     bytes32 private constant _FILE = "GmxRegistryV1";
+    bytes32 private constant _BN_GMX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.bnGmx")) - 1);
     bytes32 private constant _ES_GMX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.esGmx")) - 1);
     bytes32 private constant _FS_GLP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.fsGlp")) - 1);
     bytes32 private constant _GLP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.glp")) - 1);
@@ -88,6 +90,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         Initializer calldata _initializer,
         address _dolomiteRegistry
     ) external initializer {
+        _ownerSetBnGmx(_initializer.bnGmx);
         _ownerSetEsGmx(_initializer.esGmx);
         _ownerSetFSGlp(_initializer.fsGlp);
         _ownerSetGlp(_initializer.glp);
@@ -106,6 +109,10 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     // ============ External Functions ============
+
+    function ownerSetBnGmx(address _bnGmx) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetBnGmx(_bnGmx);
+    }
 
     function ownerSetEsGmx(address _esGmx) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetEsGmx(_esGmx);
@@ -165,6 +172,10 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
 
     function ownerSetVGmx(address _vGmx) external override onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetVGmx(_vGmx);
+    }
+
+    function bnGmx() external view returns (address) {
+        return _getAddress(_BN_GMX_SLOT);
     }
 
     function esGmx() external view returns (address) {
@@ -228,6 +239,16 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     }
 
     // ==================== Internal Functions =========================
+
+    function _ownerSetBnGmx(address _bnGmx) internal {
+        Require.that(
+            _bnGmx != address(0),
+            _FILE,
+            "Invalid bnGmx address"
+        );
+        _setAddress(_BN_GMX_SLOT, _bnGmx);
+        emit BnGmxSet(_bnGmx);
+    }
 
     function _ownerSetEsGmx(address _esGmx) internal {
         Require.that(

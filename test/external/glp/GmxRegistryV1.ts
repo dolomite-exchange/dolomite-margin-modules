@@ -28,6 +28,7 @@ describe('GmxRegistryV1', () => {
 
   describe('#initialize', () => {
     it('should initialize variables properly', async () => {
+      expect(await registry.bnGmx()).to.equal(core.gmxEcosystem!.bnGmx.address);
       expect(await registry.esGmx()).to.equal(core.gmxEcosystem!.esGmx.address);
       expect(await registry.fsGlp()).to.equal(core.gmxEcosystem!.fsGlp.address);
       expect(await registry.glp()).to.equal(core.gmxEcosystem!.glp.address);
@@ -46,6 +47,7 @@ describe('GmxRegistryV1', () => {
 
     it('should fail if already initialized', async () => {
       const initializer = {
+        bnGmx: core.gmxEcosystem!.bnGmx.address,
         esGmx: core.gmxEcosystem!.esGmx.address,
         fsGlp: core.gmxEcosystem!.fsGlp.address,
         glp: core.gmxEcosystem!.glp.address,
@@ -64,6 +66,31 @@ describe('GmxRegistryV1', () => {
       await expectThrow(
         registry.initialize(initializer, core.dolomiteRegistry.address),
         'Initializable: contract is already initialized',
+      );
+    });
+  });
+
+  describe('#ownerSetBnGmx', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetBnGmx(OTHER_ADDRESS);
+      await expectEvent(registry, result, 'BnGmxSet', {
+        bnGmx: OTHER_ADDRESS,
+      });
+      expect(await registry.bnGmx()).to.equal(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetBnGmx(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+      expect(await registry.bnGmx()).to.equal(core.gmxEcosystem!.bnGmx.address);
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetBnGmx(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid bnGmx address',
       );
     });
   });
@@ -201,6 +228,13 @@ describe('GmxRegistryV1', () => {
       await expectThrow(
         registry.connect(core.hhUser1).ownerSetGlpVaultFactory(OTHER_ADDRESS),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetGlpVaultFactory(ZERO_ADDRESS),
+        'GmxRegistryV1: Invalid glpVaultFactory address',
       );
     });
   });

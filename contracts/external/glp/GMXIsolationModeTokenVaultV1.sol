@@ -27,7 +27,10 @@ import { IGLPIsolationModeTokenVaultV2 } from "../interfaces/gmx/IGLPIsolationMo
 import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
 import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
+import { ISGMX } from "../interfaces/gmx/ISGMX.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
+
+import "hardhat/console.sol";
 
 
 /**
@@ -84,7 +87,7 @@ contract GMXIsolationModeTokenVaultV1 is
         address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
         assert(glpVault != address(0));
 
-        IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(_shouldStakeGmx);
+        IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(_shouldStakeGmx, true);
     }
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external onlyVaultFactory(msg.sender) {
@@ -124,10 +127,21 @@ contract GMXIsolationModeTokenVaultV1 is
     onlyVaultFactory(msg.sender) {
         uint256 underlyingBal = super.underlyingBalanceOf();
         if (underlyingBal < _amount) {
-            address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
+            address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
             assert(glpVault != address(0));
 
-            IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(_amount - underlyingBal);
+            IERC20 sbfGmx = IERC20(registry().sbfGmx());
+            uint256 sGmxStakedAmount = ISGMX(registry().sGmx()).stakedAmounts(glpVault);
+            uint256 bnGmxAmount = IGLPIsolationModeTokenVaultV2(glpVault).claimAndStakeBnGmx();
+            // @follow-up This can be off by 1 wei with rounding
+            uint256 maxUnstakeAmount = sbfGmx.balanceOf(glpVault) * sGmxStakedAmount/ (sGmxStakedAmount + bnGmxAmount);
+
+            if (maxUnstakeAmount >= _amount - underlyingBal) {
+                IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(_amount - underlyingBal);
+            } else {
+                IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(false, false);
+                IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(_amount - underlyingBal);
+            }
         }
 
         assert(_recipient != address(this));
@@ -155,4 +169,13 @@ contract GMXIsolationModeTokenVaultV1 is
         return registry().dolomiteRegistry();
     }
 
+    function _withdrawFromVaultForDolomiteMargin(
+        uint256 _fromAccountNumber,
+        uint256 _amountWei
+    ) internal override {
+        super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
+
+        address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
+        IGLPIsolationModeTokenVaultV2(glpVault).sweep();
+    } 
 }

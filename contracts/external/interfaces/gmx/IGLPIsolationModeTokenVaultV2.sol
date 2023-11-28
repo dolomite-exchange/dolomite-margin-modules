@@ -107,6 +107,7 @@ interface IGLPIsolationModeTokenVaultV2 {
      */
     function unstakeEsGmx(uint256 _amount) external;
 
+    function claimAndStakeBnGmx() external returns (uint256);
     /**
      * @notice  Accepts a full account transfer from the sender's GMX account. There must not be any tokens in vesting
      *          and this contract must not have interacted with GMX yet for this to function. This function must be
@@ -150,7 +151,7 @@ interface IGLPIsolationModeTokenVaultV2 {
      * @param  _shouldStakeGmx  `true` to stake the GMX tokens in this vault, or `false` to send them to the vault
      *                          owner.
      */
-    function unvestGmx(bool _shouldStakeGmx) external;
+    function unvestGmx(bool _shouldStakeGmx, bool _addDepositIntoDolomite) external;
 
     /**
      * @notice  Syncs the vault's GMX balance with the GMX vault. This function must be called by the GMX vault factory.
@@ -159,6 +160,8 @@ interface IGLPIsolationModeTokenVaultV2 {
      * @param  _gmxVault  Matching GMX vault address for GLP vault owner
      */
     function sync(address _gmxVault) external;
+
+    function sweep() external;
 
     /**
      * @return The registry used to get addresses from the GMX ecosystem

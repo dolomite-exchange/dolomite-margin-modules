@@ -21,6 +21,8 @@ import {
   GMXIsolationModeTokenVaultV1,
   IGMXIsolationModeVaultFactory,
   GMXIsolationModeVaultFactory,
+  GLPIsolationModeTokenVaultV2,
+  TestGLPIsolationModeTokenVaultV2,
 } from '../../types';
 
 export function getGLPPriceOracleV1ConstructorParams(
@@ -58,7 +60,9 @@ export function getGLPUnwrapperTraderV2ConstructorParams(
 export type GmxUserVaultImplementation =
   IGLPIsolationModeTokenVaultV1
   | GLPIsolationModeTokenVaultV1
-  | TestGLPIsolationModeTokenVaultV1;
+  | TestGLPIsolationModeTokenVaultV1
+  | GLPIsolationModeTokenVaultV2
+  | TestGLPIsolationModeTokenVaultV2;
 
 export function getGLPIsolationModeVaultFactoryConstructorParams(
   core: CoreProtocol,
@@ -134,6 +138,7 @@ export async function getGmxRegistryConstructorParams(
   }
 
   const initializer = {
+    bnGmx: core.gmxEcosystem.bnGmx.address,
     esGmx: core.gmxEcosystem.esGmx.address,
     fsGlp: core.gmxEcosystem.fsGlp.address,
     glp: core.gmxEcosystem.glp.address,

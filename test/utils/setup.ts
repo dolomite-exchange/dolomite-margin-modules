@@ -172,6 +172,7 @@ import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
   ARB_MAP,
   ATLAS_SI_TOKEN_MAP,
+  BN_GMX_MAP,
   CHAINLINK_PRICE_ORACLE_MAP,
   CHAINLINK_PRICE_ORACLE_OLD_MAP,
   CHAINLINK_REGISTRY_MAP,
@@ -278,6 +279,7 @@ export interface CamelotEcosystem {
 }
 
 export interface GmxEcosystem {
+  bnGmx: IERC20;
   esGmx: IERC20;
   esGmxDistributor: IEsGmxDistributor;
   fsGlp: IERC20;
@@ -967,6 +969,7 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
   const esGmxDistributor = getContract(esGmxDistributorAddress, IEsGmxDistributor__factory.connect, signer);
   const esGmxAdmin = await impersonateOrFallback(await esGmxDistributor.connect(signer).admin(), true, signer);
   return {
+    bnGmx: getContract(BN_GMX_MAP[network] as string, IERC20__factory.connect, signer),
     esGmx: getContract(ES_GMX_MAP[network] as string, IERC20__factory.connect, signer),
     esGmxDistributor: esGmxDistributor.connect(esGmxAdmin),
     fsGlp: getContract(FS_GLP_MAP[network] as string, IERC20__factory.connect, signer),

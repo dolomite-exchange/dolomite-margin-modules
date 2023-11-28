@@ -6,7 +6,6 @@ import {
   GMXIsolationModeTokenVaultV1__factory,
   GMXIsolationModeVaultFactory,
   GmxRegistryV1,
-  TestGLPIsolationModeTokenVaultV1,
   TestGLPIsolationModeTokenVaultV2,
   TestGLPIsolationModeTokenVaultV2__factory,
 } from '../../../src/types';
@@ -45,7 +44,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
   let factory: GMXIsolationModeVaultFactory;
   let glpFactory: GLPIsolationModeVaultFactory;
   let gmxVault: GMXIsolationModeTokenVaultV1;
-  let glpVault: TestGLPIsolationModeTokenVaultV1;
+  let glpVault: TestGLPIsolationModeTokenVaultV2;
   let underlyingMarketIdGmx: BigNumber;
 
   before(async () => {
@@ -188,6 +187,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await doHandleRewardsWithWaitTime(30);
       const gmxAmountVested = await glpVault.getGmxAmountNeededForEsGmxVesting(esGmxAmount);
       await gmxVault.vestGmx(esGmxAmount);
+
       expect(await core.gmxEcosystem!.vGmx.pairAmounts(glpVault.address)).to.eq(gmxAmountVested);
       // the amount of GMX in the vault should be unchanged if some of it moves into vesting
       expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
@@ -303,6 +303,64 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     it('should fail if not called by the factory', async () => {
       await expectThrow(
         gmxVault.connect(core.hhUser1).executeDepositIntoVault(core.hhUser1.address, gmxAmount),
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#withdrawFromVaultForDolomiteMargin', () => {
+    it('should work normally', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
+      await gmxVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, gmxAmount);
+      await expectWalletBalance(gmxVault.address, core.gmxEcosystem!.gmx, gmxAmount);
+
+      await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
+      await expectWalletBalance(gmxVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
+    });
+
+    it('should work when have to unstake GMX', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
+      await gmxVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, gmxAmount);
+      await expectWalletBalance(gmxVault.address, core.gmxEcosystem!.gmx, gmxAmount);
+      await gmxVault.connect(core.hhUser1).stakeGmx(gmxAmount);
+
+      await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
+      await expectWalletBalance(gmxVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
+    });
+
+    it('should work normally when have to unvest & unstake GMX', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
+      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await gmxVault.stakeGmx(gmxAmount);
+
+      await doHandleRewardsWithWaitTime(30);
+      await gmxVault.vestGmx(esGmxAmount);
+      await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, gmxAmount);
+      console.log((await core.dolomiteMargin.getAccountWei({ owner: gmxVault.address, number: accountNumber }, underlyingMarketIdGmx)).toString());
+    });
+
+    it('should work normally when unvest, unstake, and sweep', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
+      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await gmxVault.stakeGmx(gmxAmount);
+
+      await doHandleRewardsWithWaitTime(30);
+      await gmxVault.vestGmx(esGmxAmount);
+      await waitDays(366);
+
+      await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, gmxAmount);
+      console.log((await core.dolomiteMargin.getAccountWei({ owner: gmxVault.address, number: accountNumber }, underlyingMarketIdGmx)).toString());
+    });
+  });
+
+  describe('#executeWithdrawalFromVault', () => {
+    it('should fail if not called by the factory', async () => {
+      await expectThrow(
+        gmxVault.connect(core.hhUser1).executeWithdrawalFromVault(core.hhUser1.address, gmxAmount),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
