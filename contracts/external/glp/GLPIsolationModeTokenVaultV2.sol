@@ -30,6 +30,7 @@ import { IGLPIsolationModeVaultFactory } from "../interfaces/gmx/IGLPIsolationMo
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "../interfaces/gmx/IGmxRewardRouterV2.sol";
 import { IGmxVester } from "../interfaces/gmx/IGmxVester.sol";
+import { IGmxRewardTracker } from "../interfaces/gmx/IGmxRewardTracker.sol";
 import { ISGMX } from "../interfaces/gmx/ISGMX.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 
@@ -43,14 +44,6 @@ import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeToke
  *          it cannot be borrowed by other users, may only be seized via liquidation, and cannot be held in the same
  *          position as other "isolated" tokens.
  */
-interface IRewardTracker {
-    function claim(address _recipient) external returns (uint256);
-
-    function depositBalances(address _account, address _token) external returns (uint256);
-
-    function stake(address _depositToken, uint256 _amount) external;
-}
-
 contract GLPIsolationModeTokenVaultV2 is
     IGLPIsolationModeTokenVaultV2,
     IsolationModeTokenVaultV1
@@ -176,7 +169,7 @@ contract GLPIsolationModeTokenVaultV2 is
         );
 
         address bnGmx = registry().bnGmx();
-        return IRewardTracker(registry().sbfGmx()).depositBalances(address(this), bnGmx);
+        return IGmxRewardTracker(registry().sbfGmx()).depositBalances(address(this), bnGmx);
     }
 
     function acceptFullAccountTransfer(
