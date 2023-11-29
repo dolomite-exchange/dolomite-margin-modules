@@ -220,8 +220,13 @@ export const ES_GMX_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
-export const ES_GMX_DISTRIBUTOR_MAP: Record<Network, string | undefined> = {
+export const ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x60519b48ec4183a61ca2B8e37869E675FD203b34',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x23208B91A98c7C1CD9FE63085BFf68311494F193',
   [Network.ArbitrumGoerli]: undefined,
 };
 
@@ -275,6 +280,11 @@ export const GMX_EXECUTOR_MAP: Record<Network, string | undefined> = {
 
 export const GMX_ETH_USD_MARKET_TOKEN_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x70d95587d40A2caf56bd97485aB3Eec10Bee6336',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_GOV_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xe7E740Fa40CA16b15B621B49de8E9F0D69CF4858',
   [Network.ArbitrumGoerli]: undefined,
 };
 

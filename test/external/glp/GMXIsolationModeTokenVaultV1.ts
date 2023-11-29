@@ -1,21 +1,26 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
+  CustomTestToken,
   GLPIsolationModeVaultFactory,
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeTokenVaultV1__factory,
+  GMXIsolationModeUnwrapperTraderV2,
   GMXIsolationModeVaultFactory,
+  GMXIsolationModeWrapperTraderV2,
   GmxRegistryV1,
   TestGLPIsolationModeTokenVaultV2,
   TestGLPIsolationModeTokenVaultV2__factory,
 } from '../../../src/types';
-import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
 import {
   createGLPIsolationModeVaultFactory,
   createGMXIsolationModeTokenVaultV1,
   createGMXIsolationModeVaultFactory,
+  createGMXUnwrapperTraderV2,
+  createGMXWrapperTraderV2,
   createGmxRegistry,
   createTestGLPIsolationModeTokenVaultV2
 } from '../../utils/ecosystem-token-utils/gmx';
@@ -27,20 +32,27 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
+import { getUnwrapZapParams } from 'test/utils/zap-utils';
+import { parseEther } from 'ethers/lib/utils';
+import { GMX_GOV_MAP } from 'src/utils/constants';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const esGmxAmount = BigNumber.from('10000000000000000'); // 0.01 esGMX tokens
 const accountNumber = ZERO_BI;
+const otherAccountNumber = BigNumber.from('123');
 
 describe('GMXIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
   let gmxRegistry: GmxRegistryV1;
+  let unwrapper: GMXIsolationModeUnwrapperTraderV2;
+  let wrapper: GMXIsolationModeWrapperTraderV2;
   let gmxFactory: GMXIsolationModeVaultFactory;
   let glpFactory: GLPIsolationModeVaultFactory;
   let gmxVault: GMXIsolationModeTokenVaultV1;
   let glpVault: TestGLPIsolationModeTokenVaultV2;
+  let gmxMarketId: BigNumber;
   let underlyingMarketIdGmx: BigNumber;
 
   before(async () => {
@@ -61,11 +73,17 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(glpFactory.address, true);
     await glpFactory.connect(core.governance).ownerInitialize([]);
 
+    unwrapper = await createGMXUnwrapperTraderV2(core, gmxFactory, gmxRegistry);
+    wrapper = await createGMXWrapperTraderV2(core, gmxFactory, gmxRegistry);
     underlyingMarketIdGmx = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(gmxFactory.address, '1000000000000000000');
     await setupTestMarket(core, gmxFactory, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(gmxFactory.address, true);
-    await gmxFactory.connect(core.governance).ownerInitialize([]);
+    await gmxFactory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
+
+    gmxMarketId = await core.dolomiteMargin.getNumMarkets();
+    await core.testEcosystem!.testPriceOracle.setPrice(core.gmxEcosystem!.gmx.address, '1000000000000000000');
+    await setupTestMarket(core, core.gmxEcosystem!.gmx, false);
 
     await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
     await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(gmxFactory.address);
@@ -82,7 +100,13 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       core.hhUser1
     );
 
-    await core.gmxEcosystem!.esGmxDistributor.setTokensPerInterval('10333994708994708');
+    // Make sure distributor has high tokens per interval and enough esGMX
+    await core.gmxEcosystem!.esGmxDistributorForStakedGmx.setTokensPerInterval('10333994708994708');
+    const gov = await impersonate(GMX_GOV_MAP[Network.ArbitrumOne]!, true);
+    await core.gmxEcosystem!.esGmx.connect(gov).mint(
+      core.gmxEcosystem!.esGmxDistributorForStakedGmx.address,
+      parseEther('100000000')
+    );
 
     snapshotId = await snapshot();
   });
@@ -346,6 +370,114 @@ describe('GMXIsolationModeTokenVaultV1', () => {
         gmxVault.connect(core.hhUser1).executeWithdrawalFromVault(core.hhUser1.address, gmxAmount),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
       );
+    });
+  });
+
+  describe('#underlyingBalanceOf', () => {
+    it('should work normally with only staking', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
+      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await gmxVault.stakeGmx(gmxAmount);
+      expect(await gmxVault.underlyingBalanceOf()).to.eq(gmxAmount);
+    });
+
+    it('should work normally with staking and vesting', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
+      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await gmxVault.stakeGmx(gmxAmount);
+      expect(await glpVault.getGmxAmountNeededForEsGmxVesting(esGmxAmount)).to.eq(ZERO_BI);
+      await doHandleRewardsWithWaitTime(30);
+      await gmxVault.vestGmx(esGmxAmount);
+
+      expect(await gmxVault.underlyingBalanceOf()).to.eq(gmxAmount);
+    });
+  });
+
+  describe('#swapExactInputForOutput', () => {
+    it('should work normally with no staked GMX', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
+      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await gmxVault.transferIntoPositionWithUnderlyingToken(accountNumber, otherAccountNumber, gmxAmount);
+
+      const zapParams = await getUnwrapZapParams(
+        underlyingMarketIdGmx,
+        gmxAmount,
+        gmxMarketId,
+        ONE_BI,
+        unwrapper,
+        core
+      );
+      await gmxVault.swapExactInputForOutput(
+        123,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
+      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, underlyingMarketIdGmx, ZERO_BI);
+      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, gmxMarketId, gmxAmount);
+    });
+
+    it('should work normally with staked GMX', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
+      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await gmxVault.transferIntoPositionWithUnderlyingToken(accountNumber, otherAccountNumber, gmxAmount);
+      await gmxVault.stakeGmx(gmxAmount);
+
+      const zapParams = await getUnwrapZapParams(
+        underlyingMarketIdGmx,
+        gmxAmount,
+        gmxMarketId,
+        ONE_BI,
+        unwrapper,
+        core
+      );
+      await gmxVault.swapExactInputForOutput(
+        123,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
+      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, underlyingMarketIdGmx, ZERO_BI);
+      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, gmxMarketId, gmxAmount);
+    });
+
+    it('should work normally with vested GMX and sweep', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
+      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await gmxVault.transferIntoPositionWithUnderlyingToken(accountNumber, otherAccountNumber, gmxAmount);
+      await gmxVault.stakeGmx(gmxAmount);
+      await doHandleRewardsWithWaitTime(30);
+      await gmxVault.vestGmx(esGmxAmount);
+      await waitDays(366);
+
+      const zapParams = await getUnwrapZapParams(
+        underlyingMarketIdGmx,
+        gmxAmount,
+        gmxMarketId,
+        ONE_BI,
+        unwrapper,
+        core
+      );
+      await gmxVault.swapExactInputForOutput(
+        123,
+        zapParams.marketIdsPath,
+        zapParams.inputAmountWei,
+        zapParams.minOutputAmountWei,
+        zapParams.tradersPath,
+        zapParams.makerAccounts,
+        zapParams.userConfig,
+      );
+      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, esGmxAmount);
+      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, underlyingMarketIdGmx, ZERO_BI);
+      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, gmxMarketId, gmxAmount);
     });
   });
 

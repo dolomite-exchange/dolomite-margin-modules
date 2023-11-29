@@ -34,6 +34,8 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
+import { GMX_GOV_MAP } from 'src/utils/constants';
+import { parseEther } from 'ethers/lib/utils';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -105,7 +107,17 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     expect(glpProtocolBalance.sign).to.eq(true);
     expect(glpProtocolBalance.value).to.eq(amountWei);
 
-    await core.gmxEcosystem!.esGmxDistributor.setTokensPerInterval('10333994708994708');
+    await core.gmxEcosystem!.esGmxDistributorForStakedGlp.setTokensPerInterval('10333994708994708');
+    await core.gmxEcosystem!.esGmxDistributorForStakedGmx.setTokensPerInterval('10333994708994708');
+    const gov = await impersonate(GMX_GOV_MAP[Network.ArbitrumOne]!, true);
+    await core.gmxEcosystem!.esGmx.connect(gov).mint(
+      core.gmxEcosystem!.esGmxDistributorForStakedGmx.address,
+      parseEther('100000000')
+    );
+    await core.gmxEcosystem!.esGmx.connect(gov).mint(
+      core.gmxEcosystem!.esGmxDistributorForStakedGlp.address,
+      parseEther('100000000')
+    );
     await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
     await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(gmxFactory.address);
 
@@ -1191,7 +1203,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     });
 
     it('should fail when triggered more than once on the same glpVault', async () => {
-      await core.gmxEcosystem!.esGmxDistributor.setTokensPerInterval('0');
+      await core.gmxEcosystem!.esGmxDistributorForStakedGlp.setTokensPerInterval('0');
       const usdcAmount = BigNumber.from('100000000'); // 100 USDC
       await setupUSDCBalance(core, core.hhUser2, usdcAmount, core.gmxEcosystem!.glpManager);
       await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser2).mintAndStakeGlp(

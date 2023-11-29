@@ -167,6 +167,8 @@ import {
   TestInterestSetter__factory,
   TestPriceOracle,
   TestPriceOracle__factory,
+  IERC20Mintable,
+  IERC20Mintable__factory,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
@@ -182,7 +184,8 @@ import {
   DPLV_GLP_MAP,
   DPT_GLP_2024_MAP, DPX_MAP,
   DYT_GLP_2024_MAP,
-  ES_GMX_DISTRIBUTOR_MAP,
+  ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP,
+  ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP,
   ES_GMX_MAP,
   FS_GLP_MAP,
   GLP_MANAGER_MAP,
@@ -280,8 +283,9 @@ export interface CamelotEcosystem {
 
 export interface GmxEcosystem {
   bnGmx: IERC20;
-  esGmx: IERC20;
-  esGmxDistributor: IEsGmxDistributor;
+  esGmx: IERC20Mintable;
+  esGmxDistributorForStakedGlp: IEsGmxDistributor;
+  esGmxDistributorForStakedGmx: IEsGmxDistributor;
   fsGlp: IERC20;
   glp: IERC20;
   glpManager: IGLPManager;
@@ -961,17 +965,29 @@ async function createCamelotEcosystem(
 }
 
 async function createGmxEcosystem(network: Network, signer: SignerWithAddress): Promise<GmxEcosystem | undefined> {
-  const esGmxDistributorAddress = ES_GMX_DISTRIBUTOR_MAP[network];
-  if (!esGmxDistributorAddress) {
+  const esGmxDistributorAddressForGlp = ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP[network];
+  const esGmxDistributorAddressForGmx = ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP[network];
+  if (!esGmxDistributorAddressForGlp || !esGmxDistributorAddressForGmx) {
     return undefined;
   }
 
-  const esGmxDistributor = getContract(esGmxDistributorAddress, IEsGmxDistributor__factory.connect, signer);
-  const esGmxAdmin = await impersonateOrFallback(await esGmxDistributor.connect(signer).admin(), true, signer);
+  const esGmxDistributorForGlp = getContract(esGmxDistributorAddressForGlp, IEsGmxDistributor__factory.connect, signer);
+  const esGmxAdminForGlp = await impersonateOrFallback(
+    await esGmxDistributorForGlp.connect(signer).admin(),
+    true,
+    signer
+  );
+  const esGmxDistributorForGmx = getContract(esGmxDistributorAddressForGmx, IEsGmxDistributor__factory.connect, signer);
+  const esGmxAdminForGmx = await impersonateOrFallback(
+    await esGmxDistributorForGmx.connect(signer).admin(),
+    true,
+    signer
+  );
   return {
     bnGmx: getContract(BN_GMX_MAP[network] as string, IERC20__factory.connect, signer),
-    esGmx: getContract(ES_GMX_MAP[network] as string, IERC20__factory.connect, signer),
-    esGmxDistributor: esGmxDistributor.connect(esGmxAdmin),
+    esGmx: getContract(ES_GMX_MAP[network] as string, IERC20Mintable__factory.connect, signer),
+    esGmxDistributorForStakedGlp: esGmxDistributorForGlp.connect(esGmxAdminForGlp),
+    esGmxDistributorForStakedGmx: esGmxDistributorForGmx.connect(esGmxAdminForGmx),
     fsGlp: getContract(FS_GLP_MAP[network] as string, IERC20__factory.connect, signer),
     glp: getContract(GLP_MAP[network] as string, IERC20__factory.connect, signer),
     glpManager: getContract(

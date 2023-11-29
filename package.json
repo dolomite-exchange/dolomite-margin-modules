@@ -14,7 +14,7 @@
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat coverage --testfiles \"test/**/!(*Liquidation*|*LiquidatorProxyV2*|*Umami*)*.ts\" --network hardhat",
     "coverage:prepare": "ts-node scripts/fix-contracts-for-coverage.ts",
     "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat coverage --testfiles \"test/external/**/(GmxV2*|IsolationModeFreezableLiquidatorProxy)*.ts\" --network hardhat",
-    "coverage:specific2": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat coverage --testfiles \"test/external/glp/(GMXIsolationModeUnwrapperTraderV2|GMXIsolationModeWrapperTraderV2).ts\" --network hardhat",
+    "coverage:specific2": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat coverage --testfiles \"test/external/glp/(GMXIsolationModeTokenVaultV1|GLPIsolationModeTokenVaultV2|GMXIsolationModeVaultFactory).ts\" --network hardhat",
     "deploy:abracadabra-ecosystem": "hardhat --network arbitrum_one run scripts/deploy/deploy-abracadabra-ecosystem.ts",
     "deploy:atlas-ecosystem": "hardhat --network arbitrum_goerli run scripts/deploy/deploy-atlas-ecosystem.ts",
     "deploy:coveralls": "coveralls < coverage/lcov.info",

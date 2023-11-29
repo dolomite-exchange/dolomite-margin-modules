@@ -22,7 +22,9 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV2.sol";
 import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
 import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
@@ -151,6 +153,11 @@ contract GMXIsolationModeTokenVaultV1 is
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
+    function underlyingBalanceOf() public view override returns (uint256) {
+        address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
+        return IGLPIsolationModeTokenVaultV2(glpVault).gmxBalanceOf() + super.underlyingBalanceOf();
+    }
+
     function shouldSkipTransfer() public view returns (bool) {
         return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
     }
@@ -181,4 +188,27 @@ contract GMXIsolationModeTokenVaultV1 is
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
         IGLPIsolationModeTokenVaultV2(glpVault).sweep();
     } 
+
+    function _swapExactInputForOutput(
+        uint256 _tradeAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
+        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
+        IGenericTraderProxyV1.UserConfig memory _userConfig
+    ) internal override {
+        super._swapExactInputForOutput(
+            _tradeAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
+        );
+
+        address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
+        IGLPIsolationModeTokenVaultV2(glpVault).sweep();
+    }
 }
