@@ -29,8 +29,8 @@ import { IGLPIsolationModeTokenVaultV2 } from "../interfaces/gmx/IGLPIsolationMo
 import { IGLPIsolationModeVaultFactory } from "../interfaces/gmx/IGLPIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "../interfaces/gmx/IGmxRewardRouterV2.sol";
-import { IGmxVester } from "../interfaces/gmx/IGmxVester.sol";
 import { IGmxRewardTracker } from "../interfaces/gmx/IGmxRewardTracker.sol";
+import { IGmxVester } from "../interfaces/gmx/IGmxVester.sol";
 import { ISGMX } from "../interfaces/gmx/ISGMX.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 
@@ -158,13 +158,13 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function claimAndStakeBnGmx() external onlyGmxVault(msg.sender) returns (uint256){
         _handleRewards(
-            false,
-            false,
-            false,
-            false,
-            true,
-            false,
-            false,
+            /* _shouldClaimGmx = */ false,
+            /* _shouldStakeGmx = */ false,
+            /* _shouldClaimEsGmx = */ false,
+            /* _shouldStakeEsGmx = */ false,
+            /* _shouldStakeMultiplierPoints = */ true,
+            /* _shouldClaimWeth = */ false,
+            /* _shouldDepositWethIntoDolomite = */ false,
             _DEFAULT_ACCOUNT_NUMBER
         );
 
@@ -201,7 +201,7 @@ contract GLPIsolationModeTokenVaultV2 is
         IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(/* _toAccountNumber = */ 0, amountWei);
 
         if (hasSynced()) {
-            // @follow-up Are asserts ok here and is balance correct
+            // @follow-up Are asserts ok here and is gmxBalanceOf correct
             uint256 amountGmx = gmxBalanceOf();
             address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
             assert(amountGmx > 0);
@@ -234,6 +234,15 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function unvestGmx(bool _shouldStakeGmx, bool _addDepositIntoDolomite) external override onlyGmxVault(msg.sender) {
         _unvestEsGmx(vGmx(), _shouldStakeGmx, _addDepositIntoDolomite);
+    }
+
+    function sweep() external onlyGmxVault(msg.sender) {
+        _depositIntoGMXVault(
+            /* _gmxVault = */ msg.sender,
+            /* _accountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+            /* _amountWei = */ gmx().balanceOf(address(this)),
+            /* _shouldSkipTransfer = */ false
+        );
     }
 
     function sync(address _gmxVault) external {
@@ -281,10 +290,6 @@ contract GLPIsolationModeTokenVaultV2 is
         // we can't use the fsGLP because it's not transferable. sGLP contains the authorization and logic for
         // transferring fsGLP tokens.
         sGlp().safeTransfer(_recipient, _amount);
-    }
-
-    function sweep() external onlyGmxVault(msg.sender) {
-        _depositIntoGMXVault(msg.sender, _DEFAULT_ACCOUNT_NUMBER, gmx().balanceOf(address(this)), /* shouldSkipTransfer = */ false);
     }
 
     function esGmx() public view returns (IERC20) {
@@ -414,16 +419,11 @@ contract GLPIsolationModeTokenVaultV2 is
         if (_shouldStakeGmx) {
             // we can reset the allowance back to 0 here
             _approveGmxForStaking(_gmx, 0);
-            if (bal > 0) {
-                // @follow-up Is blind transfer ok or is it worth determining if can do actual transfer
-                gmx().transfer(gmxVault, gmx().balanceOf(address(this)));
-                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
-            }
-        } else {
-            if (bal > 0) {
-                gmx().transfer(gmxVault, gmx().balanceOf(address(this)));
-                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
-            }
+        }
+        if (bal > 0) {
+            // @follow-up Is blind transfer ok or is it worth determining if can do actual transfer
+            gmx().transfer(gmxVault, gmx().balanceOf(address(this)));
+            _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
         }
 
         if (_shouldClaimWeth) {
