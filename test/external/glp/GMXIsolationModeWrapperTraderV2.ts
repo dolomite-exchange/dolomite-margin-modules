@@ -14,7 +14,6 @@ import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-consta
 import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
 import {
-  createGLPIsolationModeTokenVaultV1,
   createGLPIsolationModeTokenVaultV2,
   createGLPIsolationModeVaultFactory,
   createGMXIsolationModeTokenVaultV1,
@@ -32,29 +31,26 @@ import {
 } from '../../utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
 import { AccountInfoStruct } from 'src/utils';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 
-describe('GMXIsolationModeUnwrapperTraderV2', () => {
+describe('GMXIsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
   let underlyingToken: IERC20;
-  let underlyingMarketId: BigNumber;
+  let underlyingGmxMarketId: BigNumber;
   let gmxMarketId: BigNumber;
   let gmxRegistry: GmxRegistryV1;
   let unwrapper: GMXIsolationModeUnwrapperTraderV2;
   let wrapper: GMXIsolationModeWrapperTraderV2;
-  let factory: GMXIsolationModeVaultFactory;
+  let gmxFactory: GMXIsolationModeVaultFactory;
   let glpFactory: GLPIsolationModeVaultFactory;
   let vault: GMXIsolationModeTokenVaultV1;
   let defaultAccount: AccountInfoStruct;
-
-  let solidUser: SignerWithAddress;
 
   before(async () => {
     core = await setupCoreProtocol({
@@ -62,37 +58,44 @@ describe('GMXIsolationModeUnwrapperTraderV2', () => {
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.gmxEcosystem!.gmx;
+    gmxRegistry = await createGmxRegistry(core);
 
     const gmxVaultImplementation = await createGMXIsolationModeTokenVaultV1();
-    gmxRegistry = await createGmxRegistry(core);
-    factory = await createGMXIsolationModeVaultFactory(core, gmxRegistry, gmxVaultImplementation);
+    gmxFactory = await createGMXIsolationModeVaultFactory(core, gmxRegistry, gmxVaultImplementation);
     const glpVaultImplementation = await createGLPIsolationModeTokenVaultV2();
     glpFactory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, glpVaultImplementation);
 
-    // Setup GMX market
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '1000000000000000000');
-    await setupTestMarket(core, factory, true);
-
+    // Setup markets
     gmxMarketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(core.gmxEcosystem!.gmx.address, '1000000000000000000');
     await setupTestMarket(core, core.gmxEcosystem!.gmx, false);
 
-    unwrapper = await createGMXUnwrapperTraderV2(core, factory, gmxRegistry);
-    wrapper = await createGMXWrapperTraderV2(core, factory, gmxRegistry);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-    await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
-    await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
-    await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(factory.address);
+    underlyingGmxMarketId = await core.dolomiteMargin.getNumMarkets();
+    await core.testEcosystem!.testPriceOracle.setPrice(gmxFactory.address, '1000000000000000000');
+    await setupTestMarket(core, gmxFactory, true);
 
-    await factory.createVault(core.hhUser1.address);
-    const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
+    await core.testEcosystem!.testPriceOracle.setPrice(glpFactory.address, '1000000000000000000');
+    await setupTestMarket(core, glpFactory, true);
+
+    unwrapper = await createGMXUnwrapperTraderV2(core, gmxFactory, gmxRegistry);
+    wrapper = await createGMXWrapperTraderV2(core, gmxFactory, gmxRegistry);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(gmxFactory.address, true);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(glpFactory.address, true);
+    await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
+    await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(gmxFactory.address);
+    await gmxFactory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
+    await glpFactory.connect(core.governance).ownerInitialize([]);
+
+    await gmxFactory.createVault(core.hhUser1.address);
+    const vaultAddress = await gmxFactory.getVaultByAccount(core.hhUser1.address);
     vault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
       vaultAddress,
       GMXIsolationModeTokenVaultV1__factory,
       core.hhUser1
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
+    await setupGMXBalance(core, core.hhUser1, amountWei, vault);
+    await vault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
     snapshotId = await snapshot();
   });
@@ -101,7 +104,7 @@ describe('GMXIsolationModeUnwrapperTraderV2', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  describe.only('Call and Exchange for non-liquidation sale', () => {
+  describe('Call and Exchange for non-liquidation sale', () => {
     it('should work when called with the normal conditions', async () => {
       await setupGMXBalance(core, core.hhUser1, amountWei, core.dolomiteMargin);
       await core.gmxEcosystem!.gmx.connect(core.hhUser1).transfer(core.dolomiteMargin.address, amountWei);
@@ -112,7 +115,7 @@ describe('GMXIsolationModeUnwrapperTraderV2', () => {
         liquidAccountId,
         ZERO_ADDRESS,
         ZERO_ADDRESS,
-        underlyingMarketId,
+        underlyingGmxMarketId,
         gmxMarketId,
         ZERO_BI,
         amountWei,
@@ -122,13 +125,13 @@ describe('GMXIsolationModeUnwrapperTraderV2', () => {
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await core.dolomiteMargin.connect(core.hhUser5).operate([defaultAccount], actions);
 
-      // const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
-      // expect(underlyingBalanceWei.value).to.eq(amountWei.add(TEN));
-      // expect(await vault.underlyingBalanceOf()).to.eq(amountWei.add(TEN));
+      const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingGmxMarketId);
+      expect(underlyingBalanceWei.value).to.eq(amountWei.mul(2));
+      expect(await vault.underlyingBalanceOf()).to.eq(amountWei.mul(2));
 
-      // const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, otherMarketId);
-      // expect(otherBalanceWei.sign).to.eq(false);
-      // expect(otherBalanceWei.value).to.eq(otherAmountWei);
+      const otherBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, gmxMarketId);
+      expect(otherBalanceWei.sign).to.eq(false);
+      expect(otherBalanceWei.value).to.eq(amountWei);
     });
   });
 
@@ -138,7 +141,7 @@ describe('GMXIsolationModeUnwrapperTraderV2', () => {
         wrapper.connect(core.hhUser1).exchange(
           vault.address,
           core.dolomiteMargin.address,
-          factory.address,
+          gmxFactory.address,
           core.gmxEcosystem!.gmx.address,
           amountWei,
           BYTES_EMPTY,
@@ -153,7 +156,7 @@ describe('GMXIsolationModeUnwrapperTraderV2', () => {
         wrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
           core.dolomiteMargin.address,
-          factory.address,
+          gmxFactory.address,
           core.tokens.dfsGlp!.address,
           amountWei,
           encodeExternalSellActionDataWithNoData(ZERO_BI),
@@ -183,7 +186,7 @@ describe('GMXIsolationModeUnwrapperTraderV2', () => {
         wrapper.connect(dolomiteMarginImpersonator).exchange(
           vault.address,
           core.dolomiteMargin.address,
-          factory.address,
+          gmxFactory.address,
           core.gmxEcosystem!.gmx.address,
           ZERO_BI,
           encodeExternalSellActionDataWithNoData(ZERO_BI),
@@ -211,7 +214,7 @@ describe('GMXIsolationModeUnwrapperTraderV2', () => {
 
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
-      expect(await wrapper.getExchangeCost(core.gmxEcosystem!.gmx.address, factory.address, amountWei, BYTES_EMPTY))
+      expect(await wrapper.getExchangeCost(core.gmxEcosystem!.gmx.address, gmxFactory.address, amountWei, BYTES_EMPTY))
         .to
         .eq(amountWei);
     });
