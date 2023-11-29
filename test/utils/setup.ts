@@ -95,6 +95,8 @@ import {
   IJonesGLPAdapter__factory,
   IJonesGLPVaultRouter,
   IJonesGLPVaultRouter__factory,
+  IJonesUSDCFarm,
+  IJonesUSDCFarm__factory,
   IJonesUSDCRegistry,
   IJonesUSDCRegistry__factory,
   IJonesWhitelistController,
@@ -216,6 +218,7 @@ import {
   JONES_ECOSYSTEM_GOVERNOR_MAP,
   JONES_GLP_ADAPTER_MAP,
   JONES_GLP_VAULT_ROUTER_MAP,
+  JONES_JUSDC_FARM_MAP,
   JONES_JUSDC_MAP,
   JONES_JUSDC_RECEIPT_TOKEN_MAP,
   JONES_MAP,
@@ -355,11 +358,13 @@ export interface JonesEcosystem {
   whitelistController: IJonesWhitelistController;
   usdcReceiptToken: IERC4626;
   jUSDC: IERC4626;
+  jUSDCFarm: IJonesUSDCFarm;
   admin: SignerWithAddress;
   jonesWethV3Pool: IAlgebraV3Pool;
   live: {
     jUSDCIsolationModeFactory: JonesUSDCIsolationModeVaultFactory;
     jonesUSDCRegistry: IJonesUSDCRegistry;
+    jonesUSDCRegistryProxy: RegistryProxy;
   };
 }
 
@@ -499,6 +504,7 @@ export interface CoreProtocol {
   plutusEcosystem: PlutusEcosystem | undefined;
   premiaEcosystem: PremiaEcosystem | undefined;
   testEcosystem: TestEcosystem | undefined;
+  tokenVaultActionsLibraries: Record<string, string> | undefined;
   umamiEcosystem: UmamiEcosystem | undefined;
   /// =========================
   /// Markets and Tokens
@@ -853,6 +859,7 @@ export async function setupCoreProtocol(
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
   const premiaEcosystem = await createPremiaEcosystem(config.network, hhUser1);
   const testEcosystem = await createTestEcosystem(dolomiteMargin, dolomiteRegistry, governance, hhUser1, config);
+  const tokenVaultActionsLibraries = await createTokenVaultActionsLibraries(config);
   const umamiEcosystem = await createUmamiEcosystem(config.network, hhUser1);
 
   return {
@@ -895,6 +902,7 @@ export async function setupCoreProtocol(
     plutusEcosystem,
     premiaEcosystem,
     testEcosystem,
+    tokenVaultActionsLibraries,
     umamiEcosystem,
     config: {
       blockNumber: config.blockNumber,
@@ -1047,6 +1055,19 @@ async function createTestEcosystem(
   };
 }
 
+async function createTokenVaultActionsLibraries(
+  config: CoreProtocolSetupConfig,
+): Promise<Record<string, string> | undefined> {
+  const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
+  if (!(deployments[libraryName] as any)[config.network]) {
+    return undefined;
+  }
+
+  return {
+    [libraryName]: (deployments[libraryName] as any)[config.network].address,
+  };
+}
+
 async function createAbraEcosystem(network: Network, signer: SignerWithAddress): Promise<AbraEcosystem | undefined> {
   if (!MAGIC_GLP_MAP[network]) {
     return undefined;
@@ -1189,6 +1210,7 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
     ),
     jonesWethV3Pool: getContract(JONES_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
     jUSDC: getContract(JONES_JUSDC_MAP[network] as string, IERC4626__factory.connect, signer),
+    jUSDCFarm: getContract(JONES_JUSDC_FARM_MAP[network] as string, IJonesUSDCFarm__factory.connect, signer),
     usdcReceiptToken: getContract(
       JONES_JUSDC_RECEIPT_TOKEN_MAP[network] as string,
       IERC4626__factory.connect,
@@ -1204,6 +1226,11 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
       jonesUSDCRegistry: getContract(
         (Deployments.JonesUSDCRegistryProxy as any)[network]?.address,
         IJonesUSDCRegistry__factory.connect,
+        signer,
+      ),
+      jonesUSDCRegistryProxy: getContract(
+        (Deployments.JonesUSDCRegistryProxy as any)[network]?.address,
+        RegistryProxy__factory.connect,
         signer,
       ),
     },

@@ -410,6 +410,11 @@ export const JONES_JUSDC_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const JONES_JUSDC_FARM_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x0aEfaD19aA454bCc1B1Dd86e18A7d58D0a6FAC38',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const JONES_JUSDC_RECEIPT_TOKEN_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xa485a0bc44988B95245D5F20497CCaFF58a73E99',
   [Network.ArbitrumGoerli]: undefined,

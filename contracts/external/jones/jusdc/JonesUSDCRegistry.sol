@@ -25,6 +25,7 @@ import { BaseRegistry } from "../../general/BaseRegistry.sol";
 import { IERC4626 } from "../../interfaces/IERC4626.sol";
 import { IJonesGLPAdapter } from "../../interfaces/jones/IJonesGLPAdapter.sol";
 import { IJonesGLPVaultRouter } from "../../interfaces/jones/IJonesGLPVaultRouter.sol";
+import { IJonesUSDCFarm } from "../../interfaces/jones/IJonesUSDCFarm.sol";
 import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
 import { IJonesWhitelistController } from "../../interfaces/jones/IJonesWhitelistController.sol";
 
@@ -51,6 +52,7 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
     bytes32 private constant _JUSDC_SLOT = bytes32(uint256(keccak256("eip1967.proxy.jUSDC")) - 1);
     bytes32 private constant _UNWRAPPER_TRADER_FOR_LIQUIDATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperTraderForLiquidation")) - 1);
     bytes32 private constant _UNWRAPPER_TRADER_FOR_ZAP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.unwrapperTraderForZap")) - 1);
+    bytes32 private constant _JUSDC_FARM_SLOT = bytes32(uint256(keccak256("eip1967.proxy.jUSDCFarm")) - 1);
     // solhint-enable max-line-length
 
     // ==================== Initializers ====================
@@ -61,13 +63,15 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         address _whitelistController,
         address _usdcReceiptToken,
         address _jUSDC,
-        address _dolomiteRegistry
+        address _dolomiteRegistry,
+        address _jonesUSDCFarm
     ) external initializer {
         _ownerSetGlpAdapter(_glpAdapter);
         _ownerSetGlpVaultRouter(_glpVaultRouter);
         _ownerSetWhitelistController(_whitelistController);
         _ownerSetUsdcReceiptToken(_usdcReceiptToken);
         _ownerSetJUSDC(_jUSDC);
+        _ownerSetJUSDCFarm(_jonesUSDCFarm);
         _ownerSetDolomiteRegistry(_dolomiteRegistry);
     }
 
@@ -80,8 +84,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
             _FILE,
             "Already initialized"
         );
-        _setUnwrapperTraderForLiquidation(_unwrapperTraderForLiquidation);
-        _setUnwrapperTraderForZap(_unwrapperTraderForZap);
+        _ownerSetUnwrapperTraderForLiquidation(_unwrapperTraderForLiquidation);
+        _ownerSetUnwrapperTraderForZap(_unwrapperTraderForZap);
     }
 
     // ==================== Admin Methods ====================
@@ -131,7 +135,7 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        _setUnwrapperTraderForLiquidation(_unwrapperTraderForLiquidation);
+        _ownerSetUnwrapperTraderForLiquidation(_unwrapperTraderForLiquidation);
     }
 
     function ownerSetUnwrapperTraderForZap(
@@ -139,7 +143,15 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
     )
     external
     onlyDolomiteMarginOwner(msg.sender) {
-        _setUnwrapperTraderForZap(_unwrapperTraderForZap);
+        _ownerSetUnwrapperTraderForZap(_unwrapperTraderForZap);
+    }
+
+    function ownerSetJUSDCFarm(
+        address _jUSDCFarm
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetJUSDCFarm(_jUSDCFarm);
     }
 
     // ==================== Public Methods ====================
@@ -170,6 +182,10 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
 
     function unwrapperTraderForZap() public view returns (address) {
         return _getAddress(_UNWRAPPER_TRADER_FOR_ZAP_SLOT);
+    }
+
+    function jUSDCFarm() public view returns (IJonesUSDCFarm) {
+        return IJonesUSDCFarm(_getAddress(_JUSDC_FARM_SLOT));
     }
 
     // ==================== Private Functions ====================
@@ -224,7 +240,7 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         emit JUSDCSet(_jUSDC);
     }
 
-    function _setUnwrapperTraderForLiquidation(address _unwrapperTraderForLiquidation) internal {
+    function _ownerSetUnwrapperTraderForLiquidation(address _unwrapperTraderForLiquidation) internal {
         Require.that(
             _unwrapperTraderForLiquidation != address(0),
             _FILE,
@@ -234,7 +250,7 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         emit UnwrapperTraderForLiquidationSet(_unwrapperTraderForLiquidation);
     }
 
-    function _setUnwrapperTraderForZap(address _unwrapperTraderForZap) internal {
+    function _ownerSetUnwrapperTraderForZap(address _unwrapperTraderForZap) internal {
         Require.that(
             _unwrapperTraderForZap != address(0),
             _FILE,
@@ -242,5 +258,15 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         );
         _setAddress(_UNWRAPPER_TRADER_FOR_ZAP_SLOT, _unwrapperTraderForZap);
         emit UnwrapperTraderForZapSet(_unwrapperTraderForZap);
+    }
+
+    function _ownerSetJUSDCFarm(address _jUSDCFarm) internal {
+        Require.that(
+            _jUSDCFarm != address(0),
+            _FILE,
+            "Invalid jUSDCFarm address"
+        );
+        _setAddress(_JUSDC_FARM_SLOT, _jUSDCFarm);
+        emit JUSDCFarmSet(_jUSDCFarm);
     }
 }

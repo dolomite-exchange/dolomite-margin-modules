@@ -193,6 +193,13 @@
       "isVerified": true
     }
   },
+  "JonesUSDCIsolationModeTokenVaultV2": {
+    "42161": {
+      "address": "0xc1E23335D9d7699d6Eb0B31d99912440b33345Ce",
+      "transaction": "0x892a44b92f3b867b2ab714167b0fd1af93d3278110d5b465af3590bcf9a9ead4",
+      "isVerified": true
+    }
+  },
   "JonesUSDCIsolationModeUnwrapperTraderV2": {
     "42161": {
       "address": "0x61EB7F571Cc89Bb56c3314891Bd323701d4071eC",
@@ -225,6 +232,13 @@
     "42161": {
       "address": "0xe091E7a5897759faF5591d2eF1Cff0FD9A02F3cF",
       "transaction": "0x5826b867b5fea223e45e6179ccebf5e58d79058c4fd7ab272463a14be69cf20c",
+      "isVerified": true
+    }
+  },
+  "JonesUSDCRegistry": {
+    "42161": {
+      "address": "0xc30A2c10ADd9Cf993386642dcB7c84b78a84C0eD",
+      "transaction": "0x5310be2b7f4147ae77e34c1d328afaf632dd8241d23545e4a224080f31c9bad8",
       "isVerified": true
     }
   },

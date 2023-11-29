@@ -72,7 +72,7 @@ export enum TargetCollateralization {
   _120 = '1.20',
   _125 = '1.25',
   _150 = '1.50',
-  _166 = '1.66',
+  _166 = '1.66666666',
 }
 
 export function getMarginPremiumForTargetCollateralization(
