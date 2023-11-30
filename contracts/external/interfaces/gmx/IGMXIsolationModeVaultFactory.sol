@@ -28,7 +28,7 @@ import { IIsolationModeVaultFactory } from "../IIsolationModeVaultFactory.sol";
  * @title   IGMXIsolationModeVaultFactory
  * @author  Dolomite
  *
- * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for staked-GMX tokens.
+ * @notice  Interface for a subclass of IsolationModeVaultFactory that creates vaults for GMX tokens.
  */
 interface IGMXIsolationModeVaultFactory is IIsolationModeVaultFactory {
 

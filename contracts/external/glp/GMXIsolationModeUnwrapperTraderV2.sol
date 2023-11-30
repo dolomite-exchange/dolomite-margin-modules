@@ -28,7 +28,7 @@ import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationMod
  * @title   GMXIsolationModeUnwrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for unwrapping dGMX into any supported token. Upon settlement,
+ * @notice  Used for unwrapping dGMX into GMX tokens. Upon settlement,
  *          the GMX is sent from the user's vault to this contract and dGMX is burned from `DolomiteMargin`.
  */
 contract GMXIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {

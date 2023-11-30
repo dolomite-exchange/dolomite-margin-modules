@@ -27,7 +27,7 @@ import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
  * @title   IGLPIsolationModeTokenVaultV2
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the GLPIsolationModeTokenVaultV1 implementation
+ * @notice  This interface defines the functions that are available on the GLPIsolationModeTokenVaultV2 implementation
  *          contract for each user's proxy vault.
  */
 interface IGLPIsolationModeTokenVaultV2 {
