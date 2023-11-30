@@ -58,12 +58,13 @@ contract TestDolomiteMarginExchangeWrapper is IDolomiteMarginExchangeWrapper, On
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
-        (uint256 _outputAmount,) = abi.decode(_orderData, (uint256, bytes));
-        if (ICustomTestToken(_outputToken).balanceOf(address(this)) < _outputAmount) {
-            ICustomTestToken(_outputToken).addBalance(address(this), _outputAmount);
+        (, bytes memory extraData) = abi.decode(_orderData, (uint256, bytes));
+        uint256 returnAmount = abi.decode(extraData, (uint256));
+        if (ICustomTestToken(_outputToken).balanceOf(address(this)) < returnAmount) {
+            ICustomTestToken(_outputToken).addBalance(address(this), returnAmount);
         }
-        IERC20(_outputToken).safeApprove(_receiver, _outputAmount);
-        return _outputAmount;
+        IERC20(_outputToken).safeApprove(_receiver, returnAmount);
+        return returnAmount;
     }
 
     function getExchangeCost(

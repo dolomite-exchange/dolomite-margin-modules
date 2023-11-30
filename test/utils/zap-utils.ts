@@ -38,7 +38,10 @@ export async function getSimpleZapParams(
   const traderParam: GenericTraderParam = {
     trader: core.testEcosystem.testExchangeWrapper.address,
     traderType: GenericTraderType.ExternalLiquidity,
-    tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'bytes'], [minOutputAmountWei, []]),
+    tradeData: ethers.utils.defaultAbiCoder.encode(
+      ['uint256', 'bytes'],
+      [minOutputAmountWei, ethers.utils.defaultAbiCoder.encode(['uint256'], [minOutputAmountWei])],
+    ),
     makerAccountIndex: 0,
   };
   return {
