@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IIsolationModeTokenVaultV1 } from "../IIsolationModeTokenVaultV1.sol";
 
+
 /**
  * @title   IGMXIsolationModeTokenVaultV1
  * @author  Dolomite
