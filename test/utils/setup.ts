@@ -576,6 +576,13 @@ export async function disableInterestAccrual(core: CoreProtocol, marketId: BigNu
   return core.dolomiteMargin.ownerSetInterestSetter(marketId, core.interestSetters.alwaysZeroInterestSetter.address);
 }
 
+export async function enableInterestAccrual(core: CoreProtocol, marketId: BigNumberish) {
+  return core.dolomiteMargin.ownerSetInterestSetter(
+    marketId,
+    core.interestSetters.linearStepFunction8L92UInterestSetter.address,
+  );
+}
+
 export async function setupWETHBalance(
   core: CoreProtocol,
   signer: SignerWithAddress,

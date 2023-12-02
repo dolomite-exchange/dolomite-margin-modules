@@ -5,13 +5,14 @@ import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { OARB, TestVesterImplementation } from 'src/types';
-import { depositIntoDolomiteMargin, withdrawFromDolomiteMargin } from 'src/utils/dolomite-utils';
+import { depositIntoDolomiteMargin, getPartialRoundHalfUp, withdrawFromDolomiteMargin } from 'src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
-import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
+import { advanceByTimeDelta, getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
 import {
   CoreProtocol,
   disableInterestAccrual,
+  enableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupARBBalance,
   setupCoreProtocol,
@@ -42,8 +43,8 @@ describe('Vester', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     await disableInterestAccrual(core, core.marketIds.usdc);
-    await disableInterestAccrual(core, core.marketIds.arb);
     await disableInterestAccrual(core, core.marketIds.weth);
+    await disableInterestAccrual(core, core.marketIds.arb!);
 
     oARB = await createOARB(core);
 
@@ -248,26 +249,38 @@ describe('Vester', () => {
       const arbPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.arb)).value;
       const ethCost = ONE_ETH_BI.mul(arbPrice).div(ethPrice).mul('9750').div('10000');
 
+      const arbPar = await core.dolomiteMargin.getAccountPar(
+        { owner: vester.address, number: vesterAccountNumber },
+        core.marketIds.arb,
+      );
+      await enableInterestAccrual(core, core.marketIds.arb!);
+      await advanceByTimeDelta(86400);
+
       const result = await vester.closePositionAndBuyTokens(
         1,
         defaultAccountNumber,
         defaultAccountNumber,
         MAX_UINT_256_BI,
       );
+      await disableInterestAccrual(core, core.marketIds.arb!);
+
+      const index = await core.dolomiteMargin.getMarketCurrentIndex(core.marketIds.arb);
+      const arbWei = getPartialRoundHalfUp(arbPar.value, index.supply, ONE_ETH_BI);
+      expect(arbWei).to.be.gt(ONE_ETH_BI);
       await expectEvent(vester, result, 'PositionClosed', {
         owner: core.hhUser1.address,
         vestingId: ONE_BI,
         ethCostPaid: ethCost,
       });
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
+      await expectWalletBalance(vester.address, oARB, ZERO_BI);
       await expectProtocolBalance(
         core,
         core.hhUser1,
         defaultAccountNumber,
         core.marketIds.arb,
-        parseEther('2'),
+        arbWei.add(ONE_ETH_BI),
       );
-      await expectWalletBalance(vester, oARB, ZERO_BI);
       await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb, ZERO_BI);
       await expectProtocolBalance(
         core,
@@ -563,7 +576,19 @@ describe('Vester', () => {
       );
       await increase(ONE_WEEK.mul(2).add(1));
 
+      const arbPar = await core.dolomiteMargin.getAccountPar(
+        { owner: vester.address, number: vesterAccountNumber },
+        core.marketIds.arb,
+      );
+      await enableInterestAccrual(core, core.marketIds.arb!);
+      await advanceByTimeDelta(86400);
+
       const result = await vester.connect(core.hhUser5).forceClosePosition(1);
+      await disableInterestAccrual(core, core.marketIds.arb!);
+
+      const index = await core.dolomiteMargin.getMarketCurrentIndex(core.marketIds.arb);
+      const arbWei = getPartialRoundHalfUp(arbPar.value, index.supply, ONE_ETH_BI);
+      expect(arbWei).to.be.gt(ONE_ETH_BI);
       await expectEvent(vester, result, 'PositionForceClosed', {
         owner: core.hhUser1.address,
         id: 1,
@@ -576,7 +601,7 @@ describe('Vester', () => {
         core.hhUser1,
         defaultAccountNumber,
         core.marketIds.arb,
-        parseEther('.95'),
+        arbWei.sub(parseEther('0.05')),
       );
       await expectProtocolBalance(core, core.governance, ZERO_BI, core.marketIds.arb, parseEther('.05'));
       await expectWalletBalance(core.governance.address, core.tokens.arb, ZERO_BI);
@@ -654,15 +679,28 @@ describe('Vester', () => {
       await expectWalletBalance(vester, oARB, ONE_ETH_BI);
       await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb, ONE_ETH_BI);
 
+      const arbPar = await core.dolomiteMargin.getAccountPar(
+        { owner: vester.address, number: vesterAccountNumber },
+        core.marketIds.arb,
+      );
+      await enableInterestAccrual(core, core.marketIds.arb!);
+      await advanceByTimeDelta(86400);
+
       const result = await vester.emergencyWithdraw(1);
+      await disableInterestAccrual(core, core.marketIds.arb!);
+
+      const index = await core.dolomiteMargin.getMarketCurrentIndex(core.marketIds.arb);
+      const arbWei = getPartialRoundHalfUp(arbPar.value, index.supply, ONE_ETH_BI);
+      expect(arbWei).to.be.gt(ONE_ETH_BI);
+
       await expectEvent(vester, result, 'EmergencyWithdraw', {
         owner: core.hhUser1.address,
         vestingId: ONE_BI,
         arbTax: ZERO_BI,
       });
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.arb, ONE_ETH_BI);
       await expectWalletBalance(vester, oARB, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.arb, arbWei);
       await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb, ZERO_BI);
       expect(await vester.promisedArbTokens()).to.eq(ZERO_BI);
       expect(await vester.availableArbTokens()).to.eq(ONE_ETH_BI);

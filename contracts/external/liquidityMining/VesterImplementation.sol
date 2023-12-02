@@ -221,7 +221,7 @@ contract VesterImplementation is
             /* toAccount = */ positionOwner,
             /* toAccountNumber = */ _toAccountNumber,
             /* marketId */ ARB_MARKET_ID,
-            /* amount */ position.amount
+            /* amount */ type(uint256).max
         );
 
         // Calculate price
@@ -270,15 +270,6 @@ contract VesterImplementation is
         // Burn oARB and transfer ARB tokens back to user"s dolomite account minus tax amount
         uint256 arbTax = position.amount * forceClosePositionTax() / _BASE;
         oARB().burn(position.amount);
-        _transfer(
-            /* _fromAccount = */ address(this),
-            /* _fromAccountNumber = */ accountNumber,
-            /* _toAccount = */ positionOwner,
-            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _marketId = */ ARB_MARKET_ID,
-            /* _amountWei */ position.amount - arbTax
-        );
-
         if (arbTax > 0) {
             _transfer(
                 /* _fromAccount = */ address(this),
@@ -289,6 +280,15 @@ contract VesterImplementation is
                 /* _amountWei */ arbTax
             );
         }
+
+        _transfer(
+            /* _fromAccount = */ address(this),
+            /* _fromAccountNumber = */ accountNumber,
+            /* _toAccount = */ positionOwner,
+            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+            /* _marketId = */ ARB_MARKET_ID,
+            /* _amountWei */ type(uint256).max
+        );
 
         emit PositionForceClosed(positionOwner, _id, arbTax);
     }
@@ -307,17 +307,6 @@ contract VesterImplementation is
         // Transfer arb back to the user and burn ARB
         oARB().burn(position.amount);
         uint256 arbTax = position.amount * emergencyWithdrawTax() / _BASE;
-        _transfer(
-            /* _fromAccount = */ address(this),
-            /* _fromAccountNumber = */ accountNumber,
-            /* _toAccount = */ owner,
-            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _marketId = */ ARB_MARKET_ID,
-            /* _amountWei */ position.amount - arbTax
-        );
-
-        _closePosition(position);
-
         if (arbTax > 0) {
             _transfer(
                 /* _fromAccount = */ address(this),
@@ -328,6 +317,17 @@ contract VesterImplementation is
                 /* _amountWei */ arbTax
             );
         }
+
+        _transfer(
+            /* _fromAccount = */ address(this),
+            /* _fromAccountNumber = */ accountNumber,
+            /* _toAccount = */ owner,
+            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+            /* _marketId = */ ARB_MARKET_ID,
+            /* _amountWei */ type(uint256).max
+        );
+
+        _closePosition(position);
 
         emit EmergencyWithdraw(owner, _id, arbTax);
     }
@@ -526,6 +526,14 @@ contract VesterImplementation is
         uint256 _marketId,
         uint256 _amount
     ) internal {
+        uint256 amountToTransfer = _amount;
+        if (_amount == type(uint256).max) {
+            IDolomiteStructs.AccountInfo memory fromAccountInfo = IDolomiteStructs.AccountInfo({
+                owner: _fromAccount,
+                number: _fromAccountNumber
+            });
+            amountToTransfer = DOLOMITE_MARGIN().getAccountWei(fromAccountInfo, _marketId).value;
+        }
         AccountActionLib.transfer(
             DOLOMITE_MARGIN(),
             _fromAccount,
@@ -534,8 +542,8 @@ contract VesterImplementation is
             _toAccountNumber,
             _marketId,
             IDolomiteStructs.AssetDenomination.Wei,
-            _amount,
-            AccountBalanceLib.BalanceCheckFlag.From
+            amountToTransfer,
+            AccountBalanceLib.BalanceCheckFlag.Both
         );
     }
 
