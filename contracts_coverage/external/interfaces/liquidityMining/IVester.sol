@@ -24,7 +24,7 @@ import { IOARB } from "./IOARB.sol";
 
 
 /**
- * @title   IVester
+ * @title   IVesterV1.sol
  * @author  Dolomite
  *
  * Interface for a vesting contract that offers users a discount on ARB tokens

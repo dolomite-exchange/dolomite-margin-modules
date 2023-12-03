@@ -33,24 +33,24 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
-import { IVester } from "../interfaces/liquidityMining/IVester.sol";
+import { IVesterV1 } from "../interfaces/liquidityMining/IVesterV1.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
 /**
- * @title   VesterImplementation
+ * @title   VesterImplementationV1
  * @author  Dolomite
  *
- * An implementation of the IVesterV1.sol interface that allows users to buy ARB at a discount if they vest ARB and oARB for a
- * certain amount of time
+ * An implementation of the IVesterV1 interface that allows users to buy ARB at a discount if they vest ARB and oARB for
+ * a certain amount of time
  */
-contract VesterImplementation is
+contract VesterImplementationV1 is
     ProxyContractHelpers,
     OnlyDolomiteMargin,
     ReentrancyGuard,
     ERC721EnumerableUpgradeable,
-    IVester
+    IVesterV1
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IOARB;
@@ -59,7 +59,7 @@ contract VesterImplementation is
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "VesterImplementation";
+    bytes32 private constant _FILE = "VesterImplementationV1";
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _BASE = 10_000;
 
@@ -75,6 +75,7 @@ contract VesterImplementation is
     bytes32 private constant _EMERGENCY_WITHDRAW_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.emergencyWithdrawTax")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_VESTING_ACTIVE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isVestingActive")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _BASE_URI_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseURI")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _VERSION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.version")) - 1); // solhint-disable-line max-line-length
 
     // =========================================================
     // ==================== State Variables ====================
@@ -91,7 +92,6 @@ contract VesterImplementation is
     // =========================================================
 
     modifier requireVestingActive() {
-        if (isVestingActive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isVestingActive(),
             _FILE,
@@ -143,13 +143,11 @@ contract VesterImplementation is
         requireVestingActive
         returns (uint256)
     {
-        if (ARB.balanceOf(address(this)) >= _amount + promisedArbTokens()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             ARB.balanceOf(address(this)) >= _amount + promisedArbTokens(),
             _FILE,
             "Not enough ARB tokens available"
         );
-        if (_duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0,
             _FILE,
@@ -198,19 +196,16 @@ contract VesterImplementation is
         VestingPosition memory position = _getVestingPositionSlot(_id);
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(position.creator, _id)));
         address positionOwner = ownerOf(_id);
-        if (positionOwner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             positionOwner == msg.sender,
             _FILE,
             "Invalid position owner"
         );
-        if (block.timestamp > position.startTime + position.duration) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + position.duration,
             _FILE,
             "Position not vested"
         );
-        if (block.timestamp <= position.startTime + position.duration + closePositionWindow()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp <= position.startTime + position.duration + closePositionWindow(),
             _FILE,
@@ -227,7 +222,7 @@ contract VesterImplementation is
             /* toAccount = */ positionOwner,
             /* toAccountNumber = */ _toAccountNumber,
             /* marketId */ ARB_MARKET_ID,
-            /* amount */ position.amount
+            /* amount */ type(uint256).max
         );
 
         // Calculate price
@@ -236,7 +231,6 @@ contract VesterImplementation is
         uint256 arbPriceAdj = DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID).value * discount / _BASE;
 
         uint256 cost = position.amount * arbPriceAdj / wethPrice;
-        if (cost <= _maxPaymentAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             cost <= _maxPaymentAmount,
             _FILE,
@@ -266,7 +260,6 @@ contract VesterImplementation is
         VestingPosition memory position = _getVestingPositionSlot(_id);
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(position.creator, _id)));
         address positionOwner = ownerOf(_id);
-        if (block.timestamp > position.startTime + position.duration + closePositionWindow()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + position.duration + closePositionWindow(),
             _FILE,
@@ -278,15 +271,6 @@ contract VesterImplementation is
         // Burn oARB and transfer ARB tokens back to user"s dolomite account minus tax amount
         uint256 arbTax = position.amount * forceClosePositionTax() / _BASE;
         oARB().burn(position.amount);
-        _transfer(
-            /* _fromAccount = */ address(this),
-            /* _fromAccountNumber = */ accountNumber,
-            /* _toAccount = */ positionOwner,
-            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _marketId = */ ARB_MARKET_ID,
-            /* _amountWei */ position.amount - arbTax
-        );
-
         if (arbTax > 0) {
             _transfer(
                 /* _fromAccount = */ address(this),
@@ -297,6 +281,15 @@ contract VesterImplementation is
                 /* _amountWei */ arbTax
             );
         }
+
+        _transfer(
+            /* _fromAccount = */ address(this),
+            /* _fromAccountNumber = */ accountNumber,
+            /* _toAccount = */ positionOwner,
+            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+            /* _marketId = */ ARB_MARKET_ID,
+            /* _amountWei */ type(uint256).max
+        );
 
         emit PositionForceClosed(positionOwner, _id, arbTax);
     }
@@ -306,7 +299,6 @@ contract VesterImplementation is
         VestingPosition memory position = _getVestingPositionSlot(_id);
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(position.creator, _id)));
         address owner = ownerOf(_id);
-        if (owner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             owner == msg.sender,
             _FILE,
@@ -316,17 +308,6 @@ contract VesterImplementation is
         // Transfer arb back to the user and burn ARB
         oARB().burn(position.amount);
         uint256 arbTax = position.amount * emergencyWithdrawTax() / _BASE;
-        _transfer(
-            /* _fromAccount = */ address(this),
-            /* _fromAccountNumber = */ accountNumber,
-            /* _toAccount = */ owner,
-            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _marketId = */ ARB_MARKET_ID,
-            /* _amountWei */ position.amount - arbTax
-        );
-
-        _closePosition(position);
-
         if (arbTax > 0) {
             _transfer(
                 /* _fromAccount = */ address(this),
@@ -337,6 +318,17 @@ contract VesterImplementation is
                 /* _amountWei */ arbTax
             );
         }
+
+        _transfer(
+            /* _fromAccount = */ address(this),
+            /* _fromAccountNumber = */ accountNumber,
+            /* _toAccount = */ owner,
+            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+            /* _marketId = */ ARB_MARKET_ID,
+            /* _amountWei */ type(uint256).max
+        );
+
+        _closePosition(position);
 
         emit EmergencyWithdraw(owner, _id, arbTax);
     }
@@ -353,7 +345,6 @@ contract VesterImplementation is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         if (!_shouldBypassAvailableAmounts) {
-            if (_amount <= availableArbTokens()) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _amount <= availableArbTokens(),
                 _FILE,
@@ -469,7 +460,6 @@ contract VesterImplementation is
     }
 
     function _ownerSetOARB(address _oARB) internal {
-        if (promisedArbTokens() == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             promisedArbTokens() == 0,
             _FILE,
@@ -480,7 +470,6 @@ contract VesterImplementation is
     }
 
     function _ownerSetClosePositionWindow(uint256 _closePositionWindow) internal {
-        if (_closePositionWindow >= _MIN_DURATION) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _closePositionWindow >= _MIN_DURATION,
             _FILE,
@@ -491,7 +480,6 @@ contract VesterImplementation is
     }
 
     function _ownerSetForceClosePositionTax(uint256 _forceClosePositionTax) internal {
-        if (_forceClosePositionTax >= 0 && _forceClosePositionTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _forceClosePositionTax >= 0 && _forceClosePositionTax < _BASE,
             _FILE,
@@ -505,7 +493,6 @@ contract VesterImplementation is
         uint256 _emergencyWithdrawTax
     )
     internal {
-        if (_emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _BASE,
             _FILE,
@@ -540,6 +527,14 @@ contract VesterImplementation is
         uint256 _marketId,
         uint256 _amount
     ) internal {
+        uint256 amountToTransfer = _amount;
+        if (_amount == type(uint256).max) {
+            IDolomiteStructs.AccountInfo memory fromAccountInfo = IDolomiteStructs.AccountInfo({
+                owner: _fromAccount,
+                number: _fromAccountNumber
+            });
+            amountToTransfer = DOLOMITE_MARGIN().getAccountWei(fromAccountInfo, _marketId).value;
+        }
         AccountActionLib.transfer(
             DOLOMITE_MARGIN(),
             _fromAccount,
@@ -548,8 +543,8 @@ contract VesterImplementation is
             _toAccountNumber,
             _marketId,
             IDolomiteStructs.AssetDenomination.Wei,
-            _amount,
-            AccountBalanceLib.BalanceCheckFlag.From
+            amountToTransfer,
+            AccountBalanceLib.BalanceCheckFlag.Both
         );
     }
 
@@ -635,7 +630,7 @@ contract VesterImplementation is
         } else if (_duration == 3 weeks) {
             return 9_000;
         } else {
-            /*assert(_duration == 4 weeks);*/
+            assert(_duration == 4 weeks);
             return 8_000;
         }
     }

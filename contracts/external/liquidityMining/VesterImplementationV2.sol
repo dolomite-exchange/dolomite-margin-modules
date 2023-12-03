@@ -33,24 +33,24 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
-import { IVester } from "../interfaces/liquidityMining/IVester.sol";
+import { IVesterV2 } from "../interfaces/liquidityMining/IVesterV2.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
 /**
- * @title   VesterImplementation
+ * @title   VesterImplementationV2
  * @author  Dolomite
  *
- * An implementation of the IVester interface that allows users to buy ARB at a discount if they vest ARB and oARB for a
+ * An implementation of the IVesterV2 interface that allows users to buy ARB at a discount if they vest ARB and oARB for a
  * certain amount of time
  */
-contract VesterImplementation is
+contract VesterImplementationV2 is
     ProxyContractHelpers,
     OnlyDolomiteMargin,
     ReentrancyGuard,
     ERC721EnumerableUpgradeable,
-    IVester
+    IVesterV2
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IOARB;
@@ -59,7 +59,7 @@ contract VesterImplementation is
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "VesterImplementation";
+    bytes32 private constant _FILE = "VesterImplementationV2";
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _BASE = 10_000;
 
@@ -75,6 +75,7 @@ contract VesterImplementation is
     bytes32 private constant _EMERGENCY_WITHDRAW_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.emergencyWithdrawTax")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_VESTING_ACTIVE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isVestingActive")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _BASE_URI_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseURI")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _VERSION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.version")) - 1); // solhint-disable-line max-line-length
 
     // =========================================================
     // ==================== State Variables ====================
@@ -442,6 +443,10 @@ contract VesterImplementation is
         return _baseURI();
     }
 
+    function version() public view returns (uint256) {
+        return _getUint256(_VERSION_SLOT);
+    }
+
     function vestingPositions(uint256 _id) public pure returns (VestingPosition memory) {
         return _getVestingPositionSlot(_id);
     }
@@ -599,6 +604,10 @@ contract VesterImplementation is
         _setUint256(_NEXT_ID_SLOT, _id);
     }
 
+    function _setVersion(uint256 _version) internal {
+        _setUint256(_VERSION_SLOT, _version);
+    }
+
     function _baseURI() internal view override returns (string memory) {
         bytes32 slot = _BASE_URI_SLOT;
         BaseUriStorage storage baseUriStorage;
@@ -621,7 +630,7 @@ contract VesterImplementation is
         }
     }
 
-    function _calculateDiscount(uint256 _duration) internal pure returns (uint256) {
+    function _calculateDiscount(uint256 _duration) internal virtual view returns (uint256) {
         if (_duration == 1 weeks) {
             return 9_750;
         } else if (_duration == 2 weeks) {
