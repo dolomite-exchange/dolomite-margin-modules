@@ -21,7 +21,6 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
@@ -85,9 +84,8 @@ library GmxV2Library {
         _weth.withdraw(_ethExecutionFee);
 
         address depositVault = _registry.gmxDepositVault();
-        exchangeRouter.sendWnt{value: _ethExecutionFee}(depositVault, _ethExecutionFee);
         IERC20(_inputToken).safeApprove(address(_registry.gmxRouter()), _inputAmount);
-        exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
+        exchangeRouter.sendTokens{value: _ethExecutionFee}(_inputToken, depositVault, _inputAmount);
 
         IGmxExchangeRouter.CreateDepositParams memory depositParams = IGmxExchangeRouter.CreateDepositParams(
             /* receiver = */ address(this),

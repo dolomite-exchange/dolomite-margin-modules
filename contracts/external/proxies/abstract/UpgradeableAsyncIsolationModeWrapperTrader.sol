@@ -49,7 +49,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
 
     // ======================== Constants ========================
 
-    bytes32 private constant _FILE = "IsolationModeWrapperTraderV2";
+    bytes32 private constant _FILE = "UpgradeableWrapperTraderV2";
 
     bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
     bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
@@ -412,7 +412,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             value: DOLOMITE_MARGIN().getMarketTotalPar(marketId).supply
         });
 
-        if (maxWei != 0 && DOLOMITE_MARGIN().parToWei(marketId, supplyPar).value + _depositAmountWei >= maxWei) {
+        if (maxWei != 0 && DOLOMITE_MARGIN().parToWei(marketId, supplyPar).value + _depositAmountWei > maxWei) {
             // If the supplyPar is gte than the maxWei, then we should to transfer the deposit to the vault owner. It's
             // better to do this than to revert, since the user will be able to maintain control over the assets.
             IERC20 underlyingToken = IERC20(_factory.UNDERLYING_TOKEN());

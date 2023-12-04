@@ -42,7 +42,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "GmxV2MarketTokenPriceOracle";
-    /// @dev All of the GM tokens listed have, at-worst, 20 bp for the price deviation
+    /// @dev All of the GM tokens listed have, at-worst, 25 bp for the price deviation
     uint256 public constant PRICE_DEVIATION_BP = 25;
     uint256 public constant BASIS_POINTS = 10_000;
     uint256 public constant SUPPLY_CAP_USAGE_NUMERATOR = 5;
@@ -160,7 +160,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         uint256 gmAmountIn = DOLOMITE_MARGIN().getMarketMaxWei(marketId).value;
         if (gmAmountIn == 0) {
             // GUARD STATEMENT
-            // If the value is 0, that means there's on cap so we can just return the GM token price
+            // If the value is 0, that means there's no cap so we can just return the GM token price
             return _gmPrice;
         }
 
