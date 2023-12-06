@@ -132,7 +132,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         _validateWithdrawalExists(withdrawalInfo);
         Require.that(
-            withdrawalInfo.inputAmount == _withdrawal.numbers.marketTokenAmount,
+            _withdrawal.numbers.marketTokenAmount >= withdrawalInfo.inputAmount,
             _FILE,
             "Invalid market token amount"
         );

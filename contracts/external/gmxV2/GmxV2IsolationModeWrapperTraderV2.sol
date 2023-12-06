@@ -92,13 +92,11 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function afterDepositCancellation(
         bytes32 _key,
-        GmxDeposit.DepositProps memory _deposit,
+        GmxDeposit.DepositProps memory /* _deposit */,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external
     onlyHandler(msg.sender) {
-        assert(_deposit.numbers.initialLongTokenAmount == 0 || _deposit.numbers.initialShortTokenAmount == 0);
-
         DepositInfo memory depositInfo = _getDepositSlot(_key);
         depositInfo.isRetryable = true;
         _setDepositInfo(_key, depositInfo);
