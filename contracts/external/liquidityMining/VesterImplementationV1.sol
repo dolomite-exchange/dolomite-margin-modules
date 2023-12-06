@@ -118,9 +118,12 @@ contract VesterImplementationV1 is
     }
 
     function initialize(
-        address _oARB,
-        string memory _baseUri
-    ) external initializer {
+        bytes calldata _data
+    )
+        external
+        initializer
+    {
+        (address _oARB, string memory _baseUri) = abi.decode(_data, (address, string));
         _ownerSetIsVestingActive(true);
         _ownerSetOARB(_oARB);
         _ownerSetClosePositionWindow(1 weeks);

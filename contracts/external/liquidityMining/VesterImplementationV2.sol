@@ -25,6 +25,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { VesterImplementationLibForV2 } from "./VesterImplementationLibForV2.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
@@ -42,7 +43,7 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  * @title   VesterImplementationV2
  * @author  Dolomite
  *
- * An implementation of the IVesterV2 interface that allows users to buy ARB at a discount if they vest ARB and oARB for a
+ * An implementation of the IVesterV2 interface that allows users to buy ARB at a discount if they vest oARB for a
  * certain amount of time
  */
 contract VesterImplementationV2 is
@@ -52,6 +53,7 @@ contract VesterImplementationV2 is
     ERC721EnumerableUpgradeable,
     IVesterV2
 {
+    using Address for address payable;
     using SafeERC20 for IERC20;
     using SafeERC20 for IOARB;
 
@@ -63,9 +65,6 @@ contract VesterImplementationV2 is
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _BASE = 10_000;
 
-    uint256 private constant _MIN_DURATION = 1 weeks;
-    uint256 private constant _MAX_DURATION = 4 weeks;
-
     bytes32 private constant _NEXT_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.nextId")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _VESTING_POSITIONS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vestingPositions")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _PROMISED_ARB_TOKENS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.promisedArbTokens")) - 1); // solhint-disable-line max-line-length
@@ -75,7 +74,15 @@ contract VesterImplementationV2 is
     bytes32 private constant _EMERGENCY_WITHDRAW_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.emergencyWithdrawTax")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_VESTING_ACTIVE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isVestingActive")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _BASE_URI_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseURI")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _VERSION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.version")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _GRANDFATHERED_ID_CUTOFF_SLOT = bytes32(uint256(keccak256("eip1967.proxy.grandfatheredIdCutoff")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _NEXT_REQUEST_ID_SLOT = bytes32(uint256(keccak256("eip1967.proxy.nextRequestId")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _IS_HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isHandler")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _LEVEL_EXPIRATION_WINDOW_SLOT = bytes32(uint256(keccak256("eip1967.proxy.levelExpirationWindow")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _LEVEL_BY_USER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.levelByUser")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _LEVEL_REQUEST_BY_USER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.levelRequestByUser")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _LEVEL_EXPIRATION_TIMESTAMP_BY_USER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.levelExpirationTimestampByUser")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _LEVEL_REQUEST_FEE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.levelRequestFee")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _LEVEL_BOOST_THRESHOLD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.levelBoostThreshold")) - 1); // solhint-disable-line max-line-length
 
     // =========================================================
     // ==================== State Variables ====================
@@ -87,16 +94,22 @@ contract VesterImplementationV2 is
     IERC20 public immutable ARB; // solhint-disable-line
     uint256 public immutable ARB_MARKET_ID; // solhint-disable-line
 
+    uint256 private immutable _MIN_VESTING_DURATION; // solhint-disable-line
+    uint256 private immutable _MAX_VESTING_DURATION; // solhint-disable-line
+    uint256 private immutable _GRANDFATHERED_UPGRADED_MIN_DURATION; // solhint-disable-line
+    uint256 private immutable _OLD_MAX_VESTING_DURATION; // solhint-disable-line
+
     // =========================================================
     // ======================= Modifiers =======================
     // =========================================================
 
     modifier requireVestingActive() {
-        Require.that(
-            isVestingActive(),
-            _FILE,
-            "Vesting not active"
-        );
+        _validateIsVestingActive();
+        _;
+    }
+
+    modifier requireIsHandler(address _from) {
+        _validateIsHandler(msg.sender);
         _;
     }
 
@@ -115,19 +128,25 @@ contract VesterImplementationV2 is
         WETH_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_weth));
         ARB = _arb;
         ARB_MARKET_ID = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_arb));
+
+        _MIN_VESTING_DURATION = VesterImplementationLibForV2.minVestingDuration();
+        _MAX_VESTING_DURATION = VesterImplementationLibForV2.maxVestingDuration();
+        _GRANDFATHERED_UPGRADED_MIN_DURATION = VesterImplementationLibForV2.grandfatheredUpgradedMinVestingDuration();
+        _OLD_MAX_VESTING_DURATION = VesterImplementationLibForV2.oldMaxVestingDuration();
     }
 
     function initialize(
-        address _oARB,
-        string memory _baseUri
-    ) external initializer {
-        _ownerSetIsVestingActive(true);
-        _ownerSetOARB(_oARB);
-        _ownerSetClosePositionWindow(1 weeks);
-        _ownerSetForceClosePositionTax(500); // 5%
-        _ownerSetEmergencyWithdrawTax(0); // 0%
-        _ownerSetBaseURI(_baseUri);
-        __ERC721_init("Dolomite oARB Vesting", "voARB");
+        bytes calldata _data
+    )
+        external
+        reinitializer(/* version = */ 2)
+    {
+        address _initialHandler = abi.decode(_data, (address));
+        _setUint256(_GRANDFATHERED_ID_CUTOFF_SLOT, _nextNftId());
+        _ownerSetLevelExpirationWindow(/* _levelExpirationWindow = */ 4 weeks);
+        _ownerSetLevelRequestFee(/* _fee = */ 0.0003 ether);
+        _ownerSetHandler(_initialHandler, /* _isHandler = */ true);
+        _ownerSetLevelBoostThreshold(/* _level = */ 4);
     }
 
     // ==================================================================
@@ -149,14 +168,16 @@ contract VesterImplementationV2 is
             "Not enough ARB tokens available"
         );
         Require.that(
-            _duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0,
+            _duration >= _MIN_VESTING_DURATION
+                && _duration <= _MAX_VESTING_DURATION
+                && _duration % _MIN_VESTING_DURATION == 0,
             _FILE,
             "Invalid duration"
         );
 
         // Create vesting position NFT
-        uint256 nftId = _nextId() + 1;
-        _setNextId(nftId);
+        uint256 nftId = _nextNftId() + 1;
+        _setNextNftId(nftId);
 
         _createVestingPosition(
             VestingPosition({
@@ -170,8 +191,8 @@ contract VesterImplementationV2 is
         _setPromisedArbTokens(promisedArbTokens() + _amount);
 
         _mint(msg.sender, nftId);
-        // Transfer amounts in to hash of id and msg.sender
         oARB().safeTransferFrom(msg.sender, address(this), _amount);
+        // Transfer amounts in to hash of id and msg.sender
         _transfer(
             /* fromAccount = */ msg.sender,
             /* fromAccountNumber = */ _fromAccountNumber,
@@ -185,31 +206,36 @@ contract VesterImplementationV2 is
         return nftId;
     }
 
+    function extendDurationForGrandfatheredPosition(uint256 _nftId, uint256 _duration) external {
+        VesterImplementationLibForV2.extendDurationForGrandfatheredPosition(
+            /* _implementation = */ this,
+            /* _vestingPosition = */ _getVestingPositionSlot(_nftId),
+            _nftId,
+            _duration
+        );
+    }
+
     function closePositionAndBuyTokens(
-        uint256 _id,
+        uint256 _nftId,
         uint256 _fromAccountNumber,
         uint256 _toAccountNumber,
         uint256 _maxPaymentAmount
     )
     external
     nonReentrant {
-        VestingPosition memory position = _getVestingPositionSlot(_id);
-        uint256 accountNumber = uint256(keccak256(abi.encodePacked(position.creator, _id)));
-        address positionOwner = ownerOf(_id);
+        VestingPosition memory position = _getVestingPositionSlot(_nftId);
+        uint256 accountNumber = _getAccountNumberByPosition(position);
+        address positionOwner = ownerOf(_nftId);
         Require.that(
             positionOwner == msg.sender,
             _FILE,
             "Invalid position owner"
         );
+        uint256 level = getEffectiveLevelByUser(positionOwner);
         Require.that(
-            block.timestamp > position.startTime + position.duration,
+            block.timestamp > position.startTime + _calculateEffectiveDuration(position.duration, level),
             _FILE,
             "Position not vested"
-        );
-        Require.that(
-            block.timestamp <= position.startTime + position.duration + closePositionWindow(),
-            _FILE,
-            "Position expired"
         );
 
         _closePosition(position);
@@ -226,9 +252,9 @@ contract VesterImplementationV2 is
         );
 
         // Calculate price
-        uint256 discount = _calculateDiscount(position.duration);
+        uint256 effectiveRate = _calculateEffectiveRate(position.duration, _nftId);
         uint256 wethPrice = DOLOMITE_MARGIN().getMarketPrice(WETH_MARKET_ID).value;
-        uint256 arbPriceAdj = DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID).value * discount / _BASE;
+        uint256 arbPriceAdj = DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID).value * effectiveRate / _BASE;
 
         uint256 cost = position.amount * arbPriceAdj / wethPrice;
         Require.that(
@@ -238,7 +264,7 @@ contract VesterImplementationV2 is
         );
 
         _transfer(
-            /* fromAccount = */ msg.sender,
+            /* fromAccount = */ positionOwner,
             /* fromAccountNumber = */ _fromAccountNumber,
             /* toAccount = */ DOLOMITE_MARGIN().owner(),
             /* toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
@@ -249,17 +275,17 @@ contract VesterImplementationV2 is
         // Deposit purchased ARB tokens into dolomite, clear vesting position, and refund
         _depositARBIntoDolomite(positionOwner, _toAccountNumber, position.amount);
 
-        emit PositionClosed(positionOwner, _id, cost);
+        emit PositionClosed(positionOwner, _nftId, cost);
     }
 
     function forceClosePosition(
-        uint256 _id
+        uint256 _nftId
     )
     external
     onlyDolomiteMarginGlobalOperator(msg.sender) {
-        VestingPosition memory position = _getVestingPositionSlot(_id);
-        uint256 accountNumber = uint256(keccak256(abi.encodePacked(position.creator, _id)));
-        address positionOwner = ownerOf(_id);
+        VestingPosition memory position = _getVestingPositionSlot(_nftId);
+        uint256 accountNumber = _getAccountNumberByPosition(position);
+        address positionOwner = ownerOf(_nftId);
         Require.that(
             block.timestamp > position.startTime + position.duration + closePositionWindow(),
             _FILE,
@@ -291,14 +317,14 @@ contract VesterImplementationV2 is
             /* _amountWei */ type(uint256).max
         );
 
-        emit PositionForceClosed(positionOwner, _id, arbTax);
+        emit PositionForceClosed(positionOwner, _nftId, arbTax);
     }
 
     // WARNING: This will forfeit all vesting progress and burn any locked oARB
-    function emergencyWithdraw(uint256 _id) external {
-        VestingPosition memory position = _getVestingPositionSlot(_id);
-        uint256 accountNumber = uint256(keccak256(abi.encodePacked(position.creator, _id)));
-        address owner = ownerOf(_id);
+    function emergencyWithdraw(uint256 _nftId) external {
+        VestingPosition memory position = _getVestingPositionSlot(_nftId);
+        uint256 accountNumber = _getAccountNumberByPosition(position);
+        address owner = ownerOf(_nftId);
         Require.that(
             owner == msg.sender,
             _FILE,
@@ -330,7 +356,26 @@ contract VesterImplementationV2 is
 
         _closePosition(position);
 
-        emit EmergencyWithdraw(owner, _id, arbTax);
+        emit EmergencyWithdraw(owner, _nftId, arbTax);
+    }
+
+    function initiateLevelRequest(address _user) external payable {
+        Require.that(
+            msg.value == levelRequestFee(),
+            _FILE,
+            "Invalid fee"
+        );
+        Require.that(
+            getLevelRequestByUser(_user) == 0,
+            _FILE,
+            "Request already initiated"
+        );
+
+        uint256 requestId = _nextRequestId() + 1;
+        _setLevelRequestByUser(_user, requestId);
+
+        _setNextRequestId(requestId);
+        emit LevelRequestInitiated(_user, requestId);
     }
 
     // ==================================================================
@@ -360,14 +405,6 @@ contract VesterImplementationV2 is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetIsVestingActive(_isVestingActive);
-    }
-
-    function ownerSetOARB(
-        address _oARB
-    )
-    external
-    onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetOARB(_oARB);
     }
 
     function ownerSetClosePositionWindow(
@@ -400,6 +437,72 @@ contract VesterImplementationV2 is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         _ownerSetBaseURI(_baseUri);
+    }
+
+    function ownerSetLevelExpirationWindow(
+        uint256 _levelExpirationWindow
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetLevelExpirationWindow(_levelExpirationWindow);
+    }
+
+    function ownerSetLevelRequestFee(
+        uint256 _fee
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetLevelRequestFee(_fee);
+    }
+
+    function ownerSetLevelBoostThreshold(
+        uint8 _levelBoostThreshold
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetLevelBoostThreshold(_levelBoostThreshold);
+    }
+
+    function ownerSetHandler(
+        address _handler,
+        bool _isHandler
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetHandler(_handler, _isHandler);
+    }
+
+    // ==================================================================
+    // ======================== Handler Functions =======================
+    // ==================================================================
+
+    function handlerUpdateLevel(
+        uint256 _requestId,
+        address _user,
+        uint256 _level
+    )
+        external
+        requireIsHandler(msg.sender)
+    {
+        Require.that(
+            _requestId == 0 || _requestId == getLevelRequestByUser(_user),
+            _FILE,
+            "Invalid request ID"
+        );
+
+        _setLevelRequestByUser(_user, /* _requestId = */ 0);
+        _setLevelByUser(_user, _level);
+        _setLevelExpirationTimestampByUser(_user, block.timestamp + levelExpirationWindow());
+        emit LevelRequestFinalized(_user, _requestId, _level);
+    }
+
+    function handlerWithdrawETH(
+        address payable _to
+    )
+        external
+        requireIsHandler(msg.sender)
+    {
+        _to.sendValue(address(this).balance);
     }
 
     // ==================================================================
@@ -443,12 +546,54 @@ contract VesterImplementationV2 is
         return _baseURI();
     }
 
-    function version() public view returns (uint256) {
-        return _getUint256(_VERSION_SLOT);
+    function levelRequestFee() public view returns (uint256) {
+        return _getUint256(_LEVEL_REQUEST_FEE_SLOT);
     }
 
-    function vestingPositions(uint256 _id) public pure returns (VestingPosition memory) {
-        return _getVestingPositionSlot(_id);
+    function levelBoostThreshold() public view returns (uint8) {
+        return uint8(_getUint256(_LEVEL_BOOST_THRESHOLD_SLOT));
+    }
+
+    function grandfatheredIdCutoff() public view returns (uint256) {
+        return _getUint256(_GRANDFATHERED_ID_CUTOFF_SLOT);
+    }
+
+    function levelExpirationWindow() public view returns (uint256) {
+        return _getUint256(_LEVEL_EXPIRATION_WINDOW_SLOT);
+    }
+
+    function getLevelByUser(address _user) public view returns (uint256) {
+        bytes32 slot = keccak256(abi.encodePacked(_LEVEL_BY_USER_SLOT, _user));
+        return _getUint256(slot);
+    }
+
+    function getEffectiveLevelByUser(address _user) public view returns (uint256) {
+        uint256 expirationTimestamp = getLevelExpirationTimestampByUser(_user);
+        if (expirationTimestamp == 0 || block.timestamp > expirationTimestamp) {
+            // If there's no expiration timestamp or if it's expired, return 0
+            return 0;
+        }
+
+        return getLevelByUser(_user);
+    }
+
+    function getLevelRequestByUser(address _user) public view returns (uint256) {
+        bytes32 slot = keccak256(abi.encodePacked(_LEVEL_REQUEST_BY_USER_SLOT, _user));
+        return _getUint256(slot);
+    }
+
+    function getLevelExpirationTimestampByUser(address _user) public view returns (uint256) {
+        bytes32 slot = keccak256(abi.encodePacked(_LEVEL_EXPIRATION_TIMESTAMP_BY_USER_SLOT, _user));
+        return _getUint256(slot);
+    }
+
+    function isHandler(address _handler) public view returns (bool) {
+        bytes32 slot = keccak256(abi.encodePacked(_IS_HANDLER_SLOT, _handler));
+        return _getUint256(slot) == 1;
+    }
+
+    function vestingPositions(uint256 _nftId) public pure returns (VestingPosition memory) {
+        return _getVestingPositionSlot(_nftId);
     }
 
     // ==================================================================
@@ -463,19 +608,9 @@ contract VesterImplementationV2 is
         emit VestingActiveSet(_isVestingActive);
     }
 
-    function _ownerSetOARB(address _oARB) internal {
-        Require.that(
-            promisedArbTokens() == 0,
-            _FILE,
-            "Outstanding vesting positions"
-        );
-        _setAddress(_OARB_SLOT, _oARB);
-        emit OARBSet(_oARB);
-    }
-
     function _ownerSetClosePositionWindow(uint256 _closePositionWindow) internal {
         Require.that(
-            _closePositionWindow >= _MIN_DURATION,
+            _closePositionWindow >= _MIN_VESTING_DURATION,
             _FILE,
             "Invalid close position window"
         );
@@ -515,6 +650,37 @@ contract VesterImplementationV2 is
         }
         baseUriStorage.baseUri = _baseUri;
         emit BaseURISet(_baseUri);
+    }
+
+    function _ownerSetLevelExpirationWindow(uint256 _levelExpirationWindow) internal {
+        Require.that(
+            _levelExpirationWindow >= _MIN_VESTING_DURATION,
+            _FILE,
+            "Invalid level expiration window"
+        );
+        _setUint256(_LEVEL_EXPIRATION_WINDOW_SLOT, _levelExpirationWindow);
+        emit LevelExpirationWindowSet(_levelExpirationWindow);
+    }
+
+    function _ownerSetLevelRequestFee(uint256 _fee) internal {
+        Require.that(
+            _fee < 0.1 ether,
+            _FILE,
+            "Level request fee too large"
+        );
+        _setUint256(_LEVEL_REQUEST_FEE_SLOT, _fee);
+        emit LevelRequestFeeSet(_fee);
+    }
+
+    function _ownerSetLevelBoostThreshold(uint8 _levelBoostThreshold) internal {
+        _setUint256(_LEVEL_BOOST_THRESHOLD_SLOT, _levelBoostThreshold);
+        emit LevelBoostThresholdSet(_levelBoostThreshold);
+    }
+
+    function _ownerSetHandler(address _handler, bool _isHandler) internal {
+        bytes32 slot = keccak256(abi.encodePacked(_IS_HANDLER_SLOT, _handler));
+        _setUint256(slot, _isHandler ? 1 : 0);
+        emit HandlerSet(_handler, _isHandler);
     }
 
     function _closePosition(VestingPosition memory _position) internal {
@@ -558,8 +724,7 @@ contract VesterImplementationV2 is
         uint256 _amount
     ) internal {
         IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
-        IERC20 arb = IERC20(DOLOMITE_MARGIN().getMarketTokenAddress(ARB_MARKET_ID));
-        arb.safeApprove(address(dolomiteMargin), _amount);
+        ARB.safeApprove(address(dolomiteMargin), _amount);
         AccountActionLib.deposit(
             dolomiteMargin,
             _account,
@@ -590,22 +755,37 @@ contract VesterImplementationV2 is
         emit PromisedArbTokensSet(_promisedArbTokens);
     }
 
-    function _clearVestingPosition(uint256 _id) internal {
-        VestingPosition storage vestingPosition = _getVestingPositionSlot(_id);
+    function _clearVestingPosition(uint256 _nftId) internal {
+        VestingPosition storage vestingPosition = _getVestingPositionSlot(_nftId);
         vestingPosition.creator = address(0);
         vestingPosition.id = 0;
         vestingPosition.startTime = 0;
         vestingPosition.duration = 0;
         vestingPosition.amount = 0;
-        emit VestingPositionCleared(_id);
+        emit VestingPositionCleared(_nftId);
     }
 
-    function _setNextId(uint256 _id) internal {
-        _setUint256(_NEXT_ID_SLOT, _id);
+    function _setNextNftId(uint256 _nftId) internal {
+        _setUint256(_NEXT_ID_SLOT, _nftId);
     }
 
-    function _setVersion(uint256 _version) internal {
-        _setUint256(_VERSION_SLOT, _version);
+    function _setNextRequestId(uint256 _requestId) internal {
+        _setUint256(_NEXT_REQUEST_ID_SLOT, _requestId);
+    }
+
+    function _setLevelByUser(address _user, uint256 _level) internal {
+        bytes32 slot = keccak256(abi.encodePacked(_LEVEL_BY_USER_SLOT, _user));
+        _setUint256(slot, _level);
+    }
+
+    function _setLevelRequestByUser(address _user, uint256 _requestId) internal {
+        bytes32 slot = keccak256(abi.encodePacked(_LEVEL_REQUEST_BY_USER_SLOT, _user));
+        _setUint256(slot, _requestId);
+    }
+
+    function _setLevelExpirationTimestampByUser(address _user, uint256 _expirationTimestamp) internal {
+        bytes32 slot = keccak256(abi.encodePacked(_LEVEL_EXPIRATION_TIMESTAMP_BY_USER_SLOT, _user));
+        _setUint256(slot, _expirationTimestamp);
     }
 
     function _baseURI() internal view override returns (string memory) {
@@ -618,28 +798,67 @@ contract VesterImplementationV2 is
         return baseUriStorage.baseUri;
     }
 
-    function _nextId() internal view returns (uint256) {
+    function _nextNftId() internal view returns (uint256) {
         return _getUint256(_NEXT_ID_SLOT);
     }
 
-    function _getVestingPositionSlot(uint256 _id) internal pure returns (VestingPosition storage vestingPosition) {
-        bytes32 slot = keccak256(abi.encodePacked(_VESTING_POSITIONS_SLOT, _id));
+    function _nextRequestId() internal view returns (uint256) {
+        return _getUint256(_NEXT_REQUEST_ID_SLOT);
+    }
+
+    function _validateIsVestingActive() internal view {
+        Require.that(
+            isVestingActive(),
+            _FILE,
+            "Vesting not active"
+        );
+    }
+
+    function _validateIsHandler(address _from) internal view {
+        Require.that(
+            isHandler(_from),
+            _FILE,
+            "Invalid handler",
+            _from
+        );
+    }
+
+    function _calculateEffectiveDuration(uint256 _duration, uint256 _level) internal view returns (uint256) {
+        if (_level >= levelBoostThreshold()) {
+            // A 50% increase in speed is the same thing as multiplying the value by 2/3
+            return _duration * 2 / 3;
+        } else {
+            return _duration;
+        }
+    }
+
+    function _calculateEffectiveRate(uint256 _duration, uint256 _nftId) internal virtual view returns (uint256) {
+        if (_nftId <= grandfatheredIdCutoff() && _duration < _GRANDFATHERED_UPGRADED_MIN_DURATION) {
+            if (_duration == 1 weeks) {
+                return 9_750;
+            } else if (_duration == 2 weeks) {
+                return 9_500;
+            } else if (_duration == 3 weeks) {
+                return 9_000;
+            } else {
+                assert(_duration == 4 weeks);
+                return 8_000;
+            }
+        } else {
+            uint256 numberOfWeeks = _duration / _MIN_VESTING_DURATION;
+            return 10_000 - (250 * numberOfWeeks);
+        }
+    }
+
+    function _getVestingPositionSlot(uint256 _nftId) internal pure returns (VestingPosition storage vestingPosition) {
+        bytes32 slot = keccak256(abi.encodePacked(_VESTING_POSITIONS_SLOT, _nftId));
         // solhint-disable-next-line no-inline-assembly
         assembly {
             vestingPosition.slot := slot
         }
     }
 
-    function _calculateDiscount(uint256 _duration) internal virtual view returns (uint256) {
-        if (_duration == 1 weeks) {
-            return 9_750;
-        } else if (_duration == 2 weeks) {
-            return 9_500;
-        } else if (_duration == 3 weeks) {
-            return 9_000;
-        } else {
-            assert(_duration == 4 weeks);
-            return 8_000;
-        }
+    function _getAccountNumberByPosition(VestingPosition memory _position) internal pure returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(_position.creator, _position.id)));
     }
 }

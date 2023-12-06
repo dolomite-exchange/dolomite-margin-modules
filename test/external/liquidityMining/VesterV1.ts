@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { OARB, TestVesterImplementation } from 'src/types';
+import { OARB, TestVesterImplementationV1 } from 'src/types';
 import { depositIntoDolomiteMargin, getPartialRoundHalfUp, withdrawFromDolomiteMargin } from 'src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { advanceByTimeDelta, getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
@@ -19,7 +19,7 @@ import {
   setupUSDCBalance,
   setupWETHBalance,
 } from 'test/utils/setup';
-import { createOARB, createTestVesterProxy } from '../../utils/ecosystem-token-utils/liquidity-mining';
+import { createOARB, createTestVesterV1Proxy } from '../../utils/ecosystem-token-utils/liquidity-mining';
 import { expectEmptyPosition } from './liquidityMining-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
@@ -32,12 +32,12 @@ const BASE_URI = 'oARB LIQUIDITY MINING RULEZ';
 
 const WETH_BALANCE = parseEther('10');
 
-describe('Vester', () => {
+describe('VesterV1', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
 
-  let vester: TestVesterImplementation;
+  let vester: TestVesterImplementationV1;
   let oARB: OARB;
 
   before(async () => {
@@ -48,7 +48,7 @@ describe('Vester', () => {
 
     oARB = await createOARB(core);
 
-    vester = await createTestVesterProxy(core, oARB, BASE_URI);
+    vester = await createTestVesterV1Proxy(core, oARB, BASE_URI);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount.mul(2), core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.usdc, usdcAmount);
@@ -96,8 +96,9 @@ describe('Vester', () => {
     });
 
     it('should fail if already initialized', async () => {
+      const bytes = ethers.utils.defaultAbiCoder.encode(['address', 'string'], [ZERO_ADDRESS, 'hello there']);
       await expectThrow(
-        vester.connect(core.governance).initialize(ZERO_ADDRESS, 'hello there'),
+        vester.connect(core.governance).initialize(bytes),
         'Initializable: contract is already initialized',
       );
     });
@@ -203,28 +204,28 @@ describe('Vester', () => {
       await core.tokens.arb.connect(vesterSigner).transfer(core.hhUser2.address, parseEther('.5'));
       await expectThrow(
         vester.connect(core.hhUser1).vest(defaultAccountNumber, ONE_WEEK.mul(4), ONE_ETH_BI),
-        'VesterImplementation: Not enough ARB tokens available',
+        'VesterImplementationV1: Not enough ARB tokens available',
       );
     });
 
     it('should fail if duration is less than 1 week', async () => {
       await expectThrow(
         vester.vest(defaultAccountNumber, ONE_WEEK.sub(1), ZERO_BI),
-        'VesterImplementation: Invalid duration',
+        'VesterImplementationV1: Invalid duration',
       );
     });
 
     it('should fail if duration is more than 4 weeks', async () => {
       await expectThrow(
-        vester.vest(defaultAccountNumber, ONE_WEEK.mul(4).sub(1), ZERO_BI),
-        'VesterImplementation: Invalid duration',
+        vester.vest(defaultAccountNumber, ONE_WEEK.mul(4).add(1), ZERO_BI),
+        'VesterImplementationV1: Invalid duration',
       );
     });
 
     it('should fail if duration not 1 week interval', async () => {
       await expectThrow(
         vester.vest(defaultAccountNumber, ONE_WEEK.mul(2).add(1), ZERO_BI),
-        'VesterImplementation: Invalid duration',
+        'VesterImplementationV1: Invalid duration',
       );
     });
 
@@ -232,7 +233,7 @@ describe('Vester', () => {
       await vester.connect(core.governance).ownerSetIsVestingActive(false);
       await expectThrow(
         vester.vest(defaultAccountNumber, ONE_WEEK.mul(2).add(1), ZERO_BI),
-        'VesterImplementation: Vesting not active',
+        'VesterImplementationV1: Vesting not active',
       );
     });
   });
@@ -511,7 +512,7 @@ describe('Vester', () => {
       await increase(ONE_WEEK);
       await expectThrow(
         vester.closePositionAndBuyTokens(1, defaultAccountNumber, defaultAccountNumber, ONE_BI),
-        'VesterImplementation: Cost exceeds max payment amount',
+        'VesterImplementationV1: Cost exceeds max payment amount',
       );
     });
 
@@ -530,7 +531,7 @@ describe('Vester', () => {
       await expectThrow(
         vester.connect(core.hhUser2)
           .closePositionAndBuyTokens(1, defaultAccountNumber, defaultAccountNumber, MAX_UINT_256_BI),
-        'VesterImplementation: Invalid position owner',
+        'VesterImplementationV1: Invalid position owner',
       );
     });
 
@@ -539,7 +540,7 @@ describe('Vester', () => {
       await expectThrow(
         vester.connect(core.hhUser1)
           .closePositionAndBuyTokens(1, defaultAccountNumber, defaultAccountNumber, MAX_UINT_256_BI),
-        'VesterImplementation: Position not vested',
+        'VesterImplementationV1: Position not vested',
       );
     });
 
@@ -549,7 +550,7 @@ describe('Vester', () => {
       await expectThrow(
         vester.connect(core.hhUser1)
           .closePositionAndBuyTokens(1, defaultAccountNumber, defaultAccountNumber, MAX_UINT_256_BI),
-        'VesterImplementation: Position expired',
+        'VesterImplementationV1: Position expired',
       );
     });
 
@@ -655,7 +656,7 @@ describe('Vester', () => {
       await increase(ONE_WEEK.mul(2).sub(2)); // Not sure why this is off by a bit
       await expectThrow(
         vester.connect(core.hhUser5).forceClosePosition(1),
-        'VesterImplementation: Position not expired',
+        'VesterImplementationV1: Position not expired',
       );
     });
 
@@ -768,7 +769,7 @@ describe('Vester', () => {
       await vester.connect(core.hhUser1).vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
       await expectThrow(
         vester.connect(core.hhUser2).emergencyWithdraw(1),
-        'VesterImplementation: Invalid position owner',
+        'VesterImplementationV1: Invalid position owner',
       );
     });
   });
@@ -791,7 +792,7 @@ describe('Vester', () => {
 
       await expectThrow(
         vester.connect(core.governance).ownerWithdrawArb(core.governance.address, ONE_ETH_BI.div(2), false),
-        'VesterImplementation: Insufficient available tokens',
+        'VesterImplementationV1: Insufficient available tokens',
       );
     });
 
@@ -834,7 +835,7 @@ describe('Vester', () => {
       await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
       await expectThrow(
         vester.connect(core.governance).ownerSetOARB(OTHER_ADDRESS),
-        'VesterImplementation: Outstanding vesting positions',
+        'VesterImplementationV1: Outstanding vesting positions',
       );
     });
 
@@ -858,7 +859,7 @@ describe('Vester', () => {
     it('should fail less than min duration', async () => {
       await expectThrow(
         vester.connect(core.governance).ownerSetClosePositionWindow(ONE_WEEK.sub(1)),
-        'VesterImplementation: Invalid close position window',
+        'VesterImplementationV1: Invalid close position window',
       );
     });
 
@@ -882,7 +883,7 @@ describe('Vester', () => {
     it('should fail if outside of range', async () => {
       await expectThrow(
         vester.connect(core.governance).ownerSetEmergencyWithdrawTax(10_001),
-        'VesterImplementation: Invalid emergency withdrawal tax',
+        'VesterImplementationV1: Invalid emergency withdrawal tax',
       );
     });
 

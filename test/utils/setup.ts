@@ -174,7 +174,7 @@ import {
   TestInterestSetter,
   TestInterestSetter__factory,
   TestPriceOracle,
-  TestPriceOracle__factory,
+  TestPriceOracle__factory, VesterImplementationV1, VesterImplementationV1__factory, VesterProxy, VesterProxy__factory,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
@@ -368,6 +368,11 @@ export interface JonesEcosystem {
   };
 }
 
+export interface LiquidityMiningEcosystem {
+  oArbVester: VesterImplementationV1;
+  oArbVesterProxy: VesterProxy;
+}
+
 export interface OdosEcosystem {
   odosRouter: IOdosRouter;
 }
@@ -497,6 +502,7 @@ export interface CoreProtocol {
   liquidatorProxyV2: ILiquidatorProxyV2WithExternalLiquidity | undefined;
   liquidatorProxyV3: ILiquidatorProxyV3WithLiquidityToken | undefined;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
+  liquidityMiningEcosystem: LiquidityMiningEcosystem | undefined;
   odosEcosystem: OdosEcosystem | undefined;
   paraswapEcosystem: ParaswapEcosystem | undefined;
   paraswapTrader: ParaswapAggregatorTrader | undefined;
@@ -860,6 +866,7 @@ export async function setupCoreProtocol(
   const gmxEcosystemV2 = await createGmxEcosystemV2(config.network, hhUser1);
   const interestSetters = await createInterestSetters(config.network, hhUser1);
   const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
+  const liquidityMiningEcosystem = await createLiquidityMiningEcosystem(config.network, hhUser1);
   const odosEcosystem = await createOdosEcosystem(config.network, hhUser1);
   const paraswapEcosystem = await createParaswapEcosystem(config.network, hhUser1);
   const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
@@ -902,6 +909,7 @@ export async function setupCoreProtocol(
     hhUser3,
     hhUser4,
     hhUser5,
+    liquidityMiningEcosystem,
     odosEcosystem,
     paraswapEcosystem,
     paraswapTrader,
@@ -1280,6 +1288,20 @@ async function createGmxEcosystemV2(network: Network, signer: SignerWithAddress)
       signer,
     ),
     gmxWithdrawalVault: await impersonateOrFallback(GMX_WITHDRAWAL_VAULT_MAP[network] as string, true, signer),
+  };
+}
+
+async function createLiquidityMiningEcosystem(
+  network: Network,
+  signer: SignerWithAddress,
+): Promise<LiquidityMiningEcosystem | undefined> {
+  if (network !== '42161') {
+    return undefined;
+  }
+
+  return {
+    oArbVester: VesterImplementationV1__factory.connect(deployments.VesterProxy[network].address, signer),
+    oArbVesterProxy: VesterProxy__factory.connect(deployments.VesterProxy[network].address, signer),
   };
 }
 

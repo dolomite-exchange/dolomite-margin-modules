@@ -679,10 +679,24 @@
       "isVerified": true
     }
   },
+  "VesterImplementationLibForV2": {
+    "42161": {
+      "address": "0xd2B57e2c4460c4e651d2d7EFE82290B8cf02e682",
+      "transaction": "0xa227960d25b57d372dd629c6fb331ccc6ee39ba0dc89720ae1013d19ab19a162",
+      "isVerified": true
+    }
+  },
   "VesterImplementationV1": {
     "42161": {
       "address": "0xd086c37E84146F6A03baCaB54f80dB3B2691bA80",
       "transaction": "0x1f8981538f847e6c966fb34276d984109879df1cd76e03344d5f8a8cc441be17",
+      "isVerified": true
+    }
+  },
+  "VesterImplementationV2": {
+    "42161": {
+      "address": "0x2960C15a51BF8B190b579E6bB2f74c75E136157D",
+      "transaction": "0x374a8f4a594be57818b47442331d69d7b69a4a1367fd7f79f8bfe1f223062e25",
       "isVerified": true
     }
   },

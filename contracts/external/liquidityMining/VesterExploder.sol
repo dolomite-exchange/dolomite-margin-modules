@@ -21,8 +21,8 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import {IVesterV1} from "../interfaces/liquidityMining/IVesterV1.sol";
 import { IVesterExploder } from "../interfaces/liquidityMining/IVesterExploder.sol";
+import { IVesterV1 } from "../interfaces/liquidityMining/IVesterV1.sol";
 
 /**
  * @title   VesterExploder
