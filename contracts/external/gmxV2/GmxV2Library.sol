@@ -61,6 +61,8 @@ library GmxV2Library {
     bytes32 private constant _MAX_PNL_FACTOR_FOR_ADL_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_ADL"));
     bytes32 private constant _MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS")); // solhint-disable-line max-line-length
     bytes32 private constant _MAX_CALLBACK_GAS_LIMIT_KEY = keccak256(abi.encode("MAX_CALLBACK_GAS_LIMIT"));
+    bytes32 private constant _CREATE_WITHDRAWAL_FEATURE_DISABLED = keccak256(abi.encode("CREATE_WITHDRAWAL_FEATURE_DISABLED"));
+    bytes32 private constant _EXECUTE_WITHDRAWAL_FEATURE_DISABLED = keccak256(abi.encode("EXECUTE_WITHDRAWAL_FEATURE_DISABLED"));
     uint256 private constant _GMX_PRICE_DECIMAL_ADJUSTMENT = 6;
     uint256 private constant _GMX_PRICE_SCALE_ADJUSTMENT = 10 ** _GMX_PRICE_DECIMAL_ADJUSTMENT;
 
@@ -203,10 +205,22 @@ library GmxV2Library {
     ) public view returns (bool) {
         address underlyingToken = _factory.UNDERLYING_TOKEN();
         IGmxDataStore dataStore = _registry.gmxDataStore();
-        uint256 maxPnlForAdl = dataStore.getUint(
-            _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_ADL_KEY, underlyingToken, /* _isLong = */ true)
+        bytes32 createWithdrawalKey = keccak256(abi.encode(
+            _CREATE_WITHDRAWAL_FEATURE_DISABLED,
+            _registry.gmxWithdrawalHandler()
+        ));
+        bool isCreateWithdrawalFeatureDisabled = dataStore.getBool(createWithdrawalKey);
+
+        bytes32 executeWithdrawalKey = keccak256(abi.encode(
+            _EXECUTE_WITHDRAWAL_FEATURE_DISABLED,
+            _registry.gmxWithdrawalHandler()
+        ));
+        bool isExecuteWithdrawalFeatureDisabled = dataStore.getBool(executeWithdrawalKey);
+
+        uint256 maxPnlForWithdrawalsShort = dataStore.getUint(
+            _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ false)
         );
-        uint256 maxPnlForWithdrawals = dataStore.getUint(
+        uint256 maxPnlForWithdrawalsLong = dataStore.getUint(
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ true)
         );
 
@@ -231,14 +245,12 @@ library GmxV2Library {
             /* _maximize = */ true
         );
 
-        bool isShortPnlTooLarge =
-            shortPnlToPoolFactor <= int256(maxPnlForAdl) && shortPnlToPoolFactor >= int256(maxPnlForWithdrawals);
-        bool isLongPnlTooLarge =
-            longPnlToPoolFactor <= int256(maxPnlForAdl) && longPnlToPoolFactor >= int256(maxPnlForWithdrawals);
+        bool isShortPnlTooLarge = shortPnlToPoolFactor >= int256(maxPnlForWithdrawalsShort);
+        bool isLongPnlTooLarge = longPnlToPoolFactor >= int256(maxPnlForWithdrawalsLong);
 
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
 
-        return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit;
+        return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit || isCreateWithdrawalFeatureDisabled || isExecuteWithdrawalFeatureDisabled; // solhint-disable-line max-line-length
     }
 
     function validateInitialMarketIds(
