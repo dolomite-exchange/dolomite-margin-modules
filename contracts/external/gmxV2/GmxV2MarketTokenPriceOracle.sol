@@ -103,6 +103,10 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         });
     }
 
+    /**
+     *
+     * @dev  This will always return the largest swap fee, which is the one considering the negative price impact
+     */
     function getFeeBpByMarketToken(address _gmToken) public view returns (uint256) {
         bytes32 key = _swapFeeFactorKey(_gmToken, /* _forPositiveImpact = */ false);
         return REGISTRY.gmxDataStore().getUint(key) / FEE_FACTOR_DECIMAL_ADJUSTMENT;
