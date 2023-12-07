@@ -230,7 +230,7 @@ abstract contract FreezableIsolationModeVaultFactory is
         uint256 _executionFee
     ) internal {
         Require.that(
-            _executionFee <= _MAX_EXECUTION_FEE,
+            _executionFee <= MAX_EXECUTION_FEE,
             _FILE,
             "Invalid execution fee"
         );

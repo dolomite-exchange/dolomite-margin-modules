@@ -216,17 +216,27 @@ library GmxV2Library {
     ) public view returns (bool) {
         address underlyingToken = _factory.UNDERLYING_TOKEN();
         IGmxDataStore dataStore = _registry.gmxDataStore();
-        bytes32 createWithdrawalKey = keccak256(abi.encode(
-            _CREATE_WITHDRAWAL_FEATURE_DISABLED,
-            _registry.gmxWithdrawalHandler()
-        ));
-        bool isCreateWithdrawalFeatureDisabled = dataStore.getBool(createWithdrawalKey);
+        {
+            bytes32 createWithdrawalKey = keccak256(abi.encode(
+                _CREATE_WITHDRAWAL_FEATURE_DISABLED,
+                _registry.gmxWithdrawalHandler()
+            ));
+            bool isCreateWithdrawalFeatureDisabled = dataStore.getBool(createWithdrawalKey);
+            if (isCreateWithdrawalFeatureDisabled) {
+                return true;
+            }
+        }
 
-        bytes32 executeWithdrawalKey = keccak256(abi.encode(
-            _EXECUTE_WITHDRAWAL_FEATURE_DISABLED,
-            _registry.gmxWithdrawalHandler()
-        ));
-        bool isExecuteWithdrawalFeatureDisabled = dataStore.getBool(executeWithdrawalKey);
+        {
+            bytes32 executeWithdrawalKey = keccak256(abi.encode(
+                _EXECUTE_WITHDRAWAL_FEATURE_DISABLED,
+                _registry.gmxWithdrawalHandler()
+            ));
+            bool isExecuteWithdrawalFeatureDisabled = dataStore.getBool(executeWithdrawalKey);
+            if (isExecuteWithdrawalFeatureDisabled) {
+                return true;
+            }
+        }
 
         uint256 maxPnlForWithdrawalsShort = dataStore.getUint(
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ false)
@@ -261,7 +271,7 @@ library GmxV2Library {
 
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
 
-        return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit || isCreateWithdrawalFeatureDisabled || isExecuteWithdrawalFeatureDisabled; // solhint-disable-line max-line-length
+        return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit; // solhint-disable-line max-line-length
     }
 
     function validateInitialMarketIds(

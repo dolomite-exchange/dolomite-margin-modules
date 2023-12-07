@@ -141,57 +141,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
 
         uint256 gmPrice = _getGmTokenPrice(factory, longTokenPriceProps, shortTokenPriceProps);
 
-        // @audit - Do you think this is a good way to think about the oracle price if we become a market leader for
-        //          underwriting GM tokens?
-
-        uint256 gmPriceAfterPriceImpact = _getGmTokenPriceAfterPriceImpact(
-            gmPrice,
-            factory,
-            longTokenPriceProps,
-            shortTokenPriceProps
-        );
-
-        return _adjustDownForBasisPoints(gmPriceAfterPriceImpact, getFeeBpByMarketToken(factory.UNDERLYING_TOKEN()));
-    }
-
-    function _getGmTokenPriceAfterPriceImpact(
-        uint256 _gmPrice,
-        IGmxV2IsolationModeVaultFactory _factory,
-        GmxPrice.PriceProps memory _longTokenPriceProps,
-        GmxPrice.PriceProps memory _shortTokenPriceProps
-    ) internal view returns (uint256) {
-        uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_factory));
-        uint256 gmAmountIn = DOLOMITE_MARGIN().getMarketMaxWei(marketId).value;
-        if (gmAmountIn == 0) {
-            // GUARD STATEMENT
-            // If the value is 0, that means there's no cap so we can just return the GM token price
-            return _gmPrice;
-        }
-
-        // Assume under the worst case, we liquidate 10% of the supply cap (which would entail a swap for half of that,
-        // 5%, to USDC (short token)).
-        uint256 wethAmountIn = gmAmountIn * _gmPrice / (_longTokenPriceProps.max * GMX_DECIMAL_ADJUSTMENT);
-        uint256 wethAmountInAdj = wethAmountIn * SUPPLY_CAP_USAGE_NUMERATOR / SUPPLY_CAP_USAGE_DENOMINATOR;
-
-        // We generally will liquidate into USDC which is why we measure price impact from long to short token
-        (, int256 wethPriceImpact) = REGISTRY.gmxReader().getSwapPriceImpact(
-            REGISTRY.gmxDataStore(),
-            _factory.UNDERLYING_TOKEN(),
-            /* _tokenIn = */ _factory.LONG_TOKEN(),
-            /* _tokenOut = */ _factory.SHORT_TOKEN(),
-            wethAmountInAdj,
-            /* _tokenInPrice  = */ _longTokenPriceProps,
-            /* _tokenOutPrice  = */ _shortTokenPriceProps
-        );
-
-        if (wethPriceImpact < 0) {
-            uint256 wethPriceImpactAbs = uint256(wethPriceImpact * -1);
-            // @audit - Am I using price impact properly? It's measured in terms of WETH units, not %-age, right?
-            return _gmPrice - (_gmPrice * wethPriceImpactAbs / wethAmountInAdj);
-        } else {
-            // For positive price impact, we don't care to add it to the price.
-            return _gmPrice;
-        }
+        return _adjustDownForBasisPoints(gmPrice, getFeeBpByMarketToken(factory.UNDERLYING_TOKEN()));
     }
 
     function _getGmTokenPrice(
