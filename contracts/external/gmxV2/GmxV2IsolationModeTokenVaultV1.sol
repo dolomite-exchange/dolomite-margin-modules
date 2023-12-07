@@ -45,6 +45,8 @@ import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/Isola
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds any GMX V2 Market token that and
  *          can be used to credit a user's Dolomite balance.
+ * @dev     In certain cases, GM tokens may be refunded to the vault owner.
+ *          The vault owner MUST be able to handle GM tokens
  */
 contract GmxV2IsolationModeTokenVaultV1 is
     IGmxV2IsolationModeTokenVaultV1,
@@ -156,6 +158,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
     }
 
+    /**
+     *
+     *  @dev  _minOutputAmountWei MUST BE greater than 0 or call will revert
+     */
     function _swapExactInputForOutput(
         uint256 _tradeAccountNumber,
         uint256[] calldata _marketIdsPath,
