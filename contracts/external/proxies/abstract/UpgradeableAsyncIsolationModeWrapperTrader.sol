@@ -348,6 +348,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             // @audit   This can also fail if the user pushes the GM token total supply on Dolomite past our supply cap
             //          How do we mitigate this? We don't know ahead of time how many tokens the user will get...
             // @audit   Are there any other "reasons" that the try-catch can fail that I'm missing here?
+            factory.setShouldVaultSkipTransfer(depositInfo.vault, /* _shouldSkipTransfer = */ false);
             try factory.depositIntoDolomiteMarginFromTokenConverter(
                 depositInfo.vault,
                 depositInfo.accountNumber,
@@ -425,6 +426,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         } else {
             depositAmount = _depositAmountWei;
         }
+        _factory.setShouldVaultSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ false);
         _factory.depositIntoDolomiteMarginFromTokenConverter(
             _depositInfo.vault,
             _DEFAULT_ACCOUNT_NUMBER,

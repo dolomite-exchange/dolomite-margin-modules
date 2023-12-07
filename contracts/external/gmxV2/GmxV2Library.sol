@@ -303,11 +303,17 @@ library GmxV2Library {
             "Unexpected secondaryOutputAmount"
         );
         Require.that(
-            _outputTokenAddress.value == _secondaryOutputTokenAddress.value
-                && _withdrawalInfo.outputToken == _outputTokenAddress.value,
+            _withdrawalInfo.outputToken == _outputTokenAddress.value,
             _FILE,
-            "Can only receive one token"
+            "Output token is incorrect"
         );
+        if (_secondaryOutputTokenAmount.value > 0) {
+            Require.that(
+                _outputTokenAddress.value == _secondaryOutputTokenAddress.value,
+                _FILE,
+                "Can only receive one token"
+            );
+        }
     }
 
     // ==================================================================
