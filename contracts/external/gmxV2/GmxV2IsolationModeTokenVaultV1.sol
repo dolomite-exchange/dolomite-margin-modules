@@ -30,6 +30,7 @@ import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
+import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IGmxV2IsolationModeTokenVaultV1 } from "../interfaces/gmx/IGmxV2IsolationModeTokenVaultV1.sol";
@@ -177,6 +178,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
         uint256 len = _tradersPath.length;
         if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             GmxV2Library.depositAndApproveWethForWrapping(this);
+            Require.that(
+                msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).MAX_EXECUTION_FEE(),
+                _FILE,
+                "Invalid execution fee"
+            );
             _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, abi.encode(msg.value));
         } else {
             Require.that(
@@ -217,6 +223,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
             "Invalid output token"
         );
 
+        Require.that(
+            msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).MAX_EXECUTION_FEE(),
+            _FILE,
+            "Invalid execution fee"
+        );
         uint256 ethExecutionFee = msg.value;
         if (_isLiquidation) {
             ethExecutionFee += getExecutionFeeForAccountNumber(_tradeAccountNumber);

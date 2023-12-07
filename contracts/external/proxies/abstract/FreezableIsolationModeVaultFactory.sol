@@ -47,7 +47,7 @@ abstract contract FreezableIsolationModeVaultFactory is
     // =========================================================
 
     bytes32 private constant _FILE = "FreezableVaultFactory";
-    uint256 private constant _MAX_EXECUTION_FEE = 1 ether;
+    uint256 public constant MAX_EXECUTION_FEE = 1 ether;
 
     // =========================================================
     // ==================== Field Variables ====================

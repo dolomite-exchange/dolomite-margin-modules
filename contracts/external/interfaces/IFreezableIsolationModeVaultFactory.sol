@@ -196,4 +196,10 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
      *          liquidated. The gas fees are refunded when a position is closed.
      */
     function executionFee() external view returns (uint256);
+
+    /**
+     * @dev     The max amount of gas (in ETH) that should be sent with a position so the user can pay the gas fees to be
+     *          liquidated. The gas fees are refunded when a position is closed.
+     */
+    function MAX_EXECUTION_FEE() external view returns (uint256);
 }
