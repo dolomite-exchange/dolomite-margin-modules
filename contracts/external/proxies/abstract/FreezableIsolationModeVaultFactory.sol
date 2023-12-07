@@ -65,6 +65,22 @@ abstract contract FreezableIsolationModeVaultFactory is
     IHandlerRegistry public override handlerRegistry;
 
     // ===========================================================
+    // ======================= Modifiers ======================
+    // ===========================================================
+
+    modifier requireIsTokenConverterOrVaultOrDolomiteMarginOwner(address _caller) {
+        Require.that(
+            _tokenConverterToIsTrustedMap[_caller]
+                || _vaultToUserMap[_caller] != address(0)
+                || DOLOMITE_MARGIN().owner() == _caller,
+            _FILE,
+            "Caller is not a authorized",
+            _caller
+        );
+        _;
+    }
+
+    // ===========================================================
     // ======================= Constructors ======================
     // ===========================================================
 
@@ -140,7 +156,7 @@ abstract contract FreezableIsolationModeVaultFactory is
         address _conversionToken
     )
         external
-        requireIsTokenConverterOrVault(msg.sender)
+        requireIsTokenConverterOrVaultOrDolomiteMarginOwner(msg.sender)
         requireIsVault(_vault)
     {
         address expectedConversionToken = _accountInfoToOutputTokenMap[_vault][_accountNumber];

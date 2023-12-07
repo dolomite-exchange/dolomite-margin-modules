@@ -412,20 +412,24 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             value: DOLOMITE_MARGIN().getMarketTotalPar(marketId).supply
         });
 
-        if (maxWei != 0 && DOLOMITE_MARGIN().parToWei(marketId, supplyPar).value + _depositAmountWei > maxWei) {
-            // If the supplyPar is gte than the maxWei, then we should to transfer the deposit to the vault owner. It's
+        uint256 depositAmount;
+        uint256 currentWeiSupply = DOLOMITE_MARGIN().parToWei(marketId, supplyPar).value;
+        if (maxWei != 0 && currentWeiSupply + _depositAmountWei > maxWei) {
+            depositAmount = maxWei - currentWeiSupply;
+            // If the supplyPar is gte than the maxWei, then we should to transfer the leftover amount back to the vault owner. It's
             // better to do this than to revert, since the user will be able to maintain control over the assets.
             IERC20 underlyingToken = IERC20(_factory.UNDERLYING_TOKEN());
-            underlyingToken.safeTransfer(_factory.getAccountByVault(_depositInfo.vault), _depositAmountWei);
+            underlyingToken.safeTransfer(_factory.getAccountByVault(_depositInfo.vault), _depositAmountWei - depositAmount);
             // Reset the allowance to 0 since it won't be used
             underlyingToken.safeApprove(_depositInfo.vault, 0);
         } else {
-            _factory.depositIntoDolomiteMarginFromTokenConverter(
-                _depositInfo.vault,
-                _DEFAULT_ACCOUNT_NUMBER,
-                _depositAmountWei
-            );
+            depositAmount = _depositAmountWei;
         }
+        _factory.depositIntoDolomiteMarginFromTokenConverter(
+            _depositInfo.vault,
+            _DEFAULT_ACCOUNT_NUMBER,
+            depositAmount
+        );
 
         _clearDepositAndUpdatePendingAmount(_depositInfo);
     }
