@@ -51,7 +51,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     uint256 public constant RETURN_DECIMAL_ADJUSTMENT = 10 ** 12;
     uint256 public constant FEE_FACTOR_DECIMAL_ADJUSTMENT = 10 ** 26;
 
-    bytes32 public constant MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS")); // solhint-disable-line max-line-length
+    bytes32 public constant MAX_PNL_FACTOR_FOR_DEPOSITS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_DEPOSITS")); // solhint-disable-line max-line-length
     bytes32 public constant SWAP_FEE_FACTOR_KEY = keccak256(abi.encode("SWAP_FEE_FACTOR"));
     bytes32 public constant SWAP_FEE_RECEIVER_FACTOR_KEY = keccak256(abi.encode("SWAP_FEE_RECEIVER_FACTOR"));
 
@@ -221,7 +221,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             indexTokenPriceProps,
             _longTokenPriceProps,
             _shortTokenPriceProps,
-            MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY,
+            MAX_PNL_FACTOR_FOR_DEPOSITS_KEY,
             /* _maximize = */ false
         );
 
