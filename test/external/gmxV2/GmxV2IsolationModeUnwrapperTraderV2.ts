@@ -742,6 +742,116 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await expectWalletBalance(unwrapper, core.tokens.weth, withdrawalInfo.outputAmount);
     });
 
+    it('should work normally if user sends extra amount to withdrawal vault', async () => {
+      await setupGMBalance(core, core.gmxEcosystemV2!.gmxWithdrawalVault, ONE_BI);
+      await setupBalances(core.tokens.weth);
+      const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+        .executeWithdrawal(
+          withdrawalKey,
+          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
+          { gasLimit },
+        );
+      await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
+        key: withdrawalKey,
+        token: factory.address,
+      });
+
+      const withdrawal = await unwrapper.getWithdrawalInfo(withdrawalKey);
+      expect(withdrawal.key).to.eq(withdrawalKey);
+      expect(withdrawal.vault).to.eq(ZERO_ADDRESS);
+      expect(withdrawal.accountNumber).to.eq(ZERO_BI);
+      expect(withdrawal.inputAmount).to.eq(ZERO_BI);
+      expect(withdrawal.outputToken).to.eq(ZERO_ADDRESS);
+      expect(withdrawal.outputAmount).to.eq(ZERO_BI);
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: vault.address, number: borrowAccountNumber },
+        core.marketIds.weth,
+        ONE_BI,
+        '100',
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, ZERO_BI);
+      expect(await vault.isVaultFrozen()).to.eq(false);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+
+    });
+
+    // This POC from Guardian now fails
+    xit("Send 1 Wei to Withdrawal Vault to Revert On afterWithdrawalExecution Validation", async () => {
+      // Send 1 wei of GM to withdrawal vault prior to initiating a withdrawal
+      await setupGMBalance(core, core.gmxEcosystemV2?.gmxWithdrawalVault!, 1);
+      // A withdrawal for amountWei + 1 is created
+      await setupBalances(core.tokens.nativeUsdc!);
+      // The protocol has amountWei GM prior to withdrawal execution
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        marketId,
+        amountWei
+      );
+      // There is no USDC in the Unwrapper
+      expect(await core.tokens.nativeUsdc!.balanceOf(unwrapper.address)).to.eq(0);
+
+      const result = await core
+        .gmxEcosystemV2!.gmxWithdrawalHandler.connect(
+          core.gmxEcosystemV2!.gmxExecutor
+        )
+        .executeWithdrawal(
+          withdrawalKey,
+          getOracleParams(
+            core.tokens.weth.address,
+            core.tokens.nativeUsdc!.address
+          ),
+          { gasLimit: 10_000_000 }
+        );
+
+      // Withdrawal info object remains and is uncleared
+      const withdrawal = await unwrapper.getWithdrawalInfo(withdrawalKey);
+      expect(withdrawal.key).to.eq(withdrawalKey);
+      expect(withdrawal.vault).to.eq(vault.address);
+      expect(withdrawal.accountNumber).to.eq(borrowAccountNumber);
+      expect(withdrawal.inputAmount).to.eq(amountWei);
+      expect(withdrawal.outputToken).to.eq(core.tokens.nativeUsdc!.address);
+      expect(withdrawal.outputAmount).to.eq(ONE_BI);
+
+      // The protocol STILL has amountWei GM after withdrawal execution
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        marketId,
+        amountWei
+      );
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI
+      );
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc!,
+        ZERO_BI
+      );
+
+      // Vault remains frozen, prohibiting user actions
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+
+      // Funds are stuck in the Unwrapper
+      expect(await core.tokens.nativeUsdc!.balanceOf(unwrapper.address)).to.be.gt(0);
+    });
+
     it('should fail if given invalid event data', async () => {
       await setupBalances(core.tokens.weth);
       const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
