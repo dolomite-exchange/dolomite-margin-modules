@@ -13,6 +13,8 @@ import {
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2Registry,
   IGmxMarketToken,
+  TestGmxDataStore,
+  TestGmxDataStore__factory,
   TestGmxReader,
   TestGmxReader__factory,
   TestGmxV2IsolationModeTokenVaultV1,
@@ -59,6 +61,8 @@ const otherAmountWei = parseEther('0.33');
 const minAmountOut = parseEther('1800');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
+const CREATE_WITHDRAWALS_DISABLED_KEY = '0xab24f8952c7d7e543a307db1e2b74b2baa6ddb6814de7c569a542c285753c8f5';
+const EXECUTE_WITHDRAWALS_DISABLED_KEY = '0x7773eb573511e1c1e636e190493f492e1f7d7e62df2b99742a2dd3b7a4a0bdfb';
 const INVALID_POOL_FACTOR = BigNumber.from('900000000000000000000000000000'); // 9e29
 const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
 
@@ -83,6 +87,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   let impersonatedFactory: SignerWithAddress;
   let impersonatedVault: SignerWithAddress;
   let testReader: TestGmxReader;
+  let testDataStore: TestGmxDataStore;
   let eventEmitter: EventEmitterRegistry;
 
   let otherToken1: CustomTestToken;
@@ -169,6 +174,12 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       vaultAddress2,
       TestGmxV2IsolationModeTokenVaultV1__factory,
       core.hhUser2,
+    );
+
+    testDataStore = await createContractWithAbi(
+      TestGmxDataStore__factory.abi,
+      TestGmxDataStore__factory.bytecode,
+      [],
     );
 
     testReader = await createContractWithAbi(
@@ -1295,6 +1306,18 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   describe('#isExternalRedemptionPaused', () => {
     it('should return false with real gmx reader', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
+    });
+
+    it('should return true if create withdrawals are disabled', async () => {
+      await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
+      await testDataStore.setBool(CREATE_WITHDRAWALS_DISABLED_KEY, true);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
+    });
+
+    it('should return true if execute withdrawals are disabled', async () => {
+      await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
+      await testDataStore.setBool(EXECUTE_WITHDRAWALS_DISABLED_KEY, true);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
 
     it('should return false if short and long are outside pnl range', async () => {
