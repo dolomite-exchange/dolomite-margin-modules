@@ -93,12 +93,20 @@ library GmxV2Library {
             "Execute deposit feature disabled"
         );
 
-        _weth.safeTransferFrom(_vault, address(this), _ethExecutionFee);
-        _weth.withdraw(_ethExecutionFee);
 
         address depositVault = _registry.gmxDepositVault();
-        IERC20(_inputToken).safeApprove(address(_registry.gmxRouter()), _inputAmount);
-        exchangeRouter.sendTokens{value: _ethExecutionFee}(_inputToken, depositVault, _inputAmount);
+        if (_inputToken == address(_weth)) {
+            _weth.safeTransferFrom(_vault, address(this), _ethExecutionFee);
+            _weth.safeApprove(address(_registry.gmxRouter()), _ethExecutionFee + _inputAmount);
+            exchangeRouter.sendTokens(address(_weth), depositVault, _ethExecutionFee + _inputAmount);
+        } else {
+            _weth.safeTransferFrom(_vault, address(this), _ethExecutionFee);
+            _weth.safeApprove(address(_registry.gmxRouter()), _ethExecutionFee);
+            exchangeRouter.sendTokens(address(_weth), depositVault, _ethExecutionFee);
+
+            IERC20(_inputToken).safeApprove(address(_registry.gmxRouter()), _inputAmount);
+            exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
+        }
 
         IGmxExchangeRouter.CreateDepositParams memory depositParams = IGmxExchangeRouter.CreateDepositParams(
             /* receiver = */ address(this),
