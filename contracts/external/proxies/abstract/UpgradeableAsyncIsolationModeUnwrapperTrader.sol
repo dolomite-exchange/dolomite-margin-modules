@@ -48,22 +48,25 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
 {
     using SafeERC20 for IERC20;
 
+    struct State {
+        uint256 actionsLength;
+        uint256 reentrancyGuard;
+        address vaultFactory;
+        mapping(bytes32 => WithdrawalInfo) withdrawalInfo;
+    }
+
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "UpgradeableUnwrapperTraderV2";
     uint256 private constant _ACTIONS_LENGTH = 2;
-
-    // ======================== Field Variables ========================
-
-    bytes32 private constant _ACTIONS_LENGTH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.actionsLength")) - 1);
-    bytes32 private constant _REENTRANCY_GUARD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.reentrancyGuard")) - 1);
-    bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
-    bytes32 private constant _WITHDRAWAL_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalInfo")) - 1);
+    uint256 internal constant _ACTIONS_LENGTH_NORMAL = 4;
+    uint256 internal constant _ACTIONS_LENGTH_CALLBACK = 2;
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
 
-    uint256 internal constant _ACTIONS_LENGTH_NORMAL = 4;
-    uint256 internal constant _ACTIONS_LENGTH_CALLBACK = 2;
+    // ======================== Field Variables ========================
+
+    bytes32 private constant _STORAGE_STATE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.storageState")) - 1);
 
     // ======================== Modifiers ========================
 
@@ -194,7 +197,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         view
         returns (uint256)
     {
-        return _getUint256(_ACTIONS_LENGTH_SLOT);
+        State storage state = _getStorageSlot();
+        return state.actionsLength;
     }
 
     function isValidOutputToken(address _outputToken) public override virtual view returns (bool);
@@ -236,7 +240,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function VAULT_FACTORY() public view returns (IIsolationModeVaultFactory) {
-        return IIsolationModeVaultFactory(_getAddress(_VAULT_FACTORY_SLOT));
+        State storage state = _getStorageSlot();
+        return IIsolationModeVaultFactory(state.vaultFactory);
     }
 
     // ============ Internal Functions ============
@@ -494,19 +499,19 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function _setActionsLength(uint256 _length) internal {
-        _setUint256(_ACTIONS_LENGTH_SLOT, _length);
+        State storage state = _getStorageSlot();
+        state.actionsLength = _length;
     }
 
     function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
-        bool clearValues = _info.inputAmount == 0;
-        WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
-        storageInfo.key = _key;
-        storageInfo.vault = clearValues ? address(0) : _info.vault;
-        storageInfo.accountNumber = clearValues ? 0 : _info.accountNumber;
-        storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
-        storageInfo.outputToken = clearValues ? address(0) : _info.outputToken;
-        storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
-        storageInfo.isRetryable = clearValues ? false : _info.isRetryable;
+        State storage state = _getStorageSlot();
+
+        if (_info.inputAmount == 0) {
+            // @follow-up This now clears out the key value in withdrawalInfo. Confirm that doesn't cause issues
+            delete state.withdrawalInfo[_key];
+        } else {
+            state.withdrawalInfo[_key] = _info;
+        }
     }
 
     function _updateVaultPendingAmount(
@@ -584,27 +589,35 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
             : _structOutputAmount;
     }
 
-    function _getWithdrawalSlot(bytes32 _key) internal pure returns (WithdrawalInfo storage info) {
-        bytes32 slot = keccak256(abi.encodePacked(_WITHDRAWAL_INFO_SLOT, _key));
+    function _getWithdrawalSlot(bytes32 _key) internal view returns (WithdrawalInfo storage info) {
+        State storage state = _getStorageSlot(); 
+        return state.withdrawalInfo[_key];
+    }
+
+    function _getStorageSlot() internal pure returns (State storage state) {
+        bytes32 slot = _STORAGE_STATE_SLOT;
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            info.slot := slot
+            state.slot := slot
         }
     }
 
     // ============ Private Functions ============
 
     function _setVaultFactory(address _factory) private {
-        _setAddress(_VAULT_FACTORY_SLOT, _factory);
+        State storage state = _getStorageSlot();
+        state.vaultFactory = _factory;
     }
 
     function _setReentrancyGuard(uint256 _value) private {
-        _setUint256(_REENTRANCY_GUARD_SLOT, _value);
+        State storage state = _getStorageSlot();
+        state.reentrancyGuard = _value;
     }
 
     function _validateNotReentered() private view {
+        State storage state = _getStorageSlot();
         Require.that(
-            _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
+            state.reentrancyGuard != _ENTERED,
             _FILE,
             "Reentrant call"
         );

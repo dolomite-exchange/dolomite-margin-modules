@@ -344,7 +344,8 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       expect(await underlyingToken.allowance(wrapper.address, vault.address)).to.eq(0);
 
       const deposit = await wrapper.getDepositInfo(depositKey);
-      expect(deposit.key).to.eq(depositKey);
+      // @follow-up Changed this
+      expect(deposit.key).to.eq(BYTES_ZERO);
       expect(deposit.vault).to.eq(ZERO_ADDRESS);
       expect(deposit.accountNumber).to.eq(ZERO_BI);
       expect(deposit.outputAmount).to.eq(ZERO_BI);
@@ -1225,7 +1226,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
   async function expectEmptyDepositInfo(key: string) {
     const deposit = await wrapper.getDepositInfo(key);
-    expect(deposit.key).to.eq(key);
+    expect(deposit.key).to.eq(BYTES_ZERO);
     expect(deposit.vault).to.eq(ZERO_ADDRESS);
     expect(deposit.accountNumber).to.eq(ZERO_BI);
     expect(deposit.inputToken).to.eq(ZERO_ADDRESS);

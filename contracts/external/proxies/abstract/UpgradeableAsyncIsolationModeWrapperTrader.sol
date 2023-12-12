@@ -47,15 +47,19 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     using InterestIndexLib for IDolomiteMargin;
     using SafeERC20 for IERC20;
 
+    struct State {
+        mapping(bytes32 => DepositInfo) depositInfo;
+        address vaultFactory;
+    }
+
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "UpgradeableWrapperTraderV2";
-
-    bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
-    bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
-
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _ACTIONS_LENGTH = 1;
+
+    bytes32 private constant _STORAGE_STATE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.storageState")) - 1);
+
 
     // ======================== External Functions ========================
 
@@ -231,10 +235,11 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     function isValidInputToken(address _inputToken) public override virtual view returns (bool);
 
     function VAULT_FACTORY() public view returns (IIsolationModeVaultFactory) {
-        return IIsolationModeVaultFactory(_getAddress(_VAULT_FACTORY_SLOT));
+        State storage state = _getStorageSlot();
+        return IIsolationModeVaultFactory(state.vaultFactory);
     }
 
-    function getDepositInfo(bytes32 _key) public pure returns (DepositInfo memory) {
+    function getDepositInfo(bytes32 _key) public view returns (DepositInfo memory) {
         return _getDepositSlot(_key);
     }
 
@@ -464,19 +469,17 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     }
 
     function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
-        bool clearValues = _info.outputAmount == 0;
-        DepositInfo storage storageInfo = _getDepositSlot(_key);
-        storageInfo.key = _key;
-        storageInfo.vault = clearValues ? address(0) : _info.vault;
-        storageInfo.accountNumber = clearValues ? 0 : _info.accountNumber;
-        storageInfo.inputToken = clearValues ? address(0) : _info.inputToken;
-        storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
-        storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
-        storageInfo.isRetryable = clearValues ? false : _info.isRetryable;
+        State storage state = _getStorageSlot();
+        if (_info.outputAmount == 0) {
+            delete state.depositInfo[_key];
+        } else {
+            state.depositInfo[_key] = _info;
+        }
     }
 
     function _setVaultFactory(address _factory) internal {
-        _setAddress(_VAULT_FACTORY_SLOT, _factory);
+        State storage state = _getStorageSlot();
+        state.vaultFactory = _factory;
     }
 
     function _updateVaultPendingAmount(
@@ -526,11 +529,16 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         );
     }
 
-    function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {
-        bytes32 slot = keccak256(abi.encodePacked(_DEPOSIT_INFO_SLOT, _key));
+    function _getDepositSlot(bytes32 _key) internal view returns (DepositInfo storage info) {
+        State storage state = _getStorageSlot();
+        return state.depositInfo[_key];
+    }
+
+    function _getStorageSlot() internal pure returns (State storage state) {
+        bytes32 slot = _STORAGE_STATE_SLOT;
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            info.slot := slot
+            state.slot := slot
         }
     }
 }

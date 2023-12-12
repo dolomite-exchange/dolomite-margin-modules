@@ -195,7 +195,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         return IGmxV2Registry(address(HANDLER_REGISTRY()));
     }
 
-    function getWithdrawalInfo(bytes32 _key) public pure returns (WithdrawalInfo memory) {
+    function getWithdrawalInfo(bytes32 _key) public view returns (WithdrawalInfo memory) {
         return _getWithdrawalSlot(_key);
     }
 
