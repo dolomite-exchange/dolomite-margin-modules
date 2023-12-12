@@ -438,6 +438,39 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectStateIsCleared();
     });
 
+    it('should work when deposit will partially fill because of max supply wei (sends diff to vault owner)', async () => {
+      const minAmountOut = parseEther('1060');
+      await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut);
+      await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
+
+      await core.dolomiteMargin.ownerSetMaxWei(marketId, parseEther('1061'));
+      const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
+        .executeDeposit(
+          depositKey,
+          getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
+        );
+      await expectEvent(eventEmitter, result, 'AsyncDepositFailed', {
+        key: depositKey,
+        token: factory.address,
+        reason: `OperationImpl: Total supply exceeds max supply <${marketId.toString()}>`,
+      });
+
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, 0);
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        defaultAccountNumber,
+        marketId,
+        ONE_ETH_BI,
+      );
+      await expectProtocolBalance(core, vault, borrowAccountNumber, marketId, minAmountOut);
+      // The vault should only hold the min
+      await expectWalletBalance(vault, underlyingToken, minAmountOut.add(ONE_ETH_BI));
+      // The owner should hold anything extra (beyond the min)
+      await expectWalletBalanceIsGreaterThan(core.hhUser1, underlyingToken, ONE_BI);
+      await expectStateIsCleared();
+    });
+
     it('should work when deposit fails due to insufficient collateralization', async () => {
       const minAmountOut = parseEther('1060');
       await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut, async () => {
@@ -609,7 +642,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           depositInfo.deposit,
           depositInfo.eventData,
         ),
-        'IsolationModeWrapperTraderV2: Invalid deposit key',
+        'UpgradeableWrapperTraderV2: Invalid deposit key',
       );
     });
   });
@@ -775,7 +808,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           depositInfo.deposit,
           depositInfo.eventData,
         ),
-        'IsolationModeWrapperTraderV2: Invalid deposit key',
+        'UpgradeableWrapperTraderV2: Invalid deposit key',
       );
     });
 
@@ -1155,7 +1188,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           initiateWrappingParams.userConfig,
           { value: executionFee },
         ),
-        `IsolationModeWrapperTraderV2: Vault is frozen <${vault.address.toLowerCase()}>`,
+        `UpgradeableWrapperTraderV2: Vault is frozen <${vault.address.toLowerCase()}>`,
       );
     });
   });
@@ -1185,7 +1218,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
             isRetryable: false,
           },
         ),
-        `IsolationModeWrapperTraderV2: Only unwrapper can call <${core.hhUser1.address.toLowerCase()}>`,
+        `UpgradeableWrapperTraderV2: Only unwrapper can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

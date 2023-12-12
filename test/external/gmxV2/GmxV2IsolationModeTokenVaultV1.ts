@@ -53,6 +53,7 @@ import {
 import { getSimpleZapParams } from 'test/utils/zap-utils';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../utils/dolomite';
+import { ethers } from 'hardhat';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -65,6 +66,7 @@ const CREATE_WITHDRAWALS_DISABLED_KEY = '0xab24f8952c7d7e543a307db1e2b74b2baa6dd
 const EXECUTE_WITHDRAWALS_DISABLED_KEY = '0x7773eb573511e1c1e636e190493f492e1f7d7e62df2b99742a2dd3b7a4a0bdfb';
 const INVALID_POOL_FACTOR = BigNumber.from('900000000000000000000000000000'); // 9e29
 const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
+const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
 
 enum FreezeType {
   Deposit = 0,
@@ -242,6 +244,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI_ENCODED,
         { value: parseEther('.01') },
       );
       await expect(result).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
@@ -294,6 +297,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         'GmxV2IsolationModeVaultV1: Invalid output token',
@@ -319,6 +323,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           ZERO_BI,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         'IsolationModeVaultV1Freezable: Invalid withdrawal amount',
@@ -334,6 +339,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         `IsolationModeVaultV1Freezable: Withdrawal too large <${vault.address.toLowerCase()}, ${borrowAccountNumber}>`,
@@ -358,6 +364,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -388,6 +395,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -401,6 +409,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
@@ -413,6 +422,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI_ENCODED,
       );
       await expectThrow(
         vault.callFunctionAndTriggerReentrancy(
@@ -432,6 +442,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         `IsolationModeVaultV1Freezable: Only liquidator can call <${core.hhUser1.address.toLowerCase()}>`,
@@ -444,6 +455,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI_ENCODED,
       );
       await expectThrow(
         vault.callFunctionAndTriggerReentrancy(
@@ -558,6 +570,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI_ENCODED,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -593,6 +606,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI_ENCODED,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
