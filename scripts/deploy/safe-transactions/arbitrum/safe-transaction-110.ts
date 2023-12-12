@@ -1,9 +1,9 @@
-import { OARB, OARB__factory, VesterImplementation, VesterImplementation__factory } from '../../../../src/types';
+import { OARB, OARB__factory, VesterImplementationV1, VesterImplementationV1__factory } from '../../../../src/types';
 import {
   getOARBConstructorParams,
   getVesterExploderConstructorParams,
   getVesterImplementationConstructorParams,
-  getVesterProxyConstructorParams,
+  getVesterV1ProxyConstructorParams,
 } from '../../../../src/utils/constructors/liquidity-mining';
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
 import { Network } from '../../../../src/utils/no-deps-constants';
@@ -19,7 +19,7 @@ import {
 
 /**
  * This script encodes the following transactions:
- * - Creates the VesterImplementationV1 contract
+ * - Creates the VesterImplementationV1V1 contract
  * - Creates the VesterProxy contract
  */
 async function main(): Promise<DenJsonUpload> {
@@ -82,21 +82,21 @@ async function main(): Promise<DenJsonUpload> {
   };
 }
 
-async function createVesterProxy(core: CoreProtocol, network: Network, oARB: OARB): Promise<VesterImplementation> {
+async function createVesterProxy(core: CoreProtocol, network: Network, oARB: OARB): Promise<VesterImplementationV1> {
   const vesterImplementationAddress = await deployContractAndSave(
     Number(network),
-    'VesterImplementation',
-    getVesterImplementationConstructorParams(core),
     'VesterImplementationV1',
+    getVesterImplementationConstructorParams(core),
+    'VesterImplementationV1V1',
   );
-  const vesterImplementation = VesterImplementation__factory.connect(
+  const vesterImplementation = VesterImplementationV1__factory.connect(
     vesterImplementationAddress,
     core.hhUser1,
   );
   const eventEmitterRegistryProxyAddress = await deployContractAndSave(
     Number(network),
     'VesterProxy',
-    await getVesterProxyConstructorParams(
+    await getVesterV1ProxyConstructorParams(
       core,
       vesterImplementation,
       oARB,
@@ -104,7 +104,7 @@ async function createVesterProxy(core: CoreProtocol, network: Network, oARB: OAR
     ),
   );
 
-  return VesterImplementation__factory.connect(eventEmitterRegistryProxyAddress, core.hhUser1);
+  return VesterImplementationV1__factory.connect(eventEmitterRegistryProxyAddress, core.hhUser1);
 }
 
 main()

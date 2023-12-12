@@ -18,11 +18,11 @@ import {
   PendleRegistry__factory,
 } from '../../../../src/types';
 import {
-  getLiquidationPremiumForTargetCollateralization,
+  getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
   getOwnerAddMarketParametersForIsolationMode,
   TargetCollateralization,
-  TargetLiquidationPremium,
+  TargetLiquidationPenalty,
 } from '../../../../src/utils/constructors/dolomite';
 import {
   getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
@@ -35,7 +35,8 @@ import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils
 import { Network } from '../../../../src/utils/no-deps-constants';
 import { CoreProtocol, setupCoreProtocol } from '../../../../test/utils/setup';
 import {
-  createFolder, DenJsonUpload,
+  createFolder,
+  DenJsonUpload,
   deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
@@ -153,7 +154,7 @@ async function encodeTransactions(
         oracle,
         core.alwaysZeroInterestSetter,
         getMarginPremiumForTargetCollateralization(TargetCollateralization._120),
-        getLiquidationPremiumForTargetCollateralization(TargetLiquidationPremium._7),
+        getLiquidationPremiumForTargetLiquidationPenalty(TargetLiquidationPenalty._7),
         maxWei,
       ),
     ),

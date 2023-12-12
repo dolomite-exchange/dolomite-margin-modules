@@ -29,7 +29,7 @@ async function main() {
     getTWAPPriceOracleConstructorParams(
       core,
       core.tokens.grail!,
-      [core.camelotEcosystem!.grailUsdcV3Pool.address],
+      [core.camelotEcosystem!.grailUsdcV3Pool],
     ),
     'GrailTWAPPriceOracleV1',
   );

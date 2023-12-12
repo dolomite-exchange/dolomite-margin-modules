@@ -1,4 +1,6 @@
 import { parseEther } from 'ethers/lib/utils';
+import { ST_ETH_CHAINLINK_FEED_MAP, ST_ETH_MAP } from '../../../../src/utils/constants';
+import { getPendlePtPriceOracleConstructorParams } from '../../../../src/utils/constructors/pendle';
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network } from '../../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../test/utils/setup';
@@ -9,8 +11,6 @@ import {
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../deploy-utils';
-import { ST_ETH_CHAINLINK_FEED_MAP, ST_ETH_MAP } from '../../../../src/utils/constants';
-import { getPendlePtPriceOracleConstructorParams } from '../../../../src/utils/constructors/pendle';
 
 /**
  * This script encodes the following transactions:
@@ -38,7 +38,7 @@ async function main(): Promise<DenJsonUpload> {
       core.pendleEcosystem!.rEthJun2025.pendleRegistry,
       core.tokens.weth,
     ),
-    'PendlePtREthJun2025PriceOracle'
+    'PendlePtREthJun2025PriceOracle',
   );
   const ptWstEthJun2024OracleAddress = await deployContractAndSave(
     Number(network),
@@ -49,7 +49,7 @@ async function main(): Promise<DenJsonUpload> {
       core.pendleEcosystem!.wstEthJun2024.pendleRegistry,
       core.tokens.weth,
     ),
-    'PendlePtWstEthJun2024PriceOracle'
+    'PendlePtWstEthJun2024PriceOracle',
   );
   const ptWstEthJun2025OracleAddress = await deployContractAndSave(
     Number(network),
@@ -60,7 +60,7 @@ async function main(): Promise<DenJsonUpload> {
       core.pendleEcosystem!.wstEthJun2025.pendleRegistry,
       core.tokens.weth,
     ),
-    'PendlePtWstEthJun2025PriceOracle'
+    'PendlePtWstEthJun2025PriceOracle',
   );
 
   const transactions = [];
@@ -158,19 +158,19 @@ async function main(): Promise<DenJsonUpload> {
 }
 
 main()
-.then(jsonUpload => {
-  if (typeof jsonUpload === 'undefined') {
-    return;
-  }
+  .then(jsonUpload => {
+    if (typeof jsonUpload === 'undefined') {
+      return;
+    }
 
-  const path = require('path');
-  const scriptName = path.basename(__filename).slice(0, -3);
-  const dir = `${__dirname}/output`;
-  createFolder(dir);
-  writeFile(`${dir}/${scriptName}.json`, JSON.stringify(jsonUpload, null, 2));
-  process.exit(0);
-})
-.catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+    const path = require('path');
+    const scriptName = path.basename(__filename).slice(0, -3);
+    const dir = `${__dirname}/output`;
+    createFolder(dir);
+    writeFile(`${dir}/${scriptName}.json`, JSON.stringify(jsonUpload, null, 2));
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

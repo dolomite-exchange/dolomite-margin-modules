@@ -87,21 +87,9 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
      *      the `nonReentrant` function external, and making it call a `private` function that does the actual work.
      */
     modifier nonReentrant() {
-        // @audit:  This MUST stay as `value != _ENTERED` otherwise it will DOS old vaults that don't have the
-        //          `initialize` fix
-        Require.that(
-            _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
-            _FILE,
-            "Reentrant call"
-        );
-
-        // Any calls to nonReentrant after this point will fail
-        _setUint256(_REENTRANCY_GUARD_SLOT, _ENTERED);
-
+        _nonReentrantBefore();
         _;
-
-        // By storing the original value once again, a refund is triggered (see https://eips.ethereum.org/EIPS/eip-2200)
-        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+        _nonReentrantAfter();
     }
 
     // ===================================================
@@ -673,5 +661,27 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _FILE,
             "Cannot send ETH"
         );
+    }
+
+    // ===========================================
+    // ============ Private Functions ============
+    // ===========================================
+
+    function _nonReentrantBefore() private {
+        // @audit:  This MUST stay as `value != _ENTERED` otherwise it will DOS old vaults that don't have the
+        //          `initialize` fix
+        Require.that(
+            _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
+            _FILE,
+            "Reentrant call"
+        );
+
+        // Any calls to nonReentrant after this point will fail
+        _setUint256(_REENTRANCY_GUARD_SLOT, _ENTERED);
+    }
+
+    function _nonReentrantAfter() private {
+        // By storing the original value once again, a refund is triggered (see https://eips.ethereum.org/EIPS/eip-2200)
+        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
     }
 }
