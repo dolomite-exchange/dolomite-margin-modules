@@ -564,12 +564,9 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         bytes memory _orderData
     ) internal virtual view returns (uint256);
 
-    function _validateWithdrawalExists(WithdrawalInfo memory _withdrawalInfo) internal pure {
-        Require.that(
-            _withdrawalInfo.vault != address(0),
-            _FILE,
-            "Invalid withdrawal key"
-        );
+    function _getWithdrawalSlot(bytes32 _key) internal view returns (WithdrawalInfo storage info) {
+        State storage state = _getStorageSlot(); 
+        return state.withdrawalInfo[_key];
     }
 
     function _getAmountsToCollect(
@@ -589,9 +586,12 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
             : _structOutputAmount;
     }
 
-    function _getWithdrawalSlot(bytes32 _key) internal view returns (WithdrawalInfo storage info) {
-        State storage state = _getStorageSlot(); 
-        return state.withdrawalInfo[_key];
+    function _validateWithdrawalExists(WithdrawalInfo memory _withdrawalInfo) internal pure {
+        Require.that(
+            _withdrawalInfo.vault != address(0),
+            _FILE,
+            "Invalid withdrawal key"
+        );
     }
 
     function _getStorageSlot() internal pure returns (State storage state) {

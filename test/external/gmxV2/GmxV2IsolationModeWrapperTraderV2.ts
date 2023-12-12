@@ -439,7 +439,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectStateIsCleared();
     });
 
-    it('should work when deposit will partially fill because of max supply wei (sends diff to vault owner)', async () => {
+    it('should work when deposit partially fills because max supply wei (sends diff to vault owner)', async () => {
       const minAmountOut = parseEther('1060');
       await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut);
       await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);

@@ -430,10 +430,13 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
 
         if (maxWei != 0 && currentWeiSupply + _depositAmountWei > maxWei) {
             depositAmount = maxWei - currentWeiSupply;
-            // If the supplyPar is gte than the maxWei, then we should to transfer the leftover amount back to the vault owner. It's
-            // better to do this than to revert, since the user will be able to maintain control over the assets.
-            underlyingToken.safeTransfer(_factory.getAccountByVault(_depositInfo.vault), _depositAmountWei - depositAmount);
-            // Reset the allowance to 0 since it won't be used
+            // If the supplyPar is gte than the maxWei, then we should to transfer the leftover amount back to the vault
+            // owner. It's better to do this than to revert, since the user will be able to maintain control
+            // over the assets.
+            underlyingToken.safeTransfer(
+                _factory.getAccountByVault(_depositInfo.vault),
+                _depositAmountWei - depositAmount
+            );
         } else {
             depositAmount = _depositAmountWei;
         }
@@ -521,17 +524,17 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     view
     returns (uint256);
 
+    function _getDepositSlot(bytes32 _key) internal view returns (DepositInfo storage info) {
+        State storage state = _getStorageSlot();
+        return state.depositInfo[_key];
+    }
+
     function _validateDepositExists(DepositInfo memory _depositInfo) internal pure {
         Require.that(
             _depositInfo.vault != address(0),
             _FILE,
             "Invalid deposit key"
         );
-    }
-
-    function _getDepositSlot(bytes32 _key) internal view returns (DepositInfo storage info) {
-        State storage state = _getStorageSlot();
-        return state.depositInfo[_key];
     }
 
     function _getStorageSlot() internal pure returns (State storage state) {

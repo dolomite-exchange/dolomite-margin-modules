@@ -834,7 +834,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     });
 
     // This POC from Guardian now fails
-    xit("Send 1 Wei to Withdrawal Vault to Revert On afterWithdrawalExecution Validation", async () => {
+    xit('Send 1 Wei to Withdrawal Vault to Revert On afterWithdrawalExecution Validation', async () => {
       // Send 1 wei of GM to withdrawal vault prior to initiating a withdrawal
       await setupGMBalance(core, core.gmxEcosystemV2?.gmxWithdrawalVault!, 1);
       // A withdrawal for amountWei + 1 is created
