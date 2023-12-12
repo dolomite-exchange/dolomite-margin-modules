@@ -1,43 +1,62 @@
 import { BigNumber } from 'ethers';
 import { getAnyNetwork } from '../../../src/utils/dolomite-utils';
 import { setupCoreProtocol } from '../../../test/utils/setup';
-import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';
+import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../deploy-utils';
 
 async function main() {
   const network = await getAnyNetwork();
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const lowerOptimal = BigNumber.from('80000000000000000');
-  const upperOptimal = BigNumber.from('920000000000000000');
-  const lower = lowerOptimal.toString().match(/^([1-9]+)/)![0];
-  const upper = upperOptimal.toString().match(/^([1-9]+)/)![0];
+  const stableLowerOptimal = BigNumber.from('80000000000000000');
+  const stableUpperOptimal = BigNumber.from('920000000000000000');
+  const stableLower = stableLowerOptimal.toString().match(/^([1-9]+)/)![0];
+  const stableUpper = stableUpperOptimal.toString().match(/^([1-9]+)/)![0];
   const stablecoinLinearInterestSetter = await deployContractAndSave(
     Number(network),
     'LinearStepFunctionInterestSetter',
-    [lowerOptimal, upperOptimal],
-    `Stablecoin${lower}L${upper}ULinearStepFunctionInterestSetter`,
+    [stableLowerOptimal, stableUpperOptimal],
+    `Stablecoin${stableLower}L${stableUpper}ULinearStepFunctionInterestSetter`,
+  );
+  const altcoinLowerOptimal = BigNumber.from('140000000000000000');
+  const altcoinUpperOptimal = BigNumber.from('860000000000000000');
+  const altcoinLower = altcoinLowerOptimal.toString().match(/^([1-9]+)/)![0];
+  const altcoinUpper = altcoinUpperOptimal.toString().match(/^([1-9]+)/)![0];
+  await deployContractAndSave(
+    Number(network),
+    'LinearStepFunctionInterestSetter',
+    [altcoinLowerOptimal, altcoinUpperOptimal],
+    `Altcoin${altcoinLower}L${altcoinUpper}ULinearStepFunctionInterestSetter`,
   );
 
-  await prettyPrintEncodedData(
-    core.dolomiteMargin!.populateTransaction.ownerSetInterestSetter(
+  await prettyPrintEncodedDataWithTypeSafety(
+    core,
+    core,
+    'dolomiteMargin',
+    'ownerSetInterestSetter',
+    [
       core.marketIds.usdc!,
       stablecoinLinearInterestSetter,
-    ),
-    'dolomiteMargin.ownerSetInterestSetter(usdc, stablecoinLinearInterestSetter)',
+    ],
   );
-  await prettyPrintEncodedData(
-    core.dolomiteMargin!.populateTransaction.ownerSetInterestSetter(
+  await prettyPrintEncodedDataWithTypeSafety(
+    core,
+    core,
+    'dolomiteMargin',
+    'ownerSetInterestSetter',
+    [
       core.marketIds.usdt!,
       stablecoinLinearInterestSetter,
-    ),
-    'dolomiteMargin.ownerSetInterestSetter(usdt, stablecoinLinearInterestSetter)',
+    ],
   );
-  await prettyPrintEncodedData(
-    core.dolomiteMargin!.populateTransaction.ownerSetInterestSetter(
+  await prettyPrintEncodedDataWithTypeSafety(
+    core,
+    core,
+    'dolomiteMargin',
+    'ownerSetInterestSetter',
+    [
       core.marketIds.dai!,
       stablecoinLinearInterestSetter,
-    ),
-    'dolomiteMargin.ownerSetInterestSetter(dai, stablecoinLinearInterestSetter)',
+    ],
   );
 }
 

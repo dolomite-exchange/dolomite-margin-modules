@@ -21,8 +21,8 @@ pragma solidity ^0.8.9;
 
 import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { IVester } from "../interfaces/liquidityMining/IVester.sol";
 import { IVesterExploder } from "../interfaces/liquidityMining/IVesterExploder.sol";
+import { IVesterV1 } from "../interfaces/liquidityMining/IVesterV1.sol";
 
 /**
  * @title   VesterExploder
@@ -41,7 +41,7 @@ contract VesterExploder is IVesterExploder, OnlyDolomiteMargin {
     // ===================== Storage =====================
     // ===================================================
 
-    IVester public immutable VESTER; // solhint-disable-line var-name-mixedcase
+    IVesterV1 public immutable VESTER; // solhint-disable-line var-name-mixedcase
     mapping(address => bool) private _handlerMap;
 
     // ===================================================
@@ -67,7 +67,7 @@ contract VesterExploder is IVesterExploder, OnlyDolomiteMargin {
         address _dolomiteMargin,
         address[] memory _initialHandlers
     ) OnlyDolomiteMargin(_dolomiteMargin) {
-        VESTER = IVester(_vester);
+        VESTER = IVesterV1(_vester);
 
         uint256 len = _initialHandlers.length;
         for (uint256 i; i < len; ++i) {

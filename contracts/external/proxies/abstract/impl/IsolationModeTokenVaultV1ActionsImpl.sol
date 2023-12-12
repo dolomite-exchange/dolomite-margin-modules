@@ -278,6 +278,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
                 );
             }
             // we always swap the exact amount out; no need to check `BalanceCheckFlag.To`
+            // always skip the checking allowable collateral, since we're immediately trading all of it here
             transferIntoPositionWithOtherToken(
                 _vault,
                 _fromAccountNumber,
