@@ -101,13 +101,11 @@ contract GMXIsolationModeTokenVaultV1 is
     function executeDepositIntoVault(
         address _from,
         uint256 _amount
-    ) 
+    )
     public
     override
     onlyVaultFactory(msg.sender) {
-        // @audit Make sure that shouldSkipTransfer and isDepositSourceGLPVault are always reset
-        // There was issue with a test where if 0 was depositted from the GLP vault, it would not be reset
-        if(shouldSkipTransfer()) {
+        if (shouldSkipTransfer()) {
             _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, 0);
         } else if (isDepositSourceGLPVault()) {
             address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
@@ -135,7 +133,7 @@ contract GMXIsolationModeTokenVaultV1 is
             uint256 sGmxStakedAmount = ISGMX(registry().sGmx()).stakedAmounts(glpVault);
             uint256 bnGmxAmount = IGLPIsolationModeTokenVaultV2(glpVault).claimAndStakeBnGmx();
             // @follow-up This can be off by 1 wei with rounding
-            uint256 maxUnstakeAmount = sbfGmx.balanceOf(glpVault) * sGmxStakedAmount/ (sGmxStakedAmount + bnGmxAmount);
+            uint256 maxUnstakeAmount = sbfGmx.balanceOf(glpVault) * sGmxStakedAmount / (sGmxStakedAmount + bnGmxAmount);
 
             uint256 diff = _amount - underlyingBal;
             if (maxUnstakeAmount >= diff) {
@@ -186,8 +184,8 @@ contract GMXIsolationModeTokenVaultV1 is
         super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
 
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
-        IGLPIsolationModeTokenVaultV2(glpVault).sweep();
-    } 
+        IGLPIsolationModeTokenVaultV2(glpVault).sweepGmxTokensIntoGmxVault();
+    }
 
     function _swapExactInputForOutput(
         uint256 _tradeAccountNumber,
@@ -209,6 +207,6 @@ contract GMXIsolationModeTokenVaultV1 is
         );
 
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
-        IGLPIsolationModeTokenVaultV2(glpVault).sweep();
+        IGLPIsolationModeTokenVaultV2(glpVault).sweepGmxTokensIntoGmxVault();
     }
 }

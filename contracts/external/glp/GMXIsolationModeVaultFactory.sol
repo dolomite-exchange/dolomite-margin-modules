@@ -89,6 +89,11 @@ contract GMXIsolationModeVaultFactory is
         uint256 _amountWei,
         bool _shouldSkipTransfer
     ) external onlyGLPVault(msg.sender, _vault) {
+        if (_amountWei == 0) {
+            // Guard statement
+            return;
+        }
+
         if (_shouldSkipTransfer) {
             IGMXIsolationModeTokenVaultV1(_vault).setShouldSkipTransfer(true);
         } else {

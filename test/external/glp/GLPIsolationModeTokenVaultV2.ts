@@ -1356,14 +1356,14 @@ describe('GLPIsolationModeTokenVaultV2', () => {
 
       const gmxVaultAddress = await gmxFactory.getVaultByAccount(core.hhUser1.address);
       const gmxVaultImpersonator = await impersonate(gmxVaultAddress, true);
-      await glpVault.connect(gmxVaultImpersonator).sweep();
+      await glpVault.connect(gmxVaultImpersonator).sweepGmxTokensIntoGmxVault();
 
       await expectProtocolBalance(core, gmxVaultAddress, 0, underlyingGmxMarketId, gmxAmount);
     });
 
     it('should fail if not called by gmxVault', async () => {
       await expectThrow(
-        glpVault.connect(core.hhUser1).sweep(),
+        glpVault.connect(core.hhUser1).sweepGmxTokensIntoGmxVault(),
         'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
       );
     });

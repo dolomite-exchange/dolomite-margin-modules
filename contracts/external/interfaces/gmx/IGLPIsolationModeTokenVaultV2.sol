@@ -159,16 +159,17 @@ interface IGLPIsolationModeTokenVaultV2 {
 
     /**
      * @notice  Syncs the vault's GMX balance with the GMX vault. This function must be called by the GMX vault factory.
-     *          All GMX tokens will remain in this vault, but the GMX vault will be updated with the vault's balance.
+     *          All GMX tokens will remain in this vault, but the GMX vault's Dolomite Balance will be updated with the
+     *          vault's balance.
      *
      * @param  _gmxVault  Matching GMX vault address for GLP vault owner
      */
     function sync(address _gmxVault) external;
 
     /**
-     * @notice  Deposits any excess GMX balance in the GLP vault into the GMX vault
+     * @notice  Deposits any excess GMX balance in this GLP vault to the GMX vault. Does not touch staked-GMX
      */
-    function sweep() external;
+    function sweepGmxTokensIntoGmxVault() external;
 
     /**
      * @return The registry used to get addresses from the GMX ecosystem
