@@ -67,7 +67,8 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
         uint256 _inputTokenAmount,
         uint256 _outputMarketId,
         uint256 _minOutputAmount,
-        uint256 _expirationTimestamp
+        uint256 _expirationTimestamp,
+        bytes calldata _extraData
     )
         external
         payable
@@ -98,7 +99,8 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
             _liquidAccount.number,
             _inputTokenAmount,
             outputToken,
-            _minOutputAmount
+            _minOutputAmount,
+            _extraData
         );
     }
 

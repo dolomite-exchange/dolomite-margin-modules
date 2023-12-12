@@ -214,7 +214,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
-        bool _isLiquidation
+        bool _isLiquidation,
+        bytes calldata _extraData
     ) internal override {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
         Require.that(
@@ -241,7 +242,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
-            _minOutputAmount
+            _minOutputAmount,
+            _extraData
         );
     }
 

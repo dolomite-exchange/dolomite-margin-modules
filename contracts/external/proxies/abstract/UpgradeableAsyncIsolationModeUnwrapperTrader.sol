@@ -34,6 +34,7 @@ import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../interfaces/
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AsyncIsolationModeUnwrapperTraderImpl } from "./impl/AsyncIsolationModeUnwrapperTraderImpl.sol";
 
+
 /**
  * @title   UpgradeableAsyncIsolationModeUnwrapperTrader
  * @author  Dolomite
@@ -256,7 +257,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         uint256 _accountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bytes calldata _extraData
     ) internal {
 
         // Panic if the key is already used
@@ -269,7 +271,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
             inputAmount: _inputAmount,
             outputToken: _outputToken,
             outputAmount: _minOutputAmount,
-            isRetryable: false
+            isRetryable: false,
+            extraData: _extraData
         });
         _setWithdrawalInfo(_key, withdrawalInfo);
         _updateVaultPendingAmount(_vault, _accountNumber, _inputAmount, /* _isPositive = */ true, _outputToken);

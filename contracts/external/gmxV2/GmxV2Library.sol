@@ -144,7 +144,8 @@ library GmxV2Library {
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
-        uint256 _ethExecutionFee
+        uint256 _ethExecutionFee,
+        bytes calldata _extraData
     ) public returns (bytes32) {
         IERC20(_factory.UNDERLYING_TOKEN()).safeTransferFrom(_vault, address(this), _inputAmount);
 
@@ -170,8 +171,8 @@ library GmxV2Library {
             /* market = */ swapPath[0],
             /* longTokenSwapPath = */ _outputToken == _factory.LONG_TOKEN() ? new address[](0) : swapPath,
             /* shortTokenSwapPath = */ _outputToken == _factory.SHORT_TOKEN() ? new address[](0) : swapPath,
-            /* minLongTokenAmount = */ _outputToken == _factory.LONG_TOKEN() ? _minOutputAmount : 0,
-            /* minShortTokenAmount = */ _outputToken == _factory.SHORT_TOKEN() ? _minOutputAmount : 0,
+            /* minLongTokenAmount = */ _minOutputAmount,
+            /* minShortTokenAmount = */ abi.decode(_extraData, (uint256)),
             /* shouldUnwrapNativeToken = */ false,
             /* executionFee = */ _ethExecutionFee,
             /* callbackGasLimit = */ registry.callbackGasLimit()

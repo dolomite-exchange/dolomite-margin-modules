@@ -47,6 +47,7 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
         /// @dev initially 0 until the withdrawal is executed
         uint256 outputAmount;
         bool isRetryable;
+        bytes extraData;
     }
 
     // ================================================
@@ -81,7 +82,8 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bytes calldata _extraData
     ) external payable;
 
     /**
