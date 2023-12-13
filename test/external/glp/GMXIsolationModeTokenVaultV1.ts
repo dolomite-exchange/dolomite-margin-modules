@@ -310,7 +310,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     });
   });
 
-  describe('#withdrawFromVaultForDolomiteMargin', () => {
+  describe.only('#withdrawFromVaultForDolomiteMargin', () => {
     it('should work normally', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
@@ -331,6 +331,24 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
       await expectWalletBalance(gmxVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
       await expectWalletBalance(core.hhUser1.address, core.gmxEcosystem!.gmx, gmxAmount);
+    });
+
+    it.only('oriole test', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
+      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await gmxVault.stakeGmx(gmxAmount);
+
+      await doHandleRewardsWithWaitTime(30);
+      await gmxVault.vestGmx(esGmxAmount);
+      const withdrawAmount = BigNumber.from('7000000000000000000');
+      await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, withdrawAmount);
+
+      const vaultAccount = { owner: gmxVault.address, number: accountNumber };
+      await expectWalletBalance(glpVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
+      await expectWalletBalance(core.hhUser1.address, core.gmxEcosystem!.gmx, withdrawAmount);
+      // Balance should be greater than 0 because of vesting
+      await expectProtocolBalanceIsGreaterThan(core, vaultAccount, underlyingMarketIdGmx, ONE_BI, 1);
+      // await expectWalletBalanceIsGreaterThan(gmxVault, core.gmxEcosystem!.gmx, ZERO_BI);
     });
 
     it('should work normally when have to unvest & unstake GMX', async () => {

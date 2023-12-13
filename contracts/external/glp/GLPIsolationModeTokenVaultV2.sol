@@ -98,6 +98,22 @@ contract GLPIsolationModeTokenVaultV2 is
         );
     }
 
+    function claimAndStakeBnGmx() external onlyGmxVault(msg.sender) returns (uint256){
+        _handleRewards(
+            /* _shouldClaimGmx = */ false,
+            /* _shouldStakeGmx = */ false,
+            /* _shouldClaimEsGmx = */ false,
+            /* _shouldStakeEsGmx = */ false,
+            /* _shouldStakeMultiplierPoints = */ true,
+            /* _shouldClaimWeth = */ false,
+            /* _shouldDepositWethIntoDolomite = */ false,
+            _DEFAULT_ACCOUNT_NUMBER
+        );
+
+        address bnGmx = registry().bnGmx();
+        return IGmxRewardTracker(registry().sbfGmx()).depositBalances(address(this), bnGmx);
+    }
+
     function handleRewardsWithSpecificDepositAccountNumber(
         bool _shouldClaimGmx,
         bool _shouldStakeGmx,

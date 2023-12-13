@@ -28,8 +28,11 @@ import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "../interfaces/gmx/IGLPIsolationModeTokenVaultV2.sol";
 import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
 import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
+import { ISGMX } from "../interfaces/gmx/ISGMX.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
+
+import "hardhat/console.sol";
 
 
 /**
@@ -128,19 +131,27 @@ contract GMXIsolationModeTokenVaultV1 is
             address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
             assert(glpVault != address(0));
 
+            IERC20 sbfGmx = IERC20(registry().sbfGmx());
+            uint256 sGmxStakedAmount = ISGMX(registry().sGmx()).stakedAmounts(glpVault);
+            uint256 bnGmxAmount = IGLPIsolationModeTokenVaultV2(glpVault).claimAndStakeBnGmx();
+            // @follow-up This can be off by 1 wei with rounding
+            uint256 maxUnstakeAmount = sbfGmx.balanceOf(glpVault) * sGmxStakedAmount/ (sGmxStakedAmount + bnGmxAmount);
+
             uint256 amountInVesting = IGLPIsolationModeTokenVaultV2(glpVault).gmxInVesting();
             uint256 totalStakeAmount = IGLPIsolationModeTokenVaultV2(glpVault).gmxBalanceOf();
+            console.log(maxUnstakeAmount);
+            console.log(totalStakeAmount - amountInVesting);
 
             uint256 diff = _amount - underlyingBalance;
-            if (totalStakeAmount - amountInVesting >= diff) {
-                IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
-            } else {
-                IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(
-                    /* _shouldStakeGmx = */ false,
-                    /* _addDepositIntoDolomite = */ false
-                );
-                IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
-            }
+            IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
+            // if (totalStakeAmount - amountInVesting >= diff) {
+            // } else {
+            //     IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(
+            //         /* _shouldStakeGmx = */ false,
+            //         /* _addDepositIntoDolomite = */ false
+            //     );
+            //     IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
+            // }
         }
 
         assert(_recipient != address(this));

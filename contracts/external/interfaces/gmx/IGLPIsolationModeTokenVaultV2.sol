@@ -66,6 +66,8 @@ interface IGLPIsolationModeTokenVaultV2 {
     )
     external;
 
+    function claimAndStakeBnGmx() external returns (uint256);
+
     /**
      * @notice  The same function as #handleRewardsWithSpecificDepositAccountNumber but defaults
      *          `_depositAccountNumberForWeth` to `0`.
