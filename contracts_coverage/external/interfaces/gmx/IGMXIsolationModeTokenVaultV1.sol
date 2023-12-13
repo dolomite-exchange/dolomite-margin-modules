@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 
-
 /**
  * @title   IGMXIsolationModeTokenVaultV1
  * @author  Dolomite

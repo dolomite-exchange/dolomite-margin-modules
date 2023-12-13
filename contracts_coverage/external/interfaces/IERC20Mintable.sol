@@ -27,7 +27,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @title   IERC20Mintable
  * @author  Dolomite
  *
- * @notice  Interface for vault token contracts
+ * @notice  Interface for mintable ERC20 tokens
  */
 interface IERC20Mintable is IERC20 {
 

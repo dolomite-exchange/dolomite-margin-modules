@@ -158,22 +158,6 @@ contract GLPIsolationModeTokenVaultV2 is
         gmxRewardsRouter().unstakeEsGmx(_amount);
     }
 
-    function claimAndStakeBnGmx() external onlyGmxVault(msg.sender) returns (uint256){
-        _handleRewards(
-            /* _shouldClaimGmx = */ false,
-            /* _shouldStakeGmx = */ false,
-            /* _shouldClaimEsGmx = */ false,
-            /* _shouldStakeEsGmx = */ false,
-            /* _shouldStakeMultiplierPoints = */ true,
-            /* _shouldClaimWeth = */ false,
-            /* _shouldDepositWethIntoDolomite = */ false,
-            _DEFAULT_ACCOUNT_NUMBER
-        );
-
-        address bnGmx = registry().bnGmx();
-        return IGmxRewardTracker(registry().sbfGmx()).depositBalances(address(this), bnGmx);
-    }
-
     function acceptFullAccountTransfer(
         address _sender
     )
@@ -187,9 +171,9 @@ contract GLPIsolationModeTokenVaultV2 is
             _FILE,
             "Invalid sender"
         );
-        if (!hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0) { /* FOR COVERAGE TESTING */ }
+        if (!hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0,
+            !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0,
             _FILE,
             "Cannot transfer more than once"
         );
@@ -202,13 +186,11 @@ contract GLPIsolationModeTokenVaultV2 is
 
         // the amount of fsGLP being deposited is the current balance of fsGLP, since we should have started at 0.
         uint256 amountWei = underlyingBalanceOf();
-        IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(/* _toAccountNumber = */ 0, amountWei);
+        IIsolationModeVaultFactory(VAULT_FACTORY()).depositIntoDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, amountWei);
 
         if (hasSynced()) {
-            // @follow-up Are asserts ok here and is gmxBalanceOf correct
             uint256 amountGmx = gmxBalanceOf();
             address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
-            /*assert(amountGmx > 0);*/
             /*assert(gmxVault != address(0));*/
 
             _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, amountGmx, /* shouldSkipTransfer = */ true);
@@ -240,7 +222,7 @@ contract GLPIsolationModeTokenVaultV2 is
         _unvestEsGmx(vGmx(), _shouldStakeGmx, _addDepositIntoDolomite);
     }
 
-    function sweep() external onlyGmxVault(msg.sender) {
+    function sweepGmxTokensIntoGmxVault() external onlyGmxVault(msg.sender) {
         _depositIntoGMXVault(
             /* _gmxVault = */ msg.sender,
             /* _accountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
@@ -316,6 +298,10 @@ contract GLPIsolationModeTokenVaultV2 is
         // only holds staked-GMX tokens, which is why we only check the sGMX contract. sGMX reflects any sbfGMX that is
         // moved into vGMX vesting too.
         return sGmx().depositBalances(account, address(gmx()));
+    }
+
+    function gmxInVesting() public view returns (uint256) {
+        return vGmx().pairAmounts(address(this));
     }
 
     function esGmxBalanceOf() public view returns (uint256) {
@@ -409,7 +395,7 @@ contract GLPIsolationModeTokenVaultV2 is
             _approveGmxForStaking(gmx(), type(uint256).max);
         }
 
-        uint256 preBal = gmxBalanceOf() + gmx().balanceOf(address(this));
+        uint256 stakedGmxBalanceBefore = gmxBalanceOf();
         gmxRewardsRouter().handleRewards(
             _shouldClaimGmx,
             _shouldStakeGmx,
@@ -419,18 +405,26 @@ contract GLPIsolationModeTokenVaultV2 is
             _shouldClaimWeth,
             /* _shouldConvertWethToEth = */ false
         );
-        uint256 bal = gmxBalanceOf() + gmx().balanceOf(address(this)) - preBal;
+        uint256 stakedGmxBalanceDelta = gmxBalanceOf() - stakedGmxBalanceBefore;
 
         IERC20 _gmx = gmx();
         if (_shouldStakeGmx) {
             // we can reset the allowance back to 0 here
-            _approveGmxForStaking(_gmx, 0);
+            _approveGmxForStaking(_gmx, /* _amount = */ 0);
         }
-        if (bal > 0) {
-            // @follow-up Is blind transfer ok or is it worth determining if can do actual transfer
-            gmx().transfer(gmxVault, gmx().balanceOf(address(this)));
-            _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
-        }
+
+        _depositIntoGMXVault(
+            gmxVault,
+            _DEFAULT_ACCOUNT_NUMBER,
+            gmx().balanceOf(address(this)),
+            /* shouldSkipTransfer = */ false
+        );
+        _depositIntoGMXVault(
+            gmxVault,
+            _DEFAULT_ACCOUNT_NUMBER,
+            stakedGmxBalanceDelta,
+            /* shouldSkipTransfer = */ true
+        );
 
         if (_shouldClaimWeth) {
             address factory = VAULT_FACTORY();
@@ -463,17 +457,14 @@ contract GLPIsolationModeTokenVaultV2 is
 
         _vester.withdraw();
         IERC20 _gmx = gmx();
-        uint256 bal = _gmx.balanceOf(address(this));
-        // @follow-up I don't think this can ever be zero
-        /*assert(bal > 0);*/
+        uint256 balance = _gmx.balanceOf(address(this));
 
         if (_addDepositIntoDolomite) {
             if (_shouldStakeGmx) {
-                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
-                _stakeGmx(_gmx, bal);
-            }
-            else {
-                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ false);
+                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ true);
+                _stakeGmx(_gmx, balance);
+            } else {
+                _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ false);
             }
         }
     }
@@ -498,10 +489,8 @@ contract GLPIsolationModeTokenVaultV2 is
         );
         _setUint256(_HAS_SYNCED, 1);
 
-        uint256 bal = gmxBalanceOf();
-        if (bal > 0) {
-            _depositIntoGMXVault(_gmxVault, _DEFAULT_ACCOUNT_NUMBER, bal, /* shouldSkipTransfer = */ true);
-        }
+        // Skip the transfer since we're depositing staked GMX tokens
+        _depositIntoGMXVault(_gmxVault, _DEFAULT_ACCOUNT_NUMBER, gmxBalanceOf(), /* shouldSkipTransfer = */ true);
     }
 
     function _getGmxVaultOrCreate(address _account) internal returns (address) {
@@ -518,6 +507,10 @@ contract GLPIsolationModeTokenVaultV2 is
         uint256 _amountWei,
         bool _shouldSkipTransfer
     ) internal {
+        if (_amountWei == 0) {
+            return;
+        }
+
         if (!_shouldSkipTransfer) {
             gmx().safeApprove(_gmxVault, _amountWei);
         }
@@ -543,6 +536,7 @@ contract GLPIsolationModeTokenVaultV2 is
     ) internal override {
         super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
 
+        // Sweep any GMX tokens that are sent to this vault from unvesting GLP
         _depositIntoGMXVault(
             _getGmxVaultOrCreate(OWNER()),
             _DEFAULT_ACCOUNT_NUMBER,

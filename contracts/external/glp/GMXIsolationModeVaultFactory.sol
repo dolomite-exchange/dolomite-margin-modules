@@ -44,6 +44,7 @@ contract GMXIsolationModeVaultFactory is
     IsolationModeVaultFactory
 {
     using SafeERC20 for IERC20;
+
     // ============ Constants ============
 
     bytes32 private constant _FILE = "GMXIsolationModeVaultFactory";
@@ -90,7 +91,7 @@ contract GMXIsolationModeVaultFactory is
         bool _shouldSkipTransfer
     ) external onlyGLPVault(msg.sender, _vault) {
         if (_amountWei == 0) {
-            // Guard statement
+            // Guard statement. If the amount is 0, setShouldSkipTransfer is not unset, otherwise
             return;
         }
 
@@ -99,6 +100,7 @@ contract GMXIsolationModeVaultFactory is
         } else {
             IGMXIsolationModeTokenVaultV1(_vault).setIsDepositSourceGLPVault(true);
         }
+
         _enqueueTransfer(
             /* from = */ _vault,
             /* to = */ address(DOLOMITE_MARGIN()),

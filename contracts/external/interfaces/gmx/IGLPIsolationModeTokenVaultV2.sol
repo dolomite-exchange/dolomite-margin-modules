@@ -108,11 +108,6 @@ interface IGLPIsolationModeTokenVaultV2 {
     function unstakeEsGmx(uint256 _amount) external;
 
     /**
-     * @notice  Claims and stakes all bnGmx tokens. Only used to make the math easier for max unstakeGmx amount
-     */
-    function claimAndStakeBnGmx() external returns (uint256);
-
-    /**
      * @notice  Accepts a full account transfer from the sender's GMX account. There must not be any tokens in vesting
      *          and this contract must not have interacted with GMX yet for this to function. This function must be
      *          called by the vault owner.
@@ -180,4 +175,9 @@ interface IGLPIsolationModeTokenVaultV2 {
      * @return The amount of GMX tokens the user owns
      */
     function gmxBalanceOf() external view returns (uint256);
+
+    /**
+     * @return The amount of GMX tokens the user has in the vesting contract (for converting esGMX into GMX)
+     */
+    function gmxInVesting() external view returns (uint256);
 }

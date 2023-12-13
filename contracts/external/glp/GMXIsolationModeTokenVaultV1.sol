@@ -29,7 +29,6 @@ import { IGLPIsolationModeTokenVaultV2 } from "../interfaces/gmx/IGLPIsolationMo
 import { IGMXIsolationModeTokenVaultV1 } from "../interfaces/gmx/IGMXIsolationModeTokenVaultV1.sol";
 import { IGMXIsolationModeVaultFactory } from "../interfaces/gmx/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
-import { ISGMX } from "../interfaces/gmx/ISGMX.sol";
 import { IsolationModeTokenVaultV1 } from "../proxies/abstract/IsolationModeTokenVaultV1.sol";
 
 
@@ -91,11 +90,11 @@ contract GMXIsolationModeTokenVaultV1 is
     }
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external onlyVaultFactory(msg.sender) {
-        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
+        _setShouldSkipTransfer(_shouldSkipTransfer);
     }
 
     function setIsDepositSourceGLPVault(bool _isDepositSourceGLPVault) external onlyVaultFactory(msg.sender) {
-        _setUint256(_IS_DEPOSIT_SOURCE_GLP_VAULT, _isDepositSourceGLPVault ? 1 : 0);
+        _setIsDepositSourceGLPVault(_isDepositSourceGLPVault);
     }
 
     function executeDepositIntoVault(
@@ -106,12 +105,12 @@ contract GMXIsolationModeTokenVaultV1 is
     override
     onlyVaultFactory(msg.sender) {
         if (shouldSkipTransfer()) {
-            _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, 0);
+            _setShouldSkipTransfer(false);
         } else if (isDepositSourceGLPVault()) {
             address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
 
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(glpVault, address(this), _amount);
-            _setUint256(_IS_DEPOSIT_SOURCE_GLP_VAULT, 0);
+            _setIsDepositSourceGLPVault(false);
         } else {
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
         }
@@ -124,24 +123,21 @@ contract GMXIsolationModeTokenVaultV1 is
     public
     override
     onlyVaultFactory(msg.sender) {
-        uint256 underlyingBal = super.underlyingBalanceOf();
-        if (underlyingBal < _amount) {
+        uint256 underlyingBalance = super.underlyingBalanceOf();
+        if (underlyingBalance < _amount) {
             address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
             assert(glpVault != address(0));
 
-            IERC20 sbfGmx = IERC20(registry().sbfGmx());
-            uint256 sGmxStakedAmount = ISGMX(registry().sGmx()).stakedAmounts(glpVault);
-            uint256 bnGmxAmount = IGLPIsolationModeTokenVaultV2(glpVault).claimAndStakeBnGmx();
-            // @follow-up This can be off by 1 wei with rounding
-            uint256 maxUnstakeAmount = sbfGmx.balanceOf(glpVault) * sGmxStakedAmount / (sGmxStakedAmount + bnGmxAmount);
+            uint256 amountInVesting = IGLPIsolationModeTokenVaultV2(glpVault).gmxInVesting();
+            uint256 totalStakeAmount = IGLPIsolationModeTokenVaultV2(glpVault).gmxBalanceOf();
 
-            uint256 diff = _amount - underlyingBal;
-            if (maxUnstakeAmount >= diff) {
+            uint256 diff = _amount - underlyingBalance;
+            if (totalStakeAmount - amountInVesting >= diff) {
                 IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
             } else {
                 IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(
                     /* _shouldStakeGmx = */ false,
-                    /* _addDepositIntoDolomite */ false
+                    /* _addDepositIntoDolomite = */ false
                 );
                 IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
             }
@@ -208,5 +204,13 @@ contract GMXIsolationModeTokenVaultV1 is
 
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
         IGLPIsolationModeTokenVaultV2(glpVault).sweepGmxTokensIntoGmxVault();
+    }
+
+    function _setShouldSkipTransfer(bool _shouldSkipTransfer) internal {
+        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
+    }
+
+    function _setIsDepositSourceGLPVault(bool _isDepositSourceGLPVault) internal {
+        _setUint256(_IS_DEPOSIT_SOURCE_GLP_VAULT, _isDepositSourceGLPVault ? 1 : 0);
     }
 }

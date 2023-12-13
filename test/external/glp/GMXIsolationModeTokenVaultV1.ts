@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
-  CustomTestToken,
   GLPIsolationModeVaultFactory,
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeTokenVaultV1__factory,
@@ -14,14 +13,19 @@ import {
 } from '../../../src/types';
 import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
-import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
+import {
+  expectProtocolBalance, expectProtocolBalanceIsGreaterThan,
+  expectThrow,
+  expectWalletBalance,
+  expectWalletBalanceIsGreaterThan
+} from '../../utils/assertions';
 import {
   createGLPIsolationModeVaultFactory,
   createGMXIsolationModeTokenVaultV1,
   createGMXIsolationModeVaultFactory,
+  createGmxRegistry,
   createGMXUnwrapperTraderV2,
   createGMXWrapperTraderV2,
-  createGmxRegistry,
   createTestGLPIsolationModeTokenVaultV2
 } from '../../utils/ecosystem-token-utils/gmx';
 import {
@@ -342,8 +346,33 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
       await expectWalletBalance(glpVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
       await expectWalletBalance(core.hhUser1.address, core.gmxEcosystem!.gmx, gmxAmount);
-      expect((await core.dolomiteMargin.getAccountWei(vaultAccount, underlyingMarketIdGmx)).value).to.be.gt(ZERO_BI);
-      expect(await core.gmxEcosystem!.gmx.balanceOf(gmxVault.address)).to.be.gt(ZERO_BI);
+      // Balance should be greater than 0 because of vesting
+      await expectProtocolBalanceIsGreaterThan(core, vaultAccount, underlyingMarketIdGmx, ONE_BI, 1);
+      await expectWalletBalanceIsGreaterThan(gmxVault, core.gmxEcosystem!.gmx, ZERO_BI);
+    });
+
+    it('should work normally when have to unstake but not unvest GMX', async () => {
+      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
+      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await gmxVault.stakeGmx(gmxAmount);
+
+      await doHandleRewardsWithWaitTime(30);
+      await gmxVault.vestGmx(esGmxAmount);
+
+      const gmxInVesting = await glpVault.gmxInVesting();
+      expect(gmxInVesting).to.be.gt(ZERO_BI);
+      expect(gmxInVesting).to.not.eq(gmxAmount);
+      expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
+
+      const unstakeAmount = gmxAmount.sub(gmxInVesting);
+      await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, unstakeAmount);
+
+      expect(await glpVault.gmxBalanceOf()).to.eq(gmxInVesting);
+      expect(await glpVault.gmxInVesting()).to.eq(gmxInVesting);
+      await expectWalletBalance(glpVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
+      await expectWalletBalance(core.hhUser1.address, core.gmxEcosystem!.gmx, unstakeAmount);
+      await expectWalletBalance(gmxVault, core.gmxEcosystem!.gmx, ZERO_BI);
+      await expectProtocolBalance(core, gmxVault, accountNumber, underlyingMarketIdGmx, gmxInVesting);
     });
 
     it('should work normally when unvest, unstake, and sweep', async () => {
@@ -530,5 +559,4 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       expect(await gmxVault.registry()).to.equal(gmxRegistry.address);
     });
   });
-
 });

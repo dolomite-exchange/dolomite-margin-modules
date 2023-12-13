@@ -27,7 +27,7 @@ import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
  * @title   IGLPIsolationModeTokenVaultV2
  * @author  Dolomite
  *
- * @notice  This interface defines the functions that are available on the GLPIsolationModeTokenVaultV1 implementation
+ * @notice  This interface defines the functions that are available on the GLPIsolationModeTokenVaultV2 implementation
  *          contract for each user's proxy vault.
  */
 interface IGLPIsolationModeTokenVaultV2 {
@@ -108,11 +108,6 @@ interface IGLPIsolationModeTokenVaultV2 {
     function unstakeEsGmx(uint256 _amount) external;
 
     /**
-     * @notice  Claims and stakes all bnGmx tokens. Only used to make the math easier for max unstakeGmx amount
-     */
-    function claimAndStakeBnGmx() external returns (uint256);
-
-    /**
      * @notice  Accepts a full account transfer from the sender's GMX account. There must not be any tokens in vesting
      *          and this contract must not have interacted with GMX yet for this to function. This function must be
      *          called by the vault owner.
@@ -159,16 +154,17 @@ interface IGLPIsolationModeTokenVaultV2 {
 
     /**
      * @notice  Syncs the vault's GMX balance with the GMX vault. This function must be called by the GMX vault factory.
-     *          All GMX tokens will remain in this vault, but the GMX vault will be updated with the vault's balance.
+     *          All GMX tokens will remain in this vault, but the GMX vault's Dolomite Balance will be updated with the
+     *          vault's balance.
      *
      * @param  _gmxVault  Matching GMX vault address for GLP vault owner
      */
     function sync(address _gmxVault) external;
 
     /**
-     * @notice  Deposits any excess GMX balance in the GLP vault into the GMX vault
+     * @notice  Deposits any excess GMX balance in this GLP vault to the GMX vault. Does not touch staked-GMX
      */
-    function sweep() external;
+    function sweepGmxTokensIntoGmxVault() external;
 
     /**
      * @return The registry used to get addresses from the GMX ecosystem
@@ -179,4 +175,9 @@ interface IGLPIsolationModeTokenVaultV2 {
      * @return The amount of GMX tokens the user owns
      */
     function gmxBalanceOf() external view returns (uint256);
+
+    /**
+     * @return The amount of GMX tokens the user has in the vesting contract (for converting esGMX into GMX)
+     */
+    function gmxInVesting() external view returns (uint256);
 }

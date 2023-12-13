@@ -156,22 +156,6 @@ contract GLPIsolationModeTokenVaultV2 is
         gmxRewardsRouter().unstakeEsGmx(_amount);
     }
 
-    function claimAndStakeBnGmx() external onlyGmxVault(msg.sender) returns (uint256) {
-        _handleRewards(
-            /* _shouldClaimGmx = */ false,
-            /* _shouldStakeGmx = */ false,
-            /* _shouldClaimEsGmx = */ false,
-            /* _shouldStakeEsGmx = */ false,
-            /* _shouldStakeMultiplierPoints = */ true,
-            /* _shouldClaimWeth = */ false,
-            /* _shouldDepositWethIntoDolomite = */ false,
-            _DEFAULT_ACCOUNT_NUMBER
-        );
-
-        address bnGmx = registry().bnGmx();
-        return IGmxRewardTracker(registry().sbfGmx()).depositBalances(address(this), bnGmx);
-    }
-
     function acceptFullAccountTransfer(
         address _sender
     )
@@ -311,6 +295,10 @@ contract GLPIsolationModeTokenVaultV2 is
         return sGmx().depositBalances(account, address(gmx()));
     }
 
+    function gmxInVesting() public view returns (uint256) {
+        return vGmx().pairAmounts(address(this));
+    }
+
     function esGmxBalanceOf() public view returns (uint256) {
         IERC20 _esGmx = esGmx();
         address account = address(this);
@@ -401,7 +389,7 @@ contract GLPIsolationModeTokenVaultV2 is
             _approveGmxForStaking(gmx(), type(uint256).max);
         }
 
-        uint256 gmxBalanceBefore = gmxBalanceOf() + gmx().balanceOf(address(this));
+        uint256 stakedGmxBalanceBefore = gmxBalanceOf();
         gmxRewardsRouter().handleRewards(
             _shouldClaimGmx,
             _shouldStakeGmx,
@@ -411,7 +399,7 @@ contract GLPIsolationModeTokenVaultV2 is
             _shouldClaimWeth,
             /* _shouldConvertWethToEth = */ false
         );
-        uint256 gmxBalanceDelta = gmxBalanceOf() + gmx().balanceOf(address(this)) - gmxBalanceBefore;
+        uint256 stakedGmxBalanceDelta = gmxBalanceOf() - stakedGmxBalanceBefore;
 
         IERC20 _gmx = gmx();
         if (_shouldStakeGmx) {
@@ -419,21 +407,18 @@ contract GLPIsolationModeTokenVaultV2 is
             _approveGmxForStaking(_gmx, /* _amount = */ 0);
         }
 
-        if (gmxBalanceDelta > 0) {
-            uint256 gmxBalance = gmx().balanceOf(address(this));
-            _depositIntoGMXVault(
-                gmxVault,
-                _DEFAULT_ACCOUNT_NUMBER,
-                gmxBalance,
-                /* shouldSkipTransfer = */ false
-            );
-            _depositIntoGMXVault(
-                gmxVault,
-                _DEFAULT_ACCOUNT_NUMBER,
-                gmxBalanceDelta - gmxBalance,
-                /* shouldSkipTransfer = */ true
-            );
-        }
+        _depositIntoGMXVault(
+            gmxVault,
+            _DEFAULT_ACCOUNT_NUMBER,
+            gmx().balanceOf(address(this)),
+            /* shouldSkipTransfer = */ false
+        );
+        _depositIntoGMXVault(
+            gmxVault,
+            _DEFAULT_ACCOUNT_NUMBER,
+            stakedGmxBalanceDelta,
+            /* shouldSkipTransfer = */ true
+        );
 
         if (_shouldClaimWeth) {
             address factory = VAULT_FACTORY();
@@ -472,8 +457,7 @@ contract GLPIsolationModeTokenVaultV2 is
             if (_shouldStakeGmx) {
                 _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ true);
                 _stakeGmx(_gmx, balance);
-            }
-            else {
+            } else {
                 _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ false);
             }
         }
@@ -498,11 +482,8 @@ contract GLPIsolationModeTokenVaultV2 is
         );
         _setUint256(_HAS_SYNCED, 1);
 
-        uint256 balance = gmxBalanceOf();
-        if (balance > 0) {
-            // Skip the transfer since we're depositing staked GMX tokens
-            _depositIntoGMXVault(_gmxVault, _DEFAULT_ACCOUNT_NUMBER, balance, /* shouldSkipTransfer = */ true);
-        }
+        // Skip the transfer since we're depositing staked GMX tokens
+        _depositIntoGMXVault(_gmxVault, _DEFAULT_ACCOUNT_NUMBER, gmxBalanceOf(), /* shouldSkipTransfer = */ true);
     }
 
     function _getGmxVaultOrCreate(address _account) internal returns (address) {

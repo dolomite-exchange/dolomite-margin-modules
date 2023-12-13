@@ -28,8 +28,8 @@ import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationMod
  * @title   GMXIsolationModeUnwrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for unwrapping dGMX into any supported token. Upon settlement,
- *          the GMX is sent from the user's vault to this contract and dGMX is burned from `DolomiteMargin`.
+ * @notice  Used for unwrapping dGMX into GMX tokens. Upon settlement, the GMX is sent from the user's vault to this
+ *          contract and dGMX is burned from `DolomiteMargin`.
  */
 contract GMXIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
 
@@ -77,6 +77,7 @@ contract GMXIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         bytes memory
     )
     internal
+    pure
     override
     returns (uint256) {
         return _inputAmount;
@@ -90,7 +91,7 @@ contract GMXIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
     )
     internal
     override
-    view
+    pure
     returns (uint256) {
         return _desiredInputAmount;
     }

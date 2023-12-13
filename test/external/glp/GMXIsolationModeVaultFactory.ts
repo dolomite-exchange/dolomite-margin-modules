@@ -244,6 +244,33 @@ describe('GMXIsolationModeVaultFactory', () => {
       await expectProtocolBalance(core, gmxVault.address, toAccountNumber, underlyingMarketIdGmx, gmxAmount);
     });
 
+    it('should work do nothing when amountWei is 0', async () => {
+      await gmxFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
+      const gmxVaultAddress = await gmxFactory.calculateVaultByAccount(core.hhUser1.address);
+      const gmxVault = GMXIsolationModeTokenVaultV1__factory.connect(
+        gmxVaultAddress,
+        core.hhUser1,
+      );
+      const glpVaultImpersonator = await impersonate(await glpFactory.getVaultByAccount(core.hhUser1.address), true);
+      await setupGMXBalance(core, glpVaultImpersonator, gmxAmount, gmxVault);
+
+      await gmxFactory.connect(glpVaultImpersonator).executeDepositIntoVaultFromGLPVault(
+        gmxVault.address,
+        toAccountNumber,
+        ZERO_BI,
+        false,
+      );
+      await gmxFactory.connect(glpVaultImpersonator).executeDepositIntoVaultFromGLPVault(
+        gmxVault.address,
+        toAccountNumber,
+        ZERO_BI,
+        true,
+      );
+      expect(await gmxVault.shouldSkipTransfer()).to.be.false;
+      expect(await gmxVault.isDepositSourceGLPVault()).to.be.false;
+      await expectProtocolBalance(core, gmxVault.address, toAccountNumber, underlyingMarketIdGmx, ZERO_BI);
+    });
+
     it('should fail if not called by GLP vault', async () => {
       await gmxFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
       const gmxVaultAddress = await gmxFactory.calculateVaultByAccount(core.hhUser1.address);

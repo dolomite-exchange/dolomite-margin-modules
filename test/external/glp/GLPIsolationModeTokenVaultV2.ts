@@ -361,7 +361,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
 
       // the esGMX should have been converted to GMX and staked into sbfGMX
       expect((await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address))
-      .gt(esGmxAmount.add(gmxAmount).sub(stakedGmx))).to.eq(true);
+        .gt(esGmxAmount.add(gmxAmount).sub(stakedGmx))).to.eq(true);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(glpVault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(gmxVault.address)).to.eq(ZERO_BI);
@@ -685,7 +685,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
 
       // the esGMX should have been converted to GMX and staked into sbfGMX
       expect((await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address))
-      .gt(esGmxAmount.add(gmxAmount).sub(stakedGmx))).to.eq(true);
+        .gt(esGmxAmount.add(gmxAmount).sub(stakedGmx))).to.eq(true);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(glpVault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(gmxVault.address)).to.eq(ZERO_BI);
       expect(await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
@@ -798,8 +798,6 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     });
 
     it('should fail when attempting to deposit WETH when not claiming', async () => {
-      const gmxVault = await setupGmxStakingAndEsGmxVesting();
-
       await waitDays(30);
       await expectThrow(
         glpVault.handleRewardsWithSpecificDepositAccountNumber(
@@ -1359,6 +1357,25 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       await glpVault.connect(gmxVaultImpersonator).sweepGmxTokensIntoGmxVault();
 
       await expectProtocolBalance(core, gmxVaultAddress, 0, underlyingGmxMarketId, gmxAmount);
+    });
+
+    it('should work when there is no balance in there', async () => {
+      await gmxFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
+      const gmxVaultAddress = await gmxFactory.getVaultByAccount(core.hhUser1.address);
+      const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
+        gmxVaultAddress,
+        GMXIsolationModeTokenVaultV1__factory,
+        core.hhUser1
+      );
+
+      await expectWalletBalance(gmxVault, core.gmxEcosystem!.gmx, ZERO_BI);
+
+      const gmxVaultImpersonator = await impersonate(gmxVaultAddress, true);
+      await glpVault.connect(gmxVaultImpersonator).sweepGmxTokensIntoGmxVault();
+
+      await expectProtocolBalance(core, gmxVaultAddress, accountNumber, underlyingGmxMarketId, ZERO_BI);
+      expect(await gmxVault.isDepositSourceGLPVault()).to.be.false;
+      expect(await gmxVault.shouldSkipTransfer()).to.be.false;
     });
 
     it('should fail if not called by gmxVault', async () => {

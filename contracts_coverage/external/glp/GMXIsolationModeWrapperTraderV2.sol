@@ -28,8 +28,8 @@ import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeW
  * @title   GMXIsolationModeWrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for wrapping GLP (via minting from the GLPRewardsRouter) from USDC. Upon settlement, the minted GLP is
- *          sent to the user's vault and dfsGLP is minted to `DolomiteMargin`.
+ * @notice  Used for wrapping GMX into dGmx. Upon settlement, the GMX is sent to the user's vault and dGmx is minted to
+ *          `DolomiteMargin`.
  */
 contract GMXIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
 
@@ -73,6 +73,7 @@ contract GMXIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         bytes memory
     )
     internal
+    pure
     override
     returns (uint256) {
         return _inputAmount;
@@ -86,7 +87,7 @@ contract GMXIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     )
     internal
     override
-    view
+    pure
     returns (uint256) {
         return _desiredInputAmount;
     }
