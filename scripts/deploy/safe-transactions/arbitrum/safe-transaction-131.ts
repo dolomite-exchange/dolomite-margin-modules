@@ -9,7 +9,7 @@ import {
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../deploy-utils';
-import { ST_ETH_CHAINLINK_FEED_MAP, ST_ETH_MAP } from '../../../../src/utils/constants';
+import { STETH_USD_CHAINLINK_FEED_MAP, ST_ETH_MAP } from '../../../../src/utils/constants';
 import { getPendlePtPriceOracleConstructorParams } from '../../../../src/utils/constructors/pendle';
 
 /**
@@ -91,7 +91,7 @@ async function main(): Promise<DenJsonUpload> {
       [
         ST_ETH_MAP[network]!.address, // stETH,
         18,
-        ST_ETH_CHAINLINK_FEED_MAP[network]!,
+        STETH_USD_CHAINLINK_FEED_MAP[network]!,
         ADDRESS_ZERO,
       ],
     ),
