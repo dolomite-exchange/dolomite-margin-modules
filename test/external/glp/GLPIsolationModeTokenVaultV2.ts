@@ -6,11 +6,11 @@ import {
   GLPIsolationModeTokenVaultV1__factory,
   GLPIsolationModeTokenVaultV2,
   GLPIsolationModeTokenVaultV2__factory,
-  GLPIsolationModeVaultFactory,
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeTokenVaultV1__factory,
   GMXIsolationModeVaultFactory,
   GmxRegistryV1,
+  IGLPIsolationModeVaultFactoryOld,
   TestGLPIsolationModeTokenVaultV2,
   TestGLPIsolationModeTokenVaultV2__factory,
 } from '../../../src/types';
@@ -19,7 +19,6 @@ import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no
 import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
 import {
-  createGLPIsolationModeVaultFactory,
   createGMXIsolationModeTokenVaultV1,
   createGMXIsolationModeVaultFactory,
   createGmxRegistry,
@@ -48,7 +47,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let glpFactory: GLPIsolationModeVaultFactory;
+  let glpFactory: IGLPIsolationModeVaultFactoryOld;
   let gmxFactory: GMXIsolationModeVaultFactory;
   let glpVault: TestGLPIsolationModeTokenVaultV2;
   let underlyingGlpMarketId: BigNumber;
@@ -65,15 +64,18 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     gmxRegistry = await createGmxRegistry(core);
 
     const vaultImplementation = await createTestGLPIsolationModeTokenVaultV2();
-    glpFactory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, vaultImplementation);
+    glpFactory = core.gmxEcosystem!.live.glpIsolationModeFactory;
+    await glpFactory.connect(core.governance).setUserVaultImplementation(vaultImplementation.address);
+    await glpFactory.connect(core.governance).setGmxRegistry(gmxRegistry.address);
+
     const gmxVaultImplementation = await createGMXIsolationModeTokenVaultV1();
     gmxFactory = await createGMXIsolationModeVaultFactory(core, gmxRegistry, gmxVaultImplementation);
 
-    underlyingGlpMarketId = await core.dolomiteMargin.getNumMarkets();
+    underlyingGlpMarketId = BigNumber.from(core.marketIds.dfsGlp!);
     await core.testEcosystem!.testPriceOracle.setPrice(glpFactory.address, '1000000000000000000');
-    await setupTestMarket(core, glpFactory, true);
+    await core.dolomiteMargin.connect(core.governance)
+      .ownerSetPriceOracle(underlyingGlpMarketId, core.testEcosystem!.testPriceOracle.address);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(glpFactory.address, true);
-    await glpFactory.connect(core.governance).ownerInitialize([]);
 
     underlyingGmxMarketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(gmxFactory.address, '1000000000000000000');
@@ -152,7 +154,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         TestGLPIsolationModeTokenVaultV2__factory,
         core.hhUser2,
       );
-      await vault2.initialize();
+      await vault2.getGmxVaultOrCreate();
 
       const gmxVaultAddress = gmxFactory.getVaultByAccount(core.hhUser2.address);
       expect(gmxVaultAddress).to.not.eq(ZERO_ADDRESS);
@@ -167,7 +169,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         TestGLPIsolationModeTokenVaultV2__factory,
         core.hhUser2,
       );
-      await vault2.initialize();
+      await vault2.getGmxVaultOrCreate();
 
       const gmxVaultAddress = gmxFactory.getVaultByAccount(core.hhUser2.address);
       expect(gmxVaultAddress).to.not.eq(ZERO_ADDRESS);
@@ -177,7 +179,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     it('should fail when already initialized', async () => {
       await expectThrow(
         glpVault.initialize(),
-        'GLPIsolationModeTokenVaultV2: Already initialized',
+        'IsolationModeTokenVaultV1: Already initialized',
       );
     });
   });

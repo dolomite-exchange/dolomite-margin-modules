@@ -73,17 +73,6 @@ contract GLPIsolationModeTokenVaultV2 is
     // ======================= External Functions =======================
     // ==================================================================
 
-    function initialize() external override {
-        Require.that(
-            _reentrancyGuard == 0,
-            _FILE,
-            "Already initialized"
-        );
-
-        _reentrancyGuard = _NOT_ENTERED;
-        _getGmxVaultOrCreate(OWNER());
-    }
-
     function handleRewards(
         bool _shouldClaimGmx,
         bool _shouldStakeGmx,
@@ -192,7 +181,7 @@ contract GLPIsolationModeTokenVaultV2 is
             _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, amountGmx, /* shouldSkipTransfer = */ true);
         } else {
             // This will automatically sync the balances
-            _getGmxVaultOrCreate(OWNER());
+            getGmxVaultOrCreate();
         }
 
         // reset the flag back to false
@@ -240,6 +229,15 @@ contract GLPIsolationModeTokenVaultV2 is
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
+
+    function getGmxVaultOrCreate() public returns (address) {
+        address account = OWNER();
+        address gmxVault = registry().gmxVaultFactory().getVaultByAccount(account);
+        if (gmxVault == address(0)) {
+            gmxVault = registry().gmxVaultFactory().createVault(account);
+        }
+        return gmxVault;
+    }
 
     function executeDepositIntoVault(
         address _from,
@@ -377,7 +375,7 @@ contract GLPIsolationModeTokenVaultV2 is
         bool _shouldDepositWethIntoDolomite,
         uint256 _depositAccountNumberForWeth
     ) internal {
-        address gmxVault = _getGmxVaultOrCreate(OWNER());
+        address gmxVault = getGmxVaultOrCreate();
         Require.that(
             (!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
             _FILE,
@@ -447,7 +445,7 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function _unvestEsGmx(IGmxVester _vester, bool _shouldStakeGmx, bool _addDepositIntoDolomite) internal {
-        address gmxVault = _getGmxVaultOrCreate(OWNER());
+        address gmxVault = getGmxVaultOrCreate();
 
         _vester.withdraw();
         IERC20 _gmx = gmx();
@@ -484,14 +482,6 @@ contract GLPIsolationModeTokenVaultV2 is
 
         // Skip the transfer since we're depositing staked GMX tokens
         _depositIntoGMXVault(_gmxVault, _DEFAULT_ACCOUNT_NUMBER, gmxBalanceOf(), /* shouldSkipTransfer = */ true);
-    }
-
-    function _getGmxVaultOrCreate(address _account) internal returns (address) {
-        address gmxVault = registry().gmxVaultFactory().getVaultByAccount(_account);
-        if (gmxVault == address(0)) {
-            gmxVault = registry().gmxVaultFactory().createVault(_account);
-        }
-        return gmxVault;
     }
 
     function _depositIntoGMXVault(
@@ -531,7 +521,7 @@ contract GLPIsolationModeTokenVaultV2 is
 
         // Sweep any GMX tokens that are sent to this vault from unvesting GLP
         _depositIntoGMXVault(
-            _getGmxVaultOrCreate(OWNER()),
+            getGmxVaultOrCreate(),
             _DEFAULT_ACCOUNT_NUMBER,
             gmx().balanceOf(address(this)),
             /* shouldSkipTransfer = */ false

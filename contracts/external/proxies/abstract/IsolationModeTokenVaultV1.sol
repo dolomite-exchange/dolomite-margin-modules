@@ -61,7 +61,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     // ================ Field Variables ================
     // =================================================
 
-    uint256 internal _reentrancyGuard;
+    /// @dev This is unused, but required to keep the storage slots the same
+    uint256 private _reentrancyGuard;
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -114,7 +115,11 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     // ==================== Functions ====================
     // ===================================================
 
-    function initialize() external virtual {
+    function initialize() external {
+        _initialize();
+    }
+
+    function _initialize() internal virtual {
         Require.that(
             _getUint256(_IS_INITIALIZED_SLOT) == 0,
             _FILE,
