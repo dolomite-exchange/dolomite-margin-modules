@@ -42,6 +42,11 @@ interface IIsolationModeTokenVaultV1 {
     // ===========================================================
 
     /**
+     * @notice  Initializes the vault contract. Should only be executable once by the proxy.
+     */
+    function initialize() external;
+
+    /**
      * @notice  End-user function for depositing the vault factory's underlying token into DolomiteMargin. Should only
      *          be executable by the vault owner OR the vault factory.
      */

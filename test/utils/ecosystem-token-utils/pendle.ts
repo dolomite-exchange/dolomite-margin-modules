@@ -1,9 +1,15 @@
 import { BigNumberish } from 'ethers';
 import {
+  IERC20,
   IPendleGLPRegistry,
   IPendlePtGLP2024IsolationModeTokenVaultV1,
   IPendlePtGLP2024IsolationModeVaultFactory,
+  IPendlePtIsolationModeTokenVaultV1,
+  IPendlePtIsolationModeVaultFactory,
+  IPendlePtMarket, IPendlePtOracle,
   IPendlePtToken,
+  IPendleRegistry,
+  IPendleSyToken,
   IPendleYtGLP2024IsolationModeTokenVaultV1,
   IPendleYtGLP2024IsolationModeVaultFactory,
   IPendleYtToken,
@@ -19,6 +25,17 @@ import {
   PendlePtGLP2024IsolationModeWrapperTraderV2__factory,
   PendlePtGLPPriceOracle,
   PendlePtGLPPriceOracle__factory,
+  PendlePtIsolationModeTokenVaultV1,
+  PendlePtIsolationModeUnwrapperTraderV2,
+  PendlePtIsolationModeUnwrapperTraderV2__factory,
+  PendlePtIsolationModeVaultFactory,
+  PendlePtIsolationModeVaultFactory__factory,
+  PendlePtIsolationModeWrapperTraderV2,
+  PendlePtIsolationModeWrapperTraderV2__factory,
+  PendlePtPriceOracle,
+  PendlePtPriceOracle__factory,
+  PendleRegistry,
+  PendleRegistry__factory,
   PendleYtGLP2024IsolationModeTokenVaultV1,
   PendleYtGLP2024IsolationModeTokenVaultV1__factory,
   PendleYtGLP2024IsolationModeUnwrapperTraderV2,
@@ -38,12 +55,18 @@ import {
   getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams,
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendlePtGLPPriceOracleConstructorParams,
+  getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
+  getPendlePtIsolationModeVaultFactoryConstructorParams,
+  getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
+  getPendlePtPriceOracleConstructorParams,
+  getPendleRegistryConstructorParams,
   getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams,
   getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendleYtGLPPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/pendle';
 import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../dolomite';
 import { CoreProtocol } from '../setup';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../dolomite';
 
@@ -60,6 +83,92 @@ export async function createPendleGLPRegistry(core: CoreProtocol): Promise<Pendl
   );
 
   return PendleGLPRegistry__factory.connect(registry.address, core.hhUser1);
+}
+
+export async function createPendleRegistry(
+  core: CoreProtocol,
+  ptMarket: IPendlePtMarket,
+  ptOracle: IPendlePtOracle,
+  syToken: IPendleSyToken,
+): Promise<PendleRegistry> {
+  const implementation = await createContractWithAbi<PendleRegistry>(
+    PendleRegistry__factory.abi,
+    PendleRegistry__factory.bytecode,
+    [],
+  );
+  const registry = await createContractWithAbi<RegistryProxy>(
+    RegistryProxy__factory.abi,
+    RegistryProxy__factory.bytecode,
+    await getPendleRegistryConstructorParams(implementation, core, ptMarket, ptOracle, syToken),
+  );
+
+  return PendleRegistry__factory.connect(registry.address, core.hhUser1);
+}
+
+export async function createPendlePtIsolationModeTokenVaultV1(): Promise<PendlePtIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<PendlePtIsolationModeTokenVaultV1>(
+    'PendlePtIsolationModeTokenVaultV1',
+    { ...libraries },
+    [],
+  );
+}
+
+export function createPendlePtIsolationModeVaultFactory(
+  core: CoreProtocol,
+  registry: IPendleRegistry | PendleRegistry,
+  ptToken: IPendlePtToken,
+  userVaultImplementation: IPendlePtIsolationModeTokenVaultV1 | PendlePtIsolationModeTokenVaultV1,
+): Promise<PendlePtIsolationModeVaultFactory> {
+  return createContractWithAbi(
+    PendlePtIsolationModeVaultFactory__factory.abi,
+    PendlePtIsolationModeVaultFactory__factory.bytecode,
+    getPendlePtIsolationModeVaultFactoryConstructorParams(
+      core,
+      registry,
+      ptToken,
+      userVaultImplementation,
+    ),
+  );
+}
+
+export function createPendlePtIsolationModeWrapperTraderV2(
+  core: CoreProtocol,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingToken: IERC20,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): Promise<PendlePtIsolationModeWrapperTraderV2> {
+  return createContractWithAbi(
+    PendlePtIsolationModeWrapperTraderV2__factory.abi,
+    PendlePtIsolationModeWrapperTraderV2__factory.bytecode,
+    getPendlePtIsolationModeWrapperTraderV2ConstructorParams(core, pendleRegistry, underlyingToken, dptToken),
+  );
+}
+
+export function createPendlePtIsolationModeUnwrapperTraderV2(
+  core: CoreProtocol,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingToken: IERC20,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): Promise<PendlePtIsolationModeUnwrapperTraderV2> {
+  return createContractWithAbi(
+    PendlePtIsolationModeUnwrapperTraderV2__factory.abi,
+    PendlePtIsolationModeUnwrapperTraderV2__factory.bytecode,
+    getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(core, pendleRegistry, underlyingToken, dptToken),
+  );
+}
+
+export function createPendlePtPriceOracle(
+  core: CoreProtocol,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+  underlyingToken: IERC20,
+): Promise<PendlePtPriceOracle> {
+  return createContractWithAbi(
+    PendlePtPriceOracle__factory.abi,
+    PendlePtPriceOracle__factory.bytecode,
+    getPendlePtPriceOracleConstructorParams(core, dptToken, pendleRegistry, underlyingToken),
+  );
 }
 
 export async function createPendlePtGLP2024IsolationModeTokenVaultV1(
