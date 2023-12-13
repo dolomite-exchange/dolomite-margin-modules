@@ -139,12 +139,16 @@ contract GMXIsolationModeTokenVaultV1 is
 
             uint256 amountInVesting = IGLPIsolationModeTokenVaultV2(glpVault).gmxInVesting();
             uint256 totalStakeAmount = IGLPIsolationModeTokenVaultV2(glpVault).gmxBalanceOf();
-            console.log('Max unstake formula 1 : ', maxUnstakeAmount);
-            console.log('Max unstake formula 2 : ', totalStakeAmount - amountInVesting);
 
             uint256 diff = _amount - underlyingBalance;
+
+            console.log('Max unstake formula 1 : ', maxUnstakeAmount);
+            console.log('Max unstake formula 2 : ', totalStakeAmount - amountInVesting);
+            console.log('diff greater than totalStakeAmount - amountInvesting: ', diff > totalStakeAmount - amountInVesting);
+
             IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
             // if (totalStakeAmount - amountInVesting >= diff) {
+            //     IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
             // } else {
             //     IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(
             //         /* _shouldStakeGmx = */ false,
