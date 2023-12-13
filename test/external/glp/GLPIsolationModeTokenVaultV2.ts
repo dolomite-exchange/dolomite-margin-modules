@@ -1337,15 +1337,6 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     });
   });
 
-  describe('#claimAndStakeBnGmx', () => {
-    it('should fail if not called by gmxVault', async () => {
-      await expectThrow(
-        glpVault.connect(core.hhUser1).claimAndStakeBnGmx(),
-        'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
-      );
-    });
-  });
-
   describe('#sweep', () => {
     it('should work normally', async () => {
       await gmxFactory.connect(core.hhUser1).createVault(core.hhUser1.address);
