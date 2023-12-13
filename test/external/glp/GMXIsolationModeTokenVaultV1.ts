@@ -340,7 +340,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
 
       await doHandleRewardsWithWaitTime(30);
       await gmxVault.vestGmx(esGmxAmount);
-      const withdrawAmount = BigNumber.from('7000000000000000000');
+      const withdrawAmount = BigNumber.from('7100000000000000000');
       await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, withdrawAmount);
 
       const vaultAccount = { owner: gmxVault.address, number: accountNumber };
