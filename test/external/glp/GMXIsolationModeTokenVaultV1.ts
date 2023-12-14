@@ -427,10 +427,10 @@ describe('GMXIsolationModeTokenVaultV1', () => {
 
       await doHandleRewardsWithWaitTime(3650);
       const esGmxBalance = await glpVault.esGmxBalanceOf();
-      console.log('esGMX amt:', esGmxBalance.toString());
       await glpVault.stakeEsGmx(esGmxBalance.sub(esGmxAmount));
       await gmxVault.vestGmx(esGmxAmount);
 
+      await glpVault.setSkipClaimingBnGmx(true);
       const gmxVaultSigner = await impersonate(gmxVault.address, true);
       const maxUnstakeAmount = await glpVault.connect(gmxVaultSigner).callStatic.maxGmxUnstakeAmount();
       await expectThrow(
