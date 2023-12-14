@@ -131,8 +131,8 @@ contract GMXIsolationModeTokenVaultV1 is
             address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
             assert(glpVault != address(0));
 
-            uint256 diff = _amount - underlyingBalance;
             uint256 maxUnstakeAmount = IGLPIsolationModeTokenVaultV2(glpVault).maxGmxUnstakeAmount();
+            uint256 diff = _amount - underlyingBalance;
             if (diff <= maxUnstakeAmount) {
                 IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
             } else {

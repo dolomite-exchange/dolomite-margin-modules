@@ -4,7 +4,6 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
 import {
   GLPIsolationModeTokenVaultV1,
-  GLPIsolationModeTokenVaultV1__factory,
   GLPIsolationModeTokenVaultV2,
   GLPIsolationModeUnwrapperTraderV1,
   GLPIsolationModeUnwrapperTraderV1__factory,
@@ -52,6 +51,7 @@ import {
   RegistryProxy__factory,
   TestGLPIsolationModeTokenVaultV1,
   TestGLPIsolationModeTokenVaultV2,
+  TestGMXIsolationModeTokenVaultV1,
   TestGmxV2IsolationModeTokenVaultV1,
   TestGmxV2IsolationModeUnwrapperTraderV2,
   TestGmxV2IsolationModeUnwrapperTraderV2__factory,
@@ -71,7 +71,9 @@ import {
   getGmxV2IsolationModeVaultFactoryConstructorParams,
   getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
   getGmxV2MarketTokenPriceOracleConstructorParams,
-  getGmxV2RegistryConstructorParams, getGMXWrapperTraderV2ConstructorParams, GMX_V2_CALLBACK_GAS_LIMIT,
+  getGmxV2RegistryConstructorParams,
+  getGMXWrapperTraderV2ConstructorParams,
+  GMX_V2_CALLBACK_GAS_LIMIT,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
@@ -208,6 +210,15 @@ export async function createGMXIsolationModeTokenVaultV1(): Promise<GMXIsolation
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<GMXIsolationModeTokenVaultV1>(
     'GMXIsolationModeTokenVaultV1',
+    libraries,
+    [],
+  );
+}
+
+export async function createTestGMXIsolationModeTokenVaultV1(): Promise<TestGMXIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary<TestGMXIsolationModeTokenVaultV1>(
+    'TestGMXIsolationModeTokenVaultV1',
     libraries,
     [],
   );

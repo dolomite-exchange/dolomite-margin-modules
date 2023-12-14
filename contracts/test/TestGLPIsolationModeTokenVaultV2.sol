@@ -20,6 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IGmxRewardTracker } from "../external/interfaces/gmx/IGmxRewardTracker.sol";
 import { GLPIsolationModeTokenVaultV2 } from "../external/glp/GLPIsolationModeTokenVaultV2.sol";
 
 
@@ -33,8 +36,14 @@ contract TestGLPIsolationModeTokenVaultV2 is GLPIsolationModeTokenVaultV2 {
 
     bytes32 private constant _FILE = "TestGLPIsolationModeTokenVaultV1";
 
-    function setApprovalForGmxForStaking(uint _amount) external {
+    bool public skipClaimingBnGmx;
+
+    function setApprovalForGmxForStaking(uint256 _amount) external {
         _approveGmxForStaking(gmx(), _amount);
+    }
+
+    function setSkipClaimingBnGmx(bool _skipClaimingBnGmx) external {
+        skipClaimingBnGmx = _skipClaimingBnGmx;
     }
 
     function callHandleRewardsAndTriggerReentrancy(
@@ -128,5 +137,20 @@ contract TestGLPIsolationModeTokenVaultV2 is GLPIsolationModeTokenVaultV2 {
             (string memory errorMessage) = abi.decode(result, (string));
             revert(errorMessage);
         }
+    }
+
+    function maxGmxUnstakeAmount() public override onlyGmxVault(msg.sender) returns (uint256) {
+        uint256 stakedAmount = sGmx().stakedAmounts(address(this));
+        uint256 bnGmxAmount;
+        if (skipClaimingBnGmx) {
+            address bnGmx = registry().bnGmx();
+            bnGmxAmount = IGmxRewardTracker(registry().sbfGmx()).depositBalances(address(this), bnGmx);
+        } else {
+            bnGmxAmount = _claimAndStakeBnGmx();
+        }
+
+        uint256 sbfGmxBalance = IERC20(sbfGmx()).balanceOf(address(this));
+        uint256 reductionAmount = sbfGmxBalance * bnGmxAmount / (stakedAmount + bnGmxAmount);
+        return Math.min(gmxBalanceOf(), sbfGmxBalance - reductionAmount);
     }
 }

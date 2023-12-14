@@ -92,6 +92,8 @@ contract PendlePtIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
             IPendleRouter.TokenInput memory tokenInput
         ) = abi.decode(_extraOrderData, (IPendleRouter.ApproxParams, IPendleRouter.TokenInput));
 
+        tokenInput.netTokenIn = _inputAmount;
+
         IPendleRouter pendleRouter = PENDLE_REGISTRY.pendleRouter();
         UNDERLYING_TOKEN.safeApprove(address(pendleRouter), _inputAmount);
         (uint256 ptAmount,) = pendleRouter.swapExactTokenForPt(

@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
@@ -96,22 +97,6 @@ contract GLPIsolationModeTokenVaultV2 is
             _shouldDepositWethIntoDolomite,
             /* _depositAccountNumberForWeth = */ _DEFAULT_ACCOUNT_NUMBER
         );
-    }
-
-    function claimAndStakeBnGmx() external onlyGmxVault(msg.sender) returns (uint256){
-        _handleRewards(
-            /* _shouldClaimGmx = */ false,
-            /* _shouldStakeGmx = */ false,
-            /* _shouldClaimEsGmx = */ false,
-            /* _shouldStakeEsGmx = */ false,
-            /* _shouldStakeMultiplierPoints = */ true,
-            /* _shouldClaimWeth = */ false,
-            /* _shouldDepositWethIntoDolomite = */ false,
-            _DEFAULT_ACCOUNT_NUMBER
-        );
-
-        address bnGmx = registry().bnGmx();
-        return IGmxRewardTracker(registry().sbfGmx()).depositBalances(address(this), bnGmx);
     }
 
     function handleRewardsWithSpecificDepositAccountNumber(
@@ -242,6 +227,14 @@ contract GLPIsolationModeTokenVaultV2 is
         _sync(_gmxVault);
     }
 
+    function maxGmxUnstakeAmount() public virtual onlyGmxVault(msg.sender) returns (uint256) {
+        uint256 stakedAmount = sGmx().stakedAmounts(address(this));
+        uint256 bnGmxAmount = _claimAndStakeBnGmx();
+        uint256 sbfGmxBalance = IERC20(sbfGmx()).balanceOf(address(this));
+        uint256 reductionAmount = sbfGmxBalance * bnGmxAmount / (stakedAmount + bnGmxAmount);
+        return Math.min(gmxBalanceOf(), sbfGmxBalance - reductionAmount);
+    }
+
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
@@ -307,14 +300,6 @@ contract GLPIsolationModeTokenVaultV2 is
         // only holds staked-GMX tokens, which is why we only check the sGMX contract. sGMX reflects any sbfGMX that is
         // moved into vGMX vesting too.
         return sGmx().depositBalances(account, address(gmx()));
-    }
-
-    function maxGmxUnstakeAmount() public view returns (uint256) {
-        uint256 stakedAmount = ISGMX(sGmx()).stakedAmounts(glpVault);
-        uint256 bnGmxAmount = IGLPIsolationModeTokenVaultV2(glpVault).claimAndStakeBnGmx();
-        uint256 sbfGmxBalance = IERC20(sbfGmx()).balanceOf(glpVault);
-        uint256 reductionAmount = sbfGmxBalance * bnGmxAmount / (stakedAmount + bnGmxAmount);
-        return sbfGmxBalance - reductionAmount;
     }
 
     function esGmxBalanceOf() public view returns (uint256) {
@@ -388,6 +373,22 @@ contract GLPIsolationModeTokenVaultV2 is
     // ==================================================================
     // ======================= Internal Functions =======================
     // ==================================================================
+
+    function _claimAndStakeBnGmx() internal returns (uint256) {
+        _handleRewards(
+            /* _shouldClaimGmx = */ false,
+            /* _shouldStakeGmx = */ false,
+            /* _shouldClaimEsGmx = */ false,
+            /* _shouldStakeEsGmx = */ false,
+            /* _shouldStakeMultiplierPoints = */ true,
+            /* _shouldClaimWeth = */ false,
+            /* _shouldDepositWethIntoDolomite = */ false,
+            _DEFAULT_ACCOUNT_NUMBER
+        );
+
+        address bnGmx = registry().bnGmx();
+        return IGmxRewardTracker(registry().sbfGmx()).depositBalances(address(this), bnGmx);
+    }
 
     function _handleRewards(
         bool _shouldClaimGmx,
