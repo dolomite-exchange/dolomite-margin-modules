@@ -50,6 +50,14 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
         bytes extraData;
     }
 
+    struct State {
+        uint256 actionsLength;
+        uint256 reentrancyGuard;
+        address vaultFactory;
+        address handlerRegistry;
+        mapping(bytes32 => WithdrawalInfo) withdrawalInfo;
+    }
+
     // ================================================
     // ===================== Enums ====================
     // ================================================

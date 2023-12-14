@@ -29,6 +29,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { AsyncIsolationModeTraderBase } from "../proxies/abstract/AsyncIsolationModeTraderBase.sol";
+import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 
 
@@ -67,7 +68,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         address _gmxV2Registry
     ) external initializer {
         _initializeWrapperTrader(_dGM, _dolomiteMargin);
-        _initializeAsyncTraderBase(_gmxV2Registry);
     }
 
     function afterDepositExecution(
@@ -129,6 +129,10 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function GMX_REGISTRY_V2() public view returns (IGmxV2Registry) {
         return IGmxV2Registry(address(HANDLER_REGISTRY()));
+    }
+
+    function HANDLER_REGISTRY() public view override returns (IHandlerRegistry) {
+        return IHandlerRegistry(address(0));
     }
 
     // ============================================

@@ -374,7 +374,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
             [ONE_BI, encodeWithdrawalKey(UnwrapTradeType.ForWithdrawal, withdrawalKey)],
           ),
         ),
-        'UpgradeableUnwrapperTraderV2: Output token mismatch',
+        'AsyncIsolationModeUnwrapperImpl: Output token mismatch',
       );
     });
 
@@ -600,6 +600,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       );
     });
 
+    // @todo fix
     it('should fail if reentered', async () => {
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
@@ -618,7 +619,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       );
       await expectThrow(
         unwrapper.callFunctionAndTriggerReentrancy(transaction.data!),
-        'UpgradeableUnwrapperTraderV2: Reentrant call',
+        'AsyncIsolationModeUnwrapperImpl: Reentrant call',
       );
     });
   });
@@ -671,6 +672,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
     }
 
+    // @todo fix
     it('should work normally with actual oracle params and long token', async () => {
       await setupBalances(core.tokens.weth);
       const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
@@ -794,6 +796,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await expectWalletBalance(unwrapper, core.tokens.weth, withdrawalInfo.outputAmount);
     });
 
+    // @todo fix
     it('should work normally if user sends extra amount to withdrawal vault', async () => {
       await setupGMBalance(core, core.gmxEcosystemV2!.gmxWithdrawalVault, ONE_BI);
       await setupBalances(core.tokens.weth);
@@ -1080,7 +1083,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       );
       await expectThrow(
         unwrapper.callFunctionAndTriggerReentrancy(transaction.data!),
-        'UpgradeableUnwrapperTraderV2: Reentrant call',
+        'AsyncIsolationModeUnwrapperImpl: Reentrant call',
       );
     });
   });
@@ -1167,7 +1170,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       const transaction = await unwrapper.populateTransaction.executeWithdrawalForRetry(BYTES_ZERO);
       await expectThrow(
         unwrapper.connect(core.hhUser1).callFunctionAndTriggerReentrancy(transaction.data!),
-        'UpgradeableUnwrapperTraderV2: Reentrant call',
+        'AsyncIsolationModeUnwrapperImpl: Reentrant call',
       );
     });
 
@@ -1228,7 +1231,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           { owner: core.hhUser2.address, number: defaultAccountNumber },
           defaultAbiCoder.encode(['uint256'], [amountWei]),
         ),
-        `UpgradeableUnwrapperTraderV2: Invalid vault <${core.hhUser2.address.toLowerCase()}>`,
+        `AsyncIsolationModeUnwrapperImpl: Invalid vault <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -1251,7 +1254,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           { owner: vault2.address, number: defaultAccountNumber },
           encodeWithdrawalKeyForCallFunction(amountWei, UnwrapTradeType.ForWithdrawal, DUMMY_WITHDRAWAL_KEY),
         ),
-        `UpgradeableUnwrapperTraderV2: Invalid account owner <${vault2.address.toLowerCase()}>`,
+        `AsyncIsolationModeUnwrapperImpl: Invalid account owner <${vault2.address.toLowerCase()}>`,
       );
     });
 
@@ -1285,7 +1288,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           { owner: vault.address, number: defaultAccountNumber },
           encodeWithdrawalKeyForCallFunction(ZERO_BI, UnwrapTradeType.ForWithdrawal, DUMMY_WITHDRAWAL_KEY),
         ),
-        'UpgradeableUnwrapperTraderV2: Invalid transfer amount',
+        'AsyncIsolationModeUnwrapperImpl: Invalid transfer amount',
       );
 
       await expectThrow(
@@ -1298,7 +1301,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
             DUMMY_WITHDRAWAL_KEY,
           ),
         ),
-        'UpgradeableUnwrapperTraderV2: Invalid transfer amount',
+        'AsyncIsolationModeUnwrapperImpl: Invalid transfer amount',
       );
     });
 
@@ -1332,7 +1335,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           { owner: vault.address, number: defaultAccountNumber },
           encodeWithdrawalKeyForCallFunction(amountWei.add(1), UnwrapTradeType.ForWithdrawal, DUMMY_WITHDRAWAL_KEY),
         ),
-        `UpgradeableUnwrapperTraderV2: Insufficient balance <${amountWei.toString()}, ${amountWei.add(1).toString()}>`,
+        `AsyncIsolationModeUnwrapperImpl: Insufficient balance <${amountWei.toString()}, ${amountWei.add(1).toString()}>`,
       );
     });
   });

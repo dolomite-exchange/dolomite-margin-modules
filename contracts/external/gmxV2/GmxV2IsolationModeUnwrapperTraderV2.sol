@@ -30,6 +30,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { AsyncIsolationModeTraderBase } from "../proxies/abstract/AsyncIsolationModeTraderBase.sol";
 import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { AsyncIsolationModeUnwrapperTraderImpl } from "../proxies/abstract/impl/AsyncIsolationModeUnwrapperTraderImpl.sol";
 
 
 /**
@@ -76,8 +77,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         address _gmxV2Registry
     )
     external initializer {
-        _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
-        _initializeAsyncTraderBase(_gmxV2Registry);
+        _initializeUnwrapperTrader(_dGM, _gmxV2Registry, _dolomiteMargin);
     }
 
     function vaultInitiateUnwrapping(
@@ -159,7 +159,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         // Save the output amount so we can refer to it later. This also enables it to be retried if execution fails
         withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
         withdrawalInfo.isRetryable = true;
-        _setWithdrawalInfo(_key, withdrawalInfo);
+        AsyncIsolationModeUnwrapperTraderImpl.setWithdrawalInfo(_getStorageSlot(), _key, withdrawalInfo);
 
         _executeWithdrawal(withdrawalInfo);
     }
