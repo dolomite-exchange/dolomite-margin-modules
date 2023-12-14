@@ -369,10 +369,16 @@ export async function prettyPrintEncodeInsertChainlinkOracle(
   token: IERC20,
   chainlinkAggregatorAddress: address,
   tokenPairAddress: address,
-): Promise<void> {
-  const tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+): Promise<EncodedTransaction> {
+  let tokenDecimals: number;
+  if (token.address === core.tokens.stEth?.address) {
+    tokenDecimals = 18;
+  } else {
+    tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
   mostRecentTokenDecimals = tokenDecimals;
-  await prettyPrintEncodedDataWithTypeSafety(
+  return await prettyPrintEncodedDataWithTypeSafety(
     core,
     { chainlinkPriceOracle: core.chainlinkPriceOracle! },
     'chainlinkPriceOracle',

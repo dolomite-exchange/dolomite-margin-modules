@@ -16,7 +16,6 @@ import {
   PendleGLPRegistry,
   PendleGLPRegistry__factory,
   PendlePtGLP2024IsolationModeTokenVaultV1,
-  PendlePtGLP2024IsolationModeTokenVaultV1__factory,
   PendlePtGLP2024IsolationModeUnwrapperTraderV2,
   PendlePtGLP2024IsolationModeUnwrapperTraderV2__factory,
   PendlePtGLP2024IsolationModeVaultFactory,
@@ -68,7 +67,6 @@ import {
 import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../dolomite';
 import { CoreProtocol } from '../setup';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../dolomite';
 
 export async function createPendleGLPRegistry(core: CoreProtocol): Promise<PendleGLPRegistry> {
   const implementation = await createContractWithAbi<PendleGLPRegistry>(

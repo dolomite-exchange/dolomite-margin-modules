@@ -595,7 +595,19 @@ export const V_GMX_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
-export const ST_ETH_CHAINLINK_FEED_MAP: Record<Network, string | undefined> = {
+// ************************* Chainlink *************************
+
+export const STETH_USD_CHAINLINK_FEED_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x07c5b924399cc23c24a95c8743de4006a32b7f2a',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const STETH_ETH_CHAINLINK_FEED_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xded2c52b75b24732e9107377b7ba93ec1ffa4baf',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const WSTETH_STETH_CHAINLINK_FEED_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0xb1552c5e96b312d0bf8b554186f846c40614a540',
   [Network.ArbitrumGoerli]: undefined,
 };

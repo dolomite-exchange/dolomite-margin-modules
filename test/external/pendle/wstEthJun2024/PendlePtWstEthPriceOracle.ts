@@ -22,7 +22,7 @@ import {
   createPendleRegistry,
 } from '../../../utils/ecosystem-token-utils/pendle';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../../utils/setup';
-import { ST_ETH_CHAINLINK_FEED_MAP } from '../../../../src/utils/constants';
+import { STETH_USD_CHAINLINK_FEED_MAP } from '../../../../src/utils/constants';
 
 const PT_WST_ETH_PRICE = BigNumber.from('1851962584688511417180');
 
@@ -56,7 +56,7 @@ describe('PendlePtWstEthJun2024PriceOracle', () => {
     await core.chainlinkPriceOracle!.connect(core.governance).ownerInsertOrUpdateOracleToken(
       underlyingToken.address,
       18,
-      ST_ETH_CHAINLINK_FEED_MAP[core.config.network]!,
+      STETH_USD_CHAINLINK_FEED_MAP[core.config.network]!,
       ADDRESS_ZERO,
     );
 
