@@ -309,8 +309,12 @@ contract GLPIsolationModeTokenVaultV2 is
         return sGmx().depositBalances(account, address(gmx()));
     }
 
-    function gmxInVesting() public view returns (uint256) {
-        return vGmx().pairAmounts(address(this));
+    function maxGmxUnstakeAmount() public view returns (uint256) {
+        uint256 stakedAmount = ISGMX(sGmx()).stakedAmounts(glpVault);
+        uint256 bnGmxAmount = IGLPIsolationModeTokenVaultV2(glpVault).claimAndStakeBnGmx();
+        uint256 sbfGmxBalance = IERC20(sbfGmx()).balanceOf(glpVault);
+        uint256 reductionAmount = sbfGmxBalance * bnGmxAmount / (stakedAmount + bnGmxAmount);
+        return sbfGmxBalance - reductionAmount;
     }
 
     function esGmxBalanceOf() public view returns (uint256) {
@@ -342,6 +346,10 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function sGmx() public view returns (ISGMX) {
         return ISGMX(registry().sGmx());
+    }
+
+    function sbfGmx() public view returns (address) {
+        return registry().sbfGmx();
     }
 
     function vGlp() public view returns (IGmxVester) {

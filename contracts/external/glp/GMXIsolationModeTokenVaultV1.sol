@@ -131,31 +131,17 @@ contract GMXIsolationModeTokenVaultV1 is
             address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
             assert(glpVault != address(0));
 
-            IERC20 sbfGmx = IERC20(registry().sbfGmx());
-            uint256 sGmxStakedAmount = ISGMX(registry().sGmx()).stakedAmounts(glpVault);
-            uint256 bnGmxAmount = IGLPIsolationModeTokenVaultV2(glpVault).claimAndStakeBnGmx();
-            // @follow-up This can be off by 1 wei with rounding
-            uint256 maxUnstakeAmount = sbfGmx.balanceOf(glpVault) * sGmxStakedAmount/ (sGmxStakedAmount + bnGmxAmount);
-
-            uint256 amountInVesting = IGLPIsolationModeTokenVaultV2(glpVault).gmxInVesting();
-            uint256 totalStakeAmount = IGLPIsolationModeTokenVaultV2(glpVault).gmxBalanceOf();
-
             uint256 diff = _amount - underlyingBalance;
-
-            console.log('Max unstake formula 1 : ', maxUnstakeAmount);
-            console.log('Max unstake formula 2 : ', totalStakeAmount - amountInVesting);
-            console.log('diff greater than totalStakeAmount - amountInvesting: ', diff > totalStakeAmount - amountInVesting);
-
-            IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
-            // if (totalStakeAmount - amountInVesting >= diff) {
-            //     IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
-            // } else {
-            //     IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(
-            //         /* _shouldStakeGmx = */ false,
-            //         /* _addDepositIntoDolomite = */ false
-            //     );
-            //     IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
-            // }
+            uint256 maxUnstakeAmount = IGLPIsolationModeTokenVaultV2(glpVault).maxGmxUnstakeAmount();
+            if (diff <= maxUnstakeAmount) {
+                IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
+            } else {
+                IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(
+                    /* _shouldStakeGmx = */ false,
+                    /* _addDepositIntoDolomite = */ false
+                );
+                IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(diff);
+            }
         }
 
         assert(_recipient != address(this));

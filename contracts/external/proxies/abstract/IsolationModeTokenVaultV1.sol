@@ -119,16 +119,6 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         _initialize();
     }
 
-    function _initialize() internal virtual {
-        Require.that(
-            _getUint256(_IS_INITIALIZED_SLOT) == 0,
-            _FILE,
-            "Already initialized"
-        );
-
-        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
-    }
-
     function depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -394,6 +384,16 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     function dolomiteRegistry() public override virtual view returns (IDolomiteRegistry);
 
     // ============ Internal Functions ============
+
+    function _initialize() internal virtual {
+        Require.that(
+            _getUint256(_IS_INITIALIZED_SLOT) == 0,
+            _FILE,
+            "Already initialized"
+        );
+
+        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+    }
 
     function _depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,

@@ -179,7 +179,8 @@ interface IGLPIsolationModeTokenVaultV2 {
     function gmxBalanceOf() external view returns (uint256);
 
     /**
-     * @return The amount of GMX tokens the user has in the vesting contract (for converting esGMX into GMX)
+     * @return  The max amount of GMX tokens the user can unstake before having to unvest any paired GMX tokens for
+     *          vesting
      */
-    function gmxInVesting() external view returns (uint256);
+    function maxGmxUnstakeAmount() external view returns (uint256);
 }
