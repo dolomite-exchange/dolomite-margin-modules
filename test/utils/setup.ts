@@ -401,8 +401,11 @@ export interface PendleEcosystem {
   live: {
     pendleGLP2024Registry: IPendleGLPRegistry
     pendleGLP2024RegistryProxy: RegistryProxy
-    ptGlpIsolationModeFactory: PendlePtGLP2024IsolationModeVaultFactory;
-    ytGlpIsolationModeFactory: PendleYtGLP2024IsolationModeVaultFactory;
+    ptGlp2024IsolationModeFactory: PendlePtGLP2024IsolationModeVaultFactory;
+    ytGlp2024IsolationModeFactory: PendleYtGLP2024IsolationModeVaultFactory;
+    ptREthJun2025IsolationModeFactory: PendlePtIsolationModeVaultFactory;
+    ptWstEthJun2024IsolationModeFactory: PendlePtIsolationModeVaultFactory;
+    ptWstEthJun2025IsolationModeFactory: PendlePtIsolationModeVaultFactory;
   };
 }
 
@@ -1382,12 +1385,27 @@ async function createPendleEcosystem(
         RegistryProxy__factory.connect,
         signer,
       ),
-      ptGlpIsolationModeFactory: getContract(
+      ptGlp2024IsolationModeFactory: getContract(
         (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,
         PendlePtGLP2024IsolationModeVaultFactory__factory.connect,
         signer,
       ),
-      ytGlpIsolationModeFactory: getContract(
+      ptREthJun2025IsolationModeFactory: getContract(
+        (Deployments.PendlePtREthJun2025IsolationModeVaultFactory as any)[network]?.address,
+        PendlePtIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
+      ptWstEthJun2024IsolationModeFactory: getContract(
+        (Deployments.PendlePtWstEthJun2024IsolationModeVaultFactory as any)[network]?.address,
+        PendlePtIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
+      ptWstEthJun2025IsolationModeFactory: getContract(
+        (Deployments.PendlePtWstEthJun2025IsolationModeVaultFactory as any)[network]?.address,
+        PendlePtIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
+      ytGlp2024IsolationModeFactory: getContract(
         (Deployments.PendleYtGLP2024IsolationModeVaultFactory as any)[network]?.address,
         PendleYtGLP2024IsolationModeVaultFactory__factory.connect,
         signer,

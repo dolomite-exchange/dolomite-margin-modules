@@ -209,7 +209,7 @@ async function deployPendleGLPContracts(network: Network, core: CoreProtocol) {
     'PendleGLPIsolationModeUnwrapperTraderV2',
     getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
       core,
-      core.pendleEcosystem!.live.ptGlpIsolationModeFactory,
+      core.pendleEcosystem!.live.ptGlp2024IsolationModeFactory,
       pendleRegistry,
     ),
   );
@@ -218,7 +218,7 @@ async function deployPendleGLPContracts(network: Network, core: CoreProtocol) {
     'PendleGLPIsolationModeWrapperTraderV2',
     getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
       core,
-      core.pendleEcosystem!.live.ptGlpIsolationModeFactory,
+      core.pendleEcosystem!.live.ptGlp2024IsolationModeFactory,
       pendleRegistry,
     ),
   );
@@ -227,7 +227,7 @@ async function deployPendleGLPContracts(network: Network, core: CoreProtocol) {
     'PendlePtGLPPriceOracle',
     getPendlePtGLPPriceOracleConstructorParams(
       core,
-      core.pendleEcosystem!.live.ptGlpIsolationModeFactory,
+      core.pendleEcosystem!.live.ptGlp2024IsolationModeFactory,
       pendleRegistry,
     ),
   );
@@ -466,41 +466,41 @@ async function encodePendleGLPTransactions(
     'liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(dPtGlp, newLiquidator)',
   );
   await prettyPrintEncodedData(
-    core.pendleEcosystem!.live.ptGlpIsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(
+    core.pendleEcosystem!.live.ptGlp2024IsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(
       pendlePtGlpUnwrapperV2Address,
       true,
     ),
     'pendlePtGlpIsolationModeFactory.ownerSetIsTokenConverterTrusted(pendlePtGlpUnwrapperV2Address, true)',
   );
   await prettyPrintEncodedData(
-    core.pendleEcosystem!.live.ptGlpIsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(
+    core.pendleEcosystem!.live.ptGlp2024IsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(
       pendlePtGlpWrapperV2Address,
       true,
     ),
     'pendlePtGlpIsolationModeFactory.ownerSetIsTokenConverterTrusted(pendlePtGlpWrapperV2Address, true)',
   );
   await prettyPrintEncodedData(
-    core.pendleEcosystem!.live.ptGlpIsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(
+    core.pendleEcosystem!.live.ptGlp2024IsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(
       '0x5bc9F119BfF9fB92Ecc276C19C00099dcF102040',
       false,
     ),
     'pendlePtGlpIsolationModeFactory.ownerSetIsTokenConverterTrusted(pendlePtGlpUnwrapperV2Old, false)',
   );
   await prettyPrintEncodedData(
-    core.pendleEcosystem!.live.ptGlpIsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(
+    core.pendleEcosystem!.live.ptGlp2024IsolationModeFactory.populateTransaction.ownerSetIsTokenConverterTrusted(
       '0xD84B2e74edd01940F36a23B4aCF0DA58aD28D3Ed',
       false,
     ),
     'pendlePtGlpIsolationModeFactory.ownerSetIsTokenConverterTrusted(pendlePtGlpWrapperV2Old, false)',
   );
   await prettyPrintEncodedData(
-    core.pendleEcosystem!.live.ptGlpIsolationModeFactory.populateTransaction.ownerSetPendlePtGLP2024Registry(
+    core.pendleEcosystem!.live.ptGlp2024IsolationModeFactory.populateTransaction.ownerSetPendlePtGLP2024Registry(
       pendleRegistry.address,
     ),
     'pendlePtGlpIsolationModeFactory.ownerSetPendleGLPRegistry(pendleRegistry)',
   );
   await prettyPrintEncodedData(
-    core.pendleEcosystem!.live.ptGlpIsolationModeFactory.populateTransaction.ownerSetUserVaultImplementation(
+    core.pendleEcosystem!.live.ptGlp2024IsolationModeFactory.populateTransaction.ownerSetUserVaultImplementation(
       pendlePtGlpTokenVaultAddress,
     ),
     'pendlePtGlpIsolationModeFactory.ownerSetUserVaultImplementation(pendlePtGlpTokenVaultAddress)',

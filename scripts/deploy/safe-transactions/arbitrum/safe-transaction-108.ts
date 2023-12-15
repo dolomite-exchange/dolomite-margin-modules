@@ -94,9 +94,9 @@ async function main() {
   await prettyPrintEncodedDataWithTypeSafety(
     core,
     core.pendleEcosystem!.live,
-    'ytGlpIsolationModeFactory',
+    'ytGlp2024IsolationModeFactory',
     'ownerSetAllowableDebtMarketIds',
-    [await appendNativeUsdcToDebtMarketIdList(core, core.pendleEcosystem!.live.ytGlpIsolationModeFactory)],
+    [await appendNativeUsdcToDebtMarketIdList(core, core.pendleEcosystem!.live.ytGlp2024IsolationModeFactory)],
   );
 }
 

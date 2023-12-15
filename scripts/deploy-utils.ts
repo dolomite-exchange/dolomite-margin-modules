@@ -4,10 +4,30 @@ import { BaseContract, BigNumber, BigNumberish } from 'ethers';
 import { formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
 import { network, run } from 'hardhat';
-import { IChainlinkAggregator__factory, IERC20, IERC20Metadata__factory } from '../src/types';
+import {
+  IChainlinkAggregator__factory,
+  IERC20,
+  IERC20Metadata__factory,
+  IPendlePtMarket,
+  IPendlePtOracle,
+  IPendlePtToken,
+  IPendleSyToken, PendlePtIsolationModeTokenVaultV1__factory,
+  PendlePtIsolationModeUnwrapperTraderV2, PendlePtIsolationModeUnwrapperTraderV2__factory,
+  PendlePtIsolationModeVaultFactory, PendlePtIsolationModeVaultFactory__factory,
+  PendlePtIsolationModeWrapperTraderV2, PendlePtIsolationModeWrapperTraderV2__factory,
+  PendlePtPriceOracle, PendlePtPriceOracle__factory, PendleRegistry__factory,
+} from '../src/types';
+import {
+  getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
+  getPendlePtIsolationModeVaultFactoryConstructorParams,
+  getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
+  getPendlePtPriceOracleConstructorParams,
+  getPendleRegistryConstructorParams,
+} from '../src/utils/constructors/pendle';
 import { createContractWithLibrary, createContractWithName } from '../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, ZERO_BI } from '../src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, ZERO_BI } from '../src/utils/no-deps-constants';
 import { CoreProtocol } from '../test/utils/setup';
+import deployments from './deployments.json';
 
 type ChainId = string;
 
@@ -78,6 +98,89 @@ export async function deployContractAndSave(
   await prettyPrintAndVerifyContract(file, chainId, usedContractName, args);
 
   return contract.address;
+}
+
+export interface PendlePtSystem {
+  factory: PendlePtIsolationModeVaultFactory;
+  oracle: PendlePtPriceOracle;
+  unwrapper: PendlePtIsolationModeUnwrapperTraderV2;
+  wrapper: PendlePtIsolationModeWrapperTraderV2;
+}
+
+export async function deployPendlePtSystem(
+  network: Network,
+  core: CoreProtocol,
+  ptName: string,
+  ptMarket: IPendlePtMarket,
+  ptOracle: IPendlePtOracle,
+  ptToken: IPendlePtToken,
+  syToken: IPendleSyToken,
+  underlyingToken: IERC20,
+): Promise<PendlePtSystem> {
+  const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
+  const userVaultImplementationAddress = await deployContractAndSave(
+    Number(network),
+    'PendlePtIsolationModeTokenVaultV1',
+    [],
+    `PendlePt${ptName}IsolationModeTokenVaultV1'`,
+    { [libraryName]: deployments[libraryName][network as '42161'].address },
+  );
+  const userVaultImplementation = PendlePtIsolationModeTokenVaultV1__factory.connect(
+    userVaultImplementationAddress,
+    core.governance,
+  );
+
+  const registryImplementationAddress = await deployContractAndSave(
+    Number(network),
+    'PendleRegistry',
+    [],
+    'PendleRegistryImplementationV1',
+  );
+  const registryImplementation = PendleRegistry__factory.connect(registryImplementationAddress, core.governance);
+  const registryAddress = await deployContractAndSave(
+    Number(network),
+    'RegistryProxy',
+    await getPendleRegistryConstructorParams(registryImplementation, core, ptMarket, ptOracle, syToken),
+    `Pendle${ptName}RegistryProxy`,
+  );
+  const registry = PendleRegistry__factory.connect(registryAddress, core.governance);
+
+  const factoryAddress = await deployContractAndSave(
+    Number(network),
+    'PendlePtIsolationModeVaultFactory',
+    getPendlePtIsolationModeVaultFactoryConstructorParams(core, registry, ptToken, userVaultImplementation),
+    `PendlePt${ptName}IsolationModeVaultFactory`,
+  );
+  const factory = PendlePtIsolationModeVaultFactory__factory.connect(factoryAddress, core.governance);
+
+  const unwrapperAddress = await deployContractAndSave(
+    Number(network),
+    'PendlePtIsolationModeUnwrapperTraderV2',
+    getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(core, registry, underlyingToken, factory),
+    `PendlePt${ptName}IsolationModeUnwrapperTraderV2`,
+  );
+
+  const wrapperAddress = await deployContractAndSave(
+    Number(network),
+    'PendlePtIsolationModeWrapperTraderV2',
+    getPendlePtIsolationModeWrapperTraderV2ConstructorParams(core, registry, underlyingToken, factory),
+    `PendlePt${ptName}IsolationModeWrapperTraderV2`,
+  );
+
+  const oracleAddress = await deployContractAndSave(
+    Number(network),
+    'PendlePtPriceOracle',
+    getPendlePtPriceOracleConstructorParams(core, factory, registry, underlyingToken),
+    `PendlePt${ptName}PriceOracle`,
+  );
+  const oracle = PendlePtPriceOracle__factory.connect(oracleAddress, core.governance);
+
+  return {
+    factory,
+    oracle,
+    unwrapper: PendlePtIsolationModeUnwrapperTraderV2__factory.connect(unwrapperAddress, core.governance),
+    wrapper: PendlePtIsolationModeWrapperTraderV2__factory.connect(wrapperAddress, core.governance),
+  };
 }
 
 export enum InterestSetterType {

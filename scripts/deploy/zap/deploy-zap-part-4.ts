@@ -47,7 +47,7 @@ async function main() {
   await prettyPrintEncodedDataWithTypeSafety(
     core,
     core.pendleEcosystem!.live,
-    'ptGlpIsolationModeFactory',
+    'ptGlp2024IsolationModeFactory',
     'ownerSetUserVaultImplementation',
     [pendlePtGlpTokenVaultAddress],
   );
