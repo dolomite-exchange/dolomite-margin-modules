@@ -22,11 +22,9 @@ pragma solidity ^0.8.9;
 
 import { GMXIsolationModeTokenVaultV1 } from "../external/glp/GMXIsolationModeTokenVaultV1.sol";
 
-import "hardhat/console.sol";
-
 
 /**
- * @title   GMXIsolationModeTokenVaultV1
+ * @title   TestGMXIsolationModeTokenVaultV1
  * @author  Dolomite
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds the GMX token that can be used to

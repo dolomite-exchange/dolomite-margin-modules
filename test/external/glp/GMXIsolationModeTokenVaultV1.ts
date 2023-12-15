@@ -370,7 +370,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, maxUnstakeAmount);
 
       expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount.sub(maxUnstakeAmount));
-      await expectWalletBalanceIsGreaterThan(glpVault, core.gmxEcosystem!.vGmx, ONE_BI);
+      await expectWalletBalance(glpVault, core.gmxEcosystem!.vGmx, esGmxAmount);
       await expectWalletBalance(glpVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
       await expectWalletBalance(core.hhUser1.address, core.gmxEcosystem!.gmx, maxUnstakeAmount);
       await expectWalletBalance(gmxVault, core.gmxEcosystem!.gmx, ZERO_BI);
@@ -444,7 +444,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
 
       expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
       expect(await glpVault.connect(gmxVaultSigner).callStatic.maxGmxUnstakeAmount()).to.eq(ZERO_BI);
-      await expectWalletBalanceIsGreaterThan(glpVault, core.gmxEcosystem!.vGmx, ONE_BI);
+      await expectWalletBalance(glpVault, core.gmxEcosystem!.vGmx, esGmxAmount);
       await expectWalletBalance(glpVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
       await expectWalletBalance(core.hhUser1.address, core.gmxEcosystem!.gmx, maxUnstakeAmount);
       await expectWalletBalance(gmxVault, core.gmxEcosystem!.gmx, ZERO_BI);

@@ -228,11 +228,11 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function maxGmxUnstakeAmount() public virtual onlyGmxVault(msg.sender) returns (uint256) {
-        uint256 stakedAmount = sGmx().stakedAmounts(address(this));
         uint256 bnGmxAmount = _claimAndStakeBnGmx();
         uint256 sbfGmxBalance = IERC20(sbfGmx()).balanceOf(address(this));
-        uint256 reductionAmount = sbfGmxBalance * bnGmxAmount / (stakedAmount + bnGmxAmount);
-        return Math.min(gmxBalanceOf(), sbfGmxBalance - reductionAmount);
+        uint256 totalStakedBalance = sGmx().stakedAmounts(address(this)); // staked-GMX + staked-esGMX total balance
+        uint256 stakedGmxBalance = gmxBalanceOf(); // staked-GMX balance
+        return Math.min(stakedGmxBalance, sbfGmxBalance - (bnGmxAmount * stakedGmxBalance / totalStakedBalance));
     }
 
     // ==================================================================
@@ -374,7 +374,7 @@ contract GLPIsolationModeTokenVaultV2 is
     // ======================= Internal Functions =======================
     // ==================================================================
 
-    function _claimAndStakeBnGmx() internal returns (uint256) {
+    function _claimAndStakeBnGmx() internal virtual returns (uint256) {
         _handleRewards(
             /* _shouldClaimGmx = */ false,
             /* _shouldStakeGmx = */ false,
