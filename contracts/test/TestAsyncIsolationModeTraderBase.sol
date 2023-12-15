@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { AsyncIsolationModeTraderBase } from "../external/proxies/abstract/AsyncIsolationModeTraderBase.sol";
 import { IHandlerRegistry } from "../external/interfaces/IHandlerRegistry.sol";
+import { AsyncIsolationModeTraderBase } from "../external/proxies/abstract/AsyncIsolationModeTraderBase.sol";
 
 
 /**
@@ -39,7 +39,7 @@ contract TestAsyncIsolationModeTraderBase is AsyncIsolationModeTraderBase {
     }
 
     function initialize(
-        address _gmxV2Registry,
+        address /* _gmxV2Registry */,
         address _dolomiteMargin
     ) external initializer {
         _setDolomiteMarginViaSlot(_dolomiteMargin);
@@ -48,11 +48,12 @@ contract TestAsyncIsolationModeTraderBase is AsyncIsolationModeTraderBase {
     function triggerInternalInitializer(
         address _gmxV2Registry
     ) external {
+        // solhint-disable-previous-line no-empty-blocks
     }
+
+    function testOnlyHandler() external onlyHandler(msg.sender) {} // solhint-disable-line no-empty-blocks
 
     function HANDLER_REGISTRY() public view override returns (IHandlerRegistry) {
         return IHandlerRegistry(address(0));
     }
-
-    function testOnlyHandler() external onlyHandler(msg.sender) {} // solhint-disable-line no-empty-blocks
 }

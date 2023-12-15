@@ -29,7 +29,6 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeWrapperTraderV2.sol";
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { AsyncIsolationModeTraderBase } from "../proxies/abstract/AsyncIsolationModeTraderBase.sol";
-import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AsyncIsolationModeWrapperTraderImpl } from "../proxies/abstract/impl/AsyncIsolationModeWrapperTraderImpl.sol";
 

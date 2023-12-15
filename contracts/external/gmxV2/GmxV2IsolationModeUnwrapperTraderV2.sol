@@ -30,7 +30,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { AsyncIsolationModeTraderBase } from "../proxies/abstract/AsyncIsolationModeTraderBase.sol";
 import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
-import { AsyncIsolationModeUnwrapperTraderImpl } from "../proxies/abstract/impl/AsyncIsolationModeUnwrapperTraderImpl.sol";
+import { AsyncIsolationModeUnwrapperTraderImpl } from "../proxies/abstract/impl/AsyncIsolationModeUnwrapperTraderImpl.sol"; // solhint-disable-line max-line-length
 
 
 /**

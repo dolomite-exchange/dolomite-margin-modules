@@ -94,7 +94,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
                                 registry().getUnwrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
-        IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo = unwrapper.getWithdrawalInfo(_key);
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo 
+            = unwrapper.getWithdrawalInfo(_key);
         _validateVaultOwnerForStruct(withdrawalInfo.vault);
         Require.that(
             !withdrawalInfo.isLiquidation,
