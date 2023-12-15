@@ -94,7 +94,13 @@ contract GmxV2IsolationModeTokenVaultV1 is
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
                                 registry().getUnwrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
-        _validateVaultOwnerForStruct(unwrapper.getWithdrawalInfo(_key).vault);
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo = unwrapper.getWithdrawalInfo(_key);
+        _validateVaultOwnerForStruct(withdrawalInfo.vault);
+        Require.that(
+            !withdrawalInfo.isLiquidation,
+            _FILE,
+            "Withdrawal from liquidation"
+        );
         unwrapper.initiateCancelWithdrawal(_key);
     }
 
@@ -243,6 +249,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _inputAmount,
             _outputToken,
             _minOutputAmount,
+            _isLiquidation,
             _extraData
         );
     }

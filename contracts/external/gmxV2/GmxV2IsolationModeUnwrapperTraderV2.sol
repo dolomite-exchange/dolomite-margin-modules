@@ -85,6 +85,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
+        bool _isLiquidation,
         bytes calldata _extraData
     ) external payable {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
@@ -108,6 +109,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _inputAmount,
             _outputToken,
             _minOutputAmount,
+            _isLiquidation,
             _extraData
         );
     }

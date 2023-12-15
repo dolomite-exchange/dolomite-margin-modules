@@ -31,6 +31,7 @@ import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { AsyncIsolationModeTraderBase } from "../proxies/abstract/AsyncIsolationModeTraderBase.sol";
 import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
+import { AsyncIsolationModeWrapperTraderImpl } from "../proxies/abstract/impl/AsyncIsolationModeWrapperTraderImpl.sol";
 
 
 /**
@@ -67,7 +68,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         address _dolomiteMargin,
         address _gmxV2Registry
     ) external initializer {
-        _initializeWrapperTrader(_dGM, _dolomiteMargin);
+        _initializeWrapperTrader(_dGM, _gmxV2Registry, _dolomiteMargin);
     }
 
     function afterDepositExecution(
@@ -99,7 +100,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     onlyHandler(msg.sender) {
         DepositInfo memory depositInfo = _getDepositSlot(_key);
         depositInfo.isRetryable = true;
-        _setDepositInfo(_key, depositInfo);
+        AsyncIsolationModeWrapperTraderImpl.setDepositInfo(_getStorageSlot(), _key, depositInfo);
 
         _executeDepositCancellation(depositInfo);
     }
@@ -129,10 +130,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function GMX_REGISTRY_V2() public view returns (IGmxV2Registry) {
         return IGmxV2Registry(address(HANDLER_REGISTRY()));
-    }
-
-    function HANDLER_REGISTRY() public view override returns (IHandlerRegistry) {
-        return IHandlerRegistry(address(0));
     }
 
     // ============================================

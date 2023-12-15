@@ -263,13 +263,13 @@ export async function createTestGmxV2IsolationModeVaultFactory(
 export async function createGmxV2IsolationModeUnwrapperTraderV2(
   core: CoreProtocol,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
-  library: GmxV2Library,
+  gmxV2Library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
   const implementation = await createContractWithLibrary<GmxV2IsolationModeUnwrapperTraderV2>(
     'GmxV2IsolationModeUnwrapperTraderV2',
-    { GmxV2Library: library.address, ...libraries },
+    { GmxV2Library: gmxV2Library.address, ...libraries },
     [core.tokens.weth.address],
   );
 

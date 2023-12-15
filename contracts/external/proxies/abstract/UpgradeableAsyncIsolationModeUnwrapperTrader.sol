@@ -265,6 +265,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
+        bool _isLiquidation,
         bytes calldata _extraData
     ) internal {
 
@@ -278,6 +279,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
             inputAmount: _inputAmount,
             outputToken: _outputToken,
             outputAmount: _minOutputAmount,
+            isLiquidation: _isLiquidation,
             isRetryable: false,
             extraData: _extraData
         });

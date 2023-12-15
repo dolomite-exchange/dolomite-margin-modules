@@ -1244,6 +1244,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        false,
         ONE_BI_ENCODED,
       );
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
@@ -1279,6 +1280,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         smallAmountWei,
         core.tokens.nativeUsdc!.address,
         ONE_BI,
+        false,
         ONE_BI_ENCODED,
       );
 
@@ -1326,6 +1328,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.nativeUsdc!.address,
         ONE_BI,
+        false,
         ONE_BI_ENCODED,
       );
 

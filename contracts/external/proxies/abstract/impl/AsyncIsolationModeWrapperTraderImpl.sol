@@ -54,6 +54,7 @@ library AsyncIsolationModeWrapperTraderImpl {
     // ==================== Functions ====================
     // ===================================================
 
+
     function swapExactInputForOutputForDepositCancellation(
         UpgradeableAsyncIsolationModeWrapperTrader _wrapper,
         IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo calldata _depositInfo
@@ -134,5 +135,40 @@ library AsyncIsolationModeWrapperTraderImpl {
         );
 
         return actions;
+    }
+
+    function initializeWrapperTrader(
+        IUpgradeableAsyncIsolationModeWrapperTrader.State storage _state,
+        address _vaultFactory,
+        address _handlerRegistry
+    ) public {
+        setVaultFactory(_state, _vaultFactory);
+        setHandlerRegistry(_state, _handlerRegistry);
+    }
+
+    function setVaultFactory(
+        IUpgradeableAsyncIsolationModeWrapperTrader.State storage _state,
+        address _vaultFactory
+    ) public {
+        _state.vaultFactory = _vaultFactory;
+    }
+
+    function setHandlerRegistry(
+        IUpgradeableAsyncIsolationModeWrapperTrader.State storage _state,
+        address _handlerRegistry
+    ) public {
+        _state.handlerRegistry = _handlerRegistry;
+    }
+
+    function setDepositInfo(
+        IUpgradeableAsyncIsolationModeWrapperTrader.State storage _state,
+        bytes32 _key,
+        IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory _depositInfo
+    ) public {
+        if (_depositInfo.outputAmount == 0) {
+            delete _state.depositInfo[_key];
+        } else {
+            _state.depositInfo[_key] = _depositInfo;
+        }
     }
 }

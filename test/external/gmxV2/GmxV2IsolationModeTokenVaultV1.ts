@@ -596,6 +596,38 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
 
+    it('should fail if a user attempts to cancel withdrawal initiated via liquidation', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
+
+      await expect(() => vault.initiateUnwrappingWithLiquidationTrue(
+        defaultAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
+        ONE_BI,
+        ONE_BI_ENCODED,
+        { value: parseEther('.01') },
+      )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+
+      const filter = eventEmitter.filters.AsyncWithdrawalCreated();
+      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+
+      // Mine blocks so we can cancel deposit
+      await mine(1200);
+      await expectThrow(
+        vault2.cancelWithdrawal(withdrawalKey),
+        `GmxV2IsolationModeVaultV1: Invalid vault owner <${vault.address.toLowerCase()}>`,
+      );
+    });
+
     it('should fail if a user attempts to cancel another users withdrawal', async () => {
       await setupGMBalance(core, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
