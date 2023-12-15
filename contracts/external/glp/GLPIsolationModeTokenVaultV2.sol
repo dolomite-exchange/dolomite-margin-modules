@@ -227,7 +227,7 @@ contract GLPIsolationModeTokenVaultV2 is
         _sync(_gmxVault);
     }
 
-    function maxGmxUnstakeAmount() public virtual onlyGmxVault(msg.sender) returns (uint256) {
+    function maxGmxUnstakeAmount() external onlyGmxVault(msg.sender) returns (uint256) {
         uint256 bnGmxAmount = _claimAndStakeBnGmx();
         uint256 sbfGmxBalance = IERC20(sbfGmx()).balanceOf(address(this));
         uint256 totalStakedBalance = sGmx().stakedAmounts(address(this)); // staked-GMX + staked-esGMX total balance
