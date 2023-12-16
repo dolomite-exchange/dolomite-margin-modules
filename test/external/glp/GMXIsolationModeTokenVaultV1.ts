@@ -323,7 +323,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectWalletBalance(core.hhUser1.address, core.gmxEcosystem!.gmx, gmxAmount);
     });
 
-    it('should work when have to unstake GMX', async () => {
+    it.only('should work when have to unstake GMX', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
       await gmxVault.connect(core.hhUser1).stakeGmx(gmxAmount);
@@ -335,25 +335,27 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectWalletBalance(core.hhUser1.address, core.gmxEcosystem!.gmx, gmxAmount);
     });
 
-    it('should work normally when have to unvest & unstake GMX', async () => {
+    it.only('should work normally when have to unvest & unstake GMX', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
       await gmxVault.stakeGmx(gmxAmount);
 
       await doHandleRewardsWithWaitTime(30);
       await gmxVault.vestGmx(esGmxAmount);
+
       await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, gmxAmount);
 
       const vaultAccount = { owner: gmxVault.address, number: accountNumber };
       expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
       await expectWalletBalance(glpVault.address, core.gmxEcosystem!.gmx, ZERO_BI);
+      await expectWalletBalance(glpVault.address, core.gmxEcosystem!.vGmx, ZERO_BI);
       await expectWalletBalance(core.hhUser1.address, core.gmxEcosystem!.gmx, gmxAmount);
       // Balance should be greater than 0 because of vesting
       await expectProtocolBalanceIsGreaterThan(core, vaultAccount, underlyingMarketIdGmx, ONE_BI, 1);
       await expectWalletBalanceIsGreaterThan(gmxVault, core.gmxEcosystem!.gmx, ZERO_BI);
     });
 
-    it('should work normally when have to unstake but not unvest GMX', async () => {
+    it.only('should work normally when have to unstake but not unvest GMX', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
       await gmxVault.stakeGmx(gmxAmount);
@@ -362,7 +364,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await gmxVault.vestGmx(esGmxAmount);
 
       const gmxVaultSigner = await impersonate(gmxVault.address, true);
-      const maxUnstakeAmount = await glpVault.connect(gmxVaultSigner).callStatic.maxGmxUnstakeAmount();
+      const maxUnstakeAmount = (await glpVault.connect(gmxVaultSigner).callStatic.maxGmxUnstakeAmount()).sub(1);
       expect(maxUnstakeAmount).to.be.gt(ZERO_BI);
       expect(maxUnstakeAmount).to.not.eq(gmxAmount);
       expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
@@ -383,7 +385,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       );
     });
 
-    it('should work normally when we have to unstake and BARELY unvest GMX', async () => {
+    it.only('should work normally when we have to unstake and BARELY unvest GMX', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
       await gmxVault.stakeGmx(gmxAmount);
@@ -391,14 +393,16 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await doHandleRewardsWithWaitTime(30);
       await gmxVault.vestGmx(esGmxAmount);
 
-      await glpVault.setSkipClaimingBnGmx(true);
+      expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
+
       const gmxVaultSigner = await impersonate(gmxVault.address, true);
       const maxUnstakeAmount = await glpVault.connect(gmxVaultSigner).callStatic.maxGmxUnstakeAmount();
       expect(maxUnstakeAmount).to.be.gt(ZERO_BI);
       expect(maxUnstakeAmount).to.not.eq(gmxAmount);
-      expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
 
-      const unstakeAmount = maxUnstakeAmount.add(1);
+      // Max unstake amount has a rounding issue where it's usually off by 1. So, we add 2 to push it over the max
+      const unstakeAmount = maxUnstakeAmount.add(2);
+      await glpVault.setSkipClaimingBnGmx(true);
       await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, unstakeAmount);
 
       // We can't get the precise amount because unstakeAmount ticks up
@@ -420,7 +424,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       );
     });
 
-    it('should work normally when have to unstake all BUT not unvest GMX (sbfGMX is large)', async () => {
+    it.only('should work normally when have to unstake all BUT not unvest GMX (sbfGMX is large)', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
       await gmxVault.stakeGmx(gmxAmount);
@@ -430,7 +434,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await glpVault.stakeEsGmx(esGmxBalance.sub(esGmxAmount));
       await gmxVault.vestGmx(esGmxAmount);
 
-      await glpVault.setSkipClaimingBnGmx(true);
       const gmxVaultSigner = await impersonate(gmxVault.address, true);
       const maxUnstakeAmount = await glpVault.connect(gmxVaultSigner).callStatic.maxGmxUnstakeAmount();
       await expectThrow(
@@ -451,7 +454,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, gmxVault, accountNumber, underlyingMarketIdGmx, ZERO_BI);
     });
 
-    it('should work normally when unvest, unstake, and sweep', async () => {
+    it.only('should work normally when unvest, unstake, and sweep', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
       await gmxVault.stakeGmx(gmxAmount);

@@ -84,7 +84,7 @@ export const config: HardhatUserConfig = {
     // jobs: 2,
     slow: 60000,
     asyncOnly: true,
-    retries: 2,
+    retries: process.env.RETRIES ? parseInt(process.env.RETRIES, 10) : 2,
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS === 'true',

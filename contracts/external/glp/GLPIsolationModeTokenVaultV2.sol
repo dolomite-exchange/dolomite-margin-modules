@@ -232,7 +232,9 @@ contract GLPIsolationModeTokenVaultV2 is
         uint256 sbfGmxBalance = IERC20(sbfGmx()).balanceOf(address(this));
         uint256 totalStakedBalance = sGmx().stakedAmounts(address(this)); // staked-GMX + staked-esGMX total balance
         uint256 stakedGmxBalance = gmxBalanceOf(); // staked-GMX balance
-        return Math.min(stakedGmxBalance, sbfGmxBalance - (bnGmxAmount * stakedGmxBalance / totalStakedBalance));
+
+        uint256 calculatedMaxAmount = totalStakedBalance * sbfGmxBalance / (totalStakedBalance + bnGmxAmount);
+        return Math.min(stakedGmxBalance, calculatedMaxAmount);
     }
 
     // ==================================================================
