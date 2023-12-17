@@ -1,12 +1,14 @@
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { AccountInfoStruct } from 'src/utils';
 import {
   GLPIsolationModeVaultFactory,
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeTokenVaultV1__factory,
-  GMXIsolationModeUnwrapperTraderV2,
+  SimpleIsolationModeUnwrapperTraderV2,
   GMXIsolationModeVaultFactory,
-  GMXIsolationModeWrapperTraderV2,
+  SimpleIsolationModeWrapperTraderV2,
   GmxRegistryV1,
   IERC20,
 } from '../../../src/types';
@@ -18,9 +20,9 @@ import {
   createGLPIsolationModeVaultFactory,
   createGMXIsolationModeTokenVaultV1,
   createGMXIsolationModeVaultFactory,
+  createGmxRegistry,
   createGMXUnwrapperTraderV2,
   createGMXWrapperTraderV2,
-  createGmxRegistry,
 } from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
@@ -30,14 +32,12 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
-import { AccountInfoStruct } from 'src/utils';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 
-describe('GMXIsolationModeWrapperTraderV2', () => {
+describe('GmxIsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
@@ -45,8 +45,8 @@ describe('GMXIsolationModeWrapperTraderV2', () => {
   let underlyingGmxMarketId: BigNumber;
   let gmxMarketId: BigNumber;
   let gmxRegistry: GmxRegistryV1;
-  let unwrapper: GMXIsolationModeUnwrapperTraderV2;
-  let wrapper: GMXIsolationModeWrapperTraderV2;
+  let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
+  let wrapper: SimpleIsolationModeWrapperTraderV2;
   let gmxFactory: GMXIsolationModeVaultFactory;
   let glpFactory: GLPIsolationModeVaultFactory;
   let vault: GMXIsolationModeTokenVaultV1;
@@ -77,8 +77,8 @@ describe('GMXIsolationModeWrapperTraderV2', () => {
     await core.testEcosystem!.testPriceOracle.setPrice(glpFactory.address, '1000000000000000000');
     await setupTestMarket(core, glpFactory, true);
 
-    unwrapper = await createGMXUnwrapperTraderV2(core, gmxFactory, gmxRegistry);
-    wrapper = await createGMXWrapperTraderV2(core, gmxFactory, gmxRegistry);
+    unwrapper = await createGMXUnwrapperTraderV2(core, gmxFactory);
+    wrapper = await createGMXWrapperTraderV2(core, gmxFactory);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(gmxFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(glpFactory.address, true);
     await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
@@ -91,7 +91,7 @@ describe('GMXIsolationModeWrapperTraderV2', () => {
     vault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
       vaultAddress,
       GMXIsolationModeTokenVaultV1__factory,
-      core.hhUser1
+      core.hhUser1,
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
     await setupGMXBalance(core, core.hhUser1, amountWei, vault);
@@ -203,12 +203,6 @@ describe('GMXIsolationModeWrapperTraderV2', () => {
 
     it('should fail with any other token', async () => {
       expect(await wrapper.isValidInputToken(core.tokens.usdc.address)).to.eq(false);
-    });
-  });
-
-  describe('#GMX_REGISTRY', () => {
-    it('should work', async () => {
-      expect(await wrapper.GMX_REGISTRY()).to.eq(gmxRegistry.address);
     });
   });
 

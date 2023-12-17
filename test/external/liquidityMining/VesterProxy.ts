@@ -33,12 +33,13 @@ describe('VesterProxy', () => {
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
         core.tokens.weth.address,
-        core.tokens.arb.address,
+        core.tokens.arb!.address,
       ],
     );
 
     const calldata = await implementation.populateTransaction.initialize(
       oARB.address,
+      'oARB RULEZ',
     );
 
     proxy = await createContractWithAbi<VesterProxy>(
@@ -70,7 +71,7 @@ describe('VesterProxy', () => {
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,
           core.tokens.weth.address,
-          core.tokens.arb.address,
+          core.tokens.arb!.address,
         ],
       );
       await expectEvent(
@@ -106,7 +107,7 @@ describe('VesterProxy', () => {
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,
           core.tokens.weth.address,
-          core.tokens.arb.address,
+          core.tokens.arb!.address,
         ],
       );
       const calldata = await newImplementation.populateTransaction.ownerSetForceClosePositionTax(
@@ -145,7 +146,7 @@ describe('VesterProxy', () => {
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,
           core.tokens.weth.address,
-          core.tokens.arb.address,
+          core.tokens.arb!.address,
         ],
       );
       const calldata = await implementation.populateTransaction.ownerSetForceClosePositionTax(

@@ -6,13 +6,15 @@ import {
   GLPIsolationModeVaultFactory,
   GmxRegistryV1,
   TestGLPIsolationModeTokenVaultV1,
-  TestGLPIsolationModeTokenVaultV1__factory,
 } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectThrow } from '../../utils/assertions';
-import { createGLPIsolationModeVaultFactory, createGmxRegistry, createTestGLPIsolationModeTokenVaultV1 } from '../../utils/ecosystem-token-utils/gmx';
+import {
+  createGLPIsolationModeVaultFactory,
+  createGmxRegistry,
+  createTestGLPIsolationModeTokenVaultV1,
+} from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,

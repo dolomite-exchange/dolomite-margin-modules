@@ -1,17 +1,23 @@
-import { BigNumber, BigNumberish } from 'ethers';
+import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import {
   GenericTraderParam,
   GenericTraderType,
   GenericUserConfig,
 } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { BigNumber, BigNumberish } from 'ethers';
+import { ethers } from 'hardhat';
+import { AccountInfoStruct } from 'src/utils';
+import { createTestToken, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
+import { expectProtocolBalance, expectThrow } from 'test/utils/assertions';
+import { getSimpleZapParams, getUnwrapZapParams } from 'test/utils/zap-utils';
 import {
   CustomTestToken,
   GLPIsolationModeVaultFactory,
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeTokenVaultV1__factory,
-  GMXIsolationModeUnwrapperTraderV2,
+  SimpleIsolationModeUnwrapperTraderV2,
   GMXIsolationModeVaultFactory,
-  GMXIsolationModeWrapperTraderV2,
+  SimpleIsolationModeWrapperTraderV2,
   GmxRegistryV1,
   IIsolationModeUnwrapperTrader,
   IIsolationModeWrapperTrader,
@@ -23,9 +29,9 @@ import {
   createGLPIsolationModeVaultFactory,
   createGMXIsolationModeTokenVaultV1,
   createGMXIsolationModeVaultFactory,
+  createGmxRegistry,
   createGMXUnwrapperTraderV2,
   createGMXWrapperTraderV2,
-  createGmxRegistry,
 } from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
@@ -35,12 +41,6 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
-import { AccountInfoStruct } from 'src/utils';
-import { ethers } from 'hardhat';
-import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import { createTestToken, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
-import { expectProtocolBalance, expectThrow } from 'test/utils/assertions';
-import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from 'test/utils/zap-utils';
 
 const defaultAccountNumber = '0';
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
@@ -56,8 +56,8 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
   let underlyingMarketIdGmx: BigNumber;
   let gmxMarketId: BigNumber;
   let gmxRegistry: GmxRegistryV1;
-  let unwrapper: GMXIsolationModeUnwrapperTraderV2;
-  let wrapper: GMXIsolationModeWrapperTraderV2;
+  let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
+  let wrapper: SimpleIsolationModeWrapperTraderV2;
   let gmxFactory: GMXIsolationModeVaultFactory;
   let glpFactory: GLPIsolationModeVaultFactory;
   let gmxVault: GMXIsolationModeTokenVaultV1;
@@ -97,8 +97,8 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
     await core.testEcosystem!.testPriceOracle.setPrice(glpFactory.address, '1000000000000000000');
     await setupTestMarket(core, glpFactory, true);
 
-    unwrapper = await createGMXUnwrapperTraderV2(core, gmxFactory, gmxRegistry);
-    wrapper = await createGMXWrapperTraderV2(core, gmxFactory, gmxRegistry);
+    unwrapper = await createGMXUnwrapperTraderV2(core, gmxFactory);
+    wrapper = await createGMXWrapperTraderV2(core, gmxFactory);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(gmxFactory.address, true);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(glpFactory.address, true);
     await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
@@ -111,7 +111,7 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
     gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
       vaultAddress,
       GMXIsolationModeTokenVaultV1__factory,
-      core.hhUser1
+      core.hhUser1,
     );
     await setupGMXBalance(core, core.hhUser1, amountWei, gmxVault);
     await gmxVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -119,7 +119,7 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
     await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
     await core.gmxEcosystem!.gmx.connect(core.hhUser1).transfer(
       core.testEcosystem!.testExchangeWrapper.address,
-      gmxAmount
+      gmxAmount,
     );
 
     snapshotId = await snapshot();
@@ -150,7 +150,7 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
         otherAmountWei,
         otherAmountWei,
         wrapper,
-        core
+        core,
       );
 
       await gmxVault.swapExactInputForOutput(
@@ -185,7 +185,7 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
         otherAmountWei,
         gmxMarketId,
         otherAmountWei,
-        core
+        core,
       );
       await expectThrow(
         gmxVault.swapExactInputForOutput(
@@ -197,7 +197,7 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `OperationImpl: Total supply exceeds max supply <${gmxMarketId}>`
+        `OperationImpl: Total supply exceeds max supply <${gmxMarketId}>`,
       );
     });
   });
@@ -215,7 +215,7 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
         gmxAmount,
         gmxAmount,
         unwrapper,
-        core
+        core,
       );
       await gmxVault.swapExactInputForOutput(
         123,
@@ -243,7 +243,7 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
         gmxMarketId,
         gmxAmount,
         unwrapper,
-        core
+        core,
       );
       await expectThrow(
         gmxVault.swapExactInputForOutput(
@@ -255,7 +255,7 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `OperationImpl: Total supply exceeds max supply <${gmxMarketId}>`
+        `OperationImpl: Total supply exceeds max supply <${gmxMarketId}>`,
       );
     });
   });

@@ -18,12 +18,12 @@ import {
   GLPPriceOracleV1,
   GLPPriceOracleV1__factory,
   GMXIsolationModeTokenVaultV1,
-  GMXIsolationModeUnwrapperTraderV2,
-  GMXIsolationModeUnwrapperTraderV2__factory,
+  SimpleIsolationModeUnwrapperTraderV2,
+  SimpleIsolationModeUnwrapperTraderV2__factory,
   GMXIsolationModeVaultFactory,
   GMXIsolationModeVaultFactory__factory,
-  GMXIsolationModeWrapperTraderV2,
-  GMXIsolationModeWrapperTraderV2__factory,
+  SimpleIsolationModeWrapperTraderV2,
+  SimpleIsolationModeWrapperTraderV2__factory,
   GmxRegistryV1,
   GmxRegistryV1__factory,
   GmxV2IsolationModeTokenVaultV1,
@@ -239,24 +239,22 @@ export async function createGMXIsolationModeVaultFactory(
 export async function createGMXUnwrapperTraderV2(
   core: CoreProtocol,
   factory: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
-  registry: IGmxRegistryV1 | GmxRegistryV1,
-): Promise<GMXIsolationModeUnwrapperTraderV2> {
-  return createContractWithAbi<GMXIsolationModeUnwrapperTraderV2>(
-    GMXIsolationModeUnwrapperTraderV2__factory.abi,
-    GMXIsolationModeUnwrapperTraderV2__factory.bytecode,
-    getGMXUnwrapperTraderV2ConstructorParams(core, factory, registry),
+): Promise<SimpleIsolationModeUnwrapperTraderV2> {
+  return createContractWithAbi<SimpleIsolationModeUnwrapperTraderV2>(
+    SimpleIsolationModeUnwrapperTraderV2__factory.abi,
+    SimpleIsolationModeUnwrapperTraderV2__factory.bytecode,
+    getGMXUnwrapperTraderV2ConstructorParams(core, factory),
   );
 }
 
 export async function createGMXWrapperTraderV2(
   core: CoreProtocol,
   factory: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
-  registry: IGmxRegistryV1 | GmxRegistryV1,
-): Promise<GMXIsolationModeWrapperTraderV2> {
-  return createContractWithAbi<GMXIsolationModeWrapperTraderV2>(
-    GMXIsolationModeWrapperTraderV2__factory.abi,
-    GMXIsolationModeWrapperTraderV2__factory.bytecode,
-    getGMXWrapperTraderV2ConstructorParams(core, factory, registry),
+): Promise<SimpleIsolationModeWrapperTraderV2> {
+  return createContractWithAbi<SimpleIsolationModeWrapperTraderV2>(
+    SimpleIsolationModeWrapperTraderV2__factory.abi,
+    SimpleIsolationModeWrapperTraderV2__factory.bytecode,
+    getGMXWrapperTraderV2ConstructorParams(core, factory),
   );
 }
 

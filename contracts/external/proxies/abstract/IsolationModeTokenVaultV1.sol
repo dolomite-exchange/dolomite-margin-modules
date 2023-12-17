@@ -94,7 +94,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
      *      the `nonReentrant` function external, and making it call a `private` function that does the actual work.
      */
     modifier nonReentrant() {
-        // @audit:  This MUST stay as `value != _ENTERED` otherwise it will DOS old vaults that don't have the
+        // @notice:  This MUST stay as `value != _ENTERED` otherwise it will DOS old vaults that don't have the
         //          `initialize` fix
         Require.that(
             _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,

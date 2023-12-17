@@ -1,6 +1,8 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { GMX_GOV_MAP } from 'src/utils/constants';
 import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV1__factory,
@@ -22,7 +24,7 @@ import {
   createGMXIsolationModeTokenVaultV1,
   createGMXIsolationModeVaultFactory,
   createGmxRegistry,
-  createTestGLPIsolationModeTokenVaultV2
+  createTestGLPIsolationModeTokenVaultV2,
 } from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
@@ -33,8 +35,6 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
-import { GMX_GOV_MAP } from 'src/utils/constants';
-import { parseEther } from 'ethers/lib/utils';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -114,11 +114,11 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     const gov = await impersonate(GMX_GOV_MAP[Network.ArbitrumOne]!, true);
     await core.gmxEcosystem!.esGmx.connect(gov).mint(
       core.gmxEcosystem!.esGmxDistributorForStakedGmx.address,
-      parseEther('100000000')
+      parseEther('100000000'),
     );
     await core.gmxEcosystem!.esGmx.connect(gov).mint(
       core.gmxEcosystem!.esGmxDistributorForStakedGlp.address,
-      parseEther('100000000')
+      parseEther('100000000'),
     );
     await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
     await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(gmxFactory.address);
@@ -190,7 +190,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
         await gmxFactory.getVaultByAccount(core.hhUser1.address),
         GMXIsolationModeTokenVaultV1__factory,
-        core.hhUser1
+        core.hhUser1,
       );
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
@@ -259,7 +259,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         gmxVault.address,
         accountNumber,
         underlyingGmxMarketId,
-        gmxAmount.add(rewardAmount)
+        gmxAmount.add(rewardAmount),
       );
       await expectWalletBalance(gmxVault.address, core.gmxEcosystem!.gmx, rewardAmount);
     });
@@ -311,7 +311,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         gmxVault.address,
         accountNumber,
         underlyingGmxMarketId,
-        gmxAmount.add(rewardAmount)
+        gmxAmount.add(rewardAmount),
       );
     });
 
@@ -512,7 +512,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
         await gmxFactory.getVaultByAccount(core.hhUser1.address),
         GMXIsolationModeTokenVaultV1__factory,
-        core.hhUser1
+        core.hhUser1,
       );
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(ZERO_BI, gmxAmount);
@@ -600,7 +600,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         true,
         true,
         false,
-        accountNumber
+        accountNumber,
       );
 
       expect((await core.gmxEcosystem!.esGmx.balanceOf(glpVault.address)).gt(esGmxAmount)).to.eq(true);
@@ -625,7 +625,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         true,
         true,
         false,
-        accountNumber
+        accountNumber,
       );
 
       // GMX rewards should be staked
@@ -810,7 +810,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
           true,
           false,
           true,
-          accountNumber
+          accountNumber,
         ),
         'GLPIsolationModeTokenVaultV2: Can only deposit ETH if claiming',
       );
@@ -1025,7 +1025,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
         await gmxFactory.getVaultByAccount(core.hhUser2.address),
         GMXIsolationModeTokenVaultV1__factory,
-        core.hhUser2
+        core.hhUser2,
       );
 
       expect(await core.gmxEcosystem!.fsGlp.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
@@ -1077,7 +1077,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
         await gmxFactory.getVaultByAccount(core.hhUser2.address),
         GMXIsolationModeTokenVaultV1__factory,
-        core.hhUser2
+        core.hhUser2,
       );
 
       await newVault.acceptFullAccountTransfer(core.hhUser1.address);
@@ -1121,7 +1121,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
         await gmxFactory.getVaultByAccount(core.hhUser2.address),
         GMXIsolationModeTokenVaultV1__factory,
-        core.hhUser2
+        core.hhUser2,
       );
 
       const vaultAddress = await glpFactory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
@@ -1174,7 +1174,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
         await gmxFactory.getVaultByAccount(core.hhUser2.address),
         GMXIsolationModeTokenVaultV1__factory,
-        core.hhUser2
+        core.hhUser2,
       );
 
       const vaultAddress = await glpFactory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
@@ -1321,7 +1321,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
         await gmxFactory.getVaultByAccount(core.hhUser1.address),
         GMXIsolationModeTokenVaultV1__factory,
-        core.hhUser1
+        core.hhUser1,
       );
 
       const factoryImpersonator = await impersonate(gmxFactory.address, true);
@@ -1367,7 +1367,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
         gmxVaultAddress,
         GMXIsolationModeTokenVaultV1__factory,
-        core.hhUser1
+        core.hhUser1,
       );
 
       await expectWalletBalance(gmxVault, core.gmxEcosystem!.gmx, ZERO_BI);
@@ -1413,7 +1413,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
         await gmxFactory.getVaultByAccount(core.hhUser1.address),
         GMXIsolationModeTokenVaultV1__factory,
-        core.hhUser1
+        core.hhUser1,
       );
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(ZERO_BI, gmxAmount);
@@ -1429,7 +1429,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
         await gmxFactory.getVaultByAccount(core.hhUser1.address),
         GMXIsolationModeTokenVaultV1__factory,
-        core.hhUser1
+        core.hhUser1,
       );
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(ZERO_BI, gmxAmount);

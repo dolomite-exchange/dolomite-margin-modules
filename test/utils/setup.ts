@@ -174,7 +174,7 @@ import {
   TestPriceOracle,
   TestPriceOracle__factory,
   IERC20Mintable,
-  IERC20Mintable__factory,
+  IERC20Mintable__factory, IARB, IARB__factory,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
@@ -294,6 +294,10 @@ export interface CoreProtocolConfig {
 
 export interface AbraEcosystem {
   magicGlp: IERC4626;
+}
+
+export interface ArbEcosystem {
+  arb: IARB;
 }
 
 export interface AtlasEcosystem {
@@ -459,6 +463,7 @@ export interface CoreProtocol {
   /// Contracts and Ecosystems
   /// =========================
   abraEcosystem: AbraEcosystem | undefined;
+  arbEcosystem: ArbEcosystem | undefined;
   alwaysZeroInterestSetter: IDolomiteInterestSetter;
   atlasEcosystem: AtlasEcosystem | undefined;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
@@ -498,7 +503,7 @@ export interface CoreProtocol {
    * A mapping from token's symbol to its market ID
    */
   marketIds: {
-    arb: BigNumberish;
+    arb: BigNumberish | undefined;
     dai: BigNumberish | undefined;
     dfsGlp: BigNumberish | undefined;
     djUSDC: BigNumberish | undefined;
@@ -528,7 +533,7 @@ export interface CoreProtocol {
     weth: ApiToken;
   };
   tokens: {
-    arb: IERC20;
+    arb: IERC20 | undefined;
     dai: IERC20;
     dfsGlp: IERC20 | undefined;
     dPtGlp: IERC20 | undefined;
@@ -537,6 +542,7 @@ export interface CoreProtocol {
     dPtWstEthJun2025: IERC20 | undefined;
     dpx: IERC20 | undefined;
     dYtGlp: IERC20 | undefined;
+    gmx: IERC20 | undefined;
     grail: IERC20 | undefined;
     link: IERC20;
     magic: IERC20 | undefined;
@@ -573,8 +579,8 @@ export async function setupARBBalance(
 ) {
   const whaleAddress = '0xf3fc178157fb3c87548baa86f9d24ba38e649b58'; // ARB Treasury
   const whaleSigner = await impersonate(whaleAddress, true);
-  await core.tokens.arb.connect(whaleSigner).transfer(signer.address, amount);
-  await core.tokens.arb.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  await core.tokens.arb!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.arb!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupDAIBalance(
@@ -831,6 +837,7 @@ export async function setupCoreProtocol(
   );
 
   const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
+  const arbEcosystem = await createArbEcosystem(config.network, hhUser1);
   const atlasEcosystem = await createAtlasEcosystem(config.network, hhUser1);
   const camelotEcosystem = await createCamelotEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
@@ -845,6 +852,7 @@ export async function setupCoreProtocol(
 
   return {
     abraEcosystem,
+    arbEcosystem,
     alwaysZeroInterestSetter,
     atlasEcosystem,
     borrowPositionProxyV2,
@@ -904,7 +912,7 @@ export async function setupCoreProtocol(
       },
     },
     marketIds: {
-      arb: ARB_MAP[config.network].marketId,
+      arb: ARB_MAP[config.network]?.marketId,
       dai: DAI_MAP[config.network]?.marketId,
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
       djUSDC: DJ_USDC[config.network]?.marketId,
@@ -930,7 +938,7 @@ export async function setupCoreProtocol(
       wstEth: WST_ETH_MAP[config.network]?.marketId,
     },
     tokens: {
-      arb: IERC20__factory.connect(ARB_MAP[config.network].address, hhUser1),
+      arb: createIERC20Opt(ARB_MAP[config.network]?.address, hhUser1),
       dai: IERC20__factory.connect(DAI_MAP[config.network].address, hhUser1),
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
       dPtGlp: createIERC20Opt(DPT_GLP_2024_MAP[config.network]?.address, hhUser1),
@@ -939,6 +947,7 @@ export async function setupCoreProtocol(
       dPtWstEthJun2025: createIERC20Opt(DPT_WST_ETH_JUN_2025_MAP[config.network]?.address, hhUser1),
       dpx: createIERC20Opt(DPX_MAP[config.network]?.address, hhUser1),
       dYtGlp: createIERC20Opt(DYT_GLP_2024_MAP[config.network]?.address, hhUser1),
+      gmx: createIERC20Opt(GMX_MAP[config.network]?.address, hhUser1),
       grail: createIERC20Opt(GRAIL_MAP[config.network]?.address, hhUser1),
       link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
       magic: createIERC20Opt(MAGIC_MAP[config.network]?.address, hhUser1),
@@ -1038,6 +1047,16 @@ async function createAbraEcosystem(network: Network, signer: SignerWithAddress):
   };
 }
 
+async function createArbEcosystem(network: Network, signer: SignerWithAddress): Promise<ArbEcosystem | undefined> {
+  if (!ARB_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    arb: getContract(ARB_MAP[network]?.address as string, IARB__factory.connect, signer),
+  };
+}
+
 async function createAtlasEcosystem(network: Network, signer: SignerWithAddress): Promise<AtlasEcosystem | undefined> {
   if (!ATLAS_SI_TOKEN_MAP[network]) {
     return undefined;
@@ -1098,7 +1117,7 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
       IGLPRewardsRouterV2__factory.connect,
       signer,
     ),
-    gmx: getContract(GMX_MAP[network] as string, IERC20__factory.connect, signer),
+    gmx: getContract(GMX_MAP[network]!.address, IERC20__factory.connect, signer),
     gmxRewardsRouter: getContract(
       GMX_REWARD_ROUTER_MAP[network] as string,
       IGmxRewardRouterV2__factory.connect,

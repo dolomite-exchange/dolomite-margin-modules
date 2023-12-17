@@ -6,7 +6,7 @@ export function getVesterImplementationConstructorParams(core: CoreProtocol): an
     core.dolomiteMargin.address,
     core.dolomiteRegistry.address,
     core.tokens.weth.address,
-    core.tokens.arb.address,
+    core.tokens.arb!.address,
   ];
 }
 

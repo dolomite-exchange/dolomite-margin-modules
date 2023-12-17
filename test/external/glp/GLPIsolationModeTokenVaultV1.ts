@@ -1,6 +1,8 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { GMX_GOV_MAP } from 'src/utils/constants';
 import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeTokenVaultV1__factory,
@@ -12,7 +14,11 @@ import { AccountInfoStruct } from '../../../src/utils';
 import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
-import { createGLPIsolationModeVaultFactory, createGmxRegistry, createTestGLPIsolationModeTokenVaultV1 } from '../../utils/ecosystem-token-utils/gmx';
+import {
+  createGLPIsolationModeVaultFactory,
+  createGmxRegistry,
+  createTestGLPIsolationModeTokenVaultV1,
+} from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
   setupCoreProtocol,
@@ -22,8 +28,6 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
-import { GMX_GOV_MAP } from 'src/utils/constants';
-import { parseEther } from 'ethers/lib/utils';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -88,11 +92,11 @@ describe('GLPIsolationModeTokenVaultV1', () => {
     const gov = await impersonate(GMX_GOV_MAP[Network.ArbitrumOne]!, true);
     await core.gmxEcosystem!.esGmx.connect(gov).mint(
       core.gmxEcosystem!.esGmxDistributorForStakedGlp.address,
-      parseEther('100000000')
+      parseEther('100000000'),
     );
     await core.gmxEcosystem!.esGmx.connect(gov).mint(
       core.gmxEcosystem!.esGmxDistributorForStakedGmx.address,
-      parseEther('100000000')
+      parseEther('100000000'),
     );
 
     snapshotId = await snapshot();

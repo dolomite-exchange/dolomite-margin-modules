@@ -86,9 +86,9 @@ contract IsolationModeUpgradeableProxy is
             "Invalid account",
             _account
         );
+        _setAddress(_OWNER_SLOT, _account);
         _safeDelegateCall(implementation(), abi.encodePacked(IIsolationModeTokenVaultV1.initialize.selector));
         _setUint256(_IS_INITIALIZED_SLOT, 1);
-        _setAddress(_OWNER_SLOT, _account);
     }
 
     function implementation() public override view returns (address) {

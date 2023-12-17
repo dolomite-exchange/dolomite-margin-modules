@@ -13,7 +13,7 @@ interface TokenWithMarketId {
   marketId: number;
 }
 
-export const ARB_MAP: Record<Network, TokenWithMarketId> = {
+export const ARB_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x912CE59144191C1204E64559FE8253a0e49E6548',
     marketId: 7,
@@ -351,8 +351,11 @@ export const GMX_ROUTER_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
-export const GMX_MAP: Record<Network, string | undefined> = {
-  [Network.ArbitrumOne]: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a',
+export const GMX_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a',
+    marketId: 999, // TODO: fix me
+  },
   [Network.ArbitrumGoerli]: undefined,
 };
 

@@ -1,4 +1,7 @@
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
+import { BigNumber, ContractTransaction } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import {
   GLPIsolationModeTokenVaultV2__factory,
   GLPIsolationModeVaultFactory,
@@ -13,12 +16,12 @@ import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
 import {
-  createGMXIsolationModeVaultFactory,
-  createGMXIsolationModeTokenVaultV1,
-  createGmxRegistry,
-  createGLPIsolationModeVaultFactory,
   createGLPIsolationModeTokenVaultV1,
-  createGLPIsolationModeTokenVaultV2
+  createGLPIsolationModeTokenVaultV2,
+  createGLPIsolationModeVaultFactory,
+  createGMXIsolationModeTokenVaultV1,
+  createGMXIsolationModeVaultFactory,
+  createGmxRegistry,
 } from '../../utils/ecosystem-token-utils/gmx';
 import {
   CoreProtocol,
@@ -29,9 +32,6 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '../../utils/setup';
-import { BigNumber, ContractTransaction } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 
 const gmxAmount = parseEther('10');
 const toAccountNumber = '0';
@@ -216,7 +216,7 @@ describe('GMXIsolationModeVaultFactory', () => {
         gmxVault.address,
         toAccountNumber,
         gmxAmount,
-        true
+        true,
       );
       expect(await gmxVault.shouldSkipTransfer()).to.be.false;
       expect(await gmxVault.isDepositSourceGLPVault()).to.be.false;
@@ -237,7 +237,7 @@ describe('GMXIsolationModeVaultFactory', () => {
         gmxVault.address,
         toAccountNumber,
         gmxAmount,
-        false
+        false,
       );
       expect(await gmxVault.shouldSkipTransfer()).to.be.false;
       expect(await gmxVault.isDepositSourceGLPVault()).to.be.false;
@@ -284,7 +284,7 @@ describe('GMXIsolationModeVaultFactory', () => {
           gmxVault.address,
           toAccountNumber,
           parseEther('10'),
-          true
+          true,
         ),
         'GMXIsolationModeVaultFactory: Invalid GLP vault',
       );

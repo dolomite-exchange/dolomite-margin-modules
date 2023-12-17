@@ -6,9 +6,9 @@ import { getUnwrapZapParams } from 'test/utils/zap-utils';
 import {
   GLPIsolationModeVaultFactory,
   GMXIsolationModeTokenVaultV1,
-  GMXIsolationModeUnwrapperTraderV2,
+  SimpleIsolationModeUnwrapperTraderV2,
   GMXIsolationModeVaultFactory,
-  GMXIsolationModeWrapperTraderV2,
+  SimpleIsolationModeWrapperTraderV2,
   GmxRegistryV1,
   TestGLPIsolationModeTokenVaultV2,
   TestGLPIsolationModeTokenVaultV2__factory,
@@ -52,8 +52,8 @@ describe('GMXIsolationModeTokenVaultV1', () => {
 
   let core: CoreProtocol;
   let gmxRegistry: GmxRegistryV1;
-  let unwrapper: GMXIsolationModeUnwrapperTraderV2;
-  let wrapper: GMXIsolationModeWrapperTraderV2;
+  let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
+  let wrapper: SimpleIsolationModeWrapperTraderV2;
   let gmxFactory: GMXIsolationModeVaultFactory;
   let glpFactory: GLPIsolationModeVaultFactory;
   let gmxVault: TestGMXIsolationModeTokenVaultV1;
@@ -79,8 +79,8 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(glpFactory.address, true);
     await glpFactory.connect(core.governance).ownerInitialize([]);
 
-    unwrapper = await createGMXUnwrapperTraderV2(core, gmxFactory, gmxRegistry);
-    wrapper = await createGMXWrapperTraderV2(core, gmxFactory, gmxRegistry);
+    unwrapper = await createGMXUnwrapperTraderV2(core, gmxFactory);
+    wrapper = await createGMXWrapperTraderV2(core, gmxFactory);
     underlyingMarketIdGmx = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(gmxFactory.address, '1000000000000000000');
     await setupTestMarket(core, gmxFactory, true);

@@ -20,39 +20,33 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IsolationModeUnwrapperTraderV2 } from "../proxies/abstract/IsolationModeUnwrapperTraderV2.sol";
 
 
 /**
- * @title   GMXIsolationModeUnwrapperTraderV2
+ * @title   SimpleIsolationModeUnwrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for unwrapping dGMX into GMX tokens. Upon settlement, the GMX is sent from the user's vault to this
- *          contract and dGMX is burned from `DolomiteMargin`.
+ * @notice  Used for unwrapping dTokens into underlying tokens. Upon settlement, the underlying is sent from the user's
+ *          vault to this contract and dToken is burned from `DolomiteMargin`.
  */
-contract GMXIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
+contract SimpleIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "GMXIsolationModeUnwrapperV2";
-
-    // ============ Immutable State Variables ============
-
-    IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
+    bytes32 private constant _FILE = "SimpleIsolationModeUnwrapperV2";
 
     // ============ Constructor ============
 
     constructor(
-        address _gmxRegistry,
-        address _dGmx,
+        address _vaultFactory,
         address _dolomiteMargin
     )
     IsolationModeUnwrapperTraderV2(
-        _dGmx,
+        _vaultFactory,
         _dolomiteMargin
     ) {
-        GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     // ==========================================
@@ -60,7 +54,7 @@ contract GMXIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
     // ==========================================
 
     function isValidOutputToken(address _outputToken) public override view returns (bool) {
-        return _outputToken == address(GMX_REGISTRY.gmx());
+        return _outputToken == VAULT_FACTORY.UNDERLYING_TOKEN();
     }
 
     // ============================================
@@ -76,10 +70,11 @@ contract GMXIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         uint256 _inputAmount,
         bytes memory
     )
-    internal
-    pure
-    override
-    returns (uint256) {
+        internal
+        pure
+        override
+        returns (uint256)
+    {
         return _inputAmount;
     }
 
@@ -89,10 +84,11 @@ contract GMXIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
         uint256 _desiredInputAmount,
         bytes memory
     )
-    internal
-    override
-    pure
-    returns (uint256) {
+        internal
+        override
+        pure
+        returns (uint256)
+    {
         return _desiredInputAmount;
     }
 }
