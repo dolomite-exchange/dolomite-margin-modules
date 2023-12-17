@@ -3,20 +3,31 @@ import { sleep } from '@openzeppelin/upgrades';
 import { BaseContract, BigNumber, BigNumberish } from 'ethers';
 import { formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
-import { network, run } from 'hardhat';
+import { artifacts, network, run } from 'hardhat';
 import {
-  IChainlinkAggregator__factory,
+  IChainlinkAggregator__factory, IDolomiteInterestSetter, IDolomitePriceOracle,
   IERC20,
-  IERC20Metadata__factory,
+  IERC20Metadata__factory, IIsolationModeUnwrapperTrader, IIsolationModeVaultFactory, IIsolationModeWrapperTrader,
   IPendlePtMarket,
   IPendlePtOracle,
   IPendlePtToken,
-  IPendleSyToken, PendlePtIsolationModeTokenVaultV1__factory,
-  PendlePtIsolationModeUnwrapperTraderV2, PendlePtIsolationModeUnwrapperTraderV2__factory,
-  PendlePtIsolationModeVaultFactory, PendlePtIsolationModeVaultFactory__factory,
-  PendlePtIsolationModeWrapperTraderV2, PendlePtIsolationModeWrapperTraderV2__factory,
-  PendlePtPriceOracle, PendlePtPriceOracle__factory, PendleRegistry__factory,
+  IPendleSyToken,
+  PendlePtIsolationModeTokenVaultV1__factory,
+  PendlePtIsolationModeUnwrapperTraderV2,
+  PendlePtIsolationModeUnwrapperTraderV2__factory,
+  PendlePtIsolationModeVaultFactory,
+  PendlePtIsolationModeVaultFactory__factory,
+  PendlePtIsolationModeWrapperTraderV2,
+  PendlePtIsolationModeWrapperTraderV2__factory,
+  PendlePtPriceOracle,
+  PendlePtPriceOracle__factory,
+  PendleRegistry__factory,
 } from '../src/types';
+import {
+  getLiquidationPremiumForTargetCollateralization,
+  getMarginPremiumForTargetCollateralization, getOwnerAddMarketParameters,
+  getOwnerAddMarketParametersForIsolationMode, TargetCollateralization, TargetLiquidationPremium,
+} from '../src/utils/constructors/dolomite';
 import {
   getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtIsolationModeVaultFactoryConstructorParams,
@@ -31,13 +42,14 @@ import deployments from './deployments.json';
 
 type ChainId = string;
 
-export async function verifyContract(address: string, constructorArguments: any[]) {
+export async function verifyContract(address: string, constructorArguments: any[], contractName: string | undefined) {
   try {
     console.log('Verifying contract...');
     await run('verify:verify', {
       address,
       constructorArguments,
       noCompile: true,
+      contract: contractName,
     });
   } catch (e: any) {
     if (e?.message.toLowerCase().includes('already verified')) {
@@ -71,7 +83,7 @@ export async function deployContractAndSave(
     const contract = file[usedContractName][chainId.toString()];
     console.log(`Contract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`);
     if (!contract.isVerified) {
-      await prettyPrintAndVerifyContract(file, chainId, usedContractName, args);
+      await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args);
     }
     return contract.address;
   }
@@ -95,9 +107,16 @@ export async function deployContractAndSave(
     writeDeploymentFile(file);
   }
 
-  await prettyPrintAndVerifyContract(file, chainId, usedContractName, args);
+  await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args);
 
   return contract.address;
+}
+
+export function getTokenVaultLibrary(core: CoreProtocol): Record<string, string> {
+  const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
+  return {
+    [libraryName]: deployments[libraryName][core.config.network as '42161'].address,
+  };
 }
 
 export interface PendlePtSystem {
@@ -227,19 +246,21 @@ async function prettyPrintAndVerifyContract(
   file: Record<string, Record<ChainId, any>>,
   chainId: number,
   contractName: string,
+  contractRename: string,
   args: any[],
 ) {
-  const contract = file[contractName][chainId.toString()];
+  const contract = file[contractRename][chainId.toString()];
 
-  console.log(`========================= ${contractName} =========================`);
+  console.log(`========================= ${contractRename} =========================`);
   console.log('Address: ', contract.address);
-  console.log('='.repeat(52 + contractName.length));
+  console.log('='.repeat(52 + contractRename.length));
 
   if (network.name !== 'hardhat') {
     console.log('Sleeping for 5s to wait for the transaction to be indexed by Etherscan...');
     await sleep(5000);
-    await verifyContract(contract.address, [...args]);
-    file[contractName][chainId].isVerified = true;
+    const sourceName = (await artifacts.readArtifact(contractName)).sourceName;
+    await verifyContract(contract.address, [...args], `${sourceName}:${contractName}`);
+    file[contractRename][chainId].isVerified = true;
     writeDeploymentFile(file);
   } else {
     console.log('Skipping Etherscan verification...');
@@ -248,6 +269,9 @@ async function prettyPrintAndVerifyContract(
 
 let counter = 1;
 
+/**
+ * @deprecated
+ */
 export async function prettyPrintEncodedData(
   transactionPromise: Promise<EncodedTransaction>,
   methodName: string,
@@ -493,6 +517,95 @@ export async function prettyPrintEncodeInsertChainlinkOracle(
       tokenPairAddress,
     ],
   );
+}
+
+export async function prettyPrintEncodeAddIsolationModeMarket(
+  core: CoreProtocol,
+  factory: IIsolationModeVaultFactory,
+  oracle: IDolomitePriceOracle,
+  unwrapper: IIsolationModeUnwrapperTrader,
+  wrapper: IIsolationModeWrapperTrader,
+  marketId: BigNumberish,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPremium,
+  maxWei: BigNumberish,
+): Promise<EncodedTransaction[]> {
+  const transactions: EncodedTransaction[] = [];
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteMargin',
+      'ownerAddMarket',
+      getOwnerAddMarketParametersForIsolationMode(
+        factory,
+        oracle,
+        core.alwaysZeroInterestSetter,
+        getMarginPremiumForTargetCollateralization(targetCollateralization),
+        getLiquidationPremiumForTargetCollateralization(targetLiquidationPremium),
+        maxWei,
+      ),
+    ),
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      { factory },
+      'factory',
+      'ownerInitialize',
+      [[unwrapper.address, wrapper.address]],
+    ),
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteMargin',
+      'ownerSetGlobalOperator',
+      [factory.address, true],
+    ),
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'liquidatorAssetRegistry',
+      'ownerAddLiquidatorToAssetWhitelist',
+      [marketId, core.liquidatorProxyV4.address],
+    ),
+  );
+  return transactions;
+}
+
+export async function prettyPrintEncodeAddMarket(
+  core: CoreProtocol,
+  token: IERC20,
+  oracle: IDolomitePriceOracle,
+  interestSetter: IDolomiteInterestSetter,
+  targetCollateralization: TargetCollateralization,
+  targetLiquidationPremium: TargetLiquidationPremium,
+  maxWei: BigNumberish,
+  isClosing: boolean,
+): Promise<EncodedTransaction[]> {
+  const transactions = [];
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteMargin',
+      'ownerAddMarket',
+      getOwnerAddMarketParameters(
+        token,
+        oracle,
+        interestSetter,
+        getMarginPremiumForTargetCollateralization(targetCollateralization),
+        getLiquidationPremiumForTargetCollateralization(targetLiquidationPremium),
+        maxWei,
+        isClosing,
+      ),
+    ),
+  );
+  return transactions;
 }
 
 export const DEPLOYMENT_FILE_NAME = './scripts/deployments.json';

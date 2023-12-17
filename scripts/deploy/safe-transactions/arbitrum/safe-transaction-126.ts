@@ -1,27 +1,14 @@
-import { BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import {
-  PendlePtIsolationModeUnwrapperTraderV2,
-  PendlePtIsolationModeVaultFactory,
-  PendlePtIsolationModeWrapperTraderV2,
-  PendlePtPriceOracle,
-} from '../../../../src/types';
-import {
-  getLiquidationPremiumForTargetCollateralization,
-  getMarginPremiumForTargetCollateralization,
-  getOwnerAddMarketParametersForIsolationMode,
-  TargetCollateralization,
-  TargetLiquidationPremium,
-} from '../../../../src/utils/constructors/dolomite';
+import { TargetCollateralization, TargetLiquidationPremium } from '../../../../src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
 import { Network } from '../../../../src/utils/no-deps-constants';
-import { CoreProtocol, setupCoreProtocol } from '../../../../test/utils/setup';
+import { setupCoreProtocol } from '../../../../test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,
   deployPendlePtSystem,
   EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
+  prettyPrintEncodeAddIsolationModeMarket,
   writeFile,
 } from '../../../deploy-utils';
 
@@ -29,62 +16,6 @@ enum PtName {
   REthJun2025 = 'REthJun2025',
   WstEthJun2024 = 'WstEthJun2024',
   WstEthJun2025 = 'WstEthJun2025',
-}
-
-async function encodeTransactions(
-  core: CoreProtocol,
-  factory: PendlePtIsolationModeVaultFactory,
-  oracle: PendlePtPriceOracle,
-  unwrapper: PendlePtIsolationModeUnwrapperTraderV2,
-  wrapper: PendlePtIsolationModeWrapperTraderV2,
-  marketId: BigNumberish,
-  maxWei: BigNumberish,
-): Promise<EncodedTransaction[]> {
-  const transactions: EncodedTransaction[] = [];
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'dolomiteMargin',
-      'ownerAddMarket',
-      getOwnerAddMarketParametersForIsolationMode(
-        factory,
-        oracle,
-        core.alwaysZeroInterestSetter,
-        getMarginPremiumForTargetCollateralization(TargetCollateralization._120),
-        getLiquidationPremiumForTargetCollateralization(TargetLiquidationPremium._7),
-        maxWei,
-      ),
-    ),
-  );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      { factory },
-      'factory',
-      'ownerInitialize',
-      [[unwrapper.address, wrapper.address]],
-    ),
-  );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [factory.address, true],
-    ),
-  );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'liquidatorAssetRegistry',
-      'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV4.address],
-    ),
-  );
-  return transactions;
 }
 
 /**
@@ -131,13 +62,15 @@ async function main(): Promise<DenJsonUpload> {
   const rEthMarketId = await core.dolomiteMargin.getNumMarkets();
   const rEthMaxSupplyWei = parseEther('1000');
   transactions = transactions.concat(
-    await encodeTransactions(
+    await prettyPrintEncodeAddIsolationModeMarket(
       core,
       rEthSystem.factory,
       rEthSystem.oracle,
       rEthSystem.unwrapper,
       rEthSystem.wrapper,
       rEthMarketId,
+      TargetCollateralization._120,
+      TargetLiquidationPremium._7,
       rEthMaxSupplyWei,
     ),
   );
@@ -145,13 +78,15 @@ async function main(): Promise<DenJsonUpload> {
   const wstEthJun2024MarketId = rEthMarketId.add(1);
   const wstEthJun2024MaxSupplyWei = parseEther('1000');
   transactions = transactions.concat(
-    await encodeTransactions(
+    await prettyPrintEncodeAddIsolationModeMarket(
       core,
       wstEthJun2024System.factory,
       wstEthJun2024System.oracle,
       wstEthJun2024System.unwrapper,
       wstEthJun2024System.wrapper,
       wstEthJun2024MarketId,
+      TargetCollateralization._120,
+      TargetLiquidationPremium._7,
       wstEthJun2024MaxSupplyWei,
     ),
   );
@@ -159,13 +94,15 @@ async function main(): Promise<DenJsonUpload> {
   const wstEthJun2025MarketId = wstEthJun2024MarketId.add(1);
   const wstEthJun2025MaxSupplyWei = parseEther('750');
   transactions = transactions.concat(
-    await encodeTransactions(
+    await prettyPrintEncodeAddIsolationModeMarket(
       core,
       wstEthJun2025System.factory,
       wstEthJun2025System.oracle,
       wstEthJun2025System.unwrapper,
       wstEthJun2025System.wrapper,
       wstEthJun2025MarketId,
+      TargetCollateralization._120,
+      TargetLiquidationPremium._7,
       wstEthJun2025MaxSupplyWei,
     ),
   );

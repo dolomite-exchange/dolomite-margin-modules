@@ -106,8 +106,8 @@ export function getGLPWrapperTraderV2ConstructorParams(
 }
 
 export function getGMXWrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
   dGmx: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
+  core: CoreProtocol,
 ): any[] {
   return [
     dGmx.address,
@@ -116,8 +116,8 @@ export function getGMXWrapperTraderV2ConstructorParams(
 }
 
 export function getGMXUnwrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
   dGmx: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
+  core: CoreProtocol,
 ): any[] {
   return [
     dGmx.address,
@@ -158,9 +158,9 @@ export async function getGmxRegistryConstructorParams(
 }
 
 export function getGMXIsolationModeVaultFactoryConstructorParams(
-  core: CoreProtocol,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
   userVaultImplementation: GMXIsolationModeTokenVaultV1,
+  core: CoreProtocol,
 ): any[] {
   return [
     gmxRegistry.address,

@@ -3,12 +3,11 @@ import { Network } from '../../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../test/utils/setup';
 import {
   createFolder,
-  DenJsonUpload, deployPendlePtSystem,
-  prettyPrintEncodedData, prettyPrintEncodedDataWithTypeSafety,
-  prettyPrintEncodeInsertChainlinkOracle,
+  DenJsonUpload,
+  deployPendlePtSystem,
+  prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../deploy-utils';
-import { STETH_ETH_CHAINLINK_FEED_MAP, WSTETH_STETH_CHAINLINK_FEED_MAP } from '../../../../src/utils/constants';
 
 /**
  * This script encodes the following transactions:

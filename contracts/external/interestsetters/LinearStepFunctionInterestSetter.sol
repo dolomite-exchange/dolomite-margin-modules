@@ -35,9 +35,9 @@ contract LinearStepFunctionInterestSetter is ILinearStepFunctionInterestSetter {
     // =============== Constants ===============
 
     bytes32 private constant _FILE = "LinearStepFunctionInterestSetter";
-    uint256 public constant ONE_HUNDRED_PERCENT = 1e18;
-    uint256 public constant NINETY_PERCENT = 9e17;
-    uint256 public constant TEN_PERCENT = 1e17;
+    uint256 public constant ONE_HUNDRED_PERCENT = 1 ether;
+    uint256 public constant NINETY_PERCENT = 0.9 ether;
+    uint256 public constant TEN_PERCENT = 0.1 ether;
     uint256 public constant SECONDS_IN_A_YEAR = 60 * 60 * 24 * 365;
 
     // =============== Immutable Storage ===============

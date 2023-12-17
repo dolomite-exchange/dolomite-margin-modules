@@ -232,7 +232,7 @@ export async function createGMXIsolationModeVaultFactory(
   return createContractWithAbi<GMXIsolationModeVaultFactory>(
     GMXIsolationModeVaultFactory__factory.abi,
     GMXIsolationModeVaultFactory__factory.bytecode,
-    getGMXIsolationModeVaultFactoryConstructorParams(core, gmxRegistry, userVaultImplementation),
+    getGMXIsolationModeVaultFactoryConstructorParams(gmxRegistry, userVaultImplementation, core),
   );
 }
 
@@ -243,7 +243,7 @@ export async function createGMXUnwrapperTraderV2(
   return createContractWithAbi<SimpleIsolationModeUnwrapperTraderV2>(
     SimpleIsolationModeUnwrapperTraderV2__factory.abi,
     SimpleIsolationModeUnwrapperTraderV2__factory.bytecode,
-    getGMXUnwrapperTraderV2ConstructorParams(core, factory),
+    getGMXUnwrapperTraderV2ConstructorParams(factory, core),
   );
 }
 
@@ -254,7 +254,7 @@ export async function createGMXWrapperTraderV2(
   return createContractWithAbi<SimpleIsolationModeWrapperTraderV2>(
     SimpleIsolationModeWrapperTraderV2__factory.abi,
     SimpleIsolationModeWrapperTraderV2__factory.bytecode,
-    getGMXWrapperTraderV2ConstructorParams(core, factory),
+    getGMXWrapperTraderV2ConstructorParams(factory, core),
   );
 }
 
