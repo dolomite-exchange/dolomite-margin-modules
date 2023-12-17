@@ -2,8 +2,7 @@ import { address } from '@dolomite-exchange/dolomite-margin';
 import {
   IJonesUSDCIsolationModeTokenVaultV1,
   IJonesUSDCRegistry,
-  JonesUSDCIsolationModeTokenVaultV1,
-  JonesUSDCIsolationModeTokenVaultV1__factory,
+  JonesUSDCIsolationModeTokenVaultV1, JonesUSDCIsolationModeTokenVaultV2,
   JonesUSDCIsolationModeUnwrapperTraderV2,
   JonesUSDCIsolationModeUnwrapperTraderV2__factory,
   JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -30,7 +29,8 @@ import {
   getJonesUSDCRegistryConstructorParams,
   getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/jones';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../dolomite';
 import { CoreProtocol } from '../setup';
 
 export function createJonesUSDCIsolationModeVaultFactory(
@@ -51,10 +51,20 @@ export function createJonesUSDCIsolationModeVaultFactory(
   );
 }
 
-export function createJonesUSDCIsolationModeTokenVaultV1(): Promise<JonesUSDCIsolationModeTokenVaultV1> {
-  return createContractWithAbi(
-    JonesUSDCIsolationModeTokenVaultV1__factory.abi,
-    JonesUSDCIsolationModeTokenVaultV1__factory.bytecode,
+export async function createJonesUSDCIsolationModeTokenVaultV1(): Promise<JonesUSDCIsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary(
+    'JonesUSDCIsolationModeTokenVaultV1',
+    libraries,
+    [],
+  );
+}
+
+export async function createJonesUSDCIsolationModeTokenVaultV2(): Promise<JonesUSDCIsolationModeTokenVaultV2> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary(
+    'JonesUSDCIsolationModeTokenVaultV2',
+    libraries,
     [],
   );
 }

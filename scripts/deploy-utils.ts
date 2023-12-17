@@ -1,8 +1,19 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { sleep } from '@openzeppelin/upgrades';
 import { BaseContract, BigNumber, BigNumberish } from 'ethers';
-import { formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
+import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
+import { network, run } from 'hardhat';
+import { IChainlinkAggregator__factory, IERC20, IERC20Metadata__factory } from '../src/types';
+import {
+  BaseInterestRateSetterContract,
+  BaseOracleContract,
+  getLiquidationPremiumForTargetLiquidationPenalty,
+  getMarginPremiumForTargetCollateralization,
+  getOwnerAddMarketParameters,
+  TargetCollateralization,
+  TargetLiquidationPenalty,
+} from '../src/utils/constructors/dolomite';
 import { artifacts, network, run } from 'hardhat';
 import {
   IChainlinkAggregator__factory, IDolomiteInterestSetter, IDolomitePriceOracle,
@@ -407,7 +418,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
   if (
     typeof methodName === 'string'
-    && (methodName.startsWith('owner') || methodName === 'upgradeTo')
+    && (methodName.startsWith('owner') || methodName === 'upgradeTo' || methodName === 'upgradeToAndCall')
     && await core.dolomiteMargin.owner() === core.delayedMultiSig.address
   ) {
     // All owner ... functions must go to Dolomite governance first
@@ -433,7 +444,12 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
 let mostRecentTokenDecimals: number | undefined = undefined;
 
-async function getReadableArg(core: CoreProtocol, inputParamType: ParamType, arg: any): Promise<string> {
+async function getReadableArg(
+  core: CoreProtocol,
+  inputParamType: ParamType,
+  arg: any,
+  decimals?: number,
+): Promise<string> {
   const formattedInputParamName = inputParamType.format(FormatTypes.full);
 
   if (Array.isArray(arg)) {
@@ -443,7 +459,7 @@ async function getReadableArg(core: CoreProtocol, inputParamType: ParamType, arg
       false,
     );
     const formattedArgs = await Promise.all(arg.map(async value => {
-      return await getReadableArg(core, subParamType, value);
+      return await getReadableArg(core, subParamType, value, decimals);
     }));
     return `${formattedInputParamName} = [\n\t\t\t\t${formattedArgs.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
   }
@@ -459,7 +475,7 @@ async function getReadableArg(core: CoreProtocol, inputParamType: ParamType, arg
   }
   if (isMaxWeiParam(inputParamType) && typeof mostRecentTokenDecimals !== 'undefined') {
     const scaleTo18Decimals = BigNumber.from(10).pow(18 - mostRecentTokenDecimals);
-    const decimal = formatEther(BigNumber.from(arg).mul(scaleTo18Decimals));
+    const decimal = commify(formatEther(BigNumber.from(arg).mul(scaleTo18Decimals)));
     return `${formattedInputParamName} = ${arg} (${decimal})`;
   }
 
@@ -474,18 +490,27 @@ async function getReadableArg(core: CoreProtocol, inputParamType: ParamType, arg
     });
   }
 
-  if (typeof arg === 'object') {
+  if (typeof arg === 'object' && !BigNumber.isBigNumber(arg)) {
     if (inputParamType.baseType !== 'tuple') {
       return Promise.reject(new Error('Object type is not tuple'));
+    }
+    let decimals: number | undefined = undefined;
+    if (inputParamType.name.toLowerCase().includes('premium')) {
+      decimals = 18;
     }
     const values: string[] = [];
     const keys = Object.keys(arg);
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
       const componentPiece = inputParamType.components[i];
-      values.push(await getReadableArg(core, componentPiece, arg[key]));
+      values.push(await getReadableArg(core, componentPiece, arg[key], decimals));
     }
     return `${formattedInputParamName} = {\n\t\t\t\t${values.join(' ,\n\t\t\t\t')}\n\t\t\t}`;
+  }
+
+  if (BigNumber.isBigNumber(arg) && typeof decimals !== 'undefined') {
+    const multiplier = BigNumber.from(10).pow(18 - decimals);
+    specialName = ` (${commify(formatEther(arg.mul(multiplier)))})`;
   }
 
   return `${formattedInputParamName} = ${arg}${specialName}`;
@@ -585,7 +610,7 @@ export async function prettyPrintEncodeAddMarket(
   targetCollateralization: TargetCollateralization,
   targetLiquidationPremium: TargetLiquidationPremium,
   maxWei: BigNumberish,
-  isClosing: boolean,
+  isCollateralOnly: boolean,
 ): Promise<EncodedTransaction[]> {
   const transactions = [];
   transactions.push(
@@ -601,7 +626,7 @@ export async function prettyPrintEncodeAddMarket(
         getMarginPremiumForTargetCollateralization(targetCollateralization),
         getLiquidationPremiumForTargetCollateralization(targetLiquidationPremium),
         maxWei,
-        isClosing,
+        isCollateralOnly,
       ),
     ),
   );

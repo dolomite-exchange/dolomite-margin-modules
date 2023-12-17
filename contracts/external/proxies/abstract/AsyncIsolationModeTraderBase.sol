@@ -49,7 +49,6 @@ abstract contract AsyncIsolationModeTraderBase is
     // ===================================================
 
     bytes32 private constant _FILE = "AsyncIsolationModeTraderBase";
-    bytes32 private constant _HANDLER_REGISTRY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handlerRegistry")) - 1);
 
     // ===================================================
     // ==================== Immutable ====================
@@ -87,9 +86,7 @@ abstract contract AsyncIsolationModeTraderBase is
         emit OwnerWithdrawETH(_receiver, bal);
     }
 
-    function HANDLER_REGISTRY() public view returns (IHandlerRegistry) {
-        return IHandlerRegistry(_getAddress(_HANDLER_REGISTRY_SLOT));
-    }
+    function HANDLER_REGISTRY() public view virtual returns (IHandlerRegistry);
 
     function callbackGasLimit() public view returns (uint256) {
         return HANDLER_REGISTRY().callbackGasLimit();
@@ -100,12 +97,6 @@ abstract contract AsyncIsolationModeTraderBase is
     }
 
     // ========================= Internal Functions =========================
-
-    function _initializeAsyncTraderBase(
-        address _registry
-    ) internal initializer {
-        _setAddress(_HANDLER_REGISTRY_SLOT, _registry);
-    }
 
     function _eventEmitter() internal view returns (IEventEmitterRegistry) {
         return HANDLER_REGISTRY().dolomiteRegistry().eventEmitter();

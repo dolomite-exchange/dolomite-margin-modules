@@ -182,7 +182,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bytes calldata _extraData
     )
         external
         payable
@@ -200,7 +201,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             _inputAmount,
             _outputToken,
             _minOutputAmount,
-            /* _isLiquidation = */ false
+            /* _isLiquidation = */ false,
+            _extraData
         );
     }
 
@@ -208,7 +210,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bytes calldata _extraData
     )
         external
         payable
@@ -225,7 +228,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             _inputAmount,
             _outputToken,
             _minOutputAmount,
-            /* _isLiquidation = */ true
+            /* _isLiquidation = */ true,
+            _extraData
         );
     }
 
@@ -578,7 +582,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
-        bool _isLiquidation
+        bool _isLiquidation,
+        bytes calldata _extraData
     ) internal virtual;
 
     function _validateIsLiquidator(address _from) internal view {

@@ -24,10 +24,15 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../UpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../UpgradeableAsyncIsolationModeWrapperTrader.sol";
 import { IDolomiteMargin } from "../../../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../../protocol/lib/Require.sol";
+import { IFreezableIsolationModeVaultFactory } from "../../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderBase } from "../../../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
+import { IHandlerRegistry } from "../../../interfaces/IHandlerRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../../../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IIsolationModeTokenVaultV1WithFreezable } from "../../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeVaultFactory } from "../../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
@@ -49,10 +54,24 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
     bytes32 private constant _FILE = "AsyncIsolationModeUnwrapperImpl";
     uint256 private constant _ACTIONS_LENGTH_NORMAL = 4;
+    uint256 private constant _NOT_ENTERED = 1;
+    uint256 private constant _ENTERED = 2;
 
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
+
+    function initializeUnwrapperTrader(
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state,
+        address _vaultFactory,
+        address _handlerRegistry
+    ) external {
+        setVaultFactory(_state, _vaultFactory);
+        setReentrancyGuard(_state, _NOT_ENTERED);
+        setActionsLength(_state, _ACTIONS_LENGTH_NORMAL);
+        setHandlerRegistry(_state, _handlerRegistry);
+    }
+
 
     function swapExactInputForOutputForWithdrawal(
         UpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper,
@@ -93,6 +112,168 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             /* _makerAccounts = */ new IDolomiteMargin.AccountInfo[](0),
             userConfig
         );
+    }
+
+    function callFunction(
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state,
+        address /* _sender */,
+        IDolomiteStructs.AccountInfo calldata _accountInfo,
+        bytes calldata _data
+    ) external {
+        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(_state.vaultFactory));
+        _validateVaultExists(factory, _accountInfo.owner);
+
+        (
+            uint256 transferAmount,
+            IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes,
+            bytes32[] memory keys
+        ) = abi.decode(_data, (uint256, IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
+        assert(tradeTypes.length == keys.length && keys.length > 0);
+
+        address vault;
+        uint256 inputAmount;
+        for (uint256 i; i < tradeTypes.length; ++i) {
+            uint256 inputAmountForIteration;
+            if (tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromWithdrawal) {
+                IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo = 
+                    _state.withdrawalInfo[keys[i]];
+                vault = withdrawalInfo.vault;
+                inputAmountForIteration = withdrawalInfo.inputAmount;
+            } else {
+                assert(tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit);
+                IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo =
+                    IHandlerRegistry(_state.handlerRegistry).getWrapperByToken(factory).getDepositInfo(keys[i]);
+
+                vault = depositInfo.vault;
+                inputAmountForIteration = depositInfo.outputAmount;
+            }
+
+            // Require that the vault is either the account owner or the input amount is 0 (meaning, it has been fully
+            // spent)
+            Require.that(
+                (inputAmountForIteration == 0 && vault == address(0)) || vault == _accountInfo.owner,
+                _FILE,
+                "Invalid account owner",
+                _accountInfo.owner
+            );
+            inputAmount += inputAmountForIteration;
+        }
+
+        uint256 underlyingVirtualBalance = IIsolationModeTokenVaultV1WithFreezable(vault).virtualBalance();
+        Require.that(
+            underlyingVirtualBalance >= transferAmount,
+            _FILE,
+            "Insufficient balance",
+            underlyingVirtualBalance,
+            transferAmount
+        );
+
+        Require.that(
+            transferAmount > 0 && transferAmount <= inputAmount,
+            _FILE,
+            "Invalid transfer amount"
+        );
+
+        factory.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
+        factory.setShouldVaultSkipTransfer(vault, /* _shouldSkipTransfer = */ true);
+    }
+
+    function exchangeUnderlyingTokenToOutputToken(
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state,
+        address /* _tradeOriginator */,
+        address /* _receiver */,
+        address _outputToken,
+        uint256 /* _minOutputAmount */,
+        address /* _inputToken */,
+        uint256 _inputAmount,
+        bytes memory _extraOrderData
+    ) external returns (uint256) {
+        // We don't need to validate _tradeOriginator here because it is validated in _callFunction via the transfer
+        // being enqueued (without it being enqueued, we'd never reach this point)
+
+        // Fix stack too deep errors
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage state = _state;       
+        address outputToken = _outputToken;
+
+        (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes, bytes32[] memory keys) = 
+            abi.decode(_extraOrderData, (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
+        assert(tradeTypes.length == keys.length && keys.length > 0);
+
+        uint256 inputAmountNeeded = _inputAmount; // decays toward 0
+        uint256 outputAmount;
+        for (uint256 i; i < tradeTypes.length && inputAmountNeeded > 0; ++i) {
+            bytes32 key = keys[i];
+            if (tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromWithdrawal) {
+                IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo = 
+                    state.withdrawalInfo[key];
+                if (withdrawalInfo.outputToken == address(0)) {
+                    // If the withdrawal was spent already, skip it
+                    continue;
+                }
+                _validateOutputTokenForExchange(withdrawalInfo.outputToken, outputToken);
+
+                (uint256 inputAmountToCollect, uint256 outputAmountToCollect) = _getAmountsToCollect(
+                    /* _structInputAmount = */ withdrawalInfo.inputAmount,
+                    inputAmountNeeded,
+                    /* _structOutputAmount = */ withdrawalInfo.outputAmount
+                );
+                withdrawalInfo.inputAmount -= inputAmountToCollect;
+                withdrawalInfo.outputAmount -= outputAmountToCollect;
+                state.withdrawalInfo[key] = withdrawalInfo;
+                setWithdrawalInfo(state, key, withdrawalInfo);
+                _updateVaultPendingAmount(
+                    state.vaultFactory,
+                    withdrawalInfo.vault,
+                    withdrawalInfo.accountNumber,
+                    inputAmountToCollect,
+                    /* _isPositive = */ false,
+                    withdrawalInfo.outputToken
+                );
+
+                inputAmountNeeded -= inputAmountToCollect;
+                outputAmount = outputAmount + outputAmountToCollect;
+            } else {
+                // panic if the trade type isn't correct (somehow).
+                assert(tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit);
+                IUpgradeableAsyncIsolationModeWrapperTrader wrapperTrader = 
+                    IHandlerRegistry(state.handlerRegistry).getWrapperByToken(
+                        IIsolationModeVaultFactory(state.vaultFactory)
+                    );
+                IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo =
+                                    wrapperTrader.getDepositInfo(key);
+                if (depositInfo.inputToken == address(0)) {
+                    // If the deposit was spent already, skip it
+                    continue;
+                }
+
+                // The input token for a deposit is the output token in this case
+                _validateOutputTokenForExchange(depositInfo.inputToken, outputToken);
+
+                (uint256 inputAmountToCollect, uint256 outputAmountToCollect) = _getAmountsToCollect(
+                    /* _structInputAmount = */ depositInfo.outputAmount,
+                    inputAmountNeeded,
+                    /* _structOutputAmount = */ depositInfo.inputAmount
+                );
+
+                depositInfo.outputAmount -= inputAmountToCollect;
+                depositInfo.inputAmount -= outputAmountToCollect;
+                wrapperTrader.setDepositInfoAndReducePendingAmountFromUnwrapper(key, inputAmountToCollect, depositInfo);
+
+                IERC20(depositInfo.inputToken).safeTransferFrom(
+                    address(wrapperTrader),
+                    address(this),
+                    outputAmountToCollect
+                );
+
+                inputAmountNeeded -= inputAmountToCollect;
+                outputAmount += outputAmountToCollect;
+            }
+        }
+
+        // Panic if the developer didn't set this up to consume enough of the structs
+        assert(inputAmountNeeded == 0);
+
+        return outputAmount;
     }
 
     function createActionsForUnwrapping(
@@ -207,13 +388,124 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         return actions;
     }
 
+    function setVaultFactory(
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state,
+        address _vaultFactory
+    ) public {
+        _state.vaultFactory = _vaultFactory;
+    }
+
+    function setHandlerRegistry(
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state,
+        address _handlerRegistry
+    ) public {
+        _state.handlerRegistry = _handlerRegistry;
+    }
+
+    function setActionsLength(
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state,
+        uint256 _actionLength
+    ) public {
+        _state.actionsLength = _actionLength;
+    }
+
+    function setWithdrawalInfo(
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state,
+        bytes32 _key,
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory _withdrawalInfo
+    ) public {
+         if (_withdrawalInfo.inputAmount == 0) {
+            // @follow-up This now clears out the key value in withdrawalInfo. Confirm that doesn't cause issues
+            delete _state.withdrawalInfo[_key];
+        } else {
+            _state.withdrawalInfo[_key] = _withdrawalInfo;
+        }
+    }
+
+    function setReentrancyGuard(
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state,
+        uint256 _reentrancyGuard
+    ) public {
+        _state.reentrancyGuard = _reentrancyGuard;
+    }
+
+    function validateNotReentered(
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state
+    ) public view {
+        Require.that(
+            _state.reentrancyGuard != _ENTERED,
+            _FILE,
+            "Reentrant call"
+        );
+    }
+
     // ===================================================
     // ================ Private Functions ================
     // ===================================================
+
+    // solhint-disable-next-line private-vars-leading-underscore
+    function _updateVaultPendingAmount(
+        address _vaultFactory,
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _amountDeltaWei,
+        bool _isPositive,
+        address _outputToken
+    ) internal {
+        IFreezableIsolationModeVaultFactory(_vaultFactory).setVaultAccountPendingAmountForFrozenStatus(
+            _vault,
+            _accountNumber,
+            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal,
+            /* _amountWei = */ IDolomiteStructs.Wei({
+                sign: _isPositive,
+                value: _amountDeltaWei
+            }),
+            _outputToken
+        );
+    }
+
+    // solhint-disable-next-line private-vars-leading-underscore
+    function _validateVaultExists(IIsolationModeVaultFactory _factory, address _vault) internal view {
+        Require.that(
+            _factory.getAccountByVault(_vault) != address(0),
+            _FILE,
+            "Invalid vault",
+            _vault
+        );
+    }
+
+    // solhint-disable-next-line private-vars-leading-underscore
+    function _getAmountsToCollect(
+        uint256 _structInputAmount,
+        uint256 _inputAmountNeeded,
+        uint256 _structOutputAmount
+    ) internal pure returns (uint256 _inputAmountToCollect, uint256 _outputAmountToCollect) {
+        _inputAmountToCollect = _inputAmountNeeded < _structInputAmount
+            ? _inputAmountNeeded
+            : _structInputAmount;
+
+        // Reduce output amount by the ratio of the collected input amount. Almost always the ratio will be
+        // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
+        // collateral to the liquidator.
+        _outputAmountToCollect = _inputAmountNeeded < _structInputAmount
+            ? _structOutputAmount * _inputAmountNeeded / _structInputAmount
+            : _structOutputAmount;
+    }
 
     function _getWrapperTrader(
         UpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper
     ) private view returns (IUpgradeableAsyncIsolationModeWrapperTrader) {
         return _unwrapper.HANDLER_REGISTRY().getWrapperByToken(_unwrapper.VAULT_FACTORY());
+    }
+
+    function _validateOutputTokenForExchange(
+        address _structOutputToken,
+        address _outputToken
+    ) private pure {
+        Require.that(
+            _structOutputToken == _outputToken,
+            _FILE,
+            "Output token mismatch"
+        );
     }
 }

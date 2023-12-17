@@ -13,6 +13,8 @@ import {
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2Registry,
   IGmxMarketToken,
+  TestGmxDataStore,
+  TestGmxDataStore__factory,
   TestGmxReader,
   TestGmxReader__factory,
   TestGmxV2IsolationModeTokenVaultV1,
@@ -51,6 +53,7 @@ import {
 import { getSimpleZapParams } from 'test/utils/zap-utils';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../utils/dolomite';
+import { ethers } from 'hardhat';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -59,8 +62,11 @@ const otherAmountWei = parseEther('0.33');
 const minAmountOut = parseEther('1800');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
+const CREATE_WITHDRAWALS_DISABLED_KEY = '0xab24f8952c7d7e543a307db1e2b74b2baa6ddb6814de7c569a542c285753c8f5';
+const EXECUTE_WITHDRAWALS_DISABLED_KEY = '0x7773eb573511e1c1e636e190493f492e1f7d7e62df2b99742a2dd3b7a4a0bdfb';
 const INVALID_POOL_FACTOR = BigNumber.from('900000000000000000000000000000'); // 9e29
 const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
+const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
 
 enum FreezeType {
   Deposit = 0,
@@ -83,6 +89,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   let impersonatedFactory: SignerWithAddress;
   let impersonatedVault: SignerWithAddress;
   let testReader: TestGmxReader;
+  let testDataStore: TestGmxDataStore;
   let eventEmitter: EventEmitterRegistry;
 
   let otherToken1: CustomTestToken;
@@ -171,6 +178,12 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       core.hhUser2,
     );
 
+    testDataStore = await createContractWithAbi(
+      TestGmxDataStore__factory.abi,
+      TestGmxDataStore__factory.bytecode,
+      [],
+    );
+
     testReader = await createContractWithAbi(
       TestGmxReader__factory.abi,
       TestGmxReader__factory.bytecode,
@@ -231,6 +244,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI_ENCODED,
         { value: parseEther('.01') },
       );
       await expect(result).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
@@ -283,6 +297,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         'GmxV2IsolationModeVaultV1: Invalid output token',
@@ -308,6 +323,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           ZERO_BI,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         'IsolationModeVaultV1Freezable: Invalid withdrawal amount',
@@ -323,6 +339,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         `IsolationModeVaultV1Freezable: Withdrawal too large <${vault.address.toLowerCase()}, ${borrowAccountNumber}>`,
@@ -347,6 +364,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -377,6 +395,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -390,6 +409,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
@@ -402,6 +422,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI_ENCODED,
       );
       await expectThrow(
         vault.callFunctionAndTriggerReentrancy(
@@ -421,6 +442,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
+          ONE_BI_ENCODED,
           { value: parseEther('.01') },
         ),
         `IsolationModeVaultV1Freezable: Only liquidator can call <${core.hhUser1.address.toLowerCase()}>`,
@@ -433,6 +455,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI_ENCODED,
       );
       await expectThrow(
         vault.callFunctionAndTriggerReentrancy(
@@ -547,6 +570,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI_ENCODED,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -572,6 +596,38 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
 
+    it('should fail if a user attempts to cancel withdrawal initiated via liquidation', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
+
+      await expect(() => vault.initiateUnwrappingWithLiquidationTrue(
+        defaultAccountNumber,
+        amountWei,
+        core.tokens.weth.address,
+        ONE_BI,
+        ONE_BI_ENCODED,
+        { value: parseEther('.01') },
+      )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
+
+      const filter = eventEmitter.filters.AsyncWithdrawalCreated();
+      const withdrawalKey = (await eventEmitter.queryFilter(filter))[0].args.key;
+
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, amountWei);
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, 0);
+      expect(await vault.isVaultFrozen()).to.eq(true);
+      expect(await vault.shouldSkipTransfer()).to.eq(false);
+      expect(await vault.isDepositSourceWrapper()).to.eq(false);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+
+      // Mine blocks so we can cancel deposit
+      await mine(1200);
+      await expectThrow(
+        vault2.cancelWithdrawal(withdrawalKey),
+        `GmxV2IsolationModeVaultV1: Invalid vault owner <${vault.address.toLowerCase()}>`,
+      );
+    });
+
     it('should fail if a user attempts to cancel another users withdrawal', async () => {
       await setupGMBalance(core, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -582,6 +638,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
+        ONE_BI_ENCODED,
         { value: parseEther('.01') },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -1295,6 +1352,18 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
   describe('#isExternalRedemptionPaused', () => {
     it('should return false with real gmx reader', async () => {
       expect(await vault.isExternalRedemptionPaused()).to.be.false;
+    });
+
+    it('should return true if create withdrawals are disabled', async () => {
+      await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
+      await testDataStore.setBool(CREATE_WITHDRAWALS_DISABLED_KEY, true);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
+    });
+
+    it('should return true if execute withdrawals are disabled', async () => {
+      await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
+      await testDataStore.setBool(EXECUTE_WITHDRAWALS_DISABLED_KEY, true);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
 
     it('should return false if short and long are outside pnl range', async () => {

@@ -27,6 +27,7 @@ import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.so
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { InterestIndexLib } from "../../lib/InterestIndexLib.sol";
@@ -46,16 +47,16 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
 {
     using InterestIndexLib for IDolomiteMargin;
     using SafeERC20 for IERC20;
+    using AsyncIsolationModeWrapperTraderImpl for State;
 
     // ======================== Constants ========================
 
-    bytes32 private constant _FILE = "IsolationModeWrapperTraderV2";
-
-    bytes32 private constant _DEPOSIT_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.depositInfo")) - 1);
-    bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
-
+    bytes32 private constant _FILE = "UpgradeableWrapperTraderV2";
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _ACTIONS_LENGTH = 1;
+
+    bytes32 private constant _STORAGE_STATE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.storageState")) - 1);
+
 
     // ======================== External Functions ========================
 
@@ -95,7 +96,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         uint256 deltaInputWei = _getDepositSlot(_key).inputAmount - _depositInfo.inputAmount;
         IERC20(_depositInfo.inputToken).safeApprove(msg.sender, deltaInputWei);
 
-        _setDepositInfo(_key, _depositInfo);
+        AsyncIsolationModeWrapperTraderImpl.setDepositInfo(_getStorageSlot(), _key, _depositInfo);
     }
 
     function exchange(
@@ -231,10 +232,16 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     function isValidInputToken(address _inputToken) public override virtual view returns (bool);
 
     function VAULT_FACTORY() public view returns (IIsolationModeVaultFactory) {
-        return IIsolationModeVaultFactory(_getAddress(_VAULT_FACTORY_SLOT));
+        State storage state = _getStorageSlot();
+        return IIsolationModeVaultFactory(state.vaultFactory);
     }
 
-    function getDepositInfo(bytes32 _key) public pure returns (DepositInfo memory) {
+    function HANDLER_REGISTRY() public view override returns (IHandlerRegistry) {
+        State storage state = _getStorageSlot();
+        return IHandlerRegistry(state.handlerRegistry);
+    }
+
+    function getDepositInfo(bytes32 _key) public view returns (DepositInfo memory) {
         return _getDepositSlot(_key);
     }
 
@@ -242,9 +249,12 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
 
     function _initializeWrapperTrader(
         address _vaultFactory,
+        address _handlerRegistry,
         address _dolomiteMargin
     ) internal initializer {
         _setVaultFactory(_vaultFactory);
+        State storage state = _getStorageSlot();
+        state.initializeWrapperTrader(_vaultFactory, _handlerRegistry);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
     }
 
@@ -293,7 +303,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             outputAmount: _minOutputAmount,
             isRetryable: false
         });
-        _setDepositInfo(depositKey, depositInfo);
+        AsyncIsolationModeWrapperTraderImpl.setDepositInfo(_getStorageSlot(), depositKey, depositInfo);
         _updateVaultPendingAmount(
             _tradeOriginator,
             accountNumber,
@@ -348,6 +358,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             // @audit   This can also fail if the user pushes the GM token total supply on Dolomite past our supply cap
             //          How do we mitigate this? We don't know ahead of time how many tokens the user will get...
             // @audit   Are there any other "reasons" that the try-catch can fail that I'm missing here?
+            factory.setShouldVaultSkipTransfer(depositInfo.vault, /* _shouldSkipTransfer = */ false);
             try factory.depositIntoDolomiteMarginFromTokenConverter(
                 depositInfo.vault,
                 depositInfo.accountNumber,
@@ -412,22 +423,37 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             value: DOLOMITE_MARGIN().getMarketTotalPar(marketId).supply
         });
 
-        if (maxWei != 0 && DOLOMITE_MARGIN().parToWei(marketId, supplyPar).value + _depositAmountWei >= maxWei) {
-            // If the supplyPar is gte than the maxWei, then we should to transfer the deposit to the vault owner. It's
-            // better to do this than to revert, since the user will be able to maintain control over the assets.
-            IERC20 underlyingToken = IERC20(_factory.UNDERLYING_TOKEN());
+        uint256 depositAmount;
+        uint256 currentWeiSupply = DOLOMITE_MARGIN().parToWei(marketId, supplyPar).value;
+        IERC20 underlyingToken = IERC20(_factory.UNDERLYING_TOKEN());
+        if (maxWei != 0 && currentWeiSupply >= maxWei) {
             underlyingToken.safeTransfer(_factory.getAccountByVault(_depositInfo.vault), _depositAmountWei);
-            // Reset the allowance to 0 since it won't be used
             underlyingToken.safeApprove(_depositInfo.vault, 0);
-        } else {
-            _factory.depositIntoDolomiteMarginFromTokenConverter(
-                _depositInfo.vault,
-                _DEFAULT_ACCOUNT_NUMBER,
-                _depositAmountWei
-            );
+            _clearDepositAndUpdatePendingAmount(_depositInfo);
+            return;
         }
 
+        if (maxWei != 0 && currentWeiSupply + _depositAmountWei > maxWei) {
+            depositAmount = maxWei - currentWeiSupply;
+            // If the supplyPar is gte than the maxWei, then we should to transfer the leftover amount back to the vault
+            // owner. It's better to do this than to revert, since the user will be able to maintain control
+            // over the assets.
+            underlyingToken.safeTransfer(
+                _factory.getAccountByVault(_depositInfo.vault),
+                _depositAmountWei - depositAmount
+            );
+        } else {
+            depositAmount = _depositAmountWei;
+        }
+        _factory.setShouldVaultSkipTransfer(_depositInfo.vault, /* _shouldSkipTransfer = */ false);
+        _factory.depositIntoDolomiteMarginFromTokenConverter(
+            _depositInfo.vault,
+            _DEFAULT_ACCOUNT_NUMBER,
+            depositAmount
+        );
+
         _clearDepositAndUpdatePendingAmount(_depositInfo);
+        underlyingToken.safeApprove(_depositInfo.vault, 0);
     }
 
     function _clearDepositAndUpdatePendingAmount(
@@ -442,28 +468,17 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         );
         // Setting the outputAmount to 0 clears it
         _depositInfo.outputAmount = 0;
-        _setDepositInfo(_depositInfo.key, _depositInfo);
+        AsyncIsolationModeWrapperTraderImpl.setDepositInfo(_getStorageSlot(), _depositInfo.key, _depositInfo);
     }
 
     function _setRetryableAndSaveDeposit(DepositInfo memory _depositInfo) internal {
         _depositInfo.isRetryable = true;
-        _setDepositInfo(_depositInfo.key, _depositInfo);
-    }
-
-    function _setDepositInfo(bytes32 _key, DepositInfo memory _info) internal {
-        bool clearValues = _info.outputAmount == 0;
-        DepositInfo storage storageInfo = _getDepositSlot(_key);
-        storageInfo.key = _key;
-        storageInfo.vault = clearValues ? address(0) : _info.vault;
-        storageInfo.accountNumber = clearValues ? 0 : _info.accountNumber;
-        storageInfo.inputToken = clearValues ? address(0) : _info.inputToken;
-        storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
-        storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
-        storageInfo.isRetryable = clearValues ? false : _info.isRetryable;
+        AsyncIsolationModeWrapperTraderImpl.setDepositInfo(_getStorageSlot(), _depositInfo.key, _depositInfo);
     }
 
     function _setVaultFactory(address _factory) internal {
-        _setAddress(_VAULT_FACTORY_SLOT, _factory);
+        State storage state = _getStorageSlot();
+        state.vaultFactory = _factory;
     }
 
     function _updateVaultPendingAmount(
@@ -505,6 +520,11 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     view
     returns (uint256);
 
+    function _getDepositSlot(bytes32 _key) internal view returns (DepositInfo storage info) {
+        State storage state = _getStorageSlot();
+        return state.depositInfo[_key];
+    }
+
     function _validateDepositExists(DepositInfo memory _depositInfo) internal pure {
         Require.that(
             _depositInfo.vault != address(0),
@@ -513,11 +533,11 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         );
     }
 
-    function _getDepositSlot(bytes32 _key) internal pure returns (DepositInfo storage info) {
-        bytes32 slot = keccak256(abi.encodePacked(_DEPOSIT_INFO_SLOT, _key));
+    function _getStorageSlot() internal pure returns (State storage state) {
+        bytes32 slot = _STORAGE_STATE_SLOT;
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            info.slot := slot
+            state.slot := slot
         }
     }
 }

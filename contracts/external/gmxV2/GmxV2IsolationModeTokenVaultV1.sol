@@ -27,6 +27,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
@@ -45,6 +46,8 @@ import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/Isola
  *
  * @notice  Implementation (for an upgradeable proxy) for a per-user vault that holds any GMX V2 Market token that and
  *          can be used to credit a user's Dolomite balance.
+ * @dev     In certain cases, GM tokens may be refunded to the vault owner.
+ *          The vault owner MUST be able to handle GM tokens
  */
 contract GmxV2IsolationModeTokenVaultV1 is
     IGmxV2IsolationModeTokenVaultV1,
@@ -91,7 +94,14 @@ contract GmxV2IsolationModeTokenVaultV1 is
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
                                 registry().getUnwrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
-        _validateVaultOwnerForStruct(unwrapper.getWithdrawalInfo(_key).vault);
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo 
+            = unwrapper.getWithdrawalInfo(_key);
+        _validateVaultOwnerForStruct(withdrawalInfo.vault);
+        Require.that(
+            !withdrawalInfo.isLiquidation,
+            _FILE,
+            "Withdrawal from liquidation"
+        );
         unwrapper.initiateCancelWithdrawal(_key);
     }
 
@@ -156,6 +166,10 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
     }
 
+    /**
+     *
+     *  @dev  _minOutputAmountWei MUST BE greater than 0 or call will revert
+     */
     function _swapExactInputForOutput(
         uint256 _tradeAccountNumber,
         uint256[] calldata _marketIdsPath,
@@ -171,6 +185,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
         uint256 len = _tradersPath.length;
         if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             GmxV2Library.depositAndApproveWethForWrapping(this);
+            Require.that(
+                msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).MAX_EXECUTION_FEE(),
+                _FILE,
+                "Invalid execution fee"
+            );
             _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, abi.encode(msg.value));
         } else {
             Require.that(
@@ -202,7 +221,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
-        bool _isLiquidation
+        bool _isLiquidation,
+        bytes calldata _extraData
     ) internal override {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
         Require.that(
@@ -211,6 +231,11 @@ contract GmxV2IsolationModeTokenVaultV1 is
             "Invalid output token"
         );
 
+        Require.that(
+            msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).MAX_EXECUTION_FEE(),
+            _FILE,
+            "Invalid execution fee"
+        );
         uint256 ethExecutionFee = msg.value;
         if (_isLiquidation) {
             ethExecutionFee += getExecutionFeeForAccountNumber(_tradeAccountNumber);
@@ -224,7 +249,9 @@ contract GmxV2IsolationModeTokenVaultV1 is
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
-            _minOutputAmount
+            _minOutputAmount,
+            _isLiquidation,
+            _extraData
         );
     }
 

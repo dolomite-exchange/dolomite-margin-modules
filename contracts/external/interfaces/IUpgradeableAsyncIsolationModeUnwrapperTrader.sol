@@ -47,6 +47,16 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
         /// @dev initially 0 until the withdrawal is executed
         uint256 outputAmount;
         bool isRetryable;
+        bool isLiquidation;
+        bytes extraData;
+    }
+
+    struct State {
+        uint256 actionsLength;
+        uint256 reentrancyGuard;
+        address vaultFactory;
+        address handlerRegistry;
+        mapping(bytes32 => WithdrawalInfo) withdrawalInfo;
     }
 
     // ================================================
@@ -81,7 +91,9 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata _extraData
     ) external payable;
 
     /**

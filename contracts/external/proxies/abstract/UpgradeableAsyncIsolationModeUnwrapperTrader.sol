@@ -27,12 +27,12 @@ import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.so
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
-import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
-import { IIsolationModeTokenVaultV1WithFreezable } from "../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; //solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AsyncIsolationModeUnwrapperTraderImpl } from "./impl/AsyncIsolationModeUnwrapperTraderImpl.sol";
+
 
 /**
  * @title   UpgradeableAsyncIsolationModeUnwrapperTrader
@@ -46,37 +46,35 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     AsyncIsolationModeTraderBase
 {
     using SafeERC20 for IERC20;
+    using AsyncIsolationModeUnwrapperTraderImpl for State;
 
     // ======================== Constants ========================
 
     bytes32 private constant _FILE = "UpgradeableUnwrapperTraderV2";
     uint256 private constant _ACTIONS_LENGTH = 2;
-
-    // ======================== Field Variables ========================
-
-    bytes32 private constant _ACTIONS_LENGTH_SLOT = bytes32(uint256(keccak256("eip1967.proxy.actionsLength")) - 1);
-    bytes32 private constant _REENTRANCY_GUARD_SLOT = bytes32(uint256(keccak256("eip1967.proxy.reentrancyGuard")) - 1);
-    bytes32 private constant _VAULT_FACTORY_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vaultFactory")) - 1);
-    bytes32 private constant _WITHDRAWAL_INFO_SLOT = bytes32(uint256(keccak256("eip1967.proxy.withdrawalInfo")) - 1);
+    uint256 internal constant _ACTIONS_LENGTH_NORMAL = 4;
+    uint256 internal constant _ACTIONS_LENGTH_CALLBACK = 2;
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
 
-    uint256 internal constant _ACTIONS_LENGTH_NORMAL = 4;
-    uint256 internal constant _ACTIONS_LENGTH_CALLBACK = 2;
+    // ======================== Field Variables ========================
+
+    bytes32 private constant _STORAGE_STATE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.storageState")) - 1);
 
     // ======================== Modifiers ========================
 
     modifier nonReentrant() {
+        State storage state = _getStorageSlot();
         // On the first call to nonReentrant, _reentrancyGuard will be _NOT_ENTERED
-        _validateNotReentered();
+        state.validateNotReentered();
 
         // Any calls to nonReentrant after this point will fail
-        _setReentrancyGuard(_ENTERED);
+        state.setReentrancyGuard(_ENTERED);
 
         _;
 
         // By storing the original value once again, a refund is triggered (see https://eips.ethereum.org/EIPS/eip-2200)
-        _setReentrancyGuard(_NOT_ENTERED);
+        state.setReentrancyGuard(_NOT_ENTERED);
     }
 
     // ======================== External Functions ========================
@@ -97,7 +95,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     virtual
     onlyDolomiteMargin(msg.sender)
     onlyDolomiteMarginGlobalOperator(_sender) {
-        _callFunction(_sender, _accountInfo, _data);
+        State storage state = _getStorageSlot();
+        state.callFunction(_sender, _accountInfo, _data);
     }
 
     function exchange(
@@ -134,7 +133,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
 
         _validateIsBalanceSufficient(_inputAmount);
 
-        uint256 outputAmount = _exchangeUnderlyingTokenToOutputToken(
+        uint256 outputAmount = _getStorageSlot().exchangeUnderlyingTokenToOutputToken(
             _tradeOriginator,
             _receiver,
             _outputToken,
@@ -193,7 +192,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         view
         returns (uint256)
     {
-        return _getUint256(_ACTIONS_LENGTH_SLOT);
+        State storage state = _getStorageSlot();
+        return state.actionsLength;
     }
 
     function isValidOutputToken(address _outputToken) public override virtual view returns (bool);
@@ -235,19 +235,25 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function VAULT_FACTORY() public view returns (IIsolationModeVaultFactory) {
-        return IIsolationModeVaultFactory(_getAddress(_VAULT_FACTORY_SLOT));
+        State storage state = _getStorageSlot();
+        return IIsolationModeVaultFactory(state.vaultFactory);
+    }
+
+    function HANDLER_REGISTRY() public view override returns (IHandlerRegistry) {
+        State storage state = _getStorageSlot();
+        return IHandlerRegistry(state.handlerRegistry);
     }
 
     // ============ Internal Functions ============
 
     function _initializeUnwrapperTrader(
         address _vaultFactory,
+        address _handlerRegistry,
         address _dolomiteMargin
     ) internal initializer {
-        _setVaultFactory(_vaultFactory);
+        State storage state = _getStorageSlot();
+        state.initializeUnwrapperTrader(_vaultFactory, _handlerRegistry);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
-        _setReentrancyGuard(_NOT_ENTERED);
-        _setActionsLength(_ACTIONS_LENGTH_NORMAL);
     }
 
     function _vaultCreateWithdrawalInfo(
@@ -256,7 +262,9 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         uint256 _accountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata _extraData
     ) internal {
 
         // Panic if the key is already used
@@ -269,9 +277,11 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
             inputAmount: _inputAmount,
             outputToken: _outputToken,
             outputAmount: _minOutputAmount,
-            isRetryable: false
+            isLiquidation: _isLiquidation,
+            isRetryable: false,
+            extraData: _extraData
         });
-        _setWithdrawalInfo(_key, withdrawalInfo);
+        AsyncIsolationModeUnwrapperTraderImpl.setWithdrawalInfo(_getStorageSlot(), _key, withdrawalInfo);
         _updateVaultPendingAmount(_vault, _accountNumber, _inputAmount, /* _isPositive = */ true, _outputToken);
         _eventEmitter().emitAsyncWithdrawalCreated(
             _key,
@@ -281,11 +291,13 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function _handleCallbackBefore() internal {
-        _setActionsLength(_ACTIONS_LENGTH_CALLBACK);
+        State storage state = _getStorageSlot();
+        state.setActionsLength(_ACTIONS_LENGTH_CALLBACK);
     }
 
     function _handleCallbackAfter() internal {
-        _setActionsLength(_ACTIONS_LENGTH_NORMAL);
+        State storage state = _getStorageSlot();
+        state.setActionsLength(_ACTIONS_LENGTH_NORMAL);
     }
 
     function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual {
@@ -332,178 +344,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
 
         // Setting inputAmount to 0 will clear the withdrawal
         withdrawalInfo.inputAmount = 0;
-        _setWithdrawalInfo(_key, withdrawalInfo);
+        AsyncIsolationModeUnwrapperTraderImpl.setWithdrawalInfo(_getStorageSlot(), _key, withdrawalInfo);
         _eventEmitter().emitAsyncWithdrawalCancelled(_key, address(factory));
-    }
-
-    function _callFunction(
-        address /* _sender */,
-        IDolomiteStructs.AccountInfo calldata _accountInfo,
-        bytes calldata _data
-    ) internal virtual {
-        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
-        _validateVaultExists(factory, _accountInfo.owner);
-
-        (
-            uint256 transferAmount,
-            TradeType[] memory tradeTypes,
-            bytes32[] memory keys
-        ) = abi.decode(_data, (uint256, TradeType[], bytes32[]));
-        assert(tradeTypes.length == keys.length && keys.length > 0);
-
-        address vault;
-        uint256 inputAmount;
-        for (uint256 i; i < tradeTypes.length; ++i) {
-            uint256 inputAmountForIteration;
-            if (tradeTypes[i] == TradeType.FromWithdrawal) {
-                WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(keys[i]);
-                vault = withdrawalInfo.vault;
-                inputAmountForIteration = withdrawalInfo.inputAmount;
-            } else {
-                assert(tradeTypes[i] == TradeType.FromDeposit);
-                IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo =
-                                        _getWrapperTrader().getDepositInfo(keys[i]);
-
-                vault = depositInfo.vault;
-                inputAmountForIteration = depositInfo.outputAmount;
-            }
-
-            // Require that the vault is either the account owner or the input amount is 0 (meaning, it has been fully
-            // spent)
-            Require.that(
-                (inputAmountForIteration == 0 && vault == address(0)) || vault == _accountInfo.owner,
-                _FILE,
-                "Invalid account owner",
-                _accountInfo.owner
-            );
-            inputAmount += inputAmountForIteration;
-        }
-
-        uint256 underlyingVirtualBalance = IIsolationModeTokenVaultV1WithFreezable(vault).virtualBalance();
-        Require.that(
-            underlyingVirtualBalance >= transferAmount,
-            _FILE,
-            "Insufficient balance",
-            underlyingVirtualBalance,
-            transferAmount
-        );
-
-        Require.that(
-            transferAmount > 0 && transferAmount <= inputAmount,
-            _FILE,
-            "Invalid transfer amount"
-        );
-
-        factory.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
-        factory.setShouldVaultSkipTransfer(vault, /* _shouldSkipTransfer = */ true);
-    }
-
-    /**
-     * @notice Performs the exchange from the Isolation Mode's underlying token to `_outputToken`.
-     */
-    function _exchangeUnderlyingTokenToOutputToken(
-        address /* _tradeOriginator */,
-        address /* _receiver */,
-        address _outputToken,
-        uint256 /* _minOutputAmount */,
-        address /* _inputToken */,
-        uint256 _inputAmount,
-        bytes memory _extraOrderData
-    )
-    internal
-    virtual
-    returns (uint256) {
-        // We don't need to validate _tradeOriginator here because it is validated in _callFunction via the transfer
-        // being enqueued (without it being enqueued, we'd never reach this point)
-
-        (TradeType[] memory tradeTypes, bytes32[] memory keys) = abi.decode(_extraOrderData, (TradeType[], bytes32[]));
-        assert(tradeTypes.length == keys.length && keys.length > 0);
-
-        uint256 inputAmountNeeded = _inputAmount; // decays toward 0
-        uint256 outputAmount;
-        for (uint256 i; i < tradeTypes.length && inputAmountNeeded > 0; ++i) {
-            bytes32 key = keys[i];
-            if (tradeTypes[i] == TradeType.FromWithdrawal) {
-                WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(key);
-                if (withdrawalInfo.outputToken == address(0)) {
-                    // If the withdrawal was spent already, skip it
-                    continue;
-                }
-                _validateOutputTokenForExchange(withdrawalInfo.outputToken, _outputToken);
-
-                (uint256 inputAmountToCollect, uint256 outputAmountToCollect) = _getAmountsToCollect(
-                    /* _structInputAmount = */ withdrawalInfo.inputAmount,
-                    inputAmountNeeded,
-                    /* _structOutputAmount = */ withdrawalInfo.outputAmount
-                );
-                withdrawalInfo.inputAmount -= inputAmountToCollect;
-                withdrawalInfo.outputAmount -= outputAmountToCollect;
-                _setWithdrawalInfo(key, withdrawalInfo);
-                _updateVaultPendingAmount(
-                    withdrawalInfo.vault,
-                    withdrawalInfo.accountNumber,
-                    inputAmountToCollect,
-                    /* _isPositive = */ false,
-                    withdrawalInfo.outputToken
-                );
-
-                inputAmountNeeded -= inputAmountToCollect;
-                outputAmount = outputAmount + outputAmountToCollect;
-            } else {
-                // panic if the trade type isn't correct (somehow).
-                assert(tradeTypes[i] == TradeType.FromDeposit);
-                IUpgradeableAsyncIsolationModeWrapperTrader wrapperTrader = _getWrapperTrader();
-                IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo =
-                                    wrapperTrader.getDepositInfo(key);
-                if (depositInfo.inputToken == address(0)) {
-                    // If the deposit was spent already, skip it
-                    continue;
-                }
-
-                // The input token for a deposit is the output token in this case
-                _validateOutputTokenForExchange(depositInfo.inputToken, _outputToken);
-
-                (uint256 inputAmountToCollect, uint256 outputAmountToCollect) = _getAmountsToCollect(
-                    /* _structInputAmount = */ depositInfo.outputAmount,
-                    inputAmountNeeded,
-                    /* _structOutputAmount = */ depositInfo.inputAmount
-                );
-
-                depositInfo.outputAmount -= inputAmountToCollect;
-                depositInfo.inputAmount -= outputAmountToCollect;
-                wrapperTrader.setDepositInfoAndReducePendingAmountFromUnwrapper(key, inputAmountToCollect, depositInfo);
-
-                IERC20(depositInfo.inputToken).safeTransferFrom(
-                    address(wrapperTrader),
-                    address(this),
-                    outputAmountToCollect
-                );
-
-                inputAmountNeeded -= inputAmountToCollect;
-                outputAmount += outputAmountToCollect;
-            }
-        }
-
-        // Panic if the developer didn't set this up to consume enough of the structs
-        assert(inputAmountNeeded == 0);
-
-        return outputAmount;
-    }
-
-    function _setActionsLength(uint256 _length) internal {
-        _setUint256(_ACTIONS_LENGTH_SLOT, _length);
-    }
-
-    function _setWithdrawalInfo(bytes32 _key, WithdrawalInfo memory _info) internal {
-        bool clearValues = _info.inputAmount == 0;
-        WithdrawalInfo storage storageInfo = _getWithdrawalSlot(_key);
-        storageInfo.key = _key;
-        storageInfo.vault = clearValues ? address(0) : _info.vault;
-        storageInfo.accountNumber = clearValues ? 0 : _info.accountNumber;
-        storageInfo.inputAmount = clearValues ? 0 : _info.inputAmount;
-        storageInfo.outputToken = clearValues ? address(0) : _info.outputToken;
-        storageInfo.outputAmount = clearValues ? 0 : _info.outputAmount;
-        storageInfo.isRetryable = clearValues ? false : _info.isRetryable;
     }
 
     function _updateVaultPendingAmount(
@@ -556,6 +398,11 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         bytes memory _orderData
     ) internal virtual view returns (uint256);
 
+    function _getWithdrawalSlot(bytes32 _key) internal view returns (WithdrawalInfo storage info) {
+        State storage state = _getStorageSlot(); 
+        return state.withdrawalInfo[_key];
+    }
+
     function _validateWithdrawalExists(WithdrawalInfo memory _withdrawalInfo) internal pure {
         Require.that(
             _withdrawalInfo.vault != address(0),
@@ -564,57 +411,11 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
         );
     }
 
-    function _getAmountsToCollect(
-        uint256 _structInputAmount,
-        uint256 _inputAmountNeeded,
-        uint256 _structOutputAmount
-    ) internal pure returns (uint256 _inputAmountToCollect, uint256 _outputAmountToCollect) {
-        _inputAmountToCollect = _inputAmountNeeded < _structInputAmount
-            ? _inputAmountNeeded
-            : _structInputAmount;
-
-        // Reduce output amount by the ratio of the collected input amount. Almost always the ratio will be
-        // 100%. During liquidations, there will be a non-100% ratio because the user may not lose all
-        // collateral to the liquidator.
-        _outputAmountToCollect = _inputAmountNeeded < _structInputAmount
-            ? _structOutputAmount * _inputAmountNeeded / _structInputAmount
-            : _structOutputAmount;
-    }
-
-    function _getWithdrawalSlot(bytes32 _key) internal pure returns (WithdrawalInfo storage info) {
-        bytes32 slot = keccak256(abi.encodePacked(_WITHDRAWAL_INFO_SLOT, _key));
+    function _getStorageSlot() internal pure returns (State storage state) {
+        bytes32 slot = _STORAGE_STATE_SLOT;
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            info.slot := slot
+            state.slot := slot
         }
-    }
-
-    // ============ Private Functions ============
-
-    function _setVaultFactory(address _factory) private {
-        _setAddress(_VAULT_FACTORY_SLOT, _factory);
-    }
-
-    function _setReentrancyGuard(uint256 _value) private {
-        _setUint256(_REENTRANCY_GUARD_SLOT, _value);
-    }
-
-    function _validateNotReentered() private view {
-        Require.that(
-            _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
-            _FILE,
-            "Reentrant call"
-        );
-    }
-
-    function _validateOutputTokenForExchange(
-        address _structOutputToken,
-        address _outputToken
-    ) private pure {
-        Require.that(
-            _structOutputToken == _outputToken,
-            _FILE,
-            "Output token mismatch"
-        );
     }
 }

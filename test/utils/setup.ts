@@ -95,6 +95,8 @@ import {
   IJonesGLPAdapter__factory,
   IJonesGLPVaultRouter,
   IJonesGLPVaultRouter__factory,
+  IJonesUSDCFarm,
+  IJonesUSDCFarm__factory,
   IJonesUSDCRegistry,
   IJonesUSDCRegistry__factory,
   IJonesWhitelistController,
@@ -175,6 +177,7 @@ import {
   TestPriceOracle__factory,
   IERC20Mintable,
   IERC20Mintable__factory, IARB, IARB__factory,
+  TestPriceOracle__factory, VesterImplementationV1, VesterImplementationV1__factory, VesterProxy, VesterProxy__factory,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
@@ -220,8 +223,11 @@ import {
   JONES_ECOSYSTEM_GOVERNOR_MAP,
   JONES_GLP_ADAPTER_MAP,
   JONES_GLP_VAULT_ROUTER_MAP,
+  JONES_JUSDC_FARM_MAP,
   JONES_JUSDC_MAP,
   JONES_JUSDC_RECEIPT_TOKEN_MAP,
+  JONES_MAP,
+  JONES_WETH_V3_POOL_MAP,
   JONES_WHITELIST_CONTROLLER_MAP,
   LINK_MAP,
   MAGIC_GLP_MAP,
@@ -252,6 +258,9 @@ import {
   PLV_GLP_FARM_MAP,
   PLV_GLP_MAP,
   PLV_GLP_ROUTER_MAP,
+  PREMIA_MAP,
+  PREMIA_WETH_V3_POOL_MAP,
+  RDNT_MAP,
   RETH_MAP,
   S_GLP_MAP,
   S_GMX_MAP,
@@ -347,17 +356,32 @@ export interface GmxEcosystemV2 {
   gmxWithdrawalVault: SignerWithAddress;
 }
 
+export interface InterestSetters {
+  alwaysZeroInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction6L94UInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction8L92UInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction14L86UInterestSetter: IDolomiteInterestSetter;
+}
+
 export interface JonesEcosystem {
   glpAdapter: IJonesGLPAdapter;
   glpVaultRouter: IJonesGLPVaultRouter;
   whitelistController: IJonesWhitelistController;
   usdcReceiptToken: IERC4626;
   jUSDC: IERC4626;
+  jUSDCFarm: IJonesUSDCFarm;
   admin: SignerWithAddress;
+  jonesWethV3Pool: IAlgebraV3Pool;
   live: {
     jUSDCIsolationModeFactory: JonesUSDCIsolationModeVaultFactory;
     jonesUSDCRegistry: IJonesUSDCRegistry;
+    jonesUSDCRegistryProxy: RegistryProxy;
   };
+}
+
+export interface LiquidityMiningEcosystem {
+  oArbVester: VesterImplementationV1;
+  oArbVesterProxy: VesterProxy;
 }
 
 export interface OdosEcosystem {
@@ -429,6 +453,10 @@ export interface PlutusEcosystem {
   };
 }
 
+export interface PremiaEcosystem {
+  premiaWethV3Pool: IAlgebraV3Pool;
+}
+
 export interface TestEcosystem {
   testExchangeWrapper: TestDolomiteMarginExchangeWrapper;
   testInterestSetter: TestInterestSetter;
@@ -464,7 +492,6 @@ export interface CoreProtocol {
   /// =========================
   abraEcosystem: AbraEcosystem | undefined;
   arbEcosystem: ArbEcosystem | undefined;
-  alwaysZeroInterestSetter: IDolomiteInterestSetter;
   atlasEcosystem: AtlasEcosystem | undefined;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
   camelotEcosystem: CamelotEcosystem | undefined;
@@ -482,6 +509,7 @@ export interface CoreProtocol {
   genericTraderProxy: IGenericTraderProxyV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
   gmxEcosystemV2: GmxEcosystemV2 | undefined;
+  interestSetters: InterestSetters;
   jonesEcosystem: JonesEcosystem | undefined;
   liquidatorAssetRegistry: ILiquidatorAssetRegistry;
   liquidatorProxyV1: ILiquidatorProxyV1;
@@ -489,12 +517,15 @@ export interface CoreProtocol {
   liquidatorProxyV2: ILiquidatorProxyV2WithExternalLiquidity | undefined;
   liquidatorProxyV3: ILiquidatorProxyV3WithLiquidityToken | undefined;
   liquidatorProxyV4: ILiquidatorProxyV4WithGenericTrader;
+  liquidityMiningEcosystem: LiquidityMiningEcosystem | undefined;
   odosEcosystem: OdosEcosystem | undefined;
   paraswapEcosystem: ParaswapEcosystem | undefined;
   paraswapTrader: ParaswapAggregatorTrader | undefined;
   pendleEcosystem: PendleEcosystem | undefined;
   plutusEcosystem: PlutusEcosystem | undefined;
+  premiaEcosystem: PremiaEcosystem | undefined;
   testEcosystem: TestEcosystem | undefined;
+  tokenVaultActionsLibraries: Record<string, string> | undefined;
   umamiEcosystem: UmamiEcosystem | undefined;
   /// =========================
   /// Markets and Tokens
@@ -515,12 +546,15 @@ export interface CoreProtocol {
     dpx: BigNumberish | undefined;
     dYtGlp: BigNumberish | undefined;
     grail: BigNumberish | undefined;
+    jones: BigNumberish | undefined;
     link: BigNumberish;
     magic: BigNumberish | undefined;
     magicGlp: BigNumberish | undefined;
     mim: BigNumberish | undefined;
     nativeUsdc: BigNumberish | undefined;
+    premia: BigNumberish | undefined;
     rEth: BigNumberish | undefined;
+    radiant: BigNumberish | undefined;
     pendle: BigNumberish | undefined;
     usdc: BigNumberish;
     usdt: BigNumberish | undefined;
@@ -544,10 +578,13 @@ export interface CoreProtocol {
     dYtGlp: IERC20 | undefined;
     gmx: IERC20 | undefined;
     grail: IERC20 | undefined;
+    jones: IERC20 | undefined;
     link: IERC20;
     magic: IERC20 | undefined;
     nativeUsdc: IERC20 | undefined;
+    premia: IERC20 | undefined;
     rEth: IERC20 | undefined;
+    radiant: IERC20 | undefined;
     pendle: IERC20 | undefined;
     stEth: IERC20 | undefined;
     usdc: IERC20;
@@ -558,7 +595,14 @@ export interface CoreProtocol {
 }
 
 export async function disableInterestAccrual(core: CoreProtocol, marketId: BigNumberish) {
-  return core.dolomiteMargin.ownerSetInterestSetter(marketId, core.alwaysZeroInterestSetter.address);
+  return core.dolomiteMargin.ownerSetInterestSetter(marketId, core.interestSetters.alwaysZeroInterestSetter.address);
+}
+
+export async function enableInterestAccrual(core: CoreProtocol, marketId: BigNumberish) {
+  return core.dolomiteMargin.ownerSetInterestSetter(
+    marketId,
+    core.interestSetters.linearStepFunction8L92UInterestSetter.address,
+  );
 }
 
 export async function setupWETHBalance(
@@ -715,11 +759,6 @@ export async function setupCoreProtocol(
     hhUser1,
   );
 
-  const alwaysZeroInterestSetter = IDolomiteInterestSetter__factory.connect(
-    ALWAYS_ZERO_INTEREST_SETTER_MAP[config.network],
-    governance,
-  );
-
   const borrowPositionProxyV2 = IBorrowPositionProxyV2__factory.connect(
     BorrowPositionProxyV2Json.networks[config.network].address,
     governance,
@@ -825,7 +864,7 @@ export async function setupCoreProtocol(
   );
 
   const liquidatorProxyV4 = getContract(
-    (LiquidatorProxyV4WithGenericTraderJson.networks as any)[config.network].address,
+    LiquidatorProxyV4WithGenericTraderJson.networks[config.network].address,
     ILiquidatorProxyV4WithGenericTrader__factory.connect,
     governance,
   );
@@ -842,18 +881,21 @@ export async function setupCoreProtocol(
   const camelotEcosystem = await createCamelotEcosystem(config.network, hhUser1);
   const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
   const gmxEcosystemV2 = await createGmxEcosystemV2(config.network, hhUser1);
+  const interestSetters = await createInterestSetters(config.network, hhUser1);
   const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
+  const liquidityMiningEcosystem = await createLiquidityMiningEcosystem(config.network, hhUser1);
   const odosEcosystem = await createOdosEcosystem(config.network, hhUser1);
   const paraswapEcosystem = await createParaswapEcosystem(config.network, hhUser1);
   const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
   const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
+  const premiaEcosystem = await createPremiaEcosystem(config.network, hhUser1);
   const testEcosystem = await createTestEcosystem(dolomiteMargin, dolomiteRegistry, governance, hhUser1, config);
+  const tokenVaultActionsLibraries = await createTokenVaultActionsLibraries(config);
   const umamiEcosystem = await createUmamiEcosystem(config.network, hhUser1);
 
   return {
     abraEcosystem,
     arbEcosystem,
-    alwaysZeroInterestSetter,
     atlasEcosystem,
     borrowPositionProxyV2,
     camelotEcosystem,
@@ -872,6 +914,7 @@ export async function setupCoreProtocol(
     gmxEcosystem,
     gmxEcosystemV2,
     governance,
+    interestSetters,
     jonesEcosystem,
     liquidatorAssetRegistry,
     liquidatorProxyV1,
@@ -884,12 +927,15 @@ export async function setupCoreProtocol(
     hhUser3,
     hhUser4,
     hhUser5,
+    liquidityMiningEcosystem,
     odosEcosystem,
     paraswapEcosystem,
     paraswapTrader,
     pendleEcosystem,
     plutusEcosystem,
+    premiaEcosystem,
     testEcosystem,
+    tokenVaultActionsLibraries,
     umamiEcosystem,
     config: {
       blockNumber: config.blockNumber,
@@ -924,12 +970,15 @@ export async function setupCoreProtocol(
       dpx: DPX_MAP[config.network]?.marketId,
       dYtGlp: DYT_GLP_2024_MAP[config.network]?.marketId,
       grail: GRAIL_MAP[config.network]?.marketId,
+      jones: JONES_MAP[config.network]?.marketId,
       link: LINK_MAP[config.network].marketId,
       magic: MAGIC_MAP[config.network]?.marketId,
       magicGlp: MAGIC_GLP_MAP[config.network]?.marketId,
       mim: MIM_MAP[config.network]?.marketId,
       nativeUsdc: NATIVE_USDC_MAP[config.network]?.marketId,
+      premia: PREMIA_MAP[config.network]?.marketId,
       rEth: RETH_MAP[config.network]?.marketId,
+      radiant: RDNT_MAP[config.network]?.marketId,
       pendle: PENDLE_MAP[config.network]?.marketId,
       usdc: USDC_MAP[config.network].marketId,
       usdt: USDT_MAP[config.network]?.marketId,
@@ -949,10 +998,13 @@ export async function setupCoreProtocol(
       dYtGlp: createIERC20Opt(DYT_GLP_2024_MAP[config.network]?.address, hhUser1),
       gmx: createIERC20Opt(GMX_MAP[config.network]?.address, hhUser1),
       grail: createIERC20Opt(GRAIL_MAP[config.network]?.address, hhUser1),
+      jones: createIERC20Opt(JONES_MAP[config.network]?.address, hhUser1),
       link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
       magic: createIERC20Opt(MAGIC_MAP[config.network]?.address, hhUser1),
       nativeUsdc: createIERC20Opt(NATIVE_USDC_MAP[config.network]?.address, hhUser1),
       rEth: createIERC20Opt(RETH_MAP[config.network]?.address, hhUser1),
+      radiant: createIERC20Opt(RDNT_MAP[config.network]?.address, hhUser1),
+      premia: createIERC20Opt(PREMIA_MAP[config.network]?.address, hhUser1),
       pendle: createIERC20Opt(PENDLE_MAP[config.network]?.address, hhUser1),
       stEth: createIERC20Opt(ST_ETH_MAP[config.network]?.address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
@@ -1037,6 +1089,19 @@ async function createTestEcosystem(
   };
 }
 
+async function createTokenVaultActionsLibraries(
+  config: CoreProtocolSetupConfig,
+): Promise<Record<string, string> | undefined> {
+  const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
+  if (!(deployments[libraryName] as any)[config.network]) {
+    return undefined;
+  }
+
+  return {
+    [libraryName]: (deployments[libraryName] as any)[config.network].address,
+  };
+}
+
 async function createAbraEcosystem(network: Network, signer: SignerWithAddress): Promise<AbraEcosystem | undefined> {
   if (!MAGIC_GLP_MAP[network]) {
     return undefined;
@@ -1069,7 +1134,7 @@ async function createAtlasEcosystem(network: Network, signer: SignerWithAddress)
 
 async function createCamelotEcosystem(
   network: Network,
-  signer: SignerWithAddress
+  signer: SignerWithAddress,
 ): Promise<CamelotEcosystem | undefined> {
   if (!GRAIL_WETH_V3_POOL_MAP[network]) {
     return undefined;
@@ -1154,6 +1219,30 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
   };
 }
 
+async function createInterestSetters(
+  network: Network,
+  signer: SignerWithAddress,
+): Promise<InterestSetters> {
+  return {
+    alwaysZeroInterestSetter: IDolomiteInterestSetter__factory.connect(
+      ALWAYS_ZERO_INTEREST_SETTER_MAP[network] as string,
+      signer,
+    ),
+    linearStepFunction6L94UInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.Stablecoin6L94ULinearStepFunctionInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction8L92UInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.Stablecoin8L92ULinearStepFunctionInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction14L86UInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.Altcoin14L86ULinearStepFunctionInterestSetter[network].address,
+      signer,
+    ),
+  };
+}
+
 async function createJonesEcosystem(network: Network, signer: SignerWithAddress): Promise<JonesEcosystem | undefined> {
   if (!JONES_ECOSYSTEM_GOVERNOR_MAP[network]) {
     return undefined;
@@ -1176,12 +1265,14 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
       IJonesGLPVaultRouter__factory.connect,
       signer,
     ),
+    jonesWethV3Pool: getContract(JONES_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
+    jUSDC: getContract(JONES_JUSDC_MAP[network] as string, IERC4626__factory.connect, signer),
+    jUSDCFarm: getContract(JONES_JUSDC_FARM_MAP[network] as string, IJonesUSDCFarm__factory.connect, signer),
     usdcReceiptToken: getContract(
       JONES_JUSDC_RECEIPT_TOKEN_MAP[network] as string,
       IERC4626__factory.connect,
       signer,
     ),
-    jUSDC: getContract(JONES_JUSDC_MAP[network] as string, IERC4626__factory.connect, signer),
     whitelistController: whitelist,
     live: {
       jUSDCIsolationModeFactory: getContract(
@@ -1194,11 +1285,20 @@ async function createJonesEcosystem(network: Network, signer: SignerWithAddress)
         IJonesUSDCRegistry__factory.connect,
         signer,
       ),
+      jonesUSDCRegistryProxy: getContract(
+        (Deployments.JonesUSDCRegistryProxy as any)[network]?.address,
+        RegistryProxy__factory.connect,
+        signer,
+      ),
     },
   };
 }
 
 async function createGmxEcosystemV2(network: Network, signer: SignerWithAddress): Promise<GmxEcosystemV2 | undefined> {
+  if (!GMX_DEPOSIT_HANDLER_MAP[network]) {
+    return undefined;
+  }
+
   return {
     gmxDepositHandler: getContract(
       GMX_DEPOSIT_HANDLER_MAP[network] as string,
@@ -1230,6 +1330,20 @@ async function createGmxEcosystemV2(network: Network, signer: SignerWithAddress)
       signer,
     ),
     gmxWithdrawalVault: await impersonateOrFallback(GMX_WITHDRAWAL_VAULT_MAP[network] as string, true, signer),
+  };
+}
+
+async function createLiquidityMiningEcosystem(
+  network: Network,
+  signer: SignerWithAddress,
+): Promise<LiquidityMiningEcosystem | undefined> {
+  if (network !== '42161') {
+    return undefined;
+  }
+
+  return {
+    oArbVester: VesterImplementationV1__factory.connect(deployments.VesterProxy[network].address, signer),
+    oArbVesterProxy: VesterProxy__factory.connect(deployments.VesterProxy[network].address, signer),
   };
 }
 
@@ -1488,6 +1602,19 @@ async function createPlutusEcosystem(
         signer,
       ),
     },
+  };
+}
+
+async function createPremiaEcosystem(
+  network: Network,
+  signer: SignerWithAddress,
+): Promise<PremiaEcosystem | undefined> {
+  if (!PREMIA_WETH_V3_POOL_MAP[network]) {
+    return undefined;
+  }
+
+  return {
+    premiaWethV3Pool: getContract(PREMIA_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
   };
 }
 

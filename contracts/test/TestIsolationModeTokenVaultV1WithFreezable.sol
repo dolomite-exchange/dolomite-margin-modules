@@ -47,7 +47,8 @@ contract TestIsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1
         uint256 _inputAmount,
         address _outputToken,
         uint256 /* _minOutputAmount */,
-        bool _isLiquidation
+        bool _isLiquidation,
+        bytes calldata /* _extraData */
     ) internal override {
         if (_isLiquidation) {
             IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).setVaultAccountPendingAmountForFrozenStatus(

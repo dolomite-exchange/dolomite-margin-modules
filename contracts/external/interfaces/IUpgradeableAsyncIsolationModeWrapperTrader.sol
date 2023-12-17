@@ -37,6 +37,12 @@ interface IUpgradeableAsyncIsolationModeWrapperTrader is IIsolationModeWrapperTr
     // ==================== Structs ===================
     // ================================================
 
+    struct State {
+        mapping(bytes32 => DepositInfo) depositInfo;
+        address vaultFactory;
+        address handlerRegistry;
+    }
+
     struct DepositInfo {
         bytes32 key;
         address vault;
