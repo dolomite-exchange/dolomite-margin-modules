@@ -3,22 +3,16 @@ import { sleep } from '@openzeppelin/upgrades';
 import { BaseContract, BigNumber, BigNumberish } from 'ethers';
 import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
-import { network, run } from 'hardhat';
-import { IChainlinkAggregator__factory, IERC20, IERC20Metadata__factory } from '../src/types';
-import {
-  BaseInterestRateSetterContract,
-  BaseOracleContract,
-  getLiquidationPremiumForTargetLiquidationPenalty,
-  getMarginPremiumForTargetCollateralization,
-  getOwnerAddMarketParameters,
-  TargetCollateralization,
-  TargetLiquidationPenalty,
-} from '../src/utils/constructors/dolomite';
 import { artifacts, network, run } from 'hardhat';
 import {
-  IChainlinkAggregator__factory, IDolomiteInterestSetter, IDolomitePriceOracle,
+  IChainlinkAggregator__factory,
+  IDolomiteInterestSetter,
+  IDolomitePriceOracle,
   IERC20,
-  IERC20Metadata__factory, IIsolationModeUnwrapperTrader, IIsolationModeVaultFactory, IIsolationModeWrapperTrader,
+  IERC20Metadata__factory,
+  IIsolationModeUnwrapperTrader,
+  IIsolationModeVaultFactory,
+  IIsolationModeWrapperTrader,
   IPendlePtMarket,
   IPendlePtOracle,
   IPendlePtToken,
@@ -35,9 +29,12 @@ import {
   PendleRegistry__factory,
 } from '../src/types';
 import {
-  getLiquidationPremiumForTargetCollateralization,
-  getMarginPremiumForTargetCollateralization, getOwnerAddMarketParameters,
-  getOwnerAddMarketParametersForIsolationMode, TargetCollateralization, TargetLiquidationPremium,
+  getLiquidationPremiumForTargetLiquidationPenalty,
+  getMarginPremiumForTargetCollateralization,
+  getOwnerAddMarketParameters,
+  getOwnerAddMarketParametersForIsolationMode,
+  TargetCollateralization,
+  TargetLiquidationPenalty,
 } from '../src/utils/constructors/dolomite';
 import {
   getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
@@ -552,7 +549,7 @@ export async function prettyPrintEncodeAddIsolationModeMarket(
   wrapper: IIsolationModeWrapperTrader,
   marketId: BigNumberish,
   targetCollateralization: TargetCollateralization,
-  targetLiquidationPremium: TargetLiquidationPremium,
+  targetLiquidationPremium: TargetLiquidationPenalty,
   maxWei: BigNumberish,
 ): Promise<EncodedTransaction[]> {
   const transactions: EncodedTransaction[] = [];
@@ -565,9 +562,9 @@ export async function prettyPrintEncodeAddIsolationModeMarket(
       getOwnerAddMarketParametersForIsolationMode(
         factory,
         oracle,
-        core.alwaysZeroInterestSetter,
+        core.interestSetters.alwaysZeroInterestSetter,
         getMarginPremiumForTargetCollateralization(targetCollateralization),
-        getLiquidationPremiumForTargetCollateralization(targetLiquidationPremium),
+        getLiquidationPremiumForTargetLiquidationPenalty(targetLiquidationPremium),
         maxWei,
       ),
     ),
@@ -608,7 +605,7 @@ export async function prettyPrintEncodeAddMarket(
   oracle: IDolomitePriceOracle,
   interestSetter: IDolomiteInterestSetter,
   targetCollateralization: TargetCollateralization,
-  targetLiquidationPremium: TargetLiquidationPremium,
+  targetLiquidationPremium: TargetLiquidationPenalty,
   maxWei: BigNumberish,
   isCollateralOnly: boolean,
 ): Promise<EncodedTransaction[]> {
@@ -624,7 +621,7 @@ export async function prettyPrintEncodeAddMarket(
         oracle,
         interestSetter,
         getMarginPremiumForTargetCollateralization(targetCollateralization),
-        getLiquidationPremiumForTargetCollateralization(targetLiquidationPremium),
+        getLiquidationPremiumForTargetLiquidationPenalty(targetLiquidationPremium),
         maxWei,
         isCollateralOnly,
       ),

@@ -53,7 +53,7 @@ contract TestAsyncIsolationModeTraderBase is AsyncIsolationModeTraderBase {
 
     function testOnlyHandler() external onlyHandler(msg.sender) {} // solhint-disable-line no-empty-blocks
 
-    function HANDLER_REGISTRY() public view override returns (IHandlerRegistry) {
+    function HANDLER_REGISTRY() public pure override returns (IHandlerRegistry) {
         return IHandlerRegistry(address(0));
     }
 }

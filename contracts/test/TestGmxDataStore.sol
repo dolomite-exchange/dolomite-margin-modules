@@ -54,7 +54,7 @@ contract TestGmxDataStore is IGmxDataStore {
         return uintValues[_key];
     }
 
-    function roleStore() external view returns (IGmxRoleStore) {
+    function roleStore() external pure returns (IGmxRoleStore) {
         return IGmxRoleStore(address(0));
     }
 }

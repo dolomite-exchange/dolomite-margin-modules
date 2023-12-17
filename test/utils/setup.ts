@@ -33,6 +33,8 @@ import {
   GLPIsolationModeWrapperTraderV1__factory,
   IAlgebraV3Pool,
   IAlgebraV3Pool__factory,
+  IARB,
+  IARB__factory,
   IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
   IChainlinkPriceOracle,
@@ -55,6 +57,8 @@ import {
   IDolomiteRegistry__factory,
   IERC20,
   IERC20__factory,
+  IERC20Mintable,
+  IERC20Mintable__factory,
   IERC4626,
   IERC4626__factory,
   IEsGmxDistributor,
@@ -175,9 +179,10 @@ import {
   TestInterestSetter__factory,
   TestPriceOracle,
   TestPriceOracle__factory,
-  IERC20Mintable,
-  IERC20Mintable__factory, IARB, IARB__factory,
-  TestPriceOracle__factory, VesterImplementationV1, VesterImplementationV1__factory, VesterProxy, VesterProxy__factory,
+  VesterImplementationV1,
+  VesterImplementationV1__factory,
+  VesterProxy,
+  VesterProxy__factory,
 } from '../../src/types';
 import {
   ALWAYS_ZERO_INTEREST_SETTER_MAP,
@@ -340,6 +345,7 @@ export interface GmxEcosystem {
     glpIsolationModeUnwrapperTraderV1: GLPIsolationModeUnwrapperTraderV1;
     glpIsolationModeWrapperTraderV1: GLPIsolationModeWrapperTraderV1;
     gmxRegistry: IGmxRegistryV1;
+    gmxRegistryProxy: RegistryProxy;
   };
 }
 
@@ -1157,13 +1163,13 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
   const esGmxAdminForGlp = await impersonateOrFallback(
     await esGmxDistributorForGlp.connect(signer).admin(),
     true,
-    signer
+    signer,
   );
   const esGmxDistributorForGmx = getContract(esGmxDistributorAddressForGmx, IEsGmxDistributor__factory.connect, signer);
   const esGmxAdminForGmx = await impersonateOrFallback(
     await esGmxDistributorForGmx.connect(signer).admin(),
     true,
-    signer
+    signer,
   );
   return {
     bnGmx: getContract(BN_GMX_MAP[network] as string, IERC20__factory.connect, signer),
@@ -1213,6 +1219,11 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
       gmxRegistry: getContract(
         (Deployments.GmxRegistryProxy as any)[network]?.address,
         IGmxRegistryV1__factory.connect,
+        signer,
+      ),
+      gmxRegistryProxy: getContract(
+        (Deployments.GmxRegistryProxy as any)[network]?.address,
+        RegistryProxy__factory.connect,
         signer,
       ),
     },

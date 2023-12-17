@@ -1,24 +1,37 @@
+import { parseEther } from 'ethers/lib/utils';
 import {
   ARBIsolationModeTokenVaultV1__factory,
   ARBIsolationModeVaultFactory__factory,
-  ARBRegistry__factory, GMXIsolationModeTokenVaultV1__factory, GMXIsolationModeVaultFactory__factory,
+  ARBRegistry__factory,
+  GMXIsolationModeTokenVaultV1__factory,
+  GMXIsolationModeVaultFactory__factory,
+  SimpleIsolationModeUnwrapperTraderV2__factory,
+  SimpleIsolationModeWrapperTraderV2__factory,
 } from '../../../../src/types';
 import {
   getARBIsolationModeVaultFactoryConstructorParams,
-  getARBRegistryConstructorParams, getARBUnwrapperTraderV2ConstructorParams, getARBWrapperTraderV2ConstructorParams,
+  getARBRegistryConstructorParams,
+  getARBUnwrapperTraderV2ConstructorParams,
+  getARBWrapperTraderV2ConstructorParams,
 } from '../../../../src/utils/constructors/arb';
+import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../src/utils/constructors/dolomite';
 import {
   getGMXIsolationModeVaultFactoryConstructorParams,
-  getGMXUnwrapperTraderV2ConstructorParams, getGMXWrapperTraderV2ConstructorParams,
+  getGMXUnwrapperTraderV2ConstructorParams,
+  getGMXWrapperTraderV2ConstructorParams,
 } from '../../../../src/utils/constructors/gmx';
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network } from '../../../../src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, ONE_BI } from '../../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,
-  deployContractAndSave, EncodedTransaction,
-  getTokenVaultLibrary, prettyPrintEncodeAddMarket, prettyPrintEncodedData, prettyPrintEncodeInsertChainlinkOracle,
+  deployContractAndSave,
+  EncodedTransaction,
+  getTokenVaultLibrary,
+  prettyPrintEncodeAddIsolationModeMarket,
+  prettyPrintEncodeAddMarket, prettyPrintEncodedDataWithTypeSafety,
+  prettyPrintEncodeInsertChainlinkOracle,
   writeFile,
 } from '../../../deploy-utils';
 
@@ -68,12 +81,15 @@ async function main(): Promise<DenJsonUpload> {
     getARBUnwrapperTraderV2ConstructorParams(arbFactory, core),
     'ARBIsolationModeUnwrapperTraderV2',
   );
+  const arbUnwrapper = SimpleIsolationModeUnwrapperTraderV2__factory.connect(arbUnwrapperAddress, core.hhUser1);
+
   const arbWrapperAddress = await deployContractAndSave(
     Number(network),
     'SimpleIsolationModeWrapperTraderV2',
     getARBWrapperTraderV2ConstructorParams(arbFactory, core),
     'ARBIsolationModeWrapperTraderV2',
   );
+  const arbWrapper = SimpleIsolationModeWrapperTraderV2__factory.connect(arbWrapperAddress, core.hhUser1);
 
   const gmxRegistryImplementationAddress = await deployContractAndSave(
     Number(network),
@@ -106,15 +122,58 @@ async function main(): Promise<DenJsonUpload> {
     getGMXUnwrapperTraderV2ConstructorParams(gmxFactory, core),
     'GMXIsolationModeUnwrapperTraderV2',
   );
+  const gmxUnwrapper = SimpleIsolationModeUnwrapperTraderV2__factory.connect(gmxUnwrapperAddress, core.hhUser1);
+
   const gmxWrapperAddress = await deployContractAndSave(
     Number(network),
     'SimpleIsolationModeWrapperTraderV2',
     getGMXWrapperTraderV2ConstructorParams(gmxFactory, core),
     'GMXIsolationModeWrapperTraderV2',
   );
+  const gmxWrapper = SimpleIsolationModeWrapperTraderV2__factory.connect(gmxWrapperAddress, core.hhUser1);
 
+  console.log('gmxRegistry', gmxRegistry.address);
+  const dArbMarketId = await core.dolomiteMargin.getNumMarkets();
+  const gmxMarketId = dArbMarketId.add(1);
+  const dGmxMarketId = gmxMarketId.add(1);
   const gmxUsdPriceAggregator = '0xdb98056fecfff59d032ab628337a4887110df3db';
   const transactions: EncodedTransaction[] = [];
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.gmxEcosystem!.live,
+      'gmxRegistryProxy',
+      'upgradeTo',
+      [gmxRegistryImplementationAddress],
+    )
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.gmxEcosystem!.live,
+      'gmxRegistry',
+      'ownerSetBnGmx',
+      [core.gmxEcosystem!.bnGmx.address],
+    )
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.gmxEcosystem!.live,
+      'gmxRegistry',
+      'ownerSetGlpVaultFactory',
+      [core.gmxEcosystem!.live.glpIsolationModeFactory.address],
+    )
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.gmxEcosystem!.live,
+      'gmxRegistry',
+      'ownerSetGmxVaultFactory',
+      [gmxFactory.address],
+    )
+  );
   transactions.push(
     await prettyPrintEncodeInsertChainlinkOracle(
       core,
@@ -140,11 +199,41 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
+    ...await prettyPrintEncodeAddIsolationModeMarket(
+      core,
+      arbFactory,
+      core.chainlinkPriceOracle!,
+      arbUnwrapper,
+      arbWrapper,
+      dArbMarketId,
+      TargetCollateralization._120,
+      TargetLiquidationPenalty._7,
+      parseEther('10000000'), // 10M units of collateral
+    ),
+  );
+  transactions.push(
     ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.gmx!,
       core.chainlinkPriceOracle!,
-      core.alwaysZeroInterestSetter
+      core.interestSetters.linearStepFunction8L92UInterestSetter,
+      TargetCollateralization._120,
+      TargetLiquidationPenalty._7,
+      ONE_BI, // ONE unit of collateral
+      true,
+    ),
+  );
+  transactions.push(
+    ...await prettyPrintEncodeAddIsolationModeMarket(
+      core,
+      gmxFactory,
+      core.chainlinkPriceOracle!,
+      gmxUnwrapper,
+      gmxWrapper,
+      dGmxMarketId,
+      TargetCollateralization._125,
+      TargetLiquidationPenalty._8,
+      parseEther('100000'), // 100k units of collateral
     ),
   );
 
