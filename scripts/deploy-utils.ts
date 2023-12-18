@@ -1,6 +1,6 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import { sleep } from '@openzeppelin/upgrades';
-import { BaseContract, BigNumber, BigNumberish } from 'ethers';
+import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
 import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
 import { artifacts, network, run } from 'hardhat';
@@ -281,7 +281,7 @@ let counter = 1;
  * @deprecated
  */
 export async function prettyPrintEncodedData(
-  transactionPromise: Promise<EncodedTransaction>,
+  transactionPromise: Promise<PopulatedTransaction>,
   methodName: string,
 ): Promise<void> {
   const transaction = await transactionPromise;
