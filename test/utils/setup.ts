@@ -185,7 +185,6 @@ import {
   VesterProxy__factory,
 } from '../../src/types';
 import {
-  ALWAYS_ZERO_INTEREST_SETTER_MAP,
   ARB_MAP,
   ATLAS_SI_TOKEN_MAP,
   BN_GMX_MAP,
@@ -1236,7 +1235,7 @@ async function createInterestSetters(
 ): Promise<InterestSetters> {
   return {
     alwaysZeroInterestSetter: IDolomiteInterestSetter__factory.connect(
-      ALWAYS_ZERO_INTEREST_SETTER_MAP[network] as string,
+      deployments.AlwaysZeroInterestSetter[network].address,
       signer,
     ),
     linearStepFunction6L94UInterestSetter: IDolomiteInterestSetter__factory.connect(

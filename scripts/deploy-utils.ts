@@ -319,7 +319,7 @@ const addressToNameCache: Record<string, string | undefined> = {};
 
 async function getFormattedTokenName(core: CoreProtocol, tokenAddress: string): Promise<string> {
   if (tokenAddress === ADDRESS_ZERO) {
-    return 'None';
+    return '(None)';
   }
 
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
@@ -446,17 +446,23 @@ async function getReadableArg(
   inputParamType: ParamType,
   arg: any,
   decimals?: number,
+  index?: number,
 ): Promise<string> {
-  const formattedInputParamName = inputParamType.format(FormatTypes.full);
+  let formattedInputParamName: string;
+  if (typeof index !== 'undefined') {
+    formattedInputParamName = `${inputParamType.name}[${index}]`;
+  } else {
+    formattedInputParamName = inputParamType.format(FormatTypes.full);
+  }
 
   if (Array.isArray(arg)) {
     // remove the [] at the end
     const subParamType = ParamType.fromString(
-      `${inputParamType.type.substring(0, inputParamType.type.length - 2)} ${inputParamType.name}`,
+      `${inputParamType.type.slice(0, -2)} ${inputParamType.name}`,
       false,
     );
-    const formattedArgs = await Promise.all(arg.map(async value => {
-      return await getReadableArg(core, subParamType, value, decimals);
+    const formattedArgs = await Promise.all(arg.map(async (value, i) => {
+      return await getReadableArg(core, subParamType, value, decimals, i);
     }));
     return `${formattedInputParamName} = [\n\t\t\t\t${formattedArgs.join(' ,\n\t\t\t\t')}\n\t\t\t]`;
   }
@@ -465,7 +471,10 @@ async function getReadableArg(
     return `${formattedInputParamName} = ${arg} ${await getFormattedMarketName(core, arg)}`;
   }
   if (isTokenParam(inputParamType)) {
-    return `${formattedInputParamName} = ${arg} ${await getFormattedTokenName(core, arg)}`;
+    const tokenName = await getFormattedTokenName(core, arg);
+    if (tokenName) {
+      return `${formattedInputParamName} = ${arg} ${tokenName}`;
+    }
   }
   if (isChainlinkAggregatorParam(inputParamType)) {
     return `${formattedInputParamName} = ${arg} ${await getFormattedChainlinkAggregatorName(core, arg)}`;
@@ -485,6 +494,19 @@ async function getReadableArg(
         specialName = ` (${key})`;
       }
     });
+    if (!specialName) {
+      const coreDeployments = JSON.parse(fs.readFileSync(`${__dirname}/deployments.json`).toString());
+      Object.keys(coreDeployments).forEach(key => {
+        if ((coreDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
+          specialName = ` (${key})`;
+        }
+      });
+
+      const tokenName = await getFormattedTokenName(core, arg);
+      if (tokenName) {
+        specialName = ` ${tokenName}`;
+      }
+    }
   }
 
   if (typeof arg === 'object' && !BigNumber.isBigNumber(arg)) {
@@ -500,7 +522,7 @@ async function getReadableArg(
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
       const componentPiece = inputParamType.components[i];
-      values.push(await getReadableArg(core, componentPiece, arg[key], decimals));
+      values.push(await getReadableArg(core, componentPiece, arg[key], decimals, index));
     }
     return `${formattedInputParamName} = {\n\t\t\t\t${values.join(' ,\n\t\t\t\t')}\n\t\t\t}`;
   }

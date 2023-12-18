@@ -53,6 +53,18 @@
       "isVerified": true
     }
   },
+  "AlwaysZeroInterestSetter": {
+    "42161": {
+      "address": "0x37b6fF70654EDfBdAA3c9a723fdAdF5844De2168",
+      "transaction": "0x6992828fe897b2b26ee8707e07019491f40b9b660760a39a8e85b46ef2057e7c",
+      "isVerified": true
+    },
+    "421613": {
+      "address": "0x2536ef4105a6173683C7fFCE9547091960F6d939",
+      "transaction": "",
+      "isVerified": true
+    }
+  },
   "AtlasSIUserVaultFactory": {
     "421613": {
       "address": "0x823F4f7582fcBbe4eB1239430191C29C494Dd51c",

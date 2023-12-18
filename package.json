@@ -47,7 +47,7 @@
     "execute:arbitrum-140": "hardhat --network arbitrum_one run scripts/deploy/safe-transactions/arbitrum/safe-transaction-140.ts",
     "execute:arbitrum-144": "hardhat --network arbitrum_one run scripts/deploy/safe-transactions/arbitrum/safe-transaction-144.ts",
     "execute:arbitrum-146": "hardhat --network arbitrum_one run scripts/deploy/safe-transactions/arbitrum/safe-transaction-146.ts",
-    "execute:arbitrum-150": "hardhat --network arbitrum_one run scripts/deploy/safe-transactions/arbitrum/safe-transaction-150.ts",
+    "execute:arbitrum-149": "hardhat --network arbitrum_one run scripts/deploy/safe-transactions/arbitrum/safe-transaction-149.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python scripts/lint-contracts.py fix",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",

@@ -132,7 +132,6 @@ async function main(): Promise<DenJsonUpload> {
   );
   const gmxWrapper = SimpleIsolationModeWrapperTraderV2__factory.connect(gmxWrapperAddress, core.hhUser1);
 
-  console.log('gmxRegistry', gmxRegistry.address);
   const dArbMarketId = await core.dolomiteMargin.getNumMarkets();
   const gmxMarketId = dArbMarketId.add(1);
   const dGmxMarketId = gmxMarketId.add(1);
@@ -217,8 +216,8 @@ async function main(): Promise<DenJsonUpload> {
       core.tokens.gmx!,
       core.chainlinkPriceOracle!,
       core.interestSetters.linearStepFunction8L92UInterestSetter,
-      TargetCollateralization._120,
-      TargetLiquidationPenalty._7,
+      TargetCollateralization._125,
+      TargetLiquidationPenalty._8,
       ONE_BI, // ONE unit of collateral
       true,
     ),
