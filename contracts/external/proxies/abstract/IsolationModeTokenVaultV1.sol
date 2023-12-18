@@ -253,15 +253,10 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         nonReentrant
         onlyVaultOwnerOrConverter(msg.sender)
     {
-        Require.that(
-            _marketIdsPath[0] == marketId(),
-            _FILE,
-            "Invalid first marketId",
-            _marketIdsPath[0]
-        );
         _checkMsgValue();
-        _openBorrowPosition(_fromAccountNumber, _borrowAccountNumber, _inputAmountWei);
-        _swapExactInputForOutput(
+        _openBorrowPosition(_fromAccountNumber, _borrowAccountNumber, /* _amountWei = */ 0);
+        _addCollateralAndSwapExactInputForOutput(
+            _fromAccountNumber,
             _borrowAccountNumber,
             _marketIdsPath,
             _inputAmountWei,

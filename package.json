@@ -53,7 +53,7 @@
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "sort:contracts": "hardhat --network hardhat run scripts/sort-contract.ts",
     "test": "hardhat --network hardhat test",
-    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat --network hardhat test test/external/arb/ARBIsolationModeWrapperTraderV2.ts",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat --network hardhat test test/external/proxies/abstract/IsolationModeTokenVaultV1.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
   "repository": {
