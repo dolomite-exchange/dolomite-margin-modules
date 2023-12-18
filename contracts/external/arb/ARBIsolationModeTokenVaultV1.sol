@@ -81,8 +81,13 @@ contract ARBIsolationModeTokenVaultV1 is
     function _initialize() internal override {
         super._initialize();
 
-        // Delegate to the vault owner by default
-        _delegate(OWNER());
+        address originalDelegate = _arb().delegates(OWNER());
+        if (originalDelegate != address(0)) {
+            _delegate(originalDelegate);
+        } else {
+            // Delegate to the vault owner by default
+            _delegate(OWNER());
+        }
     }
 
     function _delegate(address _delegatee) internal {

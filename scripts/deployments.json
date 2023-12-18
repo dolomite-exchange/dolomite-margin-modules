@@ -1,8 +1,8 @@
 {
   "ARBIsolationModeTokenVaultV1": {
     "42161": {
-      "address": "0x0c5b395408082C8313Ac33201a144EE561235C0b",
-      "transaction": "0x949018598e7ee1daa6ba0b5a79ef8f88793b289b51e01393087bec18f7443ebd",
+      "address": "0x48431fbC7a014BDc42946646c074d781Cc366A70",
+      "transaction": "0x9f3f2ec1cb0fbc1a73e43ca1d36e5532f72cfcaf8cfe338d8e2170340c97c0dc",
       "isVerified": true
     }
   },
