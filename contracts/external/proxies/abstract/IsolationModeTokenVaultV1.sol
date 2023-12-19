@@ -513,7 +513,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _marketId,
             _amountWei,
             _balanceCheckFlag,
-            /* _checkAllowableCollateralMarketFlag =  */ true
+            /* _checkAllowableCollateralMarketFlag =  */ true,
+            /* _bypassAccountNumberCheck = */ false
         );
     }
 
@@ -549,7 +550,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _toAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            /* _bypassAccountNumberCheck = */ false
         );
     }
 
@@ -641,7 +643,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _tradersPath,
             _makerAccounts,
             _userConfig,
-            /* _checkOutputMarketIdFlag = */ true
+            /* _checkOutputMarketIdFlag = */ true,
+            /* _bypassAccountNumberCheck = */ false
         );
     }
 

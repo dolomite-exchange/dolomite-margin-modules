@@ -67,14 +67,14 @@ library TypesLib {
         IDolomiteStructs.Par memory result;
         if (a.sign == b.sign) {
             result.sign = a.sign;
-            result.value = (a.value + b.value).to128();
+            result.value = a.value + b.value;
         } else {
             if (a.value >= b.value) {
                 result.sign = a.sign;
-                result.value = (a.value - b.value).to128();
+                result.value = a.value - b.value;
             } else {
                 result.sign = b.sign;
-                result.value = (b.value - a.value).to128();
+                result.value = b.value - a.value;
             }
         }
         return result;

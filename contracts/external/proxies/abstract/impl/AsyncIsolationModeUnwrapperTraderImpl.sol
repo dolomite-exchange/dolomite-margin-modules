@@ -135,7 +135,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         for (uint256 i; i < tradeTypes.length; ++i) {
             uint256 inputAmountForIteration;
             if (tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromWithdrawal) {
-                IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo = 
+                IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo =
                     _state.withdrawalInfo[keys[i]];
                 vault = withdrawalInfo.vault;
                 inputAmountForIteration = withdrawalInfo.inputAmount;
@@ -192,10 +192,10 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         // being enqueued (without it being enqueued, we'd never reach this point)
 
         // Fix stack too deep errors
-        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage state = _state;       
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage state = _state;
         address outputToken = _outputToken;
 
-        (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes, bytes32[] memory keys) = 
+        (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes, bytes32[] memory keys) =
             abi.decode(_extraOrderData, (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
         assert(tradeTypes.length == keys.length && keys.length > 0);
 
@@ -204,7 +204,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         for (uint256 i; i < tradeTypes.length && inputAmountNeeded > 0; ++i) {
             bytes32 key = keys[i];
             if (tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromWithdrawal) {
-                IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo = 
+                IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo =
                     state.withdrawalInfo[key];
                 if (withdrawalInfo.outputToken == address(0)) {
                     // If the withdrawal was spent already, skip it
@@ -235,7 +235,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             } else {
                 // panic if the trade type isn't correct (somehow).
                 assert(tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit);
-                IUpgradeableAsyncIsolationModeWrapperTrader wrapperTrader = 
+                IUpgradeableAsyncIsolationModeWrapperTrader wrapperTrader =
                     IHandlerRegistry(state.handlerRegistry).getWrapperByToken(
                         IIsolationModeVaultFactory(state.vaultFactory)
                     );

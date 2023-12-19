@@ -98,7 +98,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _borrowAccountNumber,
         uint256 _toAccountNumber
     ) public {
-        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber, /* _bypassAccountNumberCheck = */ false);
         _checkToAccountNumberIsZero(_toAccountNumber);
 
         uint256[] memory collateralMarketIds = new uint256[](1);
@@ -119,7 +119,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _toAccountNumber,
         uint256[] calldata _collateralMarketIds
     ) public {
-        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber, /* _bypassAccountNumberCheck = */ false);
         uint256 underlyingMarketId = _vault.marketId();
         for (uint256 i = 0; i < _collateralMarketIds.length; i++) {
             Require.that(
@@ -146,7 +146,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _amountWei
     ) public {
         _checkFromAccountNumberIsZero(_fromAccountNumber);
-        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber, /* _bypassAccountNumberCheck = */ false);
 
         _vault.BORROW_POSITION_PROXY().transferBetweenAccounts(
             _fromAccountNumber,
@@ -164,9 +164,10 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _marketId,
         uint256 _amountWei,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
-        bool _checkAllowableCollateralMarketFlag
+        bool _checkAllowableCollateralMarketFlag,
+        bool _bypassAccountNumberCheck
     ) public {
-        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber, _bypassAccountNumberCheck);
         _checkMarketIdIsNotSelf(_vault, _marketId);
 
         _vault.BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
@@ -195,7 +196,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _toAccountNumber,
         uint256 _amountWei
     ) public {
-        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber, /* _bypassAccountNumberCheck = */ false);
         _checkToAccountNumberIsZero(_toAccountNumber);
 
         _vault.BORROW_POSITION_PROXY().transferBetweenAccounts(
@@ -213,9 +214,10 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _toAccountNumber,
         uint256 _marketId,
         uint256 _amountWei,
-        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
+        AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag,
+        bool _bypassAccountNumberCheck
     ) public {
-        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber, _bypassAccountNumberCheck);
         _checkMarketIdIsNotSelf(_vault, _marketId);
 
         _vault.BORROW_POSITION_PROXY().transferBetweenAccountsWithDifferentAccounts(
@@ -238,7 +240,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _marketId,
         AccountBalanceLib.BalanceCheckFlag _balanceCheckFlag
     ) public {
-        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber);
+        _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber, /* _bypassAccountNumberCheck = */ false);
         _checkMarketIdIsNotSelf(_vault, _marketId);
         _vault.BORROW_POSITION_PROXY().repayAllForBorrowPositionWithDifferentAccounts(
             /* _fromAccountOwner = */ _vault.OWNER(),
@@ -261,6 +263,15 @@ library IsolationModeTokenVaultV1ActionsImpl {
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig
     ) public {
+        if (_borrowAccountNumber == 0) {
+            uint256 marketId = _vault.marketId();
+            Require.that(
+                _marketIdsPath[0] != marketId && _marketIdsPath[_marketIdsPath.length - 1] == marketId,
+                _FILE,
+                "Invalid marketId for swap/add"
+            );
+        }
+
         if (_marketIdsPath[0] == _vault.marketId()) {
             transferIntoPositionWithUnderlyingToken(
                 _vault,
@@ -286,7 +297,8 @@ library IsolationModeTokenVaultV1ActionsImpl {
                 _marketIdsPath[0],
                 _inputAmountWei,
                 AccountBalanceLib.BalanceCheckFlag.From,
-                /* _checkAllowableCollateralMarketFlag = */ false
+                /* _checkAllowableCollateralMarketFlag = */ false,
+                /* _bypassAccountNumberCheck = */ true
             );
         }
 
@@ -299,7 +311,8 @@ library IsolationModeTokenVaultV1ActionsImpl {
             _tradersPath,
             _makerAccounts,
             _userConfig,
-            /* _checkOutputMarketIdFlag = */ true
+            /* _checkOutputMarketIdFlag = */ true,
+            /* _bypassAccountNumberCheck = */ true
         );
     }
 
@@ -315,6 +328,15 @@ library IsolationModeTokenVaultV1ActionsImpl {
         IGenericTraderProxyV1.UserConfig memory _userConfig
     ) public {
         uint256 outputMarketId = _marketIdsPath[_marketIdsPath.length - 1];
+        if (_borrowAccountNumber == 0) {
+            uint256 marketId = _vault.marketId();
+            Require.that(
+                outputMarketId != marketId && _marketIdsPath[0] == marketId,
+                _FILE,
+                "Invalid marketId for swap/remove"
+            );
+        }
+
         IDolomiteStructs.Wei memory balanceDelta;
 
         // Create a new scope for stack too deep
@@ -336,7 +358,8 @@ library IsolationModeTokenVaultV1ActionsImpl {
                 _tradersPath,
                 _makerAccounts,
                 _userConfig,
-                /* _checkOutputMarketIdFlag = */ false
+                /* _checkOutputMarketIdFlag = */ false,
+                /* _bypassAccountNumberCheck = */ true
             );
 
             balanceDelta = dolomiteMargin
@@ -361,7 +384,8 @@ library IsolationModeTokenVaultV1ActionsImpl {
                 _toAccountNumber,
                 outputMarketId,
                 balanceDelta.value,
-                AccountBalanceLib.BalanceCheckFlag.None // we always transfer the exact amount out; no need to check
+                AccountBalanceLib.BalanceCheckFlag.None, // we always transfer the exact amount out; no need to check
+                /* _bypassAccountNumberCheck = */ true
             );
         }
     }
@@ -375,14 +399,17 @@ library IsolationModeTokenVaultV1ActionsImpl {
         IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
         IDolomiteMargin.AccountInfo[] memory _makerAccounts,
         IGenericTraderProxyV1.UserConfig memory _userConfig,
-        bool _checkOutputMarketIdFlag
+        bool _checkOutputMarketIdFlag,
+        bool _bypassAccountNumberCheck
     ) public {
-        Require.that(
-            _tradeAccountNumber != 0,
-            _FILE,
-            "Invalid tradeAccountNumber",
-            _tradeAccountNumber
-        );
+        if (!_bypassAccountNumberCheck) {
+            Require.that(
+                _tradeAccountNumber != 0,
+                _FILE,
+                "Invalid tradeAccountNumber",
+                _tradeAccountNumber
+            );
+        }
 
         if (_inputAmountWei == AccountActionLib.all()) {
             _inputAmountWei = _getAndValidateBalanceForAllForMarket(
@@ -545,12 +572,17 @@ library IsolationModeTokenVaultV1ActionsImpl {
         );
     }
 
-    function _checkBorrowAccountNumberIsNotZero(uint256 _borrowAccountNumber) private pure {
-        Require.that(
-            _borrowAccountNumber != 0,
-            _FILE,
-            "Invalid borrowAccountNumber",
-            _borrowAccountNumber
-        );
+    function _checkBorrowAccountNumberIsNotZero(
+        uint256 _borrowAccountNumber,
+        bool _bypassAccountNumberCheck
+    ) private pure {
+        if (!_bypassAccountNumberCheck) {
+            Require.that(
+                _borrowAccountNumber != 0,
+                _FILE,
+                "Invalid borrowAccountNumber",
+                _borrowAccountNumber
+            );
+        }
     }
 }

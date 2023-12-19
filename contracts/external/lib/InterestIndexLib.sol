@@ -54,12 +54,12 @@ library InterestIndexLib {
         if (_amountPar.sign) {
             return IDolomiteStructs.Wei({
                 sign: true,
-                value: _amountPar.value.getPartialRoundHalfUp(index.supply, _BASE)
+                value: uint256(_amountPar.value).getPartialRoundHalfUp(index.supply, _BASE)
             });
         } else {
             return IDolomiteStructs.Wei({
                 sign: false,
-                value: _amountPar.value.getPartialRoundHalfUp(index.borrow, _BASE)
+                value: uint256(_amountPar.value).getPartialRoundHalfUp(index.borrow, _BASE).to128()
             });
         }
     }
@@ -76,12 +76,12 @@ library InterestIndexLib {
         if (_amountWei.sign) {
             return IDolomiteStructs.Par({
                 sign: true,
-                value: _amountWei.value.getPartialRoundHalfUp(_BASE, index.supply)
+                value: _amountWei.value.getPartialRoundHalfUp(_BASE, index.supply).to128()
             });
         } else {
             return IDolomiteStructs.Par({
                 sign: false,
-                value: _amountWei.value.getPartialRoundHalfUp(_BASE, index.borrow)
+                value: _amountWei.value.getPartialRoundHalfUp(_BASE, index.borrow).to128()
             });
         }
     }

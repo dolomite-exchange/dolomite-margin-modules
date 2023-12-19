@@ -45,8 +45,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     IUpgradeableAsyncIsolationModeUnwrapperTrader,
     AsyncIsolationModeTraderBase
 {
-    using SafeERC20 for IERC20;
     using AsyncIsolationModeUnwrapperTraderImpl for State;
+    using SafeERC20 for IERC20;
 
     // ======================== Constants ========================
 
@@ -399,7 +399,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     ) internal virtual view returns (uint256);
 
     function _getWithdrawalSlot(bytes32 _key) internal view returns (WithdrawalInfo storage info) {
-        State storage state = _getStorageSlot(); 
+        State storage state = _getStorageSlot();
         return state.withdrawalInfo[_key];
     }
 

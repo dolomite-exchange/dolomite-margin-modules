@@ -56,6 +56,7 @@ contract VesterImplementationV2 is
     using Address for address payable;
     using SafeERC20 for IERC20;
     using SafeERC20 for IOARB;
+    using VesterImplementationLibForV2 for VesterImplementationV2;
 
     // ===================================================
     // ==================== Constants ====================
@@ -96,7 +97,6 @@ contract VesterImplementationV2 is
 
     uint256 private immutable _MIN_VESTING_DURATION; // solhint-disable-line
     uint256 private immutable _MAX_VESTING_DURATION; // solhint-disable-line
-    uint256 private immutable _GRANDFATHERED_UPGRADED_MIN_DURATION; // solhint-disable-line
     uint256 private immutable _OLD_MAX_VESTING_DURATION; // solhint-disable-line
 
     // =========================================================
@@ -131,7 +131,6 @@ contract VesterImplementationV2 is
 
         _MIN_VESTING_DURATION = VesterImplementationLibForV2.minVestingDuration();
         _MAX_VESTING_DURATION = VesterImplementationLibForV2.maxVestingDuration();
-        _GRANDFATHERED_UPGRADED_MIN_DURATION = VesterImplementationLibForV2.grandfatheredUpgradedMinVestingDuration();
         _OLD_MAX_VESTING_DURATION = VesterImplementationLibForV2.oldMaxVestingDuration();
     }
 
@@ -207,8 +206,7 @@ contract VesterImplementationV2 is
     }
 
     function extendDurationForGrandfatheredPosition(uint256 _nftId, uint256 _duration) external {
-        VesterImplementationLibForV2.extendDurationForGrandfatheredPosition(
-            /* _implementation = */ this,
+        this.extendDurationForGrandfatheredPosition(
             /* _vestingPosition = */ _getVestingPositionSlot(_nftId),
             _nftId,
             _duration
@@ -252,7 +250,7 @@ contract VesterImplementationV2 is
         );
 
         // Calculate price
-        uint256 effectiveRate = _calculateEffectiveRate(position.duration, _nftId);
+        uint256 effectiveRate = this.calculateEffectiveRate(position.duration, _nftId);
         uint256 wethPrice = DOLOMITE_MARGIN().getMarketPrice(WETH_MARKET_ID).value;
         uint256 arbPriceAdj = DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID).value * effectiveRate / _BASE;
 
@@ -829,24 +827,6 @@ contract VesterImplementationV2 is
             return _duration * 2 / 3;
         } else {
             return _duration;
-        }
-    }
-
-    function _calculateEffectiveRate(uint256 _duration, uint256 _nftId) internal virtual view returns (uint256) {
-        if (_nftId <= grandfatheredIdCutoff() && _duration < _GRANDFATHERED_UPGRADED_MIN_DURATION) {
-            if (_duration == 1 weeks) {
-                return 9_750;
-            } else if (_duration == 2 weeks) {
-                return 9_500;
-            } else if (_duration == 3 weeks) {
-                return 9_000;
-            } else {
-                assert(_duration == 4 weeks);
-                return 8_000;
-            }
-        } else {
-            uint256 numberOfWeeks = _duration / _MIN_VESTING_DURATION;
-            return 10_000 - (250 * numberOfWeeks);
         }
     }
 

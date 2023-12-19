@@ -61,7 +61,7 @@ async function main(): Promise<DenJsonUpload> {
     Number(network),
     'ARBIsolationModeTokenVaultV1',
     [],
-    undefined,
+    'ARBIsolationModeTokenVaultV3',
     getTokenVaultLibrary(core),
   );
   const arbVaultImplementation = ARBIsolationModeTokenVaultV1__factory.connect(

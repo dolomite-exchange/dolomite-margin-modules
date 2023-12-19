@@ -1,5 +1,4 @@
-import { ZapOutputParam } from '@dolomite-exchange/zap-sdk/dist';
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import { AmountDenomination, AmountReference, BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import {
   GenericTraderParam,
   GenericTraderType,
@@ -8,7 +7,7 @@ import {
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import {
   IIsolationModeUnwrapperTrader,
-  IIsolationModeWrapperTrader,
+  IIsolationModeWrapperTrader, TestDolomiteMarginInternalTrader,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeWrapperTraderV2,
 } from '../../src/types';
@@ -84,6 +83,69 @@ export async function getUnwrapZapParams(
     marketIdsPath: [inputMarket, outputMarket],
     tradersPath: [traderParam],
     makerAccounts: [],
+    userConfig: {
+      deadline: '123123123123123',
+      balanceCheckFlag: BalanceCheckFlag.None,
+    },
+  };
+}
+
+export async function getUnwrapAndCustomTradeZapParams(
+  marketsPath: BigNumberish[],
+  amountsPath: BigNumber[],
+  unwrapper: TestIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader,
+  internalTrader: TestDolomiteMarginInternalTrader,
+  core: CoreProtocol,
+): Promise<ZapParam> {
+  if (!core.testEcosystem) {
+    return Promise.reject('Core protocol does not have a test ecosystem');
+  }
+  if (marketsPath.length !== 3 || amountsPath.length !== 3) {
+    return Promise.reject('Lengths must equal 3');
+  }
+
+  const traderParam1: GenericTraderParam = {
+    trader: unwrapper.address,
+    traderType: GenericTraderType.IsolationModeUnwrapper,
+    tradeData: ethers.utils.defaultAbiCoder.encode(
+      ['uint256', 'bytes'],
+      [amountsPath[1], ethers.utils.defaultAbiCoder.encode(['uint256'], [amountsPath[1]])],
+    ),
+    makerAccountIndex: 0,
+  };
+
+  await core.dolomiteMargin.connect(core.hhUser1).setOperators([
+    {
+      operator: internalTrader.address,
+      trusted: true,
+    },
+  ]);
+  const tradeId = BigNumber.from('4321');
+  const outputData = {
+    value: amountsPath[2],
+    sign: false,
+    denomination: AmountDenomination.Wei,
+    ref: AmountReference.Delta,
+  };
+  await internalTrader.setData(tradeId, outputData);
+  const traderParam2: GenericTraderParam = {
+    trader: internalTrader.address,
+    traderType: GenericTraderType.InternalLiquidity,
+    tradeData: ethers.utils.defaultAbiCoder.encode(
+      ['uint256', 'bytes'],
+      [amountsPath[1].sub(1), ethers.utils.defaultAbiCoder.encode(['uint256'], [tradeId])],
+    ),
+    makerAccountIndex: 0,
+  };
+  return {
+    inputAmountWei: amountsPath[0],
+    minOutputAmountWei: amountsPath[2],
+    marketIdsPath: marketsPath,
+    tradersPath: [traderParam1, traderParam2],
+    makerAccounts: [{
+      owner: core.hhUser1.address,
+      number: 0,
+    }],
     userConfig: {
       deadline: '123123123123123',
       balanceCheckFlag: BalanceCheckFlag.None,

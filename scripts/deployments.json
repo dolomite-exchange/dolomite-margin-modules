@@ -1,8 +1,22 @@
 {
   "ARBIsolationModeTokenVaultV1": {
     "42161": {
+      "address": "0x0c5b395408082C8313Ac33201a144EE561235C0b",
+      "transaction": "0x949018598e7ee1daa6ba0b5a79ef8f88793b289b51e01393087bec18f7443ebd",
+      "isVerified": true
+    }
+  },
+  "ARBIsolationModeTokenVaultV2": {
+    "42161": {
       "address": "0x48431fbC7a014BDc42946646c074d781Cc366A70",
       "transaction": "0x9f3f2ec1cb0fbc1a73e43ca1d36e5532f72cfcaf8cfe338d8e2170340c97c0dc",
+      "isVerified": true
+    }
+  },
+  "ARBIsolationModeTokenVaultV3": {
+    "42161": {
+      "address": "0xE3CD6478665E0980D58DF294183b6fb0742C0cD4",
+      "transaction": "0x60bf3657416b77b9e4ceee2a8e39aeaa1160f7dbd865b66611fdd42571f414ff",
       "isVerified": true
     }
   },
@@ -265,6 +279,13 @@
     "42161": {
       "address": "0x7B9F5Dfee29383D266FAdDCad0C0A70EAd9057A7",
       "transaction": "0x1d389360d411027055e65d21a3bb1612eba56542667efc7c50f5a7629362dffb",
+      "isVerified": true
+    }
+  },
+  "IsolationModeTokenVaultV1ActionsImplV2": {
+    "42161": {
+      "address": "0xa2DFe626D3567D2A6111177bBa832E4c66eF7d21",
+      "transaction": "0xabe458d0b380452b24175f2d7925c053a61fdfe6369f62268cf14cc5564a1761",
       "isVerified": true
     }
   },

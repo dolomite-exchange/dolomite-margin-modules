@@ -45,9 +45,9 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     IUpgradeableAsyncIsolationModeWrapperTrader,
     AsyncIsolationModeTraderBase
 {
+    using AsyncIsolationModeWrapperTraderImpl for State;
     using InterestIndexLib for IDolomiteMargin;
     using SafeERC20 for IERC20;
-    using AsyncIsolationModeWrapperTraderImpl for State;
 
     // ======================== Constants ========================
 

@@ -88,6 +88,28 @@ library VesterImplementationLibForV2 {
         emit PositionDurationExtended(_nftId, _duration);
     }
 
+    function calculateEffectiveRate(
+        VesterImplementationV2 _implementation,
+        uint256 _duration,
+        uint256 _nftId
+    ) public view returns (uint256) {
+        if (_nftId <= _implementation.grandfatheredIdCutoff() && _duration < _GRANDFATHERED_UPGRADED_MIN_DURATION) {
+            if (_duration == 1 weeks) {
+                return 9_750;
+            } else if (_duration == 2 weeks) {
+                return 9_500;
+            } else if (_duration == 3 weeks) {
+                return 9_000;
+            } else {
+                assert(_duration == 4 weeks);
+                return 8_000;
+            }
+        } else {
+            uint256 numberOfWeeks = _duration / _MIN_VESTING_DURATION;
+            return 10_000 - (250 * numberOfWeeks);
+        }
+    }
+
     function minVestingDuration() public pure returns (uint256) {
         return _MIN_VESTING_DURATION;
     }

@@ -122,8 +122,9 @@ export async function deployContractAndSave(
 
 export function getTokenVaultLibrary(core: CoreProtocol): Record<string, string> {
   const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
+  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV2';
   return {
-    [libraryName]: deployments[libraryName][core.config.network as '42161'].address,
+    [libraryName]: deployments[deploymentName][core.config.network as '42161'].address,
   };
 }
 
@@ -144,13 +145,13 @@ export async function deployPendlePtSystem(
   syToken: IPendleSyToken,
   underlyingToken: IERC20,
 ): Promise<PendlePtSystem> {
-  const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
+  const libraries = getTokenVaultLibrary(core);
   const userVaultImplementationAddress = await deployContractAndSave(
     Number(network),
     'PendlePtIsolationModeTokenVaultV1',
     [],
     `PendlePt${ptName}IsolationModeTokenVaultV1'`,
-    { [libraryName]: deployments[libraryName][network as '42161'].address },
+    libraries,
   );
   const userVaultImplementation = PendlePtIsolationModeTokenVaultV1__factory.connect(
     userVaultImplementationAddress,
