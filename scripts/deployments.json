@@ -177,6 +177,13 @@
       "isVerified": true
     }
   },
+  "GLPIsolationModeTokenVaultV2": {
+    "42161": {
+      "address": "0x4600e18f69cF1aBfb2A4A8B388C635C6a71d256A",
+      "transaction": "0xe15c2cf6a55b2246c0659fe9706a2c19aedd8dff704860832980414afc38f8d5",
+      "isVerified": true
+    }
+  },
   "GLPIsolationModeUnwrapperTraderV1": {
     "42161": {
       "address": "0xe2E26241E8572912d0fA3c213b935D10a4Fe2268",
