@@ -1,10 +1,13 @@
+import { artifacts } from 'hardhat';
 import { verifyContract } from './deploy-utils';
 
 async function main() {
+  const contractName = 'IsolationModeUpgradeableProxy';
+  const sourceName = (await artifacts.readArtifact(contractName)).sourceName;
   await verifyContract(
-    '0x5c851fd710b83705be1cabf9d6cbd41f3544be0e',
+    '0x48e0b8026e08676689468F1DcF43203698Ff26A0',
     [],
-    undefined,
+    `${sourceName}:${contractName}`,
   );
 }
 
