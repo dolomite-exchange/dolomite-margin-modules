@@ -54,7 +54,7 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    await prettyPrintEncodeAddMarket(
+    ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.jones!,
       jonesTwap,
@@ -66,7 +66,7 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    await prettyPrintEncodeAddMarket(
+    ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.premia!,
       premiaTwap,
@@ -78,7 +78,7 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    await prettyPrintEncodeAddMarket(
+    ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.radiant!,
       core.chainlinkPriceOracle!,
