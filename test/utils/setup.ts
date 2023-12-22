@@ -268,7 +268,7 @@ import {
   RETH_MAP,
   S_GLP_MAP,
   S_GMX_MAP,
-  SBF_GMX_MAP,
+  SBF_GMX_MAP, SIZE_MAP, SIZE_WETH_V3_POOL_MAP,
   ST_ETH_MAP,
   UMAMI_CONFIGURATOR_MAP,
   UMAMI_LINK_VAULT_MAP,
@@ -320,6 +320,7 @@ export interface AtlasEcosystem {
 export interface CamelotEcosystem {
   grailUsdcV3Pool: IAlgebraV3Pool;
   grailWethV3Pool: IAlgebraV3Pool;
+  sizeWethV3Pool: IAlgebraV3Pool;
 }
 
 export interface GmxEcosystem {
@@ -591,6 +592,7 @@ export interface CoreProtocol {
     rEth: IERC20 | undefined;
     radiant: IERC20 | undefined;
     pendle: IERC20 | undefined;
+    size: IERC20 | undefined;
     stEth: IERC20 | undefined;
     usdc: IERC20;
     wbtc: IERC20;
@@ -1007,10 +1009,11 @@ export async function setupCoreProtocol(
       link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
       magic: createIERC20Opt(MAGIC_MAP[config.network]?.address, hhUser1),
       nativeUsdc: createIERC20Opt(NATIVE_USDC_MAP[config.network]?.address, hhUser1),
-      rEth: createIERC20Opt(RETH_MAP[config.network]?.address, hhUser1),
-      radiant: createIERC20Opt(RDNT_MAP[config.network]?.address, hhUser1),
       premia: createIERC20Opt(PREMIA_MAP[config.network]?.address, hhUser1),
       pendle: createIERC20Opt(PENDLE_MAP[config.network]?.address, hhUser1),
+      rEth: createIERC20Opt(RETH_MAP[config.network]?.address, hhUser1),
+      radiant: createIERC20Opt(RDNT_MAP[config.network]?.address, hhUser1),
+      size: createIERC20Opt(SIZE_MAP[config.network]?.address, hhUser1),
       stEth: createIERC20Opt(ST_ETH_MAP[config.network]?.address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
       wbtc: IERC20__factory.connect(WBTC_MAP[config.network].address, hhUser1),
@@ -1148,6 +1151,7 @@ async function createCamelotEcosystem(
   return {
     grailUsdcV3Pool: getContract(GRAIL_USDC_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
     grailWethV3Pool: getContract(GRAIL_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
+    sizeWethV3Pool: getContract(SIZE_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
   };
 }
 
