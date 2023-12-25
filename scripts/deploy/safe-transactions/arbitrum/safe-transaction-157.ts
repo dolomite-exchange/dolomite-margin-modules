@@ -1,56 +1,32 @@
-import { parseEther } from 'ethers/lib/utils';
-import {
-  ARBIsolationModeTokenVaultV1__factory,
-  ARBIsolationModeVaultFactory__factory,
-  ARBRegistry__factory,
-  GMXIsolationModeTokenVaultV1__factory,
-  GMXIsolationModeVaultFactory__factory,
-  SimpleIsolationModeUnwrapperTraderV2__factory,
-  SimpleIsolationModeWrapperTraderV2__factory,
-} from '../../../../src/types';
-import {
-  getARBIsolationModeVaultFactoryConstructorParams,
-  getARBRegistryConstructorParams,
-  getARBUnwrapperTraderV2ConstructorParams,
-  getARBWrapperTraderV2ConstructorParams,
-} from '../../../../src/utils/constructors/arb';
-import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../src/utils/constructors/dolomite';
-import {
-  getGMXIsolationModeVaultFactoryConstructorParams,
-  getGMXUnwrapperTraderV2ConstructorParams,
-  getGMXWrapperTraderV2ConstructorParams,
-} from '../../../../src/utils/constructors/gmx';
-import { getTWAPPriceOracleConstructorParams } from '../../../../src/utils/constructors/oracles';
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_BI } from '../../../../src/utils/no-deps-constants';
+import { Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,
-  deployContractAndSave,
   EncodedTransaction,
-  getTokenVaultLibrary,
-  prettyPrintEncodeAddIsolationModeMarket,
-  prettyPrintEncodeAddMarket, prettyPrintEncodedDataWithTypeSafety,
-  prettyPrintEncodeInsertChainlinkOracle,
+  prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../deploy-utils';
 
 /**
  * This script encodes the following transactions:
- * - Deploys 3 new Wrapper contracts for PT-wstETH (2024 + 2025) and PT-rETH (2025)
+ * - Changes the ARB collateralization to 115%
  */
 async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const sizeTwapOracleAddress = await deployContractAndSave(
-    Number(network),
-    'TWAPPriceOracle',
-    getTWAPPriceOracleConstructorParams(core, core.tokens.size!, [core.camelotEcosystem!.sizeWethV3Pool]),
-    'SizeTWAPPriceOracleV1',
-  );
   const transactions: EncodedTransaction[] = [];
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteMargin',
+      'ownerSetMarginPremium',
+      [core.marketIds.arb!, { value: ZERO_BI }],
+    ),
+  );
 
   return {
     transactions,
