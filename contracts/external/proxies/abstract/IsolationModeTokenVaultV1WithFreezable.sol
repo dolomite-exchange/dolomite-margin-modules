@@ -302,7 +302,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         return _getUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)));
     }
 
-    function isVaultFrozen() public view returns (bool) {
+    function isVaultFrozen() public virtual view returns (bool) {
         return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultFrozen(address(this));
     }
 

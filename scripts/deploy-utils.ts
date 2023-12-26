@@ -323,13 +323,13 @@ async function getFormattedTokenName(core: CoreProtocol, tokenAddress: string): 
     return '(None)';
   }
 
+  const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
+  mostRecentTokenDecimals = await token.decimals();
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
     return cachedName;
   }
-  const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
   try {
-    mostRecentTokenDecimals = await token.decimals();
     addressToNameCache[tokenAddress.toLowerCase()] = `(${await token.symbol()})`;
     return addressToNameCache[tokenAddress.toLowerCase()]!;
   } catch (e) {
@@ -403,9 +403,11 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   const contract = liveMap[key];
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
   const fragment = contract.interface.getFunction(methodName.toString());
-  const mappedArgs = await Promise.all((args as any[]).map(async (arg, i) => {
-    return getReadableArg(core, fragment.inputs[i], arg);
-  }));
+  const mappedArgs: string[] = [];
+  for (let i = 0; i < (args as any[]).length; i++) {
+    mappedArgs.push(await getReadableArg(core, fragment.inputs[i], (args as any[])[i]));
+  }
+
   console.log(''); // add a new line
   console.log(`=================================== ${counter++} - ${key}.${methodName} ===================================`);
   console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
