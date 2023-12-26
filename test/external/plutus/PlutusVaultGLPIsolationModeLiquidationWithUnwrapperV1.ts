@@ -71,7 +71,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV1', () => {
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
-    const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1();
+    const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1(core);
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
     factory = await createPlutusVaultGLPIsolationModeVaultFactory(
       core,
@@ -121,8 +121,15 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV1', () => {
       underlyingMarketId,
       unwrapper.address,
     );
-    await createAndSetPlutusVaultWhitelist(core, core.plutusEcosystem!.plvGlpRouter, unwrapper, wrapper, factory);
-    await createAndSetPlutusVaultWhitelist(core, core.plutusEcosystem!.plvGlpFarm, unwrapper, wrapper, factory);
+    await createAndSetPlutusVaultWhitelist(
+      core,
+      core.plutusEcosystem!.plvGlpRouter,
+      unwrapper,
+      wrapper,
+      factory,
+      vault
+    );
+    await createAndSetPlutusVaultWhitelist(core, core.plutusEcosystem!.plvGlpFarm, unwrapper, wrapper, factory, vault);
 
     snapshotId = await snapshot();
   });

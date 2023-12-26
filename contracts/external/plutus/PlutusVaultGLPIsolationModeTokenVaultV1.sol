@@ -64,28 +64,38 @@ contract PlutusVaultGLPIsolationModeTokenVaultV1 is
         _withdrawAllPls(msg.sender);
     }
 
-    function stakePlvGlp(uint96 _amount) external override onlyVaultOwner(msg.sender) {
-        IERC20 plvGlp = IERC20(UNDERLYING_TOKEN());
-        IPlutusVaultGLPFarm farm = plvGlpFarm();
-        plvGlp.safeApprove(address(farm), _amount);
-        farm.deposit(_amount);
+    function stakePlvGlp(uint256 _amount) external override onlyVaultOwner(msg.sender) {
+        _stakePlvGlp(_amount);
     }
 
-    function unstakePlvGlp(uint96 _amount) external override onlyVaultOwner(msg.sender) {
-        plvGlpFarm().withdraw(_amount);
+    function unstakePlvGlp(uint256 _amount) external override onlyVaultOwner(msg.sender) {
+        plvGlpFarm().withdraw(_amount.to96());
     }
 
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
 
+    function executeDepositIntoVault(
+        address _from,
+        uint256 _amount
+    )
+        public
+        override
+        onlyVaultFactory(msg.sender)
+    {
+        super.executeDepositIntoVault(_from, _amount);
+        _stakePlvGlp(_amount);
+    }
+
     function executeWithdrawalFromVault(
         address _recipient,
         uint256 _amount
     )
-    public
-    override
-    onlyVaultFactory(msg.sender) {
+        public
+        override
+        onlyVaultFactory(msg.sender)
+    {
         uint256 unstakedBalance = super.underlyingBalanceOf();
         if (unstakedBalance < _amount) {
             // There's not enough plvGLP in the vault to cover the withdrawal, so we need to withdraw from the staking
@@ -142,5 +152,12 @@ contract PlutusVaultGLPIsolationModeTokenVaultV1 is
     function _withdrawAllPls(address _recipient) internal {
         IERC20 _pls = pls();
         _pls.safeTransfer(_recipient, _pls.balanceOf(address(this)));
+    }
+
+    function _stakePlvGlp(uint256 _amount) internal {
+        IERC20 plvGlp = IERC20(UNDERLYING_TOKEN());
+        IPlutusVaultGLPFarm farm = plvGlpFarm();
+        plvGlp.safeApprove(address(farm), _amount);
+        farm.deposit(_amount.to96());
     }
 }

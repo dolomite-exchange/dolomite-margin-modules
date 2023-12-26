@@ -62,7 +62,7 @@ import {
   IERC4626,
   IERC4626__factory,
   IEsGmxDistributor,
-  IEsGmxDistributor__factory,
+  IEsGmxDistributor__factory, IEventEmitterRegistry, IEventEmitterRegistry__factory,
   IExpiry,
   IExpiry__factory,
   IGenericTraderProxyV1,
@@ -511,6 +511,8 @@ export interface CoreProtocol {
   dolomiteMargin: IDolomiteMargin;
   dolomiteRegistry: IDolomiteRegistry;
   dolomiteRegistryProxy: RegistryProxy;
+  eventEmitterRegistry: IEventEmitterRegistry | undefined;
+  eventEmitterRegistryProxy: RegistryProxy | undefined;
   expiry: IExpiry;
   genericTraderProxy: IGenericTraderProxyV1 | undefined;
   gmxEcosystem: GmxEcosystem | undefined;
@@ -832,6 +834,18 @@ export async function setupCoreProtocol(
     dolomiteRegistryProxy = null as any;
   }
 
+  const eventEmitterRegistry = getContractOpt(
+    (Deployments.EventEmitterRegistryProxy as any)[config.network].address,
+    IEventEmitterRegistry__factory.connect,
+    governance
+  );
+
+  const eventEmitterRegistryProxy = getContractOpt(
+    (Deployments.EventEmitterRegistryProxy as any)[config.network].address,
+    RegistryProxy__factory.connect,
+    governance
+  );
+
   const expiry = IExpiry__factory.connect(
     ExpiryJson.networks[config.network].address,
     governance,
@@ -916,6 +930,8 @@ export async function setupCoreProtocol(
     dolomiteMargin,
     dolomiteRegistry,
     dolomiteRegistryProxy,
+    eventEmitterRegistry,
+    eventEmitterRegistryProxy,
     expiry,
     genericTraderProxy,
     gmxEcosystem,
