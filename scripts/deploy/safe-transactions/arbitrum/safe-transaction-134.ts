@@ -30,7 +30,7 @@ async function main(): Promise<DenJsonUpload> {
     Number(network),
     'TWAPPriceOracle',
     getTWAPPriceOracleConstructorParams(core, core.tokens.jones!, [core.jonesEcosystem!.jonesWethV3Pool]),
-    'JonesTWAPPriceOracle',
+    'JonesTWAPPriceOracleV1',
   );
   const jonesTwap = TWAPPriceOracle__factory.connect(jonesTwapAddress, core.governance);
 
@@ -38,7 +38,7 @@ async function main(): Promise<DenJsonUpload> {
     Number(network),
     'TWAPPriceOracle',
     getTWAPPriceOracleConstructorParams(core, core.tokens.premia!, [core.premiaEcosystem!.premiaWethV3Pool]),
-    'PremiaTWAPPriceOracle',
+    'PremiaTWAPPriceOracleV1',
   );
   const premiaTwap = TWAPPriceOracle__factory.connect(premiaTwapAddress, core.governance);
 
@@ -54,7 +54,7 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    await prettyPrintEncodeAddMarket(
+    ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.jones!,
       jonesTwap,
@@ -66,7 +66,7 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    await prettyPrintEncodeAddMarket(
+    ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.premia!,
       premiaTwap,
@@ -78,7 +78,7 @@ async function main(): Promise<DenJsonUpload> {
     ),
   );
   transactions.push(
-    await prettyPrintEncodeAddMarket(
+    ...await prettyPrintEncodeAddMarket(
       core,
       core.tokens.radiant!,
       core.chainlinkPriceOracle!,

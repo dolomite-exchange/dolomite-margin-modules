@@ -296,7 +296,7 @@
       "isVerified": true
     }
   },
-  "JonesTWAPPriceOracle": {
+  "JonesTWAPPriceOracleV1": {
     "42161": {
       "address": "0x7Dc900EE1ada0Cb1B45c3C10B829682187d5e127",
       "transaction": "0x80724c2774551409ca22856d44d29bd7b2bd7255acb91912dbf2eb95bc44da9e",
@@ -751,10 +751,17 @@
       "isVerified": true
     }
   },
-  "PremiaTWAPPriceOracle": {
+  "PremiaTWAPPriceOracleV1": {
     "42161": {
       "address": "0x1093e0E82EC11080D6239538a5D5c60d155aF851",
       "transaction": "0xcd4520f4d9b6869fdcfbd687c08882eb59676a59b38e2b775f1e0029562b0fb9",
+      "isVerified": true
+    }
+  },
+  "SizeTWAPPriceOracleV1": {
+    "42161": {
+      "address": "0xAd635C94F1855De31add582ac4ce0DaB699f9B1b",
+      "transaction": "0xd914c9402438707e6f890636a6d297bb00e59d48e29ab8575b470c41162f8b99",
       "isVerified": true
     }
   },

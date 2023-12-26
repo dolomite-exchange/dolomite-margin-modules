@@ -213,6 +213,19 @@ export const RETH_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
+export const SIZE_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x939727d85d99d0ac339bf1b76dfe30ca27c19067',
+    marketId: -1,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const SIZE_WETH_V3_POOL_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x123d123c6f062f7f5a6e82c396b34f1929125bf3',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const ST_ETH_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',

@@ -36,9 +36,9 @@ interface IPlutusVaultGLPIsolationModeTokenVaultV1 {
 
     function harvest() external;
 
-    function stakePlvGlp(uint96 _amount) external;
+    function stakePlvGlp(uint256 _amount) external;
 
-    function unstakePlvGlp(uint96 _amount) external;
+    function unstakePlvGlp(uint256 _amount) external;
 
     function plvGlpFarm() external view returns (IPlutusVaultGLPFarm);
 

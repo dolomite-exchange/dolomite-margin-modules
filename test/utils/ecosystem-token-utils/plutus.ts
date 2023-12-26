@@ -5,7 +5,6 @@ import {
   IPlutusVaultGLPIsolationModeTokenVaultV1,
   IPlutusVaultRegistry,
   PlutusVaultGLPIsolationModeTokenVaultV1,
-  PlutusVaultGLPIsolationModeTokenVaultV1__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1,
   PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV2,
@@ -36,8 +35,9 @@ import {
   getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../../../src/utils/constructors/plutus';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
 import { CoreProtocol } from '../setup';
+import { getTokenVaultLibrary } from '../../../scripts/deploy-utils';
 
 export function createDolomiteCompatibleWhitelistForPlutusDAO(
   core: CoreProtocol,
@@ -77,10 +77,12 @@ export function createPlutusVaultGLPIsolationModeVaultFactory(
   );
 }
 
-export function createPlutusVaultGLPIsolationModeTokenVaultV1(): Promise<PlutusVaultGLPIsolationModeTokenVaultV1> {
-  return createContractWithAbi(
-    PlutusVaultGLPIsolationModeTokenVaultV1__factory.abi,
-    PlutusVaultGLPIsolationModeTokenVaultV1__factory.bytecode,
+export function createPlutusVaultGLPIsolationModeTokenVaultV1(
+  core: CoreProtocol,
+): Promise<PlutusVaultGLPIsolationModeTokenVaultV1> {
+  return createContractWithLibrary(
+    'PlutusVaultGLPIsolationModeTokenVaultV1',
+    getTokenVaultLibrary(core),
     [],
   );
 }
