@@ -264,7 +264,7 @@ async function prettyPrintAndVerifyContract(
   console.log('Address: ', contract.address);
   console.log('='.repeat(52 + contractRename.length));
 
-  if (network.name !== 'hardhat') {
+  if (process.env.SKIP_VERIFICATION !== 'true' && network.name !== 'hardhat') {
     console.log('Sleeping for 5s to wait for the transaction to be indexed by Etherscan...');
     await sleep(5000);
     const sourceName = (await artifacts.readArtifact(contractName)).sourceName;
@@ -324,7 +324,11 @@ async function getFormattedTokenName(core: CoreProtocol, tokenAddress: string): 
   }
 
   const token = IERC20Metadata__factory.connect(tokenAddress, core.hhUser1);
-  mostRecentTokenDecimals = await token.decimals();
+  try {
+    mostRecentTokenDecimals = await token.decimals();
+  } catch (e) {
+  }
+
   const cachedName = addressToNameCache[tokenAddress.toString().toLowerCase()];
   if (typeof cachedName !== 'undefined') {
     return cachedName;
@@ -388,6 +392,15 @@ export interface DenJsonUpload {
   transactions: EncodedTransaction[];
 }
 
+function isOwnerFunction(methodName: string): boolean {
+  return methodName.startsWith('owner')
+    || methodName === 'upgradeTo'
+    || methodName === 'upgradeToAndCall'
+    || methodName === 'setUserVaultImplementation'
+    || methodName === 'setIsTokenConverterTrusted'
+    || methodName === 'setGmxRegistry';
+}
+
 export async function prettyPrintEncodedDataWithTypeSafety<
   T extends V[K],
   U extends keyof T['populateTransaction'],
@@ -411,14 +424,17 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   console.log(''); // add a new line
   console.log(`=================================== ${counter++} - ${key}.${methodName} ===================================`);
   console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
-  console.log('To:\t\t', transaction.to);
+  console.log(
+    'To:\t\t',
+    (await getReadableArg(core, ParamType.fromString('address to'), transaction.to)).substring(13)
+  );
   console.log('Data:\t\t', transaction.data);
   console.log('='.repeat(76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length));
   console.log(''); // add a new line
 
   if (
     typeof methodName === 'string'
-    && (methodName.startsWith('owner') || methodName === 'upgradeTo' || methodName === 'upgradeToAndCall')
+    && isOwnerFunction(methodName)
     && await core.dolomiteMargin.owner() === core.delayedMultiSig.address
   ) {
     // All owner ... functions must go to Dolomite governance first
