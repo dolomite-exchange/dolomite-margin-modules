@@ -190,7 +190,7 @@ import {
   BN_GMX_MAP,
   CHAINLINK_PRICE_ORACLE_MAP,
   CHAINLINK_PRICE_ORACLE_OLD_MAP,
-  CHAINLINK_REGISTRY_MAP,
+  CHAINLINK_REGISTRY_MAP, D_ARB_MAP, D_GMX_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
   DJ_USDC,
@@ -544,7 +544,9 @@ export interface CoreProtocol {
   marketIds: {
     arb: BigNumberish | undefined;
     dai: BigNumberish | undefined;
+    dArb: BigNumberish | undefined;
     dfsGlp: BigNumberish | undefined;
+    dGmx: BigNumberish | undefined;
     djUSDC: BigNumberish | undefined;
     dplvGlp: BigNumberish | undefined;
     dPtGlp: BigNumberish | undefined;
@@ -577,7 +579,9 @@ export interface CoreProtocol {
   tokens: {
     arb: IERC20 | undefined;
     dai: IERC20;
+    dArb: IERC20 | undefined;
     dfsGlp: IERC20 | undefined;
+    dGmx: IERC20 | undefined;
     dPtGlp: IERC20 | undefined;
     dPtREthJun2025: IERC20 | undefined;
     dPtWstEthJun2024: IERC20 | undefined;
@@ -983,7 +987,9 @@ export async function setupCoreProtocol(
     marketIds: {
       arb: ARB_MAP[config.network]?.marketId,
       dai: DAI_MAP[config.network]?.marketId,
+      dArb: D_ARB_MAP[config.network]?.marketId,
       dfsGlp: DFS_GLP_MAP[config.network]?.marketId,
+      dGmx: D_GMX_MAP[config.network]?.marketId,
       djUSDC: DJ_USDC[config.network]?.marketId,
       dplvGlp: DPLV_GLP_MAP[config.network]?.marketId,
       dPtGlp: DPT_GLP_2024_MAP[config.network]?.marketId,
@@ -1012,7 +1018,9 @@ export async function setupCoreProtocol(
     tokens: {
       arb: createIERC20Opt(ARB_MAP[config.network]?.address, hhUser1),
       dai: IERC20__factory.connect(DAI_MAP[config.network].address, hhUser1),
+      dArb: createIERC20Opt(D_ARB_MAP[config.network]?.address, hhUser1),
       dfsGlp: createIERC20Opt(DFS_GLP_MAP[config.network]?.address, hhUser1),
+      dGmx: createIERC20Opt(D_GMX_MAP[config.network]?.address, hhUser1),
       dPtGlp: createIERC20Opt(DPT_GLP_2024_MAP[config.network]?.address, hhUser1),
       dPtREthJun2025: createIERC20Opt(DPT_R_ETH_JUN_2025_MAP[config.network]?.address, hhUser1),
       dPtWstEthJun2024: createIERC20Opt(DPT_WST_ETH_JUN_2024_MAP[config.network]?.address, hhUser1),

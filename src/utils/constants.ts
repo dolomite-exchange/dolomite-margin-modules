@@ -50,10 +50,26 @@ export const DAI_MAP: Record<Network, TokenWithMarketId> = {
   },
 };
 
+export const D_ARB_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x1d9E10B161aE54FEAbe1E3F71f658cac3468e3C3',
+    marketId: 28,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
 export const DFS_GLP_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0x34DF4E8062A8C8Ae97E3382B452bd7BF60542698',
     marketId: 6,
+  },
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const D_GMX_MAP: Record<Network, TokenWithMarketId | undefined> = {
+  [Network.ArbitrumOne]: {
+    address: '0x790FF506ac24b03A21F3d0019227447AE2B55Ca5',
+    marketId: 30,
   },
   [Network.ArbitrumGoerli]: undefined,
 };
