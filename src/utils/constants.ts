@@ -350,7 +350,7 @@ export const GLP_REWARD_ROUTER_MAP: Record<Network, string | undefined> = {
 };
 
 export const GMX_DEPOSIT_HANDLER_MAP: Record<Network, string | undefined> = {
-  [Network.ArbitrumOne]: '0xD9AebEA68DE4b4A3B58833e1bc2AEB9682883AB0',
+  [Network.ArbitrumOne]: '0x9Dc4f12Eb2d8405b499FB5B8AF79a5f64aB8a457',
   [Network.ArbitrumGoerli]: undefined,
 };
 
