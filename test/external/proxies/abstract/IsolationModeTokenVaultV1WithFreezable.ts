@@ -142,7 +142,6 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       TestIsolationModeTokenVaultV1WithFreezable__factory,
       core.hhUser1,
     );
-    await userVault.initialize();
 
     await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
     await underlyingToken.connect(core.hhUser1).approve(vaultAddress, amountWei);
@@ -172,12 +171,15 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     snapshotId = await revertToSnapshotAndCapture(snapshotId);
   });
 
-  async function freezeVault(): Promise<ContractTransaction> {
+  async function freezeVault(
+    accountNumber: BigNumber = ZERO_BI
+  ): Promise<ContractTransaction> {
     return factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
       userVault.address,
-      defaultAccountNumber,
+      accountNumber,
       FreezeType.Deposit,
       PLUS_ONE_BI,
+      core.tokens.usdc.address
     );
   }
 
@@ -219,6 +221,19 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectTotalSupply(factory, amountWei);
     });
 
+    it('should work normally when other subaccount is frozen', async () => {
+      await freezeVault(ONE_BI);
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
+
+      await expectWalletBalance(core.dolomiteMargin, factory, amountWei);
+      await expectWalletBalance(userVault, underlyingToken, amountWei);
+
+      await expectTotalSupply(factory, amountWei);
+    });
+
     it('should work when interacted with via factory', async () => {
       const factorySigner = await impersonate(factory.address, true);
       await userVault.connect(factorySigner).depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
@@ -247,11 +262,11 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       );
     });
 
-    it('should fail if vault is frozen', async () => {
+    it('should fail if subaccount is frozen', async () => {
       await freezeVault();
       await expectThrow(
         userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen',
+        `IsolationModeVaultV1Freezable: Vault account is frozen <${defaultAccountNumber}>`,
       );
     });
   });
@@ -259,6 +274,21 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   describe('#withdrawFromVaultForDolomiteMargin', () => {
     it('should work normally', async () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+
+      await expectWalletBalance(core.dolomiteMargin, factory, ZERO_BI);
+      await expectWalletBalance(userVault, underlyingToken, ZERO_BI);
+      await expectWalletBalance(core.hhUser1, underlyingToken, amountWei);
+
+      await expectTotalSupply(factory, ZERO_BI);
+    });
+
+    it('should work normally if other subaccount is frozen', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await freezeVault(ONE_BI);
       await userVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, underlyingMarketId, ZERO_BI);
@@ -285,11 +315,11 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       );
     });
 
-    it('should fail if vault is frozen', async () => {
+    it('should fail if vault subaccount is frozen', async () => {
       await freezeVault();
       await expectThrow(
         userVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen',
+        `IsolationModeVaultV1Freezable: Vault account is frozen <${defaultAccountNumber}>`,
       );
     });
   });
@@ -1542,6 +1572,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           defaultAccountNumber,
           FreezeType.Deposit,
           PLUS_ONE_BI,
+          core.tokens.usdc.address,
         ),
         `IsolationModeVaultFactory: Caller is not a authorized <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -1554,6 +1585,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           defaultAccountNumber,
           FreezeType.Deposit,
           PLUS_ONE_BI,
+          core.tokens.usdc.address,
         ),
         `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );
