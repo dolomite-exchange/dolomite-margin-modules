@@ -81,7 +81,9 @@ library AsyncIsolationModeWrapperTraderImpl {
 
         IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
             deadline: block.timestamp,
-            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None
+            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None,
+            // @follow-up Which event type here?
+            eventType: IGenericTraderProxyV1.EventEmissionType.None
         });
 
         uint256 outputAmount = _depositInfo.inputAmount;

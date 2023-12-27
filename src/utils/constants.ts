@@ -349,7 +349,7 @@ export const GMX_DATASTORE_MAP: Record<Network, string | undefined> = {
 };
 
 export const GMX_EXCHANGE_ROUTER_MAP: Record<Network, string | undefined> = {
-  [Network.ArbitrumOne]: '0x3B070aA6847bd0fB56eFAdB351f49BBb7619dbc2',
+  [Network.ArbitrumOne]: '0x7C68C7866A64FA2160F78EEaE12217FFbf871fa8',
   [Network.ArbitrumGoerli]: undefined,
 };
 
@@ -397,7 +397,7 @@ export const GMX_VAULT_MAP: Record<Network, string | undefined> = {
 };
 
 export const GMX_WITHDRAWAL_HANDLER_MAP: Record<Network, string | undefined> = {
-  [Network.ArbitrumOne]: '0x79B99855676dB97e488F33CF52DaCF552102A950',
+  [Network.ArbitrumOne]: '0x9E32088F3c1a5EB38D32d1Ec6ba0bCBF499DC9ac',
   [Network.ArbitrumGoerli]: undefined,
 };
 

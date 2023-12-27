@@ -33,6 +33,7 @@ import { IHandlerRegistry } from "../../../interfaces/IHandlerRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../../../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeVaultFactory } from "../../../interfaces/IIsolationModeVaultFactory.sol";
+import { IIsolationModeUnwrapperTraderV2 } from "../../../interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
@@ -88,7 +89,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         marketIdsPath[1] = _unwrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_withdrawalInfo.outputToken);
 
         IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
-        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
+        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapperV2;
         traderParams[0].makerAccountIndex = 0;
         traderParams[0].trader = address(this);
 
@@ -100,7 +101,9 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
         IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
             deadline: block.timestamp,
-            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None
+            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None,
+            // @follow-up Which event type here?
+            eventType: IGenericTraderProxyV1.EventEmissionType.None
         });
 
         IIsolationModeTokenVaultV1(_withdrawalInfo.vault).swapExactInputForOutput(
@@ -121,14 +124,21 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         bytes calldata _data
     ) external {
         IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(_state.vaultFactory));
-        _validateVaultExists(factory, _accountInfo.owner);
-
         (
             uint256 transferAmount,
+            address accountOwner,
+            uint256 accountNumber,
             IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes,
             bytes32[] memory keys
-        ) = abi.decode(_data, (uint256, IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
+        ) = abi.decode(_data, (uint256, address, uint256, IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
+        _validateVaultExists(factory, _accountInfo.owner);
+
         assert(tradeTypes.length == keys.length && keys.length > 0);
+
+        if (tradeTypes[0] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.NoOp) {
+            // This is a no-op, so we don't need to do anything
+            return;
+        }
 
         address vault;
         uint256 inputAmount;
@@ -137,6 +147,13 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             if (tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromWithdrawal) {
                 IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo =
                     _state.withdrawalInfo[keys[i]];
+                if (withdrawalInfo.isLiquidation) {
+                    Require.that(
+                        withdrawalInfo.accountNumber == accountNumber,
+                        _FILE,
+                        "Cant liquidate other subaccount"
+                    );
+                }
                 vault = withdrawalInfo.vault;
                 inputAmountForIteration = withdrawalInfo.inputAmount;
             } else {
@@ -150,11 +167,12 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
             // Require that the vault is either the account owner or the input amount is 0 (meaning, it has been fully
             // spent)
+            // @todo confirm this require statement is correct
             Require.that(
-                (inputAmountForIteration == 0 && vault == address(0)) || vault == _accountInfo.owner,
+                (inputAmountForIteration == 0 && vault == address(0)) || vault == accountOwner,
                 _FILE,
                 "Invalid account owner",
-                _accountInfo.owner
+                accountOwner
             );
             inputAmount += inputAmountForIteration;
         }
@@ -174,7 +192,8 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             "Invalid transfer amount"
         );
 
-        factory.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
+        // @follow-up Changed this to accountOwner. Is that correct
+        factory.enqueueTransferFromDolomiteMargin(accountOwner, transferAmount);
         factory.setShouldVaultSkipTransfer(vault, /* _shouldSkipTransfer = */ true);
     }
 
@@ -278,34 +297,28 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
     function createActionsForUnwrapping(
         UpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper,
-        uint256 _solidAccountId,
-        uint256 _liquidAccountId,
-        uint256 _outputMarket,
-        uint256 _inputMarket,
-        uint256 _minAmountOut,
-        uint256 _inputAmount,
-        bytes calldata _orderData
+        IIsolationModeUnwrapperTraderV2.CreateActionsForUnwrappingParams calldata _params
     ) external view returns (IDolomiteMargin.ActionArgs[] memory) {
         {
             IDolomiteMargin dolomiteMargin = _unwrapper.DOLOMITE_MARGIN();
             Require.that(
-                dolomiteMargin.getMarketTokenAddress(_inputMarket) == address(_unwrapper.VAULT_FACTORY()),
+                dolomiteMargin.getMarketTokenAddress(_params.inputMarket) == address(_unwrapper.VAULT_FACTORY()),
                 _FILE,
                 "Invalid input market",
-                _inputMarket
+                _params.inputMarket
             );
             Require.that(
-                _unwrapper.isValidOutputToken(dolomiteMargin.getMarketTokenAddress(_outputMarket)),
+                _unwrapper.isValidOutputToken(dolomiteMargin.getMarketTokenAddress(_params.outputMarket)),
                 _FILE,
                 "Invalid output market",
-                _outputMarket
+                _params.outputMarket
             );
         }
 
         (
             IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes,
             bytes32[] memory keys
-        ) = abi.decode(_orderData, (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
+        ) = abi.decode(_params.orderData, (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
         Require.that(
             tradeTypes.length == keys.length && keys.length > 0,
             _FILE,
@@ -333,7 +346,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             }
         }
         Require.that(
-            structInputAmount >= _inputAmount && _inputAmount > 0,
+            structInputAmount >= _params.inputAmount && _params.inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -344,18 +357,18 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
         // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
         actions[0] = AccountActionLib.encodeCallAction(
-            _liquidAccountId,
+            _params.primaryAccountId,
             /* _callee */ address(this),
-            /* (transferAmount, tradeTypes, keys)[encoded] = */ abi.encode(_inputAmount, tradeTypes, keys)
+            /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(_params.inputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
         );
         actions[1] = AccountActionLib.encodeExternalSellAction(
-            _solidAccountId,
-            _inputMarket,
-            _outputMarket,
+            _params.primaryAccountId,
+            _params.inputMarket,
+            _params.outputMarket,
             /* _trader = */ address(this),
-            /* _amountInWei = */ _inputAmount,
-            /* _amountOutMinWei = */ _minAmountOut,
-            _orderData
+            /* _amountInWei = */ _params.inputAmount,
+            /* _amountOutMinWei = */ _params.minOutputAmount,
+            _params.orderData
         );
         if (actions.length == _ACTIONS_LENGTH_NORMAL) {
             // We need to spend the whole withdrawal amount, so we need to add an extra sale to spend the difference.
@@ -368,21 +381,35 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 );
             }
 
-            structInputAmount -= _inputAmount;
-            actions[2] = AccountActionLib.encodeCallAction(
-                _liquidAccountId,
-                /* _callee */ address(this),
-                /* (transferAmount, tradeTypes, keys)[encoded] = */ abi.encode(structInputAmount, tradeTypes, keys)
-            );
-            actions[3] = AccountActionLib.encodeExternalSellAction(
-                _liquidAccountId,
-                _inputMarket,
-                _outputMarket,
-                /* _trader = */ address(this),
-                /* _amountInWei = */ structInputAmount,
-                /* _amountOutMinWei = */ 1,
-                _orderData
-            );
+            structInputAmount -= _params.inputAmount;
+            if (structInputAmount == 0) {
+                tradeTypes[0] = IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.NoOp;
+                actions[2] = AccountActionLib.encodeCallAction(
+                    _params.primaryAccountId,
+                    /* _callee */ address(this),
+                    /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(_params.inputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
+                );
+                actions[3] = AccountActionLib.encodeCallAction(
+                    _params.primaryAccountId,
+                    /* _callee */ address(this),
+                    /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(_params.inputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
+                );
+            } else {
+                actions[2] = AccountActionLib.encodeCallAction(
+                    _params.primaryAccountId,
+                    /* _callee */ address(this),
+                    /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(_params.inputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
+                );
+                actions[3] = AccountActionLib.encodeExternalSellAction(
+                    _params.otherAccountId,
+                    _params.inputMarket,
+                    _params.outputMarket,
+                    /* _trader = */ address(this),
+                    /* _amountInWei = */ structInputAmount,
+                    /* _amountOutMinWei = */ 1,
+                    _params.orderData
+                );
+            }
         }
 
         return actions;

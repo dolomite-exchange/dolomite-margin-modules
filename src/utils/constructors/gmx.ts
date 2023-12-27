@@ -198,7 +198,7 @@ export async function getGmxV2RegistryConstructorParams(
   ];
 }
 
-export const GMX_V2_EXECUTION_FEE = parseEther('0.0075');
+export const GMX_V2_EXECUTION_FEE = BigNumber.from('13626962204375000')
 export const GMX_V2_CALLBACK_GAS_LIMIT = BigNumber.from('2000000');
 
 export function getGmxV2IsolationModeVaultFactoryConstructorParams(

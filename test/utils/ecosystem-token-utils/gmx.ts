@@ -516,6 +516,8 @@ export function getOracleParams(token1: string, token2: string) {
       token1,
       token2,
     ],
+    realtimeFeedTokens: [],
+    realtimeFeedData: [],
   };
 }
 
