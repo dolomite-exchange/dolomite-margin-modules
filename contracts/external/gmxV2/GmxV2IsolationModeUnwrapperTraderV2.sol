@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IIsolationModeUnwrapperTrader } from "../interfaces/IIsolationModeUnwrapperTrader.sol";
+import { IIsolationModeUnwrapperTraderV2 } from "../interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { GmxWithdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
@@ -185,7 +185,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     )
     public
     view
-    override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTrader)
+    override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTraderV2)
     returns (bool) {
         return GmxV2Library.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),

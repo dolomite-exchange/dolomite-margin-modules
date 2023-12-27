@@ -31,18 +31,18 @@ import { GmxPrice } from "./GmxPrice.sol";
 library GmxOracleUtils {
 
     // @dev SetPricesParams struct for values required in Oracle.setPrices
-    // @param  signerInfo compacted indexes of signers, the index is used to retrieve
-    //         the signer address from the OracleStore
-    // @param  tokens list of tokens to set prices for
-    // @param  compactedOracleBlockNumbers compacted oracle block numbers
-    // @param  compactedOracleTimestamps compacted oracle timestamps
-    // @param  compactedDecimals compacted decimals for prices
-    // @param  compactedMinPrices compacted min prices
-    // @param  compactedMinPricesIndexes compacted min price indexes
-    // @param  compactedMaxPrices compacted max prices
-    // @param  compactedMaxPricesIndexes compacted max price indexes
-    // @param  signatures signatures of the oracle signers
-    // @param  priceFeedTokens tokens to set prices for based on an external price feed value
+    // @param signerInfo compacted indexes of signers, the index is used to retrieve
+    // the signer address from the OracleStore
+    // @param tokens list of tokens to set prices for
+    // @param compactedOracleBlockNumbers compacted oracle block numbers
+    // @param compactedOracleTimestamps compacted oracle timestamps
+    // @param compactedDecimals compacted decimals for prices
+    // @param compactedMinPrices compacted min prices
+    // @param compactedMinPricesIndexes compacted min price indexes
+    // @param compactedMaxPrices compacted max prices
+    // @param compactedMaxPricesIndexes compacted max price indexes
+    // @param signatures signatures of the oracle signers
+    // @param priceFeedTokens tokens to set prices for based on an external price feed value
     struct SetPricesParams {
         uint256 signerInfo;
         address[] tokens;
@@ -56,6 +56,8 @@ library GmxOracleUtils {
         uint256[] compactedMaxPricesIndexes;
         bytes[] signatures;
         address[] priceFeedTokens;
+        address[] realtimeFeedTokens;
+        bytes[] realtimeFeedData;
     }
 
     struct SimulatePricesParams {

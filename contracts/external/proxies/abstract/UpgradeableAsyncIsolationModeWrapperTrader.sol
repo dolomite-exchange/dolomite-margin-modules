@@ -29,6 +29,7 @@ import { Require } from "../../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
+import { IIsolationModeWrapperTraderV2 } from "../../interfaces/IIsolationModeWrapperTraderV2.sol";
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { InterestIndexLib } from "../../lib/InterestIndexLib.sol";
 import { AsyncIsolationModeWrapperTraderImpl } from "./impl/AsyncIsolationModeWrapperTraderImpl.sol";
@@ -167,15 +168,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     }
 
     function createActionsForWrapping(
-        uint256 _primaryAccountId,
-        uint256 /* _otherAccountId */,
-        address /* _primaryAccountOwner */,
-        address /* _otherAccountOwner */,
-        uint256 _outputMarket,
-        uint256 _inputMarket,
-        uint256 _minAmountOut,
-        uint256 _inputAmount,
-        bytes calldata _orderData
+        IIsolationModeWrapperTraderV2.CreateActionsForWrappingParams calldata _params
     )
     public
     virtual
@@ -184,12 +177,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     returns (IDolomiteMargin.ActionArgs[] memory) {
         return AsyncIsolationModeWrapperTraderImpl.createActionsForWrapping(
             /* wrapper = */ this,
-            _primaryAccountId,
-            _outputMarket,
-            _inputMarket,
-            _minAmountOut,
-            _inputAmount,
-            _orderData
+            _params
         );
     }
 

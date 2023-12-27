@@ -1,5 +1,5 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
-import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
+import { GenericEventEmissionType, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
 import {
@@ -463,13 +463,13 @@ export function getInitiateWrappingParams(
     traderParams: [
       {
         trader: wrapper.address,
-        traderType: GenericTraderType.IsolationModeWrapper,
+        traderType: GenericTraderType.IsolationModeWrapperV2,
         tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
         makerAccountIndex: 0,
       },
     ],
     makerAccounts: [],
-    userConfig: { deadline: '123123123123123', balanceCheckFlag: BalanceCheckFlag.None },
+    userConfig: { deadline: '123123123123123', balanceCheckFlag: BalanceCheckFlag.None, eventType: GenericEventEmissionType.None },
   };
 }
 
@@ -489,7 +489,7 @@ export function getInitiateUnwrappingParams(
     traderParams: [
       {
         trader: unwrapper.address,
-        traderType: GenericTraderType.IsolationModeUnwrapper,
+        traderType: GenericTraderType.IsolationModeUnwrapperV2,
         tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
         makerAccountIndex: 0,
       },
@@ -516,6 +516,8 @@ export function getOracleParams(token1: string, token2: string) {
       token1,
       token2,
     ],
+    realtimeFeedTokens: [],
+    realtimeFeedData: [],
   };
 }
 

@@ -747,7 +747,7 @@ export function getDefaultCoreProtocolConfig(network: Network): CoreProtocolConf
 export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig {
   return {
     network: Network.ArbitrumOne,
-    blockNumber: 131_050_900,
+    blockNumber: 163_846_237,
   };
 }
 
