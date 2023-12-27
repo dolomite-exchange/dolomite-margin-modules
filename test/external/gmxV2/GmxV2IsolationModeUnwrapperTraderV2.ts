@@ -629,7 +629,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     });
   });
 
-  describe('#afterWithdrawalExecution', () => {
+  describe.only('#afterWithdrawalExecution', () => {
     let withdrawalKey: string;
 
     async function setupBalances(outputToken: IERC20) {

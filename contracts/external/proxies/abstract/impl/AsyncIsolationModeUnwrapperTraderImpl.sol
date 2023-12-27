@@ -39,6 +39,7 @@ import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../../interfaces
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   AsyncIsolationModeUnwrapperTraderImpl
@@ -131,7 +132,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes,
             bytes32[] memory keys
         ) = abi.decode(_data, (uint256, address, uint256, IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
-        _validateVaultExists(factory, _accountInfo.owner);
+        _validateVaultExists(factory, accountOwner);
 
         assert(tradeTypes.length == keys.length && keys.length > 0);
 
@@ -148,6 +149,8 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo =
                     _state.withdrawalInfo[keys[i]];
                 if (withdrawalInfo.isLiquidation) {
+                    console.log('Withdrawal account number: ', withdrawalInfo.accountNumber);
+                    console.log('Account number: ', accountNumber);
                     Require.that(
                         withdrawalInfo.accountNumber == accountNumber,
                         _FILE,
@@ -300,6 +303,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         IIsolationModeUnwrapperTraderV2.CreateActionsForUnwrappingParams calldata _params
     ) external view returns (IDolomiteMargin.ActionArgs[] memory) {
         {
+            console.log('\n\n\n\n\n\n\n\n\n\n\n\n');
             IDolomiteMargin dolomiteMargin = _unwrapper.DOLOMITE_MARGIN();
             Require.that(
                 dolomiteMargin.getMarketTokenAddress(_params.inputMarket) == address(_unwrapper.VAULT_FACTORY()),
@@ -356,6 +360,10 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
         // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
         // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
+        console.log('primary account owner: ', _params.primaryAccountOwner);
+        console.log('primary account number: ', _params.primaryAccountNumber);
+        console.log('other account owner: ', _params.otherAccountOwner);
+        console.log('other account number: ', _params.otherAccountNumber);
         actions[0] = AccountActionLib.encodeCallAction(
             _params.primaryAccountId,
             /* _callee */ address(this),
