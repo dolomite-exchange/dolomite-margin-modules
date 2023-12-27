@@ -50,7 +50,15 @@ import deployments from './deployments.json';
 
 type ChainId = string;
 
-export async function verifyContract(address: string, constructorArguments: any[], contractName: string | undefined) {
+export async function verifyContract(
+  address: string,
+  constructorArguments: any[],
+  contractName: string | undefined,
+  attempts: number = 0,
+): Promise<void> {
+  if (attempts === 3) {
+    return Promise.reject(new Error('Failed to verify contract'));
+  }
   try {
     console.log('Verifying contract...');
     await run('verify:verify', {
@@ -63,7 +71,7 @@ export async function verifyContract(address: string, constructorArguments: any[
     if (e?.message.toLowerCase().includes('already verified')) {
       console.log('EtherscanVerification: Swallowing already verified error');
     } else {
-      throw e;
+      await verifyContract(address, constructorArguments, contractName, attempts + 1);
     }
   }
 }
