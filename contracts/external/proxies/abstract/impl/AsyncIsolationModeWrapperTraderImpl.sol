@@ -29,6 +29,7 @@ import { IFreezableIsolationModeVaultFactory } from "../../../interfaces/IFreeza
 import { IGenericTraderBase } from "../../../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1 } from "../../../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IIsolationModeWrapperTraderV2 } from "../../../interfaces/IIsolationModeWrapperTraderV2.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
@@ -69,7 +70,7 @@ library AsyncIsolationModeWrapperTraderImpl {
         marketIdsPath[1] = _wrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_depositInfo.inputToken);
 
         IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
-        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
+        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapperV2;
         traderParams[0].makerAccountIndex = 0;
         traderParams[0].trader = address(_wrapper.HANDLER_REGISTRY().getUnwrapperByToken(factory));
 
@@ -81,7 +82,9 @@ library AsyncIsolationModeWrapperTraderImpl {
 
         IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
             deadline: block.timestamp,
-            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None
+            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None,
+            // @follow-up Which event type here?
+            eventType: IGenericTraderProxyV1.EventEmissionType.None
         });
 
         uint256 outputAmount = _depositInfo.inputAmount;
@@ -101,37 +104,32 @@ library AsyncIsolationModeWrapperTraderImpl {
 
     function createActionsForWrapping(
         UpgradeableAsyncIsolationModeWrapperTrader _wrapper,
-        uint256 _primaryAccountId,
-        uint256 _outputMarket,
-        uint256 _inputMarket,
-        uint256 _minAmountOut,
-        uint256 _inputAmount,
-        bytes calldata _orderData
+        IIsolationModeWrapperTraderV2.CreateActionsForWrappingParams calldata _params
     ) external view returns (IDolomiteMargin.ActionArgs[] memory) {
         IDolomiteMargin dolomiteMargin = _wrapper.DOLOMITE_MARGIN();
         Require.that(
-            _wrapper.isValidInputToken(dolomiteMargin.getMarketTokenAddress(_inputMarket)),
+            _wrapper.isValidInputToken(dolomiteMargin.getMarketTokenAddress(_params.inputMarket)),
             _FILE,
             "Invalid input market",
-            _inputMarket
+            _params.inputMarket
         );
         Require.that(
-            dolomiteMargin.getMarketTokenAddress(_outputMarket) == address(_wrapper.VAULT_FACTORY()),
+            dolomiteMargin.getMarketTokenAddress(_params.outputMarket) == address(_wrapper.VAULT_FACTORY()),
             _FILE,
             "Invalid output market",
-            _outputMarket
+            _params.outputMarket
         );
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_wrapper.actionsLength());
 
         actions[0] = AccountActionLib.encodeExternalSellAction(
-            _primaryAccountId,
-            _inputMarket,
-            _outputMarket,
+            _params.primaryAccountId,
+            _params.inputMarket,
+            _params.outputMarket,
             /* _trader = */ address(this),
-            /* _amountInWei = */ _inputAmount,
-            /* _amountOutMinWei = */ _minAmountOut,
-            _orderData
+            /* _amountInWei = */ _params.inputAmount,
+            /* _amountOutMinWei = */ _params.minOutputAmount,
+            _params.orderData
         );
 
         return actions;

@@ -11,6 +11,7 @@ import {
 import { impersonate } from '../../utils';
 import { createDolomiteCompatibleWhitelistForPlutusDAO } from '../../utils/ecosystem-token-utils/plutus';
 import { CoreProtocol } from '../../utils/setup';
+import { expect } from 'chai';
 
 export async function createAndSetPlutusVaultWhitelist(
   core: CoreProtocol,
@@ -18,6 +19,7 @@ export async function createAndSetPlutusVaultWhitelist(
   unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   wrapperTrader: PlutusVaultGLPIsolationModeWrapperTraderV1 | PlutusVaultGLPIsolationModeWrapperTraderV2,
   dplvGlpToken: IPlutusVaultGLPIsolationModeVaultFactory | PlutusVaultGLPIsolationModeVaultFactory,
+  vault: { address: string },
 ) {
   const plutusWhitelist = await routerOrFarm.connect(core.hhUser1).whitelist();
   const dolomiteWhitelist = await createDolomiteCompatibleWhitelistForPlutusDAO(
@@ -30,4 +32,8 @@ export async function createAndSetPlutusVaultWhitelist(
 
   const owner = await impersonate(await routerOrFarm.owner(), true);
   await routerOrFarm.connect(owner).setWhitelist(dolomiteWhitelist.address);
+
+  expect(await dolomiteWhitelist.isWhitelisted(wrapperTrader.address)).to.be.true;
+  expect(await dolomiteWhitelist.isWhitelisted(unwrapperTrader.address)).to.be.true;
+  expect(await dolomiteWhitelist.isWhitelisted(vault.address)).to.be.true;
 }

@@ -93,7 +93,7 @@ async function createVesterProxy(core: CoreProtocol, network: Network, oARB: OAR
     vesterImplementationAddress,
     core.hhUser1,
   );
-  const eventEmitterRegistryProxyAddress = await deployContractAndSave(
+  const vesterProxyAddress = await deployContractAndSave(
     Number(network),
     'VesterProxy',
     await getVesterV1ProxyConstructorParams(
@@ -104,7 +104,7 @@ async function createVesterProxy(core: CoreProtocol, network: Network, oARB: OAR
     ),
   );
 
-  return VesterImplementationV1__factory.connect(eventEmitterRegistryProxyAddress, core.hhUser1);
+  return VesterImplementationV1__factory.connect(vesterProxyAddress, core.hhUser1);
 }
 
 main()

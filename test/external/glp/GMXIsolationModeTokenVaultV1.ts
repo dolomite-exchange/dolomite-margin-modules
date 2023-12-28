@@ -141,7 +141,9 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     it('should work normally', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.connect(core.hhUser1).stakeGmx(gmxAmount);
+      await gmxVault.unstakeGmx(gmxAmount);
+      expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
+      await gmxVault.stakeGmx(gmxAmount);
 
       expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
       expect(await core.gmxEcosystem!.sbfGmx.balanceOf(glpVault.address)).to.eq(gmxAmount);
@@ -152,6 +154,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     it('should work when GMX is already approved for staking', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await gmxVault.unstakeGmx(gmxAmount);
       await glpVault.setApprovalForGmxForStaking(gmxAmount.div(2)); // use an amount < gmxAmount
       await gmxVault.stakeGmx(gmxAmount);
 
@@ -173,9 +176,8 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     it('should work normally', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.connect(core.hhUser1).stakeGmx(gmxAmount);
 
-      await gmxVault.connect(core.hhUser1).unstakeGmx(gmxAmount);
+      await gmxVault.unstakeGmx(gmxAmount);
       expect(await core.gmxEcosystem!.gmx.balanceOf(gmxVault.address)).to.eq(gmxAmount);
       expect(await core.gmxEcosystem!.gmx.balanceOf(glpVault.address)).to.eq(ZERO_BI);
       expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
@@ -194,7 +196,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     it('should work normally', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
 
       expect(await glpVault.getGmxAmountNeededForEsGmxVesting(esGmxAmount)).to.eq(ZERO_BI);
       await doHandleRewardsWithWaitTime(30);
@@ -221,7 +222,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     it('should work when GMX is re-staked', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
 
       await doHandleRewardsWithWaitTime(30);
       await gmxVault.vestGmx(esGmxAmount);
@@ -242,7 +242,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     it('should work when vested GMX is withdrawn', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
 
       await doHandleRewardsWithWaitTime(30);
       await gmxVault.vestGmx(esGmxAmount);
@@ -273,6 +272,11 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     it('should work normally', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      expect(await gmxVault.underlyingBalanceOf()).to.eq(gmxAmount);
+      expect(await glpVault.gmxBalanceOf()).to.eq(gmxAmount);
+
+      await gmxVault.unstakeGmx(gmxAmount);
+
       expect(await core.gmxEcosystem!.gmx.balanceOf(gmxVault.address)).to.eq(gmxAmount);
       expect(await core.gmxEcosystem!.gmx.balanceOf(core.hhUser1.address)).to.eq(ZERO_BI);
       expect(await gmxVault.isDepositSourceGLPVault()).to.be.false;
@@ -291,7 +295,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       expect(await gmxVault.shouldSkipTransfer()).to.be.false;
     });
 
-    it('should work normally with is deposit source GLP vault is true', async () => {
+    it('should work normally when is deposit source GLP vault is true', async () => {
       const factoryImpersonator = await impersonate(gmxFactory.address, true);
       const glpVaultImpersonator = await impersonate(await glpFactory.getVaultByAccount(core.hhUser1.address), true);
       await gmxVault.connect(factoryImpersonator).setIsDepositSourceGLPVault(true);
@@ -316,6 +320,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
     it('should work normally', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
+      await gmxVault.unstakeGmx(gmxAmount);
 
       await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, gmxAmount);
       await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
@@ -323,10 +328,9 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectWalletBalance(core.hhUser1.address, core.gmxEcosystem!.gmx, gmxAmount);
     });
 
-    it.only('should work when have to unstake GMX', async () => {
+    it('should work when have to unstake GMX', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.connect(core.hhUser1).depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.connect(core.hhUser1).stakeGmx(gmxAmount);
 
       await gmxVault.connect(core.hhUser1).withdrawFromVaultForDolomiteMargin(accountNumber, gmxAmount);
       expect(await glpVault.gmxBalanceOf()).to.eq(ZERO_BI);
@@ -335,10 +339,9 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectWalletBalance(core.hhUser1.address, core.gmxEcosystem!.gmx, gmxAmount);
     });
 
-    it.only('should work normally when have to unvest & unstake GMX', async () => {
+    it('should work normally when have to unvest & unstake GMX', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
 
       await doHandleRewardsWithWaitTime(30);
       await gmxVault.vestGmx(esGmxAmount);
@@ -355,10 +358,9 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectWalletBalanceIsGreaterThan(gmxVault, core.gmxEcosystem!.gmx, ZERO_BI);
     });
 
-    it.only('should work normally when have to unstake but not unvest GMX', async () => {
+    it('should work normally when have to unstake but not unvest GMX', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
 
       await doHandleRewardsWithWaitTime(30);
       await gmxVault.vestGmx(esGmxAmount);
@@ -385,10 +387,9 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       );
     });
 
-    it.only('should work normally when we have to unstake and BARELY unvest GMX', async () => {
+    it('should work normally when we have to unstake and BARELY unvest GMX', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
 
       await doHandleRewardsWithWaitTime(30);
       await gmxVault.vestGmx(esGmxAmount);
@@ -424,10 +425,9 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       );
     });
 
-    it.only('should work normally when have to unstake all BUT not unvest GMX (sbfGMX is large)', async () => {
+    it('should work normally when have to unstake all BUT not unvest GMX (sbfGMX is large)', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
 
       await doHandleRewardsWithWaitTime(3650);
       const esGmxBalance = await glpVault.esGmxBalanceOf();
@@ -454,10 +454,9 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, gmxVault, accountNumber, underlyingMarketIdGmx, ZERO_BI);
     });
 
-    it.only('should work normally when unvest, unstake, and sweep', async () => {
+    it('should work normally when unvest, unstake, and sweep', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
 
       await doHandleRewardsWithWaitTime(30);
       await gmxVault.vestGmx(esGmxAmount);
@@ -482,17 +481,15 @@ describe('GMXIsolationModeTokenVaultV1', () => {
   });
 
   describe('#underlyingBalanceOf', () => {
-    it('should work normally with only staking', async () => {
+    it('should work normally with staking', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
       expect(await gmxVault.underlyingBalanceOf()).to.eq(gmxAmount);
     });
 
     it('should work normally with staking and vesting', async () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
       expect(await glpVault.getGmxAmountNeededForEsGmxVesting(esGmxAmount)).to.eq(ZERO_BI);
       await doHandleRewardsWithWaitTime(30);
       await gmxVault.vestGmx(esGmxAmount);
@@ -533,7 +530,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
       await gmxVault.transferIntoPositionWithUnderlyingToken(accountNumber, otherAccountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
 
       const zapParams = await getUnwrapZapParams(
         underlyingMarketIdGmx,
@@ -561,7 +557,7 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
       await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
       await gmxVault.transferIntoPositionWithUnderlyingToken(accountNumber, otherAccountNumber, gmxAmount);
-      await gmxVault.stakeGmx(gmxAmount);
+
       await doHandleRewardsWithWaitTime(30);
       await gmxVault.vestGmx(esGmxAmount);
       await waitDays(366);

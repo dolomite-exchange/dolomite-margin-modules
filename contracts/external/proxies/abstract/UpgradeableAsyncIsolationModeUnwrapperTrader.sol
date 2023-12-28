@@ -29,6 +29,7 @@ import { Require } from "../../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
+import { IIsolationModeUnwrapperTraderV2 } from "../../interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; //solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AsyncIsolationModeUnwrapperTraderImpl } from "./impl/AsyncIsolationModeUnwrapperTraderImpl.sol";
@@ -160,15 +161,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function createActionsForUnwrapping(
-        uint256 _solidAccountId,
-        uint256 _liquidAccountId,
-        address /* _primaryAccountOwner */,
-        address /* _otherAccountOwner */,
-        uint256 _outputMarket,
-        uint256 _inputMarket,
-        uint256 _minAmountOut,
-        uint256 _inputAmount,
-        bytes calldata _orderData
+        IIsolationModeUnwrapperTraderV2.CreateActionsForUnwrappingParams calldata _params
     )
     external
     virtual
@@ -176,13 +169,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     returns (IDolomiteMargin.ActionArgs[] memory) {
         return AsyncIsolationModeUnwrapperTraderImpl.createActionsForUnwrapping(
             /* _unwrapper = */ this,
-            _solidAccountId,
-            _liquidAccountId,
-            _outputMarket,
-            _inputMarket,
-            _minAmountOut,
-            _inputAmount,
-            _orderData
+            _params
         );
     }
 

@@ -75,13 +75,18 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _;
     }
 
-    modifier _depositIntoVaultForDolomiteMarginFreezableValidator() {
-        _requireNotFrozen();
+    modifier requireVaultAccountNotFrozen(uint256 _accountNumber) {
+        _requireVaultAccountNotFrozen(_accountNumber);
         _;
     }
 
-    modifier _withdrawFromVaultForDolomiteMarginFreezableValidator() {
-        _requireNotFrozen();
+    modifier _depositIntoVaultForDolomiteMarginFreezableValidator(uint256 _accountNumber) {
+        _requireVaultAccountNotFrozen(_accountNumber);
+        _;
+    }
+
+    modifier _withdrawFromVaultForDolomiteMarginFreezableValidator(uint256 _accountNumber) {
+        _requireVaultAccountNotFrozen(_accountNumber);
         _;
     }
 
@@ -334,7 +339,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _depositIntoVaultForDolomiteMarginFreezableValidator
+        _depositIntoVaultForDolomiteMarginFreezableValidator(_toAccountNumber)
     {
         super._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
     }
@@ -346,7 +351,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _withdrawFromVaultForDolomiteMarginFreezableValidator
+        _withdrawFromVaultForDolomiteMarginFreezableValidator(_fromAccountNumber)
     {
         super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
     }
@@ -693,6 +698,15 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             !isVaultFrozen(),
             _FILE,
             "Vault is frozen"
+        );
+    }
+
+    function _requireVaultAccountNotFrozen(uint256 _accountNumber) private view {
+        Require.that(
+            !isVaultAccountFrozen(_accountNumber),
+            _FILE,
+            "Vault account is frozen",
+            _accountNumber
         );
     }
 }

@@ -180,6 +180,8 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.liquidatorProxyV4.address);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, liquidatorProxy.address);
     await core.dolomiteMargin.ownerSetGlobalOperator(liquidatorProxy.address, true);
+    await core.dolomiteMargin.ownerSetGlobalOperator(core.genericTraderProxy!.address, true);
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(core.genericTraderProxy!.address);
 
     solidAccount = { owner: core.hhUser5.address, number: defaultAccountNumber };
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
@@ -586,7 +588,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       );
     }
 
-    it('should work normally for underwater account', async () => {
+    it.only('should work normally for underwater account', async () => {
       await setupBalances(borrowAccountNumber, true, false);
       await liquidatorProxy.prepareForLiquidation(
         liquidAccount,

@@ -1,5 +1,6 @@
 import { AmountDenomination, AmountReference, BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import {
+  GenericEventEmissionType,
   GenericTraderParam,
   GenericTraderType,
   GenericUserConfig,
@@ -7,6 +8,7 @@ import {
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import {
   IIsolationModeUnwrapperTrader,
+  IIsolationModeUnwrapperTraderV2,
   IIsolationModeWrapperTrader, TestDolomiteMarginInternalTrader,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeWrapperTraderV2,
@@ -52,6 +54,7 @@ export async function getSimpleZapParams(
     userConfig: {
       deadline: '123123123123123',
       balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None
     },
   };
 }
@@ -61,7 +64,7 @@ export async function getUnwrapZapParams(
   inputAmountWei: BigNumber,
   outputMarket: BigNumberish,
   minOutputAmountWei: BigNumber,
-  unwrapper: TestIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader,
+  unwrapper: TestIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader | IIsolationModeUnwrapperTraderV2,
   core: CoreProtocol,
 ): Promise<ZapParam> {
   if (!core.testEcosystem) {
@@ -86,6 +89,7 @@ export async function getUnwrapZapParams(
     userConfig: {
       deadline: '123123123123123',
       balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None
     },
   };
 }
@@ -149,6 +153,7 @@ export async function getUnwrapAndCustomTradeZapParams(
     userConfig: {
       deadline: '123123123123123',
       balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None
     },
   };
 }
@@ -183,6 +188,7 @@ export async function getWrapZapParams(
     userConfig: {
       deadline: '123123123123123',
       balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None
     },
   };
 }
@@ -190,7 +196,7 @@ export async function getWrapZapParams(
 export async function getLiquidateIsolationModeZapPath(
   marketIdsPath: BigNumberish[],
   amounts: BigNumber[],
-  unwrapper: TestIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader,
+  unwrapper: TestIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader | IIsolationModeUnwrapperTraderV2,
   core: CoreProtocol,
 ): Promise<ZapParam> {
   const unwrap = await getUnwrapZapParams(marketIdsPath[0], amounts[0], marketIdsPath[1], amounts[1], unwrapper, core);
@@ -204,6 +210,7 @@ export async function getLiquidateIsolationModeZapPath(
     userConfig: {
       deadline: '123123123123123',
       balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None
     },
   };
 }

@@ -183,7 +183,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
     virtual
     override {
         uint256 len = _tradersPath.length;
-        if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
+        if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapperV2
+            || _tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             GmxV2Library.depositAndApproveWethForWrapping(this);
             Require.that(
                 msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).MAX_EXECUTION_FEE(),

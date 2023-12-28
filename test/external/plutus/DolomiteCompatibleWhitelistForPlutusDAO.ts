@@ -36,7 +36,7 @@ describe('DolomiteCompatibleWhitelistForPlutusDAO', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     const plutusVaultRegistry = await createPlutusVaultRegistry(core);
-    const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1();
+    const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1(core);
     factory = await createPlutusVaultGLPIsolationModeVaultFactory(
       core,
       plutusVaultRegistry,

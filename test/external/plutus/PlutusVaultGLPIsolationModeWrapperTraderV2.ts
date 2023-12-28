@@ -69,7 +69,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV2', () => {
     plvGlpExchangeRateNumerator = await underlyingToken.totalAssets();
     plvGlpExchangeRateDenominator = await underlyingToken.totalSupply();
 
-    const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1();
+    const userVaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1(core);
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
     factory = await createPlutusVaultGLPIsolationModeVaultFactory(
@@ -92,14 +92,6 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV2', () => {
 
     solidUser = core.hhUser5;
 
-    await createAndSetPlutusVaultWhitelist(
-      core,
-      core.plutusEcosystem!.plvGlpRouter,
-      unwrapper,
-      wrapper,
-      factory,
-    );
-
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
     vault = setupUserVaultProxy<PlutusVaultGLPIsolationModeTokenVaultV1>(
@@ -108,6 +100,15 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV2', () => {
       core.hhUser1,
     );
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
+
+    await createAndSetPlutusVaultWhitelist(
+      core,
+      core.plutusEcosystem!.plvGlpRouter,
+      unwrapper,
+      wrapper,
+      factory,
+      vault,
+    );
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)

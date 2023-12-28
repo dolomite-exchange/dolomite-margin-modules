@@ -60,12 +60,7 @@ contract GMXIsolationModeTokenVaultV1 is
     // ==================================================================
 
     function stakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
-        address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
-        assert(glpVault != address(0));
-
-        IERC20 gmx = IERC20(registry().gmx());
-        gmx.safeApprove(glpVault, _amount);
-        IGLPIsolationModeTokenVaultV2(glpVault).stakeGmx(_amount);
+        _stakeGmx(_amount);
     }
 
     function unstakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
@@ -113,6 +108,7 @@ contract GMXIsolationModeTokenVaultV1 is
             _setIsDepositSourceGLPVault(false);
         } else {
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
+            _stakeGmx(_amount);
         }
     }
 
@@ -202,6 +198,15 @@ contract GMXIsolationModeTokenVaultV1 is
 
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
         IGLPIsolationModeTokenVaultV2(glpVault).sweepGmxTokensIntoGmxVault();
+    }
+
+    function _stakeGmx(uint256 _amount) internal {
+        address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
+        assert(glpVault != address(0));
+
+        IERC20 gmx = IERC20(registry().gmx());
+        gmx.safeApprove(glpVault, _amount);
+        IGLPIsolationModeTokenVaultV2(glpVault).stakeGmx(_amount);
     }
 
     function _setShouldSkipTransfer(bool _shouldSkipTransfer) internal {
