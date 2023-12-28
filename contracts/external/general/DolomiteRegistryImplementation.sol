@@ -157,13 +157,12 @@ contract DolomiteRegistryImplementation is
             _FILE,
             "Invalid genericTraderProxy"
         );
-        // @follow-up This doesn't pass with new address
-        // bytes memory returnData = ValidationLib.callAndCheckSuccess(
-        //     _genericTraderProxy,
-        //     IGenericTraderProxyV1(_genericTraderProxy).MARGIN_POSITION_REGISTRY.selector,
-        //     bytes("")
-        // );
-        // abi.decode(returnData, (address));
+         bytes memory returnData = ValidationLib.callAndCheckSuccess(
+             _genericTraderProxy,
+             IGenericTraderProxyV1(_genericTraderProxy).EXPIRY.selector,
+             bytes("")
+         );
+         abi.decode(returnData, (address));
 
         _setAddress(_GENERIC_TRADER_PROXY_SLOT, _genericTraderProxy);
         emit GenericTraderProxySet(_genericTraderProxy);

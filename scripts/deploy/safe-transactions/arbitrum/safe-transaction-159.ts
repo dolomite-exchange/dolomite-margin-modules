@@ -113,6 +113,12 @@ async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
+  const dolomiteRegistryImplementationAddressV6 = await deployContractAndSave(
+    Number(network),
+    'DolomiteRegistryImplementation',
+    [],
+    'DolomiteRegistryImplementationV6',
+  );
   const eventEmitterRegistryImplementationV2Address = await deployContractAndSave(
     Number(network),
     'EventEmitterRegistry',
@@ -192,6 +198,15 @@ async function main(): Promise<DenJsonUpload> {
   );
 
   const transactions: EncodedTransaction[] = [];
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteRegistryProxy',
+      'upgradeTo',
+      [dolomiteRegistryImplementationAddressV6],
+    ),
+  );
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,

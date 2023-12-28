@@ -5,15 +5,18 @@ import { createFolder, DenJsonUpload, prettyPrintEncodedDataWithTypeSafety, writ
 
 /**
  * This script encodes the following transactions:
- * - Executes safe tx #159
+ * - Executes safe txs #159 and #162
  */
 async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const startId = 252;
-  const count = 11;
-  const transactionIds = Array(count).fill(0).map((_, i) => startId + i);
+  const count = 34;
+  const transactionIds = [
+    286, // execute the dolomite registry proxy upgrade first
+    ...Array(count).fill(0).map((_, i) => startId + i),
+  ];
   const transactions = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,

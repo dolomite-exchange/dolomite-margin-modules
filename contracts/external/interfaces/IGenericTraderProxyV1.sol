@@ -151,6 +151,4 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
     ) external;
 
     function EXPIRY() external view returns (address);
-
-    function MARGIN_POSITION_REGISTRY() external view returns (address);
 }
