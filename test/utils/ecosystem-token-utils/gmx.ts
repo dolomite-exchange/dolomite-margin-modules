@@ -463,7 +463,7 @@ export function getInitiateWrappingParams(
     traderParams: [
       {
         trader: wrapper.address,
-        traderType: GenericTraderType.IsolationModeWrapperV2,
+        traderType: GenericTraderType.IsolationModeWrapper,
         tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
         makerAccountIndex: 0,
       },
@@ -489,7 +489,7 @@ export function getInitiateUnwrappingParams(
     traderParams: [
       {
         trader: unwrapper.address,
-        traderType: GenericTraderType.IsolationModeUnwrapperV2,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
         tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
         makerAccountIndex: 0,
       },

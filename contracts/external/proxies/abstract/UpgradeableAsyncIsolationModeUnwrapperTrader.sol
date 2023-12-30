@@ -97,7 +97,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     onlyDolomiteMargin(msg.sender)
     onlyDolomiteMarginGlobalOperator(_sender) {
         State storage state = _getStorageSlot();
-        state.callFunction(_sender, _accountInfo, _data);
+        state.callFunction(this, _sender, _accountInfo, _data);
     }
 
     function exchange(

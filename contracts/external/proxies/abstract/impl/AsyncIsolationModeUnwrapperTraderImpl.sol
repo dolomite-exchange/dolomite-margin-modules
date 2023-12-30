@@ -90,7 +90,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         marketIdsPath[1] = _unwrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_withdrawalInfo.outputToken);
 
         IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
-        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapperV2;
+        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
         traderParams[0].makerAccountIndex = 0;
         traderParams[0].trader = address(this);
 
@@ -120,11 +120,13 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
     function callFunction(
         IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state,
+        UpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper,
         address /* _sender */,
         IDolomiteStructs.AccountInfo calldata _accountInfo,
         bytes calldata _data
     ) external {
-        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(_state.vaultFactory));
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage state = _state;
+        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(state.vaultFactory));
         (
             uint256 transferAmount,
             address accountOwner,
@@ -132,6 +134,11 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes,
             bytes32[] memory keys
         ) = abi.decode(_data, (uint256, address, uint256, IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
+        if (transferAmount == type(uint256).max) {
+            // @audit getAccountWei can return negative. Need to check that
+            // @follow-up Is this the correct number
+            transferAmount = _unwrapper.DOLOMITE_MARGIN().getAccountWei(_accountInfo, factory.marketId()).value;
+        }
         _validateVaultExists(factory, accountOwner);
 
         assert(tradeTypes.length == keys.length && keys.length > 0);
@@ -147,10 +154,8 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             uint256 inputAmountForIteration;
             if (tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromWithdrawal) {
                 IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo =
-                    _state.withdrawalInfo[keys[i]];
+                    state.withdrawalInfo[keys[i]];
                 if (withdrawalInfo.isLiquidation) {
-                    console.log('Withdrawal account number: ', withdrawalInfo.accountNumber);
-                    console.log('Account number: ', accountNumber);
                     Require.that(
                         withdrawalInfo.accountNumber == accountNumber,
                         _FILE,
@@ -162,7 +167,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             } else {
                 assert(tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit);
                 IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo =
-                    IHandlerRegistry(_state.handlerRegistry).getWrapperByToken(factory).getDepositInfo(keys[i]);
+                    IHandlerRegistry(state.handlerRegistry).getWrapperByToken(factory).getDepositInfo(keys[i]);
 
                 vault = depositInfo.vault;
                 inputAmountForIteration = depositInfo.outputAmount;
@@ -170,7 +175,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
             // Require that the vault is either the account owner or the input amount is 0 (meaning, it has been fully
             // spent)
-            // @todo confirm this require statement is correct
             Require.that(
                 (inputAmountForIteration == 0 && vault == address(0)) || vault == accountOwner,
                 _FILE,
@@ -178,6 +182,13 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 accountOwner
             );
             inputAmount += inputAmountForIteration;
+        }
+
+        console.log('InputAmount in call function: ', inputAmount);
+        console.log('TransferAmount in call function: ', transferAmount);
+        if (inputAmount == 0 && transferAmount == 0) {
+            // GUARD STATEMENT: we do a no-op
+            return;
         }
 
         uint256 underlyingVirtualBalance = IIsolationModeTokenVaultV1WithFreezable(vault).virtualBalance();
@@ -300,10 +311,9 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
     function createActionsForUnwrapping(
         UpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper,
-        IIsolationModeUnwrapperTraderV2.CreateActionsForUnwrappingParams calldata _params
+        IIsolationModeUnwrapperTraderV2.CreateActionsForUnwrappingParams memory _params
     ) external view returns (IDolomiteMargin.ActionArgs[] memory) {
         {
-            console.log('\n\n\n\n\n\n\n\n\n\n\n\n');
             IDolomiteMargin dolomiteMargin = _unwrapper.DOLOMITE_MARGIN();
             Require.that(
                 dolomiteMargin.getMarketTokenAddress(_params.inputMarket) == address(_unwrapper.VAULT_FACTORY()),
@@ -350,7 +360,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             }
         }
         Require.that(
-            structInputAmount >= _params.inputAmount && _params.inputAmount > 0,
+            _params.inputAmount > 0,
             _FILE,
             "Invalid input amount"
         );
@@ -360,10 +370,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
         // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
         // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
-        console.log('primary account owner: ', _params.primaryAccountOwner);
-        console.log('primary account number: ', _params.primaryAccountNumber);
-        console.log('other account owner: ', _params.otherAccountOwner);
-        console.log('other account number: ', _params.otherAccountNumber);
         actions[0] = AccountActionLib.encodeCallAction(
             _params.primaryAccountId,
             /* _callee */ address(this),
@@ -389,24 +395,39 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 );
             }
 
-            structInputAmount -= _params.inputAmount;
-            if (structInputAmount == 0) {
-                tradeTypes[0] = IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.NoOp;
+            if (_params.inputAmount == type(uint256).max) {
+                // @follow-up Could this bal ever be different than bal during call function? Would throw off target
+                uint256 targetAmount = _unwrapper.DOLOMITE_MARGIN().getAccountWei(
+                    IDolomiteStructs.AccountInfo({
+                        owner: _params.otherAccountOwner,
+                        number: _params.otherAccountNumber
+                    }),
+                    _params.inputMarket
+                ).value;
+                console.log('User bal: ', targetAmount);
+                console.log('Struct inputAmount: ', structInputAmount);
+                targetAmount -= structInputAmount;
+
                 actions[2] = AccountActionLib.encodeCallAction(
                     _params.primaryAccountId,
                     /* _callee */ address(this),
                     /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(_params.inputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
                 );
-                actions[3] = AccountActionLib.encodeCallAction(
-                    _params.primaryAccountId,
-                    /* _callee */ address(this),
-                    /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(_params.inputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
+                actions[3] = AccountActionLib.encodeExternalSellActionWithTarget(
+                    _params.otherAccountId,
+                    _params.inputMarket,
+                    _params.outputMarket,
+                    /* _trader = */ address(this),
+                    /* _targetAmountWei = */ targetAmount,
+                    /* _amountOutMinWei = */ 1,
+                    _params.orderData
                 );
             } else {
+                structInputAmount -= _params.inputAmount;
                 actions[2] = AccountActionLib.encodeCallAction(
                     _params.primaryAccountId,
                     /* _callee */ address(this),
-                    /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(_params.inputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
+                    /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(structInputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
                 );
                 actions[3] = AccountActionLib.encodeExternalSellAction(
                     _params.otherAccountId,

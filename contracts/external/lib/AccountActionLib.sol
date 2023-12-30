@@ -323,6 +323,36 @@ library AccountActionLib {
         });
     }
 
+    // @todo Create new function to set target amount
+    function encodeExternalSellActionWithTarget(
+        uint256 _fromAccountId,
+        uint256 _primaryMarketId,
+        uint256 _secondaryMarketId,
+        address _trader,
+        uint256 _targetAmountWei,
+        uint256 _amountOutMinWei,
+        bytes memory _orderData
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+    IDolomiteStructs.AssetAmount memory assetAmount;
+        assetAmount = IDolomiteStructs.AssetAmount({
+            sign: false,
+            denomination: IDolomiteStructs.AssetDenomination.Wei,
+            ref: IDolomiteStructs.AssetReference.Target,
+            value: _targetAmountWei
+        });
+
+        return IDolomiteStructs.ActionArgs({
+            actionType : IDolomiteStructs.ActionType.Sell,
+            accountId : _fromAccountId,
+            amount : assetAmount,
+            primaryMarketId : _primaryMarketId,
+            secondaryMarketId : _secondaryMarketId,
+            otherAddress : _trader,
+            otherAccountId : 0,
+            data : abi.encode(_amountOutMinWei, _orderData)
+        });
+    }
+
     function encodeExternalSellAction(
         uint256 _fromAccountId,
         uint256 _primaryMarketId,

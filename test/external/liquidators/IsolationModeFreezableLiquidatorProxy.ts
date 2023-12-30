@@ -13,6 +13,7 @@ import {
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2Registry,
+  IGenericTraderProxyV1__factory,
   IGmxMarketToken,
   IGmxMarketToken__factory,
   IsolationModeFreezableLiquidatorProxy,
@@ -66,6 +67,7 @@ const borrowAccountNumber3 = borrowAccountNumber2.add(ONE_BI);
 const amountWei = ONE_ETH_BI.mul('1234'); // 1,234
 const smallAmountWei = amountWei.mul(1).div(100);
 const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
+const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
 
@@ -180,8 +182,14 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.liquidatorProxyV4.address);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, liquidatorProxy.address);
     await core.dolomiteMargin.ownerSetGlobalOperator(liquidatorProxy.address, true);
-    await core.dolomiteMargin.ownerSetGlobalOperator(core.genericTraderProxy!.address, true);
-    await core.dolomiteRegistry.ownerSetGenericTraderProxy(core.genericTraderProxy!.address);
+    await core.dolomiteMargin.ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
+    await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
+    const trader = await IGenericTraderProxyV1__factory.connect(
+      NEW_GENERIC_TRADER_PROXY,
+      core.governance,
+    );
+    await trader.ownerSetEventEmitterRegistry(eventEmitter.address);
 
     solidAccount = { owner: core.hhUser5.address, number: defaultAccountNumber };
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
@@ -358,6 +366,8 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           || state === FinishState.Liquidated
           || state === FinishState.Expired
         ) {
+          console.log(withdrawal);
+          console.log(withdrawal.inputAmount.toString());
           expect(withdrawal.key).to.eq(BYTES_ZERO);
           expect(withdrawal.vault).to.eq(ZERO_ADDRESS);
           expect(withdrawal.accountNumber).to.eq(ZERO_BI);
@@ -588,7 +598,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       );
     }
 
-    it.only('should work normally for underwater account', async () => {
+    it('should work normally for underwater account', async () => {
       await setupBalances(borrowAccountNumber, true, false);
       await liquidatorProxy.prepareForLiquidation(
         liquidAccount,
@@ -611,7 +621,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       expect(supplyValue.value.mul(ONE_ETH_BI).div(borrowValue.value)).to.be.gt(ONE_ETH_BI.mul(115).div(100));
     });
 
-    it('should work normally for underwater account that must be liquidated', async () => {
+    it.only('should work normally for underwater account that must be liquidated', async () => {
       await setupBalances(borrowAccountNumber);
       await liquidatorProxy.prepareForLiquidation(
         liquidAccount,

@@ -12,6 +12,7 @@ import {
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2MarketTokenPriceOracle,
   GmxV2Registry,
+  IGenericTraderProxyV1__factory,
   IGmxMarketToken,
   IGmxRoleStore__factory,
   TestGmxV2IsolationModeVaultFactory,
@@ -69,6 +70,7 @@ const borrowAccountNumber = '123';
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const minAmountOut = parseEther('1600');
+const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const executionFee = process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE : GMX_V2_EXECUTION_FEE.mul(10);
 const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
@@ -153,11 +155,16 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
     eventEmitter = await createEventEmitter(core);
     const newRegistry = await createDolomiteRegistryImplementation();
+
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetEventEmitter(eventEmitter.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetGenericTraderProxy(core.genericTraderProxy!.address);
-    await core.genericTraderProxy!.connect(core.governance).ownerSetEventEmitterRegistry(eventEmitter.address);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(core.genericTraderProxy!.address, true);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
+    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
+    const trader = await IGenericTraderProxyV1__factory.connect(
+      NEW_GENERIC_TRADER_PROXY,
+      core.governance,
+    );
+    await trader.ownerSetEventEmitterRegistry(eventEmitter.address);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -386,7 +393,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     // @todo fix
     it('should work normally with short token', async () => {
       // @follow-up Changed this
-      const minAmountOut = parseEther('900');
+      const minAmountOut = parseEther('800');
       await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut);
 
       // @follow-up This call looks to fail when minOutputAmount is too high. Fails in a unexpected way though
@@ -440,7 +447,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
 
     it('should work when deposit will fail because of max supply wei (sends diff to vault owner)', async () => {
-      const minAmountOut = parseEther('900');
+      const minAmountOut = parseEther('800');
       await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut);
       await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
 
@@ -474,12 +481,12 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
     // @todo fix
     it('should work when deposit partially fills because max supply wei (sends diff to vault owner)', async () => {
-      const minAmountOut = parseEther('900');
+      const minAmountOut = parseEther('800');
       await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut);
       await expectWalletBalance(core.hhUser1, underlyingToken, ZERO_BI);
 
       const ethDiff = parseEther('0.00001');
-      await core.dolomiteMargin.ownerSetMaxWei(marketId, parseEther('900').add(ethDiff));
+      await core.dolomiteMargin.ownerSetMaxWei(marketId, parseEther('800').add(ethDiff));
       const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
         .executeDeposit(
           depositKey,
@@ -508,7 +515,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
 
     it('should work when deposit fails due to insufficient collateralization', async () => {
-      const minAmountOut = parseEther('900');
+      const minAmountOut = parseEther('800');
       await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut, async () => {
         const oraclePrice = (await priceOracle.getPrice(factory.address)).value;
         const wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
@@ -549,7 +556,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
 
     it('should work when deposit fails due to reversion', async () => {
-      const minAmountOut = parseEther('900');
+      const minAmountOut = parseEther('800');
       await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut);
 
       await factory.setReversionType(ReversionType.Assert);
