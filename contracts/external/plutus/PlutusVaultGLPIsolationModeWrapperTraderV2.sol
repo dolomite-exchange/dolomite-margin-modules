@@ -60,7 +60,8 @@ contract PlutusVaultGLPIsolationModeWrapperTraderV2 is IsolationModeWrapperTrade
     )
     IsolationModeWrapperTraderV2(
         _dPlvGlp,
-        _dolomiteMargin
+        _dolomiteMargin,
+        address(IPlutusVaultRegistry(_plutusVaultRegistry).dolomiteRegistry())
     ) {
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
         PLUTUS_VAULT_REGISTRY = IPlutusVaultRegistry(_plutusVaultRegistry);

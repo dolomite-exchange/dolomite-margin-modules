@@ -56,7 +56,8 @@ contract PendlePtIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     )
     IsolationModeWrapperTraderV2(
         _dptToken,
-        _dolomiteMargin
+        _dolomiteMargin,
+        address(IPendleRegistry(_pendleRegistry).dolomiteRegistry())
     ) {
         PENDLE_REGISTRY = IPendleRegistry(_pendleRegistry);
         UNDERLYING_TOKEN = IERC20(_underlyingToken);

@@ -56,7 +56,8 @@ contract GLPIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     )
     IsolationModeWrapperTraderV2(
         _dfsGlp,
-        _dolomiteMargin
+        _dolomiteMargin,
+        address(IGmxRegistryV1(_gmxRegistry).dolomiteRegistry())
     ) {
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }

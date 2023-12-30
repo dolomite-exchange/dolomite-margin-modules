@@ -53,7 +53,8 @@ contract GLPIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 {
     )
     IsolationModeUnwrapperTraderV2(
         _dfsGlp,
-        _dolomiteMargin
+        _dolomiteMargin,
+        address(IGmxRegistryV1(_gmxRegistry).dolomiteRegistry())
     ) {
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
     }

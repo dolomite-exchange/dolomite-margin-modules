@@ -22,14 +22,13 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IsolationModeTraderBaseV2 } from "./IsolationModeTraderBaseV2.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteMarginCallee } from "../../../protocol/interfaces/IDolomiteMarginCallee.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
-import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
-import { IIsolationModeUnwrapperTrader } from "../../interfaces/IIsolationModeUnwrapperTrader.sol";
-import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
+import { IIsolationModeUnwrapperTraderV2 } from "../../interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 
 
@@ -41,9 +40,9 @@ import { AccountActionLib } from "../../lib/AccountActionLib.sol";
  *          the DolomiteMargin admin on the corresponding `IsolationModeVaultFactory` token to be used.
  */
 abstract contract IsolationModeUnwrapperTraderV2 is
-    IIsolationModeUnwrapperTrader,
+    IIsolationModeUnwrapperTraderV2,
     IDolomiteMarginCallee,
-    OnlyDolomiteMargin
+    IsolationModeTraderBaseV2
 {
     using SafeERC20 for IERC20;
 
@@ -52,20 +51,19 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     bytes32 private constant _FILE = "IsolationModeUnwrapperTraderV2";
     uint256 private constant _ACTIONS_LENGTH = 2;
 
-    // ======================== Field Variables ========================
-
-    IIsolationModeVaultFactory public immutable VAULT_FACTORY; // solhint-disable-line var-name-mixedcase
-
     // ======================== Constructor ========================
 
     constructor(
         address _vaultFactory,
-        address _dolomiteMargin
+        address _dolomiteMargin,
+        address _dolomiteRegistry
     )
-    OnlyDolomiteMargin(
-        _dolomiteMargin
+    IsolationModeTraderBaseV2(
+        _vaultFactory,
+        _dolomiteMargin,
+        _dolomiteRegistry
     ) {
-        VAULT_FACTORY = IIsolationModeVaultFactory(_vaultFactory);
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     // ======================== External Functions ========================
@@ -76,9 +74,8 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         bytes calldata _data
     )
     external
-    virtual
     onlyDolomiteMargin(msg.sender)
-    onlyDolomiteMarginGlobalOperator(_sender) {
+    onlyGenericTraderOrTrustedLiquidator(_sender) {
         _callFunction(_sender, _accountInfo, _data);
     }
 
@@ -151,32 +148,23 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     }
 
     function createActionsForUnwrapping(
-        uint256 _solidAccountId,
-        uint256 _liquidAccountId,
-        address,
-        address,
-        uint256 _outputMarket,
-        uint256 _inputMarket,
-        uint256 _minAmountOut,
-        uint256 _inputAmount,
-        bytes calldata _orderData
+        CreateActionsForUnwrappingParams calldata _params
     )
-    external
-    virtual
-    override
-    view
-    returns (IDolomiteMargin.ActionArgs[] memory) {
+        external
+        view
+        returns (IDolomiteMargin.ActionArgs[] memory)
+    {
         Require.that(
-            DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket) == address(VAULT_FACTORY),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_params.inputMarket) == address(VAULT_FACTORY),
             _FILE,
             "Invalid input market",
-            _inputMarket
+            _params.inputMarket
         );
         Require.that(
-            isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket)),
+            isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_params.outputMarket)),
             _FILE,
             "Invalid output market",
-            _outputMarket
+            _params.outputMarket
         );
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
@@ -184,19 +172,23 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         // Transfer the IsolationMode tokens to this contract. Do this by enqueuing a transfer via the call to
         // `enqueueTransferFromDolomiteMargin` in `callFunction` on this contract.
         actions[0] = AccountActionLib.encodeCallAction(
-            _liquidAccountId,
+            _params.primaryAccountId,
             /* _callee */ address(this),
-            /* _transferAmount[encoded] = */ abi.encode(_inputAmount)
+            /* _callData = */ abi.encode(
+                _params.inputAmount,
+                _params.otherAccountOwner,
+                _params.otherAccountNumber
+            )
         );
 
         actions[1] = AccountActionLib.encodeExternalSellAction(
-            _solidAccountId,
-            _inputMarket,
-            _outputMarket,
+            _params.primaryAccountId,
+            _params.inputMarket,
+            _params.outputMarket,
             /* _trader = */ address(this),
-            /* _amountInWei = */ _inputAmount,
-            /* _amountOutMinWei = */ _minAmountOut,
-            _orderData
+            /* _amountInWei = */ _params.inputAmount,
+            /* _amountOutMinWei = */ _params.minOutputAmount,
+            _params.orderData
         );
 
         return actions;
@@ -253,16 +245,27 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     )
     internal
     virtual {
-        Require.that(
-            VAULT_FACTORY.getAccountByVault(_accountInfo.owner) != address(0),
-            _FILE,
-            "Account owner is not a vault",
-            _accountInfo.owner
-        );
-
         // This is called after a liquidation has occurred. We need to transfer excess tokens to the liquidator's
         // designated recipient
-        (uint256 transferAmount) = abi.decode(_data, (uint256));
+        (uint256 transferAmount, address vaultOwner, /* uint256 vaultSubAccount */) = abi.decode(
+            _data,
+            (uint256, address, uint256)
+        );
+
+        Require.that(
+            VAULT_FACTORY.getAccountByVault(vaultOwner) != address(0),
+            _FILE,
+            "Account owner is not a vault",
+            vaultOwner
+        );
+
+        if (transferAmount == type(uint256).max) {
+            uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(VAULT_FACTORY));
+            /// @note   Account wei cannot be negative for Isolation Mode assets
+            /// @note   We can safely get the _accountInfo's (the Zap account for ordinary unwraps or Solid account for
+            ///         liquidations) balance here without worrying about read-only reentrancy
+            transferAmount = DOLOMITE_MARGIN().getAccountWei(_accountInfo, marketId).value;
+        }
         Require.that(
             transferAmount > 0,
             _FILE,

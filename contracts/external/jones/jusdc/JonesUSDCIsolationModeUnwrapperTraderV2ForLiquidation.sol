@@ -24,7 +24,6 @@ import { JonesUSDCIsolationModeUnwrapperTraderV2 } from "./JonesUSDCIsolationMod
 import { JonesUSDCMathLib } from "./JonesUSDCMathLib.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
-import { ILiquidatorAssetRegistry } from "../../interfaces/ILiquidatorAssetRegistry.sol";
 import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
 
 
@@ -42,14 +41,9 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation is JonesUSDCIsola
 
     bytes32 private constant _FILE = "JonesUSDCUnwrapperV2Liquidation";
 
-    // ============ Immutable State Variables ============
-
-    ILiquidatorAssetRegistry public immutable LIQUIDATOR_ASSET_REGISTRY; // solhint-disable-line var-name-mixedcase
-
     // ============ Constructor ============
 
     constructor(
-        address _liquidatorAssetRegistry,
         address _usdc,
         address _jonesUSDCRegistry,
         address _djUSDC,
@@ -61,7 +55,7 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation is JonesUSDCIsola
         _djUSDC,
         _dolomiteMargin
     ) {
-        LIQUIDATOR_ASSET_REGISTRY = ILiquidatorAssetRegistry(_liquidatorAssetRegistry);
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     // ============================================
@@ -75,10 +69,8 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation is JonesUSDCIsola
     )
     internal
     override {
-        uint256 marketId = VAULT_FACTORY.marketId();
         Require.that(
-            LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(marketId, _sender)
-                && LIQUIDATOR_ASSET_REGISTRY.getLiquidatorsForAsset(marketId).length > 0,
+            _isValidLiquidator(_sender, VAULT_FACTORY.marketId()),
             _FILE,
             "Sender must be a liquidator",
             _sender

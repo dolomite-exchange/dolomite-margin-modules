@@ -41,11 +41,13 @@ contract TestIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     constructor(
         address _inputToken,
         address _vaultFactory,
-        address _dolomiteMargin
+        address _dolomiteMargin,
+        address _dolomiteRegistry
     )
     IsolationModeWrapperTraderV2(
         _vaultFactory,
-        _dolomiteMargin
+        _dolomiteMargin,
+        _dolomiteRegistry
     ) {
         INPUT_TOKEN = _inputToken;
     }

@@ -53,7 +53,8 @@ contract JonesUSDCIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
     )
     IsolationModeWrapperTraderV2(
         _djUSDC,
-        _dolomiteMargin
+        _dolomiteMargin,
+        address(IJonesUSDCRegistry(_jonesVaultRegistry).dolomiteRegistry())
     ) {
         USDC = IERC20(_usdc);
         JONES_USDC_REGISTRY = IJonesUSDCRegistry(_jonesVaultRegistry);

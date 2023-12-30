@@ -45,11 +45,13 @@ contract UmamiAssetVaultIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
 
     constructor(
         address _dUmamiAssetVault,
-        address _dolomiteMargin
+        address _dolomiteMargin,
+        address _dolomiteRegistry
     )
     IsolationModeUnwrapperTraderV2(
         _dUmamiAssetVault,
-        _dolomiteMargin
+        _dolomiteMargin,
+        _dolomiteRegistry
     ) {
         // solhint-disable-previous-line no-empty-blocks
     }

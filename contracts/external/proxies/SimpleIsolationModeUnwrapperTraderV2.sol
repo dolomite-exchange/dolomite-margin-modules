@@ -40,11 +40,13 @@ contract SimpleIsolationModeUnwrapperTraderV2 is IsolationModeUnwrapperTraderV2 
 
     constructor(
         address _vaultFactory,
-        address _dolomiteMargin
+        address _dolomiteMargin,
+        address _dolomiteRegistry
     )
     IsolationModeUnwrapperTraderV2(
         _vaultFactory,
-        _dolomiteMargin
+        _dolomiteMargin,
+        _dolomiteRegistry
     ) {
         // solhint-disable-previous-line no-empty-blocks
     }

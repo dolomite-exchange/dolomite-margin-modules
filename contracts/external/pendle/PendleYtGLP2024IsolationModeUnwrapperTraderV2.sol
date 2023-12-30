@@ -57,10 +57,11 @@ contract PendleYtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
         address _gmxRegistry,
         address _dytGlp,
         address _dolomiteMargin
-    ) 
+    )
     IsolationModeUnwrapperTraderV2(
         _dytGlp,
-        _dolomiteMargin
+        _dolomiteMargin,
+        address(IGmxRegistryV1(_gmxRegistry).dolomiteRegistry())
     ) {
         PENDLE_REGISTRY = IPendleGLPRegistry(_pendleRegistry);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
@@ -86,7 +87,7 @@ contract PendleYtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
         address,
         uint256 _inputAmount,
         bytes memory _extraOrderData
-    ) 
+    )
         internal
         override
         returns (uint256)
@@ -124,8 +125,8 @@ contract PendleYtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
         bytes memory
     )
     internal
-    override 
-    pure 
+    override
+    pure
     returns (uint256) {
         revert(string(abi.encodePacked(Require.stringifyTruncated(_FILE), ": getExchangeCost is not implemented")));
     }

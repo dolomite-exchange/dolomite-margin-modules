@@ -60,7 +60,8 @@ contract PendlePtGLP2024IsolationModeUnwrapperTraderV2 is IsolationModeUnwrapper
     )
     IsolationModeUnwrapperTraderV2(
         _dptGlp,
-        _dolomiteMargin
+        _dolomiteMargin,
+        address(IPendleGLPRegistry(_pendleRegistry).dolomiteRegistry())
     ) {
         PENDLE_REGISTRY = IPendleGLPRegistry(_pendleRegistry);
         GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);

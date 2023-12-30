@@ -22,10 +22,9 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IsolationModeTraderBaseV2 } from "./IsolationModeTraderBaseV2.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
-import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
-import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
 import { IIsolationModeWrapperTrader } from "../../interfaces/IIsolationModeWrapperTrader.sol";
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 
@@ -37,7 +36,7 @@ import { AccountActionLib } from "../../lib/AccountActionLib.sol";
  * @notice  Abstract contract for wrapping a token into an IsolationMode token. Must be set as a token converter
  *          for the VaultWrapperFactory token.
  */
-abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, OnlyDolomiteMargin {
+abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, IsolationModeTraderBaseV2 {
     using SafeERC20 for IERC20;
 
     // ======================== Constants ========================
@@ -45,17 +44,19 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, O
     bytes32 private constant _FILE = "IsolationModeWrapperTraderV2";
     uint256 private constant _ACTIONS_LENGTH = 1;
 
-    // ======================== Field Variables ========================
-
-    IIsolationModeVaultFactory public immutable VAULT_FACTORY; // solhint-disable-line var-name-mixedcase
-
     // ======================== Constructor ========================
 
     constructor(
         address _vaultFactory,
-        address _dolomiteMargin
-    ) OnlyDolomiteMargin(_dolomiteMargin) {
-        VAULT_FACTORY = IIsolationModeVaultFactory(_vaultFactory);
+        address _dolomiteMargin,
+        address _dolomiteRegistry
+    )
+    IsolationModeTraderBaseV2(
+        _vaultFactory,
+        _dolomiteMargin,
+        _dolomiteRegistry
+    ) {
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     // ======================== External Functions ========================

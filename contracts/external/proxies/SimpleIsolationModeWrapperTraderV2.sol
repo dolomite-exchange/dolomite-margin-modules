@@ -40,11 +40,13 @@ contract SimpleIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
 
     constructor(
         address _dToken,
-        address _dolomiteMargin
+        address _dolomiteMargin,
+        address _dolomiteRegistry
     )
     IsolationModeWrapperTraderV2(
         _dToken,
-        _dolomiteMargin
+        _dolomiteMargin,
+        _dolomiteRegistry
     ) {
         // solhint-disable-previous-line no-empty-blocks
     }
