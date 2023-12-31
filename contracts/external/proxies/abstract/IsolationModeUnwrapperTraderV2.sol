@@ -264,7 +264,10 @@ abstract contract IsolationModeUnwrapperTraderV2 is
             /// @note   Account wei cannot be negative for Isolation Mode assets
             /// @note   We can safely get the _accountInfo's (the Zap account for ordinary unwraps or Solid account for
             ///         liquidations) balance here without worrying about read-only reentrancy
-            transferAmount = DOLOMITE_MARGIN().getAccountWei(_accountInfo, marketId).value;
+            IDolomiteStructs.Wei memory balanceWei = DOLOMITE_MARGIN().getAccountWei(_accountInfo, marketId);
+            assert(balanceWei.sign || balanceWei.value == 0);
+
+            transferAmount = balanceWei.value;
         }
         Require.that(
             transferAmount > 0,

@@ -36,6 +36,7 @@ export function getARBUnwrapperTraderV2ConstructorParams(
   return [
     factory.address,
     core.dolomiteMargin.address,
+    core.dolomiteRegistry.address,
   ];
 }
 
@@ -46,5 +47,6 @@ export function getARBWrapperTraderV2ConstructorParams(
   return [
     factory.address,
     core.dolomiteMargin.address,
+    core.dolomiteRegistry.address,
   ];
 }

@@ -110,7 +110,7 @@ async function main() {
     core.dolomiteMargin.populateTransaction.ownerAddMarket(
       dplvGlpToken.address,
       priceOracleAddress,
-      core.alwaysZeroInterestSetter.address,
+      core.interestSetters.alwaysZeroInterestSetter.address,
       { value: BigNumber.from('43478260869565217') }, // 4.347% --> 120% collateralization
       { value: ZERO_BI },
       '5000000000000000000000000', // 5M units

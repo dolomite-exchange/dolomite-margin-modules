@@ -105,7 +105,7 @@ async function main() {
     core.dolomiteMargin.populateTransaction.ownerAddMarket(
       djUSDCToken.address,
       priceOracleAddress,
-      core.alwaysZeroInterestSetter.address,
+      core.interestSetters.alwaysZeroInterestSetter.address,
       { value: ZERO_BI }, // 115% collateralization
       { value: ZERO_BI },
       BigNumber.from(500_000).mul(TEN_BI.pow(await djUSDCToken.decimals())), // 500k units

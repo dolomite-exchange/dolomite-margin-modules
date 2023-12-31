@@ -129,7 +129,7 @@ async function main() {
     [
       dytGlpToken.address,
       priceOracleAddress,
-      core.alwaysZeroInterestSetter.address,
+      core.interestSetters.alwaysZeroInterestSetter.address,
       { value: BigNumber.from('304347826086956521') }, // 30.4347% --> 150% collateralization
       { value: ONE_ETH_BI }, // 100% --> 10% liquidation penalty
       BigNumber.from(500_000).mul(TEN_BI.pow(await dytGlpToken.decimals())), // 500k units

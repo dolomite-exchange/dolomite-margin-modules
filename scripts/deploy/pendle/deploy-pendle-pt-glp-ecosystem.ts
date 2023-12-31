@@ -90,7 +90,7 @@ async function main() {
     [
       dptGlpToken.address,
       priceOracleAddress,
-      core.alwaysZeroInterestSetter.address,
+      core.interestSetters.alwaysZeroInterestSetter.address,
       { value: BigNumber.from('43478260869565217') }, // 4.347% --> 120% collateralization
       { value: ZERO_BI },
       BigNumber.from(500_000).mul(TEN_BI.pow(await dptGlpToken.decimals())), // 500k units
