@@ -84,7 +84,12 @@ export async function deployContractAndSave(
   args: ConstructorArgument[],
   contractRename?: string,
   libraries?: Record<string, string>,
+  attempts: number = 0,
 ): Promise<address> {
+  if (attempts === 3) {
+    return Promise.reject(new Error(`Could not deploy after ${attempts} attempts!`));
+  }
+
   const fileBuffer = fs.readFileSync('./scripts/deployments.json');
 
   let file: Record<string, Record<ChainId, any>>;
@@ -106,9 +111,15 @@ export async function deployContractAndSave(
 
   console.log(`Deploying ${usedContractName} to chainId ${chainId}...`);
 
-  const contract = libraries
-    ? await createContractWithLibrary(contractName, libraries, args)
-    : await createContractWithName(contractName, args);
+  let contract: BaseContract;
+  try {
+    contract = libraries
+      ? await createContractWithLibrary(contractName, libraries, args)
+      : await createContractWithName(contractName, args);
+  } catch (e) {
+    console.error(`Could not deploy at attempt ${attempts + 1} due to error:`, e);
+    return deployContractAndSave(chainId, contractName, args, contractRename, libraries, attempts + 1);
+  }
 
   file[usedContractName] = {
     ...file[usedContractName],
@@ -434,7 +445,7 @@ export async function prettyPrintEncodedDataWithTypeSafety<
   console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
   console.log(
     'To:\t\t',
-    (await getReadableArg(core, ParamType.fromString('address to'), transaction.to)).substring(13)
+    (await getReadableArg(core, ParamType.fromString('address to'), transaction.to)).substring(13),
   );
   console.log('Data:\t\t', transaction.data);
   console.log('='.repeat(76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length));

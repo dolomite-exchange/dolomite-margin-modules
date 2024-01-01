@@ -45,7 +45,7 @@ export function getGLPUnwrapperTraderV1ConstructorParams(
   ];
 }
 
-export function getGLPUnwrapperTraderV2ConstructorParams(
+export function getGLPIsolationModeUnwrapperTraderV2ConstructorParams(
   core: CoreProtocol,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
@@ -93,7 +93,7 @@ export function getGLPWrapperTraderV1ConstructorParams(
   ];
 }
 
-export function getGLPWrapperTraderV2ConstructorParams(
+export function getGLPIsolationModeWrapperTraderV2ConstructorParams(
   core: CoreProtocol,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,

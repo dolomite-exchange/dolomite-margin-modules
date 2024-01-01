@@ -26,7 +26,7 @@ async function getGlpVaultTransactions(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.gmxEcosystem!.live,
-      'glpIsolationModeFactory',
+      'dGlp',
       'setUserVaultImplementation',
       [newGlpUserVaultImplementationAddress],
     ),
@@ -38,7 +38,7 @@ async function getGlpVaultTransactions(
       'liquidatorAssetRegistry',
       'ownerAddLiquidatorToAssetWhitelist',
       [
-        await core.dolomiteMargin.getMarketIdByTokenAddress(core.gmxEcosystem!.live.glpIsolationModeFactory.address),
+        await core.dolomiteMargin.getMarketIdByTokenAddress(core.gmxEcosystem!.live.dGlp.address),
         core.liquidatorProxyV4!.address,
       ],
     ),
@@ -50,7 +50,7 @@ async function getGlpVaultTransactions(
       'liquidatorAssetRegistry',
       'ownerRemoveLiquidatorFromAssetWhitelist',
       [
-        await core.dolomiteMargin.getMarketIdByTokenAddress(core.gmxEcosystem!.live.glpIsolationModeFactory.address),
+        await core.dolomiteMargin.getMarketIdByTokenAddress(core.gmxEcosystem!.live.dGlp.address),
         liquidatorProxyV4OldAddress,
       ],
     ),

@@ -76,6 +76,7 @@ describe('JonesUSDCRegistry', () => {
           core.jonesEcosystem!.whitelistController.address,
           core.jonesEcosystem!.usdcReceiptToken.address,
           core.jonesEcosystem!.jUSDC.address,
+          core.jonesEcosystem!.jUSDCFarm.address,
           core.dolomiteRegistry.address,
         ),
         'Initializable: contract is already initialized',

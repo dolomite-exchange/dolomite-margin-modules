@@ -69,7 +69,7 @@ describe('GLPLiquidationWithUnwrapperV2', () => {
     });
     underlyingToken = core.gmxEcosystem!.fsGlp;
     gmxRegistry = core.gmxEcosystem!.live.gmxRegistry;
-    factory = core.gmxEcosystem!.live.glpIsolationModeFactory.connect(core.hhUser1);
+    factory = core.gmxEcosystem!.live.dGlp.connect(core.hhUser1);
 
     underlyingMarketId = core.marketIds.dfsGlp!;
 

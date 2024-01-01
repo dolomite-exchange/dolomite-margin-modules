@@ -64,7 +64,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     gmxRegistry = await createGmxRegistry(core);
 
     const vaultImplementation = await createTestGLPIsolationModeTokenVaultV2();
-    glpFactory = core.gmxEcosystem!.live.glpIsolationModeFactory;
+    glpFactory = core.gmxEcosystem!.live.dGlp;
     await glpFactory.connect(core.governance).setUserVaultImplementation(vaultImplementation.address);
     await glpFactory.connect(core.governance).setGmxRegistry(gmxRegistry.address);
 

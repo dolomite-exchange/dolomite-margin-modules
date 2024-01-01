@@ -49,7 +49,7 @@ async function main() {
     'PendleYtGLP2024IsolationModeVaultFactory',
     getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams(
       core,
-      core.pendleEcosystem!.live.pendleGLP2024Registry,
+      core.pendleEcosystem!.glpMar2024.pendleRegistry,
       [
         core.marketIds.weth,
         core.marketIds.dai!,
@@ -59,7 +59,7 @@ async function main() {
         core.marketIds.mim!,
       ],
       [],
-      core.pendleEcosystem!.ytGlpToken,
+      core.pendleEcosystem!.glpMar2024.ytGlpToken,
       userVaultImplementation,
     ),
   );
@@ -71,7 +71,7 @@ async function main() {
     getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
       core,
       dytGlpToken,
-      core.pendleEcosystem!.live.pendleGLP2024Registry,
+      core.pendleEcosystem!.glpMar2024.pendleRegistry,
     ),
   );
   const unwrapper = PendleYtGLP2024IsolationModeUnwrapperTraderV2__factory.connect(unwrapperAddress, core.hhUser1);
@@ -82,7 +82,7 @@ async function main() {
     getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
       core,
       dytGlpToken,
-      core.pendleEcosystem!.live.pendleGLP2024Registry,
+      core.pendleEcosystem!.glpMar2024.pendleRegistry,
     ),
   );
   const wrapper = PendleYtGLP2024IsolationModeWrapperTraderV2__factory.connect(wrapperAddress, core.hhUser1);
@@ -90,7 +90,7 @@ async function main() {
   const priceOracleAddress = await deployContractAndSave(
     Number(network),
     'PendleYtGLPPriceOracle',
-    getPendleYtGLPPriceOracleConstructorParams(core, dytGlpToken, core.pendleEcosystem!.live.pendleGLP2024Registry),
+    getPendleYtGLPPriceOracleConstructorParams(core, dytGlpToken, core.pendleEcosystem!.glpMar2024.pendleRegistry),
   );
 
   await prettyPrintEncodedDataWithTypeSafety(
@@ -109,17 +109,17 @@ async function main() {
   );
   await prettyPrintEncodedDataWithTypeSafety(
     core,
-    core.pendleEcosystem!.live,
-    'pendleGLP2024RegistryProxy',
+    core.pendleEcosystem!.glpMar2024,
+    'pendleRegistryProxy',
     'upgradeTo',
     [pendleRegistryImplementationAddress],
   );
   await prettyPrintEncodedDataWithTypeSafety(
     core,
-    core.pendleEcosystem!.live,
-    'pendleGLP2024Registry',
+    core.pendleEcosystem!.glpMar2024,
+    'pendleRegistry',
     'ownerSetYtGlpToken',
-    [core.pendleEcosystem!.ytGlpToken.address],
+    [core.pendleEcosystem!.glpMar2024.ytGlpToken.address],
   );
   await prettyPrintEncodedDataWithTypeSafety(
     core,

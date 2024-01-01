@@ -56,8 +56,8 @@ async function main(): Promise<DenJsonUpload> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.pendleEcosystem!.live,
-      'ptREthJun2025IsolationModeFactory',
+      core.pendleEcosystem!.rEthJun2025,
+      'dPtREthJun2025',
       'ownerSetIsTokenConverterTrusted',
       [rEthJun2025IsolationModeWrapperTraderV2Address, false],
     ),
@@ -65,8 +65,8 @@ async function main(): Promise<DenJsonUpload> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.pendleEcosystem!.live,
-      'ptWstEthJun2024IsolationModeFactory',
+      core.pendleEcosystem!.wstEthJun2024,
+      'dPtWstEthJun2024',
       'ownerSetIsTokenConverterTrusted',
       [wstEthJun2024IsolationModeWrapperTraderV2Address, false],
     ),
@@ -74,8 +74,8 @@ async function main(): Promise<DenJsonUpload> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.pendleEcosystem!.live,
-      'ptWstEthJun2025IsolationModeFactory',
+      core.pendleEcosystem!.wstEthJun2025,
+      'dPtWstEthJun2025',
       'ownerSetIsTokenConverterTrusted',
       [wstEthJun2025IsolationModeWrapperTraderV2Address, false],
     ),
@@ -83,8 +83,8 @@ async function main(): Promise<DenJsonUpload> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.pendleEcosystem!.live,
-      'ptREthJun2025IsolationModeFactory',
+      core.pendleEcosystem!.rEthJun2025,
+      'dPtREthJun2025',
       'ownerSetIsTokenConverterTrusted',
       [rEthSystem.wrapper.address, true],
     ),
@@ -92,8 +92,8 @@ async function main(): Promise<DenJsonUpload> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.pendleEcosystem!.live,
-      'ptWstEthJun2024IsolationModeFactory',
+      core.pendleEcosystem!.wstEthJun2024,
+      'dPtWstEthJun2024',
       'ownerSetIsTokenConverterTrusted',
       [wstEthJun2024System.wrapper.address, true],
     ),
@@ -101,8 +101,8 @@ async function main(): Promise<DenJsonUpload> {
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.pendleEcosystem!.live,
-      'ptWstEthJun2025IsolationModeFactory',
+      core.pendleEcosystem!.wstEthJun2025,
+      'dPtWstEthJun2025',
       'ownerSetIsTokenConverterTrusted',
       [wstEthJun2025System.wrapper.address, true],
     ),

@@ -47,6 +47,7 @@ async function main(): Promise<DenJsonUpload> {
     Number(network),
     'ARBRegistry',
     [],
+    'ARBRegistryImplementationV1',
   );
   const arbRegistryImplementation = ARBRegistry__factory.connect(arbRegistryImplementationAddress, core.hhUser1);
   const arbRegistryAddress = await deployContractAndSave(
@@ -161,7 +162,7 @@ async function main(): Promise<DenJsonUpload> {
       core.gmxEcosystem!.live,
       'gmxRegistry',
       'ownerSetGlpVaultFactory',
-      [core.gmxEcosystem!.live.glpIsolationModeFactory.address],
+      [core.gmxEcosystem!.live.dGlp.address],
     )
   );
   transactions.push(

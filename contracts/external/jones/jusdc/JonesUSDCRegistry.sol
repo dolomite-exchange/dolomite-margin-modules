@@ -63,8 +63,8 @@ contract JonesUSDCRegistry is IJonesUSDCRegistry, BaseRegistry {
         address _whitelistController,
         address _usdcReceiptToken,
         address _jUSDC,
-        address _dolomiteRegistry,
-        address _jonesUSDCFarm
+        address _jonesUSDCFarm,
+        address _dolomiteRegistry
     ) external initializer {
         _ownerSetGlpAdapter(_glpAdapter);
         _ownerSetGlpVaultRouter(_glpVaultRouter);

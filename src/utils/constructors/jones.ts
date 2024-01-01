@@ -21,8 +21,8 @@ export async function getJonesUSDCRegistryConstructorParams(
     core.jonesEcosystem.whitelistController.address,
     core.jonesEcosystem.usdcReceiptToken.address,
     core.jonesEcosystem.jUSDC.address,
-    core.dolomiteRegistry.address,
     core.jonesEcosystem.jUSDCFarm.address,
+    core.dolomiteRegistry.address,
   );
 
   return [

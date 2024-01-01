@@ -4,8 +4,8 @@ import {
   getMagicGLPWrapperTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/abracadabra';
 import {
-  getGLPUnwrapperTraderV2ConstructorParams,
-  getGLPWrapperTraderV2ConstructorParams,
+  getGLPIsolationModeUnwrapperTraderV2ConstructorParams,
+  getGLPIsolationModeWrapperTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/gmx';
 import {
   getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
@@ -38,18 +38,18 @@ async function main() {
   const glpUnwrapperV2Address = await deployContractAndSave(
     Number(network),
     'GLPIsolationModeUnwrapperTraderV2',
-    getGLPUnwrapperTraderV2ConstructorParams(
+    getGLPIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
-      core.gmxEcosystem!.live.glpIsolationModeFactory,
+      core.gmxEcosystem!.live.dGlp,
       core.gmxEcosystem!.live.gmxRegistry,
     ),
   );
   const glpWrapperV2Address = await deployContractAndSave(
     Number(network),
     'GLPIsolationModeWrapperTraderV2',
-    getGLPWrapperTraderV2ConstructorParams(
+    getGLPIsolationModeWrapperTraderV2ConstructorParams(
       core,
-      core.gmxEcosystem!.live.glpIsolationModeFactory,
+      core.gmxEcosystem!.live.dGlp,
       core.gmxEcosystem!.live.gmxRegistry,
     ),
   );
@@ -79,14 +79,14 @@ async function main() {
   );
 
   await prettyPrintEncodedData(
-    core.gmxEcosystem!.live.glpIsolationModeFactory.populateTransaction.setIsTokenConverterTrusted(
+    core.gmxEcosystem!.live.dGlp.populateTransaction.setIsTokenConverterTrusted(
       glpUnwrapperV2Address,
       true,
     ),
     'glpIsolationModeFactory.setIsTokenConverterTrusted(glpUnwrapperV2, true)',
   );
   await prettyPrintEncodedData(
-    core.gmxEcosystem!.live.glpIsolationModeFactory.populateTransaction.setIsTokenConverterTrusted(
+    core.gmxEcosystem!.live.dGlp.populateTransaction.setIsTokenConverterTrusted(
       glpWrapperV2Address,
       true,
     ),
@@ -133,7 +133,7 @@ async function main() {
   );
 
   await prettyPrintEncodedData(
-    core.gmxEcosystem!.live.glpIsolationModeFactory.populateTransaction.setUserVaultImplementation(
+    core.gmxEcosystem!.live.dGlp.populateTransaction.setUserVaultImplementation(
       glpTokenVaultAddress,
     ),
     'glpIsolationModeFactory.setUserVaultImplementation(glpTokenVault)',

@@ -55,7 +55,7 @@ async function main(): Promise<DenJsonUpload> {
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.gmxEcosystem!.live,
-      'glpIsolationModeFactory',
+      'dGlp',
       'setUserVaultImplementation',
       [glpVaultImplementationAddress],
     )

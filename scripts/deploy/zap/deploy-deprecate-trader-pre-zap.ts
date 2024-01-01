@@ -8,14 +8,14 @@ async function main() {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   await prettyPrintEncodedData(
-    core.gmxEcosystem!.live.glpIsolationModeFactory.populateTransaction.setIsTokenConverterTrusted(
+    core.gmxEcosystem!.live.dGlp.populateTransaction.setIsTokenConverterTrusted(
       core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1.address,
       false,
     ),
     'glpIsolationModeFactory.setIsTokenConverterTrusted(unwrapper, false)',
   );
   await prettyPrintEncodedData(
-    core.gmxEcosystem!.live.glpIsolationModeFactory.populateTransaction.setIsTokenConverterTrusted(
+    core.gmxEcosystem!.live.dGlp.populateTransaction.setIsTokenConverterTrusted(
       core.gmxEcosystem!.live.glpIsolationModeWrapperTraderV1.address,
       false,
     ),

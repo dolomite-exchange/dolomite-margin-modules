@@ -29,7 +29,7 @@ async function main() {
     getPendleYtGLPPriceOracleConstructorParams(
       core,
       IPendleYtGLP2024IsolationModeVaultFactory__factory.connect(core.tokens.dYtGlp!.address, core.hhUser1),
-      core.pendleEcosystem!.live.pendleGLP2024Registry,
+      core.pendleEcosystem!.glpMar2024.pendleRegistry,
     ),
   );
 
@@ -93,10 +93,10 @@ async function main() {
 
   await prettyPrintEncodedDataWithTypeSafety(
     core,
-    core.pendleEcosystem!.live,
-    'ytGlp2024IsolationModeFactory',
+    core.pendleEcosystem!.glpMar2024,
+    'dYtGlp2024',
     'ownerSetAllowableDebtMarketIds',
-    [await appendNativeUsdcToDebtMarketIdList(core, core.pendleEcosystem!.live.ytGlp2024IsolationModeFactory)],
+    [await appendNativeUsdcToDebtMarketIdList(core, core.pendleEcosystem!.glpMar2024.dYtGlp2024)],
   );
 }
 

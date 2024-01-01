@@ -23,6 +23,7 @@ import { ethers, network } from 'hardhat';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkName } from 'src/utils/no-deps-constants';
 import Deployments, * as deployments from '../../scripts/deployments.json';
 import {
+  ARBIsolationModeVaultFactory__factory, ARBRegistry__factory,
   DolomiteCompatibleWhitelistForPlutusDAO,
   DolomiteCompatibleWhitelistForPlutusDAO__factory,
   DolomiteRegistryImplementation,
@@ -34,7 +35,7 @@ import {
   IAlgebraV3Pool,
   IAlgebraV3Pool__factory,
   IARB,
-  IARB__factory,
+  IARB__factory, IARBIsolationModeVaultFactory, IARBRegistry,
   IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
   IChainlinkPriceOracle,
@@ -62,7 +63,9 @@ import {
   IERC4626,
   IERC4626__factory,
   IEsGmxDistributor,
-  IEsGmxDistributor__factory, IEventEmitterRegistry, IEventEmitterRegistry__factory,
+  IEsGmxDistributor__factory,
+  IEventEmitterRegistry,
+  IEventEmitterRegistry__factory,
   IExpiry,
   IExpiry__factory,
   IGenericTraderProxyV1,
@@ -78,7 +81,7 @@ import {
   IGmxDepositHandler,
   IGmxDepositHandler__factory,
   IGmxExchangeRouter,
-  IGmxExchangeRouter__factory,
+  IGmxExchangeRouter__factory, IGMXIsolationModeVaultFactory, IGMXIsolationModeVaultFactory__factory,
   IGmxMarketToken,
   IGmxMarketToken__factory,
   IGmxReader,
@@ -190,7 +193,9 @@ import {
   BN_GMX_MAP,
   CHAINLINK_PRICE_ORACLE_MAP,
   CHAINLINK_PRICE_ORACLE_OLD_MAP,
-  CHAINLINK_REGISTRY_MAP, D_ARB_MAP, D_GMX_MAP,
+  CHAINLINK_REGISTRY_MAP,
+  D_ARB_MAP,
+  D_GMX_MAP,
   DAI_MAP,
   DFS_GLP_MAP,
   DJ_USDC,
@@ -267,7 +272,9 @@ import {
   RETH_MAP,
   S_GLP_MAP,
   S_GMX_MAP,
-  SBF_GMX_MAP, SIZE_MAP, SIZE_WETH_V3_POOL_MAP,
+  SBF_GMX_MAP,
+  SIZE_MAP,
+  SIZE_WETH_V3_POOL_MAP,
   ST_ETH_MAP,
   UMAMI_CONFIGURATOR_MAP,
   UMAMI_LINK_VAULT_MAP,
@@ -302,6 +309,7 @@ export interface CoreProtocolSetupConfig {
 export interface CoreProtocolConfig {
   blockNumber: number;
   network: Network;
+  networkNumber: number;
 }
 
 export interface AbraEcosystem {
@@ -310,6 +318,11 @@ export interface AbraEcosystem {
 
 export interface ArbEcosystem {
   arb: IARB;
+  live: {
+    dArb: IARBIsolationModeVaultFactory;
+    arbRegistry: IARBRegistry;
+    arbRegistryProxy: RegistryProxy;
+  };
 }
 
 export interface AtlasEcosystem {
@@ -340,7 +353,8 @@ export interface GmxEcosystem {
   vGlp: IGmxVester;
   vGmx: IGmxVester;
   live: {
-    glpIsolationModeFactory: IGLPIsolationModeVaultFactoryOld;
+    dGlp: IGLPIsolationModeVaultFactoryOld;
+    dGmx: IGMXIsolationModeVaultFactory,
     glpIsolationModeUnwrapperTraderV1: GLPIsolationModeUnwrapperTraderV1;
     glpIsolationModeWrapperTraderV1: GLPIsolationModeWrapperTraderV1;
     gmxRegistry: IGmxRegistryV1;
@@ -402,10 +416,14 @@ export interface ParaswapEcosystem {
 export interface PendleEcosystem {
   pendleRouter: IPendleRouter;
   glpMar2024: {
+    pendleRegistry: IPendleGLPRegistry;
+    pendleRegistryProxy: RegistryProxy;
     ptGlpMarket: IPendlePtMarket;
     ptGlpToken: IPendlePtToken;
     ptOracle: IPendlePtOracle;
     ytGlpToken: IPendleYtToken;
+    dPtGlp2024: PendlePtGLP2024IsolationModeVaultFactory;
+    dYtGlp2024: PendleYtGLP2024IsolationModeVaultFactory;
   };
   rEthJun2025: {
     dPtREthJun2025: PendlePtIsolationModeVaultFactory;
@@ -431,15 +449,6 @@ export interface PendleEcosystem {
   syGlpToken: IPendleSyToken;
   syREthToken: IPendleSyToken;
   syWstEthToken: IPendleSyToken;
-  live: {
-    pendleGLP2024Registry: IPendleGLPRegistry
-    pendleGLP2024RegistryProxy: RegistryProxy
-    ptGlp2024IsolationModeFactory: PendlePtGLP2024IsolationModeVaultFactory;
-    ytGlp2024IsolationModeFactory: PendleYtGLP2024IsolationModeVaultFactory;
-    ptREthJun2025IsolationModeFactory: PendlePtIsolationModeVaultFactory;
-    ptWstEthJun2024IsolationModeFactory: PendlePtIsolationModeVaultFactory;
-    ptWstEthJun2025IsolationModeFactory: PendlePtIsolationModeVaultFactory;
-  };
 }
 
 export interface PlutusEcosystem {
@@ -740,12 +749,14 @@ export function getDefaultCoreProtocolConfig(network: Network): CoreProtocolConf
   return {
     network,
     blockNumber: NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[network],
+    networkNumber: parseInt(network, 10),
   };
 }
 
 export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig {
   return {
     network: Network.ArbitrumOne,
+    networkNumber: parseInt(Network.ArbitrumOne, 10),
     blockNumber: 163_846_237,
   };
 }
@@ -840,13 +851,13 @@ export async function setupCoreProtocol(
   const eventEmitterRegistry = getContractOpt(
     (Deployments.EventEmitterRegistryProxy as any)[config.network].address,
     IEventEmitterRegistry__factory.connect,
-    governance
+    governance,
   );
 
   const eventEmitterRegistryProxy = getContractOpt(
     (Deployments.EventEmitterRegistryProxy as any)[config.network].address,
     RegistryProxy__factory.connect,
-    governance
+    governance,
   );
 
   const expiry = IExpiry__factory.connect(
@@ -966,6 +977,7 @@ export async function setupCoreProtocol(
     config: {
       blockNumber: config.blockNumber,
       network: config.network,
+      networkNumber: parseInt(config.network, 10),
     },
     apiTokens: {
       usdc: {
@@ -1150,6 +1162,23 @@ async function createArbEcosystem(network: Network, signer: SignerWithAddress): 
 
   return {
     arb: getContract(ARB_MAP[network]?.address as string, IARB__factory.connect, signer),
+    live: {
+      dArb: getContract(
+        (Deployments.ARBIsolationModeVaultFactory as any)[network].address,
+        ARBIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
+      arbRegistry: getContract(
+        (Deployments.ARBRegistryProxy as any)[network].address,
+        ARBRegistry__factory.connect,
+        signer,
+      ),
+      arbRegistryProxy: getContract(
+        (Deployments.ARBRegistryProxy as any)[network].address,
+        RegistryProxy__factory.connect,
+        signer,
+      ),
+    }
   };
 }
 
@@ -1227,9 +1256,14 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
     vGlp: getContract(V_GLP_MAP[network] as string, IGmxVester__factory.connect, signer),
     vGmx: getContract(V_GMX_MAP[network] as string, IGmxVester__factory.connect, signer),
     live: {
-      glpIsolationModeFactory: getContract(
+      dGlp: getContract(
         (Deployments.GLPIsolationModeVaultFactory as any)[network]?.address,
         IGLPIsolationModeVaultFactoryOld__factory.connect,
+        signer,
+      ),
+      dGmx: getContract(
+        (Deployments.GMXIsolationModeVaultFactory as any)[network]?.address,
+        IGMXIsolationModeVaultFactory__factory.connect,
         signer,
       ),
       glpIsolationModeUnwrapperTraderV1: getContract(
@@ -1427,6 +1461,16 @@ async function createPendleEcosystem(
       signer,
     ),
     glpMar2024: {
+      pendleRegistry: getContract(
+        (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
+        IPendleGLPRegistry__factory.connect,
+        signer,
+      ),
+      pendleRegistryProxy: getContract(
+        (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
+        RegistryProxy__factory.connect,
+        signer,
+      ),
       ptGlpMarket: getContract(
         PENDLE_PT_GLP_2024_MARKET_MAP[network] as string,
         IPendlePtMarket__factory.connect,
@@ -1445,6 +1489,16 @@ async function createPendleEcosystem(
       ytGlpToken: getContract(
         PENDLE_YT_GLP_2024_TOKEN_MAP[network] as string,
         IPendleYtToken__factory.connect,
+        signer,
+      ),
+      dPtGlp2024: getContract(
+        (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,
+        PendlePtGLP2024IsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
+      dYtGlp2024: getContract(
+        (Deployments.PendleYtGLP2024IsolationModeVaultFactory as any)[network]?.address,
+        PendleYtGLP2024IsolationModeVaultFactory__factory.connect,
         signer,
       ),
     },
@@ -1544,43 +1598,6 @@ async function createPendleEcosystem(
       IPendleSyToken__factory.connect,
       signer,
     ),
-    live: {
-      pendleGLP2024Registry: getContract(
-        (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
-        IPendleGLPRegistry__factory.connect,
-        signer,
-      ),
-      pendleGLP2024RegistryProxy: getContract(
-        (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
-        RegistryProxy__factory.connect,
-        signer,
-      ),
-      ptGlp2024IsolationModeFactory: getContract(
-        (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,
-        PendlePtGLP2024IsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      ptREthJun2025IsolationModeFactory: getContract(
-        (Deployments.PendlePtREthJun2025IsolationModeVaultFactory as any)[network]?.address,
-        PendlePtIsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      ptWstEthJun2024IsolationModeFactory: getContract(
-        (Deployments.PendlePtWstEthJun2024IsolationModeVaultFactory as any)[network]?.address,
-        PendlePtIsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      ptWstEthJun2025IsolationModeFactory: getContract(
-        (Deployments.PendlePtWstEthJun2025IsolationModeVaultFactory as any)[network]?.address,
-        PendlePtIsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      ytGlp2024IsolationModeFactory: getContract(
-        (Deployments.PendleYtGLP2024IsolationModeVaultFactory as any)[network]?.address,
-        PendleYtGLP2024IsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-    },
   };
 }
 
