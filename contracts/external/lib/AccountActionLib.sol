@@ -335,7 +335,7 @@ library AccountActionLib {
     ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
     IDolomiteStructs.AssetAmount memory assetAmount;
         assetAmount = IDolomiteStructs.AssetAmount({
-            sign: false,
+            sign: true,
             denomination: IDolomiteStructs.AssetDenomination.Wei,
             ref: IDolomiteStructs.AssetReference.Target,
             value: _targetAmountWei

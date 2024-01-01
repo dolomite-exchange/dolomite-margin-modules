@@ -495,7 +495,7 @@ export function getInitiateUnwrappingParams(
       },
     ],
     makerAccounts: [],
-    userConfig: { deadline: '123123123123123', balanceCheckFlag: BalanceCheckFlag.None },
+    userConfig: { deadline: '123123123123123', balanceCheckFlag: BalanceCheckFlag.None, eventType: GenericEventEmissionType.None },
   };
 }
 

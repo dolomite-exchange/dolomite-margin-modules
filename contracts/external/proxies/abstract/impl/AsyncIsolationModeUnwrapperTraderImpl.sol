@@ -39,7 +39,6 @@ import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../../interfaces
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   AsyncIsolationModeUnwrapperTraderImpl
@@ -134,6 +133,12 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes,
             bytes32[] memory keys
         ) = abi.decode(_data, (uint256, address, uint256, IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
+
+        if (tradeTypes[0] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.NoOp) {
+            // This is a no-op, so we don't need to do anything
+            return;
+        }
+
         if (transferAmount == type(uint256).max) {
             // @audit getAccountWei can return negative. Need to check that
             // @follow-up Is this the correct number
@@ -143,10 +148,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
         assert(tradeTypes.length == keys.length && keys.length > 0);
 
-        if (tradeTypes[0] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.NoOp) {
-            // This is a no-op, so we don't need to do anything
-            return;
-        }
 
         address vault;
         uint256 inputAmount;
@@ -182,13 +183,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 accountOwner
             );
             inputAmount += inputAmountForIteration;
-        }
-
-        console.log('InputAmount in call function: ', inputAmount);
-        console.log('TransferAmount in call function: ', transferAmount);
-        if (inputAmount == 0 && transferAmount == 0) {
-            // GUARD STATEMENT: we do a no-op
-            return;
         }
 
         uint256 underlyingVirtualBalance = IIsolationModeTokenVaultV1WithFreezable(vault).virtualBalance();
@@ -331,8 +325,9 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
         (
             IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes,
-            bytes32[] memory keys
-        ) = abi.decode(_params.orderData, (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
+            bytes32[] memory keys,
+            bool shouldExecuteTransferForOtherAccount
+        ) = abi.decode(_params.orderData, (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[], bool));
         Require.that(
             tradeTypes.length == keys.length && keys.length > 0,
             _FILE,
@@ -395,7 +390,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 );
             }
 
-            if (_params.inputAmount == type(uint256).max) {
+            if (shouldExecuteTransferForOtherAccount) {
                 // @follow-up Could this bal ever be different than bal during call function? Would throw off target
                 uint256 targetAmount = _unwrapper.DOLOMITE_MARGIN().getAccountWei(
                     IDolomiteStructs.AccountInfo({
@@ -403,13 +398,10 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                         number: _params.otherAccountNumber
                     }),
                     _params.inputMarket
-                ).value;
-                console.log('User bal: ', targetAmount);
-                console.log('Struct inputAmount: ', structInputAmount);
-                targetAmount -= structInputAmount;
+                ).value - structInputAmount;
 
                 actions[2] = AccountActionLib.encodeCallAction(
-                    _params.primaryAccountId,
+                    _params.otherAccountId,
                     /* _callee */ address(this),
                     /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(_params.inputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
                 );
@@ -423,21 +415,32 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                     _params.orderData
                 );
             } else {
-                structInputAmount -= _params.inputAmount;
+                tradeTypes[0] = IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.NoOp;
                 actions[2] = AccountActionLib.encodeCallAction(
                     _params.primaryAccountId,
                     /* _callee */ address(this),
-                    /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(structInputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
+                    /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(_params.inputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
                 );
-                actions[3] = AccountActionLib.encodeExternalSellAction(
-                    _params.otherAccountId,
-                    _params.inputMarket,
-                    _params.outputMarket,
-                    /* _trader = */ address(this),
-                    /* _amountInWei = */ structInputAmount,
-                    /* _amountOutMinWei = */ 1,
-                    _params.orderData
+                actions[3] = AccountActionLib.encodeCallAction(
+                    _params.primaryAccountId,
+                    /* _callee */ address(this),
+                    /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(_params.inputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
                 );
+                // structInputAmount -= _params.inputAmount;
+                // actions[2] = AccountActionLib.encodeCallAction(
+                //     _params.otherAccountId,
+                //     /* _callee */ address(this),
+                //     /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(structInputAmount, _params.otherAccountOwner, _params.otherAccountNumber, tradeTypes, keys)
+                // );
+                // actions[3] = AccountActionLib.encodeExternalSellAction(
+                //     _params.otherAccountId,
+                //     _params.inputMarket,
+                //     _params.outputMarket,
+                //     /* _trader = */ address(this),
+                //     /* _amountInWei = */ structInputAmount,
+                //     /* _amountOutMinWei = */ 1,
+                //     _params.orderData
+                // );
             }
         }
 

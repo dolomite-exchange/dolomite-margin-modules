@@ -1,5 +1,4 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
-import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
@@ -22,8 +21,8 @@ import {
 import { AccountStruct } from '../../../src/utils/constants';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { BYTES_ZERO, MAX_UINT_256_BI, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { getBlockTimestamp, impersonate, increaseByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -44,7 +43,6 @@ import {
   getInitiateWrappingParams,
   getOracleParams,
 } from '../../utils/ecosystem-token-utils/gmx';
-import { setExpiry } from '../../utils/expiry-utils';
 import { liquidateV4WithZapParam } from '../../utils/liquidation-utils';
 import {
   CoreProtocol,
@@ -57,21 +55,17 @@ import {
   setupWETHBalance,
 } from '../../utils/setup';
 import { getLiquidateIsolationModeZapPath } from '../../utils/zap-utils';
-import { createSafeDelegateLibrary } from 'test/utils/ecosystem-token-utils/general';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
 const borrowAccountNumber2 = borrowAccountNumber.add(ONE_BI);
-const borrowAccountNumber3 = borrowAccountNumber2.add(ONE_BI);
 
 const amountWei = ONE_ETH_BI.mul('1234'); // 1,234
 const smallAmountWei = amountWei.mul(1).div(100);
 const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
-const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
-
-describe('IsolationModeFreezableLiquidatorProxy', () => {
+describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
@@ -88,7 +82,6 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
 
   let solidAccount: AccountStruct;
   let liquidAccount: AccountStruct;
-  let liquidAccount2: AccountStruct;
   let withdrawalKeys: string[];
   let depositKey: string | undefined;
   let depositAmountIn: BigNumber;
@@ -193,7 +186,6 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
 
     solidAccount = { owner: core.hhUser5.address, number: defaultAccountNumber };
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
-    liquidAccount2 = { owner: vault.address, number: borrowAccountNumber2 };
 
     await setupGMBalance(core, core.hhUser1, amountWei.mul(2), vault);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei.mul(2));
@@ -303,8 +295,9 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       }
 
       if (pushFullyUnderwater) {
-        // Increase the of ETH, so it's underwater after the liquidation is handled too
-        wethPrice = wethPrice.mul(107).div(100);
+        // @audit Increase the value of ETH, so it's severely underwater after the liquidation is handled too
+        // wethPrice = wethPrice.mul(107).div(100);
+        wethPrice = wethPrice.mul(120).div(100);
         await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, wethPrice);
         await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
       }
@@ -316,13 +309,6 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       }
     }
 
-    async function cancelWrapping(): Promise<ContractTransaction> {
-      await mine(1200);
-      const filter = eventEmitter.filters.AsyncDepositCreated();
-      depositKey = (await eventEmitter.queryFilter(filter))[0].args.key;
-      return await vault.connect(core.hhUser1).cancelDeposit(depositKey);
-    }
-
     async function performUnwrapping(key?: string): Promise<ContractTransaction> {
       if (!key) {
         const filter = eventEmitter.filters.AsyncWithdrawalCreated();
@@ -332,7 +318,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         .executeWithdrawal(
           withdrawalKeys[withdrawalKeys.length - 1],
           getOracleParams(core.tokens.weth.address, core.tokens.nativeUsdc!.address),
-          { gasLimit },
+          { gasLimit: 10_000_000 },
         );
     }
 
@@ -360,13 +346,12 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
 
       const withdrawals = await Promise.all(withdrawalKeys.map(key => unwrapper.getWithdrawalInfo(key)));
       const partitionedTotalOutputAmount = withdrawals.reduce((acc, withdrawal, i) => {
-        // @follow-up Changed key check because it is now deleted
+        expect(withdrawal.key).to.eq(withdrawalKeys[i]);
         if (
           state === FinishState.WithdrawalSucceeded
           || state === FinishState.Liquidated
           || state === FinishState.Expired
         ) {
-          expect(withdrawal.key).to.eq(BYTES_ZERO);
           expect(withdrawal.vault).to.eq(ZERO_ADDRESS);
           expect(withdrawal.accountNumber).to.eq(ZERO_BI);
           expect(withdrawal.inputAmount).to.eq(ZERO_BI);
@@ -374,7 +359,6 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           expect(withdrawal.outputAmount).to.eq(ZERO_BI);
           expect(withdrawal.isRetryable).to.eq(false);
         } else {
-          expect(withdrawal.key).to.eq(withdrawalKeys[i]);
           expect(withdrawal.vault).to.eq(vault.address);
           expect(withdrawal.accountNumber).to.eq(borrowAccountNumber);
           expect(
@@ -526,27 +510,23 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       await expectWalletAllowance(wrapper, unwrapper, core.tokens.nativeUsdc!, ZERO_BI);
     }
 
-    async function performLiquidationAndCheckState(
-      vaultErc20Balance: BigNumber,
-      executeTransferForOtherAccount: boolean,
-      isFrozen: boolean,
-    ) {
-      // Give the contract the WETH needed to complete the exchange
-      const testTrader = await impersonate(core.testEcosystem!.testExchangeWrapper.address, true, wethAmount.mul(10));
-      await setupWETHBalance(
-        core,
-        testTrader,
-        wethAmount.mul(5),
-        { address: '0x000000000000000000000000000000000000dead' },
-      );
+    async function calculateZapParams(wethPrice: any) {
+
+      const gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
+      amountWeiForLiquidation = wethAmount.mul(wethPrice).mul(105).div(100).div(gmPrice);
+      if (amountWeiForLiquidation.gt(totalAmountWei)) {
+        // Cap the size at amountWei
+        amountWeiForLiquidation = totalAmountWei;
+      }
 
       const allKeys = withdrawalKeys.concat(depositKey ? [depositKey] : []);
       const tradeTypes = allKeys.map(key => key === depositKey
         ? UnwrapperTradeType.FromDeposit
         : UnwrapperTradeType.FromWithdrawal);
       const liquidationData = ethers.utils.defaultAbiCoder.encode(
+        // @follow-up Why did it not fail when I didn't have this boolean
         ['uint8[]', 'bytes32[]', 'bool'],
-        [tradeTypes, allKeys, executeTransferForOtherAccount],
+        [tradeTypes, allKeys, false],
       );
       const withdrawals = await Promise.all(withdrawalKeys.map(key => unwrapper.getWithdrawalInfo(key)));
       const deposit = depositKey ? await wrapper.getDepositInfo(depositKey) : undefined;
@@ -580,368 +560,117 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         core,
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
+      
+      return {
+        zapParam:zapParam,
+        totalOutputAmount: totalOutputAmount,  
+        outputAmountForSwap: outputAmountForSwap,
+      };
+    }
+
+    async function isVaporizable(account: AccountStruct) {
+      let hasNegative = false;
+      const markets = await core.dolomiteMargin.getAccountMarketsWithBalances(account);
+      for (const market of markets) {
+        const par = await core.dolomiteMargin.getAccountPar(account, market.toNumber());
+        if (par.value.isZero()) {
+          continue;
+        } else if (par.sign) {
+          console.log(`Account ${account.number} has a positive balance of ${par.value.toString()} in the market ${market}`);
+          return false;
+        } else {
+          hasNegative = true;
+        }
+      }
+      return hasNegative;
+    }
+
+    it.only('Severely underwater position cannot be liquidated', async () => {
+      await setupBalances(borrowAccountNumber);
+
+      // liquidation preparation results in withdrawal failed due to undercollateralized account
+      await liquidatorProxy.prepareForLiquidation(
+        liquidAccount,
+        marketId,
+        amountWei,
+        core.marketIds.nativeUsdc!,
+        ONE_BI,
+        NO_EXPIRY,
+        ONE_BI_ENCODED,
+      );
+      const result = await performUnwrapping();
+      await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
+        key: withdrawalKeys[0],
+        token: factory.address,
+        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
+      });
+
+      // validated state after unwrapping
+      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalFailed);      
+
+      // setup for launching the liquidation through core proxy
+      const testTrader = await impersonate(core.testEcosystem!.testExchangeWrapper.address, true, wethAmount.mul(10));
+      await setupWETHBalance(
+        core,
+        testTrader,
+        wethAmount.mul(5),
+        { address: '0x000000000000000000000000000000000000dead' },
+      );
+      
+      // user current, high, WETH price to calculate the required zapParams for calling liquidated
+      const initialWethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+      const { zapParam: initialZapParam } = await calculateZapParams(initialWethPrice);
+      
+      // Actions that are done in a liquidation: [CallFunction, Sell, CallFunction, Sell]
+      // liquidation fails, since being severely undercollateralized, the entire available user amount
+      // will be used. That results in the first sale action deleting the withdrawal position and when
+      // the second Call action tries to invoke a function on the vault (which is now address(0)) it
+      // reverts with the error: `function call to a non-contract account`
+
+      // TEST SHOULD FAIL HERE AFTER FIX. THIS CALL SHOULD NOT REVERT
+      await expectThrow(
+        liquidateV4WithZapParam(
+          core,
+          solidAccount,
+          liquidAccount,
+          initialZapParam,
+        ),
+        `function call to a non-contract account`,
+      );
+
+      // show account is not Vaporizable because not all of its markets are negative, specifically the GM one
+      const _isVaporizable = await isVaporizable(liquidAccount);
+      expect(_isVaporizable).to.be.false;
+
+      // decreasing the price of WETH will result in a healthier liquidation position
+      const decreasedWethPrice = initialWethPrice.mul(90).div(100);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, decreasedWethPrice);
+      
+      // we recalculate the zap params for it
+      const { 
+        zapParam: zapParamAfterDecrease, 
+        totalOutputAmount: totalOutputAmountAfterDecrease, 
+        outputAmountForSwap: outputAmountForSwapAfterDecrease 
+      } = await calculateZapParams(decreasedWethPrice);
+      
+      // call liquidate with the new values and price state
       await liquidateV4WithZapParam(
         core,
         solidAccount,
         liquidAccount,
-        zapParam,
+        zapParamAfterDecrease,
       );
-
+      
+      // show it succeeds
       await checkStateAfterUnwrapping(
         borrowAccountNumber,
         FinishState.Liquidated,
-        vaultErc20Balance,
-        totalOutputAmount,
-        isFrozen,
-        outputAmountForSwap,
-      );
-    }
-
-    it('should work normally for underwater account', async () => {
-      await setupBalances(borrowAccountNumber, true, false);
-      await liquidatorProxy.prepareForLiquidation(
-        liquidAccount,
-        marketId,
         amountWei,
-        core.marketIds.nativeUsdc!,
-        ONE_BI,
-        NO_EXPIRY,
-        ONE_BI_ENCODED,
-      );
-      const result = await performUnwrapping();
-      await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
-        key: withdrawalKeys[0],
-        token: factory.address,
-      });
-      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalSucceeded);
-
-      // it's sufficiently collateralized now
-      const [supplyValue, borrowValue] = await core.dolomiteMargin.getAccountValues(liquidAccount);
-      expect(supplyValue.value.mul(ONE_ETH_BI).div(borrowValue.value)).to.be.gt(ONE_ETH_BI.mul(115).div(100));
-    });
-
-    it('should work normally for underwater account that must be liquidated', async () => {
-      await setupBalances(borrowAccountNumber);
-      await liquidatorProxy.prepareForLiquidation(
-        liquidAccount,
-        marketId,
-        amountWei,
-        core.marketIds.nativeUsdc!,
-        ONE_BI,
-        NO_EXPIRY,
-        ONE_BI_ENCODED
-      );
-      const result = await performUnwrapping();
-      await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
-        key: withdrawalKeys[0],
-        token: factory.address,
-        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
-      });
-      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalFailed);
-
-      await performLiquidationAndCheckState(amountWei, true, false);
-    });
-
-    it('should work normally for underwater account when vault is frozen', async () => {
-      await setupBalances(borrowAccountNumber2, false, false);
-      await setupBalances(borrowAccountNumber);
-      await liquidatorProxy.prepareForLiquidation(
-        liquidAccount,
-        marketId,
-        amountWei,
-        core.marketIds.nativeUsdc!,
-        ONE_BI,
-        NO_EXPIRY,
-        ONE_BI_ENCODED,
-      );
-
-      const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      withdrawalKeys.push((await eventEmitter.queryFilter(filter))[0].args.key);
-
-      await liquidatorProxy.prepareForLiquidation(
-        liquidAccount2,
-        marketId,
-        amountWei,
-        core.marketIds.nativeUsdc!,
-        ONE_BI,
-        NO_EXPIRY,
-        ONE_BI_ENCODED,
-      );
-
-      const result = await performUnwrapping(withdrawalKeys[withdrawalKeys.length - 1]);
-      await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
-        key: withdrawalKeys[withdrawalKeys.length - 1],
-        token: factory.address,
-        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
-      });
-      withdrawalKeys[0] = withdrawalKeys.pop()!;
-      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalFailed, ZERO_BI);
-
-      await performLiquidationAndCheckState(ZERO_BI, true, true);
-    });
-
-    it('should work normally for expired account (same expired market as unwind)', async () => {
-      await setupBalances(borrowAccountNumber, false, false);
-      const owedMarket = core.marketIds.weth;
-      await setExpiry(core, liquidAccount, owedMarket, 123);
-      const expiry = await core.expiry.getExpiry(liquidAccount, owedMarket);
-      await increaseByTimeDelta(1234);
-      await liquidatorProxy.prepareForLiquidation(
-        liquidAccount,
-        marketId,
-        amountWei,
-        owedMarket,
-        ONE_BI,
-        expiry,
-        ONE_BI_ENCODED,
-      );
-
-      const result = await performUnwrapping();
-      await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
-        key: withdrawalKeys[0],
-        token: factory.address,
-      });
-      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.Expired);
-
-      // At this point the expiration should not be unset but the user's owed balance should be gt 0
-      await expectProtocolBalanceIsGreaterThan(core, liquidAccount, owedMarket, ONE_BI, 0);
-      expect(await core.expiry.getExpiry(liquidAccount, owedMarket)).to.eq(expiry);
-    });
-
-    it('should work for underwater account when there is already a pending deposit', async () => {
-      await setupBalances(borrowAccountNumber, true, true, ZapType.Deposit);
-      await liquidatorProxy.prepareForLiquidation(
-        liquidAccount,
-        marketId,
-        amountWei,
-        core.marketIds.nativeUsdc!,
-        ONE_BI,
-        NO_EXPIRY,
-        ONE_BI_ENCODED,
-      );
-      const result1 = await cancelWrapping();
-      await expectEvent(eventEmitter, result1, 'AsyncDepositCancelledFailed', {
-        key: depositKey,
-        token: factory.address,
-        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
-      });
-      const result2 = await performUnwrapping();
-      await expectEvent(eventEmitter, result2, 'AsyncWithdrawalFailed', {
-        key: withdrawalKeys[0],
-        token: factory.address,
-        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
-      });
-      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalFailed);
-
-      await performLiquidationAndCheckState(amountWei, true, false);
-    });
-
-    it('should work for underwater account when there is already a pending withdrawal', async () => {
-      await setupBalances(borrowAccountNumber, true, true, ZapType.Withdraw);
-      const result1 = await performUnwrapping(withdrawalKeys[0]);
-      await expectEvent(eventEmitter, result1, 'AsyncWithdrawalFailed', {
-        key: withdrawalKeys[0],
-        token: factory.address,
-        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
-      });
-
-      const result2 = await liquidatorProxy.prepareForLiquidation(
-        liquidAccount,
-        marketId,
-        amountWei.sub(smallAmountWei),
-        core.marketIds.nativeUsdc!,
-        ONE_BI,
-        NO_EXPIRY,
-        ONE_BI_ENCODED,
-      );
-      const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      withdrawalKeys.push((await eventEmitter.queryFilter(filter, result2.blockNumber))[0].args.key);
-
-      const result3 = await performUnwrapping(withdrawalKeys[withdrawalKeys.length - 1]);
-      await expectEvent(eventEmitter, result3, 'AsyncWithdrawalFailed', {
-        key: withdrawalKeys[withdrawalKeys.length - 1],
-        token: factory.address,
-        reason: `OperationImpl: Undercollateralized account <${vault.address.toLowerCase()}, ${borrowAccountNumber.toString()}>`,
-      });
-      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalFailed);
-
-      await performLiquidationAndCheckState(amountWei, true, false);
-    });
-
-    it('should fail when liquid account is not a valid vault', async () => {
-      const liquidAccount = { owner: ZERO_ADDRESS, number: ZERO_BI };
-      await expectThrow(
-        liquidatorProxy.prepareForLiquidation(
-          liquidAccount,
-          marketId,
-          amountWei,
-          core.marketIds.weth,
-          ONE_BI,
-          NO_EXPIRY,
-          ONE_BI_ENCODED,
-        ),
-        `FreezableVaultLiquidatorProxy: Invalid liquid account <${liquidAccount.owner}>`,
+        totalOutputAmountAfterDecrease,
+        false,
+        outputAmountForSwapAfterDecrease,
       );
     });
 
-    it('should fail when expiration overflows', async () => {
-      await expectThrow(
-        liquidatorProxy.prepareForLiquidation(
-          liquidAccount,
-          marketId,
-          amountWei,
-          core.marketIds.weth,
-          ONE_BI,
-          MAX_UINT_256_BI,
-          ONE_BI_ENCODED,
-        ),
-        'FreezableVaultLiquidatorProxy: Invalid expiration timestamp',
-      );
-    });
-
-    it('should fail when position is not expired', async () => {
-      const timestamp = await getBlockTimestamp(core.config.blockNumber);
-      await expectThrow(
-        liquidatorProxy.prepareForLiquidation(
-          liquidAccount,
-          marketId,
-          amountWei,
-          core.marketIds.weth,
-          ONE_BI,
-          timestamp + 3600,
-          ONE_BI_ENCODED,
-        ),
-        'FreezableVaultLiquidatorProxy: Account not expired',
-      );
-    });
-
-    it('should fail when position expiration does not match input', async () => {
-      await setupBalances(borrowAccountNumber, false, false);
-      const owedMarket = core.marketIds.weth;
-      await setExpiry(core, liquidAccount, owedMarket, 123);
-      const expiry = await core.expiry.getExpiry(liquidAccount, owedMarket);
-      await increaseByTimeDelta(1234);
-      await expectThrow(
-        liquidatorProxy.prepareForLiquidation(
-          liquidAccount,
-          marketId,
-          amountWei,
-          owedMarket,
-          ONE_BI,
-          expiry + 321,
-          ONE_BI_ENCODED,
-        ),
-        'FreezableVaultLiquidatorProxy: Expiration mismatch',
-      );
-    });
-
-    it('should fail when liquid account has no supply', async () => {
-      await expectThrow(
-        liquidatorProxy.prepareForLiquidation(
-          { owner: vault.address, number: borrowAccountNumber3 },
-          marketId,
-          amountWei,
-          core.marketIds.weth,
-          ONE_BI,
-          NO_EXPIRY,
-          ONE_BI_ENCODED,
-        ),
-        'FreezableVaultLiquidatorProxy: Liquid account has no supply',
-      );
-    });
-
-    it('should fail when vault account is frozen', async () => {
-      await setupBalances(borrowAccountNumber, true, false);
-      await liquidatorProxy.prepareForLiquidation(
-        liquidAccount,
-        marketId,
-        amountWei,
-        core.marketIds.weth,
-        ONE_BI,
-        NO_EXPIRY,
-        ONE_BI_ENCODED,
-      );
-      await expectThrow(
-        liquidatorProxy.prepareForLiquidation(
-          liquidAccount,
-          marketId,
-          amountWei,
-          core.marketIds.weth,
-          ONE_BI,
-          NO_EXPIRY,
-          ONE_BI_ENCODED,
-        ),
-        `IsolationModeVaultV1Freezable: Account is frozen <${liquidAccount.owner.toLowerCase()}, ${liquidAccount.number.toString()}>`,
-      );
-    });
-
-    it('should fail when vault withdraws too little', async () => {
-      await setupBalances(borrowAccountNumber, true, false);
-      await expectThrow(
-        liquidatorProxy.prepareForLiquidation(
-          liquidAccount,
-          marketId,
-          amountWei.div(3),
-          core.marketIds.weth,
-          ONE_BI,
-          NO_EXPIRY,
-          ONE_BI_ENCODED,
-        ),
-        `IsolationModeVaultV1Freezable: Liquidation must be full balance <${liquidAccount.owner.toLowerCase()}, ${liquidAccount.number.toString()}>`,
-      );
-    });
-
-    // @todo fix
-    it('should fail when vault attempts to create a withdrawal/deposit with a different conversion token', async () => {
-      await setupBalances(borrowAccountNumber, true, true, ZapType.Deposit);
-      await expectThrow(
-        liquidatorProxy.prepareForLiquidation(
-          liquidAccount,
-          marketId,
-          amountWei,
-          core.marketIds.weth,
-          ONE_BI,
-          NO_EXPIRY,
-          ONE_BI_ENCODED,
-        ),
-        `FreezableVaultFactory: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail when vault attempts to create 2x withdrawals with a different conversion token', async () => {
-      await setupBalances(borrowAccountNumber, true, true, ZapType.Withdraw);
-      await expectThrow(
-        liquidatorProxy.prepareForLiquidation(
-          liquidAccount,
-          marketId,
-          amountWei.sub(smallAmountWei),
-          core.marketIds.weth,
-          ONE_BI,
-          NO_EXPIRY,
-          ONE_BI_ENCODED,
-        ),
-        `FreezableVaultFactory: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
-      );
-    });
-
-    it('should fail if the structs are not retryable', async () => {
-      await setupBalances(borrowAccountNumber, true, true);
-      const result = await liquidatorProxy.prepareForLiquidation(
-        liquidAccount,
-        marketId,
-        amountWei,
-        core.marketIds.nativeUsdc!,
-        ONE_BI,
-        NO_EXPIRY,
-        ONE_BI_ENCODED,
-      );
-      const filter = eventEmitter.filters.AsyncWithdrawalCreated();
-      withdrawalKeys.push((await eventEmitter.queryFilter(filter, result.blockNumber))[0].args.key);
-
-      await expectThrow(
-        performLiquidationAndCheckState(amountWei, true, false),
-        'AsyncIsolationModeUnwrapperImpl: All trades must be retryable',
-      );
-    });
   });
 });

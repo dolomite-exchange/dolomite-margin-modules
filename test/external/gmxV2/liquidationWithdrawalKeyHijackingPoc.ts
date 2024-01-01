@@ -11,6 +11,7 @@ import {
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2Registry,
+  IGenericTraderProxyV1__factory,
   IGmxMarketToken,
   IGmxMarketToken__factory,
   IsolationModeFreezableLiquidatorProxy,
@@ -58,6 +59,7 @@ const borrowAccountNumber2 = borrowAccountNumber.add(ONE_BI);
 const amountWei = ONE_ETH_BI.mul('1235');
 const amountWeiForSecond = ONE_ETH_BI.mul('1234');
 const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
+const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 describe('IsolationModeFreezableLiquidatorProxy', () => {
   let snapshotId: string;
@@ -168,8 +170,14 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.liquidatorProxyV4.address);
     await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, liquidatorProxy.address);
     await core.dolomiteMargin.ownerSetGlobalOperator(liquidatorProxy.address, true);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetGenericTraderProxy(core.genericTraderProxy!.address);
-    await core.dolomiteMargin.ownerSetGlobalOperator(core.genericTraderProxy!.address, true);
+    await core.dolomiteMargin.ownerSetGlobalOperator(NEW_GENERIC_TRADER_PROXY, true);
+    await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
+    await core.dolomiteRegistry.ownerSetGenericTraderProxy(NEW_GENERIC_TRADER_PROXY);
+    const trader = await IGenericTraderProxyV1__factory.connect(
+      NEW_GENERIC_TRADER_PROXY,
+      core.governance,
+    );
+    await trader.ownerSetEventEmitterRegistry(eventEmitter.address);
 
     solidAccount = { owner: core.hhUser5.address, number: defaultAccountNumber };
     liquidAccount = { owner: vault.address, number: borrowAccountNumber };
@@ -317,8 +325,8 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
             ).fill(UnwrapperTradeType.FromWithdrawal))
 
       const liquidationData = ethers.utils.defaultAbiCoder.encode(
-        ['uint8[]', 'bytes32[]'],
-        [tradeTypes, allKeys],
+        ['uint8[]', 'bytes32[]', 'bool'],
+        [tradeTypes, allKeys, true],
       );
       const withdrawals = await Promise.all(withdrawalKeys.map(key => unwrapper.getWithdrawalInfo(key)));
       const deposit = depositKey ? await wrapper.getDepositInfo(depositKey) : undefined;
@@ -428,7 +436,8 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         _wethAmountOne
       );
 
-      // This POC should cut off here because executeProxyLiquidation should fail
+      // IMPORTANT - This POC should cut off here because executeProxyLiquidation should fail
+
       console.log(" 7. Balances for accounts after liquidations show no change to second account and first account has only liquidation output token");
       const liquidAccountOneAfterBalances = await getMarketBalances(liquidAccount);
       expect(liquidAccountOneAfterBalances.get(marketId.toString()) === undefined).to.be.false; // balance 0

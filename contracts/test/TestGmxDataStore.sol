@@ -33,6 +33,8 @@ import { IGmxRoleStore } from "../external/interfaces/gmx/IGmxRoleStore.sol";
 contract TestGmxDataStore is IGmxDataStore {
 
     bytes32 private constant _FILE = "TestGmxDataStore";
+    bytes32 private constant _CREATE_WITHDRAWAL_FEATURE_DISABLED = keccak256(abi.encode("CREATE_WITHDRAWAL_FEATURE_DISABLED")); // solhint-disable-line max-line-length
+    bytes32 private constant _EXECUTE_WITHDRAWAL_FEATURE_DISABLED = keccak256(abi.encode("EXECUTE_WITHDRAWAL_FEATURE_DISABLED")); // solhint-disable-line max-line-length
 
     mapping(bytes32 => bool) public boolValues;
     mapping(bytes32 => uint256) public uintValues;
@@ -56,5 +58,9 @@ contract TestGmxDataStore is IGmxDataStore {
 
     function roleStore() external pure returns (IGmxRoleStore) {
         return IGmxRoleStore(address(0));
+    }
+
+    function getKey(bytes32 _base, address _address) external pure returns (bytes32) {
+        return keccak256(abi.encode(_base, _address));
     }
 }
