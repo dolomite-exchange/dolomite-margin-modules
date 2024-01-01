@@ -39,6 +39,8 @@ import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../../interfaces
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 
+import "hardhat/console.sol";
+
 
 /**
  * @title   AsyncIsolationModeUnwrapperTraderImpl
@@ -75,6 +77,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
 
     function swapExactInputForOutputForWithdrawal(
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state,
         UpgradeableAsyncIsolationModeUnwrapperTrader _unwrapper,
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory _withdrawalInfo
     ) external {
@@ -105,6 +108,17 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             // @follow-up Which event type here?
             eventType: IGenericTraderProxyV1.EventEmissionType.None
         });
+
+        uint256 liquidationPenalty;
+        if (_withdrawalInfo.isLiquidation) {
+            liquidationPenalty = _withdrawalInfo.outputAmount * _unwrapper.DOLOMITE_MARGIN().getLiquidationSpread().value / 1 ether;
+            IERC20(_withdrawalInfo.outputToken).safeTransfer(
+                address(_unwrapper.DOLOMITE_MARGIN()),
+                liquidationPenalty
+            );
+            _withdrawalInfo.outputAmount -= liquidationPenalty;
+            setWithdrawalInfo(_state, _withdrawalInfo.key, _withdrawalInfo);
+        }
 
         IIsolationModeTokenVaultV1(_withdrawalInfo.vault).swapExactInputForOutput(
             _withdrawalInfo.accountNumber,

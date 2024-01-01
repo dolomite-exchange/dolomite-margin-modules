@@ -288,7 +288,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual {
-        try AsyncIsolationModeUnwrapperTraderImpl.swapExactInputForOutputForWithdrawal(
+        State storage state = _getStorageSlot();
+        try state.swapExactInputForOutputForWithdrawal(
             /* _unwrapper = */ this,
             _withdrawalInfo
         ) {
