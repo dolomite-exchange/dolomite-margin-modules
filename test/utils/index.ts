@@ -124,18 +124,19 @@ export async function impersonateOrFallback(
 }
 
 export async function impersonate(
-  targetAccount: string,
+  targetAccount: string | { address: string },
   giveEther: boolean = false,
   balance = BigNumber.from('1000000000000000000'),
 ): Promise<SignerWithAddress> {
+  const targetAddress = typeof targetAccount === 'string' ? targetAccount : targetAccount.address;
   await hardhatNetwork.provider.request({
     method: 'hardhat_impersonateAccount',
-    params: [targetAccount],
+    params: [targetAddress],
   });
   if (giveEther) {
-    await setEtherBalance(targetAccount, balance);
+    await setEtherBalance(targetAddress, balance);
   }
-  return ethers.getSigner(targetAccount);
+  return ethers.getSigner(targetAddress);
 }
 
 export async function impersonateAll(

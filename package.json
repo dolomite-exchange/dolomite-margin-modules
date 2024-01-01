@@ -59,7 +59,8 @@
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "sort:contracts": "hardhat --network hardhat run scripts/sort-contract.ts",
     "test": "hardhat --network hardhat test",
-    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat --network hardhat test --grep \"test/external/arb/*(Unwrapper|Wrapper)*.ts\"",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat --network hardhat test test/external/pendle/wstEthJun2025/PendlePtWstEthIsolationModeUnwrapperTraderV2.ts",
+    "test:specific2": "TEST_SPECIFIC=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat --network hardhat test test/external/plutus/PlutusVaultGLPIsolationModeWrapperTraderV2.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
   "repository": {
@@ -76,7 +77,7 @@
     "@babel/core": "^7.20.5",
     "@babel/eslint-parser": "^7.19.1",
     "@chainlink/contracts": "^0.6.1",
-    "@dolomite-exchange/dolomite-margin": "^0.9.31",
+    "@dolomite-exchange/dolomite-margin": "^0.9.32",
     "@dolomite-exchange/zap-sdk": "^0.1.24",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
@@ -88,7 +89,7 @@
     "@openzeppelin/contracts": "4.9.3",
     "@openzeppelin/contracts-upgradeable": "4.9.3",
     "@openzeppelin/upgrades": "^2.8.0",
-    "@pendle/sdk-v2": "^2.6.0",
+    "@pendle/sdk-v2": "^2.8.2",
     "@typechain/ethers-v5": "^11.1.1",
     "@typechain/hardhat": "^8.0.3",
     "@types/chai": "^4.3.0",

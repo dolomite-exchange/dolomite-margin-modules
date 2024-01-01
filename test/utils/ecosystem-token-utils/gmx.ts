@@ -18,12 +18,8 @@ import {
   GLPPriceOracleV1,
   GLPPriceOracleV1__factory,
   GMXIsolationModeTokenVaultV1,
-  SimpleIsolationModeUnwrapperTraderV2,
-  SimpleIsolationModeUnwrapperTraderV2__factory,
   GMXIsolationModeVaultFactory,
   GMXIsolationModeVaultFactory__factory,
-  SimpleIsolationModeWrapperTraderV2,
-  SimpleIsolationModeWrapperTraderV2__factory,
   GmxRegistryV1,
   GmxRegistryV1__factory,
   GmxV2IsolationModeTokenVaultV1,
@@ -49,6 +45,10 @@ import {
   IsolationModeTraderProxy__factory,
   RegistryProxy,
   RegistryProxy__factory,
+  SimpleIsolationModeUnwrapperTraderV2,
+  SimpleIsolationModeUnwrapperTraderV2__factory,
+  SimpleIsolationModeWrapperTraderV2,
+  SimpleIsolationModeWrapperTraderV2__factory,
   TestGLPIsolationModeTokenVaultV1,
   TestGLPIsolationModeTokenVaultV2,
   TestGMXIsolationModeTokenVaultV1,
@@ -463,13 +463,17 @@ export function getInitiateWrappingParams(
     traderParams: [
       {
         trader: wrapper.address,
-        traderType: GenericTraderType.IsolationModeWrapperV2,
+        traderType: GenericTraderType.IsolationModeWrapper,
         tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
         makerAccountIndex: 0,
       },
     ],
     makerAccounts: [],
-    userConfig: { deadline: '123123123123123', balanceCheckFlag: BalanceCheckFlag.None, eventType: GenericEventEmissionType.None },
+    userConfig: {
+      deadline: '123123123123123',
+      balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None
+    },
   };
 }
 
@@ -489,7 +493,7 @@ export function getInitiateUnwrappingParams(
     traderParams: [
       {
         trader: unwrapper.address,
-        traderType: GenericTraderType.IsolationModeUnwrapperV2,
+        traderType: GenericTraderType.IsolationModeUnwrapper,
         tradeData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [accountNumber, executionFee]),
         makerAccountIndex: 0,
       },

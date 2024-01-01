@@ -35,13 +35,14 @@ import {
   createPendleRegistry,
 } from '../../../utils/ecosystem-token-utils/pendle';
 import {
-  CoreProtocol,
+  CoreProtocol, getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupRETHBalance,
   setupTestMarket,
   setupUserVaultProxy,
 } from '../../../utils/setup';
 import { encodeSwapExactTokensForPt, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
+import { setupNewGenericTraderProxy } from '../../../utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying
@@ -73,11 +74,7 @@ describe('PendlePtREthJun2025IsolationModeWrapperTraderV2', () => {
   let solidUser: SignerWithAddress;
 
   before(async () => {
-    const blockNumber = 148_468_519;
-    core = await setupCoreProtocol({
-      blockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     ptMarket = core.pendleEcosystem!.rEthJun2025.ptREthMarket;
     ptToken = core.pendleEcosystem!.rEthJun2025.ptREthToken.connect(core.hhUser1);
     underlyingToken = core.tokens.rEth!;
@@ -99,7 +96,7 @@ describe('PendlePtREthJun2025IsolationModeWrapperTraderV2', () => {
 
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingMarketId);
+    priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken);
 
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
@@ -140,6 +137,8 @@ describe('PendlePtREthJun2025IsolationModeWrapperTraderV2', () => {
     expect(await ptToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, marketId)).value).to.eq(amountWei);
 
+    await setupNewGenericTraderProxy(core, marketId);
+
     snapshotId = await snapshot();
   });
 
@@ -161,21 +160,23 @@ describe('PendlePtREthJun2025IsolationModeWrapperTraderV2', () => {
         underlyingToken.address,
       );
 
-      const actions = await wrapper.createActionsForWrapping(
-        solidAccountId,
-        liquidAccountId,
-        ZERO_ADDRESS,
-        ZERO_ADDRESS,
-        marketId,
-        underlyingMarketId,
-        ZERO_BI,
-        usableAmount,
-        extraOrderData,
-      );
+      const actions = await wrapper.createActionsForWrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: ZERO_ADDRESS,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: ZERO_ADDRESS,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: marketId,
+        inputMarket: underlyingMarketId,
+        minOutputAmount: ZERO_BI,
+        inputAmount: usableAmount,
+        orderData: extraOrderData,
+      });
 
       await underlyingToken.connect(core.hhUser1).transfer(core.dolomiteMargin.address, parseEther('10'));
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await core.dolomiteMargin.connect(core.hhUser5).operate(
+      const genericTrader = await impersonate(core.genericTraderProxy!, true);
+      await core.dolomiteMargin.connect(genericTrader).operate(
         [defaultAccount],
         actions,
       );

@@ -25,7 +25,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IsolationModeTraderBaseV2 } from "./IsolationModeTraderBaseV2.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
-import { IIsolationModeWrapperTrader } from "../../interfaces/IIsolationModeWrapperTrader.sol";
+import { IIsolationModeWrapperTraderV2 } from "../../interfaces/IIsolationModeWrapperTraderV2.sol";
 import { AccountActionLib } from "../../lib/AccountActionLib.sol";
 
 
@@ -36,7 +36,7 @@ import { AccountActionLib } from "../../lib/AccountActionLib.sol";
  * @notice  Abstract contract for wrapping a token into an IsolationMode token. Must be set as a token converter
  *          for the VaultWrapperFactory token.
  */
-abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, IsolationModeTraderBaseV2 {
+abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTraderV2, IsolationModeTraderBaseV2 {
     using SafeERC20 for IERC20;
 
     // ======================== Constants ========================
@@ -125,43 +125,35 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTrader, I
     }
 
     function createActionsForWrapping(
-        uint256 _primaryAccountId,
-        uint256 /* _otherAccountId */,
-        address /* _primaryAccountOwner */,
-        address /* _otherAccountOwner */,
-        uint256 _outputMarket,
-        uint256 _inputMarket,
-        uint256 _minAmountOut,
-        uint256 _inputAmount,
-        bytes calldata _orderData
+        CreateActionsForWrappingParams calldata _params
     )
     external
     override
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
         Require.that(
-            isValidInputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_inputMarket)),
+            isValidInputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_params.inputMarket)),
             _FILE,
             "Invalid input market",
-            _inputMarket
+            _params.inputMarket
         );
         Require.that(
-            DOLOMITE_MARGIN().getMarketTokenAddress(_outputMarket) == address(VAULT_FACTORY),
+            DOLOMITE_MARGIN().getMarketTokenAddress(_params.outputMarket) == address(VAULT_FACTORY),
             _FILE,
             "Invalid output market",
-            _outputMarket
+            _params.outputMarket
         );
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_ACTIONS_LENGTH);
 
         actions[0] = AccountActionLib.encodeExternalSellAction(
-            _primaryAccountId,
-            _inputMarket,
-            _outputMarket,
+            _params.primaryAccountId,
+            _params.inputMarket,
+            _params.outputMarket,
             /* _trader = */ address(this),
-            /* _amountInWei = */ _inputAmount,
-            /* _amountOutMinWei = */ _minAmountOut,
-            _orderData
+            /* _amountInWei = */ _params.inputAmount,
+            /* _amountOutMinWei = */ _params.minOutputAmount,
+            _params.orderData
         );
 
         return actions;

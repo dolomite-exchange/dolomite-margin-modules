@@ -34,16 +34,17 @@ import {
   createPendleRegistry,
 } from '../../../utils/ecosystem-token-utils/pendle';
 import {
-  CoreProtocol,
+  CoreProtocol, getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
   setupWstETHBalance,
 } from '../../../utils/setup';
 import { encodeSwapExactPtForTokens, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
+import { setupNewGenericTraderProxy } from '../../../utils/dolomite';
 
 const defaultAccountNumber = '0';
-const amountWei = BigNumber.from('200000000000000000000'); // $200
+const amountWei = BigNumber.from('20000000000000000000'); // 20
 const otherAmountWei = BigNumber.from('10000000'); // $10
 
 describe('PendlePtWstEthJun2025IsolationModeUnwrapperTraderV2', () => {
@@ -67,11 +68,7 @@ describe('PendlePtWstEthJun2025IsolationModeUnwrapperTraderV2', () => {
   let solidUser: SignerWithAddress;
 
   before(async () => {
-    const blockNumber = 152_347_300;
-    core = await setupCoreProtocol({
-      blockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     ptMarket = core.pendleEcosystem!.wstEthJun2025.ptWstEthMarket.connect(core.hhUser1);
     ptToken = core.pendleEcosystem!.wstEthJun2025.ptWstEthToken.connect(core.hhUser1);
@@ -92,7 +89,7 @@ describe('PendlePtWstEthJun2025IsolationModeUnwrapperTraderV2', () => {
     underlyingMarketId = BigNumber.from(core.marketIds.wstEth!);
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingMarketId);
+    priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken);
 
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);
@@ -118,9 +115,10 @@ describe('PendlePtWstEthJun2025IsolationModeUnwrapperTraderV2', () => {
       signer: core.hhUser1,
     });
 
-    const amount = parseEther('400');
+    const amount = parseEther('40');
     await setupWstETHBalance(core, core.hhUser1, amount, core.pendleEcosystem!.pendleRouter);
 
+    // swapExactTokenForPt
     await router.swapExactTokenForPt(
       ptMarket.address as any,
       underlyingToken.address as any,
@@ -132,6 +130,8 @@ describe('PendlePtWstEthJun2025IsolationModeUnwrapperTraderV2', () => {
 
     expect(await ptToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, marketId)).value).to.eq(amountWei);
+
+    await setupNewGenericTraderProxy(core, marketId);
 
     snapshotId = await snapshot();
   });
@@ -154,20 +154,22 @@ describe('PendlePtWstEthJun2025IsolationModeUnwrapperTraderV2', () => {
         underlyingToken.address,
       );
 
-      const actions = await unwrapper.createActionsForUnwrapping(
-        solidAccountId,
-        liquidAccountId,
-        vault.address,
-        vault.address,
-        underlyingMarketId,
-        marketId,
-        tokenOutput.minTokenOut,
-        amountWei,
-        extraOrderData,
-      );
+      const actions = await unwrapper.createActionsForUnwrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: vault.address,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: vault.address,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: underlyingMarketId,
+        inputMarket: marketId,
+        minOutputAmount: tokenOutput.minTokenOut,
+        inputAmount: amountWei,
+        orderData: extraOrderData,
+      });
 
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await core.dolomiteMargin.connect(core.hhUser5).operate(
+      const genericTrader = await impersonate(core.genericTraderProxy!, true);
+      await core.dolomiteMargin.connect(genericTrader).operate(
         [defaultAccount],
         actions,
       );

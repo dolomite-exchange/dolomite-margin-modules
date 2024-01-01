@@ -245,7 +245,6 @@ import {
   PENDLE_MAP,
   PENDLE_PT_GLP_2024_MARKET_MAP,
   PENDLE_PT_GLP_2024_TOKEN_MAP,
-  PENDLE_PT_GLP_ORACLE_MAP,
   PENDLE_PT_ORACLE_MAP,
   PENDLE_PT_RETH_MARKET_MAP,
   PENDLE_PT_RETH_TOKEN_MAP,
@@ -697,8 +696,8 @@ export async function setupGMXBalance(
 ) {
   const whaleAddress = '0x80a9ae39310abf666a87c743d6ebbd0e8c42158e'; // Uniswap V3 GMX/ETH pool
   const whaleSigner = await impersonate(whaleAddress, true);
-  await core.gmxEcosystem?.gmx.connect(whaleSigner).transfer(signer.address, amount);
-  await core.gmxEcosystem?.gmx.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+  await core.tokens.gmx!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.gmx!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupRETHBalance(
@@ -1439,7 +1438,7 @@ async function createPendleEcosystem(
         signer,
       ),
       ptOracle: getContract(
-        PENDLE_PT_GLP_ORACLE_MAP[network] as string,
+        PENDLE_PT_ORACLE_MAP[network] as string,
         IPendlePtOracle__factory.connect,
         signer,
       ),

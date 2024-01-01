@@ -54,7 +54,6 @@ abstract contract IsolationModeTraderBaseV2 is OnlyDolomiteMargin {
 
     // ======================== Constructor ========================
 
-    // TODO: make upgradeable friendly
     constructor(
         address _vaultFactory,
         address _dolomiteMargin,

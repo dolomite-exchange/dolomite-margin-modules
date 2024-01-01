@@ -33,6 +33,7 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
+import { setupNewGenericTraderProxy } from '../../utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -113,12 +114,14 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV2', () => {
     await core.plutusEcosystem!.plvGlp.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
-    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
+    expect(await vault.underlyingBalanceOf()).to.eq(amountWei);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
 
     // account for the fee in the numerator
     plvGlpExchangeRateNumerator = (await underlyingToken.totalAssets()).mul(98).div(100);
     plvGlpExchangeRateDenominator = await underlyingToken.totalSupply();
+
+    await setupNewGenericTraderProxy(core, underlyingMarketId);
 
     snapshotId = await snapshot();
   });
@@ -131,17 +134,19 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV2', () => {
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
-      const actions = await unwrapper.createActionsForUnwrapping(
-        solidAccountId,
-        liquidAccountId,
-        vault.address,
-        vault.address,
-        core.marketIds.usdc,
-        underlyingMarketId,
-        ZERO_BI,
-        amountWei,
-        BYTES_EMPTY,
-      );
+      const actions = await unwrapper.createActionsForUnwrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: vault.address,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: vault.address,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: core.marketIds.usdc,
+        inputMarket: underlyingMarketId,
+        minOutputAmount: ZERO_BI,
+        inputAmount: amountWei,
+        orderData: BYTES_EMPTY,
+      });
 
       const amountOut = await unwrapper.getExchangeCost(
         factory.address,
@@ -150,8 +155,8 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV2', () => {
         BYTES_EMPTY,
       );
 
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await core.dolomiteMargin.connect(core.hhUser5).operate(
+      const genericTrader = await impersonate(core.genericTraderProxy!, true);
+      await core.dolomiteMargin.connect(genericTrader).operate(
         [defaultAccount],
         actions,
       );

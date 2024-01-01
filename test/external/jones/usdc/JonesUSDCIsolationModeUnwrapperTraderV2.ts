@@ -39,6 +39,7 @@ import {
   setupUserVaultProxy,
 } from '../../../utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
+import { setupNewGenericTraderProxy } from '../../../utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -124,6 +125,8 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
     expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
 
+    await setupNewGenericTraderProxy(core, underlyingMarketId);
+
     snapshotId = await snapshot();
   });
 
@@ -135,21 +138,23 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
-      const actions = await unwrapperTraderForLiquidation.createActionsForUnwrapping(
-        solidAccountId,
-        liquidAccountId,
-        vault.address,
-        vault.address,
-        core.marketIds.usdc,
-        underlyingMarketId,
-        ZERO_BI,
-        amountWei,
-        BYTES_EMPTY,
-      );
+      const actions = await unwrapperTraderForLiquidation.createActionsForUnwrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: vault.address,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: vault.address,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: core.marketIds.usdc,
+        inputMarket: underlyingMarketId,
+        minOutputAmount: ZERO_BI,
+        inputAmount: amountWei,
+        orderData: BYTES_EMPTY,
+      });
 
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(underlyingMarketId, core.hhUser5.address);
-      const result = await core.dolomiteMargin.connect(core.hhUser5).operate(
+      const genericTrader = await impersonate(core.genericTraderProxy!, true);
+      await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(underlyingMarketId, genericTrader.address);
+      const result = await core.dolomiteMargin.connect(genericTrader).operate(
         [defaultAccount],
         actions,
       );
@@ -187,11 +192,11 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
       )).to.eq(false);
       await expectThrow(
         unwrapperTraderForLiquidation.connect(impersonator).callFunction(
-          core.hhUser1.address,
+          core.genericTraderProxy!.address,
           { owner: solidUser.address, number: ZERO_BI },
           BYTES_EMPTY,
         ),
-        `JonesUSDCUnwrapperV2Liquidation: Sender must be a liquidator <${core.hhUser1.address.toLowerCase()}>`,
+        `JonesUSDCUnwrapperV2Liquidation: Sender must be a liquidator <${core.genericTraderProxy!.address.toLowerCase()}>`,
       );
 
       await core.liquidatorAssetRegistry.ownerRemoveLiquidatorFromAssetWhitelist(
@@ -206,11 +211,11 @@ describe('JonesUSDCIsolationModeUnwrapperTraderV2', () => {
 
       await expectThrow(
         unwrapperTraderForLiquidation.connect(impersonator).callFunction(
-          core.hhUser1.address,
+          core.genericTraderProxy!.address,
           { owner: solidUser.address, number: ZERO_BI },
           BYTES_EMPTY,
         ),
-        `JonesUSDCUnwrapperV2Liquidation: Sender must be a liquidator <${core.hhUser1.address.toLowerCase()}>`,
+        `JonesUSDCUnwrapperV2Liquidation: Sender must be a liquidator <${core.genericTraderProxy!.address.toLowerCase()}>`,
       );
     });
   });

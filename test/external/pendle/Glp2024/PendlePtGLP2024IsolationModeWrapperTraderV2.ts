@@ -41,6 +41,7 @@ import {
   setupUserVaultProxy,
 } from '../../../utils/setup';
 import { encodeSwapExactTokensForPt } from '../pendle-utils';
+import { setupNewGenericTraderProxy } from '../../../utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying
@@ -132,6 +133,8 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
 
+    await setupNewGenericTraderProxy(core, underlyingMarketId);
+
     snapshotId = await snapshot();
   });
 
@@ -154,21 +157,23 @@ describe('PendlePtGLP2024IsolationModeWrapperTraderV2', () => {
 
       const { extraOrderData, approxParams } = await encodeSwapExactTokensForPt(router, core, glpAmount);
 
-      const actions = await wrapper.createActionsForWrapping(
-        solidAccountId,
-        liquidAccountId,
-        ZERO_ADDRESS,
-        ZERO_ADDRESS,
-        underlyingMarketId,
-        core.marketIds.usdc,
-        ZERO_BI,
-        usableUsdcAmount,
-        extraOrderData,
-      );
+      const actions = await wrapper.createActionsForWrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: ZERO_ADDRESS,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: ZERO_ADDRESS,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: underlyingMarketId,
+        inputMarket: core.marketIds.usdc,
+        minOutputAmount: ZERO_BI,
+        inputAmount: usableUsdcAmount,
+        orderData: extraOrderData,
+      });
 
       await core.tokens.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await core.dolomiteMargin.connect(core.hhUser5).operate(
+      const genericTrader = await impersonate(core.genericTraderProxy!, true);
+      await core.dolomiteMargin.connect(genericTrader).operate(
         [defaultAccount],
         actions,
       );

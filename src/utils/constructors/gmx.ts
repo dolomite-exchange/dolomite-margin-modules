@@ -112,6 +112,7 @@ export function getGMXWrapperTraderV2ConstructorParams(
   return [
     dGmx.address,
     core.dolomiteMargin.address,
+    core.dolomiteRegistry.address,
   ];
 }
 
@@ -122,6 +123,7 @@ export function getGMXUnwrapperTraderV2ConstructorParams(
   return [
     dGmx.address,
     core.dolomiteMargin.address,
+    core.dolomiteRegistry.address,
   ];
 }
 
@@ -198,7 +200,7 @@ export async function getGmxV2RegistryConstructorParams(
   ];
 }
 
-export const GMX_V2_EXECUTION_FEE = BigNumber.from('13626962204375000')
+export const GMX_V2_EXECUTION_FEE = BigNumber.from('13626962204375000');
 export const GMX_V2_CALLBACK_GAS_LIMIT = BigNumber.from('2000000');
 
 export function getGmxV2IsolationModeVaultFactoryConstructorParams(

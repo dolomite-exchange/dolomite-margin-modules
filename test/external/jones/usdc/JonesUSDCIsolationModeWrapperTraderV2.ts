@@ -41,6 +41,7 @@ import {
   setupUserVaultProxy,
 } from '../../../utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
+import { setupNewGenericTraderProxy } from '../../../utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -126,6 +127,8 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
     expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
 
+    await setupNewGenericTraderProxy(core, underlyingMarketId);
+
     snapshotId = await snapshot();
   });
 
@@ -137,21 +140,23 @@ describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
-      const actions = await wrapper.createActionsForWrapping(
-        solidAccountId,
-        liquidAccountId,
-        ZERO_ADDRESS,
-        ZERO_ADDRESS,
-        underlyingMarketId,
-        core.marketIds.usdc,
-        ZERO_BI,
-        usableUsdcAmount,
-        BYTES_EMPTY,
-      );
+      const actions = await wrapper.createActionsForWrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: ZERO_ADDRESS,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: ZERO_ADDRESS,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: underlyingMarketId,
+        inputMarket: core.marketIds.usdc,
+        minOutputAmount: ZERO_BI,
+        inputAmount: usableUsdcAmount,
+        orderData: BYTES_EMPTY,
+      });
 
       await core.tokens.usdc.connect(core.hhUser1).transfer(core.dolomiteMargin.address, usableUsdcAmount);
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      const result = await core.dolomiteMargin.connect(core.hhUser5).operate([defaultAccount], actions);
+      const genericTrader = await impersonate(core.genericTraderProxy!, true);
+      const result = await core.dolomiteMargin.connect(genericTrader).operate([defaultAccount], actions);
 
       // jUSDC's value goes up every second. To get the correct amountOut, we need to use the same block #
       const amountOut = await wrapper.getExchangeCost(

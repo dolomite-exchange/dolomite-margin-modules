@@ -6,7 +6,8 @@ import {
   IPendlePtGLP2024IsolationModeVaultFactory,
   IPendlePtIsolationModeTokenVaultV1,
   IPendlePtIsolationModeVaultFactory,
-  IPendlePtMarket, IPendlePtOracle,
+  IPendlePtMarket,
+  IPendlePtOracle,
   IPendlePtToken,
   IPendleRegistry,
   IPendleSyToken,
@@ -36,7 +37,6 @@ import {
   PendleRegistry,
   PendleRegistry__factory,
   PendleYtGLP2024IsolationModeTokenVaultV1,
-  PendleYtGLP2024IsolationModeTokenVaultV1__factory,
   PendleYtGLP2024IsolationModeUnwrapperTraderV2,
   PendleYtGLP2024IsolationModeUnwrapperTraderV2__factory,
   PendleYtGLP2024IsolationModeVaultFactory,
@@ -169,8 +169,7 @@ export function createPendlePtPriceOracle(
   );
 }
 
-export async function createPendlePtGLP2024IsolationModeTokenVaultV1(
-): Promise<PendlePtGLP2024IsolationModeTokenVaultV1> {
+export async function createPendlePtGLP2024IsolationModeTokenVaultV1(): Promise<PendlePtGLP2024IsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<PendlePtGLP2024IsolationModeTokenVaultV1>(
     'PendlePtGLP2024IsolationModeTokenVaultV1',
@@ -233,10 +232,12 @@ export function createPendlePtGLP2024IsolationModeVaultFactory(
   );
 }
 
-export function createPendleYtGLP2024IsolationModeTokenVaultV1(): Promise<PendleYtGLP2024IsolationModeTokenVaultV1> {
-  return createContractWithAbi(
-    PendleYtGLP2024IsolationModeTokenVaultV1__factory.abi,
-    PendleYtGLP2024IsolationModeTokenVaultV1__factory.bytecode,
+export async function createPendleYtGLP2024IsolationModeTokenVaultV1(
+): Promise<PendleYtGLP2024IsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary(
+    'PendleYtGLP2024IsolationModeTokenVaultV1',
+    libraries,
     [],
   );
 }

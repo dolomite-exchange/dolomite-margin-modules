@@ -22,6 +22,7 @@ export async function getJonesUSDCRegistryConstructorParams(
     core.jonesEcosystem.usdcReceiptToken.address,
     core.jonesEcosystem.jUSDC.address,
     core.dolomiteRegistry.address,
+    core.jonesEcosystem.jUSDCFarm.address,
   );
 
   return [
@@ -76,7 +77,6 @@ export function getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstruc
   }
 
   return [
-    core.liquidatorAssetRegistry!.address,
     core.tokens.usdc!.address,
     jonesUSDCRegistry.address,
     djUSDCToken.address,

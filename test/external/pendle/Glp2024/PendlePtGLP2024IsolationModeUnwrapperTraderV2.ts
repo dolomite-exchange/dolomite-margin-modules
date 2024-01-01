@@ -40,6 +40,7 @@ import {
   setupUserVaultProxy,
 } from '../../../utils/setup';
 import { encodeSwapExactPtForTokens, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
+import { setupNewGenericTraderProxy } from '../../../utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -126,6 +127,8 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(amountWei);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
 
+    await setupNewGenericTraderProxy(core, underlyingMarketId);
+
     snapshotId = await snapshot();
   });
 
@@ -147,20 +150,22 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
           BYTES_EMPTY,
         );
 
-      const actions = await unwrapper.createActionsForUnwrapping(
-        solidAccountId,
-        liquidAccountId,
-        vault.address,
-        vault.address,
-        core.marketIds.usdc,
-        underlyingMarketId,
-        amountOut,
-        amountWei,
-        extraOrderData,
-      );
+      const actions = await unwrapper.createActionsForUnwrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: vault.address,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: vault.address,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: core.marketIds.usdc,
+        inputMarket: underlyingMarketId,
+        minOutputAmount: amountOut,
+        inputAmount: amountWei,
+        orderData: extraOrderData,
+      });
 
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await core.dolomiteMargin.connect(core.hhUser5).operate(
+      const genericTrader = await impersonate(core.genericTraderProxy!, true);
+      await core.dolomiteMargin.connect(genericTrader).operate(
         [defaultAccount],
         actions,
       );

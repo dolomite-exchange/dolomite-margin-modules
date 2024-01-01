@@ -16,6 +16,7 @@ import {
 } from '../../src/utils/constructors/dolomite';
 import { createContractWithAbi, createContractWithName, LibraryName } from '../../src/utils/dolomite-utils';
 import { CoreProtocol } from './setup';
+import { BigNumberish } from 'ethers';
 
 export async function createIsolationModeTokenVaultV1ActionsImpl(): Promise<Record<LibraryName, address>> {
   const contract = await createContractWithName('IsolationModeTokenVaultV1ActionsImpl', []);
@@ -78,4 +79,20 @@ export async function createEventEmitter(
     await getEventEmitterRegistryConstructorParams(core, implementation),
   );
   return EventEmitterRegistry__factory.connect(proxy.address, core.hhUser1) as EventEmitterRegistry;
+}
+
+export async function setupNewGenericTraderProxy(core: CoreProtocol, marketId: BigNumberish) {
+  const implementation = await createDolomiteRegistryImplementation();
+  await core.dolomiteRegistryProxy.upgradeTo(implementation.address);
+
+  await core.dolomiteRegistry!.ownerSetGenericTraderProxy(core.genericTraderProxy!.address);
+  await core.dolomiteRegistry!
+    .ownerSetLiquidatorAssetRegistry(core.liquidatorAssetRegistry!.address);
+  await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(
+    marketId,
+    core.liquidatorProxyV4.address,
+  );
+
+  await core.dolomiteMargin.ownerSetGlobalOperator(core.genericTraderProxy!.address, true);
+  await core.dolomiteMargin.ownerSetGlobalOperator(core.liquidatorProxyV4.address, true);
 }

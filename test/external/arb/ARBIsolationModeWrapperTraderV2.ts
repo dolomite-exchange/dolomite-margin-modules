@@ -30,6 +30,7 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS } from './arb-utils';
+import { setupNewGenericTraderProxy } from '../../utils/dolomite';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '1';
@@ -85,6 +86,8 @@ describe('ARBIsolationModeWrapperTraderV2', () => {
       number: otherAccountNumber,
     };
 
+    await setupNewGenericTraderProxy(core, dArbMarketId);
+
     snapshotId = await snapshot();
   });
 
@@ -105,20 +108,22 @@ describe('ARBIsolationModeWrapperTraderV2', () => {
       );
       const solidAccountId = 0;
       const liquidAccountId = 0;
-      const actions = await wrapper.createActionsForWrapping(
-        solidAccountId,
-        liquidAccountId,
-        ZERO_ADDRESS,
-        ZERO_ADDRESS,
-        dArbMarketId,
-        core.marketIds.arb!,
-        ZERO_BI,
-        amountWei,
-        BYTES_EMPTY,
-      );
+      const actions = await wrapper.createActionsForWrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: ZERO_ADDRESS,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: ZERO_ADDRESS,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: dArbMarketId,
+        inputMarket: core.marketIds.arb!,
+        minOutputAmount: ZERO_BI,
+        inputAmount: amountWei,
+        orderData: BYTES_EMPTY,
+      });
 
-      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
-      await core.dolomiteMargin.connect(core.hhUser5).operate([otherAccount], actions);
+      const genericTrader = await impersonate(core.genericTraderProxy!, true);
+      await core.dolomiteMargin.connect(genericTrader).operate([otherAccount], actions);
 
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(otherAccount, dArbMarketId);
       expect(underlyingBalanceWei.sign).to.eq(true);
