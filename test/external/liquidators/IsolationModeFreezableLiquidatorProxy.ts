@@ -850,6 +850,22 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       );
     });
 
+    it('should fail if minOutputAmount is too large', async () => {
+      await setupBalances(borrowAccountNumber, true, false);
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation(
+          { owner: vault.address, number: borrowAccountNumber },
+          marketId,
+          amountWei,
+          core.marketIds.weth,
+          amountWei,
+          NO_EXPIRY,
+          ONE_BI_ENCODED,
+        ),
+        'FreezableVaultLiquidatorProxy: minOutputAmount too large',
+      );
+    });
+
     it('should fail when vault account is frozen', async () => {
       await setupBalances(borrowAccountNumber, true, false);
       await liquidatorProxy.prepareForLiquidation(

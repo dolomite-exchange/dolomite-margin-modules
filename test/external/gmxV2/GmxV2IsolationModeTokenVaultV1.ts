@@ -289,6 +289,50 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       expect(eventArgs.withdrawal.isRetryable).to.eq(false);
     });
 
+    it('should fail if user is underwater', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: GMX_V2_EXECUTION_FEE },
+      );
+      // Create debt for the position
+      let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
+      let wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+
+      let wethAmount = amountWei.mul(gmPrice).div(wethPrice).mul(100).div(121);
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.To,
+      );
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      // await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, wethAmount);
+      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.weth, amountWei.add(wethAmount));
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(wethAmount));
+
+      gmPrice = gmPrice.mul(70).div(100);
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, gmPrice);
+      await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+
+      await expectThrow(
+        vault.initiateUnwrapping(
+          borrowAccountNumber,
+          amountWei,
+          core.tokens.weth.address,
+          ONE_BI,
+          ONE_BI_ENCODED,
+          { value: executionFee },
+        ),
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable',
+      );
+    });
+
     it('should fail if output token is invalid', async () => {
       await setupGMBalance(core, core.hhUser1, amountWei, vault);
       await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
