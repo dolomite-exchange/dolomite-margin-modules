@@ -1,20 +1,25 @@
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
 import { Network } from '../../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../test/utils/setup';
-import { createFolder, DenJsonUpload, prettyPrintEncodedDataWithTypeSafety, writeFile } from '../../../deploy-utils';
+import {
+  createFolder,
+  DenJsonUpload,
+  EncodedTransaction,
+  prettyPrintEncodedDataWithTypeSafety,
+  writeFile,
+} from '../../../deploy-utils';
 
 /**
  * This script encodes the following transactions:
- * - Executes safe txs #159 and #162
+ * - Revokes confirmations on old transactions that will not be executed any more.
  */
 async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const startId = 252;
-  const count = 34;
+  const startId = 290;
+  const count = 86; // 375 final ID
   const transactionIds = [
-    286, // execute the dolomite registry proxy upgrade first
     ...Array(count).fill(0).map((_, i) => startId + i),
   ];
   const transactions = [

@@ -441,7 +441,7 @@ async function deployYtGlpUpdates(core: CoreProtocol): Promise<EncodedTransactio
 async function deployPtREthUpdates(core: CoreProtocol): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
     core.config.networkNumber,
-    'PendlePtREthJun2025IsolationModeUnwrapperTraderV2',
+    'PendlePtIsolationModeUnwrapperTraderV2',
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.rEthJun2025.pendleRegistry,
@@ -452,7 +452,7 @@ async function deployPtREthUpdates(core: CoreProtocol): Promise<EncodedTransacti
   );
   const wrapperV3 = await deployContractAndSave(
     core.config.networkNumber,
-    'PendlePtREthJun2025IsolationModeWrapperTraderV2',
+    'PendlePtIsolationModeWrapperTraderV2',
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.rEthJun2025.pendleRegistry,
@@ -504,7 +504,7 @@ async function deployPtREthUpdates(core: CoreProtocol): Promise<EncodedTransacti
 async function deployPtWstEthJun2024Updates(core: CoreProtocol): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
     core.config.networkNumber,
-    'PendlePtWstEthJun2024IsolationModeUnwrapperTraderV2',
+    'PendlePtIsolationModeUnwrapperTraderV2',
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.wstEthJun2024.pendleRegistry,
@@ -515,7 +515,7 @@ async function deployPtWstEthJun2024Updates(core: CoreProtocol): Promise<Encoded
   );
   const wrapperV3 = await deployContractAndSave(
     core.config.networkNumber,
-    'PendlePtWstEthJun2024IsolationModeWrapperTraderV2',
+    'PendlePtIsolationModeWrapperTraderV2',
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.wstEthJun2024.pendleRegistry,
@@ -567,7 +567,7 @@ async function deployPtWstEthJun2024Updates(core: CoreProtocol): Promise<Encoded
 async function deployPtWstEthJun2025Updates(core: CoreProtocol): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
     core.config.networkNumber,
-    'PendlePtWstEthJun2025IsolationModeUnwrapperTraderV2',
+    'PendlePtIsolationModeUnwrapperTraderV2',
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.wstEthJun2025.pendleRegistry,
@@ -578,7 +578,7 @@ async function deployPtWstEthJun2025Updates(core: CoreProtocol): Promise<Encoded
   );
   const wrapperV3 = await deployContractAndSave(
     core.config.networkNumber,
-    'PendlePtWstEthJun2025IsolationModeWrapperTraderV2',
+    'PendlePtIsolationModeWrapperTraderV2',
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.wstEthJun2025.pendleRegistry,
@@ -747,6 +747,7 @@ async function deployStakedGmxUpdates(core: CoreProtocol): Promise<EncodedTransa
 
 /**
  * This script encodes the following transactions:
+ * - Sets the liquidatorAssetRegistry on the DolomiteRegistry
  * - Deploys new unwrapper / wrappers for each Isolation Mode asset
  * - Sets the new wrappers/unwrappers for each isolation mode asset on the corresponding factories + registries
  */
@@ -755,6 +756,13 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const transactions: EncodedTransaction[] = [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteRegistry',
+      'ownerSetLiquidatorAssetRegistry',
+      [core.liquidatorAssetRegistry.address],
+    ),
     ...await deployGlpUpdates(core),
     ...await deployPlutusVaultGlpUpdates(core),
     ...await deployJUsdcUpdates(core),

@@ -57,7 +57,7 @@ describe('PendlePtREthJun2025IsolationModeTokenVaultV1', () => {
     const underlyingToken = core.tokens.rEth!;
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, core.marketIds.rEth!);
+    priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, core.tokens.rEth!);
 
     await setupTestMarket(core, factory, true, priceOracle);
 

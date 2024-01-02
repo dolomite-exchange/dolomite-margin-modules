@@ -222,6 +222,24 @@ async function main(): Promise<DenJsonUpload> {
       core,
       'dolomiteMargin',
       'ownerSetGlobalOperator',
+      [genericTraderProxyV1OldAddress, false],
+    ),
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteMargin',
+      'ownerSetGlobalOperator',
+      [liquidatorProxyV4OldAddress, false],
+    ),
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteMargin',
+      'ownerSetGlobalOperator',
       [core.genericTraderProxy!.address, true],
     ),
   );

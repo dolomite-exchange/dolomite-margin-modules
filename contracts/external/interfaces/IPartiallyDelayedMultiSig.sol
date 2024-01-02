@@ -31,6 +31,17 @@ pragma solidity ^0.8.9;
 interface IPartiallyDelayedMultiSig {
 
     // ===================================================
+    // ===================== Structs =====================
+    // ===================================================
+
+    struct Transaction {
+        address destination;
+        uint256 value;
+        bytes data;
+        bool executed;
+    }
+
+    // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
@@ -70,4 +81,21 @@ interface IPartiallyDelayedMultiSig {
     function executeMultipleTransactions(
         uint256[] calldata transactionIds
     ) external;
+
+    /**
+     * Allows an owner to revoke a confirmation for a transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     */
+    function revokeConfirmation(
+        uint256 transactionId
+    ) external;
+
+    /**
+     * Allows a reader to get a particular transaction at the specified index
+     *
+     * @param index The index into the transactions list you want to retrieve
+     * @return      The `Transaction` at the specified index
+     */
+    function transactions(uint256 index) external view returns (address, uint256, bytes memory, bool);
 }
