@@ -22,13 +22,12 @@ pragma solidity ^0.8.9;
 
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
-
-import "hardhat/console.sol";
 
 
 /**
@@ -69,59 +68,46 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
     }
 
     function prepareForLiquidation(
-        IDolomiteStructs.AccountInfo calldata _liquidAccount,
-        uint256 _freezableMarketId,
-        uint256 _inputTokenAmount,
-        uint256 _outputMarketId,
-        uint256 _minOutputAmount,
-        uint256 _expirationTimestamp,
-        bytes calldata _extraData
+        PrepareForLiquidationParams calldata _params
     )
         external
         payable
         nonReentrant
-        requireIsAssetWhitelistedForLiquidation(_freezableMarketId)
+        requireIsAssetWhitelistedForLiquidation(_params.freezableMarketId)
     {
-        IDolomiteStructs.AccountInfo memory liquidAccount = _liquidAccount;
-        uint256 freezableMarketId = _freezableMarketId;
-        uint256 inputTokenAmount = _inputTokenAmount;
-        uint256 outputMarketId = _outputMarketId;
-        uint256 minOutputAmount = _minOutputAmount;
-        bytes memory extraData = _extraData;
-        address freezableToken = DOLOMITE_MARGIN.getMarketTokenAddress(freezableMarketId);
+        address freezableToken = DOLOMITE_MARGIN.getMarketTokenAddress(_params.freezableMarketId);
         Require.that(
-            IIsolationModeVaultFactory(freezableToken).getAccountByVault(liquidAccount.owner) != address(0),
+            IIsolationModeVaultFactory(freezableToken).getAccountByVault(_params.liquidAccount.owner) != address(0),
             _FILE,
             "Invalid liquid account",
-            liquidAccount.owner
+            _params.liquidAccount.owner
         );
         MarketInfo[] memory marketInfos = _getMarketInfos(
             /* _solidMarketIds = */ new uint256[](0),
-            DOLOMITE_MARGIN.getAccountMarketsWithBalances(liquidAccount)
+            DOLOMITE_MARGIN.getAccountMarketsWithBalances(_params.liquidAccount)
         );
         _checkIsLiquidatable(
-            liquidAccount,
+            _params.liquidAccount,
             marketInfos,
-            outputMarketId,
-            _expirationTimestamp
+            _params.outputMarketId,
+            _params.expirationTimestamp
         );
 
-        address outputToken = DOLOMITE_MARGIN.getMarketTokenAddress(outputMarketId);
-        uint256 inputValue = DOLOMITE_MARGIN.getMarketPrice(freezableMarketId).value * inputTokenAmount;
-        uint256 outputValue = DOLOMITE_MARGIN.getMarketPrice(outputMarketId).value * minOutputAmount;
-        Require.that(
-            outputValue * (_BP_BASE + minOutputPercentageUpperBound) / _BP_BASE <= inputValue,
-            _FILE,
-            'minOutputAmount too large'
+        _checkMinAmountIsNotTooLarge(
+            _params.freezableMarketId,
+            _params.outputMarketId,
+            _params.inputTokenAmount,
+            _params.minOutputAmount
         );
     
-        IIsolationModeTokenVaultV1WithFreezable vault = IIsolationModeTokenVaultV1WithFreezable(liquidAccount.owner);
+        address outputToken = DOLOMITE_MARGIN.getMarketTokenAddress(_params.outputMarketId);
+        IIsolationModeTokenVaultV1WithFreezable vault = IIsolationModeTokenVaultV1WithFreezable(_params.liquidAccount.owner);
         vault.initiateUnwrappingForLiquidation{value: msg.value}(
-            liquidAccount.number,
-            inputTokenAmount,
+            _params.liquidAccount.number,
+            _params.inputTokenAmount,
             outputToken,
-            minOutputAmount,
-            extraData
+            _params.minOutputAmount,
+            _params.extraData
         );
     }
 
@@ -186,5 +172,27 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
                 "Liquid account not liquidatable"
             );
         }
+    }
+
+    function _checkMinAmountIsNotTooLarge(
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputTokenAmount,
+        uint256 _minOutputAmount
+    ) internal view {
+        uint256 inputValue = DOLOMITE_MARGIN.getMarketPrice(_inputMarketId).value * _inputTokenAmount;
+        uint256 outputValue = DOLOMITE_MARGIN.getMarketPrice(_outputMarketId).value * _minOutputAmount;
+        
+        IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN.getLiquidationSpreadForPair(
+            /* heldMarketId = */ _inputMarketId,
+            /* ownedMarketId = */ _outputMarketId
+        );
+        uint256 inputValueAdj = inputValue - (inputValue * spread.value / 2e18);
+
+        Require.that(
+            outputValue <= inputValueAdj,
+            _FILE,
+            'minOutputAmount too large'
+        );
     }
 }
