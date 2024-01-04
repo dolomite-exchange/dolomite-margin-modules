@@ -317,6 +317,7 @@ export async function createGmxV2IsolationModeVaultFactory(
   collateralMarketIds: BigNumberish[],
   gmToken: IGmxMarketToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
+  executionFee: BigNumberish,
 ): Promise<GmxV2IsolationModeVaultFactory> {
   return createContractWithLibrary<GmxV2IsolationModeVaultFactory>(
     'GmxV2IsolationModeVaultFactory',
@@ -328,6 +329,7 @@ export async function createGmxV2IsolationModeVaultFactory(
       collateralMarketIds,
       gmToken,
       userVaultImplementation,
+      executionFee
     ),
   );
 }
@@ -340,6 +342,7 @@ export async function createTestGmxV2IsolationModeVaultFactory(
   collateralMarketIds: BigNumberish[],
   gmToken: IGmxMarketToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
+  executionFee: BigNumberish,
 ): Promise<TestGmxV2IsolationModeVaultFactory> {
   return createContractWithLibrary<TestGmxV2IsolationModeVaultFactory>(
     'TestGmxV2IsolationModeVaultFactory',
@@ -351,6 +354,7 @@ export async function createTestGmxV2IsolationModeVaultFactory(
       collateralMarketIds,
       gmToken,
       userVaultImplementation,
+      executionFee
     ),
   );
 }

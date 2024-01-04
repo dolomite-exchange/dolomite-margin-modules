@@ -117,6 +117,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
+      executionFee
     );
     impersonatedFactory = await impersonate(factory.address, true);
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
@@ -245,7 +246,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         amountWei,
-        { value: GMX_V2_EXECUTION_FEE },
+        { value: executionFee },
       );
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
@@ -296,7 +297,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         amountWei,
-        { value: GMX_V2_EXECUTION_FEE },
+        { value: executionFee },
       );
       // Create debt for the position
       let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
@@ -340,7 +341,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         borrowAccountNumber,
         amountWei,
-        { value: GMX_V2_EXECUTION_FEE },
+        { value: executionFee },
       );
 
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
@@ -382,6 +383,32 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           { value: executionFee },
         ),
         'IsolationModeVaultV1Freezable: Invalid withdrawal amount',
+      );
+    });
+
+    it('should fail if execution fee is too big', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: executionFee },
+      );
+
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+
+      await expectThrow(
+        vault.initiateUnwrapping(
+          borrowAccountNumber,
+          amountWei,
+          core.tokens.weth.address,
+          ONE_BI,
+          ONE_BI_ENCODED,
+          { value: ONE_ETH_BI.add(1) },
+        ),
+        'GmxV2IsolationModeVaultV1: Invalid execution fee',
       );
     });
 
@@ -539,7 +566,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        GMX_V2_EXECUTION_FEE,
+        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -582,7 +609,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        GMX_V2_EXECUTION_FEE,
+        executionFee,
       );
       await vault.swapExactInputForOutput(
         borrowAccountNumber,
@@ -678,8 +705,8 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       // Mine blocks so we can cancel deposit
       await mine(1200);
       await expectThrow(
-        vault2.cancelWithdrawal(withdrawalKey),
-        `GmxV2IsolationModeVaultV1: Invalid vault owner <${vault.address.toLowerCase()}>`,
+        vault.cancelWithdrawal(withdrawalKey),
+        'GmxV2IsolationModeVaultV1: Withdrawal from liquidation',
       );
     });
 
@@ -796,7 +823,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei.div(2));
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       await vault.transferIntoPositionWithUnderlyingToken(
         defaultAccountNumber,
@@ -804,7 +831,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei.div(2),
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
     });
 
     it('should fail if execution fee does not match', async () => {
@@ -830,7 +857,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei.div(2));
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       await expectThrow(
         vault.openBorrowPosition(
@@ -841,7 +868,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         ),
         'GmxV2Library: Execution fee already paid',
       );
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
     });
   });
 
@@ -1002,6 +1029,40 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.userConfig,
         ),
         'GmxV2Library: Invalid execution fee',
+      );
+    });
+
+    it('should fail if ETH sent is greater than max execution fee', async () => {
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        BalanceCheckFlag.Both,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, amountWei);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.weth,
+        amountWei,
+        marketId,
+        minAmountOut,
+        wrapper,
+        ONE_ETH_BI.add(1),
+      );
+      await expectThrow(
+        vault.swapExactInputForOutput(
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: ONE_ETH_BI.add(1) },
+        ),
+        'GmxV2IsolationModeVaultV1: Invalid execution fee',
       );
     });
 
@@ -1196,7 +1257,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       const result = await vault.transferFromPositionWithUnderlyingToken(
         borrowAccountNumber,
@@ -1205,7 +1266,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
       expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
-      expect(result).to.changeEtherBalances([core.hhUser1], [GMX_V2_EXECUTION_FEE]);
+      expect(result).to.changeEtherBalances([core.hhUser1], [executionFee]);
     });
 
     it('should not refund execution fee when position is not closed', async () => {
@@ -1218,7 +1279,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       await vault.transferFromPositionWithUnderlyingToken(
         borrowAccountNumber,
@@ -1226,7 +1287,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei.div(2),
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei.div(2));
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
     });
   });
 
@@ -1241,7 +1302,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei.div(2));
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -1251,10 +1312,10 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         BalanceCheckFlag.None,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, otherAmountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       await vault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       const result = await vault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
@@ -1264,7 +1325,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         BalanceCheckFlag.None,
       );
       expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
-      expect(result).to.changeEtherBalances([core.hhUser1], [GMX_V2_EXECUTION_FEE]);
+      expect(result).to.changeEtherBalances([core.hhUser1], [executionFee]);
     });
 
     it('should not refund execution fee when position is not closed', async () => {
@@ -1277,7 +1338,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -1287,7 +1348,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         BalanceCheckFlag.None,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, otherAmountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       await vault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
@@ -1297,7 +1358,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         BalanceCheckFlag.None,
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
     });
   });
 
@@ -1312,12 +1373,12 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       const result = await vault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
       expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
-      expect(result).to.changeEtherBalances([core.hhUser1], [GMX_V2_EXECUTION_FEE]);
+      expect(result).to.changeEtherBalances([core.hhUser1], [executionFee]);
     });
 
     it('should not refund execution fee when position is not closed', async () => {
@@ -1330,7 +1391,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -1340,7 +1401,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         BalanceCheckFlag.None,
       );
       await vault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
     });
   });
 
@@ -1355,7 +1416,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -1367,7 +1428,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
       await vault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, ZERO_BI);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       const result = await vault.closeBorrowPositionWithOtherTokens(
         borrowAccountNumber,
@@ -1375,7 +1436,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         [otherMarketId1],
       );
       expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
-      expect(result).to.changeEtherBalances([core.hhUser1], [GMX_V2_EXECUTION_FEE]);
+      expect(result).to.changeEtherBalances([core.hhUser1], [executionFee]);
     });
 
     it('should not refund execution fee when position is not closed', async () => {
@@ -1388,7 +1449,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         { value: executionFee },
       );
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
 
       await vault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
@@ -1400,7 +1461,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
       await vault.closeBorrowPositionWithOtherTokens(borrowAccountNumber, defaultAccountNumber, [otherMarketId1]);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
-      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(GMX_V2_EXECUTION_FEE);
+      expect(await vault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(executionFee);
     });
   });
 

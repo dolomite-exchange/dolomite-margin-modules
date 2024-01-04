@@ -61,4 +61,13 @@ interface IPartiallyDelayedMultiSig {
         uint256 value,
         bytes memory data
     ) external returns (uint256);
+
+    /**
+     * Allows an owner to execute multiple confirmed transactions.
+     *
+     * @param  transactionIds  List of transaction IDs.
+     */
+    function executeMultipleTransactions(
+        uint256[] calldata transactionIds
+    ) external;
 }

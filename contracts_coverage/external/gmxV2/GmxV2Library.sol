@@ -21,7 +21,6 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { GmxV2Library } from "./GmxV2Library.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
@@ -62,6 +61,9 @@ library GmxV2Library {
     bytes32 private constant _MAX_PNL_FACTOR_FOR_ADL_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_ADL"));
     bytes32 private constant _MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS")); // solhint-disable-line max-line-length
     bytes32 private constant _MAX_CALLBACK_GAS_LIMIT_KEY = keccak256(abi.encode("MAX_CALLBACK_GAS_LIMIT"));
+    bytes32 private constant _CREATE_WITHDRAWAL_FEATURE_DISABLED = keccak256(abi.encode("CREATE_WITHDRAWAL_FEATURE_DISABLED")); // solhint-disable-line max-line-length
+    bytes32 private constant _EXECUTE_WITHDRAWAL_FEATURE_DISABLED = keccak256(abi.encode("EXECUTE_WITHDRAWAL_FEATURE_DISABLED")); // solhint-disable-line max-line-length
+    bytes32 private constant _EXECUTE_DEPOSIT_FEATURE_DISABLED = keccak256(abi.encode("EXECUTE_DEPOSIT_FEATURE_DISABLED")); // solhint-disable-line max-line-length
     uint256 private constant _GMX_PRICE_DECIMAL_ADJUSTMENT = 6;
     uint256 private constant _GMX_PRICE_SCALE_ADJUSTMENT = 10 ** _GMX_PRICE_DECIMAL_ADJUSTMENT;
 
@@ -81,13 +83,30 @@ library GmxV2Library {
         uint256 _inputAmount
     ) public returns (bytes32) {
         IGmxExchangeRouter exchangeRouter = _registry.gmxExchangeRouter();
-        _weth.safeTransferFrom(_vault, address(this), _ethExecutionFee);
-        _weth.withdraw(_ethExecutionFee);
+        bytes32 executeDepositKey = keccak256(abi.encode(
+            _EXECUTE_DEPOSIT_FEATURE_DISABLED,
+            exchangeRouter.depositHandler()
+        ));
+        if (!_registry.gmxDataStore().getBool(executeDepositKey)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            !_registry.gmxDataStore().getBool(executeDepositKey),
+            _FILE,
+            "Execute deposit feature disabled"
+        );
 
         address depositVault = _registry.gmxDepositVault();
-        exchangeRouter.sendWnt{value: _ethExecutionFee}(depositVault, _ethExecutionFee);
-        IERC20(_inputToken).safeApprove(address(_registry.gmxRouter()), _inputAmount);
-        exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
+        if (_inputToken == address(_weth)) {
+            _weth.safeTransferFrom(_vault, address(this), _ethExecutionFee);
+            _weth.safeApprove(address(_registry.gmxRouter()), _ethExecutionFee + _inputAmount);
+            exchangeRouter.sendTokens(address(_weth), depositVault, _ethExecutionFee + _inputAmount);
+        } else {
+            _weth.safeTransferFrom(_vault, address(this), _ethExecutionFee);
+            _weth.safeApprove(address(_registry.gmxRouter()), _ethExecutionFee);
+            exchangeRouter.sendTokens(address(_weth), depositVault, _ethExecutionFee);
+
+            IERC20(_inputToken).safeApprove(address(_registry.gmxRouter()), _inputAmount);
+            exchangeRouter.sendTokens(_inputToken, depositVault, _inputAmount);
+        }
 
         IGmxExchangeRouter.CreateDepositParams memory depositParams = IGmxExchangeRouter.CreateDepositParams(
             /* receiver = */ address(this),
@@ -126,7 +145,8 @@ library GmxV2Library {
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
-        uint256 _ethExecutionFee
+        uint256 _ethExecutionFee,
+        bytes calldata _extraData
     ) public returns (bytes32) {
         IERC20(_factory.UNDERLYING_TOKEN()).safeTransferFrom(_vault, address(this), _inputAmount);
 
@@ -152,8 +172,8 @@ library GmxV2Library {
             /* market = */ swapPath[0],
             /* longTokenSwapPath = */ _outputToken == _factory.LONG_TOKEN() ? new address[](0) : swapPath,
             /* shortTokenSwapPath = */ _outputToken == _factory.SHORT_TOKEN() ? new address[](0) : swapPath,
-            /* minLongTokenAmount = */ _outputToken == _factory.LONG_TOKEN() ? _minOutputAmount : 0,
-            /* minShortTokenAmount = */ _outputToken == _factory.SHORT_TOKEN() ? _minOutputAmount : 0,
+            /* minLongTokenAmount = */ _minOutputAmount,
+            /* minShortTokenAmount = */ abi.decode(_extraData, (uint256)),
             /* shouldUnwrapNativeToken = */ false,
             /* executionFee = */ _ethExecutionFee,
             /* callbackGasLimit = */ registry.callbackGasLimit()
@@ -209,10 +229,32 @@ library GmxV2Library {
     ) public view returns (bool) {
         address underlyingToken = _factory.UNDERLYING_TOKEN();
         IGmxDataStore dataStore = _registry.gmxDataStore();
-        uint256 maxPnlForAdl = dataStore.getUint(
-            _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_ADL_KEY, underlyingToken, /* _isLong = */ true)
+        {
+            bytes32 createWithdrawalKey = keccak256(abi.encode(
+                _CREATE_WITHDRAWAL_FEATURE_DISABLED,
+                _registry.gmxWithdrawalHandler()
+            ));
+            bool isCreateWithdrawalFeatureDisabled = dataStore.getBool(createWithdrawalKey);
+            if (isCreateWithdrawalFeatureDisabled) {
+                return true;
+            }
+        }
+
+        {
+            bytes32 executeWithdrawalKey = keccak256(abi.encode(
+                _EXECUTE_WITHDRAWAL_FEATURE_DISABLED,
+                _registry.gmxWithdrawalHandler()
+            ));
+            bool isExecuteWithdrawalFeatureDisabled = dataStore.getBool(executeWithdrawalKey);
+            if (isExecuteWithdrawalFeatureDisabled) {
+                return true;
+            }
+        }
+
+        uint256 maxPnlForWithdrawalsShort = dataStore.getUint(
+            _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ false)
         );
-        uint256 maxPnlForWithdrawals = dataStore.getUint(
+        uint256 maxPnlForWithdrawalsLong = dataStore.getUint(
             _maxPnlFactorKey(_MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY, underlyingToken, /* _isLong = */ true)
         );
 
@@ -237,14 +279,12 @@ library GmxV2Library {
             /* _maximize = */ true
         );
 
-        bool isShortPnlTooLarge =
-            shortPnlToPoolFactor <= int256(maxPnlForAdl) && shortPnlToPoolFactor >= int256(maxPnlForWithdrawals);
-        bool isLongPnlTooLarge =
-            longPnlToPoolFactor <= int256(maxPnlForAdl) && longPnlToPoolFactor >= int256(maxPnlForWithdrawals);
+        bool isShortPnlTooLarge = shortPnlToPoolFactor >= int256(maxPnlForWithdrawalsShort);
+        bool isLongPnlTooLarge = longPnlToPoolFactor >= int256(maxPnlForWithdrawalsLong);
 
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
 
-        return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit;
+        return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit; // solhint-disable-line max-line-length
     }
 
     function validateInitialMarketIds(
@@ -302,13 +342,21 @@ library GmxV2Library {
             _FILE,
             "Unexpected secondaryOutputAmount"
         );
-        if (_outputTokenAddress.value == _secondaryOutputTokenAddress.value && _withdrawalInfo.outputToken == _outputTokenAddress.value) { /* FOR COVERAGE TESTING */ }
+        if (_withdrawalInfo.outputToken == _outputTokenAddress.value) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _outputTokenAddress.value == _secondaryOutputTokenAddress.value
-                && _withdrawalInfo.outputToken == _outputTokenAddress.value,
+            _withdrawalInfo.outputToken == _outputTokenAddress.value,
             _FILE,
-            "Can only receive one token"
+            "Output token is incorrect"
         );
+
+        if (_secondaryOutputTokenAmount.value > 0) {
+            if (_outputTokenAddress.value == _secondaryOutputTokenAddress.value) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                _outputTokenAddress.value == _secondaryOutputTokenAddress.value,
+                _FILE,
+                "Can only receive one token"
+            );
+        }
     }
 
     // ==================================================================

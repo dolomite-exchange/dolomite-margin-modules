@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IIsolationModeWrapperTrader } from "../interfaces/IIsolationModeWrapperTrader.sol";
+import { IIsolationModeWrapperTraderV2 } from "../interfaces/IIsolationModeWrapperTraderV2.sol";
 import { GmxDeposit } from "../interfaces/gmx/GmxDeposit.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
@@ -30,6 +30,7 @@ import { IGmxV2IsolationModeWrapperTraderV2 } from "../interfaces/gmx/IGmxV2Isol
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { AsyncIsolationModeTraderBase } from "../proxies/abstract/AsyncIsolationModeTraderBase.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
+import { AsyncIsolationModeWrapperTraderImpl } from "../proxies/abstract/impl/AsyncIsolationModeWrapperTraderImpl.sol";
 
 
 /**
@@ -66,8 +67,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         address _dolomiteMargin,
         address _gmxV2Registry
     ) external initializer {
-        _initializeWrapperTrader(_dGM, _dolomiteMargin);
-        _initializeAsyncTraderBase(_gmxV2Registry);
+        _initializeWrapperTrader(_dGM, _gmxV2Registry, _dolomiteMargin);
     }
 
     function afterDepositExecution(
@@ -93,16 +93,14 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function afterDepositCancellation(
         bytes32 _key,
-        GmxDeposit.DepositProps memory _deposit,
+        GmxDeposit.DepositProps memory /* _deposit */,
         GmxEventUtils.EventLogData memory /* _eventData */
     )
     external
     onlyHandler(msg.sender) {
-        /*assert(_deposit.numbers.initialLongTokenAmount == 0 || _deposit.numbers.initialShortTokenAmount == 0);*/
-
         DepositInfo memory depositInfo = _getDepositSlot(_key);
         depositInfo.isRetryable = true;
-        _setDepositInfo(_key, depositInfo);
+        AsyncIsolationModeWrapperTraderImpl.setDepositInfo(_getStorageSlot(), _key, depositInfo);
 
         _executeDepositCancellation(depositInfo);
     }
@@ -123,7 +121,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     )
     public
     view
-    override(UpgradeableAsyncIsolationModeWrapperTrader, IIsolationModeWrapperTrader)
+    override(UpgradeableAsyncIsolationModeWrapperTrader, IIsolationModeWrapperTraderV2)
     returns (bool) {
         return GmxV2Library.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),

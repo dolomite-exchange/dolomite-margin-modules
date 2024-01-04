@@ -49,8 +49,9 @@ describe('GmxV2IsolationModeTraderBase', () => {
 
     it('should not initialize twice', async () => {
       await expectThrow(
-        trader.triggerInternalInitializer(
+        trader.initialize(
           gmxV2Registry.address,
+          core.tokens.weth.address,
         ),
         'Initializable: contract is already initialized',
       );

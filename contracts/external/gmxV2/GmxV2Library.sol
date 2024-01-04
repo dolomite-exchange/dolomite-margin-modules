@@ -93,7 +93,6 @@ library GmxV2Library {
             "Execute deposit feature disabled"
         );
 
-
         address depositVault = _registry.gmxDepositVault();
         if (_inputToken == address(_weth)) {
             _weth.safeTransferFrom(_vault, address(this), _ethExecutionFee);
@@ -337,6 +336,7 @@ library GmxV2Library {
             _FILE,
             "Output token is incorrect"
         );
+
         if (_secondaryOutputTokenAmount.value > 0) {
             Require.that(
                 _outputTokenAddress.value == _secondaryOutputTokenAddress.value,

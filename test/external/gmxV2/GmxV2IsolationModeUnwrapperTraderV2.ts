@@ -3,10 +3,9 @@ import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
-import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
+import { parseEther } from 'ethers/lib/utils';
 import {
   EventEmitterRegistry,
-  GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2MarketTokenPriceOracle,
@@ -14,13 +13,14 @@ import {
   IERC20,
   IGenericTraderProxyV1__factory,
   IGmxMarketToken,
+  IGmxRoleStore__factory,
   TestGmxV2IsolationModeTokenVaultV1,
   TestGmxV2IsolationModeTokenVaultV1__factory,
   TestGmxV2IsolationModeUnwrapperTraderV2,
 } from 'src/types';
 import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { BYTES_EMPTY, BYTES_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -119,6 +119,22 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
     );
     gmxV2Registry = await createGmxV2Registry(core, callbackGasLimit);
 
+    if (process.env.COVERAGE === 'true') {
+      console.log('\tUsing coverage configuration...');
+      const dataStore = core.gmxEcosystemV2!.gmxDataStore;
+      const callbackKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
+        ['string'],
+        ['MAX_CALLBACK_GAS_LIMIT'],
+      ));
+      expect(await dataStore.getUint(callbackKey)).to.eq(callbackGasLimit.div(10));
+
+      const controllerKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['CONTROLLER']));
+      const roleStore = IGmxRoleStore__factory.connect(await dataStore.roleStore(), core.hhUser1);
+      const controllers = await roleStore.getRoleMembers(controllerKey, 0, 1);
+      const controller = await impersonate(controllers[0], true);
+      await dataStore.connect(controller).setUint(callbackKey, callbackGasLimit);
+    }
+
     allowableMarketIds = [core.marketIds.nativeUsdc!, core.marketIds.weth];
     factory = await createGmxV2IsolationModeVaultFactory(
       core,
@@ -128,6 +144,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
+      executionFee
     );
     wrapper = await createGmxV2IsolationModeWrapperTraderV2(
       core,
@@ -684,7 +701,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
     }
 
-    // @todo fix
     it('should work normally with actual oracle params and long token', async () => {
       await setupBalances(core.tokens.weth);
       const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
@@ -722,7 +738,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
     });
 
-    // @todo fix
     it('should work normally with actual oracle params and short token', async () => {
       await setupBalances(core.tokens.nativeUsdc!);
       const result = await core.gmxEcosystemV2!.gmxWithdrawalHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
@@ -809,7 +824,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       await expectWalletBalance(unwrapper, core.tokens.weth, withdrawalInfo.outputAmount);
     });
 
-    // @todo fix
     it('should work normally if user sends extra amount to withdrawal vault', async () => {
       await setupGMBalance(core, core.gmxEcosystemV2!.gmxWithdrawalVault, ONE_BI);
       await setupBalances(core.tokens.weth);
@@ -949,6 +963,17 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       );
 
       withdrawalInfo.eventData.addressItems.items[0].key = 'outputToken';
+      withdrawalInfo.eventData.addressItems.items[0].value = core.tokens.wbtc.address;
+      await expectThrow(
+        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
+          withdrawalKey,
+          withdrawalInfo.withdrawal,
+          withdrawalInfo.eventData,
+        ),
+        'GmxV2Library: Output token is incorrect',
+      );
+
+      withdrawalInfo.eventData.addressItems.items[0].value = core.tokens.weth.address;
       withdrawalInfo.eventData.addressItems.items[1].key = 'badSecondaryOutputToken';
       await expectThrow(
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
@@ -980,7 +1005,47 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ),
         'GmxV2Library: Unexpected secondaryOutputAmount',
       );
+
+      withdrawalInfo.eventData.uintItems.items[1].key = 'secondaryOutputAmount';
+      withdrawalInfo.eventData.uintItems.items[1].value = ONE_BI;
+      withdrawalInfo.eventData.addressItems.items[1].value = core.tokens.wbtc.address;
+      // @audit Are these off when they go to the library? What will be primary and what will be secondary?
+      await expectThrow(
+        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
+          withdrawalKey,
+          withdrawalInfo.withdrawal,
+          withdrawalInfo.eventData,
+        ),
+        'GmxV2Library: Can only receive one token',
+      );
     });
+
+    it('should fail if marketTokenAmount is less than inputAmount', async () => {
+      await setupBalances(core.tokens.weth);
+      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const unwrapperImpersonate = await impersonate(unwrapper.address, true);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      const withdrawalInfo = getWithdrawalObject(
+        unwrapper.address,
+        underlyingToken.address,
+        ONE_BI,
+        ONE_BI,
+        ONE_BI,
+        parseEther('.01'),
+        core.tokens.nativeUsdc!.address,
+        core.tokens.weth.address,
+        BigNumber.from('100000000'),
+        BigNumber.from('100000000'),
+      );
+      await expectThrow(
+        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
+          withdrawalKey,
+          withdrawalInfo.withdrawal,
+          withdrawalInfo.eventData,
+        ),
+        'GmxV2IsolationModeUnwrapperV2: Invalid market token amount',
+      );
+    })
 
     // @todo Confirm that we can then withdraw the tokens
     xit('should fail if more than one output token received', async () => {

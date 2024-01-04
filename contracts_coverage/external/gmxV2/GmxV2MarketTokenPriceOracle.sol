@@ -42,7 +42,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "GmxV2MarketTokenPriceOracle";
-    /// @dev All of the GM tokens listed have, at-worst, 20 bp for the price deviation
+    /// @dev All of the GM tokens listed have, at-worst, 25 bp for the price deviation
     uint256 public constant PRICE_DEVIATION_BP = 25;
     uint256 public constant BASIS_POINTS = 10_000;
     uint256 public constant SUPPLY_CAP_USAGE_NUMERATOR = 5;
@@ -51,7 +51,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     uint256 public constant RETURN_DECIMAL_ADJUSTMENT = 10 ** 12;
     uint256 public constant FEE_FACTOR_DECIMAL_ADJUSTMENT = 10 ** 26;
 
-    bytes32 public constant MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_WITHDRAWALS")); // solhint-disable-line max-line-length
+    bytes32 public constant MAX_PNL_FACTOR_FOR_DEPOSITS_KEY = keccak256(abi.encode("MAX_PNL_FACTOR_FOR_DEPOSITS")); // solhint-disable-line max-line-length
     bytes32 public constant SWAP_FEE_FACTOR_KEY = keccak256(abi.encode("SWAP_FEE_FACTOR"));
     bytes32 public constant SWAP_FEE_RECEIVER_FACTOR_KEY = keccak256(abi.encode("SWAP_FEE_RECEIVER_FACTOR"));
 
@@ -105,6 +105,10 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         });
     }
 
+    /**
+     *
+     * @dev  This will always return the largest swap fee, which is the one considering the negative price impact
+     */
     function getFeeBpByMarketToken(address _gmToken) public view returns (uint256) {
         bytes32 key = _swapFeeFactorKey(_gmToken, /* _forPositiveImpact = */ false);
         return REGISTRY.gmxDataStore().getUint(key) / FEE_FACTOR_DECIMAL_ADJUSTMENT;
@@ -140,57 +144,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
 
         uint256 gmPrice = _getGmTokenPrice(factory, longTokenPriceProps, shortTokenPriceProps);
 
-        // @audit - Do you think this is a good way to think about the oracle price if we become a market leader for
-        //          underwriting GM tokens?
-
-        uint256 gmPriceAfterPriceImpact = _getGmTokenPriceAfterPriceImpact(
-            gmPrice,
-            factory,
-            longTokenPriceProps,
-            shortTokenPriceProps
-        );
-
-        return _adjustDownForBasisPoints(gmPriceAfterPriceImpact, getFeeBpByMarketToken(factory.UNDERLYING_TOKEN()));
-    }
-
-    function _getGmTokenPriceAfterPriceImpact(
-        uint256 _gmPrice,
-        IGmxV2IsolationModeVaultFactory _factory,
-        GmxPrice.PriceProps memory _longTokenPriceProps,
-        GmxPrice.PriceProps memory _shortTokenPriceProps
-    ) internal view returns (uint256) {
-        uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(_factory));
-        uint256 gmAmountIn = DOLOMITE_MARGIN().getMarketMaxWei(marketId).value;
-        if (gmAmountIn == 0) {
-            // GUARD STATEMENT
-            // If the value is 0, that means there's on cap so we can just return the GM token price
-            return _gmPrice;
-        }
-
-        // Assume under the worst case, we liquidate 10% of the supply cap (which would entail a swap for half of that,
-        // 5%, to USDC (short token)).
-        uint256 wethAmountIn = gmAmountIn * _gmPrice / (_longTokenPriceProps.max * GMX_DECIMAL_ADJUSTMENT);
-        uint256 wethAmountInAdj = wethAmountIn * SUPPLY_CAP_USAGE_NUMERATOR / SUPPLY_CAP_USAGE_DENOMINATOR;
-
-        // We generally will liquidate into USDC which is why we measure price impact from long to short token
-        (, int256 wethPriceImpact) = REGISTRY.gmxReader().getSwapPriceImpact(
-            REGISTRY.gmxDataStore(),
-            _factory.UNDERLYING_TOKEN(),
-            /* _tokenIn = */ _factory.LONG_TOKEN(),
-            /* _tokenOut = */ _factory.SHORT_TOKEN(),
-            wethAmountInAdj,
-            /* _tokenInPrice  = */ _longTokenPriceProps,
-            /* _tokenOutPrice  = */ _shortTokenPriceProps
-        );
-
-        if (wethPriceImpact < 0) {
-            uint256 wethPriceImpactAbs = uint256(wethPriceImpact * -1);
-            // @audit - Am I using price impact properly? It's measured in terms of WETH units, not %-age, right?
-            return _gmPrice - (_gmPrice * wethPriceImpactAbs / wethAmountInAdj);
-        } else {
-            // For positive price impact, we don't care to add it to the price.
-            return _gmPrice;
-        }
+        return _adjustDownForBasisPoints(gmPrice, getFeeBpByMarketToken(factory.UNDERLYING_TOKEN()));
     }
 
     function _getGmTokenPrice(
@@ -224,7 +178,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             indexTokenPriceProps,
             _longTokenPriceProps,
             _shortTokenPriceProps,
-            MAX_PNL_FACTOR_FOR_WITHDRAWALS_KEY,
+            MAX_PNL_FACTOR_FOR_DEPOSITS_KEY,
             /* _maximize = */ false
         );
 

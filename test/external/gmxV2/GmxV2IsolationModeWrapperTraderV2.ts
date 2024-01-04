@@ -15,9 +15,11 @@ import {
   IGenericTraderProxyV1__factory,
   IGmxMarketToken,
   IGmxRoleStore__factory,
+  TestGmxDataStore,
+  TestGmxDataStore__factory,
   TestGmxV2IsolationModeVaultFactory,
 } from 'src/types';
-import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
+import { createContractWithAbi, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { BYTES_EMPTY, BYTES_ZERO, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import {
@@ -69,6 +71,7 @@ const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
+const EXECUTE_DEPOSITS_DISABLED_KEY = '0x0de57bca394801f1f7e929963a1380a671c985da3155a0fcc50a8b2a31212926';
 const minAmountOut = parseEther('1600');
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
@@ -92,6 +95,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
   let priceOracle: GmxV2MarketTokenPriceOracle;
   let eventEmitter: EventEmitterRegistry;
   let marketId: BigNumber;
+  let testDataStore: TestGmxDataStore;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
@@ -125,6 +129,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
+      executionFee
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,
@@ -279,6 +284,46 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       expect(await vault.shouldSkipTransfer()).to.eq(false);
       expect(await vault.isDepositSourceWrapper()).to.eq(false);
     });
+
+    it('should fail if execute deposit feature is disabled', async () => {
+      const controllerKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['CONTROLLER']));
+      const roleStore = IGmxRoleStore__factory.connect(await core.gmxEcosystemV2!.gmxDataStore.roleStore(), core.hhUser1);
+      const controllers = await roleStore.getRoleMembers(controllerKey, 0, 1);
+      const controller = await impersonate(controllers[0], true);
+      await core.gmxEcosystemV2!.gmxDataStore.connect(controller).setBool(EXECUTE_DEPOSITS_DISABLED_KEY, true);
+
+      await vault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc!,
+        usdcAmount,
+        BalanceCheckFlag.Both,
+      );
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.nativeUsdc!, usdcAmount);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc!,
+        usdcAmount,
+        marketId,
+        minAmountOut,
+        wrapper,
+        executionFee,
+      );
+      await expectThrow(
+        vault.swapExactInputForOutput(
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: executionFee }, // @follow-up How to calculate executionFee
+        ),
+        'GmxV2Library: Execute deposit feature disabled'
+      );
+    });
   });
 
   describe('#afterDepositExecution', () => {
@@ -390,7 +435,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectStateIsCleared();
     });
 
-    // @todo fix
     it('should work normally with short token', async () => {
       // @follow-up Changed this
       const minAmountOut = parseEther('800');
@@ -479,7 +523,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       await expectStateIsCleared();
     });
 
-    // @todo fix
     it('should work when deposit partially fills because max supply wei (sends diff to vault owner)', async () => {
       const minAmountOut = parseEther('800');
       await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut);

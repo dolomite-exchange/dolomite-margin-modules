@@ -29,6 +29,7 @@ import { IFreezableIsolationModeVaultFactory } from "../../../interfaces/IFreeza
 import { IGenericTraderBase } from "../../../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1 } from "../../../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IIsolationModeWrapperTraderV2 } from "../../../interfaces/IIsolationModeWrapperTraderV2.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
@@ -53,6 +54,7 @@ library AsyncIsolationModeWrapperTraderImpl {
     // ===================================================
     // ==================== Functions ====================
     // ===================================================
+
 
     function swapExactInputForOutputForDepositCancellation(
         UpgradeableAsyncIsolationModeWrapperTrader _wrapper,
@@ -80,7 +82,9 @@ library AsyncIsolationModeWrapperTraderImpl {
 
         IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
             deadline: block.timestamp,
-            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None
+            balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None,
+            // @follow-up Which event type here?
+            eventType: IGenericTraderProxyV1.EventEmissionType.None
         });
 
         uint256 outputAmount = _depositInfo.inputAmount;
@@ -100,41 +104,71 @@ library AsyncIsolationModeWrapperTraderImpl {
 
     function createActionsForWrapping(
         UpgradeableAsyncIsolationModeWrapperTrader _wrapper,
-        uint256 _primaryAccountId,
-        uint256 _outputMarket,
-        uint256 _inputMarket,
-        uint256 _minAmountOut,
-        uint256 _inputAmount,
-        bytes calldata _orderData
+        IIsolationModeWrapperTraderV2.CreateActionsForWrappingParams calldata _params
     ) external view returns (IDolomiteMargin.ActionArgs[] memory) {
         IDolomiteMargin dolomiteMargin = _wrapper.DOLOMITE_MARGIN();
-        if (_wrapper.isValidInputToken(dolomiteMargin.getMarketTokenAddress(_inputMarket))) { /* FOR COVERAGE TESTING */ }
+        if (_wrapper.isValidInputToken(dolomiteMargin.getMarketTokenAddress(_params.inputMarket))) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _wrapper.isValidInputToken(dolomiteMargin.getMarketTokenAddress(_inputMarket)),
+            _wrapper.isValidInputToken(dolomiteMargin.getMarketTokenAddress(_params.inputMarket)),
             _FILE,
             "Invalid input market",
-            _inputMarket
+            _params.inputMarket
         );
-        if (dolomiteMargin.getMarketTokenAddress(_outputMarket) == address(_wrapper.VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
+        if (dolomiteMargin.getMarketTokenAddress(_params.outputMarket) == address(_wrapper.VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            dolomiteMargin.getMarketTokenAddress(_outputMarket) == address(_wrapper.VAULT_FACTORY()),
+            dolomiteMargin.getMarketTokenAddress(_params.outputMarket) == address(_wrapper.VAULT_FACTORY()),
             _FILE,
             "Invalid output market",
-            _outputMarket
+            _params.outputMarket
         );
 
         IDolomiteMargin.ActionArgs[] memory actions = new IDolomiteMargin.ActionArgs[](_wrapper.actionsLength());
 
         actions[0] = AccountActionLib.encodeExternalSellAction(
-            _primaryAccountId,
-            _inputMarket,
-            _outputMarket,
+            _params.primaryAccountId,
+            _params.inputMarket,
+            _params.outputMarket,
             /* _trader = */ address(this),
-            /* _amountInWei = */ _inputAmount,
-            /* _amountOutMinWei = */ _minAmountOut,
-            _orderData
+            /* _amountInWei = */ _params.inputAmount,
+            /* _amountOutMinWei = */ _params.minOutputAmount,
+            _params.orderData
         );
 
         return actions;
+    }
+
+    function initializeWrapperTrader(
+        IUpgradeableAsyncIsolationModeWrapperTrader.State storage _state,
+        address _vaultFactory,
+        address _handlerRegistry
+    ) public {
+        setVaultFactory(_state, _vaultFactory);
+        setHandlerRegistry(_state, _handlerRegistry);
+    }
+
+    function setVaultFactory(
+        IUpgradeableAsyncIsolationModeWrapperTrader.State storage _state,
+        address _vaultFactory
+    ) public {
+        _state.vaultFactory = _vaultFactory;
+    }
+
+    function setHandlerRegistry(
+        IUpgradeableAsyncIsolationModeWrapperTrader.State storage _state,
+        address _handlerRegistry
+    ) public {
+        _state.handlerRegistry = _handlerRegistry;
+    }
+
+    function setDepositInfo(
+        IUpgradeableAsyncIsolationModeWrapperTrader.State storage _state,
+        bytes32 _key,
+        IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory _depositInfo
+    ) public {
+        if (_depositInfo.outputAmount == 0) {
+            delete _state.depositInfo[_key];
+        } else {
+            _state.depositInfo[_key] = _depositInfo;
+        }
     }
 }

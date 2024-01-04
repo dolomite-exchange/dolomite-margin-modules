@@ -33,24 +33,24 @@ import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IOARB } from "../interfaces/liquidityMining/IOARB.sol";
-import { IVester } from "../interfaces/liquidityMining/IVester.sol";
+import { IVesterV1 } from "../interfaces/liquidityMining/IVesterV1.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
 
 
 /**
- * @title   VesterImplementation
+ * @title   VesterImplementationV1
  * @author  Dolomite
  *
- * An implementation of the IVesterV1.sol interface that allows users to buy ARB at a discount if they vest ARB and oARB for a
- * certain amount of time
+ * An implementation of the IVesterV1 interface that allows users to buy ARB at a discount if they vest ARB and oARB for
+ * a certain amount of time
  */
-contract VesterImplementation is
+contract VesterImplementationV1 is
     ProxyContractHelpers,
     OnlyDolomiteMargin,
     ReentrancyGuard,
     ERC721EnumerableUpgradeable,
-    IVester
+    IVesterV1
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IOARB;
@@ -59,7 +59,7 @@ contract VesterImplementation is
     // ==================== Constants ====================
     // ===================================================
 
-    bytes32 private constant _FILE = "VesterImplementation";
+    bytes32 private constant _FILE = "VesterImplementationV1";
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
     uint256 private constant _BASE = 10_000;
 
@@ -75,6 +75,7 @@ contract VesterImplementation is
     bytes32 private constant _EMERGENCY_WITHDRAW_TAX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.emergencyWithdrawTax")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_VESTING_ACTIVE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isVestingActive")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _BASE_URI_SLOT = bytes32(uint256(keccak256("eip1967.proxy.baseURI")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _VERSION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.version")) - 1); // solhint-disable-line max-line-length
 
     // =========================================================
     // ==================== State Variables ====================
@@ -118,9 +119,12 @@ contract VesterImplementation is
     }
 
     function initialize(
-        address _oARB,
-        string memory _baseUri
-    ) external initializer {
+        bytes calldata _data
+    )
+        external
+        initializer
+    {
+        (address _oARB, string memory _baseUri) = abi.decode(_data, (address, string));
         _ownerSetIsVestingActive(true);
         _ownerSetOARB(_oARB);
         _ownerSetClosePositionWindow(1 weeks);
@@ -227,7 +231,7 @@ contract VesterImplementation is
             /* toAccount = */ positionOwner,
             /* toAccountNumber = */ _toAccountNumber,
             /* marketId */ ARB_MARKET_ID,
-            /* amount */ position.amount
+            /* amount */ type(uint256).max
         );
 
         // Calculate price
@@ -278,15 +282,6 @@ contract VesterImplementation is
         // Burn oARB and transfer ARB tokens back to user"s dolomite account minus tax amount
         uint256 arbTax = position.amount * forceClosePositionTax() / _BASE;
         oARB().burn(position.amount);
-        _transfer(
-            /* _fromAccount = */ address(this),
-            /* _fromAccountNumber = */ accountNumber,
-            /* _toAccount = */ positionOwner,
-            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _marketId = */ ARB_MARKET_ID,
-            /* _amountWei */ position.amount - arbTax
-        );
-
         if (arbTax > 0) {
             _transfer(
                 /* _fromAccount = */ address(this),
@@ -297,6 +292,15 @@ contract VesterImplementation is
                 /* _amountWei */ arbTax
             );
         }
+
+        _transfer(
+            /* _fromAccount = */ address(this),
+            /* _fromAccountNumber = */ accountNumber,
+            /* _toAccount = */ positionOwner,
+            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+            /* _marketId = */ ARB_MARKET_ID,
+            /* _amountWei */ type(uint256).max
+        );
 
         emit PositionForceClosed(positionOwner, _id, arbTax);
     }
@@ -316,17 +320,6 @@ contract VesterImplementation is
         // Transfer arb back to the user and burn ARB
         oARB().burn(position.amount);
         uint256 arbTax = position.amount * emergencyWithdrawTax() / _BASE;
-        _transfer(
-            /* _fromAccount = */ address(this),
-            /* _fromAccountNumber = */ accountNumber,
-            /* _toAccount = */ owner,
-            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
-            /* _marketId = */ ARB_MARKET_ID,
-            /* _amountWei */ position.amount - arbTax
-        );
-
-        _closePosition(position);
-
         if (arbTax > 0) {
             _transfer(
                 /* _fromAccount = */ address(this),
@@ -337,6 +330,17 @@ contract VesterImplementation is
                 /* _amountWei */ arbTax
             );
         }
+
+        _transfer(
+            /* _fromAccount = */ address(this),
+            /* _fromAccountNumber = */ accountNumber,
+            /* _toAccount = */ owner,
+            /* _toAccountNumber = */ _DEFAULT_ACCOUNT_NUMBER,
+            /* _marketId = */ ARB_MARKET_ID,
+            /* _amountWei */ type(uint256).max
+        );
+
+        _closePosition(position);
 
         emit EmergencyWithdraw(owner, _id, arbTax);
     }
@@ -540,6 +544,14 @@ contract VesterImplementation is
         uint256 _marketId,
         uint256 _amount
     ) internal {
+        uint256 amountToTransfer = _amount;
+        if (_amount == type(uint256).max) {
+            IDolomiteStructs.AccountInfo memory fromAccountInfo = IDolomiteStructs.AccountInfo({
+                owner: _fromAccount,
+                number: _fromAccountNumber
+            });
+            amountToTransfer = DOLOMITE_MARGIN().getAccountWei(fromAccountInfo, _marketId).value;
+        }
         AccountActionLib.transfer(
             DOLOMITE_MARGIN(),
             _fromAccount,
@@ -548,8 +560,8 @@ contract VesterImplementation is
             _toAccountNumber,
             _marketId,
             IDolomiteStructs.AssetDenomination.Wei,
-            _amount,
-            AccountBalanceLib.BalanceCheckFlag.From
+            amountToTransfer,
+            AccountBalanceLib.BalanceCheckFlag.Both
         );
     }
 

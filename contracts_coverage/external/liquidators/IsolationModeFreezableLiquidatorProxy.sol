@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
@@ -40,10 +41,15 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "FreezableVaultLiquidatorProxy";
+    uint256 private constant _BP_BASE = 10_000;
 
     // ========================= Immutable Fields ==========================
 
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line var-name-mixedcase
+
+    // ========================= State Variables ==========================
+
+    uint256 public minOutputPercentageUpperBound = 500;
 
     // ============================ Constructor ============================
 
@@ -62,45 +68,58 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
     }
 
     function prepareForLiquidation(
-        IDolomiteStructs.AccountInfo calldata _liquidAccount,
-        uint256 _freezableMarketId,
-        uint256 _inputTokenAmount,
-        uint256 _outputMarketId,
-        uint256 _minOutputAmount,
-        uint256 _expirationTimestamp
+        PrepareForLiquidationParams calldata _params
     )
         external
         payable
         nonReentrant
-        requireIsAssetWhitelistedForLiquidation(_freezableMarketId)
+        requireIsAssetWhitelistedForLiquidation(_params.freezableMarketId)
     {
-        address freezableToken = DOLOMITE_MARGIN.getMarketTokenAddress(_freezableMarketId);
-        if (IIsolationModeVaultFactory(freezableToken).getAccountByVault(_liquidAccount.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
+        address freezableToken = DOLOMITE_MARGIN.getMarketTokenAddress(_params.freezableMarketId);
+        if (IIsolationModeVaultFactory(freezableToken).getAccountByVault(_params.liquidAccount.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            IIsolationModeVaultFactory(freezableToken).getAccountByVault(_liquidAccount.owner) != address(0),
+            IIsolationModeVaultFactory(freezableToken).getAccountByVault(_params.liquidAccount.owner) != address(0),
             _FILE,
             "Invalid liquid account",
-            _liquidAccount.owner
+            _params.liquidAccount.owner
         );
         MarketInfo[] memory marketInfos = _getMarketInfos(
             /* _solidMarketIds = */ new uint256[](0),
-            DOLOMITE_MARGIN.getAccountMarketsWithBalances(_liquidAccount)
+            DOLOMITE_MARGIN.getAccountMarketsWithBalances(_params.liquidAccount)
         );
         _checkIsLiquidatable(
-            _liquidAccount,
+            _params.liquidAccount,
             marketInfos,
-            _outputMarketId,
-            _expirationTimestamp
+            _params.outputMarketId,
+            _params.expirationTimestamp
         );
 
-        address outputToken = DOLOMITE_MARGIN.getMarketTokenAddress(_outputMarketId);
-        IIsolationModeTokenVaultV1WithFreezable vault = IIsolationModeTokenVaultV1WithFreezable(_liquidAccount.owner);
-        vault.initiateUnwrappingForLiquidation{value: msg.value}(
-            _liquidAccount.number,
-            _inputTokenAmount,
-            outputToken,
-            _minOutputAmount
+        _checkMinAmountIsNotTooLarge(
+            _params.freezableMarketId,
+            _params.outputMarketId,
+            _params.inputTokenAmount,
+            _params.minOutputAmount
         );
+
+        address outputToken = DOLOMITE_MARGIN.getMarketTokenAddress(_params.outputMarketId);
+        IIsolationModeTokenVaultV1WithFreezable vault = IIsolationModeTokenVaultV1WithFreezable(_params.liquidAccount.owner);
+        vault.initiateUnwrappingForLiquidation{value: msg.value}(
+            _params.liquidAccount.number,
+            _params.inputTokenAmount,
+            outputToken,
+            _params.minOutputAmount,
+            _params.extraData
+        );
+    }
+
+    function ownerSetMinOutputPercentageUpperBound(uint256 _minOutputPercentageUpperBound) external {
+        if (msg.sender == address(DOLOMITE_MARGIN)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            msg.sender == address(DOLOMITE_MARGIN),
+            _FILE,
+            'OnlyDolomiteMargin'
+        );
+        minOutputPercentageUpperBound = _minOutputPercentageUpperBound;
     }
 
     // ======================================================================
@@ -108,7 +127,7 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
     // ======================================================================
 
     function _checkIsLiquidatable(
-        IDolomiteStructs.AccountInfo calldata _liquidAccount,
+        IDolomiteStructs.AccountInfo memory _liquidAccount,
         MarketInfo[] memory _marketInfos,
         uint256 _outputMarketId,
         uint256 _expirationTimestamp
@@ -160,5 +179,28 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
                 "Liquid account not liquidatable"
             );
         }
+    }
+
+    function _checkMinAmountIsNotTooLarge(
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputTokenAmount,
+        uint256 _minOutputAmount
+    ) internal view {
+        uint256 inputValue = DOLOMITE_MARGIN.getMarketPrice(_inputMarketId).value * _inputTokenAmount;
+        uint256 outputValue = DOLOMITE_MARGIN.getMarketPrice(_outputMarketId).value * _minOutputAmount;
+
+        IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN.getLiquidationSpreadForPair(
+            /* heldMarketId = */ _inputMarketId,
+            /* ownedMarketId = */ _outputMarketId
+        );
+        uint256 inputValueAdj = inputValue - (inputValue * spread.value / 2e18);
+
+        if (outputValue <= inputValueAdj) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            outputValue <= inputValueAdj,
+            _FILE,
+            'minOutputAmount too large'
+        );
     }
 }

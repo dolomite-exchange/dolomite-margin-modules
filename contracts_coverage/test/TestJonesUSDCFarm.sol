@@ -42,21 +42,21 @@ contract TestJonesUSDCFarm is IJonesUSDCFarm {
     // solhint-disable-next-line no-empty-blocks
     function harvest(uint256, address) external {}
 
-    function pendingSushi(uint256, address) external view returns (uint256) {
+    function pendingSushi(uint256, address) external pure returns (uint256) {
         return 0;
     }
-    function incentivesOn() external view returns (bool) {
+    function incentivesOn() external pure returns (bool) {
         return false;
     }
-    function incentiveReceiver() external view returns (address) {
+    function incentiveReceiver() external pure returns (address) {
         return address(0);
     }
 
-    function poolInfo(uint256) external view returns (PoolInfo memory p) {
+    function poolInfo(uint256) external pure returns (PoolInfo memory p) {
         return p;
     }
 
-    function userInfo(uint256, address) external view returns (UserInfo memory u) {
+    function userInfo(uint256, address) external pure returns (UserInfo memory u) {
         return u;
     }
 }

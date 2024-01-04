@@ -70,6 +70,7 @@ const ONE_BI_ENCODED = '0x000000000000000000000000000000000000000000000000000000
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
+const executionFee = process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE : GMX_V2_EXECUTION_FEE.mul(10);
 
 describe('IsolationModeFreezableLiquidatorProxy', () => {
   let snapshotId: string;
@@ -129,6 +130,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
+      executionFee
     );
     underlyingToken = IGmxMarketToken__factory.connect(await factory.UNDERLYING_TOKEN(), core.hhUser1);
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
@@ -201,13 +203,13 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       defaultAccountNumber,
       borrowAccountNumber,
       amountWei,
-      { value: GMX_V2_EXECUTION_FEE },
+      { value: executionFee },
     );
     await vault.openBorrowPosition(
       defaultAccountNumber,
       borrowAccountNumber2,
       amountWei,
-      { value: GMX_V2_EXECUTION_FEE },
+      { value: executionFee },
     );
     await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
     await expectProtocolBalance(core, vault.address, borrowAccountNumber2, marketId, amountWei);
@@ -270,7 +272,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           marketId,
           depositMinAmountOut,
           wrapper,
-          GMX_V2_EXECUTION_FEE,
+          executionFee,
         );
         await vault.swapExactInputForOutput(
           initiateWrappingParams.accountNumber,
@@ -280,7 +282,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: GMX_V2_EXECUTION_FEE },
+          { value: executionFee },
         );
       } else if (performZapType === ZapType.Withdraw) {
         const result = await vault.initiateUnwrapping(
@@ -289,7 +291,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           core.tokens.nativeUsdc!.address,
           ONE_BI,
           ONE_BI_ENCODED,
-          { value: GMX_V2_EXECUTION_FEE },
+          { value: executionFee },
         );
         const filter = eventEmitter.filters.AsyncWithdrawalCreated();
         withdrawalKeys.push((await eventEmitter.queryFilter(filter, result.blockNumber))[0].args.key);
