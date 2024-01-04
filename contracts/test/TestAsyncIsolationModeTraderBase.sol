@@ -33,15 +33,17 @@ import { AsyncIsolationModeTraderBase } from "../external/proxies/abstract/Async
 contract TestAsyncIsolationModeTraderBase is AsyncIsolationModeTraderBase {
 
     bytes32 private constant _FILE = "TestAsyncIsolationModeTraderBase";
+    bytes32 private constant _HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handler")) - 1);
 
     constructor(address _weth) AsyncIsolationModeTraderBase(_weth) {
         // solhint-disable-previous-line no-empty-blocks
     }
 
     function initialize(
-        address /* _gmxV2Registry */,
+        address _gmxV2Registry,
         address _dolomiteMargin
     ) external initializer {
+        _setHandlerViaSlot(_gmxV2Registry);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
     }
 
@@ -53,7 +55,11 @@ contract TestAsyncIsolationModeTraderBase is AsyncIsolationModeTraderBase {
 
     function testOnlyHandler() external onlyHandler(msg.sender) {} // solhint-disable-line no-empty-blocks
 
-    function HANDLER_REGISTRY() public pure override returns (IHandlerRegistry) {
-        return IHandlerRegistry(address(0));
+    function HANDLER_REGISTRY() public view override returns (IHandlerRegistry) {
+        return IHandlerRegistry(_getAddress(_HANDLER_SLOT));
+    }
+
+    function _setHandlerViaSlot(address _handler) internal {
+        _setAddress(_HANDLER_SLOT, _handler);
     }
 }

@@ -167,6 +167,12 @@ interface IGLPIsolationModeTokenVaultV2 {
     function sweepGmxTokensIntoGmxVault() external;
 
     /**
+     * @return  The max amount of GMX tokens the user can unstake before having to unvest any paired GMX tokens for
+     *          vesting
+     */
+    function maxGmxUnstakeAmount() external returns (uint256);
+
+    /**
      * @return The registry used to get addresses from the GMX ecosystem
      */
     function registry() external view returns (IGmxRegistryV1);
@@ -175,9 +181,4 @@ interface IGLPIsolationModeTokenVaultV2 {
      * @return The amount of GMX tokens the user owns
      */
     function gmxBalanceOf() external view returns (uint256);
-
-    /**
-     * @return The amount of GMX tokens the user has in the vesting contract (for converting esGMX into GMX)
-     */
-    function gmxInVesting() external view returns (uint256);
 }

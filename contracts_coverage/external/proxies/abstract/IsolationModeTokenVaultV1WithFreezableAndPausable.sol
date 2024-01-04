@@ -50,7 +50,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is
         internal
         virtual
         override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
-        _depositIntoVaultForDolomiteMarginFreezableValidator
+        _depositIntoVaultForDolomiteMarginFreezableValidator(_toAccountNumber)
     {
         IsolationModeTokenVaultV1._depositIntoVaultForDolomiteMargin(
             _toAccountNumber,
@@ -65,7 +65,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is
         internal
         virtual
         override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
-        _withdrawFromVaultForDolomiteMarginFreezableValidator
+        _withdrawFromVaultForDolomiteMarginFreezableValidator(_fromAccountNumber)
     {
         IsolationModeTokenVaultV1._withdrawFromVaultForDolomiteMargin(
             _fromAccountNumber,

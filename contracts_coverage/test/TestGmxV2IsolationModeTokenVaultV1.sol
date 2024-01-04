@@ -67,6 +67,23 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
         address(this).safeDelegateCall(_callDataWithSelector);
     }
 
+    function initiateUnwrappingWithLiquidationTrue(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bytes calldata _extraData
+    ) external payable {
+        _initiateUnwrapping(
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount,
+            /* isLiquidation */ true,
+            _extraData
+        );
+    }
+
     function reversionType() public view returns (ReversionType) {
         return ReversionType(_getUint256(_REVERSION_TYPE_SLOT));
     }

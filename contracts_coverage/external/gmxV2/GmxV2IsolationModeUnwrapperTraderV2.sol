@@ -22,7 +22,7 @@ pragma solidity ^0.8.9;
 
 import { GmxV2Library } from "./GmxV2Library.sol";
 import { Require } from "../../protocol/lib/Require.sol";
-import { IIsolationModeUnwrapperTrader } from "../interfaces/IIsolationModeUnwrapperTrader.sol";
+import { IIsolationModeUnwrapperTraderV2 } from "../interfaces/IIsolationModeUnwrapperTraderV2.sol";
 import { GmxEventUtils } from "../interfaces/gmx/GmxEventUtils.sol";
 import { GmxWithdrawal } from "../interfaces/gmx/GmxWithdrawal.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2IsolationModeUnwrapperTraderV2.sol";
@@ -30,6 +30,7 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 import { AsyncIsolationModeTraderBase } from "../proxies/abstract/AsyncIsolationModeTraderBase.sol";
 import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../proxies/abstract/UpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { AsyncIsolationModeUnwrapperTraderImpl } from "../proxies/abstract/impl/AsyncIsolationModeUnwrapperTraderImpl.sol"; // solhint-disable-line max-line-length
 
 
 /**
@@ -76,15 +77,16 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         address _gmxV2Registry
     )
     external initializer {
-        _initializeUnwrapperTrader(_dGM, _dolomiteMargin);
-        _initializeAsyncTraderBase(_gmxV2Registry);
+        _initializeUnwrapperTrader(_dGM, _gmxV2Registry, _dolomiteMargin);
     }
 
     function vaultInitiateUnwrapping(
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata _extraData
     ) external payable {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY()));
         address vault = msg.sender;
@@ -96,7 +98,8 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _inputAmount,
             _outputToken,
             _minOutputAmount,
-            msg.value
+            msg.value,
+            _extraData
         );
 
         _vaultCreateWithdrawalInfo(
@@ -105,7 +108,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             _tradeAccountNumber,
             _inputAmount,
             _outputToken,
-            _minOutputAmount
+            _minOutputAmount,
+            _isLiquidation,
+            _extraData
         );
     }
 
@@ -131,9 +136,9 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     onlyHandler(msg.sender) {
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         _validateWithdrawalExists(withdrawalInfo);
-        if (withdrawalInfo.inputAmount == _withdrawal.numbers.marketTokenAmount) { /* FOR COVERAGE TESTING */ }
+        if (_withdrawal.numbers.marketTokenAmount >= withdrawalInfo.inputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            withdrawalInfo.inputAmount == _withdrawal.numbers.marketTokenAmount,
+            _withdrawal.numbers.marketTokenAmount >= withdrawalInfo.inputAmount,
             _FILE,
             "Invalid market token amount"
         );
@@ -157,7 +162,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         // Save the output amount so we can refer to it later. This also enables it to be retried if execution fails
         withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
         withdrawalInfo.isRetryable = true;
-        _setWithdrawalInfo(_key, withdrawalInfo);
+        AsyncIsolationModeUnwrapperTraderImpl.setWithdrawalInfo(_getStorageSlot(), _key, withdrawalInfo);
 
         _executeWithdrawal(withdrawalInfo);
     }
@@ -181,7 +186,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     )
     public
     view
-    override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTrader)
+    override(UpgradeableAsyncIsolationModeUnwrapperTrader, IIsolationModeUnwrapperTraderV2)
     returns (bool) {
         return GmxV2Library.isValidInputOrOutputToken(
             IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
@@ -193,7 +198,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         return IGmxV2Registry(address(HANDLER_REGISTRY()));
     }
 
-    function getWithdrawalInfo(bytes32 _key) public pure returns (WithdrawalInfo memory) {
+    function getWithdrawalInfo(bytes32 _key) public view returns (WithdrawalInfo memory) {
         return _getWithdrawalSlot(_key);
     }
 

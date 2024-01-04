@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
@@ -73,18 +74,6 @@ contract GLPIsolationModeTokenVaultV2 is
     // ==================================================================
     // ======================= External Functions =======================
     // ==================================================================
-
-    function initialize() external override {
-        if (_reentrancyGuard == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _reentrancyGuard == 0,
-            _FILE,
-            "Already initialized"
-        );
-
-        _reentrancyGuard = _NOT_ENTERED;
-        _getGmxVaultOrCreate(OWNER());
-    }
 
     function handleRewards(
         bool _shouldClaimGmx,
@@ -196,7 +185,7 @@ contract GLPIsolationModeTokenVaultV2 is
             _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, amountGmx, /* shouldSkipTransfer = */ true);
         } else {
             // This will automatically sync the balances
-            _getGmxVaultOrCreate(OWNER());
+            getGmxVaultOrCreate();
         }
 
         // reset the flag back to false
@@ -242,9 +231,28 @@ contract GLPIsolationModeTokenVaultV2 is
         _sync(_gmxVault);
     }
 
+    function maxGmxUnstakeAmount() external onlyGmxVault(msg.sender) returns (uint256) {
+        uint256 bnGmxAmount = _claimAndStakeBnGmx();
+        uint256 sbfGmxBalance = IERC20(sbfGmx()).balanceOf(address(this));
+        uint256 totalStakedBalance = sGmx().stakedAmounts(address(this)); // staked-GMX + staked-esGMX total balance
+        uint256 stakedGmxBalance = gmxBalanceOf(); // staked-GMX balance
+
+        uint256 calculatedMaxAmount = totalStakedBalance * sbfGmxBalance / (totalStakedBalance + bnGmxAmount);
+        return Math.min(stakedGmxBalance, calculatedMaxAmount);
+    }
+
     // ==================================================================
     // ======================== Public Functions ========================
     // ==================================================================
+
+    function getGmxVaultOrCreate() public returns (address) {
+        address account = OWNER();
+        address gmxVault = registry().gmxVaultFactory().getVaultByAccount(account);
+        if (gmxVault == address(0)) {
+            gmxVault = registry().gmxVaultFactory().createVault(account);
+        }
+        return gmxVault;
+    }
 
     function executeDepositIntoVault(
         address _from,
@@ -300,10 +308,6 @@ contract GLPIsolationModeTokenVaultV2 is
         return sGmx().depositBalances(account, address(gmx()));
     }
 
-    function gmxInVesting() public view returns (uint256) {
-        return vGmx().pairAmounts(address(this));
-    }
-
     function esGmxBalanceOf() public view returns (uint256) {
         IERC20 _esGmx = esGmx();
         address account = address(this);
@@ -333,6 +337,10 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function sGmx() public view returns (ISGMX) {
         return ISGMX(registry().sGmx());
+    }
+
+    function sbfGmx() public view returns (address) {
+        return registry().sbfGmx();
     }
 
     function vGlp() public view returns (IGmxVester) {
@@ -372,6 +380,22 @@ contract GLPIsolationModeTokenVaultV2 is
     // ======================= Internal Functions =======================
     // ==================================================================
 
+    function _claimAndStakeBnGmx() internal virtual returns (uint256) {
+        _handleRewards(
+            /* _shouldClaimGmx = */ false,
+            /* _shouldStakeGmx = */ false,
+            /* _shouldClaimEsGmx = */ false,
+            /* _shouldStakeEsGmx = */ false,
+            /* _shouldStakeMultiplierPoints = */ true,
+            /* _shouldClaimWeth = */ false,
+            /* _shouldDepositWethIntoDolomite = */ false,
+            _DEFAULT_ACCOUNT_NUMBER
+        );
+
+        address bnGmx = registry().bnGmx();
+        return IGmxRewardTracker(registry().sbfGmx()).depositBalances(address(this), bnGmx);
+    }
+
     function _handleRewards(
         bool _shouldClaimGmx,
         bool _shouldStakeGmx,
@@ -382,7 +406,7 @@ contract GLPIsolationModeTokenVaultV2 is
         bool _shouldDepositWethIntoDolomite,
         uint256 _depositAccountNumberForWeth
     ) internal {
-        address gmxVault = _getGmxVaultOrCreate(OWNER());
+        address gmxVault = getGmxVaultOrCreate();
         if ((!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth) { /* FOR COVERAGE TESTING */ }
         Require.that(
             (!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
@@ -453,7 +477,7 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function _unvestEsGmx(IGmxVester _vester, bool _shouldStakeGmx, bool _addDepositIntoDolomite) internal {
-        address gmxVault = _getGmxVaultOrCreate(OWNER());
+        address gmxVault = getGmxVaultOrCreate();
 
         _vester.withdraw();
         IERC20 _gmx = gmx();
@@ -493,14 +517,6 @@ contract GLPIsolationModeTokenVaultV2 is
         _depositIntoGMXVault(_gmxVault, _DEFAULT_ACCOUNT_NUMBER, gmxBalanceOf(), /* shouldSkipTransfer = */ true);
     }
 
-    function _getGmxVaultOrCreate(address _account) internal returns (address) {
-        address gmxVault = registry().gmxVaultFactory().getVaultByAccount(_account);
-        if (gmxVault == address(0)) {
-            gmxVault = registry().gmxVaultFactory().createVault(_account);
-        }
-        return gmxVault;
-    }
-
     function _depositIntoGMXVault(
         address _gmxVault,
         uint256 _accountNumber,
@@ -538,7 +554,7 @@ contract GLPIsolationModeTokenVaultV2 is
 
         // Sweep any GMX tokens that are sent to this vault from unvesting GLP
         _depositIntoGMXVault(
-            _getGmxVaultOrCreate(OWNER()),
+            getGmxVaultOrCreate(),
             _DEFAULT_ACCOUNT_NUMBER,
             gmx().balanceOf(address(this)),
             /* shouldSkipTransfer = */ false

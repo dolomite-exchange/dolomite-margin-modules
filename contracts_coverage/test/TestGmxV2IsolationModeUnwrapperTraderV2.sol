@@ -43,7 +43,9 @@ contract TestGmxV2IsolationModeUnwrapperTraderV2 is GmxV2IsolationModeUnwrapperT
         uint256 _accountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata _extraData
     ) external {
         _vaultCreateWithdrawalInfo(
             _key,
@@ -51,7 +53,9 @@ contract TestGmxV2IsolationModeUnwrapperTraderV2 is GmxV2IsolationModeUnwrapperT
             _accountNumber,
             _inputAmount,
             _outputToken,
-            _minOutputAmount
+            _minOutputAmount,
+            _isLiquidation,
+            _extraData
         );
     }
 

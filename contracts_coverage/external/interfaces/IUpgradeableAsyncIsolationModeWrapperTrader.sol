@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
-import { IIsolationModeWrapperTrader } from "./IIsolationModeWrapperTrader.sol";
+import { IIsolationModeWrapperTraderV2 } from "./IIsolationModeWrapperTraderV2.sol";
 import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
 
 
@@ -31,11 +31,17 @@ import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
  *
  * Interface for an upgradeable contract that can convert a token into an isolation mode token.
  */
-interface IUpgradeableAsyncIsolationModeWrapperTrader is IIsolationModeWrapperTrader, IOnlyDolomiteMargin {
+interface IUpgradeableAsyncIsolationModeWrapperTrader is IIsolationModeWrapperTraderV2, IOnlyDolomiteMargin {
 
     // ================================================
     // ==================== Structs ===================
     // ================================================
+
+    struct State {
+        mapping(bytes32 => DepositInfo) depositInfo;
+        address vaultFactory;
+        address handlerRegistry;
+    }
 
     struct DepositInfo {
         bytes32 key;

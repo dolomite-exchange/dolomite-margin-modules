@@ -47,7 +47,7 @@ abstract contract FreezableIsolationModeVaultFactory is
     // =========================================================
 
     bytes32 private constant _FILE = "FreezableVaultFactory";
-    uint256 private constant _MAX_EXECUTION_FEE = 1 ether;
+    uint256 public constant MAX_EXECUTION_FEE = 1 ether;
 
     // =========================================================
     // ==================== Field Variables ====================
@@ -63,6 +63,23 @@ abstract contract FreezableIsolationModeVaultFactory is
 
     uint256 public override executionFee;
     IHandlerRegistry public override handlerRegistry;
+
+    // ===========================================================
+    // ======================= Modifiers ======================
+    // ===========================================================
+
+    modifier requireIsTokenConverterOrVaultOrDolomiteMarginOwner(address _caller) {
+        if (_tokenConverterToIsTrustedMap[_caller] || _vaultToUserMap[_caller] != address(0) || DOLOMITE_MARGIN().owner() == _caller) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _tokenConverterToIsTrustedMap[_caller]
+                || _vaultToUserMap[_caller] != address(0)
+                || DOLOMITE_MARGIN().owner() == _caller,
+            _FILE,
+            "Caller is not a authorized",
+            _caller
+        );
+        _;
+    }
 
     // ===========================================================
     // ======================= Constructors ======================
@@ -140,7 +157,7 @@ abstract contract FreezableIsolationModeVaultFactory is
         address _conversionToken
     )
         external
-        requireIsTokenConverterOrVault(msg.sender)
+        requireIsTokenConverterOrVaultOrDolomiteMarginOwner(msg.sender)
         requireIsVault(_vault)
     {
         address expectedConversionToken = _accountInfoToOutputTokenMap[_vault][_accountNumber];
@@ -214,9 +231,9 @@ abstract contract FreezableIsolationModeVaultFactory is
     function _ownerSetExecutionFee(
         uint256 _executionFee
     ) internal {
-        if (_executionFee <= _MAX_EXECUTION_FEE) { /* FOR COVERAGE TESTING */ }
+        if (_executionFee <= MAX_EXECUTION_FEE) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _executionFee <= _MAX_EXECUTION_FEE,
+            _executionFee <= MAX_EXECUTION_FEE,
             _FILE,
             "Invalid execution fee"
         );

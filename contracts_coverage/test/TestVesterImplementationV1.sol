@@ -21,24 +21,24 @@
 pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { VesterImplementation } from "../external/liquidityMining/VesterImplementation.sol";
+import { VesterImplementationV1 } from "../external/liquidityMining/VesterImplementationV1.sol";
 import { IWETH } from "../protocol/interfaces/IWETH.sol";
 
 
 /**
- * @title   TestVesterImplementation
+ * @title   TestVesterImplementationV1
  * @author  Dolomite
  *
  * @notice  Test implementation for exposing areas for coverage testing
  */
-contract TestVesterImplementation is VesterImplementation {
+contract TestVesterImplementationV1 is VesterImplementationV1 {
 
     constructor(
         address _dolomiteMargin,
         address _dolomiteRegistry,
         IWETH _weth,
         IERC20 _arb
-    ) VesterImplementation(
+    ) VesterImplementationV1(
         _dolomiteMargin,
         _dolomiteRegistry,
         _weth,

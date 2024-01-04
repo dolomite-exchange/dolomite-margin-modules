@@ -57,6 +57,13 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
 
+    // =================================================
+    // ================ Field Variables ================
+    // =================================================
+
+    /// @dev This is unused, but required to keep the storage slots the same
+    uint256 private _reentrancyGuard;
+
     // ===================================================
     // ==================== Modifiers ====================
     // ===================================================
@@ -81,28 +88,20 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         _;
     }
 
+    modifier requireNotLiquidatable(uint256 _accountNumber) {
+        _requireNotLiquidatable(_accountNumber);
+        _;
+    }
+
     /**
      * @dev Prevents a contract from calling itself, directly or indirectly. Calling a `nonReentrant` function from
      *      another `nonReentrant` function is not supported. It is possible to prevent this from happening by making
      *      the `nonReentrant` function external, and making it call a `private` function that does the actual work.
      */
     modifier nonReentrant() {
-        // @audit:  This MUST stay as `value != _ENTERED` otherwise it will DOS old vaults that don't have the
-        //          `initialize` fix
-        if (_getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
-            _FILE,
-            "Reentrant call"
-        );
-
-        // Any calls to nonReentrant after this point will fail
-        _setUint256(_REENTRANCY_GUARD_SLOT, _ENTERED);
-
+        _nonReentrantBefore();
         _;
-
-        // By storing the original value once again, a refund is triggered (see https://eips.ethereum.org/EIPS/eip-2200)
-        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+        _nonReentrantAfter();
     }
 
     // ===================================================
@@ -110,14 +109,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     // ===================================================
 
     function initialize() external {
-        if (_getUint256(_IS_INITIALIZED_SLOT) == 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _getUint256(_IS_INITIALIZED_SLOT) == 0,
-            _FILE,
-            "Already initialized"
-        );
-
-        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+        _initialize();
     }
 
     function depositIntoVaultForDolomiteMargin(
@@ -248,6 +240,35 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _borrowAccountNumber,
             _marketId,
             _balanceCheckFlag
+        );
+    }
+
+    function openBorrowPositionAndSwapExactInputForOutput(
+        uint256 _fromAccountNumber,
+        uint256 _borrowAccountNumber,
+        uint256[] calldata _marketIdsPath,
+        uint256 _inputAmountWei,
+        uint256 _minOutputAmountWei,
+        IGenericTraderProxyV1.TraderParam[] calldata _tradersPath,
+        IDolomiteMargin.AccountInfo[] calldata _makerAccounts,
+        IGenericTraderProxyV1.UserConfig calldata _userConfig
+    )
+        external
+        payable
+        nonReentrant
+        onlyVaultOwnerOrConverter(msg.sender)
+    {
+        _checkMsgValue();
+        _openBorrowPosition(_fromAccountNumber, _borrowAccountNumber, /* _amountWei = */ 0);
+        _addCollateralAndSwapExactInputForOutput(
+            _fromAccountNumber,
+            _borrowAccountNumber,
+            _marketIdsPath,
+            _inputAmountWei,
+            _minOutputAmountWei,
+            _tradersPath,
+            _makerAccounts,
+            _userConfig
         );
     }
 
@@ -386,6 +407,17 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
 
     // ============ Internal Functions ============
 
+    function _initialize() internal virtual {
+        if (_getUint256(_IS_INITIALIZED_SLOT) == 0) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _getUint256(_IS_INITIALIZED_SLOT) == 0,
+            _FILE,
+            "Already initialized"
+        );
+
+        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
+    }
+
     function _depositIntoVaultForDolomiteMargin(
         uint256 _toAccountNumber,
         uint256 _amountWei
@@ -487,7 +519,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _marketId,
             _amountWei,
             _balanceCheckFlag,
-            /* _checkAllowableCollateralMarketFlag =  */ true
+            /* _checkAllowableCollateralMarketFlag =  */ true,
+            /* _bypassAccountNumberCheck = */ false
         );
     }
 
@@ -523,7 +556,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _toAccountNumber,
             _marketId,
             _amountWei,
-            _balanceCheckFlag
+            _balanceCheckFlag,
+            /* _bypassAccountNumberCheck = */ false
         );
     }
 
@@ -615,7 +649,8 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _tradersPath,
             _makerAccounts,
             _userConfig,
-            /* _checkOutputMarketIdFlag = */ true
+            /* _checkOutputMarketIdFlag = */ true,
+            /* _bypassAccountNumberCheck = */ false
         );
     }
 
@@ -670,6 +705,13 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
         );
     }
 
+    function _requireNotLiquidatable(uint256 _accountNumber) internal view {
+        IsolationModeTokenVaultV1ActionsImpl.checkIsLiquidatable(
+            /* _vault = */ this,
+            _accountNumber
+        );
+    }
+
     /**
      *  Called within `swapExactInputForOutput` to check that the caller send the right amount of ETH with the
      *  transaction.
@@ -681,5 +723,28 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
             _FILE,
             "Cannot send ETH"
         );
+    }
+
+    // ===========================================
+    // ============ Private Functions ============
+    // ===========================================
+
+    function _nonReentrantBefore() private {
+        // @notice:  This MUST stay as `value != _ENTERED` otherwise it will DOS old vaults that don't have the
+        //          `initialize` fix
+        if (_getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
+            _FILE,
+            "Reentrant call"
+        );
+
+        // Any calls to nonReentrant after this point will fail
+        _setUint256(_REENTRANCY_GUARD_SLOT, _ENTERED);
+    }
+
+    function _nonReentrantAfter() private {
+        // By storing the original value once again, a refund is triggered (see https://eips.ethereum.org/EIPS/eip-2200)
+        _setUint256(_REENTRANCY_GUARD_SLOT, _NOT_ENTERED);
     }
 }

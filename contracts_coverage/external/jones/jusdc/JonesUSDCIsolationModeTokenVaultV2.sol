@@ -22,14 +22,11 @@ pragma solidity ^0.8.9;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { JonesUSDCIsolationModeTokenVaultV1 } from "./JonesUSDCIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { Require } from "../../../protocol/lib/Require.sol";
-import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
 import { IJonesUSDCFarm } from "../../interfaces/jones/IJonesUSDCFarm.sol";
 import { IJonesUSDCIsolationModeVaultFactory } from "../../interfaces/jones/IJonesUSDCIsolationModeVaultFactory.sol";
-import { IJonesUSDCRegistry } from "../../interfaces/jones/IJonesUSDCRegistry.sol";
-import { IJonesWhitelistController } from "../../interfaces/jones/IJonesWhitelistController.sol";
 import { IsolationModeTokenVaultV1 } from "../../proxies/abstract/IsolationModeTokenVaultV1.sol";
-import { JonesUSDCIsolationModeTokenVaultV1 } from "./JonesUSDCIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 
 
 /**
