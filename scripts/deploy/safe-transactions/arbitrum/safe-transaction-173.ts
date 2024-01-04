@@ -1,9 +1,12 @@
+import { parseEther } from 'ethers/lib/utils';
+import { getTWAPPriceOracleConstructorParams } from '../../../../src/utils/constructors/oracles';
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
 import { Network } from '../../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,
+  deployContractAndSave,
   EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
@@ -11,24 +14,33 @@ import {
 
 /**
  * This script encodes the following transactions:
- * - Revokes confirmations on old transactions that will not be executed any more.
+ * - Deploys new DPX oracle and lowers limit to 1,000 DPX
  */
 async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const startId = 290;
-  const count = 86; // 375 final ID
-  const transactionIds = [
-    ...Array(count).fill(0).map((_, i) => startId + i),
-  ];
-  const transactions = [
+  const dpxPriceOracle = await deployContractAndSave(
+    core.config.networkNumber,
+    'TWAPPriceOracle',
+    getTWAPPriceOracleConstructorParams(core, core.tokens.dpx!, [core.camelotEcosystem!.dpxWethV3Pool]),
+    'DPXTWAPPriceOracleV1',
+  );
+
+  const transactions: EncodedTransaction[] = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core,
-      'delayedMultiSig',
-      'executeMultipleTransactions',
-      [transactionIds],
+      'dolomiteMargin',
+      'ownerSetPriceOracle',
+      [core.marketIds.dpx!, dpxPriceOracle],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'dolomiteMargin',
+      'ownerSetMaxWei',
+      [core.marketIds.dpx!, parseEther('1000')],
     ),
   ];
 

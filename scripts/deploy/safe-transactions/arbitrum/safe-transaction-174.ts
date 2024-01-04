@@ -1,4 +1,3 @@
-import { sleep } from '@openzeppelin/upgrades';
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
 import { Network } from '../../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../test/utils/setup';
@@ -12,34 +11,41 @@ import {
 
 /**
  * This script encodes the following transactions:
- * - Revokes confirmations on old transactions that will not be executed anymore.
+ * - Executes #167 and #168
  */
 async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const startId = 252;
-  const count = 35; // 286 final ID
-  const transactions: EncodedTransaction[] = [];
-  for (let i = 0; i < count; i++) {
-    const id = startId + i;
-
-    const transaction = await core.delayedMultiSig.transactions(id);
-    if (transaction[3] || typeof transaction[3] !== 'boolean') {
-      return Promise.reject(new Error(`Transaction was executed: ${id}`));
+  const startId = 290;
+  const count = 86; // 375 final ID
+  const transactionIds = [
+    ...Array(count).fill(0).map((_, i) => startId + i),
+  ];
+  for (let i = 0; i < transactionIds.length; i++) {
+    const transactionId = transactionIds[i];
+    if (transactionId === 302) {
+      transactionIds[i] = 377;
+    } else {
+      const transaction = await core.delayedMultiSig.transactions(transactionId);
+      const isConfirmed = await core.delayedMultiSig.isConfirmed(transactionId);
+      if (transaction[3]) {
+        return Promise.reject(new Error(`Transaction already executed: ${transactionId}`));
+      } else if (!isConfirmed) {
+        return Promise.reject(new Error(`Transaction not confirmed: ${transactionId}`));
+      }
     }
-
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        core,
-        'delayedMultiSig',
-        'revokeConfirmation',
-        [id],
-      ),
-    );
-    await sleep(100);
   }
+
+  const transactions = [
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core,
+      'delayedMultiSig',
+      'executeMultipleTransactions',
+      [transactionIds],
+    ),
+  ];
 
   return {
     transactions,

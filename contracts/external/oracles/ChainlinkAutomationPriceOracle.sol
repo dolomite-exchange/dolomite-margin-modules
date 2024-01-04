@@ -48,6 +48,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     uint256 public upperEdge;
     uint256 public lowerEdge;
     address public chainlinkRegistry;
+    address public forwarder;
 
     uint256 public exchangeRateNumerator;
     uint256 public exchangeRateDenominator;
@@ -86,6 +87,19 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         _ownerSetChainlinkRegistry(_chainlinkRegistry);
     }
 
+    function ownerSetForwarder(address _forwarder) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetForwarder(_forwarder);
+    }
+
+    function initializeForwarder(uint256 _upkeepId) external {
+        Require.that(
+            forwarder == address(0),
+            _FILE,
+            "Forwarder already initialized"
+        );
+        _ownerSetForwarder(IChainlinkRegistry(chainlinkRegistry).getForwarder(_upkeepId));
+    }
+
     function checkUpkeep(
         bytes calldata /* checkData */
     )
@@ -105,9 +119,9 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
 
     function performUpkeep(bytes calldata /* performData */) external {
         Require.that(
-            msg.sender == chainlinkRegistry,
+            msg.sender == forwarder,
             _FILE,
-            "Caller is not Chainlink"
+            "Caller is not forwarder"
         );
         Require.that(
             _checkUpkeepConditions(),
@@ -121,13 +135,13 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     // ============================ Internal Functions ============================
 
     function _ownerSetHeartbeat(uint256 _heartbeat) internal {
-        emit HeartbeatSet(_heartbeat);
         heartbeat = _heartbeat;
+        emit HeartbeatSet(_heartbeat);
     }
 
     function _ownerSetGracePeriod(uint256 _gracePeriod) internal {
-        emit GracePeriodSet(_gracePeriod);
         gracePeriod = _gracePeriod;
+        emit GracePeriodSet(_gracePeriod);
     }
 
     function _ownerSetUpperEdge(uint256 _upperEdge) internal {
@@ -136,8 +150,8 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
             _FILE,
             "Invalid upper edge"
         );
-        emit UpperEdgeSet(_upperEdge);
         upperEdge = _upperEdge;
+        emit UpperEdgeSet(_upperEdge);
     }
 
     function _ownerSetLowerEdge(uint256 _lowerEdge) internal {
@@ -146,8 +160,8 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
             _FILE,
             "Invalid lower edge"
         );
-        emit LowerEdgeSet(_lowerEdge);
         lowerEdge = _lowerEdge;
+        emit LowerEdgeSet(_lowerEdge);
     }
 
     function _ownerSetChainlinkRegistry(address _chainlinkRegistry) internal {
@@ -157,15 +171,19 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
             "Invalid chainlink registry"
         );
 
-        bytes memory returnData = ValidationLib.callAndCheckSuccess(
-            _chainlinkRegistry,
-            IChainlinkRegistry(_chainlinkRegistry).LINK.selector,
-            bytes("")
-        );
-        abi.decode(returnData, (address));
-
-        emit ChainlinkRegistrySet(_chainlinkRegistry);
         chainlinkRegistry = _chainlinkRegistry;
+        emit ChainlinkRegistrySet(_chainlinkRegistry);
+    }
+
+    function _ownerSetForwarder(address _forwarder) internal {
+        Require.that(
+            _forwarder != address(0),
+            _FILE,
+            "Invalid forwarder"
+        );
+
+        forwarder = _forwarder;
+        emit ForwarderSet(_forwarder);
     }
 
     function _updateExchangeRateAndTimestamp() internal {

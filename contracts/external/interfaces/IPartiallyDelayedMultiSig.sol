@@ -98,4 +98,14 @@ interface IPartiallyDelayedMultiSig {
      * @return      The `Transaction` at the specified index
      */
     function transactions(uint256 index) external view returns (address, uint256, bytes memory, bool);
+
+    /**
+     * Returns the confirmation status of a transaction.
+     *
+     * @param  transactionId  Transaction ID.
+     * @return                Confirmation status.
+     */
+    function isConfirmed(
+        uint256 transactionId
+    ) external view returns (bool);
 }

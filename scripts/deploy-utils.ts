@@ -4,6 +4,7 @@ import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'eth
 import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs from 'fs';
 import { artifacts, network, run } from 'hardhat';
+import * as path from 'path';
 import {
   IChainlinkAggregator__factory,
   IDolomiteInterestSetter,
@@ -46,9 +47,20 @@ import {
 import { createContractWithLibrary, createContractWithName } from '../src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, ZERO_BI } from '../src/utils/no-deps-constants';
 import { CoreProtocol } from '../test/utils/setup';
-import deployments from './deployments.json';
 
 type ChainId = string;
+
+export const DEPLOYMENT_FILE_NAME = `${__dirname}/deployments.json`;
+export const CORE_DEPLOYMENT_FILE_NAME = path.resolve(__dirname, '../node_modules/@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json');
+
+function readAllDeploymentFiles(): Record<string, Record<ChainId, any>> {
+  const coreDeployments = JSON.parse(fs.readFileSync(CORE_DEPLOYMENT_FILE_NAME).toString());
+  const deployments = JSON.parse(fs.readFileSync(DEPLOYMENT_FILE_NAME).toString());
+  return {
+    ...coreDeployments,
+    ...deployments,
+  };
+}
 
 export async function verifyContract(
   address: string,
@@ -90,7 +102,7 @@ export async function deployContractAndSave(
     return Promise.reject(new Error(`Could not deploy after ${attempts} attempts!`));
   }
 
-  const fileBuffer = fs.readFileSync('./scripts/deployments.json');
+  const fileBuffer = fs.readFileSync(DEPLOYMENT_FILE_NAME);
 
   let file: Record<string, Record<ChainId, any>>;
   try {
@@ -142,6 +154,7 @@ export async function deployContractAndSave(
 export function getTokenVaultLibrary(core: CoreProtocol): Record<string, string> {
   const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
   const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV2';
+  const deployments = readAllDeploymentFiles();
   return {
     [libraryName]: deployments[deploymentName][core.config.network as '42161'].address,
   };
@@ -526,16 +539,15 @@ async function getReadableArg(
   let specialName: string = '';
   if (inputParamType.type === 'address') {
     const chainId = core.config.network;
-    const freshDeployments = JSON.parse(fs.readFileSync(`${__dirname}/deployments.json`).toString());
-    Object.keys(freshDeployments).forEach(key => {
-      if ((freshDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
+    const allDeployments = readAllDeploymentFiles();
+    Object.keys(allDeployments).forEach(key => {
+      if ((allDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
         specialName = ` (${key})`;
       }
     });
     if (!specialName) {
-      const coreDeployments = JSON.parse(fs.readFileSync(`${__dirname}/deployments.json`).toString());
-      Object.keys(coreDeployments).forEach(key => {
-        if ((coreDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
+      Object.keys(allDeployments).forEach(key => {
+        if ((allDeployments as any)[key][chainId]?.address.toLowerCase() === arg.toLowerCase()) {
           specialName = ` (${key})`;
         }
       });
@@ -689,8 +701,6 @@ export async function prettyPrintEncodeAddMarket(
   );
   return transactions;
 }
-
-export const DEPLOYMENT_FILE_NAME = './scripts/deployments.json';
 
 export function writeDeploymentFile(
   fileContent: Record<string, Record<ChainId, any>>,

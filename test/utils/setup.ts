@@ -204,7 +204,7 @@ import {
   DPT_R_ETH_JUN_2025_MAP,
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
-  DPX_MAP,
+  DPX_MAP, DPX_WETH_V3_POOL_MAP,
   DYT_GLP_2024_MAP,
   ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP,
   ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP,
@@ -330,6 +330,7 @@ export interface AtlasEcosystem {
 }
 
 export interface CamelotEcosystem {
+  dpxWethV3Pool: IAlgebraV3Pool;
   grailUsdcV3Pool: IAlgebraV3Pool;
   grailWethV3Pool: IAlgebraV3Pool;
   sizeWethV3Pool: IAlgebraV3Pool;
@@ -1201,6 +1202,7 @@ async function createCamelotEcosystem(
   }
 
   return {
+    dpxWethV3Pool: getContract(DPX_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
     grailUsdcV3Pool: getContract(GRAIL_USDC_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
     grailWethV3Pool: getContract(GRAIL_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
     sizeWethV3Pool: getContract(SIZE_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),

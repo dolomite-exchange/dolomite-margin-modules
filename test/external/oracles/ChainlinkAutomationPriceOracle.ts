@@ -9,8 +9,8 @@ import {
   CustomTestVaultToken,
   TestChainlinkAutomationPriceOracle,
   TestChainlinkAutomationPriceOracle__factory,
+  TestChainlinkRegistry__factory,
 } from '../../../src/types';
-import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
 import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
@@ -24,6 +24,7 @@ import {
 } from '../../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
+const UPKEEP_ID = '123';
 
 describe('ChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
@@ -39,7 +40,12 @@ describe('ChainlinkAutomationPriceOracle', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[Network.ArbitrumOne]!, true);
+    const registry = await createContractWithAbi(
+      TestChainlinkRegistry__factory.abi,
+      TestChainlinkRegistry__factory.bytecode,
+      [OTHER_ADDRESS],
+    );
+    chainlinkRegistry = await impersonate(registry.address, true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
     token = await createTestVaultToken(core.tokens.usdc!);
@@ -168,13 +174,6 @@ describe('ChainlinkAutomationPriceOracle', () => {
       expect(await chainlinkAutomationPriceOracle.chainlinkRegistry()).to.eq(chainlinkRegistry.address);
     });
 
-    it('should fail if chainlinkRegistry is invalid', async () => {
-      await expectThrow(
-        chainlinkAutomationPriceOracle.connect(core.governance).ownerSetChainlinkRegistry(OTHER_ADDRESS),
-        `ValidationLib: Call to target failed <${OTHER_ADDRESS.toLowerCase()}>`,
-      );
-    });
-
     it('should fail when not called by owner', async () => {
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(core.hhUser1).ownerSetChainlinkRegistry(OTHER_ADDRESS),
@@ -186,6 +185,42 @@ describe('ChainlinkAutomationPriceOracle', () => {
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(core.governance).ownerSetChainlinkRegistry(ZERO_ADDRESS),
         'ChainlinkAutomationPriceOracle: Invalid chainlink registry',
+      );
+    });
+  });
+
+  describe('#ownerSetForwarder', () => {
+    it('should work normally', async () => {
+      await chainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(OTHER_ADDRESS);
+      expect(await chainlinkAutomationPriceOracle.forwarder()).to.eq(OTHER_ADDRESS);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        chainlinkAutomationPriceOracle.connect(core.hhUser1).ownerSetForwarder(OTHER_ADDRESS),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail when zero address is used', async () => {
+      await expectThrow(
+        chainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(ZERO_ADDRESS),
+        'ChainlinkAutomationPriceOracle: Invalid forwarder',
+      );
+    });
+  });
+
+  describe('#initializeForwarder', () => {
+    it('should work normally', async () => {
+      await chainlinkAutomationPriceOracle.connect(core.governance).initializeForwarder(UPKEEP_ID);
+      expect(await chainlinkAutomationPriceOracle.forwarder()).to.eq(OTHER_ADDRESS);
+    });
+
+    it('should fail when forwarder already initialized', async () => {
+      await chainlinkAutomationPriceOracle.connect(core.governance).initializeForwarder(UPKEEP_ID);
+      await expectThrow(
+        chainlinkAutomationPriceOracle.connect(core.hhUser1).initializeForwarder(UPKEEP_ID),
+        'ChainlinkAutomationPriceOracle: Forwarder already initialized',
       );
     });
   });

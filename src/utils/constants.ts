@@ -35,8 +35,8 @@ export const CHAINLINK_PRICE_ORACLE_MAP: Record<Network, string | undefined> = {
 };
 
 export const CHAINLINK_REGISTRY_MAP: Record<Network, string | undefined> = {
-  [Network.ArbitrumOne]: '0x75c0530885F385721fddA23C539AF3701d6183D4',
-  [Network.ArbitrumGoerli]: '0x291093864bafc9aA517eF90ce954dD7D95D68C80',
+  [Network.ArbitrumOne]: '0x37D9dC70bfcd8BC77Ec2858836B923c560E891D1',
+  [Network.ArbitrumGoerli]: '0xaB9718E1DC7BD61Bd3440Fb771CC23DA0C0181a1',
 };
 
 export const DAI_MAP: Record<Network, TokenWithMarketId> = {
@@ -308,6 +308,11 @@ export const ATLAS_SI_TOKEN_MAP: Record<Network, string | undefined> = {
 
 export const BN_GMX_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0x35247165119B69A40edD5304969560D0ef486921',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const DPX_WETH_V3_POOL_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x59a327d948db1810324a04d69cbe9fe9884f8f28',
   [Network.ArbitrumGoerli]: undefined,
 };
 

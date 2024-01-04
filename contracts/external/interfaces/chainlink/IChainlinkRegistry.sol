@@ -29,10 +29,8 @@ pragma solidity ^0.8.9;
 interface IChainlinkRegistry {
 
     /**
-     * @notice  Returns the LINK token address
-     *
-     * @return  LINK token address
-     *
+     * @param  _upkeepId    The ID of the upkeep to get the forwarder for
+     * @return              The address of the Chainlink forwarder for the given job ID
      */
-    function LINK() external view returns (address);
+    function getForwarder(uint256 _upkeepId) external view returns (address);
 }

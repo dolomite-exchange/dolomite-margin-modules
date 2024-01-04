@@ -47,6 +47,8 @@ interface IChainlinkAutomationPriceOracle is IDolomitePriceOracle, IChainlinkAut
 
     event ChainlinkRegistrySet(address _chainlinkRegistry);
 
+    event ForwarderSet(address _forwarder);
+
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================
@@ -80,6 +82,22 @@ interface IChainlinkAutomationPriceOracle is IDolomitePriceOracle, IChainlinkAut
      * @param  _chainlinkRegistry   The new address of the chainlink registry
      */
     function ownerSetChainlinkRegistry(address _chainlinkRegistry) external;
+
+    /**
+     *
+     * @param  _forwarder   The new address of the chainlink forwarder for interacting with this contract
+     */
+    function ownerSetForwarder(address _forwarder) external;
+
+    // ========================================================
+    // ================= Other Write Functions ================
+    // ========================================================
+
+    /**
+     *
+     * @param  _upkeepId   The ID of the upkeep to initialize the forwarder for
+     */
+    function initializeForwarder(uint256 _upkeepId) external;
 
     // ========================================================
     // =================== Getter Functions ===================
