@@ -31,30 +31,6 @@ async function getGlpVaultTransactions(
       [newGlpUserVaultImplementationAddress],
     ),
   );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'liquidatorAssetRegistry',
-      'ownerAddLiquidatorToAssetWhitelist',
-      [
-        await core.dolomiteMargin.getMarketIdByTokenAddress(core.gmxEcosystem!.live.dGlp.address),
-        core.liquidatorProxyV4!.address,
-      ],
-    ),
-  );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'liquidatorAssetRegistry',
-      'ownerRemoveLiquidatorFromAssetWhitelist',
-      [
-        await core.dolomiteMargin.getMarketIdByTokenAddress(core.gmxEcosystem!.live.dGlp.address),
-        liquidatorProxyV4OldAddress,
-      ],
-    ),
-  );
   return transactions;
 }
 
@@ -78,24 +54,6 @@ async function getIsolationModeTokenVaultTransactions(
       [userVaultImplementationAddress],
     ),
   );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'liquidatorAssetRegistry',
-      'ownerAddLiquidatorToAssetWhitelist',
-      [marketId, core.liquidatorProxyV4!.address],
-    ),
-  );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'liquidatorAssetRegistry',
-      'ownerRemoveLiquidatorFromAssetWhitelist',
-      [marketId, liquidatorProxyV4OldAddress],
-    ),
-  );
   return transactions;
 }
 
@@ -113,137 +71,85 @@ async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const dolomiteRegistryImplementationAddressV6 = await deployContractAndSave(
-    Number(network),
-    'DolomiteRegistryImplementation',
+  await deployContractAndSave(
+    Number(core.config.network),
+    'IsolationModeTokenVaultV1ActionsImpl',
     [],
-    'DolomiteRegistryImplementationV6',
-  );
-  const eventEmitterRegistryImplementationV2Address = await deployContractAndSave(
-    Number(network),
-    'EventEmitterRegistry',
-    [],
-    'EventEmitterRegistryImplementationV2',
+    'IsolationModeTokenVaultV1ActionsImplV3',
   );
   const libraries = getTokenVaultLibrary(core);
   const newGlpUserVaultImplementationAddress = await deployContractAndSave(
     Number(core.config.network),
     'GLPIsolationModeTokenVaultV2',
     [],
-    'GLPIsolationModeTokenVaultV4',
+    'GLPIsolationModeTokenVaultV5',
     libraries,
   );
   const plvGlpUserVaultImplementationAddress = await deployContractAndSave(
     Number(core.config.network),
     'PlutusVaultGLPIsolationModeTokenVaultV1',
     [],
-    'PlutusVaultGLPIsolationModeTokenVaultV3',
+    'PlutusVaultGLPIsolationModeTokenVaultV4',
     libraries,
   );
   const jonesUsdcUserVaultImplementationAddress = await deployContractAndSave(
     Number(core.config.network),
     'JonesUSDCIsolationModeTokenVaultV2',
     [],
-    'JonesUSDCIsolationModeTokenVaultV5',
+    'JonesUSDCIsolationModeTokenVaultV6',
     libraries,
   );
   const ptGlpUserVaultImplementationAddress = await deployContractAndSave(
     Number(core.config.network),
     'PendlePtGLP2024IsolationModeTokenVaultV1',
     [],
-    'PendlePtGLP2024IsolationModeTokenVaultV3',
+    'PendlePtGLP2024IsolationModeTokenVaultV4',
     libraries,
   );
   const ytGlpUserVaultImplementationAddress = await deployContractAndSave(
     Number(core.config.network),
     'PendleYtGLP2024IsolationModeTokenVaultV1',
     [],
-    'PendleYtGLP2024IsolationModeTokenVaultV3',
+    'PendleYtGLP2024IsolationModeTokenVaultV4',
     libraries,
   );
   const ptREthUserVaultImplementationAddress = await deployContractAndSave(
     Number(core.config.network),
     'PendlePtIsolationModeTokenVaultV1',
     [],
-    'PendlePtREthJun2025IsolationModeTokenVaultV3',
+    'PendlePtREthJun2025IsolationModeTokenVaultV4',
     libraries,
   );
   const ptWstEthJun2024UserVaultImplementationAddress = await deployContractAndSave(
     Number(core.config.network),
     'PendlePtIsolationModeTokenVaultV1',
     [],
-    'PendlePtWstEthJun2024IsolationModeTokenVaultV3',
+    'PendlePtWstEthJun2024IsolationModeTokenVaultV4',
     libraries,
   );
   const ptWstEthJun2025UserVaultImplementationAddress = await deployContractAndSave(
     Number(core.config.network),
     'PendlePtIsolationModeTokenVaultV1',
     [],
-    'PendlePtWstEthJun2025IsolationModeTokenVaultV3',
+    'PendlePtWstEthJun2025IsolationModeTokenVaultV4',
     libraries,
   );
   const vArbUserVaultImplementationAddress = await deployContractAndSave(
     Number(core.config.network),
     'ARBIsolationModeTokenVaultV1',
     [],
-    'ARBIsolationModeTokenVaultV5',
+    'ARBIsolationModeTokenVaultV6',
     libraries,
   );
   const gmxUserVaultImplementationAddress = await deployContractAndSave(
     Number(core.config.network),
     'GMXIsolationModeTokenVaultV1',
     [],
-    'GMXIsolationModeTokenVaultV3',
+    'GMXIsolationModeTokenVaultV4',
     libraries,
   );
 
   const transactions: EncodedTransaction[] = [];
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [genericTraderProxyV1OldAddress, false],
-    ),
-  );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [liquidatorProxyV4OldAddress, false],
-    ),
-  );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [core.genericTraderProxy!.address, true],
-    ),
-  );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'dolomiteMargin',
-      'ownerSetGlobalOperator',
-      [core.liquidatorProxyV4!.address, true],
-    ),
-  );
-  transactions.push(
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core,
-      'dolomiteRegistry',
-      'ownerSetGenericTraderProxy',
-      [core.genericTraderProxy!.address],
-    ),
-  );
-
   transactions.push(
     ...await getGlpVaultTransactions(core, newGlpUserVaultImplementationAddress),
   );

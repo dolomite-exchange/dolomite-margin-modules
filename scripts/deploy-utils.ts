@@ -153,7 +153,7 @@ export async function deployContractAndSave(
 
 export function getTokenVaultLibrary(core: CoreProtocol): Record<string, string> {
   const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
-  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV2';
+  const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV3';
   const deployments = readAllDeploymentFiles();
   return {
     [libraryName]: deployments[deploymentName][core.config.network as '42161'].address,
@@ -298,7 +298,7 @@ async function prettyPrintAndVerifyContract(
 
   if (process.env.SKIP_VERIFICATION !== 'true' && network.name !== 'hardhat') {
     console.log('Sleeping for 5s to wait for the transaction to be indexed by Etherscan...');
-    await sleep(5000);
+    await sleep(3000);
     const sourceName = (await artifacts.readArtifact(contractName)).sourceName;
     await verifyContract(contract.address, [...args], `${sourceName}:${contractName}`);
     file[contractRename][chainId].isVerified = true;
