@@ -59,7 +59,7 @@ describe('GmxV2Registry', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
-      GMX_V2_EXECUTION_FEE
+      GMX_V2_EXECUTION_FEE,
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,
@@ -146,7 +146,7 @@ describe('GmxV2Registry', () => {
         allowableMarketIds,
         core.gmxEcosystemV2!.gmxEthUsdMarketToken,
         userVaultImplementation,
-        GMX_V2_EXECUTION_FEE
+        GMX_V2_EXECUTION_FEE,
       );
       await expectThrow(
         gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(
@@ -197,7 +197,7 @@ describe('GmxV2Registry', () => {
         allowableMarketIds,
         core.gmxEcosystemV2!.gmxEthUsdMarketToken,
         userVaultImplementation,
-        GMX_V2_EXECUTION_FEE
+        GMX_V2_EXECUTION_FEE,
       );
       await expectThrow(
         gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(

@@ -24,7 +24,6 @@ import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IChainlinkAutomationPriceOracle } from "../interfaces/chainlink/IChainlinkAutomationPriceOracle.sol";
 import { IChainlinkRegistry } from "../interfaces/chainlink/IChainlinkRegistry.sol";
-import { ValidationLib } from "../lib/ValidationLib.sol";
 
 
 /**

@@ -21,16 +21,16 @@ pragma solidity ^0.8.9;
 
 import { IDolomiteMargin } from "../../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../../protocol/interfaces/IDolomiteStructs.sol";
+import { BitsLib } from "../../../../protocol/lib/BitsLib.sol";
+import { DecimalLib } from "../../../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../../protocol/lib/TypesLib.sol";
+import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
 import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1 } from "../../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../../interfaces/IIsolationModeVaultFactory.sol";
 import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
 import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
-import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
-import { BitsLib } from "../../../../protocol/lib/BitsLib.sol";
-import { DecimalLib } from "../../../../protocol/lib/DecimalLib.sol";
 import { InterestIndexLib } from "../../../lib/InterestIndexLib.sol";
 
 
@@ -592,6 +592,95 @@ library IsolationModeTokenVaultV1ActionsImpl {
         );
     }
 
+    function _getAdjustedAccountValues(
+        IDolomiteMargin _dolomiteMargin,
+        BaseLiquidatorProxy.MarketInfo[] memory _marketInfos,
+        IDolomiteStructs.AccountInfo memory _account,
+        uint256[] memory _marketIds
+    )
+        private
+        view
+        returns (
+            IDolomiteStructs.MonetaryValue memory supplyValue,
+            IDolomiteStructs.MonetaryValue memory borrowValue
+        )
+    {
+        return _getAccountValues(
+            _dolomiteMargin,
+            _marketInfos,
+            _account,
+            _marketIds,
+            /* _adjustForMarginPremiums = */ true
+        );
+    }
+
+    function _getAccountValues(
+        IDolomiteMargin _dolomiteMargin,
+        BaseLiquidatorProxy.MarketInfo[] memory _marketInfos,
+        IDolomiteStructs.AccountInfo memory _account,
+        uint256[] memory _marketIds,
+        bool _adjustForMarginPremiums
+    )
+        private
+        view
+        returns (
+            IDolomiteStructs.MonetaryValue memory,
+            IDolomiteStructs.MonetaryValue memory
+        )
+    {
+        IDolomiteStructs.MonetaryValue memory supplyValue = IDolomiteStructs.MonetaryValue(0);
+        IDolomiteStructs.MonetaryValue memory borrowValue = IDolomiteStructs.MonetaryValue(0);
+        for (uint256 i; i < _marketIds.length; ++i) {
+            IDolomiteStructs.Par memory par = _dolomiteMargin.getAccountPar(_account, _marketIds[i]);
+            BaseLiquidatorProxy.MarketInfo memory marketInfo = _binarySearch(_marketInfos, _marketIds[i]);
+            IDolomiteStructs.Wei memory userWei = InterestIndexLib.parToWei(par, marketInfo.index);
+            uint256 assetValue = userWei.value * marketInfo.price.value;
+            IDolomiteStructs.Decimal memory marginPremium = DecimalLib.one();
+            if (_adjustForMarginPremiums) {
+                marginPremium = DecimalLib.onePlus(_dolomiteMargin.getMarketMarginPremium(_marketIds[i]));
+            }
+            if (userWei.sign) {
+                supplyValue.value = supplyValue.value + DecimalLib.div(assetValue, marginPremium);
+            } else {
+                borrowValue.value = borrowValue.value + DecimalLib.mul(assetValue, marginPremium);
+            }
+        }
+        return (supplyValue, borrowValue);
+    }
+
+    function _getMarketInfos(
+        IDolomiteMargin _dolomiteMargin,
+        uint256[] memory _solidMarketIds,
+        uint256[] memory _liquidMarketIds
+    ) private view returns (BaseLiquidatorProxy.MarketInfo[] memory) {
+        uint[] memory marketBitmaps = BitsLib.createBitmaps(_dolomiteMargin.getNumMarkets());
+        uint256 marketsLength = 0;
+        marketsLength = _addMarketsToBitmap(_solidMarketIds, marketBitmaps, marketsLength);
+        marketsLength = _addMarketsToBitmap(_liquidMarketIds, marketBitmaps, marketsLength);
+
+        uint256 counter = 0;
+        BaseLiquidatorProxy.MarketInfo[] memory marketInfos = new BaseLiquidatorProxy.MarketInfo[](marketsLength);
+        for (uint256 i; i < marketBitmaps.length && counter != marketsLength; ++i) {
+            uint256 bitmap = marketBitmaps[i];
+            while (bitmap != 0) {
+                uint256 nextSetBit = BitsLib.getLeastSignificantBit(bitmap);
+                uint256 marketId = BitsLib.getMarketIdFromBit(i, nextSetBit);
+
+                marketInfos[counter++] = BaseLiquidatorProxy.MarketInfo({
+                    marketId: marketId,
+                    price: _dolomiteMargin.getMarketPrice(marketId),
+                    index: _dolomiteMargin.getMarketCurrentIndex(marketId)
+                });
+
+                // unset the set bit
+                bitmap = BitsLib.unsetBit(bitmap, nextSetBit);
+            }
+        }
+
+        return marketInfos;
+    }
+
+
     function _checkFromAccountNumberIsZero(uint256 _fromAccountNumber) private pure {
         Require.that(
             _fromAccountNumber == 0,
@@ -624,91 +713,6 @@ library IsolationModeTokenVaultV1ActionsImpl {
         }
     }
 
-    function _getAdjustedAccountValues(
-        IDolomiteMargin _dolomiteMargin,
-        BaseLiquidatorProxy.MarketInfo[] memory _marketInfos,
-        IDolomiteStructs.AccountInfo memory _account,
-        uint256[] memory _marketIds
-    )
-    internal
-    view
-    returns (
-        IDolomiteStructs.MonetaryValue memory supplyValue,
-        IDolomiteStructs.MonetaryValue memory borrowValue
-    )
-    {
-        return _getAccountValues(
-            _dolomiteMargin,
-            _marketInfos,
-            _account,
-            _marketIds,
-            /* _adjustForMarginPremiums = */ true
-        );
-    }
-
-    function _getAccountValues(
-        IDolomiteMargin _dolomiteMargin,
-        BaseLiquidatorProxy.MarketInfo[] memory _marketInfos,
-        IDolomiteStructs.AccountInfo memory _account,
-        uint256[] memory _marketIds,
-        bool _adjustForMarginPremiums
-    )
-        private
-        view
-        returns (
-            IDolomiteStructs.MonetaryValue memory supplyValue,
-            IDolomiteStructs.MonetaryValue memory borrowValue
-        )
-    {
-        for (uint256 i; i < _marketIds.length; ++i) {
-            IDolomiteStructs.Par memory par = _dolomiteMargin.getAccountPar(_account, _marketIds[i]);
-            BaseLiquidatorProxy.MarketInfo memory marketInfo = _binarySearch(_marketInfos, _marketIds[i]);
-            IDolomiteStructs.Wei memory userWei = InterestIndexLib.parToWei(par, marketInfo.index);
-            uint256 assetValue = userWei.value * marketInfo.price.value;
-            IDolomiteStructs.Decimal memory marginPremium = DecimalLib.one();
-            if (_adjustForMarginPremiums) {
-                marginPremium = DecimalLib.onePlus(_dolomiteMargin.getMarketMarginPremium(_marketIds[i]));
-            }
-            if (userWei.sign) {
-                supplyValue.value = supplyValue.value + DecimalLib.div(assetValue, marginPremium);
-            } else {
-                borrowValue.value = borrowValue.value + DecimalLib.mul(assetValue, marginPremium);
-            }
-        }
-    }
-
-    function _getMarketInfos(
-        IDolomiteMargin _dolomiteMargin,
-        uint256[] memory _solidMarketIds,
-        uint256[] memory _liquidMarketIds
-    ) internal view returns (BaseLiquidatorProxy.MarketInfo[] memory) {
-        uint[] memory marketBitmaps = BitsLib.createBitmaps(_dolomiteMargin.getNumMarkets());
-        uint256 marketsLength = 0;
-        marketsLength = _addMarketsToBitmap(_solidMarketIds, marketBitmaps, marketsLength);
-        marketsLength = _addMarketsToBitmap(_liquidMarketIds, marketBitmaps, marketsLength);
-
-        uint256 counter = 0;
-        BaseLiquidatorProxy.MarketInfo[] memory marketInfos = new BaseLiquidatorProxy.MarketInfo[](marketsLength);
-        for (uint256 i; i < marketBitmaps.length && counter != marketsLength; ++i) {
-            uint256 bitmap = marketBitmaps[i];
-            while (bitmap != 0) {
-                uint256 nextSetBit = BitsLib.getLeastSignificantBit(bitmap);
-                uint256 marketId = BitsLib.getMarketIdFromBit(i, nextSetBit);
-
-                marketInfos[counter++] = BaseLiquidatorProxy.MarketInfo({
-                    marketId: marketId,
-                    price: _dolomiteMargin.getMarketPrice(marketId),
-                    index: _dolomiteMargin.getMarketCurrentIndex(marketId)
-                });
-
-                // unset the set bit
-                bitmap = BitsLib.unsetBit(bitmap, nextSetBit);
-            }
-        }
-
-        return marketInfos;
-    }
-
     function _addMarketsToBitmap(
         uint256[] memory _markets,
         uint256[] memory _bitmaps,
@@ -726,7 +730,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
     function _binarySearch(
         BaseLiquidatorProxy.MarketInfo[] memory _markets,
         uint256 _marketId
-    ) internal pure returns (BaseLiquidatorProxy.MarketInfo memory) {
+    ) private pure returns (BaseLiquidatorProxy.MarketInfo memory) {
         return _binarySearch(
             _markets,
             /* _beginInclusive = */ 0,
@@ -772,7 +776,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _borrowValue,
         IDolomiteStructs.Decimal memory _ratio
     )
-        internal
+        private
         pure
         returns (bool)
     {

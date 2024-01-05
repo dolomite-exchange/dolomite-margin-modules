@@ -26,9 +26,9 @@ import { DecimalLib } from "../../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
-
 
 /**
  * @title   BaseLiquidatorProxy
@@ -36,7 +36,7 @@ import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
  *
  * Inheritable contract that allows sharing code across different liquidator proxy contracts
  */
-abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
+abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMargin {
     using DecimalLib for IDolomiteMargin.Decimal;
     using TypesLib for IDolomiteMargin.Par;
 
@@ -46,16 +46,6 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
         uint256 marketId;
         IDolomiteMargin.MonetaryPrice price;
         IDolomiteMargin.InterestIndex index;
-    }
-
-    struct PrepareForLiquidationParams {
-        IDolomiteMargin.AccountInfo liquidAccount;
-        uint256 freezableMarketId;
-        uint256 inputTokenAmount;
-        uint256 outputMarketId;
-        uint256 minOutputAmount;
-        uint256 expirationTimestamp;
-        bytes extraData;
     }
 
     struct LiquidatorProxyConstants {
@@ -96,7 +86,6 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
 
     // ============ Immutable Fields ============
 
-    IDolomiteMargin public immutable DOLOMITE_MARGIN; // solhint-disable-line var-name-mixedcase
     IExpiry public immutable EXPIRY; // solhint-disable-line var-name-mixedcase
 
     // ================ Constructor ===============
@@ -107,8 +96,8 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
         address _liquidatorAssetRegistry
     )
         HasLiquidatorRegistry(_liquidatorAssetRegistry)
+        OnlyDolomiteMargin(_dolomiteMargin)
     {
-        DOLOMITE_MARGIN = IDolomiteMargin(_dolomiteMargin);
         EXPIRY = IExpiry(_expiry);
     }
 
@@ -136,7 +125,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
             );
             owedPriceAdj = owedPricePrice.value;
         } else {
-            IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN.getLiquidationSpreadForPair(
+            IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getLiquidationSpreadForPair(
                 _constants.heldMarket,
                 _constants.owedMarket
             );
@@ -147,19 +136,19 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
             owedWeiToLiquidate: 0,
             solidHeldUpdateWithReward: 0,
             solidHeldWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN.getAccountPar(_constants.solidAccount, _constants.heldMarket),
+                DOLOMITE_MARGIN().getAccountPar(_constants.solidAccount, _constants.heldMarket),
                 heldMarketInfo.index
             ),
             solidOwedWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN.getAccountPar(_constants.solidAccount, _constants.owedMarket),
+                DOLOMITE_MARGIN().getAccountPar(_constants.solidAccount, _constants.owedMarket),
                 owedMarketInfo.index
             ),
             liquidHeldWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.heldMarket),
+                DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.heldMarket),
                 heldMarketInfo.index
             ),
             liquidOwedWei: InterestIndexLib.parToWei(
-                DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.owedMarket),
+                DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.owedMarket),
                 owedMarketInfo.index
             ),
             flipMarketsForExpiration: false,
@@ -193,14 +182,14 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
         );
 
         Require.that(
-            !DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive(),
+            !DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive(),
             _FILE,
             "Owed market cannot be positive",
             _constants.owedMarket
         );
 
         Require.that(
-            DOLOMITE_MARGIN.getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive(),
+            DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive(),
             _FILE,
             "Held market cannot be negative",
             _constants.heldMarket
@@ -235,7 +224,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
         // check credentials for msg.sender
         Require.that(
             _constants.solidAccount.owner == msg.sender
-                || DOLOMITE_MARGIN.getIsLocalOperator(_constants.solidAccount.owner, msg.sender),
+                || DOLOMITE_MARGIN().getIsLocalOperator(_constants.solidAccount.owner, msg.sender),
             _FILE,
             "Sender not operator",
             msg.sender
@@ -306,7 +295,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
         uint256[] memory _solidMarketIds,
         uint256[] memory _liquidMarketIds
     ) internal view returns (MarketInfo[] memory) {
-        uint[] memory marketBitmaps = BitsLib.createBitmaps(DOLOMITE_MARGIN.getNumMarkets());
+        uint[] memory marketBitmaps = BitsLib.createBitmaps(DOLOMITE_MARGIN().getNumMarkets());
         uint256 marketsLength = 0;
         marketsLength = _addMarketsToBitmap(_solidMarketIds, marketBitmaps, marketsLength);
         marketsLength = _addMarketsToBitmap(_liquidMarketIds, marketBitmaps, marketsLength);
@@ -321,8 +310,8 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
 
                 marketInfos[counter++] = MarketInfo({
                     marketId: marketId,
-                    price: DOLOMITE_MARGIN.getMarketPrice(marketId),
-                    index: DOLOMITE_MARGIN.getMarketCurrentIndex(marketId)
+                    price: DOLOMITE_MARGIN().getMarketPrice(marketId),
+                    index: DOLOMITE_MARGIN().getMarketCurrentIndex(marketId)
                 });
 
                 // unset the set bit
@@ -449,13 +438,13 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
         )
     {
         for (uint256 i; i < _marketIds.length; ++i) {
-            IDolomiteMargin.Par memory par = DOLOMITE_MARGIN.getAccountPar(_account, _marketIds[i]);
+            IDolomiteMargin.Par memory par = DOLOMITE_MARGIN().getAccountPar(_account, _marketIds[i]);
             MarketInfo memory marketInfo = _binarySearch(_marketInfos, _marketIds[i]);
             IDolomiteMargin.Wei memory userWei = InterestIndexLib.parToWei(par, marketInfo.index);
             uint256 assetValue = userWei.value * marketInfo.price.value;
             IDolomiteMargin.Decimal memory marginPremium = DecimalLib.one();
             if (_adjustForMarginPremiums) {
-                marginPremium = DecimalLib.onePlus(DOLOMITE_MARGIN.getMarketMarginPremium(_marketIds[i]));
+                marginPremium = DecimalLib.onePlus(DOLOMITE_MARGIN().getMarketMarginPremium(_marketIds[i]));
             }
             if (userWei.sign) {
                 supplyValue.value = supplyValue.value + DecimalLib.div(assetValue, marginPremium);

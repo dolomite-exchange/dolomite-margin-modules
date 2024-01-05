@@ -75,7 +75,7 @@ interface IIsolationModeUnwrapperTraderV2 is IDolomiteMarginExchangeWrapper {
      *          `_inputMarket` should be equal to `token()` and `_outputMarket` should be validated to be a correct
      *           market that can be transformed into `token()`.
      *
-     * @param _params   The parameters for creating the actions for unwrapping.
+     * @param  _params  The parameters for creating the actions for unwrapping.
      * @return          The actions that will be executed to unwrap the `_inputMarket` into `_outputMarket`.
      */
     function createActionsForUnwrapping(

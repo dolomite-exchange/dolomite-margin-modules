@@ -21,14 +21,15 @@
 pragma solidity ^0.8.9;
 
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { DecimalLib } from "../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IIsolationModeFreezableLiquidatorProxy } from "../interfaces/IIsolationModeFreezableLiquidatorProxy.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
-
 
 /**
  * @title   IsolationModeFreezableLiquidatorProxy
@@ -36,7 +37,12 @@ import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFac
  *
  * @notice  Liquidator for handling the GMX V2 (GM) tokens and other freezable vaults.
  */
-contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, ReentrancyGuard {
+contract IsolationModeFreezableLiquidatorProxy is
+    IIsolationModeFreezableLiquidatorProxy,
+    BaseLiquidatorProxy,
+    ReentrancyGuard
+{
+    using DecimalLib for uint256;
 
     // ============================ Constants ============================
 
@@ -67,6 +73,16 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
 
+    function ownerSetMinOutputPercentageUpperBound(
+        uint256 _minOutputPercentageUpperBound
+    )
+        external
+        onlyDolomiteMarginOwner(msg.sender)
+    {
+        minOutputPercentageUpperBound = _minOutputPercentageUpperBound;
+        emit MinOutputPercentageUpperBoundSet(_minOutputPercentageUpperBound);
+    }
+
     function prepareForLiquidation(
         PrepareForLiquidationParams calldata _params
     )
@@ -75,7 +91,7 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
         nonReentrant
         requireIsAssetWhitelistedForLiquidation(_params.freezableMarketId)
     {
-        address freezableToken = DOLOMITE_MARGIN.getMarketTokenAddress(_params.freezableMarketId);
+        address freezableToken = DOLOMITE_MARGIN().getMarketTokenAddress(_params.freezableMarketId);
         Require.that(
             IIsolationModeVaultFactory(freezableToken).getAccountByVault(_params.liquidAccount.owner) != address(0),
             _FILE,
@@ -84,7 +100,7 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
         );
         MarketInfo[] memory marketInfos = _getMarketInfos(
             /* _solidMarketIds = */ new uint256[](0),
-            DOLOMITE_MARGIN.getAccountMarketsWithBalances(_params.liquidAccount)
+            DOLOMITE_MARGIN().getAccountMarketsWithBalances(_params.liquidAccount)
         );
         _checkIsLiquidatable(
             _params.liquidAccount,
@@ -99,9 +115,11 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
             _params.inputTokenAmount,
             _params.minOutputAmount
         );
-    
-        address outputToken = DOLOMITE_MARGIN.getMarketTokenAddress(_params.outputMarketId);
-        IIsolationModeTokenVaultV1WithFreezable vault = IIsolationModeTokenVaultV1WithFreezable(_params.liquidAccount.owner);
+
+        address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_params.outputMarketId);
+        IIsolationModeTokenVaultV1WithFreezable vault = IIsolationModeTokenVaultV1WithFreezable(
+            _params.liquidAccount.owner
+        );
         vault.initiateUnwrappingForLiquidation{value: msg.value}(
             _params.liquidAccount.number,
             _params.inputTokenAmount,
@@ -109,15 +127,6 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
             _params.minOutputAmount,
             _params.extraData
         );
-    }
-
-    function ownerSetMinOutputPercentageUpperBound(uint256 _minOutputPercentageUpperBound) external {
-        Require.that(
-            msg.sender == address(DOLOMITE_MARGIN),
-            _FILE,
-            'OnlyDolomiteMargin'
-        );
-        minOutputPercentageUpperBound = _minOutputPercentageUpperBound;
     }
 
     // ======================================================================
@@ -154,7 +163,7 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
             ) = _getAdjustedAccountValues(
                 _marketInfos,
                 _liquidAccount,
-                DOLOMITE_MARGIN.getAccountMarketsWithBalances(_liquidAccount)
+                DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidAccount)
             );
 
             // Panic if there's no supply value
@@ -164,9 +173,9 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
                 "Liquid account has no supply"
             );
 
-            IDolomiteStructs.Decimal memory marginRatio = DOLOMITE_MARGIN.getMarginRatio();
+            IDolomiteStructs.Decimal memory marginRatio = DOLOMITE_MARGIN().getMarginRatio();
             Require.that(
-                DOLOMITE_MARGIN.getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
+                DOLOMITE_MARGIN().getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
                     || !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio),
                 _FILE,
                 "Liquid account not liquidatable"
@@ -180,19 +189,20 @@ contract IsolationModeFreezableLiquidatorProxy is BaseLiquidatorProxy, Reentranc
         uint256 _inputTokenAmount,
         uint256 _minOutputAmount
     ) internal view {
-        uint256 inputValue = DOLOMITE_MARGIN.getMarketPrice(_inputMarketId).value * _inputTokenAmount;
-        uint256 outputValue = DOLOMITE_MARGIN.getMarketPrice(_outputMarketId).value * _minOutputAmount;
-        
-        IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN.getLiquidationSpreadForPair(
+        uint256 inputValue = DOLOMITE_MARGIN().getMarketPrice(_inputMarketId).value * _inputTokenAmount;
+        uint256 outputValue = DOLOMITE_MARGIN().getMarketPrice(_outputMarketId).value * _minOutputAmount;
+
+        IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getLiquidationSpreadForPair(
             /* heldMarketId = */ _inputMarketId,
             /* ownedMarketId = */ _outputMarketId
         );
-        uint256 inputValueAdj = inputValue - (inputValue * spread.value / 2e18);
+        spread.value /= 2;
+        uint256 inputValueAdj = inputValue - inputValue.mul(spread);
 
         Require.that(
             outputValue <= inputValueAdj,
             _FILE,
-            'minOutputAmount too large'
+            "minOutputAmount too large"
         );
     }
 }

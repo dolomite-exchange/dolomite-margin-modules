@@ -38,12 +38,6 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
-import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
-import { BitsLib } from "../../protocol/lib/BitsLib.sol";
-import { DecimalLib } from "../../protocol/lib/DecimalLib.sol";
-import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
-
-import "hardhat/console.sol";
 
 
 /**
@@ -100,7 +94,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     function cancelWithdrawal(bytes32 _key) external onlyVaultOwner(msg.sender) {
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper =
                                 registry().getUnwrapperByToken(IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()));
-        IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo 
+        IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo
             = unwrapper.getWithdrawalInfo(_key);
         _validateVaultOwnerForStruct(withdrawalInfo.vault);
         Require.that(

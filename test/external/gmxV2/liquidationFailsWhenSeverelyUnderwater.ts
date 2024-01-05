@@ -122,6 +122,7 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
+      GMX_V2_EXECUTION_FEE,
     );
     underlyingToken = IGmxMarketToken__factory.connect(await factory.UNDERLYING_TOKEN(), core.hhUser1);
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
@@ -560,11 +561,11 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
         core,
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
-      
+
       return {
-        zapParam:zapParam,
-        totalOutputAmount: totalOutputAmount,  
-        outputAmountForSwap: outputAmountForSwap,
+        zapParam,
+        totalOutputAmount,
+        outputAmountForSwap,
       };
     }
 
@@ -574,7 +575,7 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
       for (const market of markets) {
         const par = await core.dolomiteMargin.getAccountPar(account, market.toNumber());
         if (par.value.isZero()) {
-          continue;
+
         } else if (par.sign) {
           console.log(`Account ${account.number} has a positive balance of ${par.value.toString()} in the market ${market}`);
           return false;
@@ -589,15 +590,15 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
       await setupBalances(borrowAccountNumber);
 
       // liquidation preparation results in withdrawal failed due to undercollateralized account
-      await liquidatorProxy.prepareForLiquidation(
+      await liquidatorProxy.prepareForLiquidation({
         liquidAccount,
-        marketId,
-        amountWei,
-        core.marketIds.nativeUsdc!,
-        ONE_BI,
-        NO_EXPIRY,
-        ONE_BI_ENCODED,
-      );
+        freezableMarketId: marketId,
+        inputTokenAmount: amountWei,
+        outputMarketId: core.marketIds.nativeUsdc!,
+        minOutputAmount: ONE_BI,
+        expirationTimestamp: NO_EXPIRY,
+        extraData: ONE_BI_ENCODED,
+      });
       const result = await performUnwrapping();
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
         key: withdrawalKeys[0],
@@ -606,7 +607,7 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
       });
 
       // validated state after unwrapping
-      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalFailed);      
+      await checkStateAfterUnwrapping(borrowAccountNumber, FinishState.WithdrawalFailed);
 
       // setup for launching the liquidation through core proxy
       const testTrader = await impersonate(core.testEcosystem!.testExchangeWrapper.address, true, wethAmount.mul(10));
@@ -616,11 +617,11 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
         wethAmount.mul(5),
         { address: '0x000000000000000000000000000000000000dead' },
       );
-      
+
       // user current, high, WETH price to calculate the required zapParams for calling liquidated
       const initialWethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
       const { zapParam: initialZapParam } = await calculateZapParams(initialWethPrice);
-      
+
       // Actions that are done in a liquidation: [CallFunction, Sell, CallFunction, Sell]
       // liquidation fails, since being severely undercollateralized, the entire available user amount
       // will be used. That results in the first sale action deleting the withdrawal position and when
@@ -635,7 +636,7 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
           liquidAccount,
           initialZapParam,
         ),
-        `function call to a non-contract account`,
+        'function call to a non-contract account',
       );
 
       // show account is not Vaporizable because not all of its markets are negative, specifically the GM one
@@ -645,14 +646,14 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
       // decreasing the price of WETH will result in a healthier liquidation position
       const decreasedWethPrice = initialWethPrice.mul(90).div(100);
       await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, decreasedWethPrice);
-      
+
       // we recalculate the zap params for it
-      const { 
-        zapParam: zapParamAfterDecrease, 
-        totalOutputAmount: totalOutputAmountAfterDecrease, 
-        outputAmountForSwap: outputAmountForSwapAfterDecrease 
+      const {
+        zapParam: zapParamAfterDecrease,
+        totalOutputAmount: totalOutputAmountAfterDecrease,
+        outputAmountForSwap: outputAmountForSwapAfterDecrease,
       } = await calculateZapParams(decreasedWethPrice);
-      
+
       // call liquidate with the new values and price state
       await liquidateV4WithZapParam(
         core,
@@ -660,7 +661,7 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
         liquidAccount,
         zapParamAfterDecrease,
       );
-      
+
       // show it succeeds
       await checkStateAfterUnwrapping(
         borrowAccountNumber,

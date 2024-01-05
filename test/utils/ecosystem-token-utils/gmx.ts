@@ -58,12 +58,12 @@ import {
   TestGmxV2IsolationModeVaultFactory,
 } from '../../../src/types';
 import {
+  getGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getGLPIsolationModeVaultFactoryConstructorParams,
+  getGLPIsolationModeWrapperTraderV2ConstructorParams,
   getGLPPriceOracleV1ConstructorParams,
   getGLPUnwrapperTraderV1ConstructorParams,
-  getGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getGLPWrapperTraderV1ConstructorParams,
-  getGLPIsolationModeWrapperTraderV2ConstructorParams,
   getGMXIsolationModeVaultFactoryConstructorParams,
   getGmxRegistryConstructorParams,
   getGMXUnwrapperTraderV2ConstructorParams,
@@ -329,7 +329,7 @@ export async function createGmxV2IsolationModeVaultFactory(
       collateralMarketIds,
       gmToken,
       userVaultImplementation,
-      executionFee
+      executionFee,
     ),
   );
 }
@@ -354,7 +354,7 @@ export async function createTestGmxV2IsolationModeVaultFactory(
       collateralMarketIds,
       gmToken,
       userVaultImplementation,
-      executionFee
+      executionFee,
     ),
   );
 }
@@ -476,7 +476,7 @@ export function getInitiateWrappingParams(
     userConfig: {
       deadline: '123123123123123',
       balanceCheckFlag: BalanceCheckFlag.None,
-      eventType: GenericEventEmissionType.None
+      eventType: GenericEventEmissionType.None,
     },
   };
 }
@@ -503,7 +503,11 @@ export function getInitiateUnwrappingParams(
       },
     ],
     makerAccounts: [],
-    userConfig: { deadline: '123123123123123', balanceCheckFlag: BalanceCheckFlag.None, eventType: GenericEventEmissionType.None },
+    userConfig: {
+      deadline: '123123123123123',
+      balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None,
+    },
   };
 }
 

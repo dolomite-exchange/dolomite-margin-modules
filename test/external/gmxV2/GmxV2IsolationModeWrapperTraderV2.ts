@@ -16,10 +16,9 @@ import {
   IGmxMarketToken,
   IGmxRoleStore__factory,
   TestGmxDataStore,
-  TestGmxDataStore__factory,
   TestGmxV2IsolationModeVaultFactory,
 } from 'src/types';
-import { createContractWithAbi, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
+import { depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
 import { BYTES_EMPTY, BYTES_ZERO, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/utils';
 import {
@@ -95,7 +94,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
   let priceOracle: GmxV2MarketTokenPriceOracle;
   let eventEmitter: EventEmitterRegistry;
   let marketId: BigNumber;
-  let testDataStore: TestGmxDataStore;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
@@ -129,7 +127,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
-      executionFee
+      executionFee,
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,
@@ -287,7 +285,10 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
 
     it('should fail if execute deposit feature is disabled', async () => {
       const controllerKey = ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['string'], ['CONTROLLER']));
-      const roleStore = IGmxRoleStore__factory.connect(await core.gmxEcosystemV2!.gmxDataStore.roleStore(), core.hhUser1);
+      const roleStore = IGmxRoleStore__factory.connect(
+        await core.gmxEcosystemV2!.gmxDataStore.roleStore(),
+        core.hhUser1,
+      );
       const controllers = await roleStore.getRoleMembers(controllerKey, 0, 1);
       const controller = await impersonate(controllers[0], true);
       await core.gmxEcosystemV2!.gmxDataStore.connect(controller).setBool(EXECUTE_DEPOSITS_DISABLED_KEY, true);
@@ -321,7 +322,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           initiateWrappingParams.userConfig,
           { value: executionFee }, // @follow-up How to calculate executionFee
         ),
-        'GmxV2Library: Execute deposit feature disabled'
+        'GmxV2Library: Execute deposit feature disabled',
       );
     });
   });
@@ -484,7 +485,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         vault.address,
         borrowAccountNumber,
         marketId,
-        ZERO_BI
+        ZERO_BI,
       );
       expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
       await expectStateIsCleared();

@@ -54,7 +54,6 @@ import {
 import { getSimpleZapParams } from 'test/utils/zap-utils';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../utils/dolomite';
-import { ethers } from 'hardhat';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -117,7 +116,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
-      executionFee
+      executionFee,
     );
     impersonatedFactory = await impersonate(factory.address, true);
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
@@ -301,9 +300,9 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       );
       // Create debt for the position
       let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
-      let wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+      const wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
 
-      let wethAmount = amountWei.mul(gmPrice).div(wethPrice).mul(100).div(121);
+      const wethAmount = amountWei.mul(gmPrice).div(wethPrice).mul(100).div(121);
       await vault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
@@ -314,8 +313,20 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
       // await expectProtocolBalance(core, vault.address, defaultAccountNumber, core.marketIds.weth, wethAmount);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.weth, amountWei.add(wethAmount));
-      await expectProtocolBalance(core, vault.address, borrowAccountNumber, core.marketIds.weth, ZERO_BI.sub(wethAmount));
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        amountWei.add(wethAmount),
+      );
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(wethAmount),
+      );
 
       gmPrice = gmPrice.mul(70).div(100);
       await core.testEcosystem!.testPriceOracle.setPrice(factory.address, gmPrice);
@@ -1191,7 +1202,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         defaultAccountNumber,
         FreezeType.Withdrawal,
         toPositiveWeiStruct(ONE_BI),
-        core.tokens.weth.address
+        core.tokens.weth.address,
       );
       const zapParams = await getSimpleZapParams(otherMarketId1, amountWei, otherMarketId2, amountWei, core);
       await expectThrow(
@@ -1472,14 +1483,20 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
 
     it('should return true if create withdrawals are disabled', async () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
-      const keyValue = await testDataStore.getKey(CREATE_WITHDRAWALS_DISABLED_KEY, core.gmxEcosystemV2!.gmxWithdrawalHandler.address);
+      const keyValue = await testDataStore.getKey(
+        CREATE_WITHDRAWALS_DISABLED_KEY,
+        core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
+      );
       await testDataStore.setBool(keyValue, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
 
     it('should return true if execute withdrawals are disabled', async () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
-      const keyValue = await testDataStore.getKey(EXECUTE_WITHDRAWALS_DISABLED_KEY, core.gmxEcosystemV2!.gmxWithdrawalHandler.address);
+      const keyValue = await testDataStore.getKey(
+        EXECUTE_WITHDRAWALS_DISABLED_KEY,
+        core.gmxEcosystemV2!.gmxWithdrawalHandler.address,
+      );
       await testDataStore.setBool(keyValue, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });

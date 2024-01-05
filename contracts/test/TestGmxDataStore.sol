@@ -23,8 +23,6 @@ pragma solidity ^0.8.9;
 import { IGmxDataStore } from "../external/interfaces/gmx/IGmxDataStore.sol";
 import { IGmxRoleStore } from "../external/interfaces/gmx/IGmxRoleStore.sol";
 
-import "hardhat/console.sol";
-
 
 /**
  * @title   TestGmxDataStore
@@ -49,6 +47,7 @@ contract TestGmxDataStore is IGmxDataStore {
 
     function setBool(bytes32 _key, bool _value) external returns (bool) {
         boolValues[_key] = _value;
+        return _value;
     }
 
     function getBool(bytes32 _key) external view returns (bool) {

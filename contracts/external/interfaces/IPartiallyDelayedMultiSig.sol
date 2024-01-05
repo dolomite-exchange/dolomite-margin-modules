@@ -94,8 +94,8 @@ interface IPartiallyDelayedMultiSig {
     /**
      * Allows a reader to get a particular transaction at the specified index
      *
-     * @param index The index into the transactions list you want to retrieve
-     * @return      The `Transaction` at the specified index
+     * @param  index    The index into the transactions list you want to retrieve
+     * @return          The `Transaction` at the specified index
      */
     function transactions(uint256 index) external view returns (address, uint256, bytes memory, bool);
 

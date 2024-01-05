@@ -169,7 +169,8 @@ export function createPendlePtPriceOracle(
   );
 }
 
-export async function createPendlePtGLP2024IsolationModeTokenVaultV1(): Promise<PendlePtGLP2024IsolationModeTokenVaultV1> {
+export async function createPendlePtGLP2024IsolationModeTokenVaultV1(
+): Promise<PendlePtGLP2024IsolationModeTokenVaultV1> {
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary<PendlePtGLP2024IsolationModeTokenVaultV1>(
     'PendlePtGLP2024IsolationModeTokenVaultV1',

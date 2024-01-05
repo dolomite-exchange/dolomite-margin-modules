@@ -49,6 +49,7 @@ contract TestGmxDataStore is IGmxDataStore {
 
     function setBool(bytes32 _key, bool _value) external returns (bool) {
         boolValues[_key] = _value;
+        return _value;
     }
 
     function getBool(bytes32 _key) external view returns (bool) {

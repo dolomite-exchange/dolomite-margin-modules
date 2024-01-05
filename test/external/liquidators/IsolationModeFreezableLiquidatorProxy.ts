@@ -840,7 +840,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     it('should fail when liquid account has no supply', async () => {
       await expectThrow(
         liquidatorProxy.prepareForLiquidation({
-          liquidAccount: { owner: vault.address, number: borrowAccountNumber3},
+          liquidAccount: { owner: vault.address, number: borrowAccountNumber3 },
           freezableMarketId: marketId,
           inputTokenAmount: amountWei,
           outputMarketId: core.marketIds.weth,
@@ -856,7 +856,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       await setupBalances(borrowAccountNumber, true, false);
       await expectThrow(
         liquidatorProxy.prepareForLiquidation({
-          liquidAccount: { owner: vault.address, number: borrowAccountNumber},
+          liquidAccount: { owner: vault.address, number: borrowAccountNumber },
           freezableMarketId: marketId,
           inputTokenAmount: amountWei,
           outputMarketId: core.marketIds.weth,

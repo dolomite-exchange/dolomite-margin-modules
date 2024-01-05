@@ -19,7 +19,6 @@
 
 pragma solidity ^0.8.9;
 
-import { IChainlinkAccessControlAggregator } from "../external/interfaces/chainlink/IChainlinkAccessControlAggregator.sol"; // solhint-disable-line max-line-length
 import { IChainlinkRegistry } from "../external/interfaces/chainlink/IChainlinkRegistry.sol";
 
 
