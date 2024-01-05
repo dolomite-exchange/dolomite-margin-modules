@@ -20,6 +20,7 @@
 
 pragma solidity ^0.8.9;
 
+import { IHandlerRegistry } from "../external/interfaces/IHandlerRegistry.sol";
 import { AsyncIsolationModeTraderBase } from "../external/proxies/abstract/AsyncIsolationModeTraderBase.sol";
 
 
@@ -32,6 +33,7 @@ import { AsyncIsolationModeTraderBase } from "../external/proxies/abstract/Async
 contract TestAsyncIsolationModeTraderBase is AsyncIsolationModeTraderBase {
 
     bytes32 private constant _FILE = "TestAsyncIsolationModeTraderBase";
+    bytes32 private constant _HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handler")) - 1);
 
     constructor(address _weth) AsyncIsolationModeTraderBase(_weth) {
         // solhint-disable-previous-line no-empty-blocks
@@ -41,15 +43,23 @@ contract TestAsyncIsolationModeTraderBase is AsyncIsolationModeTraderBase {
         address _gmxV2Registry,
         address _dolomiteMargin
     ) external initializer {
-        _initializeAsyncTraderBase(_gmxV2Registry);
+        _setHandlerViaSlot(_gmxV2Registry);
         _setDolomiteMarginViaSlot(_dolomiteMargin);
     }
 
     function triggerInternalInitializer(
         address _gmxV2Registry
     ) external {
-        _initializeAsyncTraderBase(_gmxV2Registry);
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     function testOnlyHandler() external onlyHandler(msg.sender) {} // solhint-disable-line no-empty-blocks
+
+    function HANDLER_REGISTRY() public view override returns (IHandlerRegistry) {
+        return IHandlerRegistry(_getAddress(_HANDLER_SLOT));
+    }
+
+    function _setHandlerViaSlot(address _handler) internal {
+        _setAddress(_HANDLER_SLOT, _handler);
+    }
 }

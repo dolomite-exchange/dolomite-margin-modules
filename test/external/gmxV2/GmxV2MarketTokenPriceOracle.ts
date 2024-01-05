@@ -26,7 +26,7 @@ import {
   createGmxV2MarketTokenPriceOracle,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 
 const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('919979975416060612'); // $0.9199
 const GM_ETH_USD_PRICE_MAX_WEI = BigNumber.from('918897815809950545'); // $0.9188
@@ -68,6 +68,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
+      GMX_V2_EXECUTION_FEE
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,

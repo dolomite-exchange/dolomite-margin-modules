@@ -758,7 +758,7 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig {
   return {
     network: Network.ArbitrumOne,
     networkNumber: parseInt(Network.ArbitrumOne, 10),
-    blockNumber: 163_846_237,
+    blockNumber: 164_788_000,
   };
 }
 
@@ -900,7 +900,8 @@ export async function setupCoreProtocol(
   );
 
   const liquidatorProxyV4 = getContract(
-    LiquidatorProxyV4WithGenericTraderJson.networks[config.network].address,
+    // LiquidatorProxyV4WithGenericTraderJson.networks[config.network].address,
+    '0x34975624E992bF5c094EF0CF3344660f7AaB9CB3',
     ILiquidatorProxyV4WithGenericTrader__factory.connect,
     governance,
   );

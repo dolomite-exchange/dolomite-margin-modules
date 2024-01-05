@@ -20,45 +20,39 @@
 
 pragma solidity ^0.8.9;
 
-import { IGmxRegistryV1 } from "../interfaces/gmx/IGmxRegistryV1.sol";
 import { IsolationModeWrapperTraderV2 } from "../proxies/abstract/IsolationModeWrapperTraderV2.sol";
 
 
 /**
- * @title   GMXIsolationModeWrapperTraderV2
+ * @title   SimpleIsolationModeWrapperTraderV2
  * @author  Dolomite
  *
- * @notice  Used for wrapping GMX into dGmx. Upon settlement, the GMX is sent to the user's vault and dGmx is minted to
- *          `DolomiteMargin`.
+ * @notice  Used for wrapping an underlying token into dToken. Upon settlement, the underlying token is sent to the
+ *          user's vault and dToken is minted to `DolomiteMargin`.
  */
-contract GMXIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
+contract SimpleIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "GMXIsolationModeWrapperV2";
-
-    // ============ Constructor ============
-
-    IGmxRegistryV1 public immutable GMX_REGISTRY; // solhint-disable-line var-name-mixedcase
+    bytes32 private constant _FILE = "SimpleIsolationModeWrapperV2";
 
     // ============ Constructor ============
 
     constructor(
-        address _gmxRegistry,
-        address _dGmx,
+        address _dToken,
         address _dolomiteMargin
     )
     IsolationModeWrapperTraderV2(
-        _dGmx,
+        _dToken,
         _dolomiteMargin
     ) {
-        GMX_REGISTRY = IGmxRegistryV1(_gmxRegistry);
+        // solhint-disable-previous-line no-empty-blocks
     }
 
     // ============ External Functions ============
 
     function isValidInputToken(address _inputToken) public override view returns (bool) {
-        return _inputToken == address(GMX_REGISTRY.gmx());
+        return _inputToken == VAULT_FACTORY.UNDERLYING_TOKEN();
     }
 
     // ============ Internal Functions ============
@@ -72,10 +66,11 @@ contract GMXIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         uint256 _inputAmount,
         bytes memory
     )
-    internal
-    pure
-    override
-    returns (uint256) {
+        internal
+        pure
+        override
+        returns (uint256)
+    {
         return _inputAmount;
     }
 
@@ -85,10 +80,11 @@ contract GMXIsolationModeWrapperTraderV2 is IsolationModeWrapperTraderV2 {
         uint256 _desiredInputAmount,
         bytes memory
     )
-    internal
-    override
-    pure
-    returns (uint256) {
+        internal
+        override
+        pure
+        returns (uint256)
+    {
         return _desiredInputAmount;
     }
 }

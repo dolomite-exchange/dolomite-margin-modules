@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeUnwrapperTrader } from "./IIsolationModeUnwrapperTrader.sol";
+import { IIsolationModeUnwrapperTraderV2 } from "./IIsolationModeUnwrapperTraderV2.sol";
 import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
 import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
 
@@ -31,7 +31,7 @@ import { IOnlyDolomiteMargin } from "./IOnlyDolomiteMargin.sol";
  *
  * Interface for an upgradeable contract that can convert an isolation mode token into another token.
  */
-interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapperTrader, IOnlyDolomiteMargin {
+interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapperTraderV2, IOnlyDolomiteMargin {
 
     // ================================================
     // ==================== Structs ===================
@@ -47,6 +47,16 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
         /// @dev initially 0 until the withdrawal is executed
         uint256 outputAmount;
         bool isRetryable;
+        bool isLiquidation;
+        bytes extraData;
+    }
+
+    struct State {
+        uint256 actionsLength;
+        uint256 reentrancyGuard;
+        address vaultFactory;
+        address handlerRegistry;
+        mapping(bytes32 => WithdrawalInfo) withdrawalInfo;
     }
 
     // ================================================
@@ -55,7 +65,8 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
 
     enum TradeType {
         FromWithdrawal,
-        FromDeposit
+        FromDeposit,
+        NoOp
     }
 
     // ===================================================
@@ -81,7 +92,9 @@ interface IUpgradeableAsyncIsolationModeUnwrapperTrader is IIsolationModeUnwrapp
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata _extraData
     ) external payable;
 
     /**

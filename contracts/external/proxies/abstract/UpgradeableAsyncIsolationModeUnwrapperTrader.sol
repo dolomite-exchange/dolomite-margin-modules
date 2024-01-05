@@ -97,7 +97,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     onlyDolomiteMargin(msg.sender)
     onlyDolomiteMarginGlobalOperator(_sender) {
         State storage state = _getStorageSlot();
-        state.callFunction(_sender, _accountInfo, _data);
+        state.callFunction(this, _sender, _accountInfo, _data);
     }
 
     function exchange(
@@ -288,7 +288,8 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function _executeWithdrawal(WithdrawalInfo memory _withdrawalInfo) internal virtual {
-        try AsyncIsolationModeUnwrapperTraderImpl.swapExactInputForOutputForWithdrawal(
+        State storage state = _getStorageSlot();
+        try state.swapExactInputForOutputForWithdrawal(
             /* _unwrapper = */ this,
             _withdrawalInfo
         ) {

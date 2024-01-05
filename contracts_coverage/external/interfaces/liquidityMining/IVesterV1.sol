@@ -24,13 +24,13 @@ import { IOARB } from "./IOARB.sol";
 
 
 /**
- * @title   IVesterV1.sol
+ * @title   IVesterV1
  * @author  Dolomite
  *
  * Interface for a vesting contract that offers users a discount on ARB tokens
  * if they vest ARB and oARB for a length of time
  */
-interface IVester {
+interface IVesterV1 {
 
     // =================================================
     // ==================== Structs ====================
@@ -93,13 +93,6 @@ interface IVester {
     function ownerSetIsVestingActive(bool _isVestingActive) external;
 
     /**
-     * @notice  Sets the oARB token address. Callable by Dolomite Margin owner
-     *
-     * @param  _oARB   oARB token address
-     */
-    function ownerSetOARB(address _oARB) external;
-
-    /**
      * @notice  Sets the close position window. Callable by Dolomite Margin owner
      *
      * @param  _closePositionWindow Close position window in seconds
@@ -134,12 +127,10 @@ interface IVester {
     // ======================================================
 
     /**
-     * @notice  Initializes the oARB address
      *
-     * @param  _oARB    oARB token address
-     * @param  _baseUri The URI that will be used for getting the NFT's image
+     * @param  _data encoded bytes data that resolves to (address oARB, string _baseUri)
      */
-    function initialize(address _oARB, string calldata _baseUri) external;
+    function initialize(bytes calldata _data) external;
 
     /**
      * @notice  Transfers ARB and oARB from user's dolomite balance to the contract and begins vesting

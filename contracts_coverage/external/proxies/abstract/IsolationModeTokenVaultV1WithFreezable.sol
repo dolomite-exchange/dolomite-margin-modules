@@ -75,13 +75,18 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _;
     }
 
-    modifier _depositIntoVaultForDolomiteMarginFreezableValidator() {
-        _requireNotFrozen();
+    modifier requireVaultAccountNotFrozen(uint256 _accountNumber) {
+        _requireVaultAccountNotFrozen(_accountNumber);
         _;
     }
 
-    modifier _withdrawFromVaultForDolomiteMarginFreezableValidator() {
-        _requireNotFrozen();
+    modifier _depositIntoVaultForDolomiteMarginFreezableValidator(uint256 _accountNumber) {
+        _requireVaultAccountNotFrozen(_accountNumber);
+        _;
+    }
+
+    modifier _withdrawFromVaultForDolomiteMarginFreezableValidator(uint256 _accountNumber) {
+        _requireVaultAccountNotFrozen(_accountNumber);
         _;
     }
 
@@ -182,13 +187,15 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bytes calldata _extraData
     )
         external
         payable
         nonReentrant
         onlyVaultOwner(msg.sender)
         requireNotFrozen
+        requireNotLiquidatable(_tradeAccountNumber)
     {
         _beforeInitiateUnwrapping(
             _tradeAccountNumber,
@@ -200,7 +207,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             _inputAmount,
             _outputToken,
             _minOutputAmount,
-            /* _isLiquidation = */ false
+            /* _isLiquidation = */ false,
+            _extraData
         );
     }
 
@@ -208,7 +216,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _tradeAccountNumber,
         uint256 _inputAmount,
         address _outputToken,
-        uint256 _minOutputAmount
+        uint256 _minOutputAmount,
+        bytes calldata _extraData
     )
         external
         payable
@@ -225,7 +234,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             _inputAmount,
             _outputToken,
             _minOutputAmount,
-            /* _isLiquidation = */ true
+            /* _isLiquidation = */ true,
+            _extraData
         );
     }
 
@@ -300,7 +310,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         return _getUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)));
     }
 
-    function isVaultFrozen() public view returns (bool) {
+    function isVaultFrozen() public virtual view returns (bool) {
         return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultFrozen(address(this));
     }
 
@@ -332,7 +342,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _depositIntoVaultForDolomiteMarginFreezableValidator
+        _depositIntoVaultForDolomiteMarginFreezableValidator(_toAccountNumber)
     {
         super._depositIntoVaultForDolomiteMargin(_toAccountNumber, _amountWei);
     }
@@ -344,7 +354,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _withdrawFromVaultForDolomiteMarginFreezableValidator
+        _withdrawFromVaultForDolomiteMarginFreezableValidator(_fromAccountNumber)
     {
         super._withdrawFromVaultForDolomiteMargin(_fromAccountNumber, _amountWei);
     }
@@ -580,7 +590,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _inputAmount,
         address _outputToken,
         uint256 _minOutputAmount,
-        bool _isLiquidation
+        bool _isLiquidation,
+        bytes calldata _extraData
     ) internal virtual;
 
     function _validateIsLiquidator(address _from) internal view {
@@ -696,6 +707,16 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             !isVaultFrozen(),
             _FILE,
             "Vault is frozen"
+        );
+    }
+
+    function _requireVaultAccountNotFrozen(uint256 _accountNumber) private view {
+        if (!isVaultAccountFrozen(_accountNumber)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            !isVaultAccountFrozen(_accountNumber),
+            _FILE,
+            "Vault account is frozen",
+            _accountNumber
         );
     }
 }

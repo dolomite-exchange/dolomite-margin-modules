@@ -70,7 +70,7 @@ library AsyncIsolationModeWrapperTraderImpl {
         marketIdsPath[1] = _wrapper.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_depositInfo.inputToken);
 
         IGenericTraderBase.TraderParam[] memory traderParams = new IGenericTraderBase.TraderParam[](1);
-        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapperV2;
+        traderParams[0].traderType = IGenericTraderBase.TraderType.IsolationModeUnwrapper;
         traderParams[0].makerAccountIndex = 0;
         traderParams[0].trader = address(_wrapper.HANDLER_REGISTRY().getUnwrapperByToken(factory));
 

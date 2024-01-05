@@ -48,6 +48,16 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry {
         IDolomiteMargin.InterestIndex index;
     }
 
+    struct PrepareForLiquidationParams {
+        IDolomiteMargin.AccountInfo liquidAccount;
+        uint256 freezableMarketId;
+        uint256 inputTokenAmount;
+        uint256 outputMarketId;
+        uint256 minOutputAmount;
+        uint256 expirationTimestamp;
+        bytes extraData;
+    }
+
     struct LiquidatorProxyConstants {
         IDolomiteMargin.AccountInfo solidAccount;
         IDolomiteMargin.AccountInfo liquidAccount;

@@ -422,7 +422,7 @@ abstract contract IsolationModeVaultFactory is
         emit TokenConverterSet(_tokenConverter, _isTrusted);
     }
 
-    function _createVault(address _account) internal returns (address) {
+    function _createVault(address _account) internal virtual returns (address) {
         if (_account != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _account != address(0),

@@ -195,6 +195,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         nonReentrant
         onlyVaultOwner(msg.sender)
         requireNotFrozen
+        requireNotLiquidatable(_tradeAccountNumber)
     {
         _beforeInitiateUnwrapping(
             _tradeAccountNumber,

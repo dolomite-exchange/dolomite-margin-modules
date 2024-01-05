@@ -210,6 +210,7 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   collateralMarketIds: BigNumberish[],
   gmToken: IGmxMarketToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
+  executionFee: BigNumberish,
 ): any[] {
   if (!core.gmxEcosystem) {
     throw new Error('Gmx ecosystem not initialized');
@@ -217,7 +218,7 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
 
   return [
     gmxRegistry.address,
-    GMX_V2_EXECUTION_FEE,
+    executionFee,
     [
       gmToken.address,
       core.tokens.weth.address,

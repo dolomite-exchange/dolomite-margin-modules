@@ -19,7 +19,7 @@ import {
   createGmxV2Registry,
   createTestGmxV2IsolationModeTokenVaultV1,
 } from 'test/utils/ecosystem-token-utils/gmx';
-import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 import { ZERO_BI } from '../../../src/utils/no-deps-constants';
 import {
   CoreProtocol,
@@ -59,6 +59,7 @@ describe('GmxV2Registry', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
+      GMX_V2_EXECUTION_FEE
     );
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(
       core,
@@ -145,6 +146,7 @@ describe('GmxV2Registry', () => {
         allowableMarketIds,
         core.gmxEcosystemV2!.gmxEthUsdMarketToken,
         userVaultImplementation,
+        GMX_V2_EXECUTION_FEE
       );
       await expectThrow(
         gmxV2Registry.connect(core.governance).ownerSetUnwrapperByToken(
@@ -195,6 +197,7 @@ describe('GmxV2Registry', () => {
         allowableMarketIds,
         core.gmxEcosystemV2!.gmxEthUsdMarketToken,
         userVaultImplementation,
+        GMX_V2_EXECUTION_FEE
       );
       await expectThrow(
         gmxV2Registry.connect(core.governance).ownerSetWrapperByToken(

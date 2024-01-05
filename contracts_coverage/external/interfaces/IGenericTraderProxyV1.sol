@@ -35,6 +35,12 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
 
     // ============ Structs ============
 
+    enum EventEmissionType {
+        None,
+        BorrowPosition,
+        MarginPosition
+    }
+
     struct TransferAmount {
         /// @dev The market ID to transfer
         uint256 marketId;
@@ -67,6 +73,7 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
         ///         `_transferAccountNumber` is not negative after the trade for any of the transfers in
         ///         `TransferCollateralParam.transferAmounts`.
         AccountBalanceLib.BalanceCheckFlag balanceCheckFlag;
+        EventEmissionType eventType;
     }
 
     // ============ Functions ============
@@ -139,7 +146,9 @@ interface IGenericTraderProxyV1 is IGenericTraderBase {
     )
     external;
 
-    function EXPIRY() external view returns (address);
+    function ownerSetEventEmitterRegistry(
+        address _eventEmitterRegistry
+    ) external;
 
-    function MARGIN_POSITION_REGISTRY() external view returns (address);
+    function EXPIRY() external view returns (address);
 }

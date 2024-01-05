@@ -34,6 +34,7 @@ import { FreezableIsolationModeVaultFactory } from "../proxies/abstract/Freezabl
  *
  * @notice  The wrapper around the GM token that is used to create user vaults and manage the entry points that a
  *          user can use to interact with DolomiteMargin from the vault.
+ * @dev     Swap-only GMX markets ARE NOT supported by this vault factory
  */
 contract GmxV2IsolationModeVaultFactory is
     IGmxV2IsolationModeVaultFactory,

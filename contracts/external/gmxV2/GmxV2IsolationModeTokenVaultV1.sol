@@ -38,6 +38,12 @@ import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2Isolati
 import { IsolationModeTokenVaultV1WithFreezable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1WithPausable } from "../proxies/abstract/IsolationModeTokenVaultV1WithPausable.sol";
+import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
+import { BitsLib } from "../../protocol/lib/BitsLib.sol";
+import { DecimalLib } from "../../protocol/lib/DecimalLib.sol";
+import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
+
+import "hardhat/console.sol";
 
 
 /**
@@ -183,8 +189,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     virtual
     override {
         uint256 len = _tradersPath.length;
-        if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapperV2
-            || _tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
+        if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             GmxV2Library.depositAndApproveWethForWrapping(this);
             Require.that(
                 msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).MAX_EXECUTION_FEE(),
