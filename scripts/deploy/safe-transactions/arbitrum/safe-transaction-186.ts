@@ -1,13 +1,7 @@
 import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
 import { Network } from '../../../../src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../test/utils/setup';
-import {
-  createFolder,
-  DenJsonUpload,
-  EncodedTransaction,
-  prettyPrintEncodedDataWithTypeSafety,
-  writeFile,
-} from '../../../deploy-utils';
+import { createFolder, DenJsonUpload, prettyPrintEncodedDataWithTypeSafety, writeFile, } from '../../../deploy-utils';
 
 /**
  * This script encodes the following transactions:

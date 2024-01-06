@@ -113,18 +113,6 @@ async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const dolomiteRegistryImplementationAddressV6 = await deployContractAndSave(
-    Number(network),
-    'DolomiteRegistryImplementation',
-    [],
-    'DolomiteRegistryImplementationV6',
-  );
-  const eventEmitterRegistryImplementationV2Address = await deployContractAndSave(
-    Number(network),
-    'EventEmitterRegistry',
-    [],
-    'EventEmitterRegistryImplementationV2',
-  );
   const libraries = getTokenVaultLibrary(core);
   const newGlpUserVaultImplementationAddress = await deployContractAndSave(
     Number(core.config.network),
