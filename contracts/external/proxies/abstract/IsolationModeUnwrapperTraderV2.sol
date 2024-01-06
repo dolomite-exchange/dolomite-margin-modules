@@ -259,10 +259,6 @@ abstract contract IsolationModeUnwrapperTraderV2 is
             vaultOwner
         );
 
-        // c190c2ec
-        // 0000000000000000000000001ff6b8e1192eb0369006bbad76da9068b68961b2
-        // 18db42c1a293dcf99dd3b0aee9bd0c69f8f80b081bef6bd95c2e9278aa3df87e
-        // 000000000000000000000000000000000000000000000000000000000000001c
         if (transferAmount == type(uint256).max) {
             uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(VAULT_FACTORY));
             /// @note   Account wei cannot be negative for Isolation Mode assets
