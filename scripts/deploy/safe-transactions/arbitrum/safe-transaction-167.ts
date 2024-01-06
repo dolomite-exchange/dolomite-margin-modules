@@ -165,6 +165,15 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocol): Promise<EncodedT
     await prettyPrintEncodedDataWithTypeSafety(
       core,
       core.plutusEcosystem!.live,
+      'plvGlpIsolationModeFactory',
+      'ownerSetIsTokenConverterTrusted',
+      [wrapperV3, true],
+    ),
+  );
+  transactions.push(
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.plutusEcosystem!.live,
       'dolomiteWhitelistForPlutusChef',
       'ownerSetPlvGlpUnwrapperTrader',
       [unwrapperV3],
