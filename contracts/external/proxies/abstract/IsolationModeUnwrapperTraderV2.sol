@@ -275,7 +275,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
             "Invalid transfer amount"
         );
 
-        uint256 underlyingBalanceOf = IIsolationModeTokenVaultV1(_accountInfo.owner).underlyingBalanceOf();
+        uint256 underlyingBalanceOf = IIsolationModeTokenVaultV1(vaultOwner).underlyingBalanceOf();
         Require.that(
             underlyingBalanceOf >= transferAmount,
             _FILE,
@@ -284,7 +284,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
             transferAmount
         );
 
-        VAULT_FACTORY.enqueueTransferFromDolomiteMargin(_accountInfo.owner, transferAmount);
+        VAULT_FACTORY.enqueueTransferFromDolomiteMargin(vaultOwner, transferAmount);
     }
 
     /**
