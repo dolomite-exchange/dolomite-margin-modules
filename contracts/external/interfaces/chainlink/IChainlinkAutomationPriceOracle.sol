@@ -49,6 +49,12 @@ interface IChainlinkAutomationPriceOracle is IDolomitePriceOracle, IChainlinkAut
 
     event ForwarderSet(address _forwarder);
 
+    event ExchangeRateUpdated(
+        uint256 _lastUpdateTimestamp,
+        uint256 _exchangeRateNumerator,
+        uint256 _exchangeRateDenominator
+    );
+
     // ========================================================
     // =================== Admin Functions ====================
     // ========================================================

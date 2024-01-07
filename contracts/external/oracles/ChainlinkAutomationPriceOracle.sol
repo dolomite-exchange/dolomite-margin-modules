@@ -188,6 +188,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     function _updateExchangeRateAndTimestamp() internal {
         (exchangeRateNumerator, exchangeRateDenominator) = _getExchangeRate();
         lastUpdateTimestamp = block.timestamp;
+        emit ExchangeRateUpdated(lastUpdateTimestamp, exchangeRateNumerator, exchangeRateDenominator);
     }
 
     function _checkUpkeepConditions() internal view returns (bool) {

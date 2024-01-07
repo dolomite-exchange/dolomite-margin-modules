@@ -1297,6 +1297,13 @@
       "isVerified": true
     }
   },
+  "PlutusVaultGLPWithChainlinkAutomationPriceOracleV3": {
+    "42161": {
+      "address": "0x0bD39C5a7B2db42993c9978335b497771CcB0EFD",
+      "transaction": "0x56e1b4487c19734d8e1819ae780579aa6de3831b3db0738607992f71ce472123",
+      "isVerified": true
+    }
+  },
   "PlutusVaultRegistryProxy": {
     "42161": {
       "address": "0x6FCEB6c2930d274b703b02a94eEBaaC7ECC6D1bb",

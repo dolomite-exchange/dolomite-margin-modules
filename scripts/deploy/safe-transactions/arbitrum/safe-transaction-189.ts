@@ -131,7 +131,7 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocol): Promise<EncodedT
       core.plutusEcosystem!.live.plvGlpIsolationModeFactory,
       PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.connect(unwrapperV4, core.hhUser1),
     ),
-    'PlutusVaultGLPWithChainlinkAutomationPriceOracleV2'
+    'PlutusVaultGLPWithChainlinkAutomationPriceOracleV3'
   );
 
   const transactions = [];
