@@ -64,6 +64,7 @@ const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb5864
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const CREATE_WITHDRAWALS_DISABLED_KEY = '0xe22e21c60f32cfb79020e8dbf3211f7a678325f5d7195c979268c4db4a4a6fa1';
 const EXECUTE_WITHDRAWALS_DISABLED_KEY = '0xa5d5ec2aef29f70d602db4f2b395018c1a19c7f69e551e9943277b57770f0dd0';
+const IS_MARKET_DISABLED_KEY = '0x5c27e8a9fa01145fb01eb80b81db2eab7e57bc33d109d6a64315239a65ce4d36';
 const INVALID_POOL_FACTOR = BigNumber.from('900000000000000000000000000000'); // 9e29
 const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
 const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
@@ -1527,6 +1528,16 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
     it('should return false if both are within pnl range', async () => {
       await gmxV2Registry.connect(core.governance).ownerSetGmxReader(testReader.address);
       await testReader.setPnlToPoolFactors(INVALID_POOL_FACTOR, INVALID_POOL_FACTOR);
+      expect(await vault.isExternalRedemptionPaused()).to.be.true;
+    });
+
+    it('should return true if market is disabled', async () => {
+      await gmxV2Registry.connect(core.governance).ownerSetGmxDataStore(testDataStore.address);
+      const keyValue = await testDataStore.getKey(
+        IS_MARKET_DISABLED_KEY,
+        await factory.UNDERLYING_TOKEN(),
+      );
+      await testDataStore.setBool(keyValue, true);
       expect(await vault.isExternalRedemptionPaused()).to.be.true;
     });
   });
