@@ -64,6 +64,7 @@ library GmxV2Library {
     bytes32 private constant _CREATE_WITHDRAWAL_FEATURE_DISABLED = keccak256(abi.encode("CREATE_WITHDRAWAL_FEATURE_DISABLED")); // solhint-disable-line max-line-length
     bytes32 private constant _EXECUTE_WITHDRAWAL_FEATURE_DISABLED = keccak256(abi.encode("EXECUTE_WITHDRAWAL_FEATURE_DISABLED")); // solhint-disable-line max-line-length
     bytes32 private constant _EXECUTE_DEPOSIT_FEATURE_DISABLED = keccak256(abi.encode("EXECUTE_DEPOSIT_FEATURE_DISABLED")); // solhint-disable-line max-line-length
+    bytes32 private constant _IS_MARKET_DISABLED = keccak256(abi.encode("IS_MARKET_DISABLED"));
     uint256 private constant _GMX_PRICE_DECIMAL_ADJUSTMENT = 6;
     uint256 private constant _GMX_PRICE_SCALE_ADJUSTMENT = 10 ** _GMX_PRICE_DECIMAL_ADJUSTMENT;
 
@@ -162,6 +163,12 @@ library GmxV2Library {
             exchangeRouter.sendTokens(swapPath[0], withdrawalVault, _inputAmount);
         }
 
+        Require.that(
+            _extraData.length == 32,
+            _FILE,
+            "Invalid extra data"
+        );
+
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(_factory);
         IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
             /* receiver = */ address(unwrapper),
@@ -225,6 +232,12 @@ library GmxV2Library {
         address underlyingToken = _factory.UNDERLYING_TOKEN();
         IGmxDataStore dataStore = _registry.gmxDataStore();
         {
+            bool isMarketDisabled = dataStore.getBool(_isMarketDisableKey(underlyingToken));
+            if (isMarketDisabled) {
+                return true;
+            }
+        }
+        {
             bytes32 createWithdrawalKey = keccak256(abi.encode(
                 _CREATE_WITHDRAWAL_FEATURE_DISABLED,
                 _registry.gmxWithdrawalHandler()
@@ -274,8 +287,8 @@ library GmxV2Library {
             /* _maximize = */ true
         );
 
-        bool isShortPnlTooLarge = shortPnlToPoolFactor >= int256(maxPnlForWithdrawalsShort);
-        bool isLongPnlTooLarge = longPnlToPoolFactor >= int256(maxPnlForWithdrawalsLong);
+        bool isShortPnlTooLarge = shortPnlToPoolFactor > int256(maxPnlForWithdrawalsShort);
+        bool isLongPnlTooLarge = longPnlToPoolFactor > int256(maxPnlForWithdrawalsLong);
 
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
 
@@ -382,5 +395,9 @@ library GmxV2Library {
         bool _isLong
     ) private pure returns (bytes32) {
         return keccak256(abi.encode(_MAX_PNL_FACTOR_KEY, _pnlFactorType, _market, _isLong));
+    }
+
+    function _isMarketDisableKey(address _market) internal pure returns (bytes32) {
+        return keccak256(abi.encode(_IS_MARKET_DISABLED, _market));
     }
 }

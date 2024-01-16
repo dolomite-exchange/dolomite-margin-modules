@@ -37,6 +37,16 @@ import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
  */
 interface IIsolationModeTokenVaultV1 {
 
+    struct SwapExactInputForOutputParams {
+        uint256 tradeAccountNumber;
+        uint256[] marketIdsPath;
+        uint256 inputAmountWei;
+        uint256 minOutputAmountWei;
+        IGenericTraderProxyV1.TraderParam[] tradersPath;
+        IDolomiteStructs.AccountInfo[] makerAccounts;
+        IGenericTraderProxyV1.UserConfig userConfig;
+    }
+
     // ===========================================================
     // ======================== Functions ========================
     // ===========================================================

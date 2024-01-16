@@ -20,7 +20,7 @@ import {
   withdrawFromDolomiteMargin,
 } from '../../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -46,6 +46,7 @@ const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
+const usdcAmount = BigNumber.from('100000000'); // $100
 const bigOtherAmountWei = BigNumber.from('100000000000'); // $100,000
 
 enum FreezeType {
@@ -80,7 +81,11 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   let otherMarketId2: BigNumber;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
+    core = await setupCoreProtocol({
+      blockNumber,
+      network: Network.ArbitrumOne,
+    });
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithFreezable>(
@@ -125,12 +130,12 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     tokenUnwrapper = await createContractWithAbi(
       TestIsolationModeUnwrapperTraderV2__factory.abi,
       TestIsolationModeUnwrapperTraderV2__factory.bytecode,
-      [otherToken1.address, factory.address, core.dolomiteMargin.address],
+      [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     tokenWrapper = await createContractWithAbi(
       TestIsolationModeWrapperTraderV2__factory.abi,
       TestIsolationModeWrapperTraderV2__factory.bytecode,
-      [otherToken1.address, factory.address, core.dolomiteMargin.address],
+      [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -1000,6 +1005,44 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, ZERO_BI);
     });
 
+    it('should fail if user is underwater and attempting to initiate wrapping', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcAmount,
+        BalanceCheckFlag.None,
+      );
+
+      await core.testEcosystem!.testPriceOracle.setPrice(
+        factory.address,
+        '10',
+      );
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, underlyingMarketId, outputAmount, core);
+      await expectThrow(
+        userVault.addCollateralAndSwapExactInputForOutput(
+          borrowAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable'
+      );
+    });
+
     it('should fail when not called by vault owner or converter', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
       await expectThrow(
@@ -1284,6 +1327,44 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await expectProtocolBalance(core, userVault, borrowAccountNumber, otherMarketId2, borrowAmount.mul(-1));
     });
 
+    it('should fail if user is underwater and attempting to initiate wrapping', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcAmount,
+        BalanceCheckFlag.None,
+      );
+
+      await core.testEcosystem!.testPriceOracle.setPrice(
+        factory.address,
+        '10',
+      );
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, underlyingMarketId, outputAmount, core);
+      await expectThrow(
+        userVault.swapExactInputForOutputAndRemoveCollateral(
+          borrowAccountNumber,
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable'
+      );
+    });
+
     it('should fail when not called by vault owner or converter', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
       await expectThrow(
@@ -1369,6 +1450,43 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         borrowAccountNumber,
         otherMarketId2,
         otherAmountWei.add(outputAmount),
+      );
+    });
+
+    it('should fail if user is underwater and attempting to initiate wrapping', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+      );
+
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcAmount,
+        BalanceCheckFlag.None,
+      );
+
+      await core.testEcosystem!.testPriceOracle.setPrice(
+        factory.address,
+        '10',
+      );
+
+      const outputAmount = otherAmountWei.div(2);
+      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, underlyingMarketId, outputAmount, core);
+      await expectThrow(
+        userVault.swapExactInputForOutput(
+          borrowAccountNumber,
+          zapParams.marketIdsPath,
+          zapParams.inputAmountWei,
+          zapParams.minOutputAmountWei,
+          zapParams.tradersPath,
+          zapParams.makerAccounts,
+          zapParams.userConfig,
+        ),
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable'
       );
     });
 
@@ -1574,7 +1692,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           PLUS_ONE_BI,
           core.tokens.usdc.address,
         ),
-        `IsolationModeVaultFactory: Caller is not a authorized <${core.hhUser1.address.toLowerCase()}>`,
+        `FreezableVaultFactory: Caller is not a authorized <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 

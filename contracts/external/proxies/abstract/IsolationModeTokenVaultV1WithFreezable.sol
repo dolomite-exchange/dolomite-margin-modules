@@ -134,19 +134,31 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _;
     }
 
-    modifier _addCollateralAndSwapExactInputForOutputFreezableValidator() {
+    modifier _addCollateralAndSwapExactInputForOutputFreezableValidator(uint256 _borrowAccountNumber, uint256 _outputMarketId) {
         _requireNotFrozen();
+        _requireNotLiquidatableIfWrapToUnderlying(
+            /* _accountNumber = */ _borrowAccountNumber,
+            /* _outputMarketId = */ _outputMarketId
+        );
         _;
     }
 
-    modifier _swapExactInputForOutputAndRemoveCollateralFreezableValidator(uint256 _borrowAccountNumber) {
+    modifier _swapExactInputForOutputAndRemoveCollateralFreezableValidator(uint256 _borrowAccountNumber, uint256 _outputMarketId) {
         _requireNotFrozen();
+        _requireNotLiquidatableIfWrapToUnderlying(
+            /* _accountNumber = */ _borrowAccountNumber,
+            /* _outputMarketId = */ _outputMarketId
+        );
         _;
         _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
-    modifier _swapExactInputForOutputFreezableValidator() {
+    modifier _swapExactInputForOutputFreezableValidator(uint256 _tradeAccountNumber, uint256[] memory _marketIds) {
         _requireNotFrozen();
+        _requireNotLiquidatableIfWrapToUnderlying(
+            /* _accountNumber = */ _tradeAccountNumber,
+            /* _outputMarketId = */ _marketIds[_marketIds.length - 1]
+        );
         _;
     }
 
@@ -490,7 +502,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _addCollateralAndSwapExactInputForOutputFreezableValidator
+        _addCollateralAndSwapExactInputForOutputFreezableValidator(_borrowAccountNumber, _marketIdsPath[_marketIdsPath.length - 1])
     {
         super._addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
@@ -517,7 +529,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _swapExactInputForOutputAndRemoveCollateralFreezableValidator(_borrowAccountNumber)
+        _swapExactInputForOutputAndRemoveCollateralFreezableValidator(_borrowAccountNumber, _marketIdsPath[_marketIdsPath.length - 1])
     {
         super._swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,
@@ -532,27 +544,15 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     }
 
     function _swapExactInputForOutput(
-        uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        SwapExactInputForOutputParams memory _params
     )
         internal
         virtual
         override
-        _swapExactInputForOutputFreezableValidator
+        _swapExactInputForOutputFreezableValidator(_params.tradeAccountNumber, _params.marketIdsPath)
     {
         super._swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
+            _params
         );
     }
 
@@ -709,5 +709,15 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             "Vault account is frozen",
             _accountNumber
         );
+    }
+
+    function _requireNotLiquidatableIfWrapToUnderlying(
+        uint256 _accountNumber,
+        uint256 _outputMarketId
+    ) internal view {
+        uint256 underlyingMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(VAULT_FACTORY());
+        if (_outputMarketId== underlyingMarketId) {
+            _requireNotLiquidatable(_accountNumber);
+        }
     }
 }

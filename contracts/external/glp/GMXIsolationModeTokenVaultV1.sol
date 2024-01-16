@@ -178,22 +178,10 @@ contract GMXIsolationModeTokenVaultV1 is
     }
 
     function _swapExactInputForOutput(
-        uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        SwapExactInputForOutputParams memory _params
     ) internal override {
         super._swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
+            _params
         );
 
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());

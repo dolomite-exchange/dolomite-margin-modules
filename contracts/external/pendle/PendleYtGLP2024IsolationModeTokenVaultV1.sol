@@ -190,13 +190,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
     }
 
     function _swapExactInputForOutput(
-        uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        SwapExactInputForOutputParams memory _params
     )
         internal
         override
@@ -206,12 +200,12 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         );
         IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo(
             address(this),
-            _tradeAccountNumber
+            _params.tradeAccountNumber
         );
         IDolomiteStructs.Wei memory balanceAfterWei = _getBalanceAfterWei(
             accountInfo,
-            _marketIdsPath[0],
-            _inputAmountWei,
+            _params.marketIdsPath[0],
+            _params.inputAmountWei,
             vaultFactory
         );
 
@@ -226,18 +220,12 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         );
 
         super._swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
+            _params
         );
 
         // if account balance is negative, set expiry
         if (balanceAfterWei.isNegative()) {
-            _setExpirationForBorrowPosition(accountInfo, _marketIdsPath[0], ytMaturityTimestamp, vaultFactory);
+            _setExpirationForBorrowPosition(accountInfo, _params.marketIdsPath[0], ytMaturityTimestamp, vaultFactory);
         }
     }
 

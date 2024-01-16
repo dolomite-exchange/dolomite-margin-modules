@@ -171,26 +171,20 @@ contract GmxV2IsolationModeTokenVaultV1 is
      *  @dev  _minOutputAmountWei MUST BE greater than 0 or call will revert
      */
     function _swapExactInputForOutput(
-        uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        SwapExactInputForOutputParams memory _params
     )
     internal
     virtual
     override {
-        uint256 len = _tradersPath.length;
-        if (_tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
+        uint256 len = _params.tradersPath.length;
+        if (_params.tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             GmxV2Library.depositAndApproveWethForWrapping(this);
             Require.that(
                 msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).MAX_EXECUTION_FEE(),
                 _FILE,
                 "Invalid execution fee"
             );
-            _tradersPath[len - 1].tradeData = abi.encode(_tradeAccountNumber, abi.encode(msg.value));
+            _params.tradersPath[len - 1].tradeData = abi.encode(_params.tradeAccountNumber, abi.encode(msg.value));
         } else {
             Require.that(
                 msg.value == 0,
@@ -199,20 +193,16 @@ contract GmxV2IsolationModeTokenVaultV1 is
             );
         }
 
-        if (_tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper || isVaultFrozen()) {
+        if (_params.tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper || isVaultFrozen()) {
             // Only a trusted converter can initiate unwraps (via the callback) OR execute swaps if the vault is frozen
             _requireOnlyConverter(msg.sender);
         }
 
         // Ignore the freezable implementation and call the pausable one directly
+        // @follow-up Corey: Are you cool with doing it like this? Need to still allow the unwrapper so can't call freezable modifier
+        _requireNotLiquidatableIfWrapToUnderlying(_params.tradeAccountNumber, _params.marketIdsPath[_params.marketIdsPath.length - 1]);
         IsolationModeTokenVaultV1WithPausable._swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
+            _params
         );
     }
 

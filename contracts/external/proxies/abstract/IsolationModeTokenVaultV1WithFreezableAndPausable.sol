@@ -252,7 +252,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is
         internal
         virtual
         override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
-        _addCollateralAndSwapExactInputForOutputFreezableValidator
+        _addCollateralAndSwapExactInputForOutputFreezableValidator(_borrowAccountNumber, _marketIdsPath[_marketIdsPath.length - 1])
     {
         IsolationModeTokenVaultV1._addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
@@ -279,7 +279,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is
         internal
         virtual
         override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
-        _swapExactInputForOutputAndRemoveCollateralFreezableValidator(_borrowAccountNumber)
+        _swapExactInputForOutputAndRemoveCollateralFreezableValidator(_borrowAccountNumber, _marketIdsPath[_marketIdsPath.length - 1])
     {
         IsolationModeTokenVaultV1._swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,
@@ -294,32 +294,20 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is
     }
 
     function _swapExactInputForOutput(
-        uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        SwapExactInputForOutputParams memory _params
     )
         internal
         virtual
         override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithPausable)
-        _swapExactInputForOutputFreezableValidator
+        _swapExactInputForOutputFreezableValidator(_params.tradeAccountNumber, _params.marketIdsPath)
         _swapExactInputForOutputPausableValidator(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei
+            _params.tradeAccountNumber,
+            _params.marketIdsPath,
+            _params.inputAmountWei
         )
     {
         IsolationModeTokenVaultV1._swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
+            _params
         );
     }
 }
