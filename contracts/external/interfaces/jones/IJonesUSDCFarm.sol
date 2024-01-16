@@ -51,6 +51,12 @@ interface IJonesUSDCFarm {
     // ==================================================================
 
     /**
+     * @notice Toggle incentives, if is it true it mean incentives are ON. Only callable by `governor`
+     *
+     */
+    function toggleIncentives() external;
+
+    /**
      * @notice Deposit LP tokens to MCV2 for ARB allocation.
      *
      * @param  _poolId  The index of the pool. See `poolInfo`.

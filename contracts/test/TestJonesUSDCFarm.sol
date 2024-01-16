@@ -34,6 +34,9 @@ contract TestJonesUSDCFarm is IJonesUSDCFarm {
     bytes32 private constant _FILE = "TestJonesUSDCFarm";
 
     // solhint-disable-next-line no-empty-blocks
+    function toggleIncentives() external {}
+
+    // solhint-disable-next-line no-empty-blocks
     function deposit(uint256, uint256, address) external {}
 
     // solhint-disable-next-line no-empty-blocks
