@@ -162,6 +162,12 @@ library GmxV2Library {
             exchangeRouter.sendTokens(swapPath[0], withdrawalVault, _inputAmount);
         }
 
+        Require.that(
+            _extraData.length == 32,
+            _FILE,
+            "Invalid extra data"
+        );
+
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(_factory);
         IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
             /* receiver = */ address(unwrapper),
