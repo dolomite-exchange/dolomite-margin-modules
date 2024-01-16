@@ -280,8 +280,8 @@ library GmxV2Library {
             /* _maximize = */ true
         );
 
-        bool isShortPnlTooLarge = shortPnlToPoolFactor >= int256(maxPnlForWithdrawalsShort);
-        bool isLongPnlTooLarge = longPnlToPoolFactor >= int256(maxPnlForWithdrawalsLong);
+        bool isShortPnlTooLarge = shortPnlToPoolFactor > int256(maxPnlForWithdrawalsShort);
+        bool isLongPnlTooLarge = longPnlToPoolFactor > int256(maxPnlForWithdrawalsLong);
 
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
 
