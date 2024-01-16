@@ -40,6 +40,7 @@ import { IGmxV2IsolationModeUnwrapperTraderV2 } from "../interfaces/gmx/IGmxV2Is
 import { IGmxV2IsolationModeVaultFactory } from "../interfaces/gmx/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2Registry } from "../interfaces/gmx/IGmxV2Registry.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   GmxV2Library
@@ -164,21 +165,25 @@ library GmxV2Library {
         }
 
         Require.that(
-            _extraData.length == 32,
+            _extraData.length == 64,
             _FILE,
             "Invalid extra data"
         );
 
-        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(_factory);
+        // Fix stack too deep
+        IGmxV2IsolationModeVaultFactory factory = _factory;
+
+        (, uint256 minShortTokenAmount) = abi.decode(_extraData, (uint256, uint256));
+        IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(factory);
         IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
             /* receiver = */ address(unwrapper),
             /* callbackContract = */ address(unwrapper),
             /* uiFeeReceiver = */ address(0),
             /* market = */ swapPath[0],
-            /* longTokenSwapPath = */ _outputToken == _factory.LONG_TOKEN() ? new address[](0) : swapPath,
-            /* shortTokenSwapPath = */ _outputToken == _factory.SHORT_TOKEN() ? new address[](0) : swapPath,
+            /* longTokenSwapPath = */ _outputToken == factory.LONG_TOKEN() ? new address[](0) : swapPath,
+            /* shortTokenSwapPath = */ _outputToken == factory.SHORT_TOKEN() ? new address[](0) : swapPath,
             /* minLongTokenAmount = */ _minOutputAmount,
-            /* minShortTokenAmount = */ abi.decode(_extraData, (uint256)),
+            /* minShortTokenAmount = */ minShortTokenAmount,
             /* shouldUnwrapNativeToken = */ false,
             /* executionFee = */ _ethExecutionFee,
             /* callbackGasLimit = */ registry.callbackGasLimit()
