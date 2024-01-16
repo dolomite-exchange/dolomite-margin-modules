@@ -59,6 +59,7 @@ const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
 const amountWei = parseEther('1');
 const otherAmountWei = parseEther('0.33');
+const usdcAmount = BigNumber.from('1000000000'); // $1000
 const minAmountOut = parseEther('1800');
 const DUMMY_DEPOSIT_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
@@ -1008,6 +1009,72 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         zapParams.tradersPath,
         zapParams.makerAccounts,
         zapParams.userConfig,
+      );
+    });
+
+    it('should fail if user is underwater and attempting to initiate wrapping', async () => {
+      await setupGMBalance(core, core.hhUser1, amountWei, vault);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await vault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei,
+        { value: executionFee },
+      );
+      // Create debt for the position
+      let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
+      const wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+
+      const wethAmount = amountWei.mul(gmPrice).div(wethPrice).mul(100).div(121);
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.To,
+      );
+      await expectProtocolBalance(core, vault.address, defaultAccountNumber, marketId, ZERO_BI);
+      await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, amountWei);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1.address,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        amountWei.add(wethAmount),
+      );
+      await expectProtocolBalance(
+        core,
+        vault.address,
+        borrowAccountNumber,
+        core.marketIds.weth,
+        ZERO_BI.sub(wethAmount),
+      );
+
+      gmPrice = gmPrice.mul(70).div(100);
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, gmPrice);
+      await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+
+      const initiateWrappingParams = await getInitiateWrappingParams(
+        borrowAccountNumber,
+        core.marketIds.nativeUsdc!,
+        usdcAmount,
+        marketId,
+        minAmountOut,
+        wrapper,
+        executionFee,
+      );
+      await expectThrow(
+        vault.swapExactInputForOutput(
+          borrowAccountNumber,
+          initiateWrappingParams.marketPath,
+          initiateWrappingParams.amountIn,
+          initiateWrappingParams.minAmountOut,
+          initiateWrappingParams.traderParams,
+          initiateWrappingParams.makerAccounts,
+          initiateWrappingParams.userConfig,
+          { value: executionFee }, // @follow-up How to calculate executionFee
+        ),
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable',
       );
     });
 

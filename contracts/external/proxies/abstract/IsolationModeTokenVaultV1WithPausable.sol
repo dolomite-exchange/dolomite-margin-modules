@@ -115,7 +115,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
 
     modifier _swapExactInputForOutputPausableValidator(
         uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
+        uint256[] memory _marketIdsPath,
         uint256 _inputAmountWei
     ) {
         bool isPaused = isExternalRedemptionPaused();
@@ -282,31 +282,19 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
     }
 
     function _swapExactInputForOutput(
-        uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteStructs.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        SwapExactInputForOutputParams memory _params
     )
         internal
         virtual
         override
         _swapExactInputForOutputPausableValidator(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei
+            _params.tradeAccountNumber,
+            _params.marketIdsPath,
+            _params.inputAmountWei
         )
     {
         IsolationModeTokenVaultV1._swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
+            _params
         );
     }
 

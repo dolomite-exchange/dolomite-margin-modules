@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { ProxyContractHelpers } from "../../helpers/ProxyContractHelpers.sol";
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
@@ -341,15 +342,16 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     nonReentrant
     onlyVaultOwnerOrConverter(msg.sender) {
         _checkMsgValue();
-        _swapExactInputForOutput(
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig
-        );
+        SwapExactInputForOutputParams memory params = SwapExactInputForOutputParams({
+            tradeAccountNumber: _tradeAccountNumber,
+            marketIdsPath: _marketIdsPath,
+            inputAmountWei: _inputAmountWei,
+            minOutputAmountWei: _minOutputAmountWei,
+            tradersPath: _tradersPath,
+            makerAccounts: _makerAccounts,
+            userConfig: _userConfig
+        });
+        _swapExactInputForOutput(params);
     }
 
     // ======== Public functions ========
@@ -628,26 +630,20 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     }
 
     function _swapExactInputForOutput(
-        uint256 _tradeAccountNumber,
-        uint256[] calldata _marketIdsPath,
-        uint256 _inputAmountWei,
-        uint256 _minOutputAmountWei,
-        IGenericTraderProxyV1.TraderParam[] memory _tradersPath,
-        IDolomiteMargin.AccountInfo[] memory _makerAccounts,
-        IGenericTraderProxyV1.UserConfig memory _userConfig
+        SwapExactInputForOutputParams memory _params
     )
         internal
         virtual
     {
         IsolationModeTokenVaultV1ActionsImpl.swapExactInputForOutput(
             /* _vault = */ this,
-            _tradeAccountNumber,
-            _marketIdsPath,
-            _inputAmountWei,
-            _minOutputAmountWei,
-            _tradersPath,
-            _makerAccounts,
-            _userConfig,
+            _params.tradeAccountNumber,
+            _params.marketIdsPath,
+            _params.inputAmountWei,
+            _params.minOutputAmountWei,
+            _params.tradersPath,
+            _params.makerAccounts,
+            _params.userConfig,
             /* _checkOutputMarketIdFlag = */ true,
             /* _bypassAccountNumberCheck = */ false
         );
