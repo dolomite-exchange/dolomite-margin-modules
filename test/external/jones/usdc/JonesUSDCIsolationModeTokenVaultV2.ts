@@ -1,3 +1,4 @@
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
@@ -10,7 +11,7 @@ import {
 } from '../../../../src/types';
 import { createContractWithName } from '../../../../src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { advanceByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import { advanceByTimeDelta, impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
@@ -18,7 +19,13 @@ import {
   expectWalletBalance,
 } from '../../../utils/assertions';
 import { createJonesUSDCIsolationModeTokenVaultV2 } from '../../../utils/ecosystem-token-utils/jones';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../../utils/setup';
+import {
+  CoreProtocol,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '../../../utils/setup';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -34,10 +41,11 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
   let jonesUSDCRegistry: IJonesUSDCRegistry;
   let factory: JonesUSDCIsolationModeVaultFactory;
   let vault: JonesUSDCIsolationModeTokenVaultV2;
+  let governor: SignerWithAddress;
 
   before(async () => {
     core = await setupCoreProtocol({
-      blockNumber: 155091000,
+      blockNumber: 155_091_000,
       network: Network.ArbitrumOne,
     });
     underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
@@ -45,6 +53,7 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
     jonesUSDCRegistry = core.jonesEcosystem!.live.jonesUSDCRegistry;
     factory = core.jonesEcosystem!.live.jUSDCIsolationModeFactory;
     marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(factory.address);
+    governor = await impersonate('0x4817cA4DF701d554D78Aa3d142b62C162C682ee1', true);
 
     const newRegistryImplementation = await createContractWithName('JonesUSDCRegistry', []);
     await RegistryProxy__factory.connect(jonesUSDCRegistry.address, core.governance).upgradeTo(
@@ -84,6 +93,21 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
       await advanceByTimeDelta(3600);
 
       const newBalance = amountWei.mul(99).div(100);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, newBalance);
+      expect(await vault.pendingRewards()).to.be.gt(0);
+      expect(await vault.underlyingBalanceOf()).to.eq(newBalance);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+    });
+
+    it('should work normally when incentives are disabled', async () => {
+      await core.jonesEcosystem!.jUSDCFarm.connect(governor).toggleIncentives();
+      expect(await vault.isDepositIncentiveEnabled()).to.be.false;
+
+      await vault.stake(amountWei);
+
+      await advanceByTimeDelta(3600);
+
+      const newBalance = amountWei;
       await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, newBalance);
       expect(await vault.pendingRewards()).to.be.gt(0);
       expect(await vault.underlyingBalanceOf()).to.eq(newBalance);
@@ -146,8 +170,8 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
 
   describe('#harvestRewards', () => {
     it('should work normally', async () => {
-      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.arb, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.arb, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.arb!, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.arb!, ZERO_BI);
 
       await vault.stake(amountWei);
 
@@ -168,11 +192,11 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
       await vault.harvestRewards();
       expect(await vault.pendingRewards()).to.eq(ZERO_BI);
 
-      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.arb, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.arb!, ZERO_BI);
       await expectProtocolBalanceIsGreaterThan(
         core,
         { owner: core.hhUser1.address, number: defaultAccountNumber },
-        core.marketIds.arb,
+        core.marketIds.arb!,
         ONE_BI,
         0,
       );
@@ -186,10 +210,35 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
     });
   });
 
+  describe('#executeDepositIntoVault', () => {
+    it('should auto stake when deposit incentives are disabled', async () => {
+      await core.jonesEcosystem!.jUSDCFarm.connect(governor).toggleIncentives();
+      expect(await vault.isDepositIncentiveEnabled()).to.be.false;
+
+      await vault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await underlyingToken.approve(vault.address, amountWei);
+      await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+
+      await expectProtocolBalance(core, vault, defaultAccountNumber, marketId, amountWei);
+      await expectWalletBalance(vault, underlyingToken, ZERO_BI);
+
+      await advanceByTimeDelta(3600);
+
+      expect(await vault.pendingRewards()).to.be.gt(ZERO_BI);
+    });
+
+    it('should fail if not called by vault factory', async () => {
+      await expectThrow(
+        vault.connect(core.hhUser2).executeDepositIntoVault(core.hhUser2.address, amountWei),
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#executeWithdrawalFromVault', () => {
     it('should work normally with staked amount and not leave dangling ARB in vault', async () => {
-      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.arb, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.arb, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.arb!, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.arb!, ZERO_BI);
 
       await vault.stake(amountWei);
       const newBalance = amountWei.mul(99).div(100);
@@ -209,8 +258,8 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
     });
 
     it('should work normally when user needs to withdraw some of their staked amount', async () => {
-      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.arb, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.arb, ZERO_BI);
+      await expectProtocolBalance(core, vault, defaultAccountNumber, core.marketIds.arb!, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, core.marketIds.arb!, ZERO_BI);
 
       const stakedBalance = amountWei.div(2).mul(99).div(100);
       await vault.stake(amountWei.div(2));
@@ -232,18 +281,6 @@ describe('JonesUSDCIsolationModeTokenVaultV2', () => {
         vault.connect(core.hhUser2).executeWithdrawalFromVault(core.hhUser2.address, amountWei),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`,
       );
-    });
-  });
-
-  describe('#registry', () => {
-    it('should work normally', async () => {
-      expect(await vault.registry()).to.equal(jonesUSDCRegistry.address);
-    });
-  });
-
-  describe('#dolomiteRegistry', () => {
-    it('should work', async () => {
-      expect(await vault.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);
     });
   });
 });

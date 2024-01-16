@@ -56,9 +56,8 @@ contract JonesUSDCIsolationModeTokenVaultV2 is JonesUSDCIsolationModeTokenVaultV
 
     function stake(uint256 _amount) public onlyVaultOwner(msg.sender) {
         IJonesUSDCFarm farm = registry().jUSDCFarm();
-
-        IJonesUSDCFarm.PoolInfo memory pool = farm.poolInfo(_JUSDC_POOL_ID);
-        if (farm.incentivesOn() && farm.incentiveReceiver() != address(0) && pool.depositIncentives != 0) {
+        if (isDepositIncentiveEnabled()) {
+            IJonesUSDCFarm.PoolInfo memory pool = farm.poolInfo(_JUSDC_POOL_ID);
             uint256 incentive = _amount * pool.depositIncentives / _DEPOSIT_INCENTIVE_PRECISION;
             _setShouldWithdrawToVault(/* _shouldWithdrawToVault = */ true);
             _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, incentive);
@@ -85,6 +84,26 @@ contract JonesUSDCIsolationModeTokenVaultV2 is JonesUSDCIsolationModeTokenVaultV
         _harvestRewardsAndSweepIntoDolomiteMargin();
     }
 
+    function executeDepositIntoVault(
+        address _from,
+        uint256 _amount
+    )
+    public
+    override
+    onlyVaultFactory(msg.sender) {
+        IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
+
+        if (!isDepositIncentiveEnabled()) {
+            IJonesUSDCFarm farm = registry().jUSDCFarm();
+            IERC20(UNDERLYING_TOKEN()).safeApprove(address(farm), _amount);
+            farm.deposit(
+                _JUSDC_POOL_ID,
+                _amount,
+                /* _to = */ address(this)
+            );
+        }
+    }
+
     function executeWithdrawalFromVault(
         address _recipient,
         uint256 _amount
@@ -107,6 +126,12 @@ contract JonesUSDCIsolationModeTokenVaultV2 is JonesUSDCIsolationModeTokenVaultV
             }
             IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
         }
+    }
+
+    function isDepositIncentiveEnabled() public view returns (bool) {
+        IJonesUSDCFarm farm = registry().jUSDCFarm();
+        IJonesUSDCFarm.PoolInfo memory pool = farm.poolInfo(_JUSDC_POOL_ID);
+        return farm.incentivesOn() && farm.incentiveReceiver() != address(0) && pool.depositIncentives != 0;
     }
 
     function shouldWithdrawToVault() public view returns (bool) {

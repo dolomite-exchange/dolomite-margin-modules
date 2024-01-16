@@ -520,6 +520,13 @@
       "isVerified": true
     }
   },
+  "JonesUSDCIsolationModeTokenVaultV7": {
+    "42161": {
+      "address": "0x504683343495cbDE1Eed002fFE1744Fed21b592b",
+      "transaction": "0xf21106f95f0259903521d6cf93a60b393660c197b0d28c06b3fb4d8e8f861734",
+      "isVerified": true
+    }
+  },
   "JonesUSDCIsolationModeUnwrapperTraderV2": {
     "42161": {
       "address": "0x61EB7F571Cc89Bb56c3314891Bd323701d4071eC",
