@@ -55,6 +55,16 @@ library DecimalLib {
         return IDolomiteStructs.Decimal({ value: d.value + _BASE});
     }
 
+    function oneSub(
+        IDolomiteStructs.Decimal memory d
+    )
+        internal
+        pure
+        returns (IDolomiteStructs.Decimal memory)
+    {
+        return IDolomiteStructs.Decimal({ value: _BASE - d.value});
+    }
+
     function mul(
         uint256 target,
         IDolomiteStructs.Decimal memory d

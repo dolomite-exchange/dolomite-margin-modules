@@ -31,6 +31,8 @@ import { IIsolationModeFreezableLiquidatorProxy } from "../interfaces/IIsolation
 import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title   IsolationModeFreezableLiquidatorProxy
  * @author  Dolomite
@@ -43,6 +45,7 @@ contract IsolationModeFreezableLiquidatorProxy is
     ReentrancyGuard
 {
     using DecimalLib for uint256;
+    using DecimalLib for IDolomiteStructs.Decimal;
 
     // ============================ Constants ============================
 
@@ -109,11 +112,20 @@ contract IsolationModeFreezableLiquidatorProxy is
             _params.expirationTimestamp
         );
 
+        (IDolomiteStructs.Decimal memory weight, uint256 otherMinOutputAmount) = abi.decode(_params.extraData, (IDolomiteStructs.Decimal, uint256));
+
         _checkMinAmountIsNotTooLarge(
             _params.freezableMarketId,
             _params.outputMarketId,
-            _params.inputTokenAmount,
+            _params.inputTokenAmount.mul(DecimalLib.oneSub(weight)),
             _params.minOutputAmount
+        );
+
+        _checkMinAmountIsNotTooLarge(
+            _params.freezableMarketId,
+            _params.outputMarketId,
+            _params.inputTokenAmount.mul(weight),
+            otherMinOutputAmount
         );
 
         address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_params.outputMarketId);
