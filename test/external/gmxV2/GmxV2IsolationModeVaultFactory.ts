@@ -285,6 +285,24 @@ describe('GmxV2IsolationModeVaultFactory', () => {
     });
   });
 
+  describe('#ownerSetMaxExecutionFee', () => {
+    const newMaxExecutionFee = parseEther('0.1');
+    it('should work normally', async () => {
+      const result = await factory.connect(core.governance).ownerSetMaxExecutionFee(newMaxExecutionFee);
+      await expectEvent(factory, result, 'MaxExecutionFeeSet', {
+        maxExecutionFee: newMaxExecutionFee,
+      });
+      expect(await factory.maxExecutionFee()).to.eq(newMaxExecutionFee);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        factory.connect(core.hhUser1).ownerSetMaxExecutionFee(newMaxExecutionFee),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#depositIntoDolomiteMarginFromTokenConverter', () => {
     it('should fail if not token converter', async () => {
       await expectThrow(

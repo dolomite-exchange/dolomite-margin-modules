@@ -1129,7 +1129,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         marketId,
         minAmountOut,
         wrapper,
-        ONE_ETH_BI.add(1),
+        ONE_ETH_BI,
       );
       await expectThrow(
         vault.swapExactInputForOutput(
@@ -1140,7 +1140,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: ONE_ETH_BI.add(1) },
+          { value: ONE_ETH_BI },
         ),
         'GmxV2IsolationModeVaultV1: Invalid execution fee',
       );
