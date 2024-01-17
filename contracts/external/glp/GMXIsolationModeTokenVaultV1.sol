@@ -106,6 +106,7 @@ contract GMXIsolationModeTokenVaultV1 is
 
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(glpVault, address(this), _amount);
             _setIsDepositSourceGLPVault(false);
+            _stakeGmx(_amount);
         } else {
             IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
             _stakeGmx(_amount);

@@ -143,7 +143,7 @@ export async function getGmxRegistryConstructorParams(
     glpManager: core.gmxEcosystem.glpManager.address,
     glpRewardsRouter: core.gmxEcosystem.glpRewardsRouter.address,
     gmx: core.gmxEcosystem.gmx.address,
-    gmxRewardsRouter: core.gmxEcosystem.gmxRewardsRouter.address,
+    gmxRewardsRouter: core.gmxEcosystem.gmxRewardsRouterV2.address,
     gmxVault: core.gmxEcosystem.gmxVault.address,
     sGlp: core.gmxEcosystem.sGlp.address,
     sGmx: core.gmxEcosystem.sGmx.address,

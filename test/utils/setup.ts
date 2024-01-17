@@ -13,8 +13,6 @@ import * as LiquidatorProxyV2WithExternalLiquidityJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV2WithExternalLiquidity.json';
 import * as LiquidatorProxyV3WithLiquidityTokenJson
   from '@dolomite-margin/deployed-contracts/LiquidatorProxyV3WithLiquidityToken.json';
-import * as LiquidatorProxyV4WithGenericTraderJson
-  from '@dolomite-margin/deployed-contracts/LiquidatorProxyV4WithGenericTrader.json';
 import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -23,7 +21,8 @@ import { ethers, network } from 'hardhat';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkName } from 'src/utils/no-deps-constants';
 import Deployments, * as deployments from '../../scripts/deployments.json';
 import {
-  ARBIsolationModeVaultFactory__factory, ARBRegistry__factory,
+  ARBIsolationModeVaultFactory__factory,
+  ARBRegistry__factory,
   DolomiteCompatibleWhitelistForPlutusDAO,
   DolomiteCompatibleWhitelistForPlutusDAO__factory,
   DolomiteRegistryImplementation,
@@ -35,7 +34,9 @@ import {
   IAlgebraV3Pool,
   IAlgebraV3Pool__factory,
   IARB,
-  IARB__factory, IARBIsolationModeVaultFactory, IARBRegistry,
+  IARB__factory,
+  IARBIsolationModeVaultFactory,
+  IARBRegistry,
   IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
   IChainlinkPriceOracle,
@@ -81,7 +82,9 @@ import {
   IGmxDepositHandler,
   IGmxDepositHandler__factory,
   IGmxExchangeRouter,
-  IGmxExchangeRouter__factory, IGMXIsolationModeVaultFactory, IGMXIsolationModeVaultFactory__factory,
+  IGmxExchangeRouter__factory,
+  IGMXIsolationModeVaultFactory,
+  IGMXIsolationModeVaultFactory__factory,
   IGmxMarketToken,
   IGmxMarketToken__factory,
   IGmxReader,
@@ -204,7 +207,8 @@ import {
   DPT_R_ETH_JUN_2025_MAP,
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
-  DPX_MAP, DPX_WETH_V3_POOL_MAP,
+  DPX_MAP,
+  DPX_WETH_V3_POOL_MAP,
   DYT_GLP_2024_MAP,
   ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP,
   ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP,
@@ -221,7 +225,8 @@ import {
   GMX_EXECUTOR_MAP,
   GMX_MAP,
   GMX_READER_MAP,
-  GMX_REWARD_ROUTER_MAP,
+  GMX_REWARD_ROUTER_V2_MAP,
+  GMX_REWARD_ROUTER_V3_MAP,
   GMX_ROUTER_MAP,
   GMX_VAULT_MAP,
   GMX_WITHDRAWAL_HANDLER_MAP,
@@ -346,7 +351,8 @@ export interface GmxEcosystem {
   glpManager: IGLPManager;
   glpRewardsRouter: IGLPRewardsRouterV2;
   gmx: IERC20;
-  gmxRewardsRouter: IGmxRewardRouterV2;
+  gmxRewardsRouterV2: IGmxRewardRouterV2;
+  gmxRewardsRouterV3: IGmxRewardRouterV2;
   gmxVault: IGmxVault;
   sGlp: IERC20;
   sGmx: ISGMX;
@@ -1180,7 +1186,7 @@ async function createArbEcosystem(network: Network, signer: SignerWithAddress): 
         RegistryProxy__factory.connect,
         signer,
       ),
-    }
+    },
   };
 }
 
@@ -1247,8 +1253,13 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
       signer,
     ),
     gmx: getContract(GMX_MAP[network]!.address, IERC20__factory.connect, signer),
-    gmxRewardsRouter: getContract(
-      GMX_REWARD_ROUTER_MAP[network] as string,
+    gmxRewardsRouterV2: getContract(
+      GMX_REWARD_ROUTER_V2_MAP[network] as string,
+      IGmxRewardRouterV2__factory.connect,
+      signer,
+    ),
+    gmxRewardsRouterV3: getContract(
+      GMX_REWARD_ROUTER_V3_MAP[network] as string,
       IGmxRewardRouterV2__factory.connect,
       signer,
     ),

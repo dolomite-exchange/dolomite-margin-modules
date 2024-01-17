@@ -35,7 +35,7 @@ describe('GmxRegistryV1', () => {
       expect(await registry.glpManager()).to.equal(core.gmxEcosystem!.glpManager.address);
       expect(await registry.glpRewardsRouter()).to.equal(core.gmxEcosystem!.glpRewardsRouter.address);
       expect(await registry.gmx()).to.equal(core.gmxEcosystem!.gmx.address);
-      expect(await registry.gmxRewardsRouter()).to.equal(core.gmxEcosystem!.gmxRewardsRouter.address);
+      expect(await registry.gmxRewardsRouter()).to.equal(core.gmxEcosystem!.gmxRewardsRouterV2.address);
       expect(await registry.gmxVault()).to.equal(core.gmxEcosystem!.gmxVault.address);
       expect(await registry.sGlp()).to.equal(core.gmxEcosystem!.sGlp.address);
       expect(await registry.sGmx()).to.equal(core.gmxEcosystem!.sGmx.address);
@@ -54,7 +54,7 @@ describe('GmxRegistryV1', () => {
         glpManager: core.gmxEcosystem!.glpManager.address,
         glpRewardsRouter: core.gmxEcosystem!.glpRewardsRouter.address,
         gmx: core.gmxEcosystem!.gmx.address,
-        gmxRewardsRouter: core.gmxEcosystem!.gmxRewardsRouter.address,
+        gmxRewardsRouter: core.gmxEcosystem!.gmxRewardsRouterV2.address,
         gmxVault: core.gmxEcosystem!.gmxVault.address,
         sGlp: core.gmxEcosystem!.sGlp.address,
         sGmx: core.gmxEcosystem!.sGmx.address,

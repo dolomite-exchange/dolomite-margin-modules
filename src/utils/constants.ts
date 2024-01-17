@@ -389,8 +389,13 @@ export const GMX_GOV_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumGoerli]: undefined,
 };
 
-export const GMX_REWARD_ROUTER_MAP: Record<Network, string | undefined> = {
+export const GMX_REWARD_ROUTER_V2_MAP: Record<Network, string | undefined> = {
   [Network.ArbitrumOne]: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1',
+  [Network.ArbitrumGoerli]: undefined,
+};
+
+export const GMX_REWARD_ROUTER_V3_MAP: Record<Network, string | undefined> = {
+  [Network.ArbitrumOne]: '0x159854e14A862Df9E39E1D128b8e5F70B4A3cE9B',
   [Network.ArbitrumGoerli]: undefined,
 };
 
