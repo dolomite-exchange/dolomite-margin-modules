@@ -145,6 +145,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
         GmxEventUtils.UintKeyValue memory outputTokenAmount = _eventData.uintItems.items[0];
         GmxEventUtils.UintKeyValue memory secondaryOutputTokenAmount = _eventData.uintItems.items[1];
         GmxV2Library.validateEventDataForWithdrawal(
+            IGmxV2IsolationModeVaultFactory(address(VAULT_FACTORY())),
             /* _outputTokenAddress = */ _eventData.addressItems.items[0],
             outputTokenAmount,
             /* _secondaryOutputTokenAddress = */ _eventData.addressItems.items[1],

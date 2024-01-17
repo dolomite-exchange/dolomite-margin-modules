@@ -54,6 +54,7 @@ import {
 import { getSimpleZapParams } from 'test/utils/zap-utils';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../utils/dolomite';
+import { ethers } from 'hardhat';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -68,7 +69,7 @@ const EXECUTE_WITHDRAWALS_DISABLED_KEY = '0xa5d5ec2aef29f70d602db4f2b395018c1a19
 const IS_MARKET_DISABLED_KEY = '0x5c27e8a9fa01145fb01eb80b81db2eab7e57bc33d109d6a64315239a65ce4d36';
 const INVALID_POOL_FACTOR = BigNumber.from('900000000000000000000000000000'); // 9e29
 const VALID_POOL_FACTOR = BigNumber.from('700000000000000000000000000000'); // 7e29
-const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
+const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const executionFee = process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE : GMX_V2_EXECUTION_FEE.mul(10);
@@ -257,7 +258,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
       await expect(result).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
@@ -340,7 +341,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
-          ONE_BI_ENCODED,
+          DEFAULT_EXTRA_DATA,
           { value: executionFee },
         ),
         'IsolationModeVaultV1ActionsImpl: Account liquidatable',
@@ -366,7 +367,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.wbtc.address,
           ONE_BI,
-          ONE_BI_ENCODED,
+          DEFAULT_EXTRA_DATA,
           { value: executionFee },
         ),
         'GmxV2IsolationModeVaultV1: Invalid output token',
@@ -392,7 +393,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           ZERO_BI,
           core.tokens.weth.address,
           ONE_BI,
-          ONE_BI_ENCODED,
+          DEFAULT_EXTRA_DATA,
           { value: executionFee },
         ),
         'IsolationModeVaultV1Freezable: Invalid withdrawal amount',
@@ -418,7 +419,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
-          ONE_BI_ENCODED,
+          DEFAULT_EXTRA_DATA,
           { value: ONE_ETH_BI.add(1) },
         ),
         'GmxV2IsolationModeVaultV1: Invalid execution fee',
@@ -434,7 +435,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
-          ONE_BI_ENCODED,
+          DEFAULT_EXTRA_DATA,
           { value: executionFee },
         ),
         `IsolationModeVaultV1Freezable: Withdrawal too large <${vault.address.toLowerCase()}, ${borrowAccountNumber}>`,
@@ -459,7 +460,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
-          ONE_BI_ENCODED,
+          DEFAULT_EXTRA_DATA,
           { value: executionFee },
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -490,7 +491,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
-          ONE_BI_ENCODED,
+          DEFAULT_EXTRA_DATA,
           { value: executionFee },
         ),
         'IsolationModeVaultV1Freezable: Vault is frozen',
@@ -504,7 +505,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
-          ONE_BI_ENCODED,
+          DEFAULT_EXTRA_DATA,
           { value: executionFee },
         ),
         `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
@@ -517,7 +518,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
       );
       await expectThrow(
         vault.callFunctionAndTriggerReentrancy(
@@ -537,7 +538,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           amountWei,
           core.tokens.weth.address,
           ONE_BI,
-          ONE_BI_ENCODED,
+          DEFAULT_EXTRA_DATA,
           { value: executionFee },
         ),
         `IsolationModeVaultV1Freezable: Only liquidator can call <${core.hhUser1.address.toLowerCase()}>`,
@@ -550,7 +551,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
       );
       await expectThrow(
         vault.callFunctionAndTriggerReentrancy(
@@ -665,7 +666,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -701,7 +702,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -733,7 +734,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 

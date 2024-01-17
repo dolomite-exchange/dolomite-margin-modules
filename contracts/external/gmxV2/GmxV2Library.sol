@@ -319,12 +319,13 @@ library GmxV2Library {
     }
 
     function validateEventDataForWithdrawal(
+        IGmxV2IsolationModeVaultFactory _factory,
         GmxEventUtils.AddressKeyValue memory _outputTokenAddress,
         GmxEventUtils.UintKeyValue memory _outputTokenAmount,
         GmxEventUtils.AddressKeyValue memory _secondaryOutputTokenAddress,
         GmxEventUtils.UintKeyValue memory _secondaryOutputTokenAmount,
         IGmxV2IsolationModeUnwrapperTraderV2.WithdrawalInfo memory _withdrawalInfo
-    ) public pure {
+    ) public view {
         Require.that(
             keccak256(abi.encodePacked(_outputTokenAddress.key))
                 == keccak256(abi.encodePacked("outputToken")),
@@ -349,18 +350,35 @@ library GmxV2Library {
             _FILE,
             "Unexpected secondaryOutputAmount"
         );
-        Require.that(
-            _withdrawalInfo.outputToken == _outputTokenAddress.value,
-            _FILE,
-            "Output token is incorrect"
-        );
 
-        if (_secondaryOutputTokenAmount.value > 0) {
+        if (_withdrawalInfo.outputToken == _factory.LONG_TOKEN()) {
             Require.that(
-                _outputTokenAddress.value == _secondaryOutputTokenAddress.value,
+                _withdrawalInfo.outputToken == _outputTokenAddress.value,
                 _FILE,
-                "Can only receive one token"
+                "Output token is incorrect"
             );
+
+            if (_secondaryOutputTokenAmount.value > 0) {
+                Require.that(
+                    _outputTokenAddress.value == _secondaryOutputTokenAddress.value,
+                    _FILE,
+                    "Can only receive one token"
+                );
+            }
+        } else {
+            Require.that(
+                _withdrawalInfo.outputToken == _secondaryOutputTokenAddress.value,
+                _FILE,
+                "Output token is incorrect"
+            );
+
+            if (_outputTokenAmount.value > 0) {
+                Require.that(
+                    _outputTokenAddress.value == _secondaryOutputTokenAddress.value,
+                    _FILE,
+                    "Can only receive one token"
+                );
+            }
         }
     }
 
