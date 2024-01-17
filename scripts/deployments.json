@@ -373,6 +373,13 @@
       "isVerified": true
     }
   },
+  "GMXIsolationModeTokenVaultV5": {
+    "42161": {
+      "address": "0x13cdeF45eA21f7FF7835d6619f6c481Ad039Ff37",
+      "transaction": "0x46e1ff4465e448e34de7c4a8032be00c2e3458e3bebb60408272e5f401a3ee13",
+      "isVerified": true
+    }
+  },
   "GMXIsolationModeUnwrapperTraderV2": {
     "42161": {
       "address": "0xE437e70a287a7204125d1D16390071903841d9B0",

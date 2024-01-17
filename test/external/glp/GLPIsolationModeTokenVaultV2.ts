@@ -1002,18 +1002,18 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         ONE_BI,
         ONE_BI,
       );
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).stakeGmx(gmxAmount);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).stakeGmx(gmxAmount);
       const glpAmount = await core.gmxEcosystem!.fsGlp.balanceOf(core.hhUser1.address);
 
       await waitDays(30);
-      await core.gmxEcosystem!.gmxRewardsRouter.handleRewards(true, false, true, false, true, true, true);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.handleRewards(true, false, true, false, true, true, true);
       const totalEsGmxAmount = await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address);
       const depositEsGmxAmount = totalEsGmxAmount.div(2);
       const balanceEsGmxAmount = totalEsGmxAmount.sub(depositEsGmxAmount);
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).stakeEsGmx(depositEsGmxAmount);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).stakeEsGmx(depositEsGmxAmount);
 
       const vaultAddress = await glpFactory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).signalTransfer(vaultAddress);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).signalTransfer(vaultAddress);
       await glpFactory.createVault(core.hhUser2.address);
 
       const newVault = setupUserVaultProxy<GLPIsolationModeTokenVaultV2>(
@@ -1053,18 +1053,18 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         ONE_BI,
         ONE_BI,
       );
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).stakeGmx(gmxAmount);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).stakeGmx(gmxAmount);
       const glpAmount = await core.gmxEcosystem!.fsGlp.balanceOf(core.hhUser1.address);
 
       await waitDays(30);
-      await core.gmxEcosystem!.gmxRewardsRouter.handleRewards(true, false, true, false, true, true, true);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.handleRewards(true, false, true, false, true, true, true);
       const totalEsGmxAmount = await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address);
       const depositEsGmxAmount = totalEsGmxAmount.div(2);
       const balanceEsGmxAmount = totalEsGmxAmount.sub(depositEsGmxAmount);
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).stakeEsGmx(depositEsGmxAmount);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).stakeEsGmx(depositEsGmxAmount);
 
       const vaultAddress = await glpFactory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).signalTransfer(vaultAddress);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).signalTransfer(vaultAddress);
       await glpFactory.createVault(core.hhUser2.address);
 
       const newVault = setupUserVaultProxy<GLPIsolationModeTokenVaultV2>(
@@ -1107,15 +1107,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         ONE_BI,
         ONE_BI,
       );
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).stakeGmx(gmxAmount);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).stakeGmx(gmxAmount);
       const glpAmount = await core.gmxEcosystem!.fsGlp.balanceOf(core.hhUser1.address);
 
       await waitDays(30);
-      await core.gmxEcosystem!.gmxRewardsRouter.handleRewards(true, false, true, false, true, true, true);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.handleRewards(true, false, true, false, true, true, true);
       const totalEsGmxAmount = await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address);
       const depositEsGmxAmount = totalEsGmxAmount.div(2);
       const balanceEsGmxAmount = totalEsGmxAmount.sub(depositEsGmxAmount);
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).stakeEsGmx(depositEsGmxAmount);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).stakeEsGmx(depositEsGmxAmount);
 
       await gmxFactory.createVault(core.hhUser2.address);
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
@@ -1125,7 +1125,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       );
 
       const vaultAddress = await glpFactory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).signalTransfer(vaultAddress);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).signalTransfer(vaultAddress);
 
       const newVault = setupUserVaultProxy<GLPIsolationModeTokenVaultV2>(
         vaultAddress,
@@ -1160,15 +1160,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         ONE_BI,
         ONE_BI,
       );
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).stakeGmx(gmxAmount);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).stakeGmx(gmxAmount);
       const glpAmount = await core.gmxEcosystem!.fsGlp.balanceOf(core.hhUser1.address);
 
       await waitDays(30);
-      await core.gmxEcosystem!.gmxRewardsRouter.handleRewards(true, false, true, false, true, true, true);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.handleRewards(true, false, true, false, true, true, true);
       const totalEsGmxAmount = await core.gmxEcosystem!.esGmx.balanceOf(core.hhUser1.address);
       const depositEsGmxAmount = totalEsGmxAmount.div(2);
       const balanceEsGmxAmount = totalEsGmxAmount.sub(depositEsGmxAmount);
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).stakeEsGmx(depositEsGmxAmount);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).stakeEsGmx(depositEsGmxAmount);
 
       await gmxFactory.createVault(core.hhUser2.address);
       const gmxVault = setupUserVaultProxy<GMXIsolationModeTokenVaultV1>(
@@ -1178,7 +1178,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       );
 
       const vaultAddress = await glpFactory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).signalTransfer(vaultAddress);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).signalTransfer(vaultAddress);
 
       const newVault = setupUserVaultProxy<GLPIsolationModeTokenVaultV2>(
         vaultAddress,
@@ -1215,7 +1215,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       const glpAmount = await core.gmxEcosystem!.fsGlp.balanceOf(core.hhUser2.address);
 
       const vaultAddress = await glpFactory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser2).signalTransfer(vaultAddress);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser2).signalTransfer(vaultAddress);
       await glpFactory.createVault(core.hhUser2.address);
 
       const newVault = setupUserVaultProxy<GLPIsolationModeTokenVaultV1>(
@@ -1243,7 +1243,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         ONE_BI,
       );
 
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser2).signalTransfer(vaultAddress);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser2).signalTransfer(vaultAddress);
       await expectThrow(
         newVault.acceptFullAccountTransfer(core.hhUser2.address),
         'GLPIsolationModeTokenVaultV2: Cannot transfer more than once',
@@ -1381,7 +1381,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
 
   describe('#gmxRewardsRouter', () => {
     it('should work normally', async () => {
-      expect(await glpVault.gmxRewardsRouter()).to.equal(core.gmxEcosystem!.gmxRewardsRouter.address);
+      expect(await glpVault.gmxRewardsRouter()).to.equal(core.gmxEcosystem!.gmxRewardsRouterV2.address);
     });
   });
 

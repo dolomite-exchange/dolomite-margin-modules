@@ -72,7 +72,7 @@ describe('GLPIsolationModeVaultFactory', () => {
       // use sGLP for approvals/transfers and fsGLP for checking balances
       const glpAmount = await core.gmxEcosystem!.fsGlp.connect(core.hhUser1).balanceOf(core.hhUser1.address);
       const vaultAddress = await factory.connect(core.hhUser2).calculateVaultByAccount(core.hhUser2.address);
-      await core.gmxEcosystem!.gmxRewardsRouter.connect(core.hhUser1).signalTransfer(vaultAddress);
+      await core.gmxEcosystem!.gmxRewardsRouterV2.connect(core.hhUser1).signalTransfer(vaultAddress);
 
       await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '1000000000000000000');
       await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);

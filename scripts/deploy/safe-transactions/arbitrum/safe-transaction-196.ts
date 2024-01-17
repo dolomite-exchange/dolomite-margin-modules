@@ -11,27 +11,35 @@ import {
 
 /**
  * This script encodes the following transactions:
- * - Deploys a new jUSDC Token Vault to handle auto staking if jUSDC deposit incentives are disabled
+ * - Deploys and sets the new GMX isolation mode vault (for auto staking GMX rewards)
+ * - Updates the GMX rewards router to the new address
  */
 async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const vaultV7 = await deployContractAndSave(
+  const vaultV5 = await deployContractAndSave(
     core.config.networkNumber,
-    'JonesUSDCIsolationModeTokenVaultV2',
+    'GMXIsolationModeTokenVaultV1',
     [],
-    'JonesUSDCIsolationModeTokenVaultV7',
+    'GMXIsolationModeTokenVaultV5',
     core.tokenVaultActionsLibraries,
   );
 
   const transactions = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.jonesEcosystem!.live,
-      'jUSDCIsolationModeFactory',
+      core.gmxEcosystem!.live,
+      'dGmx',
       'ownerSetUserVaultImplementation',
-      [vaultV7],
+      [vaultV5],
+    ),
+    await prettyPrintEncodedDataWithTypeSafety(
+      core,
+      core.gmxEcosystem!.live,
+      'gmxRegistry',
+      'ownerSetGmxRewardsRouter',
+      [core.gmxEcosystem!.gmxRewardsRouterV3.address],
     ),
   ];
 
