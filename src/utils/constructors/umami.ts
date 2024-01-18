@@ -1,6 +1,6 @@
 import { address } from '@dolomite-margin/dist/src';
 import { BigNumber } from 'ethers';
-import { CoreProtocol } from '../../../test/utils/setup';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 import {
   IUmamiAssetVault,
   IUmamiAssetVaultIsolationModeTokenVaultV1,

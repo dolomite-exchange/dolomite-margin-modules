@@ -3,7 +3,7 @@ import { OARB } from 'src/types';
 import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectThrow } from 'test/utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { createOARB } from '../../utils/ecosystem-token-utils/liquidity-mining';
 
 describe('OARB', () => {

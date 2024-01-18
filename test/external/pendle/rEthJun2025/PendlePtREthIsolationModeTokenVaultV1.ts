@@ -9,8 +9,8 @@ import {
   PendlePtPriceOracle,
   PendleRegistry,
 } from '../../../../src/types';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeUnwrapperTraderV2,
@@ -19,7 +19,7 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../../../utils/ecosystem-token-utils/pendle';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../../packages/base/test/utils/setup';
 
 describe('PendlePtREthJun2025IsolationModeTokenVaultV1', () => {
   let snapshotId: string;

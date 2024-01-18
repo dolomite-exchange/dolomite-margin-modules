@@ -17,26 +17,26 @@ import {
   PendlePtGLP2024IsolationModeWrapperTraderV2,
   PendlePtGLP2024IsolationModeWrapperTraderV2__factory,
 } from '../../../../src/types';
-import { AccountInfoStruct } from '../../../../src/utils';
-import { Network, ONE_BI, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../../utils';
+import { AccountInfoStruct } from '../../../../packages/base/src/utils';
+import { Network, ONE_BI, ZERO_BI } from '../../../../packages/base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../../../packages/base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceDustyOrZero,
   expectProtocolBalanceIsGreaterThan,
   expectVaultBalanceToMatchAccountBalances,
   expectWalletBalance,
-} from '../../../utils/assertions';
-import { setExpiry } from '../../../utils/expiry-utils';
-import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '../../../utils/liquidation-utils';
+} from '../../../../packages/base/test/utils/assertions';
+import { setExpiry } from '../../../../packages/base/test/utils/expiry-utils';
+import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '../../../../packages/base/test/utils/liquidation-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,
   setupCoreProtocol,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../../utils/setup';
-import { checkForParaswapSuccess } from '../../../utils/trader-utils';
+} from '../../../../packages/base/test/utils/setup';
+import { checkForParaswapSuccess } from '../../../../packages/base/test/utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '420';

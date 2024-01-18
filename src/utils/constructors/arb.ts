@@ -1,4 +1,4 @@
-import { CoreProtocol } from '../../../test/utils/setup';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 import {
   ARBIsolationModeTokenVaultV1, ARBIsolationModeVaultFactory,
   ARBRegistry,

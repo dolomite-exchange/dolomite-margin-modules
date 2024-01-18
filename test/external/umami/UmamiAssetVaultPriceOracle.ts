@@ -10,17 +10,17 @@ import {
   UmamiAssetVaultPriceOracle,
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
-import { createTestVaultToken } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { createTestVaultToken } from '../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createUmamiAssetVaultIsolationModeTokenVaultV1,
   createUmamiAssetVaultIsolationModeVaultFactory,
   createUmamiAssetVaultPriceOracle,
   createUmamiAssetVaultRegistry,
 } from '../../utils/ecosystem-token-utils/umami';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../packages/base/test/utils/setup';
 
 const LINK_PRICE = BigNumber.from('8016000000000000000'); // $8.016000000000000000
 const USDC_PRICE = BigNumber.from('999937000000000000000000000000'); // $0.999937000000000000000000000000

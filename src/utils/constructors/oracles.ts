@@ -1,5 +1,5 @@
 import { BigNumberish } from 'ethers';
-import { CoreProtocol } from '../../../test/utils/setup';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 import { IAlgebraV3Pool, IERC20 } from 'src/types';
 
 export async function getChainlinkPriceOracleParams(

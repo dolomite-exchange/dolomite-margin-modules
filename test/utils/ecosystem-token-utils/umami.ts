@@ -25,8 +25,8 @@ import {
   getUmamiAssetVaultPriceOracleConstructorParams,
   getUmamiAssetVaultRegistryConstructorParams,
 } from '../../../src/utils/constructors/umami';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { CoreProtocol } from '../setup';
+import { createContractWithAbi } from '../../../packages/base/src/utils/dolomite-utils';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 
 export async function createUmamiAssetVaultIsolationModeVaultFactory(
   core: CoreProtocol,

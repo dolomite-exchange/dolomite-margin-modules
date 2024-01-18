@@ -15,15 +15,15 @@ import {
   TestGMXIsolationModeTokenVaultV1,
   TestGMXIsolationModeTokenVaultV1__factory,
 } from '../../../src/types';
-import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
+import { Network, ONE_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../../packages/base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
   expectWalletBalance,
   expectWalletBalanceIsGreaterThan,
-} from '../../utils/assertions';
+} from '../../../packages/base/test/utils/assertions';
 import {
   createGLPIsolationModeVaultFactory,
   createGMXIsolationModeVaultFactory,
@@ -39,7 +39,7 @@ import {
   setupGMXBalance,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
 
 const gmxAmount = parseEther('10'); // 10 GMX

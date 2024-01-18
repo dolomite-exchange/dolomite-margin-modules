@@ -1,8 +1,8 @@
 import { parseEther } from 'ethers/lib/utils';
 import { getTWAPPriceOracleConstructorParams } from '../../../../src/utils/constructors/oracles';
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../../test/utils/setup';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,

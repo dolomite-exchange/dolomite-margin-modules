@@ -10,7 +10,7 @@ import {
   IGLPIsolationModeVaultFactoryOld,
   IGmxRegistryV1,
 } from '../../../src/types';
-import { AccountInfoStruct } from '../../../src/utils';
+import { AccountInfoStruct } from '../../../packages/base/src/utils';
 import {
   BYTES_EMPTY,
   Network,
@@ -18,23 +18,23 @@ import {
   NO_PARASWAP_TRADER_PARAM,
   ONE_BI,
   ZERO_BI,
-} from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
+} from '../../../packages/base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../../packages/base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceDustyOrZero,
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
-} from '../../utils/assertions';
+} from '../../../packages/base/test/utils/assertions';
 import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from '../../utils/ecosystem-token-utils/gmx';
-import { setExpiry } from '../../utils/expiry-utils';
-import { liquidateV4WithIsolationMode } from '../../utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
+import { setExpiry } from '../../../packages/base/test/utils/expiry-utils';
+import { liquidateV4WithIsolationMode } from '../../../packages/base/test/utils/liquidation-utils';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../../packages/base/test/utils/setup';
 import {
   checkForParaswapSuccess,
   getCalldataForParaswap,
   getParaswapTraderParamStruct,
-} from '../../utils/trader-utils';
+} from '../../../packages/base/test/utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

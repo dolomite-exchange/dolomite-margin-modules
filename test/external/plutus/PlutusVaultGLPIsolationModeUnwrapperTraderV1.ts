@@ -12,10 +12,10 @@ import {
   PlutusVaultGLPPriceOracle,
   PlutusVaultRegistry,
 } from '../../../src/types';
-import { AccountInfoStruct } from '../../../src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { AccountInfoStruct } from '../../../packages/base/src/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createPlutusVaultGLPIsolationModeTokenVaultV1,
   createPlutusVaultGLPIsolationModeUnwrapperTraderV1,
@@ -31,7 +31,7 @@ import {
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
 
 const defaultAccountNumber = '0';

@@ -8,12 +8,12 @@ import {
   TestGLPMathLib,
   TestGLPMathLib__factory,
 } from '../../../src/types';
-import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
-import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { createContractWithAbi, createTestToken } from '../../../packages/base/src/utils/dolomite-utils';
+import { Network, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import { createGmxRegistry } from '../../utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../../../packages/base/test/utils/setup';
 
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const usdcAmount = BigNumber.from('10000000'); // $10

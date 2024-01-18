@@ -1,5 +1,5 @@
-import { getAndCheckSpecificNetwork } from '../../src/utils/dolomite-utils';
-import { Network } from '../../src/utils/no-deps-constants';
+import { getAndCheckSpecificNetwork } from '../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../packages/base/src/utils/no-deps-constants';
 import { deployContractAndSave } from '../deploy-utils';
 
 async function main() {

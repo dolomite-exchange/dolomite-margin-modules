@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { TestBitsLib, TestBitsLib__factory } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { createContractWithAbi } from '../../../packages/base/src/utils/dolomite-utils';
+import { ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
 
 describe('BitsLib', () => {
   let snapshotId: string;

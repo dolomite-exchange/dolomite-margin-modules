@@ -7,11 +7,11 @@ import {
   VesterProxy,
   VesterProxy__factory,
 } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectThrow } from '../../utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
+import { createContractWithAbi } from '../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectEvent, expectThrow } from '../../../packages/base/test/utils/assertions';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 
 describe('VesterProxy', () => {
   let snapshotId: string;

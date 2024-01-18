@@ -13,10 +13,10 @@ import {
   PlutusVaultGLPPriceOracle,
   PlutusVaultRegistry,
 } from '../../../src/types';
-import { AccountInfoStruct } from '../../../src/utils';
-import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
-import { expectThrow, expectWalletBalance } from '../../utils/assertions';
+import { AccountInfoStruct } from '../../../packages/base/src/utils';
+import { Network, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../../packages/base/test/utils';
+import { expectThrow, expectWalletBalance } from '../../../packages/base/test/utils/assertions';
 import {
   createPlutusVaultGLPIsolationModeTokenVaultV1,
   createPlutusVaultGLPIsolationModeUnwrapperTraderV1,
@@ -31,7 +31,7 @@ import {
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
 
 const amountWei = BigNumber.from('1250000000000000000000'); // 1,250 plvGLP tokens

@@ -1,8 +1,8 @@
 import { ethers } from 'hardhat';
 import { DolomiteRegistryImplementation__factory } from '../../src/types';
-import { getRegistryProxyConstructorParams } from '../../src/utils/constructors/dolomite';
-import { Network } from '../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../test/utils/setup';
+import { getRegistryProxyConstructorParams } from '../../packages/base/src/utils/constructors/dolomite';
+import { Network } from '../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../packages/base/test/utils/setup';
 import { deployContractAndSave } from '../deploy-utils';
 
 async function main() {

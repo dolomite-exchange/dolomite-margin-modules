@@ -1,11 +1,11 @@
 import { BigNumber } from 'ethers/lib/ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { LinearStepFunctionInterestSetter__factory, TWAPPriceOracle__factory } from '../../../../src/types';
-import { getOwnerAddMarketParameters } from '../../../../src/utils/constructors/dolomite';
+import { getOwnerAddMarketParameters } from '../../../../packages/base/src/utils/constructors/dolomite';
 import { getTWAPPriceOracleConstructorParams } from '../../../../src/utils/constructors/oracles';
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network } from '../../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../../test/utils/setup';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   createFolder,
   deployContractAndSave,

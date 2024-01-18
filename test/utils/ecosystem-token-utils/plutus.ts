@@ -35,8 +35,8 @@ import {
   getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../../../src/utils/constructors/plutus';
-import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
-import { CoreProtocol } from '../setup';
+import { createContractWithAbi, createContractWithLibrary } from '../../../packages/base/src/utils/dolomite-utils';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 import { getTokenVaultLibrary } from '../../../scripts/deploy-utils';
 
 export function createDolomiteCompatibleWhitelistForPlutusDAO(

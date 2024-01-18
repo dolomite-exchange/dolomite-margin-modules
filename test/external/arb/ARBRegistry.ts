@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { ARBRegistry } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import { createARBRegistry } from '../../utils/ecosystem-token-utils/arb';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 
 describe('ARBRegistry', () => {
   let snapshotId: string;

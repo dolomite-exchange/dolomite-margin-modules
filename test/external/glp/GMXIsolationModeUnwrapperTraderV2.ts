@@ -11,9 +11,9 @@ import {
   GmxRegistryV1,
   IERC20,
 } from '../../../src/types';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createGLPIsolationModeTokenVaultV2,
   createGLPIsolationModeVaultFactory,
@@ -29,9 +29,9 @@ import {
   setupGMXBalance,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
-import { setupNewGenericTraderProxy } from '../../utils/dolomite';
+import { setupNewGenericTraderProxy } from '../../../packages/base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

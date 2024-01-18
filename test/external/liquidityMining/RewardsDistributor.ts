@@ -6,7 +6,7 @@ import { createContractWithAbi } from 'src/utils/dolomite-utils';
 import { Network, ZERO_BI } from 'src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectEvent, expectThrow } from 'test/utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { createOARB, createRewardsDistributor } from '../../utils/ecosystem-token-utils/liquidity-mining';
 
 const user1Rewards = [10, 20];

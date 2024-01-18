@@ -64,9 +64,9 @@ import {
   getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendleYtGLPPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/pendle';
-import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../dolomite';
-import { CoreProtocol } from '../setup';
+import { createContractWithAbi, createContractWithLibrary } from '../../../packages/base/src/utils/dolomite-utils';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../../packages/base/test/utils/dolomite';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 
 export async function createPendleGLPRegistry(core: CoreProtocol): Promise<PendleGLPRegistry> {
   const implementation = await createContractWithAbi<PendleGLPRegistry>(

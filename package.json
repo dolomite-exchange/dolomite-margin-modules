@@ -9,7 +9,7 @@
     "scripts/deployments.json"
   ],
   "scripts": {
-    "build": "hardhat compile",
+    "build": "yarn workspaces run build",
     "clean": "hardhat clean",
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat coverage --testfiles \"test/**/!(*Liquidation*|*LiquidatorProxyV2*|*Umami*)*.ts\" --network hardhat",
     "coverage:prepare": "ts-node scripts/fix-contracts-for-coverage.ts",
@@ -62,26 +62,22 @@
     "execute:arbitrum-186": "hardhat --network arbitrum_one run scripts/deploy/safe-transactions/arbitrum/safe-transaction-186.ts",
     "execute:arbitrum-189": "hardhat --network arbitrum_one run scripts/deploy/safe-transactions/arbitrum/safe-transaction-189.ts",
     "execute:arbitrum-192": "hardhat --network arbitrum_one run scripts/deploy/safe-transactions/arbitrum/safe-transaction-192.ts",
-    "execute:arbitrum-195": "hardhat --network arbitrum_one run scripts/deploy/safe-transactions/arbitrum/safe-transaction-195.ts",
-    "execute:arbitrum-196": "hardhat --network arbitrum_one run scripts/deploy/safe-transactions/arbitrum/safe-transaction-196.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python scripts/lint-contracts.py fix",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "sort:contracts": "hardhat --network hardhat run scripts/sort-contract.ts",
     "test": "hardhat --network hardhat test",
-    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat --network hardhat test test/external/jones/usdc/JonesUSDCIsolationModeTokenVaultV2.ts",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat --network hardhat test test/external/oracles/ChainlinkAutomationPriceOracle.ts",
     "verify:contract": "hardhat --network arbitrum_one run scripts/verify-contract.ts"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dolomite-exchange/dolomite-margin-modules.git"
-  },
+  "repository": "git@github.com:dolomite-exchange/dolomite-margin-modules.git",
   "author": "",
   "license": "GPL-2.0",
   "bugs": {
     "url": "https://github.com/dolomite-exchange/dolomite-margin-modules/issues"
   },
   "homepage": "https://github.com/dolomite-exchange/dolomite-margin-modules#readme",
+  "packageManager": "yarn@4.0.0-rc.42",
   "devDependencies": {
     "@babel/core": "^7.20.5",
     "@babel/eslint-parser": "^7.19.1",
@@ -118,7 +114,7 @@
     "eslint-plugin-import": "^2.16.0",
     "ethereum-waffle": "^4.0.0-alpha.0",
     "ethers": "^5.6.0",
-    "hardhat": "^2.16.1",
+    "hardhat": "^2.19.4",
     "hardhat-gas-reporter": "^1.0.9",
     "hardhat-tracer": "^2.6.0",
     "solidity-coverage": "^0.8.5",
@@ -127,5 +123,9 @@
     "tslint-config-airbnb": "^5.11.2",
     "typescript": "^4.5.5"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
 }

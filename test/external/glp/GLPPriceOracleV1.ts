@@ -2,16 +2,16 @@ import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { GLPPriceOracleV1, GmxRegistryV1 } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createGLPIsolationModeTokenVaultV1,
   createGLPIsolationModeVaultFactory,
   createGLPPriceOracleV1,
   createGmxRegistry,
 } from '../../utils/ecosystem-token-utils/gmx';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 
 const GLP_PRICE = BigNumber.from('1004371801993868870'); // $1.004371801993868870
 

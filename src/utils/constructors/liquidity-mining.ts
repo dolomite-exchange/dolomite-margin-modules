@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { CoreProtocol } from '../../../test/utils/setup';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 import { OARB, VesterImplementationV1, VesterImplementationV2, VesterProxy } from '../../types';
 
 export function getVesterImplementationConstructorParams(core: CoreProtocol): any[] {

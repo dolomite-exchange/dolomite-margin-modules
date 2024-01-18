@@ -8,9 +8,9 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV1,
   PlutusVaultGLPIsolationModeWrapperTraderV2,
 } from '../../../src/types';
-import { impersonate } from '../../utils';
+import { impersonate } from '../../../packages/base/test/utils';
 import { createDolomiteCompatibleWhitelistForPlutusDAO } from '../../utils/ecosystem-token-utils/plutus';
-import { CoreProtocol } from '../../utils/setup';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 import { expect } from 'chai';
 
 export async function createAndSetPlutusVaultWhitelist(

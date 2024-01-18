@@ -11,10 +11,10 @@ import {
   GmxRegistryV1,
   IERC20,
 } from '../../../src/types';
-import { AccountInfoStruct } from '../../../src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { AccountInfoStruct } from '../../../packages/base/src/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createGLPIsolationModeTokenVaultV1,
   createGLPIsolationModeVaultFactory,
@@ -30,8 +30,8 @@ import {
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../utils/setup';
-import { setupNewGenericTraderProxy } from '../../utils/dolomite';
+} from '../../../packages/base/test/utils/setup';
+import { setupNewGenericTraderProxy } from '../../../packages/base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

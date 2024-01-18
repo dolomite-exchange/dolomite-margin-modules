@@ -16,10 +16,10 @@ import {
   TestGLPIsolationModeTokenVaultV2,
   TestGLPIsolationModeTokenVaultV2__factory,
 } from '../../../src/types';
-import { AccountInfoStruct } from '../../../src/utils';
-import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../utils';
-import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
+import { AccountInfoStruct } from '../../../packages/base/src/utils';
+import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '../../../packages/base/test/utils';
+import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../../../packages/base/test/utils/assertions';
 import {
   createGMXIsolationModeTokenVaultV1,
   createGMXIsolationModeVaultFactory,
@@ -33,7 +33,7 @@ import {
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX

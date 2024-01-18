@@ -25,23 +25,23 @@ import {
   createContractWithAbi,
   createTestToken,
   depositIntoDolomiteMargin,
-} from '../../../../src/utils/dolomite-utils';
-import { Network, ONE_BI, ZERO_BI } from '../../../../src/utils/no-deps-constants';
+} from '../../../../packages/base/src/utils/dolomite-utils';
+import { Network, ONE_BI, ZERO_BI } from '../../../../packages/base/src/utils/no-deps-constants';
 import {
   getBlockTimestamp,
   impersonate,
   increaseToTimestamp,
   revertToSnapshotAndCapture,
   snapshot,
-} from '../../../utils';
+} from '../../../../packages/base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
   expectWalletBalance,
   expectWalletBalanceIsGreaterThan,
-} from '../../../utils/assertions';
-import { createDolomiteRegistryImplementation } from '../../../utils/dolomite';
+} from '../../../../packages/base/test/utils/assertions';
+import { createDolomiteRegistryImplementation } from '../../../../packages/base/test/utils/dolomite';
 import {
   createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeUnwrapperTraderV2,
@@ -55,8 +55,8 @@ import {
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../../utils/setup';
-import { getSimpleZapParams } from '../../../utils/zap-utils';
+} from '../../../../packages/base/test/utils/setup';
+import { getSimpleZapParams } from '../../../../packages/base/test/utils/zap-utils';
 
 const ONE_WEEK_SECONDS = 7 * 86400;
 

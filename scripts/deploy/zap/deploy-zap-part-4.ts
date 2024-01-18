@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../test/utils/setup';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../deploy-utils';
 
 async function main() {

@@ -12,9 +12,9 @@ import {
   IsolationModeUpgradeableProxy,
   IsolationModeUpgradeableProxy__factory,
 } from '../../../src/types';
-import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
+import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '../../../packages/base/test/utils/assertions';
 import {
   createGLPIsolationModeTokenVaultV1,
   createGLPIsolationModeTokenVaultV2,
@@ -31,7 +31,7 @@ import {
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 
 const gmxAmount = parseEther('10');
 const toAccountNumber = '0';

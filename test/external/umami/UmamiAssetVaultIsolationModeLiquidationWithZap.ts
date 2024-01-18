@@ -18,18 +18,18 @@ import {
   UmamiAssetVaultRegistry,
   UmamiAssetVaultRegistry__factory,
 } from '../../../src/types';
-import { AccountInfoStruct } from '../../../src/utils';
-import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../utils';
+import { AccountInfoStruct } from '../../../packages/base/src/utils';
+import { depositIntoDolomiteMargin } from '../../../packages/base/src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../../packages/base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
-} from '../../utils/assertions';
-import { setExpiry } from '../../utils/expiry-utils';
-import { liquidateV4WithZap, toZapBigNumber } from '../../utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../utils/setup';
+} from '../../../packages/base/test/utils/assertions';
+import { setExpiry } from '../../../packages/base/test/utils/expiry-utils';
+import { liquidateV4WithZap, toZapBigNumber } from '../../../packages/base/test/utils/liquidation-utils';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../../packages/base/test/utils/setup';
 import { setupWhitelistAndAggregateVault } from './umami-utils';
 
 const defaultAccountNumber = '0';

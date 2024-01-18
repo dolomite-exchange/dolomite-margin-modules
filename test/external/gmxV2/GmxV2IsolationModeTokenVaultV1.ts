@@ -50,10 +50,10 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
   setupWETHBalance,
-} from 'test/utils/setup';
+} from 'packages/base/test/utils/setup';
 import { getSimpleZapParams } from 'test/utils/zap-utils';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
-import { createDolomiteRegistryImplementation, createEventEmitter } from '../../utils/dolomite';
+import { createDolomiteRegistryImplementation, createEventEmitter } from '../../../packages/base/test/utils/dolomite';
 import { ethers } from 'hardhat';
 
 const defaultAccountNumber = '0';

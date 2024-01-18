@@ -1,6 +1,6 @@
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { CoreProtocol } from '../../../test/utils/setup';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 import {
   GLPIsolationModeTokenVaultV1,
   GLPIsolationModeVaultFactory,

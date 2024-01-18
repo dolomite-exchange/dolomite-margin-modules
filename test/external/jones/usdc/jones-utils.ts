@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { JonesUSDCIsolationModeUnwrapperTraderV2, JonesUSDCIsolationModeWrapperTraderV2 } from '../../../../src/types';
-import { impersonate } from '../../../utils';
-import { CoreProtocol } from '../../../utils/setup';
+import { impersonate } from '../../../../packages/base/test/utils';
+import { CoreProtocol } from '../../../../packages/base/test/utils/setup';
 
 export const TRADER_ROLE = ethers.utils.solidityKeccak256(['uint256'], [Date.now()]);
 

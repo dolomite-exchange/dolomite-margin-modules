@@ -5,9 +5,9 @@ import {
   getVesterImplementationConstructorParams,
   getVesterV1ProxyConstructorParams,
 } from '../../../../src/utils/constructors/liquidity-mining';
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { CoreProtocol, setupCoreProtocol } from '../../../../test/utils/setup';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { CoreProtocol, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,

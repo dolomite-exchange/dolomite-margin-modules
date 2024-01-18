@@ -1,8 +1,8 @@
 import { parseEther } from 'ethers/lib/utils';
-import { TargetCollateralization, TargetLiquidationPremium } from '../../../../src/utils/constructors/dolomite';
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../../test/utils/setup';
+import { TargetCollateralization, TargetLiquidationPremium } from '../../../../packages/base/src/utils/constructors/dolomite';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,

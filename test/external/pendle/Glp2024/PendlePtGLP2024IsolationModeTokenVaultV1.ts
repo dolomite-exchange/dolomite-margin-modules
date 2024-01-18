@@ -13,8 +13,8 @@ import {
   PendlePtGLP2024IsolationModeWrapperTraderV2,
   PendlePtGLPPriceOracle,
 } from '../../../../src/types';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
 import {
   createPendleGLPRegistry,
   createPendlePtGLP2024IsolationModeTokenVaultV1,
@@ -29,7 +29,7 @@ import {
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../../utils/setup';
+} from '../../../../packages/base/test/utils/setup';
 
 describe('PendlePtGLP2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;

@@ -25,7 +25,7 @@ import {
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
 } from 'test/utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'test/utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
 
 const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('919979975416060612'); // $0.9199

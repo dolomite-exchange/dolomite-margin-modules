@@ -12,21 +12,21 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCRegistry,
 } from '../../../../src/types';
-import { AccountInfoStruct } from '../../../../src/utils';
-import { depositIntoDolomiteMargin } from '../../../../src/utils/dolomite-utils';
+import { AccountInfoStruct } from '../../../../packages/base/src/utils';
+import { depositIntoDolomiteMargin } from '../../../../packages/base/src/utils/dolomite-utils';
 import {
   BYTES_EMPTY,
   Network,
   NO_PARASWAP_TRADER_PARAM,
   ONE_BI,
   ZERO_BI,
-} from '../../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../../utils';
+} from '../../../../packages/base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../../../packages/base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
-} from '../../../utils/assertions';
+} from '../../../../packages/base/test/utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -36,15 +36,15 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
-import { setExpiry } from '../../../utils/expiry-utils';
-import { liquidateV4WithIsolationMode } from '../../../utils/liquidation-utils';
+import { setExpiry } from '../../../../packages/base/test/utils/expiry-utils';
+import { liquidateV4WithIsolationMode } from '../../../../packages/base/test/utils/liquidation-utils';
 import {
   CoreProtocol,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../../utils/setup';
+} from '../../../../packages/base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
 
 const defaultAccountNumber = '0';

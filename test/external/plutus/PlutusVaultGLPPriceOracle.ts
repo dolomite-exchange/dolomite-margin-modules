@@ -7,10 +7,10 @@ import {
   PlutusVaultGLPPriceOracle,
   PlutusVaultRegistry,
 } from '../../../src/types';
-import { createTestToken } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { createTestToken } from '../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createPlutusVaultGLPIsolationModeTokenVaultV1,
   createPlutusVaultGLPIsolationModeUnwrapperTraderV1,
@@ -18,7 +18,7 @@ import {
   createPlutusVaultGLPPriceOracle,
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../packages/base/test/utils/setup';
 
 const GLP_PRICE = BigNumber.from('1004371801993868870'); // $1.004371801993868870
 const PLV_GLP_PRICE = BigNumber.from('1200844314982579522'); // $1.200844314982579522

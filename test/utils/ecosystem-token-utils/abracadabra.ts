@@ -20,8 +20,8 @@ import {
   getMagicGLPWrapperTraderV1ConstructorParams,
   getMagicGLPWrapperTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/abracadabra';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { CoreProtocol } from '../setup';
+import { createContractWithAbi } from '../../../packages/base/src/utils/dolomite-utils';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 
 export async function createMagicGLPPriceOracle(core: CoreProtocol): Promise<MagicGLPPriceOracle> {
   return createContractWithAbi(

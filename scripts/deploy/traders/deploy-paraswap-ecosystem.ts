@@ -1,8 +1,8 @@
 import { ethers } from 'hardhat';
-import { getParaswapAggregatorTraderConstructorParams } from '../../../src/utils/constructors/traders';
-import { getAnyNetwork } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../test/utils/setup';
+import { getParaswapAggregatorTraderConstructorParams } from '../../../packages/base/src/utils/constructors/traders';
+import { getAnyNetwork } from '../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 import { deployContractAndSave } from '../../deploy-utils';
 
 async function main() {

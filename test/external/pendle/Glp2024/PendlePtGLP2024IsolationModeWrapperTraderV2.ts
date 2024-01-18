@@ -15,15 +15,15 @@ import {
   PendlePtGLP2024IsolationModeWrapperTraderV2,
   PendlePtGLPPriceOracle,
 } from '../../../../src/types';
-import { AccountInfoStruct } from '../../../../src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
+import { AccountInfoStruct } from '../../../../packages/base/src/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../packages/base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
-} from '../../../utils';
-import { expectThrow, expectWalletBalance } from '../../../utils/assertions';
+} from '../../../../packages/base/test/utils';
+import { expectThrow, expectWalletBalance } from '../../../../packages/base/test/utils/assertions';
 import {
   createPendleGLPRegistry,
   createPendlePtGLP2024IsolationModeTokenVaultV1,
@@ -39,9 +39,9 @@ import {
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../../utils/setup';
+} from '../../../../packages/base/test/utils/setup';
 import { encodeSwapExactTokensForPt } from '../pendle-utils';
-import { setupNewGenericTraderProxy } from '../../../utils/dolomite';
+import { setupNewGenericTraderProxy } from '../../../../packages/base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying

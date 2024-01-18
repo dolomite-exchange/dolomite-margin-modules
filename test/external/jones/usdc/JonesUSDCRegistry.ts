@@ -5,9 +5,9 @@ import {
   JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
   JonesUSDCRegistry,
 } from '../../../../src/types';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
-import { expectEvent, expectThrow } from '../../../utils/assertions';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
+import { expectEvent, expectThrow } from '../../../../packages/base/test/utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -15,7 +15,7 @@ import {
   createJonesUSDCIsolationModeVaultFactory,
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
 const OTHER_ADDRESS_2 = '0x1234567812345678123456781234567812345672';

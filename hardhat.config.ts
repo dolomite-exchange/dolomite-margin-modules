@@ -13,7 +13,7 @@ import { HardhatUserConfig } from 'hardhat/types';
 import 'solidity-coverage';
 
 import 'tsconfig-paths/register';
-import { DEFAULT_BLOCK_NUMBER, NetworkName } from './src/utils/no-deps-constants';
+import { DEFAULT_BLOCK_NUMBER, NetworkName } from './packages/base/src/utils/no-deps-constants';
 
 chai.use(solidity);
 require('dotenv').config();

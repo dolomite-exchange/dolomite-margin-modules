@@ -8,9 +8,9 @@ import {
   PlutusVaultGLPIsolationModeVaultFactory,
   PlutusVaultGLPIsolationModeWrapperTraderV1,
 } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectThrow } from '../../utils/assertions';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectEvent, expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createDolomiteCompatibleWhitelistForPlutusDAO,
   createPlutusVaultGLPIsolationModeTokenVaultV1,
@@ -19,7 +19,7 @@ import {
   createPlutusVaultGLPIsolationModeWrapperTraderV1,
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../packages/base/test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 

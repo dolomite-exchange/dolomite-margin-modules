@@ -26,9 +26,9 @@ import {
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
   getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
 } from '../../../../src/utils/constructors/plutus';
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { CoreProtocol, setupCoreProtocol } from '../../../../test/utils/setup';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { CoreProtocol, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,

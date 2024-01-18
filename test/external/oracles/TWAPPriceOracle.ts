@@ -3,11 +3,11 @@ import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { TestPair, TestPair__factory, TWAPPriceOracle, TWAPPriceOracle__factory } from '../../../src/types';
 import { getTWAPPriceOracleConstructorParams } from '../../../src/utils/constructors/oracles';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { Network, ONE_DAY_SECONDS } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+import { createContractWithAbi } from '../../../packages/base/src/utils/dolomite-utils';
+import { Network, ONE_DAY_SECONDS } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
+import { CoreProtocol, setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 
 const ARB_TOKEN = '0x912CE59144191C1204E64559FE8253a0e49E6548';
 const ARB_WETH_POOL = '0xe51635ae8136aBAc44906A8f230C2D235E9c195F';

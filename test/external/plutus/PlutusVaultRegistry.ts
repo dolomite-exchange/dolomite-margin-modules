@@ -1,11 +1,11 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { PlutusVaultRegistry } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectThrow } from '../../utils/assertions';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectEvent, expectThrow } from '../../../packages/base/test/utils/assertions';
 import { createPlutusVaultRegistry } from '../../utils/ecosystem-token-utils/plutus';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 

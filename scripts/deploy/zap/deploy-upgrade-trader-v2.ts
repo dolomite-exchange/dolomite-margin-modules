@@ -11,8 +11,8 @@ import {
   getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/plutus';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../test/utils/setup';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';
 
 async function main() {

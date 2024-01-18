@@ -1,9 +1,9 @@
 import { parseEther } from 'ethers/lib/utils';
-import { ST_ETH_MAP, STETH_USD_CHAINLINK_FEED_MAP } from '../../../../src/utils/constants';
+import { ST_ETH_MAP, STETH_USD_CHAINLINK_FEED_MAP } from '../../../../packages/base/src/utils/constants';
 import { getPendlePtPriceOracleConstructorParams } from '../../../../src/utils/constructors/pendle';
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network } from '../../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../../test/utils/setup';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,

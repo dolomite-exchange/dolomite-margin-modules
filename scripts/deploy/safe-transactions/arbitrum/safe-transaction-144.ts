@@ -1,7 +1,7 @@
-import { STETH_ETH_CHAINLINK_FEED_MAP, WSTETH_STETH_CHAINLINK_FEED_MAP } from '../../../../src/utils/constants';
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../../test/utils/setup';
+import { STETH_ETH_CHAINLINK_FEED_MAP, WSTETH_STETH_CHAINLINK_FEED_MAP } from '../../../../packages/base/src/utils/constants';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import { createFolder, DenJsonUpload, prettyPrintEncodeInsertChainlinkOracle, writeFile } from '../../../deploy-utils';
 
 /**

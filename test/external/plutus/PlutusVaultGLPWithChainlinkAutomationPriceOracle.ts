@@ -22,19 +22,19 @@ import {
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory,
 } from '../../../src/types';
-import { CHAINLINK_REGISTRY_MAP } from '../../../src/utils/constants';
-import { createTestVaultToken } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
+import { CHAINLINK_REGISTRY_MAP } from '../../../packages/base/src/utils/constants';
+import { createTestVaultToken } from '../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
 import {
   getBlockTimestamp,
   getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
-} from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+} from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import { createPlutusVaultGLPWithChainlinkAutomationPriceOracle } from '../../utils/ecosystem-token-utils/plutus';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../../packages/base/test/utils/setup';
 
 const GLP_PRICE = BigNumber.from('984588746906888510'); // $0.984588746906888510
 const FEE_PRECISION = BigNumber.from('10000');

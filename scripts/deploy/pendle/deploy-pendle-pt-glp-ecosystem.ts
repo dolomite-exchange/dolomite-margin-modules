@@ -14,8 +14,8 @@ import {
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendlePtGLPPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/pendle';
-import { Network, TEN_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../test/utils/setup';
+import { Network, TEN_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../deploy-utils';
 
 async function main() {

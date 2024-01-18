@@ -11,17 +11,17 @@ import {
   TestChainlinkAutomationPriceOracle__factory,
   TestChainlinkRegistry__factory,
 } from '../../../src/types';
-import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { createContractWithAbi, createTestVaultToken } from '../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const UPKEEP_ID = '123';

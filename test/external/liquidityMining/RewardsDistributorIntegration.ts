@@ -4,7 +4,7 @@ import { OARB, RewardsDistributor } from 'src/types';
 import { Network } from 'src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'test/utils';
 import { expectThrow } from 'test/utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'test/utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { createOARB, createRewardsDistributor } from '../../utils/ecosystem-token-utils/liquidity-mining';
 
 const USER1 = '0x0321be949876c2545ac121379c620c2a0480b758';

@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../test/utils/setup';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 import { prettyPrintEncodedData } from '../../deploy-utils';
 
 const oldLiquidatorAddress = '0xac66E962A1C52B8a3B32AF432a60fFDBc99ebD0b';

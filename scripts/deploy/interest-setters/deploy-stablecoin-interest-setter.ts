@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
-import { getAnyNetwork } from '../../../src/utils/dolomite-utils';
-import { setupCoreProtocol } from '../../../test/utils/setup';
+import { getAnyNetwork } from '../../../packages/base/src/utils/dolomite-utils';
+import { setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../deploy-utils';
 
 async function main() {

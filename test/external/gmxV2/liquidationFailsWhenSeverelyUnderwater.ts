@@ -18,11 +18,11 @@ import {
   IsolationModeFreezableLiquidatorProxy,
   IsolationModeFreezableLiquidatorProxy__factory,
 } from '../../../src/types';
-import { AccountStruct } from '../../../src/utils/constants';
+import { AccountStruct } from '../../../packages/base/src/utils/constants';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
-import { createContractWithAbi, depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { createContractWithAbi, depositIntoDolomiteMargin } from '../../../packages/base/src/utils/dolomite-utils';
+import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -30,8 +30,8 @@ import {
   expectThrow,
   expectWalletAllowance,
   expectWalletBalance,
-} from '../../utils/assertions';
-import { createDolomiteRegistryImplementation, createEventEmitter } from '../../utils/dolomite';
+} from '../../../packages/base/test/utils/assertions';
+import { createDolomiteRegistryImplementation, createEventEmitter } from '../../../packages/base/test/utils/dolomite';
 import {
   createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
@@ -43,7 +43,7 @@ import {
   getInitiateWrappingParams,
   getOracleParams,
 } from '../../utils/ecosystem-token-utils/gmx';
-import { liquidateV4WithZapParam } from '../../utils/liquidation-utils';
+import { liquidateV4WithZapParam } from '../../../packages/base/test/utils/liquidation-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,
@@ -53,8 +53,8 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
   setupWETHBalance,
-} from '../../utils/setup';
-import { getLiquidateIsolationModeZapPath } from '../../utils/zap-utils';
+} from '../../../packages/base/test/utils/setup';
+import { getLiquidateIsolationModeZapPath } from '../../../packages/base/test/utils/zap-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);

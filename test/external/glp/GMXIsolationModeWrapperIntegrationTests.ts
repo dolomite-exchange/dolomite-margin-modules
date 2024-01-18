@@ -22,8 +22,8 @@ import {
   IIsolationModeUnwrapperTrader,
   IIsolationModeWrapperTrader,
 } from '../../../src/types';
-import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { Network, ONE_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
 import {
   createGLPIsolationModeTokenVaultV2,
   createGLPIsolationModeVaultFactory,
@@ -39,7 +39,7 @@ import {
   setupGMXBalance,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
 
 const defaultAccountNumber = '0';

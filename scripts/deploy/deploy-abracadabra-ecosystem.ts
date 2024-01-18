@@ -5,9 +5,9 @@ import {
   getMagicGLPUnwrapperTraderV1ConstructorParams,
   getMagicGLPWrapperTraderV1ConstructorParams,
 } from '../../src/utils/constructors/abracadabra';
-import { getAndCheckSpecificNetwork } from '../../src/utils/dolomite-utils';
-import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../test/utils/setup';
+import { getAndCheckSpecificNetwork } from '../../packages/base/src/utils/dolomite-utils';
+import { Network, ZERO_BI } from '../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../packages/base/test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../deploy-utils';
 
 async function main() {

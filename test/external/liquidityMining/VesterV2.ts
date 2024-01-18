@@ -17,7 +17,7 @@ import {
   setupCoreProtocol,
   setupUSDCBalance,
   setupWETHBalance,
-} from 'test/utils/setup';
+} from 'packages/base/test/utils/setup';
 import { createTestVesterV2Proxy } from '../../utils/ecosystem-token-utils/liquidity-mining';
 import { expectEmptyPosition } from './liquidityMining-utils';
 

@@ -12,8 +12,8 @@ import {
   getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendleYtGLPPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/pendle';
-import { Network, ONE_ETH_BI, TEN_BI } from '../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../test/utils/setup';
+import { Network, ONE_ETH_BI, TEN_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../deploy-utils';
 
 async function main() {

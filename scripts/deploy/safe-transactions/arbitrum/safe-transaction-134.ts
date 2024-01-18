@@ -1,10 +1,10 @@
 import { parseEther } from 'ethers/lib/utils';
 import { TWAPPriceOracle__factory } from '../../../../src/types';
-import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../src/utils/constructors/dolomite';
+import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../packages/base/src/utils/constructors/dolomite';
 import { getTWAPPriceOracleConstructorParams } from '../../../../src/utils/constructors/oracles';
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network } from '../../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../../test/utils/setup';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,

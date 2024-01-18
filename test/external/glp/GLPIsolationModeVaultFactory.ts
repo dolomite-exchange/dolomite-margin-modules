@@ -7,9 +7,9 @@ import {
   GmxRegistryV1,
   TestGLPIsolationModeTokenVaultV1,
 } from '../../../src/types';
-import { Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectThrow } from '../../utils/assertions';
+import { Network, ONE_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectEvent, expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createGLPIsolationModeVaultFactory,
   createGmxRegistry,
@@ -22,7 +22,7 @@ import {
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 

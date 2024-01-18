@@ -19,8 +19,8 @@ import {
   getRewardsDistributorConstructorParams,
   getVesterImplementationConstructorParams,
 } from '../../../src/utils/constructors/liquidity-mining';
-import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
-import { CoreProtocol } from '../setup';
+import { createContractWithAbi, createContractWithLibrary } from '../../../packages/base/src/utils/dolomite-utils';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 
 export async function createTestVesterV1Proxy(
   core: CoreProtocol,

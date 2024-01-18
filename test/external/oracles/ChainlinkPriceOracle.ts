@@ -9,7 +9,7 @@ import {
   TestChainlinkAggregator__factory,
 } from '../../../src/types';
 import { getChainlinkPriceOracleParams } from '../../../src/utils/constructors/oracles';
-import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createTestToken } from '../../../packages/base/src/utils/dolomite-utils';
 import {
   MAX_INT_192_BI,
   Network,
@@ -17,10 +17,10 @@ import {
   ONE_DAY_SECONDS,
   TEN_BI,
   ZERO_BI,
-} from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol } from '../../utils/setup';
+} from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot, waitTime } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
+import { CoreProtocol, setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 
 const WETH_PRICE = BigNumber.from('1883923360000000000000');
 const BTC_PRICE = BigNumber.from('299800328339800000000000000000000');

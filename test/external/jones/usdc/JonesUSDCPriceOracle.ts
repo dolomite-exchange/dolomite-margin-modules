@@ -7,10 +7,10 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCRegistry,
 } from '../../../../src/types';
-import { createTestToken } from '../../../../src/utils/dolomite-utils';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
-import { expectThrow } from '../../../utils/assertions';
+import { createTestToken } from '../../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
+import { expectThrow } from '../../../../packages/base/test/utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -19,7 +19,7 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../../packages/base/test/utils/setup';
 
 const USDC_PRICE = BigNumber.from('999937000000000000000000000000'); // $0.999937
 const JONES_USDC_PRICE = BigNumber.from('1040697717999611268'); // $1.040697717999611268

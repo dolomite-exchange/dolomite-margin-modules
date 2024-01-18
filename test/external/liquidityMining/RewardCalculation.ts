@@ -15,7 +15,7 @@ import {
   setupCoreProtocol,
   setupDAIBalance,
   setupWETHBalance,
-} from 'test/utils/setup';
+} from 'packages/base/test/utils/setup';
 import { createOARB } from '../../utils/ecosystem-token-utils/liquidity-mining';
 
 const defaultAccountNumber = ZERO_BI;

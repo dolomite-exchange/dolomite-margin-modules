@@ -20,13 +20,13 @@ import {
   createTestGmxV2IsolationModeTokenVaultV1,
 } from 'test/utils/ecosystem-token-utils/gmx';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
-import { ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
   setupTestMarket,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
 

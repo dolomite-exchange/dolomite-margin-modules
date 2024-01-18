@@ -11,10 +11,10 @@ import {
   SimpleIsolationModeUnwrapperTraderV2,
   SimpleIsolationModeWrapperTraderV2,
 } from '../../../src/types';
-import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { depositIntoDolomiteMargin } from '../../../packages/base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, BYTES_EMPTY, Network, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createARBIsolationModeTokenVaultV1,
   createARBIsolationModeVaultFactory,
@@ -28,9 +28,9 @@ import {
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS } from './arb-utils';
-import { setupNewGenericTraderProxy } from '../../utils/dolomite';
+import { setupNewGenericTraderProxy } from '../../../packages/base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '1';

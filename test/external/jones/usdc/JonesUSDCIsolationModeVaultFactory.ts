@@ -7,10 +7,10 @@ import {
   TestGLPIsolationModeTokenVaultV1,
   TestGLPIsolationModeTokenVaultV1__factory,
 } from '../../../../src/types';
-import { createContractWithAbi } from '../../../../src/utils/dolomite-utils';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
-import { expectEvent, expectThrow } from '../../../utils/assertions';
+import { createContractWithAbi } from '../../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
+import { expectEvent, expectThrow } from '../../../../packages/base/test/utils/assertions';
 import {
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForZap,
@@ -19,7 +19,7 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from '../../../utils/ecosystem-token-utils/jones';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../../packages/base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';

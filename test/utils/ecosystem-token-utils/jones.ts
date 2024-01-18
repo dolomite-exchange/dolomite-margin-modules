@@ -29,9 +29,9 @@ import {
   getJonesUSDCRegistryConstructorParams,
   getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams,
 } from '../../../src/utils/constructors/jones';
-import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../dolomite';
-import { CoreProtocol } from '../setup';
+import { createContractWithAbi, createContractWithLibrary } from '../../../packages/base/src/utils/dolomite-utils';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../../packages/base/test/utils/dolomite';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 
 export function createJonesUSDCIsolationModeVaultFactory(
   core: CoreProtocol,

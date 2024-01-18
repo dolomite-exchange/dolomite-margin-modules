@@ -26,9 +26,9 @@ import {
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from 'test/utils/setup';
+} from 'packages/base/test/utils/setup';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
-import { createExpirationLibrary } from '../../utils/expiry-utils';
+import { createExpirationLibrary } from '../../../packages/base/test/utils/expiry-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const amountWei = parseEther('1');

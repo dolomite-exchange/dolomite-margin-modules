@@ -5,8 +5,8 @@ import {
   IUmamiAssetVaultWhitelist__factory,
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
-import { MAX_UINT_256_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { CoreProtocol } from '../../utils/setup';
+import { MAX_UINT_256_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 
 export async function setupWhitelistAndAggregateVault(
   core: CoreProtocol,

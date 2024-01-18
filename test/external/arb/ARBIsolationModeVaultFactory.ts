@@ -6,9 +6,9 @@ import {
   SimpleIsolationModeUnwrapperTraderV2,
   SimpleIsolationModeWrapperTraderV2,
 } from '../../../src/types';
-import { ADDRESS_ZERO, Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectThrow } from '../../utils/assertions';
+import { ADDRESS_ZERO, Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectEvent, expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createARBIsolationModeTokenVaultV1,
   createARBIsolationModeVaultFactory,
@@ -16,7 +16,7 @@ import {
   createARBUnwrapperTraderV2,
   createARBWrapperTraderV2,
 } from '../../utils/ecosystem-token-utils/arb';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../../packages/base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS } from './arb-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';

@@ -19,9 +19,9 @@ import {
   getARBUnwrapperTraderV2ConstructorParams,
   getARBWrapperTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/arb';
-import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../dolomite';
-import { CoreProtocol } from '../setup';
+import { createContractWithAbi, createContractWithLibrary } from '../../../packages/base/src/utils/dolomite-utils';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../../packages/base/test/utils/dolomite';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 
 export async function createARBRegistry(core: CoreProtocol): Promise<ARBRegistry> {
   const implementation = await createContractWithAbi<ARBRegistry>(

@@ -76,14 +76,14 @@ import {
   GMX_V2_CALLBACK_GAS_LIMIT,
   GmxUserVaultImplementation,
 } from '../../../src/utils/constructors/gmx';
-import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary } from '../../../packages/base/src/utils/dolomite-utils';
 import {
   createAsyncIsolationModeUnwrapperTraderImpl,
   createAsyncIsolationModeWrapperTraderImpl,
   createIsolationModeTokenVaultV1ActionsImpl,
-} from '../dolomite';
-import { CoreProtocol } from '../setup';
-import { createSafeDelegateLibrary } from './general';
+} from '../../../packages/base/test/utils/dolomite';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
+import { createSafeDelegateLibrary } from '../../../packages/base/test/utils/ecosystem-token-utils/general';
 
 export async function createGLPPriceOracleV1(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,

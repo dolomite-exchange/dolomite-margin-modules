@@ -10,8 +10,8 @@ import {
   UmamiAssetVaultPriceOracle,
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
 import {
   createUmamiAssetVaultIsolationModeTokenVaultV1,
   createUmamiAssetVaultIsolationModeUnwrapperTraderV2,
@@ -26,7 +26,7 @@ import {
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../utils/setup';
+} from '../../../packages/base/test/utils/setup';
 
 describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
   let snapshotId: string;

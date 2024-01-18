@@ -16,11 +16,11 @@ import {
   PendleYtGLP2024IsolationModeWrapperTraderV2,
   PendleYtGLPPriceOracle,
 } from '../../../../src/types';
-import { AccountInfoStruct } from '../../../../src/utils';
-import { createDepositAction } from '../../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '../../../utils';
-import { expectThrow, expectWalletBalance } from '../../../utils/assertions';
+import { AccountInfoStruct } from '../../../../packages/base/src/utils';
+import { createDepositAction } from '../../../../packages/base/src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '../../../../packages/base/test/utils';
+import { expectThrow, expectWalletBalance } from '../../../../packages/base/test/utils/assertions';
 import {
   createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeTokenVaultV1,
@@ -36,9 +36,9 @@ import {
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../../utils/setup';
+} from '../../../../packages/base/test/utils/setup';
 import { encodeSwapExactTokensForYt } from '../pendle-utils';
-import { setupNewGenericTraderProxy } from '../../../utils/dolomite';
+import { setupNewGenericTraderProxy } from '../../../../packages/base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

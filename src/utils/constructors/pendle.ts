@@ -1,5 +1,5 @@
 import { BigNumberish } from 'ethers';
-import { CoreProtocol } from '../../../test/utils/setup';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 import {
   IPendlePtGLP2024IsolationModeTokenVaultV1,
   IPendleYtGLP2024IsolationModeTokenVaultV1,

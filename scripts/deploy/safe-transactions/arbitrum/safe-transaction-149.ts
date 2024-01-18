@@ -14,15 +14,15 @@ import {
   getARBUnwrapperTraderV2ConstructorParams,
   getARBWrapperTraderV2ConstructorParams,
 } from '../../../../src/utils/constructors/arb';
-import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../src/utils/constructors/dolomite';
+import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../packages/base/src/utils/constructors/dolomite';
 import {
   getGMXIsolationModeVaultFactoryConstructorParams,
   getGMXUnwrapperTraderV2ConstructorParams,
   getGMXWrapperTraderV2ConstructorParams,
 } from '../../../../src/utils/constructors/gmx';
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_BI } from '../../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../../test/utils/setup';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network, ONE_BI } from '../../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,

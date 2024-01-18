@@ -6,7 +6,7 @@ import { revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'test/util
 import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { createIsolationModeTraderProxy } from 'test/utils/dolomite';
 import { createGmxV2Registry } from 'test/utils/ecosystem-token-utils/gmx';
-import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from 'test/utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
 
 describe('GmxV2IsolationModeTraderBase', () => {

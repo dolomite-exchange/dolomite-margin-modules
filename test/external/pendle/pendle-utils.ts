@@ -1,6 +1,6 @@
 import { ApproxParamsStruct, BaseRouter, TokenInput, TokenOutput } from '@pendle/sdk-v2';
 import { BigNumberish, ethers } from 'ethers';
-import { CoreProtocol } from '../../utils/setup';
+import { CoreProtocol } from '../../../packages/base/test/utils/setup';
 
 export const ONE_TENTH_OF_ONE_BIPS_NUMBER = 0.00001; // 0.001%
 

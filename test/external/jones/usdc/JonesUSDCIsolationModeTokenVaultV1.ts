@@ -9,8 +9,8 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCRegistry,
 } from '../../../../src/types';
-import { BYTES_ZERO, Network } from '../../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import { BYTES_ZERO, Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -26,7 +26,7 @@ import {
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../../utils/setup';
+} from '../../../../packages/base/test/utils/setup';
 import { createRoleAndWhitelistTrader, TRADER_ROLE } from './jones-utils';
 
 describe('JonesUSDCIsolationModeTokenVaultV1', () => {

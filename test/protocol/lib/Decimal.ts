@@ -1,8 +1,8 @@
 import { BigNumber } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { TestDecimalLib, TestDecimalLib__factory } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { createContractWithAbi } from '../../../packages/base/src/utils/dolomite-utils';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
 
 const BASE = '1000000000000000000';
 

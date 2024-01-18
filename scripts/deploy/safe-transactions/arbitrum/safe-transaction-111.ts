@@ -1,9 +1,9 @@
 import deployments from '../../../../scripts/deployments.json';
 import { OARB__factory, RewardsDistributor__factory } from '../../../../src/types';
 import { getRewardsDistributorConstructorParams } from '../../../../src/utils/constructors/liquidity-mining';
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { BYTES_ZERO, Network } from '../../../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../../test/utils/setup';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { BYTES_ZERO, Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   createFolder,
   deployContractAndSave,

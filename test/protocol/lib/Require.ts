@@ -2,9 +2,9 @@ import { ADDRESSES, INTEGERS } from '@dolomite-exchange/dolomite-margin';
 import chai from 'chai';
 import { solidity } from 'ethereum-waffle';
 import { TestRequire, TestRequire__factory } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { createContractWithAbi } from '../../../packages/base/src/utils/dolomite-utils';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 
 chai.use(solidity);
 

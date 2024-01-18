@@ -42,8 +42,8 @@ import {
   getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
 } from '../../../src/utils/constructors/plutus';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../test/utils/setup';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';
 
 const oldLiquidatorAddress = '0xac66E962A1C52B8a3B32AF432a60fFDBc99ebD0b';

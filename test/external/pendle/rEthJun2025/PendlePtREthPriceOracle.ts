@@ -12,17 +12,17 @@ import {
   TestPendlePtOracle,
   TestPendlePtOracle__factory,
 } from '../../../../src/types';
-import { createContractWithAbi } from '../../../../src/utils/dolomite-utils';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '../../../utils';
-import { expectThrow } from '../../../utils/assertions';
+import { createContractWithAbi } from '../../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
+import { expectThrow } from '../../../../packages/base/test/utils/assertions';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../../../utils/ecosystem-token-utils/pendle';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../../../packages/base/test/utils/setup';
 
 const PT_RETH_PRICE = BigNumber.from('1808539032753997677827');
 

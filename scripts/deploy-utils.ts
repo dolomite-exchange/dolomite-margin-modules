@@ -36,7 +36,7 @@ import {
   getOwnerAddMarketParametersForIsolationMode,
   TargetCollateralization,
   TargetLiquidationPenalty,
-} from '../src/utils/constructors/dolomite';
+} from '../packages/base/src/utils/constructors/dolomite';
 import {
   getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtIsolationModeVaultFactoryConstructorParams,
@@ -44,9 +44,9 @@ import {
   getPendlePtPriceOracleConstructorParams,
   getPendleRegistryConstructorParams,
 } from '../src/utils/constructors/pendle';
-import { createContractWithLibrary, createContractWithName } from '../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ZERO_BI } from '../src/utils/no-deps-constants';
-import { CoreProtocol } from '../test/utils/setup';
+import { createContractWithLibrary, createContractWithName } from '../packages/base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network, ZERO_BI } from '../packages/base/src/utils/no-deps-constants';
+import { CoreProtocol } from '../packages/base/test/utils/setup';
 
 type ChainId = string;
 

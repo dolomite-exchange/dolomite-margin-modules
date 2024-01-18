@@ -12,9 +12,9 @@ import {
   SimpleIsolationModeUnwrapperTraderV2,
   SimpleIsolationModeWrapperTraderV2,
 } from '../../../src/types';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createGLPIsolationModeTokenVaultV2,
   createGLPIsolationModeVaultFactory,
@@ -31,9 +31,9 @@ import {
   setupGMXBalance,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../utils/setup';
-import { setupNewGenericTraderProxy } from '../../utils/dolomite';
-import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
+} from '../../../packages/base/test/utils/setup';
+import { setupNewGenericTraderProxy } from '../../../packages/base/test/utils/dolomite';
+import { depositIntoDolomiteMargin } from '../../../packages/base/src/utils/dolomite-utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

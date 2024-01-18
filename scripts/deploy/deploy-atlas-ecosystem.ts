@@ -1,8 +1,8 @@
 import { ethers } from 'hardhat';
-import { ATLAS_SI_TOKEN_MAP } from '../../src/utils/constants';
-import { getAnyNetwork } from '../../src/utils/dolomite-utils';
-import { Network } from '../../src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../test/utils/setup';
+import { ATLAS_SI_TOKEN_MAP } from '../../packages/base/src/utils/constants';
+import { getAnyNetwork } from '../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../packages/base/test/utils/setup';
 import { deployContractAndSave } from '../deploy-utils';
 
 async function main() {

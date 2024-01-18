@@ -12,6 +12,6 @@
       "@dolomite-margin/deployed-contracts/*": ["node_modules/@dolomite-exchange/dolomite-margin/dist/build/published_contracts/*"]
     }
   },
-  "include": ["./scripts", "./test", "./src"],
+  "include": ["./scripts", "./test", "./src", "packages/base/test/isolation-mode", "packages/base/test/liquidators", "packages/base/test/lib", "packages/base/test/traders", "packages/base/test/general", "packages/base/src/utils/constants.ts", "packages/base/src/utils/dolomite-utils.ts", "packages/base/src/utils/index.ts", "packages/base/src/utils/no-deps-constants.ts", "packages/base/src/utils/constructors/dolomite.ts", "packages/base/src/utils/constructors/traders.ts", "packages/base/test/utils/setup.ts", "packages/base/test/utils/assertions.ts", "packages/base/test/utils/dolomite.ts", "packages/base/test/utils/expiry-utils.ts", "packages/base/test/utils/index.ts", "packages/base/test/utils/liquidation-utils.ts", "packages/base/test/utils/trader-utils.ts", "packages/base/test/utils/zap-utils.ts", "packages/base/test/utils/ecosystem-token-utils/general.ts", "packages/base/test/utils/ecosystem-token-utils/testers.ts", "packages/base/test/utils/ecosystem-token-utils/traders.ts"],
   "files": ["./hardhat.config.ts"]
 }

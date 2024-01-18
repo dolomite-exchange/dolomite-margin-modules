@@ -18,19 +18,19 @@ import {
   JonesUSDCWithChainlinkAutomationPriceOracle,
   JonesUSDCWithChainlinkAutomationPriceOracle__factory,
 } from '../../../../src/types';
-import { CHAINLINK_REGISTRY_MAP } from '../../../../src/utils/constants';
-import { createContractWithAbi, createTestVaultToken } from '../../../../src/utils/dolomite-utils';
-import { Network } from '../../../../src/utils/no-deps-constants';
+import { CHAINLINK_REGISTRY_MAP } from '../../../../packages/base/src/utils/constants';
+import { createContractWithAbi, createTestVaultToken } from '../../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import {
   getBlockTimestamp,
   getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
-} from '../../../utils';
-import { expectThrow } from '../../../utils/assertions';
+} from '../../../../packages/base/test/utils';
+import { expectThrow } from '../../../../packages/base/test/utils/assertions';
 import { createJonesUSDCWithChainlinkAutomationPriceOracle } from '../../../utils/ecosystem-token-utils/jones';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../../utils/setup';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../../../packages/base/test/utils/setup';
 
 const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.99998605
 const USDC_SCALE_DIFF = BigNumber.from('10').pow(12);

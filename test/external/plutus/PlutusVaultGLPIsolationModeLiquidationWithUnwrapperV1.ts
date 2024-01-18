@@ -11,14 +11,14 @@ import {
   PlutusVaultGLPPriceOracle,
   PlutusVaultRegistry,
 } from '../../../src/types';
-import { AccountInfoStruct } from '../../../src/utils';
-import { BYTES_EMPTY, Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
+import { AccountInfoStruct } from '../../../packages/base/src/utils';
+import { BYTES_EMPTY, Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../../packages/base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
-} from '../../utils/assertions';
+} from '../../../packages/base/test/utils/assertions';
 import {
   createPlutusVaultGLPIsolationModeTokenVaultV1,
   createPlutusVaultGLPIsolationModeUnwrapperTraderV1,
@@ -27,15 +27,15 @@ import {
   createPlutusVaultGLPPriceOracle,
   createPlutusVaultRegistry,
 } from '../../utils/ecosystem-token-utils/plutus';
-import { setExpiry } from '../../utils/expiry-utils';
+import { setExpiry } from '../../../packages/base/test/utils/expiry-utils';
 import {
   CoreProtocol,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../utils/setup';
-import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/trader-utils';
+} from '../../../packages/base/test/utils/setup';
+import { checkForParaswapSuccess, getCalldataForParaswap } from '../../../packages/base/test/utils/trader-utils';
 import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
 
 const defaultAccountNumber = '0';

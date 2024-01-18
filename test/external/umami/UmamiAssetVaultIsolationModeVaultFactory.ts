@@ -9,10 +9,10 @@ import {
   UmamiAssetVaultIsolationModeVaultFactory,
   UmamiAssetVaultRegistry,
 } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectThrow } from '../../utils/assertions';
+import { createContractWithAbi } from '../../../packages/base/src/utils/dolomite-utils';
+import { Network } from '../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
+import { expectEvent, expectThrow } from '../../../packages/base/test/utils/assertions';
 import {
   createUmamiAssetVaultIsolationModeUnwrapperTraderV2,
   createUmamiAssetVaultIsolationModeVaultFactory,
@@ -20,7 +20,7 @@ import {
   createUmamiAssetVaultPriceOracle,
   createUmamiAssetVaultRegistry,
 } from '../../utils/ecosystem-token-utils/umami';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../packages/base/test/utils/setup';
 
 const underlyingMarketIds: BigNumber[] = [];
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';

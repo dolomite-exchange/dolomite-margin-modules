@@ -5,15 +5,15 @@ import {
   PendleYtGLP2024IsolationModeTokenVaultV1,
   PendleYtGLP2024IsolationModeVaultFactory,
 } from '../../../../src/types';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
-import { expectArrayEq, expectEvent, expectThrow } from '../../../utils/assertions';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
+import { expectArrayEq, expectEvent, expectThrow } from '../../../../packages/base/test/utils/assertions';
 import {
   createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeTokenVaultV1,
   createPendleYtGLP2024IsolationModeVaultFactory,
 } from '../../../utils/ecosystem-token-utils/pendle';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const YT_EXPIRY_TIME = BigNumber.from('1711584000'); // Thu Mar 28 2024 00:00:00 GMT+0000

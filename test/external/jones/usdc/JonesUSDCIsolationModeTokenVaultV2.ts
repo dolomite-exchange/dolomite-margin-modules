@@ -9,15 +9,15 @@ import {
   JonesUSDCIsolationModeVaultFactory,
   RegistryProxy__factory,
 } from '../../../../src/types';
-import { createContractWithName } from '../../../../src/utils/dolomite-utils';
-import { Network, ONE_BI, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { advanceByTimeDelta, impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+import { createContractWithName } from '../../../../packages/base/src/utils/dolomite-utils';
+import { Network, ONE_BI, ZERO_BI } from '../../../../packages/base/src/utils/no-deps-constants';
+import { advanceByTimeDelta, impersonate, revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
   expectWalletBalance,
-} from '../../../utils/assertions';
+} from '../../../../packages/base/test/utils/assertions';
 import { createJonesUSDCIsolationModeTokenVaultV2 } from '../../../utils/ecosystem-token-utils/jones';
 import {
   CoreProtocol,
@@ -25,7 +25,7 @@ import {
   setupCoreProtocol,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../../utils/setup';
+} from '../../../../packages/base/test/utils/setup';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
