@@ -5,8 +5,13 @@ import type * as testFreezableIsolationModeFactorySol from "./TestFreezableIsola
 export type { testFreezableIsolationModeFactorySol };
 export type { CustomTestToken } from "./CustomTestToken";
 export type { ICustomTestToken } from "./ICustomTestToken";
+export type { TestAccountActionLib } from "./TestAccountActionLib";
 export type { TestBaseLiquidatorProxy } from "./TestBaseLiquidatorProxy";
+export type { TestBaseRegistry } from "./TestBaseRegistry";
+export type { TestERC20Lib } from "./TestERC20Lib";
 export type { TestHandlerRegistry } from "./TestHandlerRegistry";
+export type { TestHasLiquidatorRegistry } from "./TestHasLiquidatorRegistry";
+export type { TestInterestIndexLib } from "./TestInterestIndexLib";
 export type { TestIsolationModeFactory } from "./TestIsolationModeFactory";
 export type { TestIsolationModeTokenVaultV1 } from "./TestIsolationModeTokenVaultV1";
 export type { TestIsolationModeTokenVaultV1WithFreezable } from "./TestIsolationModeTokenVaultV1WithFreezable";

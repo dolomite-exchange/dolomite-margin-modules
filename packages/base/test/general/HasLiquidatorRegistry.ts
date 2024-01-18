@@ -1,9 +1,9 @@
-import { TestHasLiquidatorRegistry, TestHasLiquidatorRegistry__factory } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
+import { TestHasLiquidatorRegistry, TestHasLiquidatorRegistry__factory } from '../../src/types';
+import { createContractWithAbi } from '../../src/utils/dolomite-utils';
+import { Network } from '../../src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../utils';
+import { expectThrow } from '../utils/assertions';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 describe('HasLiquidatorRegistry', () => {
   let snapshotId: string;

@@ -1,12 +1,12 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { TestBaseRegistry, TestBaseRegistry__factory } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectThrow } from '../../utils/assertions';
-import { createRegistryProxy } from '../../utils/dolomite';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
+import { TestBaseRegistry, TestBaseRegistry__factory } from '../../src/types';
+import { createContractWithAbi } from '../../src/utils/dolomite-utils';
+import { Network } from '../../src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../utils';
+import { expectEvent, expectThrow } from '../utils/assertions';
+import { createRegistryProxy } from '../utils/dolomite';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 

@@ -19,7 +19,7 @@ import {
   createGmxV2Registry,
   createTestGmxV2IsolationModeTokenVaultV1,
 } from 'test/utils/ecosystem-token-utils/gmx';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
 import { ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
 import {
   CoreProtocol,

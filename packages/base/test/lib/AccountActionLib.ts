@@ -8,7 +8,7 @@ import {
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
-import { CustomTestToken, TestAccountActionLib, TestAccountActionLib__factory } from '../../../../src/types';
+import { CustomTestToken, TestAccountActionLib, TestAccountActionLib__factory } from '../../src/types';
 import { createContractWithAbi, createTestToken } from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';

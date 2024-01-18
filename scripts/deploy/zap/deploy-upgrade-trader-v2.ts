@@ -6,7 +6,7 @@ import {
 import {
   getGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getGLPIsolationModeWrapperTraderV2ConstructorParams,
-} from '../../../src/utils/constructors/gmx';
+} from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
 import {
   getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,

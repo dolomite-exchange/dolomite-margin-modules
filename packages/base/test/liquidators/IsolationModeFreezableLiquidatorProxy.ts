@@ -7,20 +7,22 @@ import {
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
+  IGenericTraderProxyV1__factory,
+  IsolationModeFreezableLiquidatorProxy,
+  IsolationModeFreezableLiquidatorProxy__factory,
+} from '../../src/types';
+import {
+  IGmxMarketToken,
+  IGmxMarketToken__factory,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
-  GmxV2Registry,
-  IGenericTraderProxyV1__factory,
-  IGmxMarketToken,
-  IGmxMarketToken__factory,
-  IsolationModeFreezableLiquidatorProxy,
-  IsolationModeFreezableLiquidatorProxy__factory,
-} from '../../../../src/types';
+  GmxV2Registry
+} from '@dolomite-exchange/modules-gmx-v2/src/types';
 import { AccountStruct } from '../../src/utils/constants';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../../src/utils/constructors/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmxv2';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_ZERO, MAX_UINT_256_BI, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, increaseByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../utils';
@@ -43,7 +45,7 @@ import {
   createGmxV2Registry,
   getInitiateWrappingParams,
   getOracleParams,
-} from '../../../../test/utils/ecosystem-token-utils/gmx';
+} from '@dolomite-exchange/modules-gmx-v2/test/gmx';
 import { setExpiry } from '../utils/expiry-utils';
 import { liquidateV4WithZapParam } from '../utils/liquidation-utils';
 import {
@@ -57,7 +59,7 @@ import {
   setupWETHBalance,
 } from '../utils/setup';
 import { getLiquidateIsolationModeZapPath } from '../utils/zap-utils';
-import { createSafeDelegateLibrary } from 'test/utils/ecosystem-token-utils/general';
+import { createSafeDelegateLibrary } from '../utils/ecosystem-token-utils/general';
 import { parseEther } from 'ethers/lib/utils';
 
 const defaultAccountNumber = ZERO_BI;

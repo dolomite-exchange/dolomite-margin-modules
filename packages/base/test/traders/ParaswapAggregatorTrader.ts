@@ -1,26 +1,26 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { ParaswapAggregatorTrader } from '../../../src/types';
-import { AccountStruct } from '../../../src/utils/constants';
-import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { ParaswapAggregatorTrader } from '../../src/types';
+import { AccountStruct } from '../../src/utils/constants';
+import { depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import {
   encodeExternalSellActionData,
   getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
-} from '../../utils';
+} from '../utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
   expectThrowWithMatchingReason,
-} from '../../utils/assertions';
-import { createParaswapAggregatorTrader } from '../../utils/ecosystem-token-utils/traders';
-import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
-import { getCalldataForParaswap } from '../../utils/trader-utils';
+} from '../utils/assertions';
+import { createParaswapAggregatorTrader } from '../utils/ecosystem-token-utils/traders';
+import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
+import { getCalldataForParaswap } from '../utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');

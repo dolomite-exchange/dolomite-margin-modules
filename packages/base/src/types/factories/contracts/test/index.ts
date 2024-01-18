@@ -4,8 +4,13 @@
 export * as testFreezableIsolationModeFactorySol from "./TestFreezableIsolationModeFactory.sol";
 export { CustomTestToken__factory } from "./CustomTestToken__factory";
 export { ICustomTestToken__factory } from "./ICustomTestToken__factory";
+export { TestAccountActionLib__factory } from "./TestAccountActionLib__factory";
 export { TestBaseLiquidatorProxy__factory } from "./TestBaseLiquidatorProxy__factory";
+export { TestBaseRegistry__factory } from "./TestBaseRegistry__factory";
+export { TestERC20Lib__factory } from "./TestERC20Lib__factory";
 export { TestHandlerRegistry__factory } from "./TestHandlerRegistry__factory";
+export { TestHasLiquidatorRegistry__factory } from "./TestHasLiquidatorRegistry__factory";
+export { TestInterestIndexLib__factory } from "./TestInterestIndexLib__factory";
 export { TestIsolationModeFactory__factory } from "./TestIsolationModeFactory__factory";
 export { TestIsolationModeTokenVaultV1__factory } from "./TestIsolationModeTokenVaultV1__factory";
 export { TestIsolationModeTokenVaultV1WithFreezable__factory } from "./TestIsolationModeTokenVaultV1WithFreezable__factory";

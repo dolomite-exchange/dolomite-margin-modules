@@ -3,6 +3,8 @@
 /* eslint-disable */
 import type * as interfaces from "./interfaces";
 export type { interfaces };
+import type * as test from "./test";
+export type { test };
 export type { GLPIsolationModeTokenVaultV1 } from "./GLPIsolationModeTokenVaultV1";
 export type { GLPIsolationModeTokenVaultV2 } from "./GLPIsolationModeTokenVaultV2";
 export type { GLPIsolationModeUnwrapperTraderV1 } from "./GLPIsolationModeUnwrapperTraderV1";

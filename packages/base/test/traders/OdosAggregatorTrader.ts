@@ -2,15 +2,15 @@ import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margi
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
-import { OdosAggregatorTrader } from '../../../src/types';
-import { AccountStruct } from '../../../src/utils/constants';
-import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../../utils/assertions';
-import { createOdosAggregatorTrader } from '../../utils/ecosystem-token-utils/traders';
-import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
-import { getCalldataForOdos } from '../../utils/trader-utils';
+import { OdosAggregatorTrader } from '../../src/types';
+import { AccountStruct } from '../../src/utils/constants';
+import { depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '../utils';
+import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../utils/assertions';
+import { createOdosAggregatorTrader } from '../utils/ecosystem-token-utils/traders';
+import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
+import { getCalldataForOdos } from '../utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const amountIn = BigNumber.from('1000000000000000000');

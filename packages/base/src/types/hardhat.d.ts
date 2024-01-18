@@ -409,9 +409,21 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ICustomTestToken__factory>;
     getContractFactory(
+      name: "TestAccountActionLib",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestAccountActionLib__factory>;
+    getContractFactory(
       name: "TestBaseLiquidatorProxy",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestBaseLiquidatorProxy__factory>;
+    getContractFactory(
+      name: "TestBaseRegistry",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestBaseRegistry__factory>;
+    getContractFactory(
+      name: "TestERC20Lib",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestERC20Lib__factory>;
     getContractFactory(
       name: "TestFreezableIsolationModeVaultFactory",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -420,6 +432,14 @@ declare module "hardhat/types/runtime" {
       name: "TestHandlerRegistry",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestHandlerRegistry__factory>;
+    getContractFactory(
+      name: "TestHasLiquidatorRegistry",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestHasLiquidatorRegistry__factory>;
+    getContractFactory(
+      name: "TestInterestIndexLib",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestInterestIndexLib__factory>;
     getContractFactory(
       name: "TestIsolationModeFactory",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -965,10 +985,25 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.ICustomTestToken>;
     getContractAt(
+      name: "TestAccountActionLib",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestAccountActionLib>;
+    getContractAt(
       name: "TestBaseLiquidatorProxy",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TestBaseLiquidatorProxy>;
+    getContractAt(
+      name: "TestBaseRegistry",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestBaseRegistry>;
+    getContractAt(
+      name: "TestERC20Lib",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestERC20Lib>;
     getContractAt(
       name: "TestFreezableIsolationModeVaultFactory",
       address: string,
@@ -979,6 +1014,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TestHandlerRegistry>;
+    getContractAt(
+      name: "TestHasLiquidatorRegistry",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestHasLiquidatorRegistry>;
+    getContractAt(
+      name: "TestInterestIndexLib",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestInterestIndexLib>;
     getContractAt(
       name: "TestIsolationModeFactory",
       address: string,

@@ -18,7 +18,7 @@ import {
   IsolationModeFreezableLiquidatorProxy__factory,
 } from '../../../src/types';
 import { AccountStruct } from '../../../packages/base/src/utils/constants';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../../packages/base/src/utils/dolomite-utils';
 import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../packages/base/test/utils';
@@ -33,7 +33,7 @@ import {
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
   getOracleParams,
-} from '../../utils/ecosystem-token-utils/gmx';
+} from '@dolomite-exchange/modules-gmx-v2/test/gmx';
 import { liquidateV4WithZapParam } from '../../../packages/base/test/utils/liquidation-utils';
 import {
   CoreProtocol,

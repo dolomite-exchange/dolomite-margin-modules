@@ -19,6 +19,7 @@ describe('RegistryProxy', () => {
     const calldata = await implementation.populateTransaction.initialize(
       core.genericTraderProxy!.address,
       core.expiry!.address,
+      core.liquidatorAssetRegistry.address
     );
     registry = await createRegistryProxy(implementation.address, calldata.data!, core);
 

@@ -1,7 +1,7 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { ParaswapAggregatorTraderV2 } from '../../../../src/types';
+import { ParaswapAggregatorTraderV2 } from '../../src/types';
 import { AccountStruct } from '../../src/utils/constants';
 import { depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';

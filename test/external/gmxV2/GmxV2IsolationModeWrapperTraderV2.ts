@@ -52,7 +52,7 @@ import {
   setupUserVaultProxy,
   setupWETHBalance,
 } from 'packages/base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../../packages/base/test/utils/dolomite';
 
 enum ReversionType {

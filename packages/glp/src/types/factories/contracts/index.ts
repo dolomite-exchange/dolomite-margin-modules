@@ -2,6 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as interfaces from "./interfaces";
+export * as test from "./test";
 export { GLPIsolationModeTokenVaultV1__factory } from "./GLPIsolationModeTokenVaultV1__factory";
 export { GLPIsolationModeTokenVaultV2__factory } from "./GLPIsolationModeTokenVaultV2__factory";
 export { GLPIsolationModeUnwrapperTraderV1__factory } from "./GLPIsolationModeUnwrapperTraderV1__factory";

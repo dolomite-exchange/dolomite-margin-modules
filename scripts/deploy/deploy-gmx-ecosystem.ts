@@ -11,7 +11,7 @@ import {
   getGLPUnwrapperTraderV1ConstructorParams,
   getGLPWrapperTraderV1ConstructorParams,
   getGmxRegistryConstructorParams,
-} from '../../src/utils/constructors/gmx';
+} from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
 import { getAndCheckSpecificNetwork } from '../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../packages/base/test/utils/setup';

@@ -19,7 +19,7 @@ import {
   getGMXIsolationModeVaultFactoryConstructorParams,
   getGMXUnwrapperTraderV2ConstructorParams,
   getGMXWrapperTraderV2ConstructorParams,
-} from '../../../../src/utils/constructors/gmx';
+} from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
 import { getTWAPPriceOracleConstructorParams } from '../../../../src/utils/constructors/oracles';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, ONE_BI } from '../../../../packages/base/src/utils/no-deps-constants';

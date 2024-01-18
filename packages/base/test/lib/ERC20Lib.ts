@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { CustomTestToken, TestERC20Lib, TestERC20Lib__factory } from '../../../src/types';
-import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
-import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
+import { CustomTestToken, TestERC20Lib, TestERC20Lib__factory } from '../../src/types';
+import { createContractWithAbi, createTestToken } from '../../src/utils/dolomite-utils';
+import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../utils';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 const amount1 = BigNumber.from('200000000');
 const amount2 = BigNumber.from('500000000');

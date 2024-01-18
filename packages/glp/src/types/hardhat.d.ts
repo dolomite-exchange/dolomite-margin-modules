@@ -300,6 +300,26 @@ declare module "hardhat/types/runtime" {
       name: "ISGMX",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ISGMX__factory>;
+    getContractFactory(
+      name: "TestGLPIsolationModeTokenVaultV1",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestGLPIsolationModeTokenVaultV1__factory>;
+    getContractFactory(
+      name: "TestGLPIsolationModeTokenVaultV2",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestGLPIsolationModeTokenVaultV2__factory>;
+    getContractFactory(
+      name: "TestGLPManager",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestGLPManager__factory>;
+    getContractFactory(
+      name: "TestGLPMathLib",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestGLPMathLib__factory>;
+    getContractFactory(
+      name: "TestGMXIsolationModeTokenVaultV1",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestGMXIsolationModeTokenVaultV1__factory>;
 
     getContractAt(
       name: "BaseLiquidatorProxy",
@@ -661,6 +681,31 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ISGMX>;
+    getContractAt(
+      name: "TestGLPIsolationModeTokenVaultV1",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestGLPIsolationModeTokenVaultV1>;
+    getContractAt(
+      name: "TestGLPIsolationModeTokenVaultV2",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestGLPIsolationModeTokenVaultV2>;
+    getContractAt(
+      name: "TestGLPManager",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestGLPManager>;
+    getContractAt(
+      name: "TestGLPMathLib",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestGLPMathLib>;
+    getContractAt(
+      name: "TestGMXIsolationModeTokenVaultV1",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestGMXIsolationModeTokenVaultV1>;
 
     // default types
     getContractFactory(

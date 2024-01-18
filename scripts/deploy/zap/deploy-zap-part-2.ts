@@ -22,7 +22,7 @@ import {
   getGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getGLPIsolationModeWrapperTraderV2ConstructorParams,
   getGmxRegistryConstructorParams,
-} from '../../../src/utils/constructors/gmx';
+} from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
 import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
   getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,

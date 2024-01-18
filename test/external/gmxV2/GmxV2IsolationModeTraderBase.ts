@@ -7,7 +7,7 @@ import { expectEvent, expectThrow } from 'test/utils/assertions';
 import { createIsolationModeTraderProxy } from 'test/utils/dolomite';
 import { createGmxV2Registry } from 'test/utils/ecosystem-token-utils/gmx';
 import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT } from '../../../src/utils/constructors/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT } from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
 
 describe('GmxV2IsolationModeTraderBase', () => {
   let snapshotId: string;

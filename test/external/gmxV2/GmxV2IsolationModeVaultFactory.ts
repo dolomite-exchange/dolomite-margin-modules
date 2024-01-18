@@ -27,7 +27,7 @@ import {
   setupTestMarket,
   setupUserVaultProxy,
 } from 'packages/base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../../../src/utils/constructors/gmx';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
 import { createExpirationLibrary } from '../../../packages/base/test/utils/expiry-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
