@@ -47,6 +47,7 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
     // ==========================================================
 
     event ExecutionFeeSet(uint256 _executionFee);
+    event MaxExecutionFeeSet(uint256 _maxExecutionFee);
     event HandlerRegistrySet(address _handlerRegistry);
     event VaultAccountFrozen(
         address indexed vault,
@@ -64,6 +65,13 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
      *                          gas fees to be liquidated. The gas fees are refunded when a position is closed.
      */
     function ownerSetExecutionFee(uint256 _executionFee) external;
+
+    /**
+     *
+     * @param  _maxExecutionFee     The max amount of gas (in ETH) that can be sent with a position so the user can pay the
+     *                              gas fees to be liquidated. The gas fees are refunded when a position is closed.
+     */
+    function ownerSetMaxExecutionFee(uint256 _maxExecutionFee) external;
 
     /**
      *
@@ -201,5 +209,5 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
      * @dev     The max amount of gas (in ETH) that should be sent with a position so the user can pay the gas fees to
      *          be liquidated. The gas fees are refunded when a position is closed.
      */
-    function MAX_EXECUTION_FEE() external view returns (uint256);
+    function maxExecutionFee() external view returns (uint256);
 }

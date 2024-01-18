@@ -47,7 +47,6 @@ abstract contract FreezableIsolationModeVaultFactory is
     // =========================================================
 
     bytes32 private constant _FILE = "FreezableVaultFactory";
-    uint256 public constant MAX_EXECUTION_FEE = 1 ether;
 
     // =========================================================
     // ==================== Field Variables ====================
@@ -61,6 +60,7 @@ abstract contract FreezableIsolationModeVaultFactory is
     /// Vault ==> Freeze Type ==> Pending Amount
     mapping(address => mapping(FreezeType => uint256)) private _vaultToPendingAmountWeiMap;
 
+    uint256 public maxExecutionFee = 1 ether;
     uint256 public override executionFee;
     IHandlerRegistry public override handlerRegistry;
 
@@ -101,6 +101,16 @@ abstract contract FreezableIsolationModeVaultFactory is
         onlyDolomiteMarginOwner(msg.sender)
     {
         _ownerSetExecutionFee(_executionFee);
+    }
+
+    function ownerSetMaxExecutionFee(
+        uint256 _maxExecutionFee
+    )
+        external
+        override
+        onlyDolomiteMarginOwner(msg.sender)
+    {
+        _ownerSetMaxExecutionFee(_maxExecutionFee);
     }
 
     function ownerSetHandlerRegistry(
@@ -230,12 +240,19 @@ abstract contract FreezableIsolationModeVaultFactory is
         uint256 _executionFee
     ) internal {
         Require.that(
-            _executionFee <= MAX_EXECUTION_FEE,
+            _executionFee <= maxExecutionFee,
             _FILE,
             "Invalid execution fee"
         );
         executionFee = _executionFee;
         emit ExecutionFeeSet(_executionFee);
+    }
+
+    function _ownerSetMaxExecutionFee(
+        uint256 _maxExecutionFee
+    ) internal {
+        maxExecutionFee = _maxExecutionFee;
+        emit MaxExecutionFeeSet(_maxExecutionFee);
     }
 
     function _ownerSetHandlerRegistry(

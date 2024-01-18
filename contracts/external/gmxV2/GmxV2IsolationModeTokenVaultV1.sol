@@ -180,7 +180,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         if (_params.tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             GmxV2Library.depositAndApproveWethForWrapping(this);
             Require.that(
-                msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).MAX_EXECUTION_FEE(),
+                msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
                 _FILE,
                 "Invalid execution fee"
             );
@@ -222,7 +222,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         );
 
         Require.that(
-            msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).MAX_EXECUTION_FEE(),
+            msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
             _FILE,
             "Invalid execution fee"
         );

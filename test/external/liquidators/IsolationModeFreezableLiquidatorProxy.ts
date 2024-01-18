@@ -68,6 +68,7 @@ const borrowAccountNumber3 = borrowAccountNumber2.add(ONE_BI);
 const amountWei = ONE_ETH_BI.mul('1234'); // 1,234
 const smallAmountWei = amountWei.mul(1).div(100);
 const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
+const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
@@ -291,7 +292,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           smallAmountWei,
           core.tokens.nativeUsdc!.address,
           ONE_BI,
-          ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+          DEFAULT_EXTRA_DATA,
           { value: executionFee },
         );
         const filter = eventEmitter.filters.AsyncWithdrawalCreated();
@@ -609,7 +610,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         outputMarketId: core.marketIds.nativeUsdc!,
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
-        extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+        extraData: DEFAULT_EXTRA_DATA,
       });
       const result = await performUnwrapping();
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {
@@ -632,7 +633,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         outputMarketId: core.marketIds.nativeUsdc!,
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
-        extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+        extraData: DEFAULT_EXTRA_DATA,
       });
       const result = await performUnwrapping();
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
@@ -655,7 +656,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         outputMarketId: core.marketIds.nativeUsdc!,
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
-        extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+        extraData: DEFAULT_EXTRA_DATA,
       });
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
@@ -668,7 +669,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         outputMarketId: core.marketIds.nativeUsdc!,
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
-        extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+        extraData: DEFAULT_EXTRA_DATA,
       });
 
       const result = await performUnwrapping(withdrawalKeys[withdrawalKeys.length - 1]);
@@ -696,7 +697,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         outputMarketId: owedMarket,
         minOutputAmount: ONE_BI,
         expirationTimestamp: expiry,
-        extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+        extraData: DEFAULT_EXTRA_DATA,
       });
 
       const result = await performUnwrapping();
@@ -720,7 +721,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         outputMarketId: core.marketIds.nativeUsdc!,
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
-        extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+        extraData: DEFAULT_EXTRA_DATA,
       });
       const result1 = await cancelWrapping();
       await expectEvent(eventEmitter, result1, 'AsyncDepositCancelledFailed', {
@@ -755,7 +756,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         outputMarketId: core.marketIds.nativeUsdc!,
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
-        extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+        extraData: DEFAULT_EXTRA_DATA,
       });
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
       withdrawalKeys.push((await eventEmitter.queryFilter(filter, result2.blockNumber))[0].args.key);
@@ -781,7 +782,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           outputMarketId: core.marketIds.weth,
           minOutputAmount: ONE_BI,
           expirationTimestamp: NO_EXPIRY,
-          extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+          extraData: DEFAULT_EXTRA_DATA,
         }),
         `FreezableVaultLiquidatorProxy: Invalid liquid account <${liquidAccount.owner}>`,
       );
@@ -796,7 +797,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           outputMarketId: core.marketIds.weth,
           minOutputAmount: ONE_BI,
           expirationTimestamp: MAX_UINT_256_BI,
-          extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+          extraData: DEFAULT_EXTRA_DATA,
         }),
         'FreezableVaultLiquidatorProxy: Invalid expiration timestamp',
       );
@@ -812,7 +813,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           outputMarketId: core.marketIds.weth,
           minOutputAmount: ONE_BI,
           expirationTimestamp: timestamp + 3600,
-          extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+          extraData: DEFAULT_EXTRA_DATA,
         }),
         'FreezableVaultLiquidatorProxy: Account not expired',
       );
@@ -832,7 +833,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           outputMarketId: owedMarket,
           minOutputAmount: ONE_BI,
           expirationTimestamp: expiry + 321,
-          extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+          extraData: DEFAULT_EXTRA_DATA,
         }),
         'FreezableVaultLiquidatorProxy: Expiration mismatch',
       );
@@ -847,7 +848,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           outputMarketId: core.marketIds.weth,
           minOutputAmount: ONE_BI,
           expirationTimestamp: NO_EXPIRY,
-          extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+          extraData: DEFAULT_EXTRA_DATA,
         }),
         'FreezableVaultLiquidatorProxy: Liquid account has no supply',
       );
@@ -863,7 +864,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           outputMarketId: core.marketIds.weth,
           minOutputAmount: amountWei,
           expirationTimestamp: NO_EXPIRY,
-          extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+          extraData: DEFAULT_EXTRA_DATA,
         }),
         'FreezableVaultLiquidatorProxy: minOutputAmount too large',
       );
@@ -892,7 +893,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         outputMarketId: core.marketIds.weth,
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
-        extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+        extraData: DEFAULT_EXTRA_DATA,
       });
       await expectThrow(
         liquidatorProxy.prepareForLiquidation({
@@ -902,7 +903,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           outputMarketId: core.marketIds.weth,
           minOutputAmount: ONE_BI,
           expirationTimestamp: NO_EXPIRY,
-          extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+          extraData: DEFAULT_EXTRA_DATA,
         }),
         `IsolationModeVaultV1Freezable: Account is frozen <${liquidAccount.owner.toLowerCase()}, ${liquidAccount.number.toString()}>`,
       );
@@ -918,7 +919,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           outputMarketId: core.marketIds.weth,
           minOutputAmount: ONE_BI,
           expirationTimestamp: NO_EXPIRY,
-          extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+          extraData: DEFAULT_EXTRA_DATA,
         }),
         `IsolationModeVaultV1Freezable: Liquidation must be full balance <${liquidAccount.owner.toLowerCase()}, ${liquidAccount.number.toString()}>`,
       );
@@ -934,7 +935,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           outputMarketId: core.marketIds.weth,
           minOutputAmount: ONE_BI,
           expirationTimestamp: NO_EXPIRY,
-          extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+          extraData: DEFAULT_EXTRA_DATA,
         }),
         `FreezableVaultFactory: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
@@ -950,7 +951,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           outputMarketId: core.marketIds.weth,
           minOutputAmount: ONE_BI,
           expirationTimestamp: NO_EXPIRY,
-          extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+          extraData: DEFAULT_EXTRA_DATA,
         }),
         `FreezableVaultFactory: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
@@ -965,7 +966,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         outputMarketId: core.marketIds.weth,
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
-        extraData: ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]),
+        extraData: DEFAULT_EXTRA_DATA,
       });
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
       withdrawalKeys.push((await eventEmitter.queryFilter(filter, result.blockNumber))[0].args.key);

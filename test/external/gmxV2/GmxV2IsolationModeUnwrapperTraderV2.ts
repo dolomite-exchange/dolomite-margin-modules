@@ -65,7 +65,7 @@ const borrowAccountNumber = '123';
 const DUMMY_WITHDRAWAL_KEY = '0x6d1ff6ffcab884211992a9d6b8261b7fae5db4d2da3a5eb58647988da3869d6f';
 const usdcAmount = BigNumber.from('1000000000'); // $1000
 const amountWei = parseEther('10');
-const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
+const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const executionFee = process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE : GMX_V2_EXECUTION_FEE.mul(10);
@@ -246,7 +246,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -282,7 +282,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -339,7 +339,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
       await expectWalletBalance(vault, underlyingToken, ZERO_BI);
@@ -475,7 +475,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -517,7 +517,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         MAX_UINT_256_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -561,7 +561,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ethers.utils.defaultAbiCoder.encode(['uint256'], [MAX_UINT_256_BI]),
+        ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), MAX_UINT_256_BI]),
         { value: executionFee },
       )).to.changeTokenBalance(underlyingToken, vault, ZERO_BI.sub(amountWei));
 
@@ -632,7 +632,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       );
     });
 
-    // @todo fix
     it('should fail if reentered', async () => {
       const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
@@ -679,7 +678,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         outputToken.address,
         minAmountOut,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
       await expectWalletBalance(vault, underlyingToken, ZERO_BI);
@@ -1195,7 +1194,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         minAmountOut,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
       await expectWalletBalance(vault, underlyingToken, ZERO_BI);
@@ -1287,7 +1286,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
       await expectWalletBalance(vault, underlyingToken, ZERO_BI);
@@ -1332,7 +1331,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         core.tokens.weth.address,
         ONE_BI,
         false,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
       );
       const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
@@ -1374,7 +1373,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         core.tokens.nativeUsdc!.address,
         ONE_BI,
         false,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
       );
 
       await expectThrow(
@@ -1430,7 +1429,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         core.tokens.nativeUsdc!.address,
         ONE_BI,
         false,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
       );
 
       await expectThrow(
@@ -1481,7 +1480,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         amountWei,
         core.tokens.weth.address,
         ONE_BI,
-        ONE_BI_ENCODED,
+        DEFAULT_EXTRA_DATA,
         { value: executionFee },
       );
       await expectWalletBalance(vault, underlyingToken, ZERO_BI);
