@@ -1143,13 +1143,13 @@ async function createTestEcosystem(
 async function createTokenVaultActionsLibraries(
   config: CoreProtocolSetupConfig,
 ): Promise<Record<string, string> | undefined> {
-  const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
-  if (!(deployments[libraryName] as any)[config.network]) {
+  const tokenVaultVersion = 'IsolationModeTokenVaultV1ActionsImplV3';
+  if (!(deployments[tokenVaultVersion] as any)[config.network]) {
     return undefined;
   }
 
   return {
-    [libraryName]: (deployments[libraryName] as any)[config.network].address,
+    IsolationModeTokenVaultV1ActionsImpl: (deployments[tokenVaultVersion] as any)[config.network].address,
   };
 }
 
