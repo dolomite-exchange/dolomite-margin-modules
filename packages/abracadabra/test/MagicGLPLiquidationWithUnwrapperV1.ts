@@ -1,23 +1,23 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { IERC4626, MagicGLPPriceOracle, MagicGLPUnwrapperTraderV1 } from '../../../src/types';
-import { AccountInfoStruct } from '../../../src/utils';
-import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
+import { IERC4626, MagicGLPPriceOracle, MagicGLPUnwrapperTraderV1 } from '../src/types';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
-} from '../../utils/assertions';
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createMagicGLPPriceOracle,
   createMagicGLPUnwrapperTraderV1,
-} from '../../utils/ecosystem-token-utils/abracadabra';
-import { setExpiry } from '../../utils/expiry-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
-import { checkForParaswapSuccess, getCalldataForParaswap } from '../../utils/trader-utils';
+} from './utils/abracadabra';
+import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { checkForParaswapSuccess, getCalldataForParaswap } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

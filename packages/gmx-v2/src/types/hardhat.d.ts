@@ -328,6 +328,26 @@ declare module "hardhat/types/runtime" {
       name: "IGmxWithdrawalHandler",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IGmxWithdrawalHandler__factory>;
+    getContractFactory(
+      name: "TestGmxDataStore",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestGmxDataStore__factory>;
+    getContractFactory(
+      name: "TestGmxReader",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestGmxReader__factory>;
+    getContractFactory(
+      name: "TestGmxV2IsolationModeTokenVaultV1",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestGmxV2IsolationModeTokenVaultV1__factory>;
+    getContractFactory(
+      name: "TestGmxV2IsolationModeUnwrapperTraderV2",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestGmxV2IsolationModeUnwrapperTraderV2__factory>;
+    getContractFactory(
+      name: "TestGmxV2IsolationModeVaultFactory",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestGmxV2IsolationModeVaultFactory__factory>;
 
     getContractAt(
       name: "BaseLiquidatorProxy",
@@ -724,6 +744,31 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IGmxWithdrawalHandler>;
+    getContractAt(
+      name: "TestGmxDataStore",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestGmxDataStore>;
+    getContractAt(
+      name: "TestGmxReader",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestGmxReader>;
+    getContractAt(
+      name: "TestGmxV2IsolationModeTokenVaultV1",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestGmxV2IsolationModeTokenVaultV1>;
+    getContractAt(
+      name: "TestGmxV2IsolationModeUnwrapperTraderV2",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestGmxV2IsolationModeUnwrapperTraderV2>;
+    getContractAt(
+      name: "TestGmxV2IsolationModeVaultFactory",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestGmxV2IsolationModeVaultFactory>;
 
     // default types
     getContractFactory(

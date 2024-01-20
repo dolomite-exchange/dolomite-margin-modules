@@ -7,5 +7,7 @@ import type * as interfaces from "./interfaces";
 export type { interfaces };
 import type * as protocol from "./protocol";
 export type { protocol };
+import type * as test from "./test";
+export type { test };
 import type * as utils from "./utils";
 export type { utils };

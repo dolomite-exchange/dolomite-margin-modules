@@ -46,7 +46,7 @@ import {
   getGMXUnwrapperTraderV2ConstructorParams,
   getGMXWrapperTraderV2ConstructorParams,
   GmxUserVaultImplementation,
-} from '../../src/utils/constructors/glp';
+} from '../../src/glp-constructors';
 import { createContractWithAbi, createContractWithLibrary } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   createIsolationModeTokenVaultV1ActionsImpl,

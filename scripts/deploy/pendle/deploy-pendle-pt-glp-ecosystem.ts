@@ -13,7 +13,7 @@ import {
   getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams,
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendlePtGLPPriceOracleConstructorParams,
-} from '../../../src/utils/constructors/pendle';
+} from '@dolomite-exchange/modules-pendle/src/pendle';
 import { Network, TEN_BI, ZERO_BI } from '../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../deploy-utils';

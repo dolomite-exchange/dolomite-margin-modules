@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { getVesterImplementationConstructorParams } from '../../../../src/utils/constructors/liquidity-mining';
+import { getVesterImplementationConstructorParams } from '@dolomite-exchange/modules-liquidity-mining/src/types/liquidity-mining';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';

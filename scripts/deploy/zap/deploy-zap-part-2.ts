@@ -29,19 +29,19 @@ import {
   getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
   getJonesUSDCPriceOracleConstructorParams,
   getJonesUSDCRegistryConstructorParams,
-} from '../../../src/utils/constructors/jones';
+} from '@dolomite-exchange/modules-jones/src/jones';
 import {
   getPendleGLPRegistryConstructorParams,
   getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendlePtGLPPriceOracleConstructorParams,
-} from '../../../src/utils/constructors/pendle';
+} from '@dolomite-exchange/modules-pendle/src/pendle';
 import {
   getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
   getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
-} from '../../../src/utils/constructors/plutus';
+} from '@dolomite-exchange/modules-plutus/src/plutus';
 import { Network } from '../../../packages/base/src/utils/no-deps-constants';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';

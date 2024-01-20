@@ -2,6 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as interfaces from "./interfaces";
+export * as test from "./test";
 export { GmxV2IsolationModeTokenVaultV1__factory } from "./GmxV2IsolationModeTokenVaultV1__factory";
 export { GmxV2IsolationModeUnwrapperTraderV2__factory } from "./GmxV2IsolationModeUnwrapperTraderV2__factory";
 export { GmxV2IsolationModeVaultFactory__factory } from "./GmxV2IsolationModeVaultFactory__factory";

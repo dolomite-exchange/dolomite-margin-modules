@@ -4,4 +4,5 @@
 export * as helpers from "./helpers";
 export * as interfaces from "./interfaces";
 export * as protocol from "./protocol";
+export * as test from "./test";
 export * as utils from "./utils";

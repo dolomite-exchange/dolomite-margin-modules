@@ -166,3 +166,13 @@ export type { IGmxWithdrawalCallbackReceiver } from "./contracts/interfaces/IGmx
 export { IGmxWithdrawalCallbackReceiver__factory } from "./factories/contracts/interfaces/IGmxWithdrawalCallbackReceiver__factory";
 export type { IGmxWithdrawalHandler } from "./contracts/interfaces/IGmxWithdrawalHandler";
 export { IGmxWithdrawalHandler__factory } from "./factories/contracts/interfaces/IGmxWithdrawalHandler__factory";
+export type { TestGmxDataStore } from "./contracts/test/TestGmxDataStore";
+export { TestGmxDataStore__factory } from "./factories/contracts/test/TestGmxDataStore__factory";
+export type { TestGmxReader } from "./contracts/test/TestGmxReader";
+export { TestGmxReader__factory } from "./factories/contracts/test/TestGmxReader__factory";
+export type { TestGmxV2IsolationModeTokenVaultV1 } from "./contracts/test/TestGmxV2IsolationModeTokenVaultV1";
+export { TestGmxV2IsolationModeTokenVaultV1__factory } from "./factories/contracts/test/TestGmxV2IsolationModeTokenVaultV1__factory";
+export type { TestGmxV2IsolationModeUnwrapperTraderV2 } from "./contracts/test/TestGmxV2IsolationModeUnwrapperTraderV2";
+export { TestGmxV2IsolationModeUnwrapperTraderV2__factory } from "./factories/contracts/test/TestGmxV2IsolationModeUnwrapperTraderV2__factory";
+export type { TestGmxV2IsolationModeVaultFactory } from "./contracts/test/TestGmxV2IsolationModeVaultFactory";
+export { TestGmxV2IsolationModeVaultFactory__factory } from "./factories/contracts/test/TestGmxV2IsolationModeVaultFactory__factory";

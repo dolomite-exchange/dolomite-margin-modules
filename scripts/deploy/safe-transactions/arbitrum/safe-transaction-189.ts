@@ -2,7 +2,7 @@ import { PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory } from '../../../
 import {
   getARBUnwrapperTraderV2ConstructorParams,
   getARBWrapperTraderV2ConstructorParams,
-} from '../../../../src/utils/constructors/arb';
+} from '@dolomite-exchange/modules-arb/src/arb';
 import {
   getGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getGLPIsolationModeWrapperTraderV2ConstructorParams,
@@ -13,7 +13,7 @@ import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
   getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,
   getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
-} from '../../../../src/utils/constructors/jones';
+} from '@dolomite-exchange/modules-jones/src/jones';
 import {
   getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
@@ -21,12 +21,12 @@ import {
   getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
   getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
-} from '../../../../src/utils/constructors/pendle';
+} from '@dolomite-exchange/modules-pendle/src/pendle';
 import {
   getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
   getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
-} from '../../../../src/utils/constructors/plutus';
+} from '@dolomite-exchange/modules-plutus/src/plutus';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { CoreProtocol, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';

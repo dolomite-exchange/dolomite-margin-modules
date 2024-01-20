@@ -13,14 +13,14 @@ import {
   getARBRegistryConstructorParams,
   getARBUnwrapperTraderV2ConstructorParams,
   getARBWrapperTraderV2ConstructorParams,
-} from '../../../../src/utils/constructors/arb';
+} from '@dolomite-exchange/modules-arb/src/arb';
 import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../packages/base/src/utils/constructors/dolomite';
 import {
   getGMXIsolationModeVaultFactoryConstructorParams,
   getGMXUnwrapperTraderV2ConstructorParams,
   getGMXWrapperTraderV2ConstructorParams,
 } from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
-import { getTWAPPriceOracleConstructorParams } from '../../../../src/utils/constructors/oracles';
+import { getTWAPPriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network, ONE_BI } from '../../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';

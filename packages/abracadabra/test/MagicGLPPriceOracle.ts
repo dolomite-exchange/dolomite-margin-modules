@@ -1,13 +1,14 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { CustomTestToken, IERC4626, MagicGLPPriceOracle, MagicGLPPriceOracle__factory } from '../../../src/types';
-import { createContractWithAbi, createTestToken } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
-import { createMagicGLPPriceOracle } from '../../utils/ecosystem-token-utils/abracadabra';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+import { MagicGLPPriceOracle, MagicGLPPriceOracle__factory } from '../src/types';
+import { CustomTestToken, IERC4626 } from '@dolomite-exchange/modules-base/src/types';
+import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { createMagicGLPPriceOracle } from './utils/abracadabra';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const GLP_PRICE = BigNumber.from('1004371801993868870'); // $1.004371801993868870
 

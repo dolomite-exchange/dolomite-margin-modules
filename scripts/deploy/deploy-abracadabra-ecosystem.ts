@@ -4,7 +4,7 @@ import {
   getMagicGLPPriceOracleConstructorParams,
   getMagicGLPUnwrapperTraderV1ConstructorParams,
   getMagicGLPWrapperTraderV1ConstructorParams,
-} from '../../src/utils/constructors/abracadabra';
+} from '../../packages/abracadabra/src/utils/abracadabra';
 import { getAndCheckSpecificNetwork } from '../../packages/base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../packages/base/test/utils/setup';

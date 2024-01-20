@@ -24,6 +24,10 @@ export type { IDolomiteMarginAdmin } from "./@dolomite-exchange/modules-base/con
 export { IDolomiteMarginAdmin__factory } from "./factories/@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMarginAdmin__factory";
 export type { IDolomitePriceOracle } from "./@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle";
 export { IDolomitePriceOracle__factory } from "./factories/@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle__factory";
+export type { ICustomTestToken } from "./@dolomite-exchange/modules-base/contracts/test/ICustomTestToken";
+export { ICustomTestToken__factory } from "./factories/@dolomite-exchange/modules-base/contracts/test/ICustomTestToken__factory";
+export type { ICustomTestVaultToken } from "./@dolomite-exchange/modules-base/contracts/test/ICustomTestVaultToken";
+export { ICustomTestVaultToken__factory } from "./factories/@dolomite-exchange/modules-base/contracts/test/ICustomTestVaultToken__factory";
 export type { IAlgebraPoolErrors } from "./@dolomite-exchange/modules-base/contracts/utils/IAlgebraPoolErrors";
 export { IAlgebraPoolErrors__factory } from "./factories/@dolomite-exchange/modules-base/contracts/utils/IAlgebraPoolErrors__factory";
 export type { IERC20Metadata } from "./@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata";
@@ -50,5 +54,11 @@ export type { IChainlinkRegistry } from "./contracts/interfaces/IChainlinkRegist
 export { IChainlinkRegistry__factory } from "./factories/contracts/interfaces/IChainlinkRegistry__factory";
 export type { ITWAPPriceOracle } from "./contracts/interfaces/ITWAPPriceOracle";
 export { ITWAPPriceOracle__factory } from "./factories/contracts/interfaces/ITWAPPriceOracle__factory";
+export type { TestChainlinkAggregator } from "./contracts/test/TestChainlinkAggregator";
+export { TestChainlinkAggregator__factory } from "./factories/contracts/test/TestChainlinkAggregator__factory";
+export type { TestChainlinkAutomationPriceOracle } from "./contracts/test/TestChainlinkAutomationPriceOracle";
+export { TestChainlinkAutomationPriceOracle__factory } from "./factories/contracts/test/TestChainlinkAutomationPriceOracle__factory";
+export type { TestChainlinkRegistry } from "./contracts/test/TestChainlinkRegistry";
+export { TestChainlinkRegistry__factory } from "./factories/contracts/test/TestChainlinkRegistry__factory";
 export type { TWAPPriceOracle } from "./contracts/TWAPPriceOracle";
 export { TWAPPriceOracle__factory } from "./factories/contracts/TWAPPriceOracle__factory";

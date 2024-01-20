@@ -24,6 +24,10 @@ declare module "hardhat/types/runtime" {
       name: "LinearStepFunctionInterestSetter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.LinearStepFunctionInterestSetter__factory>;
+    getContractFactory(
+      name: "TestInterestSetter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestInterestSetter__factory>;
 
     getContractAt(
       name: "IDolomiteInterestSetter",
@@ -40,6 +44,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.LinearStepFunctionInterestSetter>;
+    getContractAt(
+      name: "TestInterestSetter",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestInterestSetter>;
 
     // default types
     getContractFactory(

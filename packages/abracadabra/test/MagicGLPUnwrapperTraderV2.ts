@@ -1,17 +1,18 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { IERC4626, MagicGLPPriceOracle, MagicGLPUnwrapperTraderV2 } from '../../../src/types';
-import { AccountInfoStruct, ActionArgsStruct } from '../../../src/utils';
-import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
+import { MagicGLPPriceOracle, MagicGLPUnwrapperTraderV2 } from '../src/types';
+import { IERC4626 } from '@dolomite-exchange/modules-base/src/types';
+import { AccountInfoStruct, ActionArgsStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createMagicGLPPriceOracle,
   createMagicGLPUnwrapperTraderV2,
-} from '../../utils/ecosystem-token-utils/abracadabra';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+} from './utils/abracadabra';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

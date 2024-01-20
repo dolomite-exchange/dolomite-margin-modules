@@ -12,3 +12,5 @@ export type { ILinearStepFunctionInterestSetter } from "./contracts/interfaces/I
 export { ILinearStepFunctionInterestSetter__factory } from "./factories/contracts/interfaces/ILinearStepFunctionInterestSetter__factory";
 export type { LinearStepFunctionInterestSetter } from "./contracts/LinearStepFunctionInterestSetter";
 export { LinearStepFunctionInterestSetter__factory } from "./factories/contracts/LinearStepFunctionInterestSetter__factory";
+export type { TestInterestSetter } from "./contracts/test/TestInterestSetter";
+export { TestInterestSetter__factory } from "./factories/contracts/test/TestInterestSetter__factory";

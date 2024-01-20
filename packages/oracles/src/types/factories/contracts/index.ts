@@ -2,6 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as interfaces from "./interfaces";
+export * as test from "./test";
 export { ChainlinkAutomationPriceOracle__factory } from "./ChainlinkAutomationPriceOracle__factory";
 export { ChainlinkPriceOracle__factory } from "./ChainlinkPriceOracle__factory";
 export { TWAPPriceOracle__factory } from "./TWAPPriceOracle__factory";

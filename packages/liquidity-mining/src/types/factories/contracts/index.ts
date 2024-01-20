@@ -2,6 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as interfaces from "./interfaces";
+export * as test from "./test";
 export { Emitter__factory } from "./Emitter__factory";
 export { EmitterMultipleRewardTokens__factory } from "./EmitterMultipleRewardTokens__factory";
 export { OARB__factory } from "./OARB__factory";

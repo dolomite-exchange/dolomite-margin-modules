@@ -14,7 +14,7 @@ import {
   getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
   getJonesUSDCPriceOracleConstructorParams,
   getJonesUSDCRegistryConstructorParams,
-} from '../../src/utils/constructors/jones';
+} from '@dolomite-exchange/modules-jones/src/jones';
 import { getAndCheckSpecificNetwork } from '../../packages/base/src/utils/dolomite-utils';
 import { Network, TEN_BI, ZERO_BI } from '../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../packages/base/test/utils/setup';

@@ -3,10 +3,15 @@
 /* eslint-disable */
 export * as testFreezableIsolationModeFactorySol from "./TestFreezableIsolationModeFactory.sol";
 export { CustomTestToken__factory } from "./CustomTestToken__factory";
+export { CustomTestVaultToken__factory } from "./CustomTestVaultToken__factory";
 export { ICustomTestToken__factory } from "./ICustomTestToken__factory";
+export { ICustomTestVaultToken__factory } from "./ICustomTestVaultToken__factory";
 export { TestAccountActionLib__factory } from "./TestAccountActionLib__factory";
+export { TestAsyncIsolationModeTraderBase__factory } from "./TestAsyncIsolationModeTraderBase__factory";
 export { TestBaseLiquidatorProxy__factory } from "./TestBaseLiquidatorProxy__factory";
 export { TestBaseRegistry__factory } from "./TestBaseRegistry__factory";
+export { TestDolomiteMarginExchangeWrapper__factory } from "./TestDolomiteMarginExchangeWrapper__factory";
+export { TestDolomiteMarginInternalTrader__factory } from "./TestDolomiteMarginInternalTrader__factory";
 export { TestERC20Lib__factory } from "./TestERC20Lib__factory";
 export { TestHandlerRegistry__factory } from "./TestHandlerRegistry__factory";
 export { TestHasLiquidatorRegistry__factory } from "./TestHasLiquidatorRegistry__factory";
@@ -17,4 +22,8 @@ export { TestIsolationModeTokenVaultV1WithFreezable__factory } from "./TestIsola
 export { TestIsolationModeTokenVaultV1WithFreezableAndPausable__factory } from "./TestIsolationModeTokenVaultV1WithFreezableAndPausable__factory";
 export { TestIsolationModeTokenVaultV1WithPausable__factory } from "./TestIsolationModeTokenVaultV1WithPausable__factory";
 export { TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory } from "./TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory";
+export { TestIsolationModeUnwrapperTraderV2__factory } from "./TestIsolationModeUnwrapperTraderV2__factory";
+export { TestIsolationModeWrapperTraderV2__factory } from "./TestIsolationModeWrapperTraderV2__factory";
+export { TestPair__factory } from "./TestPair__factory";
+export { TestPriceOracle__factory } from "./TestPriceOracle__factory";
 export { TestSimpleIsolationModeVaultFactory__factory } from "./TestSimpleIsolationModeVaultFactory__factory";

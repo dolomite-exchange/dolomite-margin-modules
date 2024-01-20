@@ -2,4 +2,5 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as interfaces from "./interfaces";
+export * as test from "./test";
 export { LinearStepFunctionInterestSetter__factory } from "./LinearStepFunctionInterestSetter__factory";

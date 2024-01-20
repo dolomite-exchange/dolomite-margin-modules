@@ -14,7 +14,7 @@ import {
   getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
   getPlutusVaultGLPPriceOracleConstructorParams,
   getPlutusVaultRegistryConstructorParams,
-} from '../../src/utils/constructors/plutus';
+} from '@dolomite-exchange/modules-plutus/src/plutus';
 import { getAndCheckSpecificNetwork } from '../../packages/base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../packages/base/test/utils/setup';

@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import {
   getMagicGLPUnwrapperTraderV2ConstructorParams,
   getMagicGLPWrapperTraderV2ConstructorParams,
-} from '../../../src/utils/constructors/abracadabra';
+} from '../../../packages/abracadabra/src/utils/abracadabra';
 import {
   getGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getGLPIsolationModeWrapperTraderV2ConstructorParams,
@@ -10,7 +10,7 @@ import {
 import {
   getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
-} from '../../../src/utils/constructors/plutus';
+} from '@dolomite-exchange/modules-plutus/src/plutus';
 import { Network } from '../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../packages/base/test/utils/setup';
 import { deployContractAndSave, prettyPrintEncodedData } from '../../deploy-utils';

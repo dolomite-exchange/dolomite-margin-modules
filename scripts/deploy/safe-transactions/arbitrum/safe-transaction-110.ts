@@ -4,7 +4,7 @@ import {
   getVesterExploderConstructorParams,
   getVesterImplementationConstructorParams,
   getVesterV1ProxyConstructorParams,
-} from '../../../../src/utils/constructors/liquidity-mining';
+} from '@dolomite-exchange/modules-liquidity-mining/src/types/liquidity-mining';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { CoreProtocol, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';

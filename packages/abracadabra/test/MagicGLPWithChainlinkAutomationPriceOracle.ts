@@ -7,17 +7,16 @@ import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import {
-  CustomTestVaultToken,
-  IERC4626,
   MagicGLPWithChainlinkAutomationPriceOracle,
   MagicGLPWithChainlinkAutomationPriceOracle__factory,
-} from '../../../src/types';
-import { createContractWithAbi, createTestVaultToken } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
-import { createMagicGLPWithChainlinkAutomationPriceOracle } from '../../utils/ecosystem-token-utils/abracadabra';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../utils/setup';
+} from '../src/types';
+import { CustomTestVaultToken, IERC4626 } from '@dolomite-exchange/modules-base/src/types';
+import { createContractWithAbi, createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { createMagicGLPWithChainlinkAutomationPriceOracle } from './utils/abracadabra';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const GLP_PRICE = BigNumber.from('1004682394802947459'); // $1.004682394802947459
 

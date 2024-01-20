@@ -45,6 +45,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IDolomitePriceOracle__factory>;
     getContractFactory(
+      name: "ICustomTestToken",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ICustomTestToken__factory>;
+    getContractFactory(
+      name: "ICustomTestVaultToken",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ICustomTestVaultToken__factory>;
+    getContractFactory(
       name: "IAlgebraPoolErrors",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IAlgebraPoolErrors__factory>;
@@ -97,6 +105,18 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ITWAPPriceOracle__factory>;
     getContractFactory(
+      name: "TestChainlinkAggregator",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestChainlinkAggregator__factory>;
+    getContractFactory(
+      name: "TestChainlinkAutomationPriceOracle",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestChainlinkAutomationPriceOracle__factory>;
+    getContractFactory(
+      name: "TestChainlinkRegistry",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestChainlinkRegistry__factory>;
+    getContractFactory(
       name: "TWAPPriceOracle",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TWAPPriceOracle__factory>;
@@ -141,6 +161,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IDolomitePriceOracle>;
+    getContractAt(
+      name: "ICustomTestToken",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ICustomTestToken>;
+    getContractAt(
+      name: "ICustomTestVaultToken",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ICustomTestVaultToken>;
     getContractAt(
       name: "IAlgebraPoolErrors",
       address: string,
@@ -206,6 +236,21 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ITWAPPriceOracle>;
+    getContractAt(
+      name: "TestChainlinkAggregator",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestChainlinkAggregator>;
+    getContractAt(
+      name: "TestChainlinkAutomationPriceOracle",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestChainlinkAutomationPriceOracle>;
+    getContractAt(
+      name: "TestChainlinkRegistry",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestChainlinkRegistry>;
     getContractAt(
       name: "TWAPPriceOracle",
       address: string,

@@ -1,10 +1,10 @@
 import {
   getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams,
-} from '../../src/utils/constructors/abracadabra';
-import { getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams } from '../../src/utils/constructors/jones';
+} from '../../packages/abracadabra/src/utils/abracadabra';
+import { getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams } from '@dolomite-exchange/modules-jones/src/jones';
 import {
   getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
-} from '../../src/utils/constructors/plutus';
+} from '@dolomite-exchange/modules-plutus/src/plutus';
 import { getAndCheckSpecificNetwork } from '../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../packages/base/test/utils/setup';

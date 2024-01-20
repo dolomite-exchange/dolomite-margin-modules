@@ -12,7 +12,7 @@ import {
   IIsolationModeWrapperTrader, TestDolomiteMarginInternalTrader,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeWrapperTraderV2,
-} from '../../../../src/types';
+} from '../../src/types';
 import { AccountInfoStruct } from '../../src/utils';
 import { CoreProtocol } from './setup';
 

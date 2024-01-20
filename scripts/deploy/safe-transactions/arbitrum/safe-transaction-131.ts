@@ -1,6 +1,6 @@
 import { parseEther } from 'ethers/lib/utils';
 import { ST_ETH_MAP, STETH_USD_CHAINLINK_FEED_MAP } from '../../../../packages/base/src/utils/constants';
-import { getPendlePtPriceOracleConstructorParams } from '../../../../src/utils/constructors/pendle';
+import { getPendlePtPriceOracleConstructorParams } from '@dolomite-exchange/modules-pendle/src/pendle';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';

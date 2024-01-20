@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { IPendleYtGLP2024IsolationModeVaultFactory__factory } from '../../../../src/types';
-import { getChainlinkPriceOracleParams } from '../../../../src/utils/constructors/oracles';
-import { getPendleYtGLPPriceOracleConstructorParams } from '../../../../src/utils/constructors/pendle';
+import { getChainlinkPriceOracleParams } from '@dolomite-exchange/modules-oracles/src/oracles';
+import { getPendleYtGLPPriceOracleConstructorParams } from '@dolomite-exchange/modules-pendle/src/pendle';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { CoreProtocol, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';

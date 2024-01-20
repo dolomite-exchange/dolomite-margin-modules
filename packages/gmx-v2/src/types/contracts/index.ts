@@ -3,6 +3,8 @@
 /* eslint-disable */
 import type * as interfaces from "./interfaces";
 export type { interfaces };
+import type * as test from "./test";
+export type { test };
 export type { GmxV2IsolationModeTokenVaultV1 } from "./GmxV2IsolationModeTokenVaultV1";
 export type { GmxV2IsolationModeUnwrapperTraderV2 } from "./GmxV2IsolationModeUnwrapperTraderV2";
 export type { GmxV2IsolationModeVaultFactory } from "./GmxV2IsolationModeVaultFactory";

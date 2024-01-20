@@ -9,7 +9,7 @@ import {
   CustomTestToken__factory,
   CustomTestVaultToken,
   CustomTestVaultToken__factory,
-} from '../../../../src/types';
+} from '../../src/types';
 import { ActionArgsStruct } from './index';
 import { MAX_UINT_256_BI, Network, networkToNetworkNameMap } from './no-deps-constants';
 

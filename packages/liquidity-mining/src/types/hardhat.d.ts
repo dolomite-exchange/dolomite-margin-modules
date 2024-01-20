@@ -233,6 +233,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.RewardsDistributor__factory>;
     getContractFactory(
+      name: "TestVesterImplementationV1",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestVesterImplementationV1__factory>;
+    getContractFactory(
+      name: "TestVesterImplementationV2",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestVesterImplementationV2__factory>;
+    getContractFactory(
       name: "VesterExploder",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.VesterExploder__factory>;
@@ -528,6 +536,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.RewardsDistributor>;
+    getContractAt(
+      name: "TestVesterImplementationV1",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestVesterImplementationV1>;
+    getContractAt(
+      name: "TestVesterImplementationV2",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestVesterImplementationV2>;
     getContractAt(
       name: "VesterExploder",
       address: string,

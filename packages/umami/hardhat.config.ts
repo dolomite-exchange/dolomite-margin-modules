@@ -14,7 +14,7 @@ import path from 'path';
 import 'solidity-coverage';
 
 import 'tsconfig-paths/register';
-import { DEFAULT_BLOCK_NUMBER, NetworkName } from '../../src/utils/no-deps-constants';
+import { DEFAULT_BLOCK_NUMBER, NetworkName } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 
 chai.use(solidity);
 require('dotenv').config({ path: path.resolve(process.cwd(), '../../.env') });

@@ -8,7 +8,7 @@ import {
   IsolationModeTraderProxy__factory,
   RegistryProxy,
   RegistryProxy__factory,
-} from '../../../../src/types';
+} from '../../src/types';
 import {
   getEventEmitterRegistryConstructorParams,
   getIsolationModeTraderProxyConstructorParams,

@@ -1,9 +1,10 @@
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { IERC4626, MagicGLPUnwrapperTraderV2 } from '../../../src/types';
-import { AccountInfoStruct } from '../../../src/utils';
-import { depositIntoDolomiteMargin } from '../../../src/utils/dolomite-utils';
+import { MagicGLPUnwrapperTraderV2 } from '../src/types';
+import { IERC4626 } from '@dolomite-exchange/modules-base/src/types';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   BYTES_EMPTY,
   LIQUIDATE_ALL,
@@ -13,24 +14,24 @@ import {
   ONE_BI,
   SELL_ALL,
   ZERO_BI,
-} from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../utils';
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceDustyOrZero,
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalance,
   expectWalletBalanceOrDustyIfZero,
-} from '../../utils/assertions';
-import { createMagicGLPUnwrapperTraderV2 } from '../../utils/ecosystem-token-utils/abracadabra';
-import { setExpiry } from '../../utils/expiry-utils';
-import { liquidateV4WithLiquidityToken } from '../../utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '../../utils/setup';
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { createMagicGLPUnwrapperTraderV2 } from './utils/abracadabra';
+import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
+import { liquidateV4WithLiquidityToken } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   checkForParaswapSuccess,
   getCalldataForParaswap,
   getParaswapTraderParamStruct,
-} from '../../utils/trader-utils';
+} from '@dolomite-exchange/modules-base/test/utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

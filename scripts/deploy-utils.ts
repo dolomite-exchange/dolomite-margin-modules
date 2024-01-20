@@ -7,6 +7,8 @@ import { artifacts, network, run } from 'hardhat';
 import * as path from 'path';
 import {
   IChainlinkAggregator__factory,
+} from '@dolomite-exchange/modules-oracles/src/types';
+import {
   IDolomiteInterestSetter,
   IDolomitePriceOracle,
   IERC20,
@@ -14,6 +16,8 @@ import {
   IIsolationModeUnwrapperTrader,
   IIsolationModeVaultFactory,
   IIsolationModeWrapperTrader,
+} from '@dolomite-exchange/modules-base/src/types';
+import {
   IPendlePtMarket,
   IPendlePtOracle,
   IPendlePtToken,
@@ -28,7 +32,7 @@ import {
   PendlePtPriceOracle,
   PendlePtPriceOracle__factory,
   PendleRegistry__factory,
-} from '../src/types';
+} from '@dolomite-exchange/modules-pendle/src/types';
 import {
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
@@ -43,10 +47,10 @@ import {
   getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
   getPendlePtPriceOracleConstructorParams,
   getPendleRegistryConstructorParams,
-} from '../src/utils/constructors/pendle';
-import { createContractWithLibrary, createContractWithName } from '../packages/base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ZERO_BI } from '../packages/base/src/utils/no-deps-constants';
-import { CoreProtocol } from '../packages/base/test/utils/setup';
+} from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
+import { createContractWithLibrary, createContractWithName } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 type ChainId = string;
 

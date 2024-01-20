@@ -13,7 +13,7 @@ import {
   getARBRegistryConstructorParams,
   getARBUnwrapperTraderV2ConstructorParams,
   getARBWrapperTraderV2ConstructorParams,
-} from '../../../../src/utils/constructors/arb';
+} from '@dolomite-exchange/modules-arb/src/arb';
 import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../packages/base/src/utils/constructors/dolomite';
 import {
   getGMXIsolationModeVaultFactoryConstructorParams,

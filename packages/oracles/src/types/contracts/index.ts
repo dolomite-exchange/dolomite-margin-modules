@@ -3,6 +3,8 @@
 /* eslint-disable */
 import type * as interfaces from "./interfaces";
 export type { interfaces };
+import type * as test from "./test";
+export type { test };
 export type { ChainlinkAutomationPriceOracle } from "./ChainlinkAutomationPriceOracle";
 export type { ChainlinkPriceOracle } from "./ChainlinkPriceOracle";
 export type { TWAPPriceOracle } from "./TWAPPriceOracle";

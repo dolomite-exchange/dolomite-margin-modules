@@ -2,7 +2,7 @@ import { address, AmountDenomination, AmountReference } from '@dolomite-margin/d
 import { expect } from 'chai';
 import { BaseContract, BigNumber, BigNumberish, CallOverrides, ContractTransaction } from 'ethers';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
-import { ERC20__factory } from '../../../../src/types';
+import { ERC20__factory } from '../../src/types';
 import { AccountInfoStruct } from '../../src/utils';
 import { AccountStruct } from '../../src/utils/constants';
 import { valueStructToBigNumber } from '../../src/utils/dolomite-utils';

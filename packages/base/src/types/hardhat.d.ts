@@ -405,13 +405,25 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CustomTestToken__factory>;
     getContractFactory(
+      name: "CustomTestVaultToken",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.CustomTestVaultToken__factory>;
+    getContractFactory(
       name: "ICustomTestToken",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ICustomTestToken__factory>;
     getContractFactory(
+      name: "ICustomTestVaultToken",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ICustomTestVaultToken__factory>;
+    getContractFactory(
       name: "TestAccountActionLib",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestAccountActionLib__factory>;
+    getContractFactory(
+      name: "TestAsyncIsolationModeTraderBase",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestAsyncIsolationModeTraderBase__factory>;
     getContractFactory(
       name: "TestBaseLiquidatorProxy",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -420,6 +432,14 @@ declare module "hardhat/types/runtime" {
       name: "TestBaseRegistry",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestBaseRegistry__factory>;
+    getContractFactory(
+      name: "TestDolomiteMarginExchangeWrapper",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestDolomiteMarginExchangeWrapper__factory>;
+    getContractFactory(
+      name: "TestDolomiteMarginInternalTrader",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestDolomiteMarginInternalTrader__factory>;
     getContractFactory(
       name: "TestERC20Lib",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -464,6 +484,22 @@ declare module "hardhat/types/runtime" {
       name: "TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory>;
+    getContractFactory(
+      name: "TestIsolationModeUnwrapperTraderV2",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestIsolationModeUnwrapperTraderV2__factory>;
+    getContractFactory(
+      name: "TestIsolationModeWrapperTraderV2",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestIsolationModeWrapperTraderV2__factory>;
+    getContractFactory(
+      name: "TestPair",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestPair__factory>;
+    getContractFactory(
+      name: "TestPriceOracle",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestPriceOracle__factory>;
     getContractFactory(
       name: "TestSimpleIsolationModeVaultFactory",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -980,15 +1016,30 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.CustomTestToken>;
     getContractAt(
+      name: "CustomTestVaultToken",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.CustomTestVaultToken>;
+    getContractAt(
       name: "ICustomTestToken",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.ICustomTestToken>;
     getContractAt(
+      name: "ICustomTestVaultToken",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ICustomTestVaultToken>;
+    getContractAt(
       name: "TestAccountActionLib",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TestAccountActionLib>;
+    getContractAt(
+      name: "TestAsyncIsolationModeTraderBase",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestAsyncIsolationModeTraderBase>;
     getContractAt(
       name: "TestBaseLiquidatorProxy",
       address: string,
@@ -999,6 +1050,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TestBaseRegistry>;
+    getContractAt(
+      name: "TestDolomiteMarginExchangeWrapper",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestDolomiteMarginExchangeWrapper>;
+    getContractAt(
+      name: "TestDolomiteMarginInternalTrader",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestDolomiteMarginInternalTrader>;
     getContractAt(
       name: "TestERC20Lib",
       address: string,
@@ -1054,6 +1115,26 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa>;
+    getContractAt(
+      name: "TestIsolationModeUnwrapperTraderV2",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestIsolationModeUnwrapperTraderV2>;
+    getContractAt(
+      name: "TestIsolationModeWrapperTraderV2",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestIsolationModeWrapperTraderV2>;
+    getContractAt(
+      name: "TestPair",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestPair>;
+    getContractAt(
+      name: "TestPriceOracle",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestPriceOracle>;
     getContractAt(
       name: "TestSimpleIsolationModeVaultFactory",
       address: string,
