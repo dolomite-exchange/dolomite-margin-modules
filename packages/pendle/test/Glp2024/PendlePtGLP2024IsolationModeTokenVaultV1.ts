@@ -4,7 +4,6 @@ import {
   IERC20,
   IPendlePtToken,
   IPendleSyToken__factory,
-  IPlutusVaultGLPFarm,
   PendleGLPRegistry,
   PendlePtGLP2024IsolationModeTokenVaultV1,
   PendlePtGLP2024IsolationModeTokenVaultV1__factory,
@@ -12,9 +11,12 @@ import {
   PendlePtGLP2024IsolationModeVaultFactory,
   PendlePtGLP2024IsolationModeWrapperTraderV2,
   PendlePtGLPPriceOracle,
-} from '../../../../src/types';
-import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
+} from '../../src/types';
+import {
+  IPlutusVaultGLPFarm,
+} from '@dolomite-exchange/modules-plutus/src/types';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   createPendleGLPRegistry,
   createPendlePtGLP2024IsolationModeTokenVaultV1,
@@ -22,14 +24,14 @@ import {
   createPendlePtGLP2024IsolationModeVaultFactory,
   createPendlePtGLP2024IsolationModeWrapperTraderV2,
   createPendlePtGLPPriceOracle,
-} from '@dolomite-exchange/modules-pendle/test/pendle';
+} from '../pendle-ecosystem-utils';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../../../packages/base/test/utils/setup';
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 
 describe('PendlePtGLP2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;

@@ -3,26 +3,28 @@ import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
   IERC20,
   PendlePtIsolationModeVaultFactory,
   PendlePtPriceOracle,
   PendleRegistry,
   TestPendlePtOracle,
   TestPendlePtOracle__factory,
-} from '../../../../src/types';
-import { createContractWithAbi } from '../../../../packages/base/src/utils/dolomite-utils';
-import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
-import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
-import { expectThrow } from '../../../../packages/base/test/utils/assertions';
+} from '../../src/types';
+import {
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+} from '@dolomite-exchange/modules-base/src/types';
+import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtPriceOracle,
   createPendleRegistry,
-} from '@dolomite-exchange/modules-pendle/test/pendle';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../../../packages/base/test/utils/setup';
+} from '../pendle-ecosystem-utils';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const PT_RETH_PRICE = BigNumber.from('1808539032753997677827');
 

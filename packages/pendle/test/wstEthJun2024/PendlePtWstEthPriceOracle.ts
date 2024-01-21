@@ -2,27 +2,29 @@ import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
   IERC20,
   PendlePtIsolationModeVaultFactory,
   PendlePtPriceOracle,
   PendleRegistry,
   TestPendlePtOracle,
   TestPendlePtOracle__factory,
-} from '../../../../src/types';
-import { createContractWithAbi } from '../../../../packages/base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network } from '../../../../packages/base/src/utils/no-deps-constants';
-import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
-import { expectThrow } from '../../../../packages/base/test/utils/assertions';
+} from '../../src/types';
+import {
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+} from '@dolomite-exchange/modules-base/src/types';
+import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtPriceOracle,
   createPendleRegistry,
-} from '@dolomite-exchange/modules-pendle/test/pendle';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '../../../../packages/base/test/utils/setup';
-import { STETH_USD_CHAINLINK_FEED_MAP } from '../../../../packages/base/src/utils/constants';
+} from '../pendle-ecosystem-utils';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { STETH_USD_CHAINLINK_FEED_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 
 const PT_WST_ETH_PRICE = BigNumber.from('1851962584688511417180');
 

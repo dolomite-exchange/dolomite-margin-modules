@@ -170,3 +170,7 @@ export type { PendleYtGLP2024IsolationModeWrapperTraderV2 } from "./contracts/Pe
 export { PendleYtGLP2024IsolationModeWrapperTraderV2__factory } from "./factories/contracts/PendleYtGLP2024IsolationModeWrapperTraderV2__factory";
 export type { PendleYtGLPPriceOracle } from "./contracts/PendleYtGLPPriceOracle";
 export { PendleYtGLPPriceOracle__factory } from "./factories/contracts/PendleYtGLPPriceOracle__factory";
+export type { TestPendlePtOracle } from "./contracts/test/TestPendlePtOracle";
+export { TestPendlePtOracle__factory } from "./factories/contracts/test/TestPendlePtOracle__factory";
+export type { TestPendleYtGLP2024IsolationModeTokenVaultV1 } from "./contracts/test/TestPendleYtGLP2024IsolationModeTokenVaultV1";
+export { TestPendleYtGLP2024IsolationModeTokenVaultV1__factory } from "./factories/contracts/test/TestPendleYtGLP2024IsolationModeTokenVaultV1__factory";

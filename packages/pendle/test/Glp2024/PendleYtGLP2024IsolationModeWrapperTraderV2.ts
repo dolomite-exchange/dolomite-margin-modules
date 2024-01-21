@@ -15,12 +15,12 @@ import {
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeWrapperTraderV2,
   PendleYtGLPPriceOracle,
-} from '../../../../src/types';
-import { AccountInfoStruct } from '../../../../packages/base/src/utils';
-import { createDepositAction } from '../../../../packages/base/src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../packages/base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '../../../../packages/base/test/utils';
-import { expectThrow, expectWalletBalance } from '../../../../packages/base/test/utils/assertions';
+} from '../../src/types';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { createDepositAction } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeTokenVaultV1,
@@ -28,7 +28,7 @@ import {
   createPendleYtGLP2024IsolationModeVaultFactory,
   createPendleYtGLP2024IsolationModeWrapperTraderV2,
   createPendleYtGLPPriceOracle,
-} from '@dolomite-exchange/modules-pendle/test/pendle';
+} from '../pendle-ecosystem-utils';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
@@ -36,9 +36,9 @@ import {
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../../../packages/base/test/utils/setup';
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { encodeSwapExactTokensForYt } from '../pendle-utils';
-import { setupNewGenericTraderProxy } from '../../../../packages/base/test/utils/dolomite';
+import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

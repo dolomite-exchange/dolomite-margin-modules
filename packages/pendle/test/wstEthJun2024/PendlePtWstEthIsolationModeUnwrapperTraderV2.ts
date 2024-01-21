@@ -15,16 +15,16 @@ import {
   PendlePtIsolationModeWrapperTraderV2,
   PendlePtPriceOracle,
   PendleRegistry,
-} from '../../../../src/types';
-import { AccountInfoStruct } from '../../../../packages/base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../packages/base/src/utils/no-deps-constants';
+} from '../../src/types';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
-} from '../../../../packages/base/test/utils';
-import { expectThrow } from '../../../../packages/base/test/utils/assertions';
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeUnwrapperTraderV2,
@@ -32,16 +32,16 @@ import {
   createPendlePtIsolationModeWrapperTraderV2,
   createPendlePtPriceOracle,
   createPendleRegistry,
-} from '@dolomite-exchange/modules-pendle/test/pendle';
+} from '../pendle-ecosystem-utils';
 import {
   CoreProtocol, getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
   setupWstETHBalance,
-} from '../../../../packages/base/test/utils/setup';
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { encodeSwapExactPtForTokens, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
-import { setupNewGenericTraderProxy } from '../../../../packages/base/test/utils/dolomite';
+import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

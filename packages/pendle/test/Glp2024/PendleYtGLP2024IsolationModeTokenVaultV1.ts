@@ -6,9 +6,6 @@ import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import {
-  CustomTestToken,
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
   IPendleSyToken,
   IPendleSyToken__factory,
   IPendleYtToken,
@@ -17,46 +14,51 @@ import {
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeWrapperTraderV2,
   PendleYtGLPPriceOracle,
-  RegistryProxy__factory,
   TestPendleYtGLP2024IsolationModeTokenVaultV1,
   TestPendleYtGLP2024IsolationModeTokenVaultV1__factory,
-} from '../../../../src/types';
+} from '../../src/types';
+import {
+  CustomTestToken,
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+  RegistryProxy__factory,
+} from '@dolomite-exchange/modules-base/src/types';
 import {
   createContractWithAbi,
   createTestToken,
   depositIntoDolomiteMargin,
-} from '../../../../packages/base/src/utils/dolomite-utils';
-import { Network, ONE_BI, ZERO_BI } from '../../../../packages/base/src/utils/no-deps-constants';
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   getBlockTimestamp,
   impersonate,
   increaseToTimestamp,
   revertToSnapshotAndCapture,
   snapshot,
-} from '../../../../packages/base/test/utils';
+} from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
   expectWalletBalance,
   expectWalletBalanceIsGreaterThan,
-} from '../../../../packages/base/test/utils/assertions';
-import { createDolomiteRegistryImplementation } from '../../../../packages/base/test/utils/dolomite';
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeUnwrapperTraderV2,
   createPendleYtGLP2024IsolationModeVaultFactory,
   createPendleYtGLP2024IsolationModeWrapperTraderV2,
   createPendleYtGLPPriceOracle,
-} from '@dolomite-exchange/modules-pendle/test/pendle';
+} from '../pendle-ecosystem-utils';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../../../packages/base/test/utils/setup';
-import { getSimpleZapParams } from '../../../../packages/base/test/utils/zap-utils';
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { getSimpleZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
 
 const ONE_WEEK_SECONDS = 7 * 86400;
 

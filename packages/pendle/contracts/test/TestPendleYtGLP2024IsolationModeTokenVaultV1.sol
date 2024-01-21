@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { PendleYtGLP2024IsolationModeTokenVaultV1 } from "../external/pendle/PendleYtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { PendleYtGLP2024IsolationModeTokenVaultV1 } from "../PendleYtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 
 
 /**

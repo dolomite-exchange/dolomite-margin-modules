@@ -8,18 +8,18 @@ import {
   PendleYtGLPPriceOracle,
   TestPendlePtOracle,
   TestPendlePtOracle__factory,
-} from '../../../../src/types';
-import { createContractWithAbi } from '../../../../packages/base/src/utils/dolomite-utils';
-import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
-import { getBlockTimestamp, increaseToTimestamp, revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
-import { expectThrow } from '../../../../packages/base/test/utils/assertions';
+} from '../../src/types';
+import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getBlockTimestamp, increaseToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeTokenVaultV1,
   createPendleYtGLP2024IsolationModeVaultFactory,
   createPendleYtGLPPriceOracle,
-} from '@dolomite-exchange/modules-pendle/test/pendle';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../../../../packages/base/test/utils/setup';
+} from '../pendle-ecosystem-utils';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 /**
  * This is the expected price at the following timestamp: 1690134516

@@ -4,7 +4,6 @@ import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
-  IGmxRegistryV1,
   IPendlePtToken,
   PendleGLPRegistry,
   PendlePtGLP2024IsolationModeTokenVaultV1,
@@ -13,16 +12,19 @@ import {
   PendlePtGLP2024IsolationModeVaultFactory,
   PendlePtGLP2024IsolationModeWrapperTraderV2,
   PendlePtGLPPriceOracle,
-} from '../../../../src/types';
-import { AccountInfoStruct } from '../../../../packages/base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../packages/base/src/utils/no-deps-constants';
+} from '../../src/types';
+import {
+  IGmxRegistryV1,
+} from '@dolomite-exchange/modules-glp/src/types';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
-} from '../../../../packages/base/test/utils';
-import { expectThrow } from '../../../../packages/base/test/utils/assertions';
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPendleGLPRegistry,
   createPendlePtGLP2024IsolationModeTokenVaultV1,
@@ -30,7 +32,7 @@ import {
   createPendlePtGLP2024IsolationModeVaultFactory,
   createPendlePtGLP2024IsolationModeWrapperTraderV2,
   createPendlePtGLPPriceOracle,
-} from '@dolomite-exchange/modules-pendle/test/pendle';
+} from '../pendle-ecosystem-utils';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
@@ -38,9 +40,9 @@ import {
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../../../packages/base/test/utils/setup';
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { encodeSwapExactPtForTokens, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
-import { setupNewGenericTraderProxy } from '../../../../packages/base/test/utils/dolomite';
+import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

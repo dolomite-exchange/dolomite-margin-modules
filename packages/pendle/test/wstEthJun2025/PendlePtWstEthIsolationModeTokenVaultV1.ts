@@ -8,9 +8,9 @@ import {
   PendlePtIsolationModeWrapperTraderV2,
   PendlePtPriceOracle,
   PendleRegistry,
-} from '../../../../src/types';
-import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
+} from '../../src/types';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeUnwrapperTraderV2,
@@ -18,8 +18,8 @@ import {
   createPendlePtIsolationModeWrapperTraderV2,
   createPendlePtPriceOracle,
   createPendleRegistry,
-} from '@dolomite-exchange/modules-pendle/test/pendle';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../../../../packages/base/test/utils/setup';
+} from '../pendle-ecosystem-utils';
+import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 describe('PendlePtWstEthJun2025IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -57,7 +57,7 @@ describe('PendlePtWstEthJun2025IsolationModeTokenVaultV1', () => {
     const underlyingToken = core.tokens.wstEth!;
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, core.marketIds.wstEth!);
+    priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, core.tokens.wstEth!);
 
     await setupTestMarket(core, factory, true, priceOracle);
 

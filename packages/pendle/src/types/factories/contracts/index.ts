@@ -2,6 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as interfaces from "./interfaces";
+export * as test from "./test";
 export { PendleGLPRegistry__factory } from "./PendleGLPRegistry__factory";
 export { PendlePtGLP2024IsolationModeTokenVaultV1__factory } from "./PendlePtGLP2024IsolationModeTokenVaultV1__factory";
 export { PendlePtGLP2024IsolationModeUnwrapperTraderV2__factory } from "./PendlePtGLP2024IsolationModeUnwrapperTraderV2__factory";

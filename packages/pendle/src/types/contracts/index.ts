@@ -3,6 +3,8 @@
 /* eslint-disable */
 import type * as interfaces from "./interfaces";
 export type { interfaces };
+import type * as test from "./test";
+export type { test };
 export type { PendleGLPRegistry } from "./PendleGLPRegistry";
 export type { PendlePtGLP2024IsolationModeTokenVaultV1 } from "./PendlePtGLP2024IsolationModeTokenVaultV1";
 export type { PendlePtGLP2024IsolationModeUnwrapperTraderV2 } from "./PendlePtGLP2024IsolationModeUnwrapperTraderV2";

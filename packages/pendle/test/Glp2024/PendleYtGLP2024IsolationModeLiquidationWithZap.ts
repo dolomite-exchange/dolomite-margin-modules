@@ -5,7 +5,7 @@ import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
 import 'dotenv/config';
 import { BigNumber } from 'ethers';
-import deployments from '../../../../scripts/deployments.json';
+import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
 import {
   IPendleYtToken,
   PendleYtGLP2024IsolationModeTokenVaultV1,
@@ -14,27 +14,27 @@ import {
   PendleYtGLP2024IsolationModeUnwrapperTraderV2__factory,
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeVaultFactory__factory,
-} from '../../../../src/types';
-import { AccountInfoStruct } from '../../../../packages/base/src/utils';
-import { Network, ONE_BI, ZERO_BI } from '../../../../packages/base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '../../../../packages/base/test/utils';
+} from '../../src/types';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceDustyOrZero,
   expectProtocolBalanceIsGreaterThan,
   expectVaultBalanceToMatchAccountBalances,
   expectWalletBalance,
-} from '../../../../packages/base/test/utils/assertions';
-import { setExpiry } from '../../../../packages/base/test/utils/expiry-utils';
-import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '../../../../packages/base/test/utils/liquidation-utils';
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
+import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,
   setupCoreProtocol,
   setupUSDCBalance,
   setupUserVaultProxy,
-} from '../../../../packages/base/test/utils/setup';
-import { checkForParaswapSuccess } from '../../../../packages/base/test/utils/trader-utils';
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '420';

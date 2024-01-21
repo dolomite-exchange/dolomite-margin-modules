@@ -336,6 +336,14 @@ declare module "hardhat/types/runtime" {
       name: "PendleYtGLPPriceOracle",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.PendleYtGLPPriceOracle__factory>;
+    getContractFactory(
+      name: "TestPendlePtOracle",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestPendlePtOracle__factory>;
+    getContractFactory(
+      name: "TestPendleYtGLP2024IsolationModeTokenVaultV1",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestPendleYtGLP2024IsolationModeTokenVaultV1__factory>;
 
     getContractAt(
       name: "BaseLiquidatorProxy",
@@ -742,6 +750,16 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.PendleYtGLPPriceOracle>;
+    getContractAt(
+      name: "TestPendlePtOracle",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestPendlePtOracle>;
+    getContractAt(
+      name: "TestPendleYtGLP2024IsolationModeTokenVaultV1",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestPendleYtGLP2024IsolationModeTokenVaultV1>;
 
     // default types
     getContractFactory(

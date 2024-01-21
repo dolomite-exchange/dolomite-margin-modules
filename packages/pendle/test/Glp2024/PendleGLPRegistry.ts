@@ -1,11 +1,11 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { PendleGLPRegistry } from '../../../../src/types';
-import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../../../packages/base/test/utils';
-import { expectEvent, expectThrow } from '../../../../packages/base/test/utils/assertions';
-import { createPendleGLPRegistry } from '@dolomite-exchange/modules-pendle/test/pendle';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
+import { PendleGLPRegistry } from '../../src/types';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { createPendleGLPRegistry } from '../pendle-ecosystem-utils';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 

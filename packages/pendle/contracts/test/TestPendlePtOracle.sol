@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendlePtOracle } from "../external/interfaces/pendle/IPendlePtOracle.sol";
+import { IPendlePtOracle } from "../interfaces/IPendlePtOracle.sol";
 
 
 /**
