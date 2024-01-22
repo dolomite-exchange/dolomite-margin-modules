@@ -10,8 +10,11 @@ export { TestAccountActionLib__factory } from "./TestAccountActionLib__factory";
 export { TestAsyncIsolationModeTraderBase__factory } from "./TestAsyncIsolationModeTraderBase__factory";
 export { TestBaseLiquidatorProxy__factory } from "./TestBaseLiquidatorProxy__factory";
 export { TestBaseRegistry__factory } from "./TestBaseRegistry__factory";
+export { TestBitsLib__factory } from "./TestBitsLib__factory";
+export { TestDecimalLib__factory } from "./TestDecimalLib__factory";
 export { TestDolomiteMarginExchangeWrapper__factory } from "./TestDolomiteMarginExchangeWrapper__factory";
 export { TestDolomiteMarginInternalTrader__factory } from "./TestDolomiteMarginInternalTrader__factory";
+export { TestDolomiteMarginMath__factory } from "./TestDolomiteMarginMath__factory";
 export { TestERC20Lib__factory } from "./TestERC20Lib__factory";
 export { TestHandlerRegistry__factory } from "./TestHandlerRegistry__factory";
 export { TestHasLiquidatorRegistry__factory } from "./TestHasLiquidatorRegistry__factory";
@@ -26,4 +29,6 @@ export { TestIsolationModeUnwrapperTraderV2__factory } from "./TestIsolationMode
 export { TestIsolationModeWrapperTraderV2__factory } from "./TestIsolationModeWrapperTraderV2__factory";
 export { TestPair__factory } from "./TestPair__factory";
 export { TestPriceOracle__factory } from "./TestPriceOracle__factory";
+export { TestRequire__factory } from "./TestRequire__factory";
 export { TestSimpleIsolationModeVaultFactory__factory } from "./TestSimpleIsolationModeVaultFactory__factory";
+export { TestTypes__factory } from "./TestTypes__factory";

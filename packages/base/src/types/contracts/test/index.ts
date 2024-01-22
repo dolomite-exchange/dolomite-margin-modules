@@ -11,8 +11,11 @@ export type { TestAccountActionLib } from "./TestAccountActionLib";
 export type { TestAsyncIsolationModeTraderBase } from "./TestAsyncIsolationModeTraderBase";
 export type { TestBaseLiquidatorProxy } from "./TestBaseLiquidatorProxy";
 export type { TestBaseRegistry } from "./TestBaseRegistry";
+export type { TestBitsLib } from "./TestBitsLib";
+export type { TestDecimalLib } from "./TestDecimalLib";
 export type { TestDolomiteMarginExchangeWrapper } from "./TestDolomiteMarginExchangeWrapper";
 export type { TestDolomiteMarginInternalTrader } from "./TestDolomiteMarginInternalTrader";
+export type { TestDolomiteMarginMath } from "./TestDolomiteMarginMath";
 export type { TestERC20Lib } from "./TestERC20Lib";
 export type { TestHandlerRegistry } from "./TestHandlerRegistry";
 export type { TestHasLiquidatorRegistry } from "./TestHasLiquidatorRegistry";
@@ -27,4 +30,6 @@ export type { TestIsolationModeUnwrapperTraderV2 } from "./TestIsolationModeUnwr
 export type { TestIsolationModeWrapperTraderV2 } from "./TestIsolationModeWrapperTraderV2";
 export type { TestPair } from "./TestPair";
 export type { TestPriceOracle } from "./TestPriceOracle";
+export type { TestRequire } from "./TestRequire";
 export type { TestSimpleIsolationModeVaultFactory } from "./TestSimpleIsolationModeVaultFactory";
+export type { TestTypes } from "./TestTypes";

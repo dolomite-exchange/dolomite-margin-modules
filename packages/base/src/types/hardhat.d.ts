@@ -433,6 +433,14 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestBaseRegistry__factory>;
     getContractFactory(
+      name: "TestBitsLib",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestBitsLib__factory>;
+    getContractFactory(
+      name: "TestDecimalLib",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestDecimalLib__factory>;
+    getContractFactory(
       name: "TestDolomiteMarginExchangeWrapper",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestDolomiteMarginExchangeWrapper__factory>;
@@ -440,6 +448,10 @@ declare module "hardhat/types/runtime" {
       name: "TestDolomiteMarginInternalTrader",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestDolomiteMarginInternalTrader__factory>;
+    getContractFactory(
+      name: "TestDolomiteMarginMath",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestDolomiteMarginMath__factory>;
     getContractFactory(
       name: "TestERC20Lib",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -501,9 +513,17 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestPriceOracle__factory>;
     getContractFactory(
+      name: "TestRequire",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestRequire__factory>;
+    getContractFactory(
       name: "TestSimpleIsolationModeVaultFactory",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.TestSimpleIsolationModeVaultFactory__factory>;
+    getContractFactory(
+      name: "TestTypes",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TestTypes__factory>;
     getContractFactory(
       name: "OdosAggregatorTrader",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -1051,6 +1071,16 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.TestBaseRegistry>;
     getContractAt(
+      name: "TestBitsLib",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestBitsLib>;
+    getContractAt(
+      name: "TestDecimalLib",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestDecimalLib>;
+    getContractAt(
       name: "TestDolomiteMarginExchangeWrapper",
       address: string,
       signer?: ethers.Signer
@@ -1060,6 +1090,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TestDolomiteMarginInternalTrader>;
+    getContractAt(
+      name: "TestDolomiteMarginMath",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestDolomiteMarginMath>;
     getContractAt(
       name: "TestERC20Lib",
       address: string,
@@ -1136,10 +1171,20 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.TestPriceOracle>;
     getContractAt(
+      name: "TestRequire",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestRequire>;
+    getContractAt(
       name: "TestSimpleIsolationModeVaultFactory",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.TestSimpleIsolationModeVaultFactory>;
+    getContractAt(
+      name: "TestTypes",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TestTypes>;
     getContractAt(
       name: "OdosAggregatorTrader",
       address: string,
