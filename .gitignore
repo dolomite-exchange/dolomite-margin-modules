@@ -12,7 +12,7 @@ package-lock.json
 
 .idea
 
-src/types
+packages/*/src/types
 
 .env
 
