@@ -24,7 +24,7 @@ import {
   createGmxV2Library,
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
-} from './utils/gmxv2';
+} from './gmx-v2-ecosystem-utils';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
 

@@ -19,7 +19,7 @@ import {
   createGmxV2IsolationModeWrapperTraderV2,
   createGmxV2Library,
   createGmxV2Registry,
-} from './utils/gmxv2';
+} from './gmx-v2-ecosystem-utils';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfigForGmxV2,

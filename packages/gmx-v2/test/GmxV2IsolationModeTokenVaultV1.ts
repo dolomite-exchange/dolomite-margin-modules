@@ -42,7 +42,7 @@ import {
   createTestGmxV2IsolationModeTokenVaultV1,
   getInitiateUnwrappingParams,
   getInitiateWrappingParams,
-} from './utils/gmxv2';
+} from './gmx-v2-ecosystem-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,

@@ -42,7 +42,7 @@ import {
   getDepositObject,
   getInitiateWrappingParams,
   getOracleParams,
-} from './utils/gmxv2';
+} from './gmx-v2-ecosystem-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,

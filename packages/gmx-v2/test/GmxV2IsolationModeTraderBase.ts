@@ -8,7 +8,7 @@ import { ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-co
 import { revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createIsolationModeTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { createGmxV2Registry } from './utils/gmxv2';
+import { createGmxV2Registry } from './gmx-v2-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from 'packages/base/test/utils/setup';
 import { GMX_V2_CALLBACK_GAS_LIMIT } from '../src/gmx-v2-constructors';
 

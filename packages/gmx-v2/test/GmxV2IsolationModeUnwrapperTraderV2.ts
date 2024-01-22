@@ -40,7 +40,7 @@ import {
   createTestGmxV2IsolationModeUnwrapperTraderV2,
   getOracleParams,
   getWithdrawalObject,
-} from './utils/gmxv2';
+} from './gmx-v2-ecosystem-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,

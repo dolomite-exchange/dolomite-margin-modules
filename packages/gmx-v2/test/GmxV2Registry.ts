@@ -18,7 +18,7 @@ import {
   createGmxV2Library,
   createGmxV2Registry,
   createTestGmxV2IsolationModeTokenVaultV1,
-} from './utils/gmxv2';
+} from './gmx-v2-ecosystem-utils';
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
 import { ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import {

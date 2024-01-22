@@ -44,7 +44,7 @@ import {
   createGmxV2Registry,
   getInitiateWrappingParams,
   getOracleParams,
-} from './utils/gmxv2';
+} from './gmx-v2-ecosystem-utils';
 import { liquidateV4WithZapParam } from 'packages/base/test/utils/liquidation-utils';
 import {
   CoreProtocol,

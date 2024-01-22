@@ -22,7 +22,7 @@ import {
   GmxV2Registry
 } from '@dolomite-exchange/modules-gmx-v2/src/types';
 import { AccountStruct } from '../../src/utils/constants';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmxv2';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_ZERO, MAX_UINT_256_BI, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, increaseByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../utils';
@@ -45,7 +45,7 @@ import {
   createGmxV2Registry,
   getInitiateWrappingParams,
   getOracleParams,
-} from '@dolomite-exchange/modules-gmx-v2/test/gmx';
+} from '@dolomite-exchange/modules-gmx-v2/test/gmx-v2-ecosystem-utils';
 import { setExpiry } from '../utils/expiry-utils';
 import { liquidateV4WithZapParam } from '../utils/liquidation-utils';
 import {
