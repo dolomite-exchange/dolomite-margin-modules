@@ -157,7 +157,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             return;
         }
 
-        if (transferAmount == type(uint256).max && assetReference == IDolomiteStructs.AssetReference.Delta) {
+        if (transferAmount == type(uint256).max) {
             // @audit getAccountWei can return negative. Need to check that
             // @follow-up Is this the correct number
             transferAmount = _unwrapper.DOLOMITE_MARGIN().getAccountWei(_accountInfo, factory.marketId()).value;
