@@ -2,7 +2,8 @@
   "name": "@dolomite-exchange/modules-jones",
   "version": "0.0.1",
   "scripts": {
-    "build": "hardhat compile"
+    "build": "hardhat compile",
+    "clean": "hardhat clean"
   },
   "private": false,
   "files": [

@@ -1,25 +1,14 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
-import '@nomiclabs/hardhat-solhint';
-import '@nomiclabs/hardhat-vyper';
-import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
-
-import chai from 'chai';
-import { solidity } from 'ethereum-waffle';
 import 'hardhat-gas-reporter';
 import { HardhatUserConfig } from 'hardhat/types';
-import 'solidity-coverage';
 
 import 'tsconfig-paths/register';
-import { DEFAULT_BLOCK_NUMBER, NetworkName } from './packages/base/src/utils/no-deps-constants';
+import { DEFAULT_BLOCK_NUMBER, NetworkName } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 
-chai.use(solidity);
-require('dotenv').config();
-if (process.env.COVERAGE !== 'true') {
-  require('hardhat-tracer');
-}
+import path from 'path';
+require('dotenv').config({ path: path.resolve(process.cwd(), '../../.env') });
 
 const arbitrumOneWeb3Url = process.env.ARBITRUM_ONE_WEB3_PROVIDER_URL;
 if (!arbitrumOneWeb3Url) {
@@ -35,7 +24,7 @@ if (!arbiscanApiKey) {
 }
 
 const contractsDirectory = process.env.COVERAGE === 'true' ? './contracts_coverage' : './contracts';
-export const config: HardhatUserConfig = {
+export const base_config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
@@ -101,6 +90,3 @@ export const config: HardhatUserConfig = {
     },
   },
 };
-
-// noinspection JSUnusedGlobalSymbols
-export default config;

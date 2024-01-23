@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "yarn workspaces run build",
-    "clean": "hardhat clean",
+    "clean": "yarn workspaces run clean",
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat coverage --testfiles \"test/**/!(*Liquidation*|*LiquidatorProxyV2*|*Umami*)*.ts\" --network hardhat",
     "coverage:prepare": "ts-node scripts/fix-contracts-for-coverage.ts",
     "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ./node_modules/.bin/hardhat coverage --testfiles \"test/external/**/(GmxV2*|IsolationModeFreezableLiquidatorProxy)*.ts\" --network hardhat",
