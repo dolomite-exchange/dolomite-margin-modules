@@ -20,7 +20,7 @@ import {
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from './utils/glp';
+import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from './glp-ecosystem-utils';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';

@@ -23,7 +23,7 @@ import {
   createARBRegistry,
   createARBUnwrapperTraderV2,
   createARBWrapperTraderV2,
-} from './arb-test-utils';
+} from './arb-ecosystem-utils';
 import {
   CoreProtocol, disableInterestAccrual,
   setupARBBalance,

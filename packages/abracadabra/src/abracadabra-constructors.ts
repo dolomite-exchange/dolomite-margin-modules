@@ -1,5 +1,5 @@
 import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { IChainlinkRegistry } from '../../../../src/types';
+import { IChainlinkRegistry } from './types';
 
 export function getMagicGLPPriceOracleConstructorParams(core: CoreProtocol): any[] {
   return [

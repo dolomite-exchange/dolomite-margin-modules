@@ -2,7 +2,7 @@ import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import deployments from '../../../scripts/deployments.json';
+import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
 import {
   IERC4626,
   JonesUSDCIsolationModeTokenVaultV1,
@@ -17,19 +17,19 @@ import {
   JonesUSDCPriceOracle__factory,
   JonesUSDCRegistry,
   JonesUSDCRegistry__factory,
-} from '../../../../src/types';
-import { AccountInfoStruct } from '../../base/src/utils';
-import { depositIntoDolomiteMargin } from '../../base/src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '../../base/test/utils';
+} from '../src/types';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
-} from '../../base/test/utils/assertions';
-import { setExpiry } from '../../base/test/utils/expiry-utils';
-import { liquidateV4WithZap, toZapBigNumber } from '../../base/test/utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '../../base/test/utils/setup';
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
+import { liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
 
 const defaultAccountNumber = '0';

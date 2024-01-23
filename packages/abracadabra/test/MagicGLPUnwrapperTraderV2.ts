@@ -1,4 +1,4 @@
-import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
+import { ActionType, AmountDenomination, AmountReference } from '@dolomite-exchange/dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { MagicGLPPriceOracle, MagicGLPUnwrapperTraderV2 } from '../src/types';
@@ -11,7 +11,7 @@ import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertio
 import {
   createMagicGLPPriceOracle,
   createMagicGLPUnwrapperTraderV2,
-} from './utils/abracadabra';
+} from './abracadabra-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const defaultAccountNumber = '0';

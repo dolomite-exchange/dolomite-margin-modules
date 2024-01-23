@@ -7,7 +7,7 @@ import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-d
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { createOARB, createRewardsDistributor } from './liquidity-mining';
+import { createOARB, createRewardsDistributor } from './liquidity-mining-ecosystem-utils';
 
 const user1Rewards = [10, 20];
 const user2Rewards = [15, 25];

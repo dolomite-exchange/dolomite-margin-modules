@@ -4,7 +4,7 @@ import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/sr
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { createOARB } from './liquidity-mining';
+import { createOARB } from './liquidity-mining-ecosystem-utils';
 
 describe('OARB', () => {
   let snapshotId: string;

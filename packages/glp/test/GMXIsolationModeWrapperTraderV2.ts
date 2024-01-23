@@ -25,7 +25,7 @@ import {
   createGmxRegistry,
   createGMXUnwrapperTraderV2,
   createGMXWrapperTraderV2,
-} from './utils/glp';
+} from './glp-ecosystem-utils';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,

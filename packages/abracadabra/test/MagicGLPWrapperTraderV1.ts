@@ -11,7 +11,7 @@ import { expectProtocolBalanceDustyOrZero, expectThrow } from '@dolomite-exchang
 import {
   createMagicGLPPriceOracle,
   createMagicGLPWrapperTraderV1,
-} from './utils/abracadabra';
+} from './abracadabra-ecosystem-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,

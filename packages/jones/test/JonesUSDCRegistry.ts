@@ -14,7 +14,7 @@ import {
   createJonesUSDCIsolationModeUnwrapperTraderV2ForZap,
   createJonesUSDCIsolationModeVaultFactory,
   createJonesUSDCRegistry,
-} from './jones';
+} from './jones-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';

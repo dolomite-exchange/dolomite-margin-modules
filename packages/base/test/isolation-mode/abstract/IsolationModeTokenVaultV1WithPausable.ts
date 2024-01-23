@@ -11,26 +11,26 @@ import {
   TestIsolationModeUnwrapperTraderV2__factory,
   TestIsolationModeWrapperTraderV2,
   TestIsolationModeWrapperTraderV2__factory,
-} from '../../../../src/types';
+} from '../../../src/types';
 import {
   createContractWithAbi,
   createContractWithLibrary,
   createTestToken,
   depositIntoDolomiteMargin,
-} from '../../../../src/utils/dolomite-utils';
-import { Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../../utils';
-import { expectProtocolBalance, expectThrow } from '../../../utils/assertions';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
+} from '../../../src/utils/dolomite-utils';
+import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { expectProtocolBalance, expectThrow } from '../../utils/assertions';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
+import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../../utils/setup';
-import { getSimpleZapParams, getWrapZapParams } from '../../../utils/zap-utils';
+} from '../../utils/setup';
+import { getSimpleZapParams, getWrapZapParams } from '../../utils/zap-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';

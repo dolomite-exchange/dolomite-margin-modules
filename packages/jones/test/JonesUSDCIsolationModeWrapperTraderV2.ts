@@ -34,7 +34,7 @@ import {
   createJonesUSDCIsolationModeWrapperTraderV2,
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
-} from './jones';
+} from './jones-ecosystem-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,

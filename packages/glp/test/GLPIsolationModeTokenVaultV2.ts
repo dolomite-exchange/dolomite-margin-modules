@@ -25,7 +25,7 @@ import {
   createGMXIsolationModeVaultFactory,
   createGmxRegistry,
   createTestGLPIsolationModeTokenVaultV2,
-} from './utils/glp';
+} from './glp-ecosystem-utils';
 import {
   CoreProtocol,
   setupCoreProtocol,

@@ -22,7 +22,7 @@ import {
   expectThrow,
   expectWalletBalance,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { createJonesUSDCIsolationModeTokenVaultV2 } from './jones';
+import { createJonesUSDCIsolationModeTokenVaultV2 } from './jones-ecosystem-utils';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,

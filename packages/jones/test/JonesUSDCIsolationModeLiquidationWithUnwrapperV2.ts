@@ -35,7 +35,7 @@ import {
   createJonesUSDCIsolationModeWrapperTraderV2,
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
-} from './jones';
+} from './jones-ecosystem-utils';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import {

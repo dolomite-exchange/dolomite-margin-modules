@@ -11,7 +11,7 @@ import {
   MagicGLPWrapperTraderV1__factory,
   MagicGLPWrapperTraderV2,
   MagicGLPWrapperTraderV2__factory,
-} from '../../src/types';
+} from '../src/types';
 import {
   getMagicGLPPriceOracleConstructorParams,
   getMagicGLPUnwrapperTraderV1ConstructorParams,
@@ -19,7 +19,7 @@ import {
   getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams,
   getMagicGLPWrapperTraderV1ConstructorParams,
   getMagicGLPWrapperTraderV2ConstructorParams,
-} from '../../src/utils/abracadabra';
+} from '../src/abracadabra-constructors';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 

@@ -7,7 +7,7 @@ import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modul
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { createMagicGLPPriceOracle } from './utils/abracadabra';
+import { createMagicGLPPriceOracle } from './abracadabra-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const GLP_PRICE = BigNumber.from('1004371801993868870'); // $1.004371801993868870

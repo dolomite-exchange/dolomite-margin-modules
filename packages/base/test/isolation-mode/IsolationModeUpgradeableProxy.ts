@@ -6,20 +6,20 @@ import {
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeUnwrapperTraderV2__factory,
-} from '../../../src/types';
-import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../../src/utils/dolomite-utils';
-import { Network } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectThrow } from '../../utils/assertions';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
+} from '../../src/types';
+import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../src/utils/dolomite-utils';
+import { Network } from '../../src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../utils';
+import { expectThrow } from '../utils/assertions';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
+import { createTestIsolationModeFactory } from '../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../utils/setup';
+} from '../utils/setup';
 
 describe('IsolationModeUpgradeableProxy', () => {
   let snapshotId: string;

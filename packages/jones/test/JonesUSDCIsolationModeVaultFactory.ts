@@ -20,7 +20,7 @@ import {
   createJonesUSDCIsolationModeWrapperTraderV2,
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
-} from './jones';
+} from './jones-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
 

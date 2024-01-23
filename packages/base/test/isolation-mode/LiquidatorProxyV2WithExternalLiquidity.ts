@@ -7,23 +7,23 @@ import {
   ILiquidatorProxyV2WithExternalLiquidity,
   TestPriceOracle,
   TestPriceOracle__factory,
-} from '../../../src/types';
-import { AccountStruct } from '../../../src/utils/constants';
+} from '../../src/types';
+import { AccountStruct } from '../../src/utils/constants';
 import {
   createContractWithAbi,
   depositIntoDolomiteMargin,
   owedWeiToHeldWei,
   withdrawFromDolomiteMargin,
-} from '../../../src/utils/dolomite-utils';
-import { Network, NO_EXPIRY } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+} from '../../src/utils/dolomite-utils';
+import { Network, NO_EXPIRY } from '../../src/utils/no-deps-constants';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,
   expectWalletBalanceOrDustyIfZero,
-} from '../../utils/assertions';
-import { CoreProtocol, setupCoreProtocol, setupWETHBalance } from '../../utils/setup';
-import { getCalldataForParaswap } from '../../utils/trader-utils';
+} from '../utils/assertions';
+import { CoreProtocol, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
+import { getCalldataForParaswap } from '../utils/trader-utils';
 
 const USDC_PRICE = BigNumber.from('1000000000000000000000000000000');
 const solidNumber = '321';

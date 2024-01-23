@@ -19,14 +19,14 @@ import {
   TestIsolationModeWrapperTraderV1__factory,
   TestIsolationModeWrapperTraderV2,
   TestIsolationModeWrapperTraderV2__factory,
-} from '../../../../src/types';
+} from '../../../src/types';
 import {
   createContractWithAbi,
   createContractWithLibrary,
   createTestToken,
-} from '../../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+} from '../../../src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -34,16 +34,16 @@ import {
   expectTotalSupply,
   expectWalletAllowance,
   expectWalletBalance,
-} from '../../../utils/assertions';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
+} from '../../utils/assertions';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
+import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../../utils/setup';
+} from '../../utils/setup';
 
 const toAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units

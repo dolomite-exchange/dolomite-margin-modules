@@ -10,7 +10,7 @@ import {
   TestIsolationModeWrapperTraderV1__factory,
   TestSimpleIsolationModeVaultFactory,
   TestSimpleIsolationModeVaultFactory__factory,
-} from '../../../../src/types';
+} from '../../src/types';
 import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../src/utils/dolomite-utils';
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';

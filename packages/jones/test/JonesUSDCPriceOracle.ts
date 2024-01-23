@@ -18,7 +18,7 @@ import {
   createJonesUSDCIsolationModeVaultFactory,
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
-} from './jones';
+} from './jones-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const USDC_PRICE = BigNumber.from('999937000000000000000000000000'); // $0.999937

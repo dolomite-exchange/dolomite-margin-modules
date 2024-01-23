@@ -1,4 +1,4 @@
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { MagicGLPUnwrapperTraderV2 } from '../src/types';
@@ -23,7 +23,7 @@ import {
   expectWalletBalance,
   expectWalletBalanceOrDustyIfZero,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { createMagicGLPUnwrapperTraderV2 } from './utils/abracadabra';
+import { createMagicGLPUnwrapperTraderV2 } from './abracadabra-ecosystem-utils';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import { liquidateV4WithLiquidityToken } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';

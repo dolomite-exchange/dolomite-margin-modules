@@ -18,7 +18,7 @@ import {
   createARBRegistry,
   createARBUnwrapperTraderV2,
   createARBWrapperTraderV2,
-} from './arb-test-utils';
+} from './arb-ecosystem-utils';
 import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS } from './arb-utils';
 

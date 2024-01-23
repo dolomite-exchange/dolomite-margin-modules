@@ -34,7 +34,7 @@ import {
   createGMXWrapperTraderV2,
   createTestGLPIsolationModeTokenVaultV2,
   createTestGMXIsolationModeTokenVaultV1,
-} from './utils/glp';
+} from './glp-ecosystem-utils';
 import {
   CoreProtocol,
   setupCoreProtocol,

@@ -11,7 +11,7 @@ import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertio
 import {
   createMagicGLPPriceOracle,
   createMagicGLPUnwrapperTraderV1,
-} from './utils/abracadabra';
+} from './abracadabra-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const defaultAccountNumber = '0';

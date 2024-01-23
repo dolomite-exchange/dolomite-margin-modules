@@ -1,4 +1,4 @@
-import { ADDRESSES } from '@dolomite-margin/dist/src';
+import { ADDRESSES } from '@dolomite-exchange/dolomite-margin/dist/src';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
@@ -15,7 +15,7 @@ import { createContractWithAbi, createTestVaultToken } from '@dolomite-exchange/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { createMagicGLPWithChainlinkAutomationPriceOracle } from './utils/abracadabra';
+import { createMagicGLPWithChainlinkAutomationPriceOracle } from './abracadabra-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const GLP_PRICE = BigNumber.from('1004682394802947459'); // $1.004682394802947459

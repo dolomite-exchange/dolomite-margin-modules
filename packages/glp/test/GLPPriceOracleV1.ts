@@ -10,7 +10,7 @@ import {
   createGLPIsolationModeVaultFactory,
   createGLPPriceOracleV1,
   createGmxRegistry,
-} from './utils/glp';
+} from './glp-ecosystem-utils';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const GLP_PRICE = BigNumber.from('1004371801993868870'); // $1.004371801993868870

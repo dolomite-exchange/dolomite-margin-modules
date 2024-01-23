@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { DolomiteRegistryImplementation, RegistryProxy } from '../../../../src/types';
+import { DolomiteRegistryImplementation, RegistryProxy } from '../../src/types';
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';

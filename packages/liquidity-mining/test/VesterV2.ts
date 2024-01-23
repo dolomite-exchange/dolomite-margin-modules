@@ -18,7 +18,7 @@ import {
   setupUSDCBalance,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { createTestVesterV2Proxy } from './liquidity-mining';
+import { createTestVesterV2Proxy } from './liquidity-mining-ecosystem-utils';
 import { expectEmptyPosition } from './liquidityMining-utils';
 
 const oldWalletWithPosition = '0x52256ef863a713Ef349ae6E97A7E8f35785145dE';

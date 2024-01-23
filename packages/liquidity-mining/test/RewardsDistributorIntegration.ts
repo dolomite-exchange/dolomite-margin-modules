@@ -5,7 +5,7 @@ import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-const
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { createOARB, createRewardsDistributor } from './liquidity-mining';
+import { createOARB, createRewardsDistributor } from './liquidity-mining-ecosystem-utils';
 
 const USER1 = '0x0321be949876c2545ac121379c620c2a0480b758';
 const USER2 = '0x1702acf734116cd8faf86d139aa91843f81510a1';

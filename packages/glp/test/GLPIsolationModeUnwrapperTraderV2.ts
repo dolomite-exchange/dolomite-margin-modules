@@ -22,7 +22,7 @@ import {
   createGLPUnwrapperTraderV2,
   createGLPWrapperTraderV2,
   createGmxRegistry,
-} from './utils/glp';
+} from './glp-ecosystem-utils';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,

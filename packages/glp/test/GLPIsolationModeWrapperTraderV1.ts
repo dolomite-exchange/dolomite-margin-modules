@@ -21,7 +21,7 @@ import {
   createGLPPriceOracleV1,
   createGLPWrapperTraderV1,
   createGmxRegistry,
-} from './utils/glp';
+} from './glp-ecosystem-utils';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,

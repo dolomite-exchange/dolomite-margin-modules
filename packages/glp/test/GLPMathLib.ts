@@ -12,7 +12,7 @@ import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modul
 import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { createGmxRegistry } from './utils/glp';
+import { createGmxRegistry } from './glp-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const amountWei = BigNumber.from('200000000000000000000'); // $200

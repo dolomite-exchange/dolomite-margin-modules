@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { createContractWithLibrary, createTestToken } from 'src/utils/dolomite-utils';
-import { createTestIsolationModeFactory } from 'test/utils/ecosystem-token-utils/testers';
+import { createContractWithLibrary, createTestToken } from '../../src/utils/dolomite-utils';
+import { createTestIsolationModeFactory } from '../utils/ecosystem-token-utils/testers';
 import {
   CustomTestToken,
   IsolationModeTraderProxy,
@@ -8,17 +8,17 @@ import {
   TestAsyncUpgradeableIsolationModeWrapperTrader__factory,
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
-} from '../../../src/types';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '../../utils';
-import { expectEvent, expectThrow } from '../../utils/assertions';
+} from '../../src/types';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '../utils';
+import { expectEvent, expectThrow } from '../utils/assertions';
 import {
   createAsyncIsolationModeWrapperTraderImpl,
   createDolomiteRegistryImplementation,
   createIsolationModeTokenVaultV1ActionsImpl,
   createIsolationModeTraderProxy,
-} from '../../utils/dolomite';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../../utils/setup';
+} from '../utils/dolomite';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 describe('IsolationModeTraderProxy', () => {
   let snapshotId: string;

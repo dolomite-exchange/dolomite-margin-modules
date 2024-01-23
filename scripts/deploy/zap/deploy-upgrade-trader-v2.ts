@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import {
   getMagicGLPUnwrapperTraderV2ConstructorParams,
   getMagicGLPWrapperTraderV2ConstructorParams,
-} from '../../../packages/abracadabra/src/utils/abracadabra';
+} from '../../../packages/abracadabra/src/abracadabra-constructors';
 import {
   getGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getGLPIsolationModeWrapperTraderV2ConstructorParams,

@@ -9,11 +9,11 @@ import {
   OARB,
   OARBStorageVault,
   OARBStorageVault__factory,
-} from 'src/types';
-import { createContractWithAbi, depositIntoDolomiteMargin } from 'src/utils/dolomite-utils';
-import { Network, ONE_ETH_BI, ZERO_BI } from 'src/utils/no-deps-constants';
-import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from 'test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from 'test/utils/assertions';
+} from '../src/types';
+import { createContractWithAbi, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   CoreProtocol,
   disableInterestAccrual,
@@ -21,8 +21,8 @@ import {
   setupCoreProtocol,
   setupUSDCBalance,
   setupWETHBalance,
-} from 'packages/base/test/utils/setup';
-import { createOARB } from '../../utils/ecosystem-token-utils/liquidity-mining';
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { createOARB } from './liquidity-mining-ecosystem-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const defaultAllocPoint = BigNumber.from('100');

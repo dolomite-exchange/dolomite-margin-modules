@@ -11,7 +11,7 @@ import {
   CustomTestToken,
 } from '@dolomite-exchange/modules-base/src/types';
 import { getChainlinkPriceOracleParams } from '../src/oracles-constructors';
-import { createContractWithAbi, createTestToken } from '../../../packages/base/src/utils/dolomite-utils';
+import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/../../../packages/base/src/utils/dolomite-utils';
 import {
   MAX_INT_192_BI,
   Network,
@@ -19,10 +19,10 @@ import {
   ONE_DAY_SECONDS,
   TEN_BI,
   ZERO_BI,
-} from '../../../packages/base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot, waitTime } from '../../../packages/base/test/utils';
-import { expectThrow } from '../../../packages/base/test/utils/assertions';
-import { CoreProtocol, setupCoreProtocol } from '../../../packages/base/test/utils/setup';
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocol, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const WETH_PRICE = BigNumber.from('1883923360000000000000');
 const BTC_PRICE = BigNumber.from('299800328339800000000000000000000');

@@ -19,7 +19,7 @@ import {
   setupUSDCBalance,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { createOARB, createTestVesterV1Proxy } from './liquidity-mining';
+import { createOARB, createTestVesterV1Proxy } from './liquidity-mining-ecosystem-utils';
 import { expectEmptyPosition } from './liquidityMining-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';

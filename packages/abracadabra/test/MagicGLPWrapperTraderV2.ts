@@ -1,4 +1,4 @@
-import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
+import { ActionType, AmountDenomination, AmountReference } from '@dolomite-exchange/dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { MagicGLPPriceOracle, MagicGLPWrapperTraderV2 } from '../src/types';
@@ -11,7 +11,7 @@ import { expectProtocolBalanceDustyOrZero, expectThrow } from '@dolomite-exchang
 import {
   createMagicGLPPriceOracle,
   createMagicGLPWrapperTraderV2,
-} from './utils/abracadabra';
+} from './abracadabra-ecosystem-utils';
 import {
   CoreProtocol,
   disableInterestAccrual,

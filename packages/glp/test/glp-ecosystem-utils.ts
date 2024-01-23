@@ -25,7 +25,7 @@ import {
   TestGLPIsolationModeTokenVaultV1,
   TestGLPIsolationModeTokenVaultV2,
   TestGMXIsolationModeTokenVaultV1,
-} from '../../src/types';
+} from '../src/types';
 import {
   RegistryProxy,
   RegistryProxy__factory,
@@ -46,7 +46,7 @@ import {
   getGMXUnwrapperTraderV2ConstructorParams,
   getGMXWrapperTraderV2ConstructorParams,
   GmxUserVaultImplementation,
-} from '../../src/glp-constructors';
+} from '../src/glp-constructors';
 import { createContractWithAbi, createContractWithLibrary } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   createIsolationModeTokenVaultV1ActionsImpl,

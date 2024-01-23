@@ -26,7 +26,7 @@ import {
   createGLPUnwrapperTraderV1,
   createGLPWrapperTraderV1,
   createGmxRegistry,
-} from './utils/glp';
+} from './glp-ecosystem-utils';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import {
   CoreProtocol,

@@ -1,6 +1,6 @@
 import {
   getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams,
-} from '../../packages/abracadabra/src/utils/abracadabra';
+} from '../../packages/abracadabra/src/abracadabra-constructors';
 import { getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams } from '@dolomite-exchange/modules-jones/src/jones';
 import {
   getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,

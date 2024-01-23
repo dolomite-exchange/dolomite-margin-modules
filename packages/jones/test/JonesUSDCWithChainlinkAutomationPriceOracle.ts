@@ -31,7 +31,7 @@ import {
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { createJonesUSDCWithChainlinkAutomationPriceOracle } from './jones';
+import { createJonesUSDCWithChainlinkAutomationPriceOracle } from './jones-ecosystem-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.99998605

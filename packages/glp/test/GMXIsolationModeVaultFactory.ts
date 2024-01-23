@@ -22,7 +22,7 @@ import {
   createGMXIsolationModeTokenVaultV1,
   createGMXIsolationModeVaultFactory,
   createGmxRegistry,
-} from './utils/glp';
+} from './glp-ecosystem-utils';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,

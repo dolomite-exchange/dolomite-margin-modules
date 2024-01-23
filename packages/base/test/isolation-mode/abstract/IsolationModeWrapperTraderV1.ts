@@ -10,30 +10,30 @@ import {
   TestIsolationModeTokenVaultV1__factory,
   TestIsolationModeWrapperTraderV1,
   TestIsolationModeWrapperTraderV1__factory,
-} from '../../../../src/types';
-import { AccountInfoStruct } from '../../../../src/utils';
+} from '../../../src/types';
+import { AccountInfoStruct } from '../../../src/utils';
 import {
   createContractWithAbi,
   createContractWithLibrary,
   createTestToken,
-} from '../../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../../../src/utils/no-deps-constants';
+} from '../../../src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
-} from '../../../utils';
-import { expectThrow } from '../../../utils/assertions';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../../utils/ecosystem-token-utils/testers';
+} from '../../utils';
+import { expectThrow } from '../../utils/assertions';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
+import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../../utils/setup';
+} from '../../utils/setup';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

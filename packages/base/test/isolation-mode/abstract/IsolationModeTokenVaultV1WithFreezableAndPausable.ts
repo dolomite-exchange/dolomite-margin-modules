@@ -11,36 +11,36 @@ import {
   TestIsolationModeUnwrapperTraderV2__factory,
   TestIsolationModeWrapperTraderV2,
   TestIsolationModeWrapperTraderV2__factory,
-} from '../../../../src/types';
+} from '../../../src/types';
 import {
   createContractWithAbi,
   createContractWithLibrary,
   createTestToken,
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
-} from '../../../../src/utils/dolomite-utils';
-import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../../utils';
+} from '../../../src/utils/dolomite-utils';
+import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
   expectProtocolBalance,
   expectThrow,
   expectTotalSupply,
   expectWalletBalance,
-} from '../../../utils/assertions';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '../../../utils/dolomite';
+} from '../../utils/assertions';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import {
   createTestFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
-} from '../../../utils/ecosystem-token-utils/testers';
+} from '../../utils/ecosystem-token-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
-} from '../../../utils/setup';
-import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../../utils/zap-utils';
+} from '../../utils/setup';
+import { getSimpleZapParams, getUnwrapZapParams, getWrapZapParams } from '../../utils/zap-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';

@@ -16,7 +16,7 @@ import {
   setupDAIBalance,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { createOARB } from './liquidity-mining';
+import { createOARB } from './liquidity-mining-ecosystem-utils';
 
 const defaultAccountNumber = ZERO_BI;
 const defaultAllocPoint = BigNumber.from('100');
