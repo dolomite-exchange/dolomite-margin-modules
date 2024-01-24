@@ -199,7 +199,7 @@ describe('ParaswapAggregatorTraderV2', () => {
         core,
       );
       const actualOrderData = encodeExternalSellActionData(
-        outputAmount,
+        outputAmount.mul(10000),
         ['bytes4', 'bytes'],
         [`0x${tradeData.slice(2, 10)}`, `0x${tradeData.slice(10)}`],
       );

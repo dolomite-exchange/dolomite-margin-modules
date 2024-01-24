@@ -83,7 +83,7 @@ describe('BaseLiquidatorProxy', () => {
       expect(cache.flipMarketsForExpiration).to.eq(false);
       expect(cache.heldPrice).to.eq((await core.dolomiteMargin.getMarketPrice(heldMarket)).value);
       expect(cache.owedPrice).to.eq(owedPrice);
-      expect(cache.owedPriceAdj).to.eq(owedPrice.mul(107).div(100));
+      expect(cache.owedPriceAdj).to.eq(owedPrice.mul(105).div(100));
     });
 
     it('should work when expiration timestamp is not 0', async () => {
@@ -119,7 +119,7 @@ describe('BaseLiquidatorProxy', () => {
       expect(cache.flipMarketsForExpiration).to.eq(false);
       expect(cache.heldPrice).to.eq((await core.dolomiteMargin.getMarketPrice(heldMarket)).value);
       expect(cache.owedPrice).to.eq(owedPrice);
-      expect(cache.owedPriceAdj).to.eq(owedPrice.mul(10700).div(10000));
+      expect(cache.owedPriceAdj).to.eq(owedPrice.mul(10500).div(10000));
     });
   });
 
@@ -384,7 +384,7 @@ describe('BaseLiquidatorProxy', () => {
       const marketInfos = await proxy.getMarketInfos(marketIds, []);
       const [supply, borrow] = await proxy.getAdjustedAccountValues(marketInfos, account, marketIds);
       expect(supply.value).to.eq(ethAmount.mul(ethPrice.value));
-      expect(borrow.value).to.eq(wbtcAmount.mul(wbtcPrice.value).mul('1086956521739130434').div(ONE_ETH_BI));
+      expect(borrow.value).to.eq(wbtcAmount.mul(wbtcPrice.value));
     });
   });
 

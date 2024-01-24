@@ -1,4 +1,4 @@
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
@@ -19,7 +19,7 @@ import {
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
@@ -125,12 +125,12 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
     tokenUnwrapper = await createContractWithAbi(
       TestIsolationModeUnwrapperTraderV2__factory.abi,
       TestIsolationModeUnwrapperTraderV2__factory.bytecode,
-      [otherToken1.address, factory.address, core.dolomiteMargin.address],
+      [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     tokenWrapper = await createContractWithAbi(
       TestIsolationModeWrapperTraderV2__factory.abi,
       TestIsolationModeWrapperTraderV2__factory.bytecode,
-      [otherToken1.address, factory.address, core.dolomiteMargin.address],
+      [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -142,7 +142,6 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       TestIsolationModeTokenVaultV1WithFreezableAndPausable__factory,
       core.hhUser1,
     );
-    await userVault.initialize();
 
     await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
     await underlyingToken.connect(core.hhUser1).approve(vaultAddress, amountWei);
@@ -178,6 +177,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       defaultAccountNumber,
       FreezeType.Deposit,
       PLUS_ONE_BI,
+      ADDRESS_ZERO
     );
   }
 
@@ -247,11 +247,12 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       );
     });
 
+    // @todo fix
     it('should fail if vault is frozen', async () => {
       await freezeVault();
       await expectThrow(
         userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen',
+        `IsolationModeVaultV1Freezable: Vault account is frozen <${defaultAccountNumber.toString()}>`,
       );
     });
   });
@@ -285,11 +286,12 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       );
     });
 
+    // @todo fix
     it('should fail if vault is frozen', async () => {
       await freezeVault();
       await expectThrow(
         userVault.withdrawFromVaultForDolomiteMargin(defaultAccountNumber, amountWei),
-        'IsolationModeVaultV1Freezable: Vault is frozen',
+        `IsolationModeVaultV1Freezable: Vault account is frozen <${defaultAccountNumber.toString()}>`,
       );
     });
   });
@@ -2120,8 +2122,9 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
           defaultAccountNumber,
           FreezeType.Deposit,
           PLUS_ONE_BI,
+          ADDRESS_ZERO
         ),
-        `IsolationModeVaultFactory: Caller is not a authorized <${core.hhUser1.address.toLowerCase()}>`,
+        `FreezableVaultFactory: Caller is not a authorized <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
 
@@ -2132,6 +2135,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
           defaultAccountNumber,
           FreezeType.Deposit,
           PLUS_ONE_BI,
+          ADDRESS_ZERO
         ),
         `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );

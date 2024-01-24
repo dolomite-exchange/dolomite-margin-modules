@@ -20,6 +20,8 @@ packages/*/src/types
 coverage.json
 coverage/
 coverage_2/
+packages/*/coverage/
+packages/*/coverage_2/
 
 dist/
 

@@ -1,24 +1,30 @@
 import { expect } from 'chai';
-import { createContractWithLibrary, createTestToken } from '../../src/utils/dolomite-utils';
+import { createContractWithLibrary, createContractWithLibraryAndArtifact, createTestToken } from '../../src/utils/dolomite-utils';
 import { createTestIsolationModeFactory } from '../utils/ecosystem-token-utils/testers';
 import {
   CustomTestToken,
   IsolationModeTraderProxy,
-  TestAsyncUpgradeableIsolationModeWrapperTrader,
-  TestAsyncUpgradeableIsolationModeWrapperTrader__factory,
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
 } from '../../src/types';
+import {
+  TestGmxV2IsolationModeUnwrapperTraderV2,
+  TestGmxV2IsolationModeUnwrapperTraderV2__factory,
+} from '@dolomite-exchange/modules-gmx-v2/src/types';
+import TestGmxV2IsolationModeUnwrapperTraderV2Artifact from '@dolomite-exchange/modules-gmx-v2/artifacts/contracts/test/TestGmxV2IsolationModeUnwrapperTraderV2.sol/TestGmxV2IsolationModeUnwrapperTraderV2.json';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
 import {
+  createAsyncIsolationModeUnwrapperTraderImpl,
   createAsyncIsolationModeWrapperTraderImpl,
   createDolomiteRegistryImplementation,
   createIsolationModeTokenVaultV1ActionsImpl,
   createIsolationModeTraderProxy,
 } from '../utils/dolomite';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
+import { createGmxV2Library } from '@dolomite-exchange/modules-gmx-v2/test/gmx-v2-ecosystem-utils';
+import { createSafeDelegateLibrary } from '../utils/ecosystem-token-utils/general';
 
 describe('IsolationModeTraderProxy', () => {
   let snapshotId: string;
@@ -26,7 +32,7 @@ describe('IsolationModeTraderProxy', () => {
   let core: CoreProtocol;
   let underlyingToken: CustomTestToken;
   let otherToken: CustomTestToken;
-  let implementation: TestAsyncUpgradeableIsolationModeWrapperTrader;
+  let implementation: TestGmxV2IsolationModeUnwrapperTraderV2;
   let factory: TestIsolationModeFactory;
   let proxy: IsolationModeTraderProxy;
 
@@ -42,16 +48,18 @@ describe('IsolationModeTraderProxy', () => {
     );
     factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
 
-    const wrapperLibraries = await createAsyncIsolationModeWrapperTraderImpl();
-    implementation = await createContractWithLibrary<TestAsyncUpgradeableIsolationModeWrapperTrader>(
-      'TestAsyncUpgradeableIsolationModeWrapperTrader',
-      wrapperLibraries,
-      [],
+    const gmxV2Library = await createGmxV2Library();
+    const safeDelegateCallLibrary = await createSafeDelegateLibrary();
+    const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
+    implementation = await createContractWithLibraryAndArtifact<TestGmxV2IsolationModeUnwrapperTraderV2>(
+      TestGmxV2IsolationModeUnwrapperTraderV2Artifact,
+      { GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address, ...libraries },
+      [core.tokens.weth.address],
     );
     const calldata = await implementation.populateTransaction.initialize(
-      otherToken.address,
       factory.address,
       core.dolomiteMargin.address,
+      core.dolomiteRegistry.address
     );
     proxy = await createIsolationModeTraderProxy(implementation.address, calldata.data!, core);
 
@@ -64,7 +72,7 @@ describe('IsolationModeTraderProxy', () => {
 
   describe('#fallback', () => {
     it('should work normally', async () => {
-      const trader = TestAsyncUpgradeableIsolationModeWrapperTrader__factory.connect(proxy.address, core.hhUser1);
+      const trader = TestGmxV2IsolationModeUnwrapperTraderV2__factory.connect(proxy.address, core.hhUser1);
       expect(await trader.VAULT_FACTORY()).to.eq(factory.address);
     });
   });
@@ -128,11 +136,13 @@ describe('IsolationModeTraderProxy', () => {
     });
 
     it('should fail when call to the new implementation fails', async () => {
-      const libraries = await createAsyncIsolationModeWrapperTraderImpl();
-      const newImplementation = await createContractWithLibrary<TestAsyncUpgradeableIsolationModeWrapperTrader>(
-        'TestAsyncUpgradeableIsolationModeWrapperTrader',
-        libraries,
-        [],
+      const gmxV2Library = await createGmxV2Library();
+      const safeDelegateCallLibrary = await createSafeDelegateLibrary();
+      const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
+      const newImplementation = await createContractWithLibraryAndArtifact<TestGmxV2IsolationModeUnwrapperTraderV2>(
+        TestGmxV2IsolationModeUnwrapperTraderV2Artifact,
+        { GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address, ...libraries },
+        [core.tokens.weth.address],
       );
       const calldata = await implementation.populateTransaction.getExchangeCost(
         core.tokens.weth.address,
@@ -142,7 +152,7 @@ describe('IsolationModeTraderProxy', () => {
       );
       await expectThrow(
         proxy.connect(core.governance).upgradeToAndCall(newImplementation.address, calldata.data!),
-        `IsolationModeWrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
+        `UpgradeableUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
   });

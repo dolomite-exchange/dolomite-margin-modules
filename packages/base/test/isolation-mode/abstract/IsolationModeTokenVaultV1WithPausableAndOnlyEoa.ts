@@ -76,7 +76,7 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
     tokenUnwrapper = await createContractWithAbi(
       TestIsolationModeUnwrapperTraderV2__factory.abi,
       TestIsolationModeUnwrapperTraderV2__factory.bytecode,
-      [core.tokens.usdc.address, factory.address, core.dolomiteMargin.address],
+      [core.tokens.usdc.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -104,9 +104,6 @@ describe('IsolationModeTokenVaultV1WithPausableAndOnlyEoa', () => {
       doAnythingVaultAddress,
       TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa__factory,
     );
-
-    await eoaVault.initialize();
-    await contractVault.connect(core.hhUser1).initialize();
 
     otherToken1 = await createTestToken();
     await core.testEcosystem!.testPriceOracle.setPrice(

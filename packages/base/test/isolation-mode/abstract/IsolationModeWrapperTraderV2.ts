@@ -79,7 +79,7 @@ describe('IsolationModeWrapperTraderV2', () => {
     wrapper = await createContractWithAbi(
       TestIsolationModeWrapperTraderV2__factory.abi,
       TestIsolationModeWrapperTraderV2__factory.bytecode,
-      [otherToken.address, factory.address, core.dolomiteMargin.address],
+      [otherToken.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await factory.connect(core.governance).ownerInitialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -123,17 +123,19 @@ describe('IsolationModeWrapperTraderV2', () => {
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
-      const actions = await wrapper.createActionsForWrapping(
-        solidAccountId,
-        liquidAccountId,
-        ZERO_ADDRESS,
-        ZERO_ADDRESS,
-        underlyingMarketId,
-        otherMarketId,
-        ZERO_BI,
-        otherAmountWei,
-        BYTES_EMPTY,
-      );
+      const actions = await wrapper.createActionsForWrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: solidUser.address,
+        primaryAccountNumber: ZERO_BI,
+        otherAccountOwner: core.hhUser1.address,
+        otherAccountNumber: ZERO_BI,
+        outputMarket: underlyingMarketId,
+        inputMarket: otherMarketId,
+        minOutputAmount: ZERO_BI,
+        inputAmount: otherAmountWei,
+        orderData: BYTES_EMPTY,
+      });
 
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await core.dolomiteMargin.connect(core.hhUser5).operate([defaultAccount], actions);
@@ -268,17 +270,19 @@ describe('IsolationModeWrapperTraderV2', () => {
     it('should work for normal condition', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 1;
-      const actions = await wrapper.createActionsForWrapping(
-        solidAccountId,
-        liquidAccountId,
-        solidUser.address,
-        core.hhUser1.address,
-        underlyingMarketId,
-        otherMarketId,
-        otherAmountWei,
-        amountWei,
-        BYTES_EMPTY,
-      );
+      const actions = await wrapper.createActionsForWrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: solidUser.address,
+        primaryAccountNumber: ZERO_BI,
+        otherAccountOwner: core.hhUser1.address,
+        otherAccountNumber: ZERO_BI,
+        outputMarket: underlyingMarketId,
+        inputMarket: otherMarketId,
+        minOutputAmount: otherAmountWei,
+        inputAmount: amountWei,
+        orderData: BYTES_EMPTY,
+      });
       expect(actions.length).to.eq(1);
 
       // Inspect the sell action
@@ -298,17 +302,19 @@ describe('IsolationModeWrapperTraderV2', () => {
     it('should fail when input market is invalid', async () => {
       const solidAccount = 0;
       await expectThrow(
-        wrapper.createActionsForWrapping(
-          solidAccount,
-          solidAccount,
-          ZERO_ADDRESS,
-          ZERO_ADDRESS,
-          underlyingMarketId,
-          core.marketIds.weth,
-          ZERO_BI,
-          amountWei,
-          BYTES_EMPTY,
-        ),
+        wrapper.createActionsForWrapping({
+          primaryAccountId: solidAccount,
+          otherAccountId: solidAccount,
+          primaryAccountOwner: solidUser.address,
+          primaryAccountNumber: ZERO_BI,
+          otherAccountOwner: solidUser.address,
+          otherAccountNumber: ZERO_BI,
+          outputMarket: underlyingMarketId,
+          inputMarket: core.marketIds.weth,
+          minOutputAmount: ZERO_BI,
+          inputAmount: amountWei,
+          orderData: BYTES_EMPTY,
+        }),
         `IsolationModeWrapperTraderV2: Invalid input market <${core.marketIds.weth.toString()}>`,
       );
     });
@@ -316,17 +322,19 @@ describe('IsolationModeWrapperTraderV2', () => {
     it('should fail when output market is invalid', async () => {
       const solidAccount = 0;
       await expectThrow(
-        wrapper.createActionsForWrapping(
-          solidAccount,
-          solidAccount,
-          ZERO_ADDRESS,
-          ZERO_ADDRESS,
-          core.marketIds.weth,
-          otherMarketId,
-          ZERO_BI,
-          amountWei,
-          BYTES_EMPTY,
-        ),
+        wrapper.createActionsForWrapping({
+          primaryAccountId: solidAccount,
+          otherAccountId: solidAccount,
+          primaryAccountOwner: solidUser.address,
+          primaryAccountNumber: ZERO_BI,
+          otherAccountOwner: solidUser.address,
+          otherAccountNumber: ZERO_BI,
+          outputMarket: core.marketIds.weth,
+          inputMarket: otherMarketId,
+          minOutputAmount: ZERO_BI,
+          inputAmount: amountWei,
+          orderData: BYTES_EMPTY,
+        }),
         `IsolationModeWrapperTraderV2: Invalid output market <${core.marketIds.weth.toString()}>`,
       );
     });

@@ -1,4 +1,4 @@
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, ContractTransaction } from 'ethers';
@@ -81,11 +81,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   let otherMarketId2: BigNumber;
 
   before(async () => {
-    const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
-    core = await setupCoreProtocol({
-      blockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithFreezable>(

@@ -22,7 +22,7 @@ import {
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
@@ -99,7 +99,7 @@ describe('IsolationModeTokenVaultV1', () => {
     tokenUnwrapper = await createContractWithAbi(
       TestIsolationModeUnwrapperTraderV2__factory.abi,
       TestIsolationModeUnwrapperTraderV2__factory.bytecode,
-      [otherToken1.address, factory.address, core.dolomiteMargin.address],
+      [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     internalTrader = await createContractWithAbi(
       TestDolomiteMarginInternalTrader__factory.abi,
@@ -109,7 +109,7 @@ describe('IsolationModeTokenVaultV1', () => {
     tokenWrapper = await createContractWithAbi(
       TestIsolationModeWrapperTraderV2__factory.abi,
       TestIsolationModeWrapperTraderV2__factory.bytecode,
-      [otherToken1.address, factory.address, core.dolomiteMargin.address],
+      [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);

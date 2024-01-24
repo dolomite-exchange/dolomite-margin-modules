@@ -3,7 +3,12 @@
   "version": "0.0.1",
   "scripts": {
     "build": "hardhat compile",
-    "clean": "hardhat clean"
+    "clean": "hardhat clean",
+    "test": "hardhat --network hardhat test",
+    "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --network hardhat",
+    "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts",
+    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/general/BaseRegistry.ts\" --network hardhat",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/general/BaseRegistry.ts"
   },
   "private": false,
   "files": [

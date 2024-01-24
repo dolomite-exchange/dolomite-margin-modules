@@ -50,7 +50,7 @@ describe('IsolationModeUpgradeableProxy', () => {
     const tokenUnwrapper = await createContractWithAbi(
       TestIsolationModeUnwrapperTraderV2__factory.abi,
       TestIsolationModeUnwrapperTraderV2__factory.bytecode,
-      [core.tokens.usdc.address, factory.address, core.dolomiteMargin.address],
+      [core.tokens.usdc.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
 
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address]);

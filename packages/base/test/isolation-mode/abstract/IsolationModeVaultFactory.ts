@@ -111,7 +111,7 @@ describe('IsolationModeVaultFactory', () => {
     tokenUnwrapperV2 = await createContractWithAbi<TestIsolationModeUnwrapperTraderV2>(
       TestIsolationModeUnwrapperTraderV2__factory.abi,
       TestIsolationModeUnwrapperTraderV2__factory.bytecode,
-      [otherToken.address, factory.address, core.dolomiteMargin.address],
+      [otherToken.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     tokenWrapperV1 = await createContractWithAbi<TestIsolationModeWrapperTraderV1>(
       TestIsolationModeWrapperTraderV1__factory.abi,
@@ -121,7 +121,7 @@ describe('IsolationModeVaultFactory', () => {
     tokenWrapperV2 = await createContractWithAbi<TestIsolationModeWrapperTraderV2>(
       TestIsolationModeWrapperTraderV2__factory.abi,
       TestIsolationModeWrapperTraderV2__factory.bytecode,
-      [otherToken.address, factory.address, core.dolomiteMargin.address],
+      [otherToken.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(tokenWrapperV1.address, true);
     initializeResult = await factory.connect(core.governance).ownerInitialize([
@@ -492,17 +492,19 @@ describe('IsolationModeVaultFactory', () => {
       signer?: SignerWithAddress,
     ): Promise<ContractTransaction> {
       const solidAccountId = 0;
-      const actions = await tokenWrapperV2.createActionsForWrapping(
-        solidAccountId,
-        /* _liquidAccountId = */ 0,
-        ZERO_ADDRESS,
-        ZERO_ADDRESS,
-        outputMarketId,
-        inputMarketId,
-        ZERO_BI,
-        smallAmountWei,
-        BYTES_EMPTY,
-      );
+      const actions = await tokenWrapperV2.createActionsForWrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: ZERO_BI,
+        primaryAccountOwner: solidAccount.address,
+        primaryAccountNumber: ZERO_BI,
+        otherAccountOwner: core.hhUser1.address,
+        otherAccountNumber: ZERO_BI,
+        outputMarket: outputMarketId,
+        inputMarket: inputMarketId,
+        minOutputAmount: ZERO_BI,
+        inputAmount: smallAmountWei,
+        orderData: BYTES_EMPTY,
+      });
       return core.dolomiteMargin
         .connect(signer ?? vaultImplementation)
         .operate([{ owner: vaultImplementation.address, number: toAccountNumber }], actions);
@@ -688,26 +690,28 @@ describe('IsolationModeVaultFactory', () => {
     }
 
     async function executeUnwrapV2(
-      vaultImplementation: SignerWithAddress,
+      vault: string,
       inputMarketId: BigNumberish,
       outputMarketId: BigNumberish,
-      signer?: SignerWithAddress,
     ): Promise<ContractTransaction> {
       const solidAccountId = 0;
-      const actions = await tokenUnwrapperV2.createActionsForUnwrapping(
-        solidAccountId,
-        solidAccountId,
-        ZERO_ADDRESS,
-        ZERO_ADDRESS,
-        outputMarketId,
-        inputMarketId,
-        ZERO_BI,
-        smallAmountWei,
-        BYTES_EMPTY,
-      );
+      const actions = await tokenUnwrapperV2.createActionsForUnwrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: solidAccountId,
+        primaryAccountOwner: vault,
+        primaryAccountNumber: ZERO_BI,
+        otherAccountOwner: vault,
+        otherAccountNumber: ZERO_BI,
+        outputMarket: outputMarketId,
+        inputMarket: inputMarketId,
+        minOutputAmount: ZERO_BI,
+        inputAmount: smallAmountWei,
+        orderData: BYTES_EMPTY,
+      });
+      const genericTrader = await impersonate(core.genericTraderProxy!.address, true)
       return core.dolomiteMargin
-        .connect(signer ?? vaultImplementation)
-        .operate([{ owner: vaultImplementation.address, number: toAccountNumber }], actions);
+        .connect(genericTrader)
+        .operate([{ owner: vault, number: toAccountNumber }], actions);
     }
 
     it('should work when called by a V1 token converter', async () => {
@@ -766,15 +770,13 @@ describe('IsolationModeVaultFactory', () => {
       await underlyingToken.connect(core.hhUser1).approve(vault.address, amountWei);
       await vault.depositIntoVaultForDolomiteMargin(toAccountNumber, amountWei);
 
-      const vaultImplementation = await impersonate(vault.address, true);
       await otherToken.addBalance(core.dolomiteMargin.address, amountWei);
       expect(await factory.isTokenConverterTrusted(tokenUnwrapperV2.address)).to.eq(true);
-      await core.dolomiteMargin.ownerSetGlobalOperator(vaultImplementation.address, true);
       await expectThrow(
-        executeUnwrapV2(vaultImplementation, core.marketIds.weth, otherMarketId),
+        executeUnwrapV2(vault.address, core.marketIds.weth, otherMarketId),
         `IsolationModeUnwrapperTraderV2: Invalid input market <${core.marketIds.weth.toString()}>`,
       );
-      const result = await executeUnwrapV2(vaultImplementation, underlyingMarketId, otherMarketId);
+      const result = await executeUnwrapV2(vault.address, underlyingMarketId, otherMarketId);
 
       const queuedTransfer = await factory.getQueuedTransferByCursor(2);
       expect(queuedTransfer.from).to.eq(core.dolomiteMargin.address);

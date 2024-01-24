@@ -93,12 +93,12 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
     tokenUnwrapper = await createContractWithAbi(
       TestIsolationModeUnwrapperTraderV2__factory.abi,
       TestIsolationModeUnwrapperTraderV2__factory.bytecode,
-      [otherToken1.address, factory.address, core.dolomiteMargin.address],
+      [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     tokenWrapper = await createContractWithAbi(
       TestIsolationModeWrapperTraderV2__factory.abi,
       TestIsolationModeWrapperTraderV2__factory.bytecode,
-      [otherToken1.address, factory.address, core.dolomiteMargin.address],
+      [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
@@ -112,7 +112,6 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
       TestIsolationModeTokenVaultV1WithPausable__factory,
       core.hhUser1,
     );
-    await userVault.initialize();
 
     await underlyingToken.connect(core.hhUser1).addBalance(core.hhUser1.address, amountWei);
     await underlyingToken.connect(core.hhUser1).approve(vaultAddress, amountWei);
