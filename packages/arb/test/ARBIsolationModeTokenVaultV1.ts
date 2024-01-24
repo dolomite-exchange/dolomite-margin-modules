@@ -4,6 +4,7 @@ import {
   ARBIsolationModeTokenVaultV1__factory,
   ARBIsolationModeVaultFactory,
   ARBRegistry,
+  IARB__factory,
 } from '../src/types';
 import {
   SimpleIsolationModeUnwrapperTraderV2,
@@ -71,9 +72,22 @@ describe('ARBIsolationModeTokenVaultV1', () => {
   });
 
   describe('#initialize', () => {
-    it('should set delegatee to vault owner', async () => {
+    it('should set delegatee to vault owner if not already set', async () => {
       expect(await arbVault.delegates()).to.eq(core.hhUser1.address);
       expect(await core.arbEcosystem!.arb.delegates(arbVault.address)).to.eq(core.hhUser1.address);
+    });
+
+    it('should set delegatee to vault owner if already set', async () => {
+      await core.arbEcosystem!.arb.connect(core.hhUser2).delegate(core.hhUser3.address);
+      await arbFactory.createVault(core.hhUser2.address);
+      const arbVault2 = setupUserVaultProxy<ARBIsolationModeTokenVaultV1>(
+        await arbFactory.getVaultByAccount(core.hhUser2.address),
+        ARBIsolationModeTokenVaultV1__factory,
+        core.hhUser2,
+      );
+
+      expect(await arbVault2.delegates()).to.eq(core.hhUser3.address);
+      expect(await core.arbEcosystem!.arb.delegates(arbVault2.address)).to.eq(core.hhUser3.address);
     });
   });
 

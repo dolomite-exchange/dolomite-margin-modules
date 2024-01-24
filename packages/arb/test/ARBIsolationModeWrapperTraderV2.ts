@@ -26,6 +26,7 @@ import {
 } from './arb-ecosystem-utils';
 import {
   CoreProtocol, disableInterestAccrual,
+  getDefaultCoreProtocolConfig,
   setupARBBalance,
   setupCoreProtocol,
   setupTestMarket,
@@ -52,10 +53,7 @@ describe('ARBIsolationModeWrapperTraderV2', () => {
   let otherAccount: AccountInfoStruct;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     await disableInterestAccrual(core, core.marketIds.arb!);
 
     arbRegistry = await createARBRegistry(core);

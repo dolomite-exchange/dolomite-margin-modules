@@ -26,7 +26,7 @@ import {
   setupCoreProtocol,
   setupARBBalance,
   setupTestMarket,
-  setupUserVaultProxy, disableInterestAccrual,
+  setupUserVaultProxy, disableInterestAccrual, getDefaultCoreProtocolConfig,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS } from './arb-utils';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
@@ -48,10 +48,7 @@ describe('ARBIsolationModeUnwrapperTraderV2', () => {
   let defaultAccount: AccountInfoStruct;
 
   before(async () => {
-    core = await setupCoreProtocol({
-      blockNumber: DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     await disableInterestAccrual(core, core.marketIds.arb!);
 
     arbRegistry = await createARBRegistry(core);
