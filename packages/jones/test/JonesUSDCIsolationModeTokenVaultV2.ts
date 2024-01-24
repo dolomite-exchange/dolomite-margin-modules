@@ -9,10 +9,8 @@ import {
 } from '../src/types';
 import {
   IERC4626,
-} from '@dolomite-exchange/modules-base/src/types';
-import {
   RegistryProxy__factory,
-} from '@dolomite-exchange/modules-base/src/types'
+} from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithName } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceByTimeDelta, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';

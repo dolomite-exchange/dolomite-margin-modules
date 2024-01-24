@@ -90,7 +90,7 @@ import {
   TestDolomiteMarginExchangeWrapper,
   TestDolomiteMarginExchangeWrapper__factory,
 } from '../../src/types';
-import { 
+import {
   IPendleGLPRegistry,
   IPendleGLPRegistry__factory,
   IPendlePtMarket,
@@ -210,8 +210,6 @@ import {
   TestInterestSetter,
   TestInterestSetter__factory,
 } from '@dolomite-exchange/modules-interest-setters/src/types';
-import {
-} from '../../src/types';
 import {
   ARB_MAP,
   ATLAS_SI_TOKEN_MAP,

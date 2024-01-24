@@ -19,7 +19,7 @@ import {
 import {
   RegistryProxy,
   RegistryProxy__factory,
-} from '@dolomite-exchange/modules-base/src/types'
+} from '@dolomite-exchange/modules-base/src/types';
 import {
   getUmamiAssetVaultIsolationModeUnwrapperTraderV2ConstructorParams,
   getUmamiAssetVaultIsolationModeVaultFactoryConstructorParams,

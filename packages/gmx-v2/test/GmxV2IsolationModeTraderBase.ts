@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import { GmxV2Registry, } from '../src/types';
 import {
-  TestAsyncIsolationModeTraderBase, TestAsyncIsolationModeTraderBase__factory 
+  TestAsyncIsolationModeTraderBase,
+  TestAsyncIsolationModeTraderBase__factory
 } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';

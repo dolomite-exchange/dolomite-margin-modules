@@ -113,17 +113,17 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
       const actions = await unwrapper.createActionsForUnwrapping({
-          primaryAccountId: solidAccountId,
-          otherAccountId: liquidAccountId,
-          primaryAccountOwner: vault.address,
-          primaryAccountNumber: ZERO_BI,
-          otherAccountOwner: vault.address,
-          otherAccountNumber: ZERO_BI,
-          outputMarket: otherMarketId,
-          inputMarket: underlyingMarketId,
-          minOutputAmount: ZERO_BI,
-          inputAmount: amountWei,
-          orderData: BYTES_EMPTY,
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: vault.address,
+        primaryAccountNumber: ZERO_BI,
+        otherAccountOwner: vault.address,
+        otherAccountNumber: ZERO_BI,
+        outputMarket: otherMarketId,
+        inputMarket: underlyingMarketId,
+        minOutputAmount: ZERO_BI,
+        inputAmount: amountWei,
+        orderData: BYTES_EMPTY,
       });
 
       const amountOut = await unwrapper.getExchangeCost(
@@ -133,7 +133,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
         BYTES_EMPTY,
       );
 
-      const genericTrader = await impersonate(core.genericTraderProxy!.address, true)
+      const genericTrader = await impersonate(core.genericTraderProxy!.address, true);
       await core.dolomiteMargin.connect(genericTrader).operate([defaultAccount], actions);
 
       const underlyingBalanceWei = await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId);
@@ -308,17 +308,17 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       const solidAccountId = 0;
       const liquidAccountId = 1;
       const actions = await unwrapper.createActionsForUnwrapping({
-          primaryAccountId: solidAccountId,
-          otherAccountId: liquidAccountId,
-          primaryAccountOwner: solidUser.address,
-          primaryAccountNumber: ZERO_BI,
-          otherAccountOwner: core.hhUser1.address,
-          otherAccountNumber: ZERO_BI,
-          outputMarket: otherMarketId,
-          inputMarket: underlyingMarketId,
-          minOutputAmount: otherAmountWei,
-          inputAmount: amountWei,
-          orderData: BYTES_EMPTY,
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: solidUser.address,
+        primaryAccountNumber: ZERO_BI,
+        otherAccountOwner: core.hhUser1.address,
+        otherAccountNumber: ZERO_BI,
+        outputMarket: otherMarketId,
+        inputMarket: underlyingMarketId,
+        minOutputAmount: otherAmountWei,
+        inputAmount: amountWei,
+        orderData: BYTES_EMPTY,
       });
       expect(actions.length).to.eq(2);
 
@@ -326,7 +326,10 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       expect(actions[0].actionType).to.eq(ActionType.Call);
       expect(actions[0].accountId).to.eq(solidAccountId);
       expect(actions[0].otherAddress).to.eq(unwrapper.address);
-      expect(actions[0].data).to.eq(ethers.utils.defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [amountWei, core.hhUser1.address, ZERO_BI]));
+      expect(actions[0].data).to.eq(ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'address', 'uint256'],
+        [amountWei, core.hhUser1.address, ZERO_BI]
+      ));
 
       // Inspect the sell action
       expect(actions[1].actionType).to.eq(ActionType.Sell);

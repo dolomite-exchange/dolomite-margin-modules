@@ -18,7 +18,12 @@ import {
   SimpleIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitDays
+} from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceIsGreaterThan,

@@ -19,7 +19,7 @@ import {
   TestGmxV2IsolationModeTokenVaultV1,
   TestGmxV2IsolationModeTokenVaultV1__factory,
 } from '../src/types';
-import { 
+import {
   CustomTestToken,
   EventEmitterRegistry,
 } from '@dolomite-exchange/modules-base/src/types';

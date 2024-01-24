@@ -10,7 +10,7 @@ import {
 import {
   IERC20,
   IWETH,
-} from '@dolomite-exchange/modules-base/src/types'
+} from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';

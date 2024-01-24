@@ -15,7 +15,12 @@ import {
 } from '../src/types';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot, waitDays } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitDays
+} from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPlutusVaultGLPIsolationModeTokenVaultV1,

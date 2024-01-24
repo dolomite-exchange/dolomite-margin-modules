@@ -53,7 +53,6 @@ export async function createContractWithLibraryAndArtifact<T extends BaseContrac
   return await ContractFactory.deploy(...args) as T;
 }
 
-
 export async function createTestToken(): Promise<CustomTestToken> {
   return createContractWithAbi<CustomTestToken>(
     CustomTestToken__factory.abi,

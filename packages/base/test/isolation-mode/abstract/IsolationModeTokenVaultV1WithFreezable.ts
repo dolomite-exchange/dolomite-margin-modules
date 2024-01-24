@@ -1023,7 +1023,13 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       );
 
       const outputAmount = otherAmountWei.div(2);
-      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, underlyingMarketId, outputAmount, core);
+      const zapParams = await getSimpleZapParams(
+        otherMarketId1,
+        otherAmountWei,
+        underlyingMarketId,
+        outputAmount,
+        core
+      );
       await expectThrow(
         userVault.addCollateralAndSwapExactInputForOutput(
           borrowAccountNumber,
@@ -1345,7 +1351,13 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       );
 
       const outputAmount = otherAmountWei.div(2);
-      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, underlyingMarketId, outputAmount, core);
+      const zapParams = await getSimpleZapParams(
+        otherMarketId1,
+        otherAmountWei,
+        underlyingMarketId,
+        outputAmount,
+        core
+      );
       await expectThrow(
         userVault.swapExactInputForOutputAndRemoveCollateral(
           borrowAccountNumber,
@@ -1471,7 +1483,13 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       );
 
       const outputAmount = otherAmountWei.div(2);
-      const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, underlyingMarketId, outputAmount, core);
+      const zapParams = await getSimpleZapParams(
+        otherMarketId1,
+        otherAmountWei,
+        underlyingMarketId,
+        outputAmount,
+        core
+      );
       await expectThrow(
         userVault.swapExactInputForOutput(
           borrowAccountNumber,
