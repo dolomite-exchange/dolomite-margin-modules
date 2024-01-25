@@ -60,6 +60,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
     // Do this just to reset time for heartbeat and grace period tests
     await increase(24 * 3600);
     chainlinkRegistryImpersonated = await impersonate(core.chainlinkRegistry!.address, true);
+    await magicGLPWithChainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(chainlinkRegistryImpersonated.address);
     await magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistryImpersonated).performUpkeep('0x');
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
 
