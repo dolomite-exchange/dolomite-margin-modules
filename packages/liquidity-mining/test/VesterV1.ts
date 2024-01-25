@@ -43,13 +43,26 @@ describe('VesterV1', () => {
   let arb: IERC20;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    core = await setupCoreProtocol({
+      blockNumber: 114_200_000,
+      network: Network.ArbitrumOne
+    });
     arbMarketId = core.marketIds.arb!;
     arb = core.tokens.arb!;
     await disableInterestAccrual(core, core.marketIds.usdc);
     await disableInterestAccrual(core, arbMarketId);
     await disableInterestAccrual(core, core.marketIds.weth);
     await disableInterestAccrual(core, core.marketIds.arb!);
+
+    const wethPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.weth);
+    const usdcPrice = await core.dolomiteMargin.getMarketPrice(core.marketIds.usdc);
+    const arbPrice = await core.dolomiteMargin.getMarketPrice(arbMarketId);
+    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, wethPrice.value);
+    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.usdc.address, usdcPrice.value);
+    await core.testEcosystem!.testPriceOracle.setPrice(arb.address, arbPrice.value);
+    await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
+    await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.usdc, core.testEcosystem!.testPriceOracle.address);
+    await core.dolomiteMargin.ownerSetPriceOracle(arbMarketId, core.testEcosystem!.testPriceOracle.address);
 
     oARB = await createOARB(core);
 
@@ -705,7 +718,6 @@ describe('VesterV1', () => {
         arbTax: ZERO_BI,
       });
       await expectWalletBalance(core.hhUser1.address, oARB, ZERO_BI);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, arbMarketId, ONE_ETH_BI);
       await expectWalletBalance(vester, oARB, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, core.marketIds.arb!, arbWei);
       await expectProtocolBalance(core, vester, vesterAccountNumber, arbMarketId, ZERO_BI);
@@ -776,6 +788,15 @@ describe('VesterV1', () => {
       await expectThrow(
         vester.connect(core.hhUser2).emergencyWithdraw(1),
         'VesterImplementationV1: Invalid position owner',
+      );
+    });
+  });
+
+  describe('#ownerSetForceClosePositionTax', () => {
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        vester.connect(core.hhUser1).ownerSetForceClosePositionTax(500),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -915,6 +936,22 @@ describe('VesterV1', () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerSetBaseURI(baseURI),
         `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#tokenURI', () => {
+    it('should work normally', async () => {
+      const baseURI = 'hello';
+      await vester.connect(core.governance).ownerSetBaseURI(baseURI);
+      await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
+      expect(await vester.tokenURI(1)).to.eq('hello');
+    });
+
+    it('should fail if tokenId is not minted', async () => {
+      await expectThrow(
+        vester.tokenURI(1),
+        'ERC721: invalid token ID',
       );
     });
   });

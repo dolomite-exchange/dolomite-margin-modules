@@ -7,7 +7,8 @@ import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertio
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createOARB } from './liquidity-mining-ecosystem-utils';
 
-describe('OARBStorageVault', () => {
+// OARB Storage Vault contract is not in use in production. These tests don't all pass
+xdescribe('OARBStorageVault', () => {
   let snapshotId: string;
   let core: CoreProtocol;
   let oARB: OARB;

@@ -4,11 +4,11 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { IERC20, OARB, OARB__factory, TestVesterImplementationV2 } from '../src/types';
-import { depositIntoDolomiteMargin, getPartialRoundHalfUp, withdrawFromDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { IERC20, OARB, OARB__factory, TestVesterImplementationV2, TestVesterImplementationV2__factory, VesterImplementationLibForV2, VesterImplementationLibForV2__factory } from '../src/types';
+import { createContractWithAbi, depositIntoDolomiteMargin, getPartialRoundHalfUp, withdrawFromDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceByTimeDelta, getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectEvent, expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   CoreProtocol,
   disableInterestAccrual,
@@ -20,6 +20,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createTestVesterV2Proxy } from './liquidity-mining-ecosystem-utils';
 import { expectEmptyPosition } from './liquidityMining-utils';
+import { create } from 'domain';
 
 const oldWalletWithPosition = '0x52256ef863a713Ef349ae6E97A7E8f35785145dE';
 const oldWalletWithPositionNftId = '266';
@@ -36,7 +37,7 @@ const ARB_VESTER_BALANCE = BigNumber.from('280014293719809481013141'); // 280,01
 const AVAILABLE_ARB_VESTER_BALANCE = ARB_VESTER_BALANCE.sub(OARB_VESTER_BALANCE);
 const PROMISED_ARB_VESTER_BALANCE = OARB_VESTER_BALANCE;
 
-const WETH_BALANCE = parseEther('10');
+const WETH_BALANCE = parseEther('1000');
 
 describe('VesterV2', () => {
   let snapshotId: string;
@@ -75,7 +76,7 @@ describe('VesterV2', () => {
 
     await setupARBBalance(core, core.hhUser1, ONE_ETH_BI, core.dolomiteMargin);
     await setupARBBalance(core, core.hhUser2, parseEther('100'), core.dolomiteMargin);
-    await setupWETHBalance(core, core.hhUser1, parseEther('10'), core.dolomiteMargin);
+    await setupWETHBalance(core, core.hhUser1, WETH_BALANCE, core.dolomiteMargin);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.arb!!, ONE_ETH_BI);
     await depositIntoDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, WETH_BALANCE);
     await oARB.connect(core.hhUser1).approve(vester.address, ONE_ETH_BI);
@@ -448,6 +449,206 @@ describe('VesterV2', () => {
       );
     });
 
+    it('should work normally for grandfathered position with 1 week duration', async () => {
+      const nftId = await getNftIdWithDuration(ONE_WEEK);
+      const vestingPosition = await vester.vestingPositions(nftId);
+      const oldSigner = await impersonate(vestingPosition.creator);
+      const vesterAccountNumber = BigNumber.from(
+        ethers.utils.solidityKeccak256(['address', 'uint256'], [oldSigner.address, nftId]),
+      );
+      await increase(ONE_WEEK);
+
+      await vester.connect(oldSigner).transferFrom(oldSigner.address, core.hhUser1.address, nftId);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.arb!.address, ONE_ETH_BI);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, ONE_ETH_BI);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb!, core.testEcosystem!.testPriceOracle.address);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
+
+      const preArbBalance = (await core.dolomiteMargin.getAccountWei({ owner: vester.address, number: vesterAccountNumber}, core.marketIds.arb!!)).value;
+      await vester.closePositionAndBuyTokens(
+        nftId,
+        defaultAccountNumber,
+        defaultAccountNumber,
+        MAX_UINT_256_BI,
+      );
+      await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        core.marketIds.arb!,
+        vestingPosition.amount.add(preArbBalance).add(ONE_ETH_BI),
+      );
+      await expectWalletBalance(vester, oARB, OARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb!, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        WETH_BALANCE.sub(vestingPosition.amount.mul(9_750).div(10_000)),
+      );
+      await expectProtocolBalanceIsGreaterThan(core, { owner: core.governance.address, number: ZERO_BI }, core.marketIds.weth, vestingPosition.amount.mul(9_750).div(10_000), ZERO_BI);
+      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+
+      expectEmptyPosition(await vester.vestingPositions(nextNftId));
+      await expectThrow(
+        vester.ownerOf(nextNftId),
+        'ERC721: invalid token ID',
+      );
+    });
+
+    it('should work normally for grandfathered position with 2 week duration', async () => {
+      const nftId = await getNftIdWithDuration(ONE_WEEK.mul(2));
+      const vestingPosition = await vester.vestingPositions(nftId);
+      const oldSigner = await impersonate(vestingPosition.creator);
+      const vesterAccountNumber = BigNumber.from(
+        ethers.utils.solidityKeccak256(['address', 'uint256'], [oldSigner.address, nftId]),
+      );
+      await increase(ONE_WEEK.mul(2));
+
+      await vester.connect(oldSigner).transferFrom(oldSigner.address, core.hhUser1.address, nftId);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.arb!.address, ONE_ETH_BI);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, ONE_ETH_BI);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb!, core.testEcosystem!.testPriceOracle.address);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
+
+      const preArbBalance = (await core.dolomiteMargin.getAccountWei({ owner: vester.address, number: vesterAccountNumber}, core.marketIds.arb!!)).value;
+      await vester.closePositionAndBuyTokens(
+        nftId,
+        defaultAccountNumber,
+        defaultAccountNumber,
+        MAX_UINT_256_BI,
+      );
+      await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        core.marketIds.arb!,
+        vestingPosition.amount.add(preArbBalance).add(ONE_ETH_BI),
+      );
+      await expectWalletBalance(vester, oARB, OARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb!, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        WETH_BALANCE.sub(vestingPosition.amount.mul(9_500).div(10_000)),
+      );
+      await expectProtocolBalanceIsGreaterThan(core, { owner: core.governance.address, number: ZERO_BI }, core.marketIds.weth, vestingPosition.amount.mul(9_500).div(10_000), ZERO_BI);
+      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+
+      expectEmptyPosition(await vester.vestingPositions(nextNftId));
+      await expectThrow(
+        vester.ownerOf(nextNftId),
+        'ERC721: invalid token ID',
+      );
+    });
+
+    it('should work normally for grandfathered position with 3 week duration', async () => {
+      const nftId = await getNftIdWithDuration(ONE_WEEK.mul(3));
+      const vestingPosition = await vester.vestingPositions(nftId);
+      const oldSigner = await impersonate(vestingPosition.creator);
+      const vesterAccountNumber = BigNumber.from(
+        ethers.utils.solidityKeccak256(['address', 'uint256'], [oldSigner.address, nftId]),
+      );
+      await increase(ONE_WEEK.mul(3));
+
+      await vester.connect(oldSigner).transferFrom(oldSigner.address, core.hhUser1.address, nftId);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.arb!.address, ONE_ETH_BI);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, ONE_ETH_BI);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb!, core.testEcosystem!.testPriceOracle.address);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
+
+      const preArbBalance = (await core.dolomiteMargin.getAccountWei({ owner: vester.address, number: vesterAccountNumber}, core.marketIds.arb!!)).value;
+      await vester.closePositionAndBuyTokens(
+        nftId,
+        defaultAccountNumber,
+        defaultAccountNumber,
+        MAX_UINT_256_BI,
+      );
+      await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        core.marketIds.arb!,
+        vestingPosition.amount.add(preArbBalance).add(ONE_ETH_BI),
+      );
+      await expectWalletBalance(vester, oARB, OARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb!, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        WETH_BALANCE.sub(vestingPosition.amount.mul(9_000).div(10_000)),
+      );
+      await expectProtocolBalanceIsGreaterThan(core, { owner: core.governance.address, number: ZERO_BI }, core.marketIds.weth, vestingPosition.amount.mul(9_000).div(10_000), ZERO_BI);
+      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+
+      expectEmptyPosition(await vester.vestingPositions(nextNftId));
+      await expectThrow(
+        vester.ownerOf(nextNftId),
+        'ERC721: invalid token ID',
+      );
+    });
+
+    it('should work normally for grandfathered position with 4 week duration', async () => {
+      const nftId = await getNftIdWithDuration(ONE_WEEK.mul(4));
+      const vestingPosition = await vester.vestingPositions(nftId);
+      const oldSigner = await impersonate(vestingPosition.creator);
+      const vesterAccountNumber = BigNumber.from(
+        ethers.utils.solidityKeccak256(['address', 'uint256'], [oldSigner.address, nftId]),
+      );
+      await increase(ONE_WEEK.mul(4));
+
+      await vester.connect(oldSigner).transferFrom(oldSigner.address, core.hhUser1.address, nftId);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.arb!.address, ONE_ETH_BI);
+      await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, ONE_ETH_BI);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb!, core.testEcosystem!.testPriceOracle.address);
+      await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
+
+      const preArbBalance = (await core.dolomiteMargin.getAccountWei({ owner: vester.address, number: vesterAccountNumber}, core.marketIds.arb!!)).value;
+      await vester.closePositionAndBuyTokens(
+        nftId,
+        defaultAccountNumber,
+        defaultAccountNumber,
+        MAX_UINT_256_BI,
+      );
+      await expectWalletBalance(core.hhUser1.address, oARB, ONE_ETH_BI);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        core.marketIds.arb!,
+        vestingPosition.amount.add(preArbBalance).add(ONE_ETH_BI),
+      );
+      await expectWalletBalance(vester, oARB, OARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      await expectProtocolBalance(core, vester, vesterAccountNumber, core.marketIds.arb!, ZERO_BI);
+      await expectProtocolBalance(
+        core,
+        core.hhUser1,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        WETH_BALANCE.sub(vestingPosition.amount.mul(8_000).div(10_000)),
+      );
+      await expectProtocolBalanceIsGreaterThan(core, { owner: core.governance.address, number: ZERO_BI }, core.marketIds.weth, vestingPosition.amount.mul(8_000).div(10_000), ZERO_BI);
+      expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
+      expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
+
+      expectEmptyPosition(await vester.vestingPositions(nextNftId));
+      await expectThrow(
+        vester.ownerOf(nextNftId),
+        'ERC721: invalid token ID',
+      );
+    });
+
     it('should work normally with accelerated vesting', async () => {
       await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
       const vesterAccountNumber = BigNumber.from(
@@ -557,7 +758,7 @@ describe('VesterV2', () => {
         core.hhUser1,
         defaultAccountNumber,
         core.marketIds.weth,
-        parseEther('9.1'),
+        WETH_BALANCE.sub(parseEther('.9')),
       );
       await expectProtocolBalance(
         core,
@@ -593,7 +794,7 @@ describe('VesterV2', () => {
 
     it('should fail if dolomite balance is not sufficient', async () => {
       await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
-      await withdrawFromDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, parseEther('10'));
+      await withdrawFromDolomiteMargin(core, core.hhUser1, defaultAccountNumber, core.marketIds.weth, WETH_BALANCE);
       await freezeAndGetOraclePrice(core.tokens.weth);
       await freezeAndGetOraclePrice(core.tokens.arb!!);
       await increase(ONE_WEEK);
@@ -978,6 +1179,15 @@ describe('VesterV2', () => {
     });
   });
 
+  describe('#ownerSetForceClosePositionTax', () => {
+    it('should fail if not called by dolomite margin owner', async () => {
+      await expectThrow(
+        vester.connect(core.hhUser1).ownerSetForceClosePositionTax(500),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#ownerSetBaseURI', () => {
     const baseURI = 'hello';
     it('should work normally', async () => {
@@ -1165,9 +1375,50 @@ describe('VesterV2', () => {
     });
   });
 
+  describe('#tokenURI', () => {
+    it('should work normally', async () => {
+      const baseURI = 'hello';
+      await vester.connect(core.governance).ownerSetBaseURI(baseURI);
+      await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
+      expect(await vester.tokenURI(267)).to.eq('hello');
+    });
+
+    it('should fail if tokenId is not minted', async () => {
+      await expectThrow(
+        vester.tokenURI(1),
+        'ERC721: invalid token ID',
+      );
+    });
+  });
+
+  describe('#grandfatheredUpgradedMinVestingDuration', () => {
+    it('should work normally', async () => {
+      const library = await createContractWithAbi<VesterImplementationLibForV2>(
+        VesterImplementationLibForV2__factory.abi,
+        VesterImplementationLibForV2__factory.bytecode,
+        [],
+      );
+      expect(await library.grandfatheredUpgradedMinVestingDuration()).to.eq(FOUR_WEEKS.mul(2));
+    });
+  })
+
   async function getNftId(signer: SignerWithAddress): Promise<BigNumber> {
     const filter = vester.filters.VestingStarted(signer.address);
     return (await vester.queryFilter(filter))[0].args.vestingId;
+  }
+
+  async function getNftIdWithDuration(duration: BigNumber): Promise<BigNumber> {
+    const filter = vester.filters.VestingStarted();
+    const results = await vester.queryFilter(filter);
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].args.duration.eq(duration)) {
+        if ((await vester.vestingPositions(results[i].args.vestingId)).creator === ADDRESS_ZERO) {
+          continue;
+        }
+        return results[i].args.vestingId;
+      }
+    }
+    return ZERO_BI;
   }
 
   async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {

@@ -135,6 +135,25 @@ describe('RewardsDistributor', () => {
     });
   });
 
+  describe('#ownerSetHandler', () => {
+    it('should work normally', async () => {
+      expect(await rewardsDistributor.isHandler(core.hhUser1.address)).to.eq(false);
+      const result = await rewardsDistributor.connect(core.governance).ownerSetHandler(core.hhUser1.address, true);
+      await expectEvent(rewardsDistributor, result, 'HandlerSet', {
+        handler: core.hhUser1.address,
+        isHandler: true,
+      });
+      expect(await rewardsDistributor.isHandler(core.hhUser1.address)).to.eq(true);
+    });
+
+    it('should fail when not called by dolomite margin owner', async () => {
+      await expectThrow(
+        rewardsDistributor.connect(core.hhUser1).ownerSetHandler(core.hhUser1.address, true),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#setMerkleRoot', () => {
     it('should work normally for owner', async () => {
       expect(await rewardsDistributor.getMerkleRootByEpoch(1)).to.eq(merkleRoot1);

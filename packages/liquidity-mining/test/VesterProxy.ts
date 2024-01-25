@@ -4,10 +4,13 @@ import {
   OARB__factory,
   TestVesterImplementationV2,
   TestVesterImplementationV2__factory,
+  VesterImplementationLibForV2,
+  VesterImplementationLibForV2__factory,
   VesterProxy,
   VesterProxy__factory,
 } from '../src/types';
-import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
+import { createContractWithAbi, createContractWithLibrary } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
@@ -19,6 +22,7 @@ describe('VesterProxy', () => {
   let core: CoreProtocol;
   let implementation: TestVesterImplementationV2;
   let oARB: OARB;
+  let library: VesterImplementationLibForV2;
 
   let proxy: VesterProxy;
 
@@ -26,9 +30,14 @@ describe('VesterProxy', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     oARB = await createContractWithAbi<OARB>(OARB__factory.abi, OARB__factory.bytecode, [core.dolomiteMargin.address]);
 
-    implementation = await createContractWithAbi<TestVesterImplementationV2>(
-      TestVesterImplementationV2__factory.abi,
-      TestVesterImplementationV2__factory.bytecode,
+    library = await createContractWithAbi<VesterImplementationLibForV2>(
+      VesterImplementationLibForV2__factory.abi,
+      VesterImplementationLibForV2__factory.bytecode,
+      [],
+    );
+    implementation = await createContractWithLibrary<TestVesterImplementationV2>(
+      'TestVesterImplementationV2',
+      { VesterImplementationLibForV2: library.address },
       [
         core.dolomiteMargin.address,
         core.dolomiteRegistry.address,
@@ -38,7 +47,7 @@ describe('VesterProxy', () => {
     );
 
     const calldata = await implementation.populateTransaction.initialize(
-      oARB.address,
+      defaultAbiCoder.encode(['address'], [oARB.address])
     );
 
     proxy = await createContractWithAbi<VesterProxy>(
@@ -57,15 +66,15 @@ describe('VesterProxy', () => {
   describe('#fallback', () => {
     it('should work normally', async () => {
       const vester = TestVesterImplementationV2__factory.connect(proxy.address, core.hhUser1);
-      expect(await vester.oARB()).to.eq(oARB.address);
+      expect(await vester.levelRequestFee()).to.eq(parseEther('0.0003'));
     });
   });
 
   describe('#upgradeTo', () => {
     it('should work normally', async () => {
-      const newImplementation = await createContractWithAbi<TestVesterImplementationV2>(
-        TestVesterImplementationV2__factory.abi,
-        TestVesterImplementationV2__factory.bytecode,
+      const newImplementation = await createContractWithLibrary<TestVesterImplementationV2>(
+        'TestVesterImplementationV2',
+        { VesterImplementationLibForV2: library.address },
         [
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,
@@ -99,9 +108,9 @@ describe('VesterProxy', () => {
 
   describe('#upgradeToAndCall', () => {
     it('should work normally', async () => {
-      const newImplementation = await createContractWithAbi<TestVesterImplementationV2>(
-        TestVesterImplementationV2__factory.abi,
-        TestVesterImplementationV2__factory.bytecode,
+      const newImplementation = await createContractWithLibrary<TestVesterImplementationV2>(
+        'TestVesterImplementationV2',
+        { VesterImplementationLibForV2: library.address },
         [
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,
@@ -138,9 +147,9 @@ describe('VesterProxy', () => {
     });
 
     it('should fail when call to the new implementation fails', async () => {
-      const newImplementation = await createContractWithAbi<TestVesterImplementationV2>(
-        TestVesterImplementationV2__factory.abi,
-        TestVesterImplementationV2__factory.bytecode,
+      const newImplementation = await createContractWithLibrary<TestVesterImplementationV2>(
+        'TestVesterImplementationV2',
+        { VesterImplementationLibForV2: library.address },
         [
           core.dolomiteMargin.address,
           core.dolomiteRegistry.address,
@@ -153,7 +162,7 @@ describe('VesterProxy', () => {
       );
       await expectThrow(
         proxy.connect(core.governance).upgradeToAndCall(newImplementation.address, calldata.data!),
-        'VesterImplementation: Invalid force close position tax',
+        'VesterImplementationV2: Invalid force close position tax',
       );
     });
   });
