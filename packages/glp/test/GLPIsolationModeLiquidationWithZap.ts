@@ -81,6 +81,8 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
     wrapper = await createGLPWrapperTraderV2(core, factory, gmxRegistry);
     await factory.connect(core.governance).setIsTokenConverterTrusted(unwrapper.address, true);
     await factory.connect(core.governance).setIsTokenConverterTrusted(wrapper.address, true);
+    // @follow-up How to do this without hardcoding the address?
+    await factory.connect(core.governance).setIsTokenConverterTrusted('0xbE39B67E4C58C203de332cCca8efb3A3F717d184', true);
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -156,6 +158,7 @@ describe('GLPIsolationModeLiquidationWithZap', () => {
         liquidAccountStruct,
         zapOutputs,
       );
+      console.log('here');
       const receipt = await txResult.wait();
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
 
