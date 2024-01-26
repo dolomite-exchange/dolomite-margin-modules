@@ -14,7 +14,7 @@ import {
   CustomTestVaultToken,
 } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi, createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_WEEK_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
@@ -27,6 +27,7 @@ import {
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const UPKEEP_ID = '123';
+const USDC_PRICE = BigNumber.from('1000000000000000000');
 
 describe('ChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
@@ -57,7 +58,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
 
     await core.testEcosystem!.testPriceOracle.setPrice(
       token.address,
-      '1000000000000000000', // $1.00
+      USDC_PRICE, // $1.00
     );
     marketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, token, true);
@@ -272,6 +273,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
 
   describe('#performUpkeep', () => {
     it('works if greater than heartbeat period', async () => {
+      await chainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(chainlinkRegistry.address);
       await increase(23 * 3600);
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
@@ -289,6 +291,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
     });
 
     it('works if greater than deviation upperEdge', async () => {
+      await chainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(chainlinkRegistry.address);
       await core.tokens.usdc!.connect(core.hhUser1).transfer(token.address, 25e4);
       await chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
       const updateTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
@@ -299,6 +302,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
     });
 
     it('works if less than deviation lowerEdge', async () => {
+      await chainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(chainlinkRegistry.address);
       const impersonatedToken = await impersonate(token.address, true);
       await core.tokens.usdc!.connect(impersonatedToken).transfer(core.hhUser1.address, 25e4);
       await chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x');
@@ -310,6 +314,7 @@ describe('ChainlinkAutomationPriceOracle', () => {
     });
 
     it('fails when new denominator is zero', async () => {
+      await chainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(chainlinkRegistry.address);
       await token.connect(core.hhUser1).burn(parseEther('10000'));
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
@@ -320,11 +325,12 @@ describe('ChainlinkAutomationPriceOracle', () => {
     it('fails when not called by Chainlink', async () => {
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(core.hhUser1).performUpkeep('0x'),
-        'ChainlinkAutomationPriceOracle: Caller is not Chainlink',
+        'ChainlinkAutomationPriceOracle: Caller is not forwarder',
       );
     });
 
     it('fails when before heartbeat and within deviation range', async () => {
+      await chainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(chainlinkRegistry.address);
       await expectThrow(
         chainlinkAutomationPriceOracle.connect(chainlinkRegistry).performUpkeep('0x'),
         'ChainlinkAutomationPriceOracle: checkUpkeep conditions not met',
@@ -343,6 +349,20 @@ describe('ChainlinkAutomationPriceOracle', () => {
       expect(await chainlinkAutomationPriceOracle.exchangeRateNumerator()).to.eq(10025e4);
       expect(await chainlinkAutomationPriceOracle.exchangeRateDenominator()).to.eq(parseEther('10000'));
       expect(await chainlinkAutomationPriceOracle.lastUpdateTimestamp()).to.eq(updateTimestamp);
+    });
+  });
+
+  describe('#getPrice', () => {
+    it('should work', async () => {
+      expect((await chainlinkAutomationPriceOracle.getPrice(token.address)).value).to.eq(USDC_PRICE);
+    });
+
+    it('should fail if price is expired', async () => {
+      await increase(ONE_WEEK_SECONDS);
+      await expectThrow(
+        chainlinkAutomationPriceOracle.getPrice(token.address),
+        'ChainlinkAutomationPriceOracle: Price is expired',
+      );
     });
   });
 });
