@@ -977,8 +977,8 @@
   },
   "PendlePtWstEthJun2024IsolationModeUnwrapperTraderV4": {
     "42161": {
-      "address": "0x05C5A361431A5b141d9f09D761EA4323B651dfB8",
-      "transaction": "0x318a72f081192bde055c073c20b18c48ee1e6a31301c82b4c134a9106baafdb4",
+      "address": "0x5BFEE4e3853d499e4B149C4F18c91F59A45C422E",
+      "transaction": "0xf897913940584f170a6db1030a3107abcc357cae2c170058c3921056c735caf5",
       "isVerified": true
     }
   },
@@ -1005,8 +1005,8 @@
   },
   "PendlePtWstEthJun2024IsolationModeWrapperTraderV4": {
     "42161": {
-      "address": "0x30173DbD3A5af41bE2b8462d1D27E18e536D6705",
-      "transaction": "0xed414d06838ba7717542d5b385ae0d70b5d4136cbae668e287f3d60180b220ce",
+      "address": "0x0196D6e6c2879fac66307d877b033463A23A1740",
+      "transaction": "0xb64f345cb2e52a496c88ca0faf0ea7fa7acfc6eb4ddf083989199771410e0a7e",
       "isVerified": true
     }
   },
@@ -1061,8 +1061,8 @@
   },
   "PendlePtWstEthJun2025IsolationModeUnwrapperTraderV4": {
     "42161": {
-      "address": "0x98F1DA067A80b6CEFE1eeeaFF63972d5140550Df",
-      "transaction": "0xefe87a42aa34e06a2750878c54734df3ca2bfb010042ded6b3bef76b1410400b",
+      "address": "0x4673B24a8C3c7A6EaaAF32D520bf88A52a21d81a",
+      "transaction": "0x077adbdedad4a223b7b8db7f3cee6dc9be8d7fe704c5c45704546768ff76795b",
       "isVerified": true
     }
   },
@@ -1089,8 +1089,8 @@
   },
   "PendlePtWstEthJun2025IsolationModeWrapperTraderV4": {
     "42161": {
-      "address": "0xb88653715b5E53874bC0A569f48eF2D0c01e4a0E",
-      "transaction": "0xf0ca192f32cbb96b5234e8575677b6aefe8e739d6305f34c95c28d9c33857a40",
+      "address": "0xc8475C99bcCC93Bafb7A211CF339c8C07A628527",
+      "transaction": "0xaafd5aaeded1baba9c909f804010cbf4f59bb57c257b63f373c620e19547e709",
       "isVerified": true
     }
   },
