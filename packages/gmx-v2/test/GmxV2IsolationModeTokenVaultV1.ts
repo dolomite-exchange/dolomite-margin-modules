@@ -1142,7 +1142,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: ONE_ETH_BI },
+          { value: ONE_ETH_BI.mul(2) },
         ),
         'GmxV2IsolationModeVaultV1: Invalid execution fee',
       );

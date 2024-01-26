@@ -48,6 +48,7 @@ import {
   setupWETHBalance,
 } from 'packages/base/test/utils/setup';
 import { getLiquidateIsolationModeZapPath } from 'packages/base/test/utils/zap-utils';
+import { parseEther } from 'ethers/lib/utils';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -56,6 +57,7 @@ const borrowAccountNumber2 = borrowAccountNumber.add(ONE_BI);
 const amountWei = ONE_ETH_BI.mul('1235');
 const amountWeiForSecond = ONE_ETH_BI.mul('1234');
 const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
+const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 describe('IsolationModeFreezableLiquidatorProxy', () => {
@@ -280,7 +282,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         outputMarketId: core.marketIds.nativeUsdc!,
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
-        extraData: ONE_BI_ENCODED,
+        extraData: DEFAULT_EXTRA_DATA,
       });
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
       const withdrawalKey = (await eventEmitter.queryFilter(
@@ -383,7 +385,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       - during the above operations we regularly modify the token prices to bring accounts in a collateralized or
         undercollateralized state
     */
-    it.only('Withdrawal Keys Misused by Differing Subaccount in Liquidations', async () => {
+    it('Withdrawal Keys Misused by Differing Subaccount in Liquidations', async () => {
       // with the specific initial prices only the first borrower, "borrowAccountNumber" is undercollateralized
       const {
         amountWeiForLiquidation: _amountWeiForLiquidationOne,
@@ -438,16 +440,20 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       expect(liquidAccountTwoBeforeBalances.get(core.marketIds.nativeUsdc!.toString()) === undefined).to.be.true;
 
       console.log(` 6. Liquidating account ${liquidAccount.number} but using accounts' ${borrowAccountNumber2} key: ${secondBorrowerKey}`);
-      await executeProxyLiquidation(
-        solidAccount,
-        liquidAccount,
-        [secondBorrowerKey],
-        [],
-        _amountWeiForLiquidationOne,
-        _wethAmountOne,
-      );
-
       // IMPORTANT - This POC should cut off here because executeProxyLiquidation should fail
+      await expectThrow(
+        executeProxyLiquidation(
+          solidAccount,
+          liquidAccount,
+          [secondBorrowerKey],
+          [],
+          _amountWeiForLiquidationOne,
+          _wethAmountOne,
+        ),
+        'AsyncIsolationModeUnwrapperImpl: Cant liquidate other subaccount'
+      );
+      return
+
 
       console.log(
         ' 7. Balances for accounts after liquidations show no change to second account and first account has only liquidation output token');

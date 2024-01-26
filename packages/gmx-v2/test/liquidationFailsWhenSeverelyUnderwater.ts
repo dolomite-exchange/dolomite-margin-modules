@@ -57,6 +57,7 @@ import {
   setupWETHBalance,
 } from 'packages/base/test/utils/setup';
 import { getLiquidateIsolationModeZapPath } from 'packages/base/test/utils/zap-utils';
+import { parseEther } from 'ethers/lib/utils';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -65,6 +66,7 @@ const borrowAccountNumber2 = borrowAccountNumber.add(ONE_BI);
 const amountWei = ONE_ETH_BI.mul('1234'); // 1,234
 const smallAmountWei = amountWei.mul(1).div(100);
 const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
+const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
@@ -283,7 +285,7 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
           smallAmountWei,
           core.tokens.nativeUsdc!.address,
           ONE_BI,
-          ONE_BI_ENCODED,
+          DEFAULT_EXTRA_DATA,
           { value: GMX_V2_EXECUTION_FEE },
         );
         const filter = eventEmitter.filters.AsyncWithdrawalCreated();
@@ -588,7 +590,7 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
       return hasNegative;
     }
 
-    it.only('Severely underwater position cannot be liquidated', async () => {
+    it('Severely underwater position cannot be liquidated', async () => {
       await setupBalances(borrowAccountNumber);
 
       // liquidation preparation results in withdrawal failed due to undercollateralized account
@@ -599,7 +601,7 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
         outputMarketId: core.marketIds.nativeUsdc!,
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
-        extraData: ONE_BI_ENCODED,
+        extraData: DEFAULT_EXTRA_DATA,
       });
       const result = await performUnwrapping();
       await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {
@@ -630,16 +632,15 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
       // the second Call action tries to invoke a function on the vault (which is now address(0)) it
       // reverts with the error: `function call to a non-contract account`
 
-      // TEST SHOULD FAIL HERE AFTER FIX. THIS CALL SHOULD NOT REVERT
-      await expectThrow(
+      // CHANGED HERE FOR IT TO NOT BE REVERTED
+      await expect(
         liquidateV4WithZapParam(
           core,
           solidAccount,
           liquidAccount,
           initialZapParam,
-        ),
-        'function call to a non-contract account',
-      );
+      )).to.not.be.reverted;
+      return;
 
       // show account is not Vaporizable because not all of its markets are negative, specifically the GM one
       const _isVaporizable = await isVaporizable(liquidAccount);

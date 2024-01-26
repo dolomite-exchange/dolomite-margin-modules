@@ -4,9 +4,6 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BaseContract, BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
 import {
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
-  EventEmitterRegistry,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
@@ -16,14 +13,19 @@ import {
   IGenericTraderProxyV1__factory,
   IGmxMarketToken,
   IGmxMarketToken__factory,
+} from '../src/types';
+import {
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+  EventEmitterRegistry,
   IsolationModeFreezableLiquidatorProxy,
   IsolationModeFreezableLiquidatorProxy__factory,
-} from '../../../src/types';
+} from "@dolomite-exchange/modules-base/src/types";
 import { AccountStruct } from '../../base/src/utils/constants';
 import {
   GMX_V2_CALLBACK_GAS_LIMIT,
   GMX_V2_EXECUTION_FEE,
-} from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
+} from '../src/gmx-v2-constructors';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../base/src/utils/dolomite-utils';
 import {
   BYTES_ZERO,
@@ -59,7 +61,7 @@ import {
   createGmxV2Registry,
   getInitiateWrappingParams,
   getOracleParams,
-} from '@dolomite-exchange/modules-gmx-v2/test/gmx';
+} from './gmx-v2-ecosystem-utils';
 import { setExpiry } from '../../base/test/utils/expiry-utils';
 import { liquidateV4WithZapParam } from '../../base/test/utils/liquidation-utils';
 import {
@@ -73,7 +75,7 @@ import {
   setupWETHBalance,
 } from '../../base/test/utils/setup';
 import { getLiquidateIsolationModeZapPath } from '../../base/test/utils/zap-utils';
-import { createSafeDelegateLibrary } from 'test/utils/ecosystem-token-utils/general';
+import { parseEther } from 'ethers/lib/utils';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -83,6 +85,7 @@ const borrowAccountNumber3 = borrowAccountNumber2.add(ONE_BI);
 const amountWei = ONE_ETH_BI.mul('1234'); // 1,234
 const smallAmountWei = amountWei.mul(1).div(100);
 const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
+const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
@@ -580,7 +583,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       return expect(contractTransaction).to.not.emit(contract, eventName);
     }
 
-    it.only('DOS Liquidations with OOG via extra data', async () => {
+    it('DOS Liquidations with OOG via extra data', async () => {
       await setupBalances(borrowAccountNumber);
 
       // take a snapshot of the current state of the blockchain
@@ -594,7 +597,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         outputMarketId: core.marketIds.nativeUsdc!,
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
-        extraData: ONE_BI_ENCODED,
+        extraData: DEFAULT_EXTRA_DATA,
       });
 
       const filter = eventEmitter.filters.AsyncWithdrawalCreated();
@@ -620,9 +623,10 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       // we do this to cause a gas spike when loaded into memory and cause the afterWithdrawalExecution function to revert
       const abi = ethers.utils.defaultAbiCoder;
       const garbageBytes = Buffer.alloc(100_000);
-      const _extraData: ethers.utils.BytesLike = abi.encode(['uint256', 'bytes'], [1, garbageBytes]);
+      const _extraData: ethers.utils.BytesLike = abi.encode(['uint256', 'uint256', 'bytes'], [parseEther('.5'), 1, garbageBytes]);
 
-      const prepareForLiquidationResultDosed = await liquidatorProxy.prepareForLiquidation(
+      // POC should now fail after fix
+      await expect(liquidatorProxy.prepareForLiquidation(
         {
           liquidAccount,
           freezableMarketId: marketId,
@@ -633,7 +637,8 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
           extraData: _extraData,
         },
         { gasLimit: 20_000_000 }
-      ); // This now fails because _extraData is invalid
+      )).to.be.revertedWith('GmxV2Library: Invalid extra data');
+      return;
 
       const withdrawalKeySecondCase = (
         await eventEmitter.queryFilter(filter, prepareForLiquidationResultDosed.blockNumber)

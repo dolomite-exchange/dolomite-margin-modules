@@ -39,7 +39,6 @@ describe('GmxV2IsolationModeVaultFactory', () => {
 
   let core: CoreProtocol;
   let gmxV2Registry: GmxV2Registry;
-  let expirationLibrary: Contract;
   let gmxV2Library: GmxV2Library;
   let allowableMarketIds: BigNumberish[];
   let vaultImplementation: GmxV2IsolationModeTokenVaultV1;
@@ -53,7 +52,6 @@ describe('GmxV2IsolationModeVaultFactory', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
     gmxV2Registry = await createGmxV2Registry(core, GMX_V2_CALLBACK_GAS_LIMIT);
-    expirationLibrary = await createExpirationLibrary();
     gmxV2Library = await createGmxV2Library();
     vaultImplementation = await createGmxV2IsolationModeTokenVaultV1(core, gmxV2Library);
 

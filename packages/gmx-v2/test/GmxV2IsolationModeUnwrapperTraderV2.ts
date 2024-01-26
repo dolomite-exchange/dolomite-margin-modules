@@ -55,6 +55,7 @@ import {
 import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { createSafeDelegateLibrary } from '@dolomite-exchange/modules-base/test/utils/ecosystem-token-utils/general';
+import { IDolomiteStructs } from 'packages/pendle/src/types/contracts/PendlePtGLP2024IsolationModeTokenVaultV1';
 
 enum ReversionType {
   None = 0,
@@ -86,6 +87,7 @@ function encodeWithdrawalKey(tradeType: UnwrapTradeType, key: string): string {
 }
 
 function encodeWithdrawalKeyForCallFunction(
+  assetReference: BigNumberish,
   transferAmount: BigNumberish,
   accountOwner: string,
   accountNumber: BigNumberish,
@@ -93,8 +95,8 @@ function encodeWithdrawalKeyForCallFunction(
   key: string,
 ): string {
   return ethers.utils.defaultAbiCoder.encode(
-    ['uint256', 'address', 'uint256', 'uint8[]', 'bytes32[]'],
-    [transferAmount, accountOwner, accountNumber, [tradeType], [key]],
+    ['uint256', 'uint256', 'address', 'uint256', 'uint8[]', 'bytes32[]'],
+    [assetReference, transferAmount, accountOwner, accountNumber, [tradeType], [key]],
   );
 }
 
@@ -939,6 +941,54 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       expect(await core.tokens.nativeUsdc!.balanceOf(unwrapper.address)).to.be.gt(0);
     });
 
+    it('should work normally if secondaryOutputToken is a different address but has no amount', async () => {
+      await setupBalances(core.tokens.weth);
+      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const unwrapperImpersonate = await impersonate(unwrapper.address, true);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      const withdrawalInfo = getWithdrawalObject(
+        unwrapper.address,
+        underlyingToken.address,
+        ONE_BI,
+        ONE_BI,
+        amountWei,
+        executionFee,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        BigNumber.from('100000000'),
+        ZERO_BI
+      );
+      await unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
+        withdrawalKey,
+        withdrawalInfo.withdrawal,
+        withdrawalInfo.eventData,
+      );
+    });
+
+    it('should work normally if outputToken is a different address but has no amount', async () => {
+      await setupBalances(core.tokens.nativeUsdc!);
+      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const unwrapperImpersonate = await impersonate(unwrapper.address, true);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      const withdrawalInfo = getWithdrawalObject(
+        unwrapper.address,
+        underlyingToken.address,
+        ONE_BI,
+        ONE_BI,
+        amountWei,
+        executionFee,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        ZERO_BI,
+        BigNumber.from('100000000'),
+      );
+      await unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
+        withdrawalKey,
+        withdrawalInfo.withdrawal,
+        withdrawalInfo.eventData,
+      );
+    });
+
     it('should fail if given invalid event data', async () => {
       await setupBalances(core.tokens.weth);
       const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
@@ -1009,11 +1059,52 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         ),
         'GmxV2Library: Unexpected secondaryOutputAmount',
       );
+    });
 
-      withdrawalInfo.eventData.uintItems.items[1].key = 'secondaryOutputAmount';
-      withdrawalInfo.eventData.uintItems.items[1].value = ONE_BI;
-      withdrawalInfo.eventData.addressItems.items[1].value = core.tokens.wbtc.address;
-      // @audit Are these off when they go to the library? What will be primary and what will be secondary?
+    it('should fail if receive more than one token if outputToken is long token', async () => {
+      await setupBalances(core.tokens.weth);
+      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const unwrapperImpersonate = await impersonate(unwrapper.address, true);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      const withdrawalInfo = getWithdrawalObject(
+        unwrapper.address,
+        underlyingToken.address,
+        ONE_BI,
+        ONE_BI,
+        amountWei,
+        executionFee,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        BigNumber.from('100000000'),
+        ONE_BI
+      );
+      await expectThrow(
+        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
+          withdrawalKey,
+          withdrawalInfo.withdrawal,
+          withdrawalInfo.eventData,
+        ),
+        'GmxV2Library: Can only receive one token',
+      );
+    });
+
+    it('should fail if receive more than one token if outputToken is short token', async () => {
+      await setupBalances(core.tokens.nativeUsdc!);
+      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const unwrapperImpersonate = await impersonate(unwrapper.address, true);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      const withdrawalInfo = getWithdrawalObject(
+        unwrapper.address,
+        underlyingToken.address,
+        ONE_BI,
+        ONE_BI,
+        amountWei,
+        executionFee,
+        core.tokens.weth.address,
+        core.tokens.nativeUsdc!.address,
+        BigNumber.from('100000000'),
+        ONE_BI
+      );
       await expectThrow(
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
           withdrawalKey,
@@ -1312,6 +1403,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           core.hhUser5.address,
           { owner: core.hhUser2.address, number: defaultAccountNumber },
           encodeWithdrawalKeyForCallFunction(
+            0,
             amountWei,
             core.hhUser2.address,
             defaultAccountNumber,
@@ -1342,6 +1434,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           core.hhUser5.address,
           { owner: vault2.address, number: defaultAccountNumber },
           encodeWithdrawalKeyForCallFunction(
+            0,
             amountWei,
             vault2.address,
             defaultAccountNumber,
@@ -1383,6 +1476,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           core.hhUser5.address,
           { owner: vault.address, number: defaultAccountNumber },
           encodeWithdrawalKeyForCallFunction(
+            0,
             ZERO_BI,
             vault.address,
             defaultAccountNumber,
@@ -1398,6 +1492,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           core.hhUser5.address,
           { owner: vault.address, number: defaultAccountNumber },
           encodeWithdrawalKeyForCallFunction(
+            0,
             smallAmountWei.add(1),
             vault.address,
             defaultAccountNumber,
@@ -1439,6 +1534,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           core.hhUser5.address,
           { owner: vault.address, number: defaultAccountNumber },
           encodeWithdrawalKeyForCallFunction(
+            0,
             amountWei.add(1),
             vault.address,
             defaultAccountNumber,
