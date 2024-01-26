@@ -9,6 +9,8 @@ import {
   TestVesterImplementationV1__factory,
   TestVesterImplementationV2,
   TestVesterImplementationV2__factory,
+  VesterExploder,
+  VesterExploder__factory,
   VesterImplementationLibForV2,
   VesterImplementationLibForV2__factory,
   VesterProxy,
@@ -17,6 +19,7 @@ import {
 import {
   getOARBConstructorParams,
   getRewardsDistributorConstructorParams,
+  getVesterExploderConstructorParams,
   getVesterImplementationConstructorParams,
 } from '../src/liquidity-mining-constructors';
 import { createContractWithAbi, createContractWithLibrary } from '../../base/src/utils/dolomite-utils';
@@ -73,6 +76,17 @@ export async function createTestVesterV2Proxy(
   );
 
   return TestVesterImplementationV2__factory.connect(vesterProxy.address, core.hhUser1);
+}
+
+export async function createVesterExploder(
+  core: CoreProtocol,
+  vester: TestVesterImplementationV2 | TestVesterImplementationV1 | VesterProxy,
+): Promise<VesterExploder> {
+  return createContractWithAbi<VesterExploder>(
+    VesterExploder__factory.abi,
+    VesterExploder__factory.bytecode,
+    getVesterExploderConstructorParams(core, vester),
+  );
 }
 
 export async function createOARB(core: CoreProtocol): Promise<OARB> {
