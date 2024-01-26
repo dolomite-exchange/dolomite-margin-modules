@@ -109,18 +109,6 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV1', () => {
       .approve(core.plutusEcosystem!.plvGlpRouter.address, glpAmount);
     await core.plutusEcosystem!.plvGlpRouter.connect(core.hhUser1).deposit(glpAmount);
 
-    await underlyingToken.approve(vault.address, heldAmountWei);
-    await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
-
-    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
-    expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, underlyingMarketId)).value)
-      .to
-      .eq(heldAmountWei);
-
-    await core.liquidatorProxyV3!.connect(core.governance).setMarketIdToTokenUnwrapperForLiquidationMap(
-      underlyingMarketId,
-      unwrapper.address,
-    );
     await createAndSetPlutusVaultWhitelist(
       core,
       core.plutusEcosystem!.plvGlpRouter,
@@ -130,6 +118,19 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV1', () => {
       vault
     );
     await createAndSetPlutusVaultWhitelist(core, core.plutusEcosystem!.plvGlpFarm, unwrapper, wrapper, factory, vault);
+
+    await underlyingToken.approve(vault.address, heldAmountWei);
+    await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
+
+    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(ZERO_BI);
+    expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, underlyingMarketId)).value)
+      .to
+      .eq(heldAmountWei);
+
+    await core.liquidatorProxyV3!.connect(core.governance).setMarketIdToTokenUnwrapperForLiquidationMap(
+      underlyingMarketId,
+      unwrapper.address,
+    );
 
     snapshotId = await snapshot();
   });

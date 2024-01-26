@@ -96,22 +96,23 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
       .approve(core.plutusEcosystem!.plvGlpRouter.address, glpAmount);
     await core.plutusEcosystem!.plvGlpRouter.connect(core.hhUser1).deposit(glpAmount);
 
+    await core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.connect(core.governance)
+      .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
+    await core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.connect(core.governance)
+      .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
+    await core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.connect(core.governance)
+      .ownerSetPlvGlpWrapperTrader(wrapper.address);
+    await core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.connect(core.governance)
+      .ownerSetPlvGlpWrapperTrader(wrapper.address);
+
     await underlyingToken.approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
-    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
+    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(ZERO_BI);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, underlyingMarketId)).value)
       .to
       .eq(heldAmountWei);
 
-    await core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.connect(core.governance)
-      .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
-    await core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.connect(core.governance)
-      .ownerSetPlvGlpUnwrapperTrader(unwrapper.address);
-    await core.plutusEcosystem!.live.dolomiteWhitelistForGlpDepositor.connect(core.governance)
-      .ownerSetPlvGlpWrapperTrader(wrapper.address);
-    await core.plutusEcosystem!.live.dolomiteWhitelistForPlutusChef.connect(core.governance)
-      .ownerSetPlvGlpWrapperTrader(wrapper.address);
 
     snapshotId = await snapshot();
   });

@@ -16,6 +16,7 @@ import {
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
+  getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
@@ -62,9 +63,10 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
   let farm: IPlutusVaultGLPFarm;
 
   before(async () => {
+    const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
     core = await setupCoreProtocol({
+      blockNumber,
       network: Network.ArbitrumOne,
-      blockNumber: 163_864_000,
     });
     underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
     rewardToken = core.plutusEcosystem!.plsToken.connect(core.hhUser1);
@@ -117,8 +119,11 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
     await core.plutusEcosystem!.plvGlp.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(accountNumber, amountWei);
 
-    expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+    expect((await core.dolomiteMargin.getAccountWei(account, underlyingMarketId)).value)
+      .to
+      .eq(amountWei);
     expect(await vault.underlyingBalanceOf()).to.eq(amountWei);
+    expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
 
     const glpProtocolBalance = await core.dolomiteMargin.getAccountWei(account, underlyingMarketId);
     expect(glpProtocolBalance.sign).to.eq(true);
@@ -140,12 +145,12 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
   describe('#stakePlvGlp', () => {
     it('should work normally', async () => {
       await vault.unstakePlvGlp(stakedAmountWei);
-      await expectWalletBalance(vault, underlyingToken, amountWei);
+      await expectWalletBalance(vault, underlyingToken, stakedAmountWei);
 
       await vault.stakePlvGlp(stakedAmountWei);
       expect(await vault.underlyingBalanceOf()).to.eq(amountWei);
-      expect(await underlyingToken.balanceOf(vault.address)).to.eq(unstakedAmountWei);
-      expect((await farm.userInfo(vault.address))._balance).to.eq(stakedAmountWei);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await farm.userInfo(vault.address))._balance).to.eq(amountWei);
     });
 
     it('should fail when not called by vault owner', async () => {
@@ -178,13 +183,13 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
   describe('#unstakePlvGlp', () => {
     it('should work normally', async () => {
       expect(await vault.underlyingBalanceOf()).to.eq(amountWei);
-      expect(await underlyingToken.balanceOf(vault.address)).to.eq(unstakedAmountWei);
-      expect((await farm.userInfo(vault.address))._balance).to.eq(stakedAmountWei);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await farm.userInfo(vault.address))._balance).to.eq(amountWei);
 
       await vault.unstakePlvGlp(unstakedAmountWei);
       expect(await vault.underlyingBalanceOf()).to.eq(amountWei);
-      expect(await underlyingToken.balanceOf(vault.address)).to.eq(unstakedAmountWei.mul(2));
-      expect((await farm.userInfo(vault.address))._balance).to.eq(stakedAmountWei.sub(unstakedAmountWei));
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(unstakedAmountWei);
+      expect((await farm.userInfo(vault.address))._balance).to.eq(stakedAmountWei);
     });
 
     it('should fail when not called by vault owner', async () => {
@@ -207,14 +212,9 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
 
     it('should work when plvGLP needs to be un-staked', async () => {
       const balanceBefore = await underlyingToken.balanceOf(core.hhUser1.address);
-      await vault.stakePlvGlp(stakedAmountWei);
-
-      // balance should not have changed
-      expect(await underlyingToken.balanceOf(core.hhUser1.address)).to.eq(balanceBefore);
-
       expect(await vault.underlyingBalanceOf()).to.eq(amountWei);
-      expect(await underlyingToken.balanceOf(vault.address)).to.eq(unstakedAmountWei);
-      expect((await farm.userInfo(vault.address))._balance).to.eq(stakedAmountWei);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await farm.userInfo(vault.address))._balance).to.eq(amountWei);
       expect((await core.dolomiteMargin.getAccountWei(account, underlyingMarketId)).value).to.equal(amountWei);
 
       await vault.withdrawFromVaultForDolomiteMargin(accountNumber, amountWei);
@@ -227,13 +227,9 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
 
     it('should work when plvGLP needs to be un-staked and rewards are paused', async () => {
       const balanceBefore = await underlyingToken.balanceOf(core.hhUser1.address);
-
-      // balance should not have changed
-      expect(await underlyingToken.balanceOf(core.hhUser1.address)).to.eq(balanceBefore);
-
       expect(await vault.underlyingBalanceOf()).to.eq(amountWei);
-      expect(await underlyingToken.balanceOf(vault.address)).to.eq(unstakedAmountWei);
-      expect((await farm.userInfo(vault.address))._balance).to.eq(stakedAmountWei);
+      expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
+      expect((await farm.userInfo(vault.address))._balance).to.eq(amountWei);
       expect((await core.dolomiteMargin.getAccountWei(account, underlyingMarketId)).value).to.equal(amountWei);
 
       const farmOwner = await impersonate(await farm.owner(), true);
@@ -270,11 +266,11 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
 
   describe('#underlyingBalanceOf', () => {
     it('should work when funds are only in vault', async () => {
+      await vault.unstakePlvGlp(amountWei);
       expect(await vault.underlyingBalanceOf()).to.equal(amountWei);
     });
 
     it('should work when funds are in vault and staked', async () => {
-      await vault.stakePlvGlp(stakedAmountWei);
       expect(await vault.underlyingBalanceOf()).to.equal(amountWei); // amount should be unchanged
     });
   });

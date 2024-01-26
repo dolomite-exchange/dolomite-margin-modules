@@ -114,7 +114,7 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV2', () => {
     await core.plutusEcosystem!.plvGlp.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
-    expect(await vault.underlyingBalanceOf()).to.eq(amountWei);
+    expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
 
     // account for the fee in the numerator

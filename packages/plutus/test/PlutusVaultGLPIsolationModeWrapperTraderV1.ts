@@ -109,6 +109,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
       factory,
       vault,
     );
+    await createAndSetPlutusVaultWhitelist(core, core.plutusEcosystem!.plvGlpFarm, unwrapper, wrapper, factory, vault);
 
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.gmxEcosystem!.glpManager);
     await core.gmxEcosystem!.glpRewardsRouter.connect(core.hhUser1)
@@ -119,7 +120,7 @@ describe('PlutusVaultGLPIsolationModeWrapperTraderV1', () => {
     await core.plutusEcosystem!.plvGlp.connect(core.hhUser1).approve(vault.address, amountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
 
-    expect(await underlyingToken.balanceOf(vault.address)).to.eq(amountWei);
+    expect(await underlyingToken.balanceOf(vault.address)).to.eq(ZERO_BI);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccount, underlyingMarketId)).value).to.eq(amountWei);
 
     snapshotId = await snapshot();
