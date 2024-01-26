@@ -28,6 +28,11 @@ export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
   [Network.ArbitrumGoerli]: 14_700_000,
 };
 
+export const NETWORK_TO_REGISTRY_PROXY_MAP: Record<Network, number> = {
+  [Network.ArbitrumOne]: 153_161_253,
+  [Network.ArbitrumGoerli]: 153_161_253,
+};
+
 export const DEFAULT_BLOCK_NUMBER = NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[NETWORK_ID];
 
 export const ONE_DAY_SECONDS = 86_400;

@@ -18,7 +18,7 @@ import { Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
-import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkName } from '../../src/utils/no-deps-constants';
+import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NETWORK_TO_REGISTRY_PROXY_MAP, NetworkName } from '../../src/utils/no-deps-constants';
 import Deployments, * as deployments from '../../../../scripts/deployments.json';
 import {
   ARBIsolationModeVaultFactory__factory,
@@ -857,7 +857,7 @@ export async function setupCoreProtocol(
   let dolomiteRegistry: IDolomiteRegistry;
   let dolomiteRegistryProxy: RegistryProxy;
   if (
-    config.blockNumber >= NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[config.network]
+    config.blockNumber >= NETWORK_TO_REGISTRY_PROXY_MAP[config.network]
     || network.name === NetworkName.ArbitrumOne
   ) {
     dolomiteRegistry = IDolomiteRegistry__factory.connect(

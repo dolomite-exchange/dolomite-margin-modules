@@ -7,6 +7,7 @@ import {
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
 } from '../../src/types';
+// @todo create test contract for this
 import {
   TestGmxV2IsolationModeUnwrapperTraderV2,
   TestGmxV2IsolationModeUnwrapperTraderV2__factory,
