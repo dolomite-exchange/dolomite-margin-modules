@@ -100,6 +100,7 @@ describe('PlutusVaultGLPWithChainlinkAutomationPriceOracle', () => {
       unwrapperTrader,
     );
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+    await plvGlpPriceOracle.connect(core.governance).ownerSetForwarder(chainlinkRegistry.address);
     exitFeeBp = (await plvGlpRouter.getFeeBp(unwrapperTrader.address))._exitFeeBp;
 
     snapshotId = await snapshot();
