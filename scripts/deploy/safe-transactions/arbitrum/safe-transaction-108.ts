@@ -1,10 +1,10 @@
+import { getChainlinkPriceOracleParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
+import { getPendleYtGLPPriceOracleConstructorParams } from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
 import { BigNumber } from 'ethers';
-import { IPendleYtGLP2024IsolationModeVaultFactory__factory } from '../../../../src/types';
-import { getChainlinkPriceOracleParams } from '@dolomite-exchange/modules-oracles/src/oracles';
-import { getPendleYtGLPPriceOracleConstructorParams } from '@dolomite-exchange/modules-pendle/src/pendle';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { CoreProtocol, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
+import { IPendleYtGLP2024IsolationModeVaultFactory__factory } from '../../../../src/types';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../deploy-utils';
 import * as Deployments from '../../../deployments.json';
 

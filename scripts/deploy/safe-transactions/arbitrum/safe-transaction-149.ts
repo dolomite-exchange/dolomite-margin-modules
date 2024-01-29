@@ -1,4 +1,22 @@
+import {
+  getARBIsolationModeVaultFactoryConstructorParams,
+  getARBRegistryConstructorParams,
+  getARBUnwrapperTraderV2ConstructorParams,
+  getARBWrapperTraderV2ConstructorParams,
+} from '@dolomite-exchange/modules-arb/src/arb-constructors';
+import {
+  getGMXIsolationModeVaultFactoryConstructorParams,
+  getGMXUnwrapperTraderV2ConstructorParams,
+  getGMXWrapperTraderV2ConstructorParams,
+} from '@dolomite-exchange/modules-glp/src/glp-constructors';
 import { parseEther } from 'ethers/lib/utils';
+import {
+  TargetCollateralization,
+  TargetLiquidationPenalty,
+} from '../../../../packages/base/src/utils/constructors/dolomite';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network, ONE_BI } from '../../../../packages/base/src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   ARBIsolationModeTokenVaultV1__factory,
   ARBIsolationModeVaultFactory__factory,
@@ -9,28 +27,14 @@ import {
   SimpleIsolationModeWrapperTraderV2__factory,
 } from '../../../../src/types';
 import {
-  getARBIsolationModeVaultFactoryConstructorParams,
-  getARBRegistryConstructorParams,
-  getARBUnwrapperTraderV2ConstructorParams,
-  getARBWrapperTraderV2ConstructorParams,
-} from '@dolomite-exchange/modules-arb/src/arb';
-import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../packages/base/src/utils/constructors/dolomite';
-import {
-  getGMXIsolationModeVaultFactoryConstructorParams,
-  getGMXUnwrapperTraderV2ConstructorParams,
-  getGMXWrapperTraderV2ConstructorParams,
-} from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
-import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_BI } from '../../../../packages/base/src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
-import {
   createFolder,
   DenJsonUpload,
   deployContractAndSave,
   EncodedTransaction,
   getTokenVaultLibrary,
   prettyPrintEncodeAddIsolationModeMarket,
-  prettyPrintEncodeAddMarket, prettyPrintEncodedDataWithTypeSafety,
+  prettyPrintEncodeAddMarket,
+  prettyPrintEncodedDataWithTypeSafety,
   prettyPrintEncodeInsertChainlinkOracle,
   writeFile,
 } from '../../../deploy-utils';
@@ -145,7 +149,7 @@ async function main(): Promise<DenJsonUpload> {
       'gmxRegistryProxy',
       'upgradeTo',
       [gmxRegistryImplementationAddress],
-    )
+    ),
   );
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -154,7 +158,7 @@ async function main(): Promise<DenJsonUpload> {
       'gmxRegistry',
       'ownerSetBnGmx',
       [core.gmxEcosystem!.bnGmx.address],
-    )
+    ),
   );
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -163,7 +167,7 @@ async function main(): Promise<DenJsonUpload> {
       'gmxRegistry',
       'ownerSetGlpVaultFactory',
       [core.gmxEcosystem!.live.dGlp.address],
-    )
+    ),
   );
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -172,7 +176,7 @@ async function main(): Promise<DenJsonUpload> {
       'gmxRegistry',
       'ownerSetGmxVaultFactory',
       [gmxFactory.address],
-    )
+    ),
   );
   transactions.push(
     await prettyPrintEncodeInsertChainlinkOracle(

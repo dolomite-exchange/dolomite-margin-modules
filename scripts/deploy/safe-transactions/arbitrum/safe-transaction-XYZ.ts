@@ -1,38 +1,12 @@
-import { parseEther } from 'ethers/lib/utils';
-import {
-  ARBIsolationModeTokenVaultV1__factory,
-  ARBIsolationModeVaultFactory__factory,
-  ARBRegistry__factory,
-  GMXIsolationModeTokenVaultV1__factory,
-  GMXIsolationModeVaultFactory__factory,
-  SimpleIsolationModeUnwrapperTraderV2__factory,
-  SimpleIsolationModeWrapperTraderV2__factory,
-} from '../../../../src/types';
-import {
-  getARBIsolationModeVaultFactoryConstructorParams,
-  getARBRegistryConstructorParams,
-  getARBUnwrapperTraderV2ConstructorParams,
-  getARBWrapperTraderV2ConstructorParams,
-} from '@dolomite-exchange/modules-arb/src/arb';
-import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../packages/base/src/utils/constructors/dolomite';
-import {
-  getGMXIsolationModeVaultFactoryConstructorParams,
-  getGMXUnwrapperTraderV2ConstructorParams,
-  getGMXWrapperTraderV2ConstructorParams,
-} from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
 import { getTWAPPriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ONE_BI } from '../../../../packages/base/src/utils/no-deps-constants';
+import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,
   deployContractAndSave,
   EncodedTransaction,
-  getTokenVaultLibrary,
-  prettyPrintEncodeAddIsolationModeMarket,
-  prettyPrintEncodeAddMarket, prettyPrintEncodedDataWithTypeSafety,
-  prettyPrintEncodeInsertChainlinkOracle,
   writeFile,
 } from '../../../deploy-utils';
 

@@ -1,9 +1,11 @@
-import deployments from '../../../../scripts/deployments.json';
-import { OARB__factory, RewardsDistributor__factory } from '../../../../src/types';
-import { getRewardsDistributorConstructorParams } from '@dolomite-exchange/modules-liquidity-mining/src/types/liquidity-mining';
+import {
+  getRewardsDistributorConstructorParams,
+} from '@dolomite-exchange/modules-liquidity-mining/src/liquidity-mining-constructors';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { BYTES_ZERO, Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
+import deployments from '../../../../scripts/deployments.json';
+import { OARB__factory, RewardsDistributor__factory } from '../../../../src/types';
 import {
   createFolder,
   deployContractAndSave,

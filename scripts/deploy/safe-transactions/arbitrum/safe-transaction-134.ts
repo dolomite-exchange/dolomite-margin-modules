@@ -1,10 +1,13 @@
+import { getTWAPPriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { parseEther } from 'ethers/lib/utils';
-import { TWAPPriceOracle__factory } from '../../../../src/types';
-import { TargetCollateralization, TargetLiquidationPenalty } from '../../../../packages/base/src/utils/constructors/dolomite';
-import { getTWAPPriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles';
+import {
+  TargetCollateralization,
+  TargetLiquidationPenalty,
+} from '../../../../packages/base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
+import { TWAPPriceOracle__factory } from '../../../../src/types';
 import {
   createFolder,
   DenJsonUpload,

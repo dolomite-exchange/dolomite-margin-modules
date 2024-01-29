@@ -1,13 +1,13 @@
-import { OARB, OARB__factory, VesterImplementationV1, VesterImplementationV1__factory } from '../../../../src/types';
 import {
   getOARBConstructorParams,
   getVesterExploderConstructorParams,
   getVesterImplementationConstructorParams,
   getVesterV1ProxyConstructorParams,
-} from '@dolomite-exchange/modules-liquidity-mining/src/types/liquidity-mining';
+} from '@dolomite-exchange/modules-liquidity-mining/src/liquidity-mining-constructors';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { CoreProtocol, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
+import { OARB, OARB__factory, VesterImplementationV1, VesterImplementationV1__factory } from '../../../../src/types';
 import {
   createFolder,
   DenJsonUpload,

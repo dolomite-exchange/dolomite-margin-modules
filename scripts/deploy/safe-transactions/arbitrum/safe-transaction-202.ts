@@ -1,14 +1,15 @@
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
+import { CoreProtocol, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
 import {
   getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
-} from '../../../../src/utils/constructors/pendle';
-import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
-import { Network } from '../../../../src/utils/no-deps-constants';
-import { CoreProtocol, setupCoreProtocol } from '../../../../test/utils/setup';
+} from '../../../../packages/pendle/src/pendle-constructors';
 import {
   createFolder,
   DenJsonUpload,
-  deployContractAndSave, EncodedTransaction,
+  deployContractAndSave,
+  EncodedTransaction,
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../deploy-utils';

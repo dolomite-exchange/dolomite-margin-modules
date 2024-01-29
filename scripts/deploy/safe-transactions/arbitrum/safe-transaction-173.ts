@@ -1,5 +1,5 @@
+import { getTWAPPriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { parseEther } from 'ethers/lib/utils';
-import { getTWAPPriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';

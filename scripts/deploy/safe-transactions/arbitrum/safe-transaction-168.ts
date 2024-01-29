@@ -1,6 +1,8 @@
+import { BigNumberish } from 'ethers';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { CoreProtocol, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
+import { IIsolationModeVaultFactory__factory } from '../../../../src/types';
 import {
   createFolder,
   DenJsonUpload,
@@ -10,8 +12,6 @@ import {
   prettyPrintEncodedDataWithTypeSafety,
   writeFile,
 } from '../../../deploy-utils';
-import { BigNumberish } from 'ethers';
-import { IIsolationModeVaultFactory__factory } from '../../../../src/types';
 
 const genericTraderProxyV1OldAddress = '0x3E647e1242A8CE0cE013cb967fBfF742d7846242';
 const liquidatorProxyV4OldAddress = '0x7997a5E848fD5AA92E47f4D94011c6c9Aa5bcCdC';
@@ -66,7 +66,7 @@ async function getIsolationModeTokenVaultTransactions(
   const transactions: EncodedTransaction[] = [];
   const factory = IIsolationModeVaultFactory__factory.connect(
     await core.dolomiteMargin.getMarketTokenAddress(marketId),
-    core.hhUser1
+    core.hhUser1,
   );
 
   transactions.push(

@@ -1,11 +1,11 @@
+import { getTWAPPriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { BigNumber } from 'ethers/lib/ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { LinearStepFunctionInterestSetter__factory, TWAPPriceOracle__factory } from '../../../../src/types';
 import { getOwnerAddMarketParameters } from '../../../../packages/base/src/utils/constructors/dolomite';
-import { getTWAPPriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
+import { LinearStepFunctionInterestSetter__factory, TWAPPriceOracle__factory } from '../../../../src/types';
 import {
   createFolder,
   deployContractAndSave,

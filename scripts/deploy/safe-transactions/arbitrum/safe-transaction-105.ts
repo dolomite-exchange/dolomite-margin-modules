@@ -1,9 +1,9 @@
 import { BigNumber } from 'ethers';
-import { IDolomiteInterestSetter__factory, IDolomitePriceOracle__factory } from '../../../../src/types';
 import { getOwnerAddMarketParameters } from '../../../../packages/base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
+import { IDolomiteInterestSetter__factory, IDolomitePriceOracle__factory } from '../../../../src/types';
 import { prettyPrintEncodedDataWithTypeSafety } from '../../../deploy-utils';
 
 /**

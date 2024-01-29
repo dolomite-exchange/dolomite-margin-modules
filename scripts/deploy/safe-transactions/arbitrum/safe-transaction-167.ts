@@ -1,34 +1,35 @@
-import { PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory } from '../../../../src/types';
 import {
   getARBUnwrapperTraderV2ConstructorParams,
   getARBWrapperTraderV2ConstructorParams,
-} from '@dolomite-exchange/modules-arb/src/arb';
+} from '@dolomite-exchange/modules-arb/src/arb-constructors';
 import {
   getGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getGLPIsolationModeWrapperTraderV2ConstructorParams,
   getGMXUnwrapperTraderV2ConstructorParams,
   getGMXWrapperTraderV2ConstructorParams,
-} from '@dolomite-exchange/modules-gmx-v2/src/utils/constructors/gmx';
+} from '@dolomite-exchange/modules-glp/src/glp-constructors';
 import {
   getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
   getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,
   getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
-} from '@dolomite-exchange/modules-jones/src/jones';
+} from '@dolomite-exchange/modules-jones/src/jones-construtors';
 import {
   getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
-  getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams, getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
+  getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
+  getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
   getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
   getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
-} from '@dolomite-exchange/modules-pendle/src/pendle';
+} from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
 import {
   getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
   getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
   getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
-} from '@dolomite-exchange/modules-plutus/src/plutus';
+} from '@dolomite-exchange/modules-plutus/src/plutus-constructors';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { CoreProtocol, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
+import { PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory } from '../../../../src/types';
 import {
   createFolder,
   DenJsonUpload,
@@ -130,7 +131,7 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocol): Promise<EncodedT
       core.plutusEcosystem!.live.plvGlpIsolationModeFactory,
       PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.connect(unwrapperV3, core.hhUser1),
     ),
-    'PlutusVaultGLPWithChainlinkAutomationPriceOracleV2'
+    'PlutusVaultGLPWithChainlinkAutomationPriceOracleV2',
   );
 
   const transactions = [];

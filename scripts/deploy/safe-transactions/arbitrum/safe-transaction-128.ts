@@ -1,8 +1,8 @@
-import { EventEmitterRegistry, EventEmitterRegistry__factory } from '../../../../src/types';
 import { getRegistryProxyConstructorParams } from '../../../../packages/base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { CoreProtocol, setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
+import { EventEmitterRegistry, EventEmitterRegistry__factory } from '../../../../src/types';
 import {
   createFolder,
   DenJsonUpload,

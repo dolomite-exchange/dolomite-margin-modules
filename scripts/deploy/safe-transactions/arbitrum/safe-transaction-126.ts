@@ -1,5 +1,8 @@
 import { parseEther } from 'ethers/lib/utils';
-import { TargetCollateralization, TargetLiquidationPremium } from '../../../../packages/base/src/utils/constructors/dolomite';
+import {
+  TargetCollateralization,
+  TargetLiquidationPenalty,
+} from '../../../../packages/base/src/utils/constructors/dolomite';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
@@ -70,7 +73,7 @@ async function main(): Promise<DenJsonUpload> {
       rEthSystem.wrapper,
       rEthMarketId,
       TargetCollateralization._120,
-      TargetLiquidationPremium._7,
+      TargetLiquidationPenalty._7,
       rEthMaxSupplyWei,
     ),
   );
@@ -86,7 +89,7 @@ async function main(): Promise<DenJsonUpload> {
       wstEthJun2024System.wrapper,
       wstEthJun2024MarketId,
       TargetCollateralization._120,
-      TargetLiquidationPremium._7,
+      TargetLiquidationPenalty._7,
       wstEthJun2024MaxSupplyWei,
     ),
   );
@@ -102,7 +105,7 @@ async function main(): Promise<DenJsonUpload> {
       wstEthJun2025System.wrapper,
       wstEthJun2025MarketId,
       TargetCollateralization._120,
-      TargetLiquidationPremium._7,
+      TargetLiquidationPenalty._7,
       wstEthJun2025MaxSupplyWei,
     ),
   );
