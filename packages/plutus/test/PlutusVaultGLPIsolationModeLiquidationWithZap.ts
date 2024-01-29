@@ -2,7 +2,7 @@ import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
-import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
+import deployments from '../../../scripts/deployments.json';
 import {
   IERC4626,
   IPlutusVaultGLPIsolationModeVaultFactory,
@@ -25,9 +25,10 @@ import {
   expectWalletBalanceOrDustyIfZero,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
-import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import { getLastZapAmountToBigNumber, liquidateV4WithZap, liquidateV4WithZapParam, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
+import { getLiquidateIsolationModeZapPath } from 'packages/base/test/utils/zap-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -70,11 +71,11 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
     );
     factory = core.plutusEcosystem!.live.plvGlpIsolationModeFactory.connect(core.hhUser1);
     unwrapper = PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.connect(
-      deployments.PlutusVaultGLPIsolationModeUnwrapperTraderV2[network].address,
+      deployments.PlutusVaultGLPIsolationModeUnwrapperTraderV4[network].address,
       core.hhUser1,
     );
     wrapper = PlutusVaultGLPIsolationModeWrapperTraderV2__factory.connect(
-      deployments.PlutusVaultGLPIsolationModeWrapperTraderV2[network].address,
+      deployments.PlutusVaultGLPIsolationModeWrapperTraderV4[network].address,
       core.hhUser1,
     );
 
@@ -117,7 +118,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
     await underlyingToken.approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
-    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
+    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(ZERO_BI);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, heldMarketId)).value)
       .to
       .eq(heldAmountWei);
@@ -167,6 +168,13 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
         toZapBigNumber(usdcDebtAmount),
         core.hhUser5.address,
       );
+      // const zapParams = await getLiquidateIsolationModeZapPath(
+      //   [heldMarketId, core.marketIds.weth, core.marketIds.usdc],
+      //   [heldUpdatedWithReward, ONE_BI, usdcDebtAmount],
+      //   unwrapper,
+      //   core
+      // );
+      zapOutputs[0].traderParams[0].trader = unwrapper.address;
       const txResult = await liquidateV4WithZap(
         core,
         solidAccountStruct,
@@ -256,6 +264,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
         toZapBigNumber(wethDebtAmount),
         core.hhUser5.address,
       );
+      zapOutputs[0].traderParams[0].trader = unwrapper.address;
       const isSuccessful = await checkForParaswapSuccess(
         liquidateV4WithZap(
           core,
@@ -367,6 +376,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
         toZapBigNumber(usdcDebtAmount),
         core.hhUser5.address,
       );
+      zapOutputs[0].traderParams[0].trader = unwrapper.address;
       const txResult = await liquidateV4WithZap(
         core,
         solidAccountStruct,
@@ -461,6 +471,7 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
         toZapBigNumber(wethDebtAmount),
         core.hhUser5.address,
       );
+      zapOutputs[0].traderParams[0].trader = unwrapper.address;
       const isSuccessful = await checkForParaswapSuccess(
         liquidateV4WithZap(
           core,
