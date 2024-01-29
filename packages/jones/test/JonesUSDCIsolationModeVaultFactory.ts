@@ -14,6 +14,7 @@ import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-const
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
+  createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForZap,
   createJonesUSDCIsolationModeVaultFactory,
@@ -31,18 +32,14 @@ describe('JonesUSDCIsolationModeVaultFactory', () => {
 
   let core: CoreProtocol;
   let jonesUSDCRegistry: JonesUSDCRegistry;
-  let vaultImplementation: TestGLPIsolationModeTokenVaultV1;
+  let vaultImplementation: JonesUSDCIsolationModeTokenVaultV1;
   let factory: JonesUSDCIsolationModeVaultFactory;
   let underlyingMarketId: BigNumber;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
-    vaultImplementation = await createContractWithAbi<TestGLPIsolationModeTokenVaultV1>(
-      TestGLPIsolationModeTokenVaultV1__factory.abi,
-      TestGLPIsolationModeTokenVaultV1__factory.bytecode,
-      [],
-    );
+    vaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     factory = await createJonesUSDCIsolationModeVaultFactory(
       core,
       jonesUSDCRegistry,

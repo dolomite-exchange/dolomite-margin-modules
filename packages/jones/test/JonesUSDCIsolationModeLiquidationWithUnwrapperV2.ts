@@ -46,6 +46,7 @@ import {
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
+import { IERC20 } from 'packages/base/src/types';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -140,6 +141,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
     expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, underlyingMarketId)).value)
       .to
       .eq(heldAmountWei);
+    await freezeAndGetOraclePrice(core.tokens.usdc);
 
     snapshotId = await snapshot();
   });
@@ -351,4 +353,12 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectWalletBalanceOrDustyIfZero(core, unwrapperForLiquidation.address, core.tokens.usdc.address, ZERO_BI);
     });
   });
+
+  async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {
+    const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
+    const price = await core.dolomiteMargin.getMarketPrice(marketId);
+    await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
+    await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+    return price.value;
+  }
 });
