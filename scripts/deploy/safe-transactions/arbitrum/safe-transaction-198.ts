@@ -1,6 +1,6 @@
-import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
-import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
+import { getAndCheckSpecificNetwork } from '../../../../src/utils/dolomite-utils';
+import { Network } from '../../../../src/utils/no-deps-constants';
+import { setupCoreProtocol } from '../../../../test/utils/setup';
 import {
   createFolder,
   DenJsonUpload,
@@ -11,35 +11,27 @@ import {
 
 /**
  * This script encodes the following transactions:
- * - Deploys and sets the new GMX isolation mode vault (for auto staking GMX rewards)
- * - Updates the GMX rewards router to the new address
+ * - Deploys a new jUSDC Token Vault to handle auto staking if jUSDC deposit incentives are disabled
  */
 async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const vaultV5 = await deployContractAndSave(
+  const vaultV7 = await deployContractAndSave(
     core.config.networkNumber,
-    'GMXIsolationModeTokenVaultV1',
+    'JonesUSDCIsolationModeTokenVaultV2',
     [],
-    'GMXIsolationModeTokenVaultV6',
+    'JonesUSDCIsolationModeTokenVaultV8',
     core.tokenVaultActionsLibraries,
   );
 
   const transactions = [
     await prettyPrintEncodedDataWithTypeSafety(
       core,
-      core.gmxEcosystem!.live,
-      'dGmx',
+      core.jonesEcosystem!.live,
+      'jUSDCIsolationModeFactory',
       'ownerSetUserVaultImplementation',
-      [vaultV5],
-    ),
-    await prettyPrintEncodedDataWithTypeSafety(
-      core,
-      core.gmxEcosystem!.live,
-      'gmxRegistry',
-      'ownerSetGmxRewardsRouter',
-      [core.gmxEcosystem!.gmxRewardsRouterV3.address],
+      [vaultV7],
     ),
   ];
 

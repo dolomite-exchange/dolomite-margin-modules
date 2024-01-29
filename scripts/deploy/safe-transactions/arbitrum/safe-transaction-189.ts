@@ -519,7 +519,7 @@ async function deployPtWstEthJun2024Updates(core: CoreProtocol): Promise<Encoded
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.wstEthJun2024.pendleRegistry,
-      core.tokens.rEth!,
+      core.tokens.wstEth!,
       core.pendleEcosystem!.wstEthJun2024.dPtWstEthJun2024,
     ),
     'PendlePtWstEthJun2024IsolationModeUnwrapperTraderV4',
@@ -530,7 +530,7 @@ async function deployPtWstEthJun2024Updates(core: CoreProtocol): Promise<Encoded
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.wstEthJun2024.pendleRegistry,
-      core.tokens.rEth!,
+      core.tokens.wstEth!,
       core.pendleEcosystem!.wstEthJun2024.dPtWstEthJun2024,
     ),
     'PendlePtWstEthJun2024IsolationModeWrapperTraderV4',
@@ -582,7 +582,7 @@ async function deployPtWstEthJun2025Updates(core: CoreProtocol): Promise<Encoded
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.wstEthJun2025.pendleRegistry,
-      core.tokens.rEth!,
+      core.tokens.wstEth!,
       core.pendleEcosystem!.wstEthJun2025.dPtWstEthJun2025,
     ),
     'PendlePtWstEthJun2025IsolationModeUnwrapperTraderV4',
@@ -593,7 +593,7 @@ async function deployPtWstEthJun2025Updates(core: CoreProtocol): Promise<Encoded
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
       core,
       core.pendleEcosystem!.wstEthJun2025.pendleRegistry,
-      core.tokens.rEth!,
+      core.tokens.wstEth!,
       core.pendleEcosystem!.wstEthJun2025.dPtWstEthJun2025,
     ),
     'PendlePtWstEthJun2025IsolationModeWrapperTraderV4',
