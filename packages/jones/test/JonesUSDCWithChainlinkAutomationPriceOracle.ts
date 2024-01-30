@@ -20,7 +20,7 @@ import {
   CustomTestVaultToken,
   IERC4626,
 } from '@dolomite-exchange/modules-base/src/types';
-import { CHAINLINK_REGISTRY_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { CHAINLINK_AUTOMATION_REGISTRY_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { createContractWithAbi, createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
@@ -57,7 +57,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
     const network = Network.ArbitrumOne;
     const blockNumber = await getRealLatestBlockNumber(true, network);
     core = await setupCoreProtocol({ blockNumber, network });
-    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[network]!, true);
+    chainlinkRegistry = await impersonate(CHAINLINK_AUTOMATION_REGISTRY_MAP[network]!, true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
     jonesUSDCRegistry = JonesUSDCRegistry__factory.connect(

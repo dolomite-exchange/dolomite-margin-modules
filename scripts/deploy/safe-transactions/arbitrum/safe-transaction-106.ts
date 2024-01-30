@@ -1,3 +1,5 @@
+import { CHAINLINK_PRICE_ORACLE_OLD_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { IChainlinkPriceOracleOld__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
 import { Network } from '../../../../packages/base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '../../../../packages/base/test/utils/setup';
@@ -12,7 +14,10 @@ async function main() {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
-  const chainlinkPriceOracleOld = core.chainlinkPriceOracleOld!;
+  const chainlinkPriceOracleOld = IChainlinkPriceOracleOld__factory.connect(
+    CHAINLINK_PRICE_ORACLE_OLD_MAP[core.config.network]!,
+    core.hhUser1,
+  );
   const bridgedUsdc = core.tokens.usdc!;
   await prettyPrintEncodedDataWithTypeSafety(
     core,

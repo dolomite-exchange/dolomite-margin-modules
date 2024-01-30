@@ -110,11 +110,6 @@
       "transaction": "0x71895c6cacea2da300f1c7de6e4c8bfc6d0b30c339eac2bbca8730cc2b638e75",
       "isVerified": true
     },
-    "421613": {
-      "address": "0x68c4FA76926A211AC5456E5C1358D82Dd868f1B6",
-      "transaction": "0x7fd43ab81e5a3095bac712d26b3b8e66ff474af3dfe8b71f2c31b90026eb7bb8",
-      "isVerified": true
-    }
   },
   "AlwaysZeroInterestSetter": {
     "42161": {
@@ -122,25 +117,10 @@
       "transaction": "0x6992828fe897b2b26ee8707e07019491f40b9b660760a39a8e85b46ef2057e7c",
       "isVerified": true
     },
-    "421613": {
-      "address": "0x2536ef4105a6173683C7fFCE9547091960F6d939",
-      "transaction": "",
-      "isVerified": true
-    }
   },
   "AtlasSIUserVaultFactory": {
-    "421613": {
-      "address": "0x823F4f7582fcBbe4eB1239430191C29C494Dd51c",
-      "transaction": "0xe8d85a24b5a78382babc16667be3898cfda9e2ad073c6c6072bf1dae4dd73952",
-      "isVerified": true
-    }
   },
   "AtlasSIUserVaultV1": {
-    "421613": {
-      "address": "0x7FD65B49ee2E2faC8077932953e993e91b6f6621",
-      "transaction": "0x7d5e93aa20528a7186f824f0a777a5dc6cd8180f889060139cbb7c80739ed2eb",
-      "isVerified": true
-    }
   },
   "ChainlinkPriceOracle": {
     "42161": {
@@ -1366,11 +1346,6 @@
       "transaction": "0xcb917ae8109a407089912e7710e1eccc05aa34a399b2ebc312591281c0f31c60",
       "isVerified": true
     },
-    "421613": {
-      "address": "0x48dDadaC3d47035926C82480CB6eBc15EbBbE0fF",
-      "transaction": "0x35c70c5fe066259a69698bee6faf76e480f82e13653011eda36c3784cf1652e1",
-      "isVerified": true
-    }
   },
   "Stablecoin8L92ULinearStepFunctionInterestSetter": {
     "42161": {
@@ -1378,18 +1353,8 @@
       "transaction": "0xd37eb92f872dfbd311ce27d16cf649f62a298a2cc28d7bbb603deae2b64a62a2",
       "isVerified": true
     },
-    "421613": {
-      "address": "0x8A5B9528E17BE5f263aAe5603D69043B4902687E",
-      "transaction": "0xdbe96679fe7803b74bbc40daaea0744169fbce979817d620e3c02806273a86b6",
-      "isVerified": true
-    }
   },
   "TestAdminPriceOracleV1": {
-    "421613": {
-      "address": "0xB54b35897388d0E022a66DDf4ec71B01049c403D",
-      "transaction": "0x3893a6904daab16ed655b05ec9631066a27cb948a2a1c42b0d8c7b952fceb95e",
-      "isVerified": true
-    }
   },
   "VesterExploder": {
     "42161": {

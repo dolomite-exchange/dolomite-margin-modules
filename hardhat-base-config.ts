@@ -42,11 +42,6 @@ export const base_config: HardhatUserConfig = {
       gas: 50_000_000, // 50M gas
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
-    [NetworkName.ArbitrumGoerli]: {
-      chainId: 421613,
-      url: arbitrumGoerliWeb3Url,
-      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
-    },
   },
   solidity: {
     compilers: [

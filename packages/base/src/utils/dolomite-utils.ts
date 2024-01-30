@@ -181,7 +181,6 @@ export function heldWeiToOwedWei(
 
 const NETWORK_TO_VALID_MAP: Record<Network, boolean> = {
   [Network.ArbitrumOne]: true,
-  [Network.ArbitrumGoerli]: true,
 };
 
 export async function getAnyNetwork(): Promise<Network> {

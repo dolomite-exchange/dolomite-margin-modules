@@ -20,6 +20,5 @@
     "url": "https://github.com/dolomite-exchange/dolomite-margin-modules.git",
     "directory": "packages/pendle"
   },
-  "devDependencies": {
-  }
+  "license": "GPL-2.0"
 }

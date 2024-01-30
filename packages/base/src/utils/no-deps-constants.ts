@@ -5,17 +5,14 @@ import { GenericTraderParamStruct } from './index';
 
 export enum Network {
   ArbitrumOne = '42161',
-  ArbitrumGoerli = '421613',
 }
 
 export enum NetworkName {
   ArbitrumOne = 'arbitrum_one',
-  ArbitrumGoerli = 'arbitrum_goerli',
 }
 
 export const networkToNetworkNameMap: Record<Network, NetworkName> = {
   [Network.ArbitrumOne]: NetworkName.ArbitrumOne,
-  [Network.ArbitrumGoerli]: NetworkName.ArbitrumGoerli,
 };
 
 const typedNetworkIdString = process.env.NETWORK_ID || Network.ArbitrumOne;
@@ -25,12 +22,10 @@ export const NO_EXPIRY = BigNumber.from('0');
 
 export const NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP: Record<Network, number> = {
   [Network.ArbitrumOne]: 167_300_000,
-  [Network.ArbitrumGoerli]: 14_700_000,
 };
 
 export const NETWORK_TO_REGISTRY_PROXY_MAP: Record<Network, number> = {
   [Network.ArbitrumOne]: 153_161_253,
-  [Network.ArbitrumGoerli]: 153_161_253,
 };
 
 export const DEFAULT_BLOCK_NUMBER = NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[NETWORK_ID];

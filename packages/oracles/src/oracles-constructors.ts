@@ -1,11 +1,16 @@
+import { CHAINLINK_PRICE_ORACLE_OLD_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { BigNumberish } from 'ethers';
 import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { IAlgebraV3Pool, IERC20 } from '@dolomite-exchange/modules-base/src/types';
+import { IChainlinkPriceOracleOld__factory } from './types';
 
 export async function getChainlinkPriceOracleParams(
   core: CoreProtocol,
 ): Promise<[string[], string[], BigNumberish[], string[], string]> {
-  const oldPriceOracle = core.chainlinkPriceOracleOld!;
+  const oldPriceOracle = IChainlinkPriceOracleOld__factory.connect(
+    CHAINLINK_PRICE_ORACLE_OLD_MAP[core.config.network]!,
+    core.hhUser1,
+  );
   const tokens: string[] = [];
   const aggregators: string[] = [];
   const tokenDecimals: number[] = [];

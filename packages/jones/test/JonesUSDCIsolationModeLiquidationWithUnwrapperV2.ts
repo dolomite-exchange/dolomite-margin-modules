@@ -39,7 +39,7 @@ import {
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import {
-  CoreProtocol,
+  CoreProtocolType,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -59,10 +59,12 @@ const liquidationSpreadDenominator = BigNumber.from('100');
 const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
 
+const network = Network.ArbitrumOne;
+
 describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolType<typeof network>;
   let underlyingToken: IERC4626;
   let underlyingMarketId: BigNumber;
   let jonesUSDCRegistry: JonesUSDCRegistry;
@@ -77,12 +79,12 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
   let solidAccountStruct: AccountInfoStruct;
 
   before(async () => {
-    const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
+    const blockNumber = await getRealLatestBlockNumber(true, network);
     core = await setupCoreProtocol({
       blockNumber,
-      network: Network.ArbitrumOne,
+      network,
     });
-    underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
+    underlyingToken = core.jonesEcosystem.jUSDC.connect(core.hhUser1);
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     factory = await createJonesUSDCIsolationModeVaultFactory(
@@ -131,9 +133,9 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
     liquidAccountStruct = { owner: vault.address, number: otherAccountNumber };
     solidAccountStruct = { owner: core.hhUser5.address, number: defaultAccountNumber };
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
-    await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem!.jUSDC.connect(core.hhUser1).approve(vault.address, heldAmountWei);
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem.glpAdapter);
+    await core.jonesEcosystem.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
+    await core.jonesEcosystem.jUSDC.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
@@ -245,7 +247,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectWalletBalanceOrDustyIfZero(
         core,
         unwrapperForLiquidation.address,
-        core.jonesEcosystem!.jUSDC.address,
+        core.jonesEcosystem.jUSDC.address,
         ZERO_BI,
       );
       await expectWalletBalanceOrDustyIfZero(core, unwrapperForLiquidation.address, core.tokens.usdc.address, ZERO_BI);
@@ -345,7 +347,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectWalletBalanceOrDustyIfZero(
         core,
         unwrapperForLiquidation.address,
-        core.jonesEcosystem!.jUSDC.address,
+        core.jonesEcosystem.jUSDC.address,
         ZERO_BI,
       );
       await expectWalletBalanceOrDustyIfZero(core, unwrapperForLiquidation.address, core.tokens.usdc.address, ZERO_BI);
