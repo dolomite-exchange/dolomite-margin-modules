@@ -1,37 +1,21 @@
-import { TestInterestSetter } from '@dolomite-exchange/modules-interest-setters/src/types';
-import {
-  IPendleGLPRegistry,
-  IPendlePtMarket,
-  IPendlePtOracle,
-  IPendlePtToken, IPendleRegistry,
-  IPendleRouter, IPendleSyToken,
-  IPendleYtToken,
-  PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtIsolationModeVaultFactory,
-  PendleYtGLP2024IsolationModeVaultFactory,
-} from '@dolomite-exchange/modules-pendle/src/types';
-import {
-  DolomiteCompatibleWhitelistForPlutusDAO,
-  IPlutusVaultGLPFarm,
-  IPlutusVaultGLPIsolationModeVaultFactory,
-  IPlutusVaultGLPRouter,
-  IPlutusVaultRegistry,
-  PlutusVaultGLPIsolationModeUnwrapperTraderV1,
-  PlutusVaultGLPIsolationModeWrapperTraderV1,
-} from '@dolomite-exchange/modules-plutus/src/types';
-import { IUmamiAssetVault, IUmamiAssetVaultStorageViewer } from '@dolomite-exchange/modules-umami/src/types';
-import { address } from '@dolomite-margin/dist/src';
-import { Signer } from 'ethers';
-import {
-  IAlgebraV3Pool,
-  IERC20,
-  IERC4626,
-  IOdosRouter,
-  IParaswapAugustusRouter,
-  IParaswapFeeClaimer,
-  ParaswapAggregatorTraderV2, RegistryProxy, TestDolomiteMarginExchangeWrapper, TestPriceOracle,
-} from '../../../src/types';
+import { IOdosRouter, IOdosRouter__factory, } from '../../../src/types';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ODOS_ROUTER_MAP } from '../../../src/utils/constants';
 
 export interface OdosEcosystem {
   odosRouter: IOdosRouter;
+}
+
+export async function createOdosEcosystem(
+  network: Network,
+  signer: SignerWithAddress,
+): Promise<OdosEcosystem> {
+  if (!ODOS_ROUTER_MAP[network]) {
+    return Promise.reject(`Invalid network, found ${network}`);
+  }
+
+  return {
+    odosRouter: IOdosRouter__factory.connect(ODOS_ROUTER_MAP[network]!, signer),
+  };
 }

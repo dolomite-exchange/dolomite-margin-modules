@@ -1,130 +1,4 @@
-import {
-  ARBIsolationModeVaultFactory__factory,
-  ARBRegistry__factory,
-  IARB,
-  IARB__factory,
-  IARBIsolationModeVaultFactory,
-  IARBRegistry,
-} from '@dolomite-exchange/modules-arb/src/types';
-import {
-  GLPIsolationModeUnwrapperTraderV1,
-  GLPIsolationModeUnwrapperTraderV1__factory,
-  GLPIsolationModeWrapperTraderV1,
-  GLPIsolationModeWrapperTraderV1__factory,
-  IEsGmxDistributor,
-  IEsGmxDistributor__factory,
-  IGLPIsolationModeVaultFactoryOld,
-  IGLPIsolationModeVaultFactoryOld__factory,
-  IGLPManager,
-  IGLPManager__factory,
-  IGLPRewardsRouterV2,
-  IGLPRewardsRouterV2__factory,
-  IGMXIsolationModeVaultFactory,
-  IGMXIsolationModeVaultFactory__factory,
-  IGmxRegistryV1,
-  IGmxRegistryV1__factory,
-  IGmxRewardRouterV2,
-  IGmxRewardRouterV2__factory,
-  IGmxVault,
-  IGmxVault__factory,
-  IGmxVester,
-  IGmxVester__factory,
-  ISGMX,
-  ISGMX__factory,
-} from '@dolomite-exchange/modules-glp/src/types';
-import {
-  IGmxDataStore,
-  IGmxDataStore__factory,
-  IGmxDepositHandler,
-  IGmxDepositHandler__factory,
-  IGmxExchangeRouter,
-  IGmxExchangeRouter__factory,
-  IGmxMarketToken,
-  IGmxMarketToken__factory,
-  IGmxReader,
-  IGmxReader__factory,
-  IGmxRouter,
-  IGmxRouter__factory,
-  IGmxWithdrawalHandler,
-  IGmxWithdrawalHandler__factory,
-} from '@dolomite-exchange/modules-gmx-v2/src/types';
-import {
-  TestInterestSetter,
-  TestInterestSetter__factory,
-} from '@dolomite-exchange/modules-interest-setters/src/types';
-import {
-  IJonesGLPAdapter,
-  IJonesGLPAdapter__factory,
-  IJonesGLPVaultRouter,
-  IJonesGLPVaultRouter__factory,
-  IJonesUSDCFarm,
-  IJonesUSDCFarm__factory,
-  IJonesUSDCRegistry,
-  IJonesUSDCRegistry__factory,
-  IJonesWhitelistController,
-  IJonesWhitelistController__factory,
-  JonesUSDCIsolationModeVaultFactory,
-  JonesUSDCIsolationModeVaultFactory__factory,
-} from '@dolomite-exchange/modules-jones/src/types';
-import {
-  VesterImplementationV1,
-  VesterImplementationV1__factory,
-  VesterProxy,
-  VesterProxy__factory,
-} from '@dolomite-exchange/modules-liquidity-mining/src/types';
-import {
-  IChainlinkPriceOracle,
-  IChainlinkPriceOracle__factory,
-  IChainlinkRegistry,
-  IChainlinkRegistry__factory,
-} from '@dolomite-exchange/modules-oracles/src/types';
-import {
-  IPendleGLPRegistry,
-  IPendleGLPRegistry__factory,
-  IPendlePtMarket,
-  IPendlePtMarket__factory,
-  IPendlePtOracle,
-  IPendlePtOracle__factory,
-  IPendlePtToken,
-  IPendlePtToken__factory,
-  IPendleRegistry,
-  IPendleRegistry__factory,
-  IPendleRouter,
-  IPendleRouter__factory,
-  IPendleSyToken,
-  IPendleSyToken__factory,
-  IPendleYtToken,
-  IPendleYtToken__factory,
-  PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtGLP2024IsolationModeVaultFactory__factory,
-  PendlePtIsolationModeVaultFactory,
-  PendlePtIsolationModeVaultFactory__factory,
-  PendleYtGLP2024IsolationModeVaultFactory,
-  PendleYtGLP2024IsolationModeVaultFactory__factory,
-} from '@dolomite-exchange/modules-pendle/src/types';
-import {
-  DolomiteCompatibleWhitelistForPlutusDAO,
-  DolomiteCompatibleWhitelistForPlutusDAO__factory,
-  IPlutusVaultGLPFarm,
-  IPlutusVaultGLPFarm__factory,
-  IPlutusVaultGLPIsolationModeVaultFactory,
-  IPlutusVaultGLPIsolationModeVaultFactory__factory,
-  IPlutusVaultGLPRouter,
-  IPlutusVaultGLPRouter__factory,
-  IPlutusVaultRegistry,
-  IPlutusVaultRegistry__factory,
-  PlutusVaultGLPIsolationModeUnwrapperTraderV1,
-  PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory,
-  PlutusVaultGLPIsolationModeWrapperTraderV1,
-  PlutusVaultGLPIsolationModeWrapperTraderV1__factory,
-} from '@dolomite-exchange/modules-plutus/src/types';
-import {
-  IUmamiAssetVault,
-  IUmamiAssetVault__factory,
-  IUmamiAssetVaultStorageViewer,
-  IUmamiAssetVaultStorageViewer__factory,
-} from '@dolomite-exchange/modules-umami/src/types';
-import { ApiToken, BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk/dist';
+import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk/dist';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
 import * as DolomiteAmmFactoryJson from '@dolomite-margin/deployed-contracts/DolomiteAmmFactory.json';
@@ -142,66 +16,30 @@ import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
 import Deployments, * as deployments from '../../../../scripts/deployments.json';
 import {
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
-  IAlgebraV3Pool,
-  IAlgebraV3Pool__factory,
-  IBorrowPositionProxyV2,
   IBorrowPositionProxyV2__factory,
-  IDepositWithdrawalProxy,
   IDepositWithdrawalProxy__factory,
-  IDolomiteAmmFactory,
   IDolomiteAmmFactory__factory,
-  IDolomiteAmmRouterProxy,
   IDolomiteAmmRouterProxy__factory,
-  IDolomiteInterestSetter,
-  IDolomiteInterestSetter__factory,
   IDolomiteMargin,
   IDolomiteMargin__factory,
   IDolomiteRegistry,
   IDolomiteRegistry__factory,
   IERC20,
   IERC20__factory,
-  IERC20Mintable,
-  IERC20Mintable__factory,
-  IERC4626,
-  IERC4626__factory,
-  IEventEmitterRegistry,
   IEventEmitterRegistry__factory,
-  IExpiry,
   IExpiry__factory,
-  IGenericTraderProxyV1,
   IGenericTraderProxyV1__factory,
-  ILiquidatorAssetRegistry,
   ILiquidatorAssetRegistry__factory,
-  ILiquidatorProxyV1,
   ILiquidatorProxyV1__factory,
   ILiquidatorProxyV1WithAmm__factory,
-  ILiquidatorProxyV4WithGenericTrader,
   ILiquidatorProxyV4WithGenericTrader__factory,
-  IOdosRouter,
-  IOdosRouter__factory,
-  IParaswapAugustusRouter,
-  IParaswapAugustusRouter__factory,
-  IParaswapFeeClaimer,
-  IParaswapFeeClaimer__factory,
-  IPartiallyDelayedMultiSig,
   IPartiallyDelayedMultiSig__factory,
-  IWETH,
   IWETH__factory,
-  ParaswapAggregatorTraderV2,
-  ParaswapAggregatorTraderV2__factory,
   RegistryProxy,
   RegistryProxy__factory,
-  TestDolomiteMarginExchangeWrapper,
-  TestDolomiteMarginExchangeWrapper__factory,
-  TestPriceOracle,
-  TestPriceOracle__factory,
 } from '../../src/types';
 import {
   ARB_MAP,
-  ATLAS_SI_TOKEN_MAP,
-  BN_GMX_MAP,
   CHAINLINK_AUTOMATION_REGISTRY_MAP,
   CHAINLINK_PRICE_ORACLE_MAP,
   D_ARB_MAP,
@@ -215,104 +53,52 @@ import {
   DPT_WST_ETH_JUN_2024_MAP,
   DPT_WST_ETH_JUN_2025_MAP,
   DPX_MAP,
-  DPX_WETH_V3_POOL_MAP,
   DYT_GLP_2024_MAP,
-  ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP,
-  ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP,
-  ES_GMX_MAP,
-  FS_GLP_MAP,
-  GLP_MANAGER_MAP,
-  GLP_MAP,
-  GLP_REWARD_ROUTER_MAP,
-  GMX_DATASTORE_MAP,
-  GMX_DEPOSIT_HANDLER_MAP,
-  GMX_DEPOSIT_VAULT_MAP,
-  GMX_ETH_USD_MARKET_TOKEN_MAP,
-  GMX_EXCHANGE_ROUTER_MAP,
-  GMX_EXECUTOR_MAP,
   GMX_MAP,
-  GMX_READER_MAP,
-  GMX_REWARD_ROUTER_V2_MAP,
-  GMX_REWARD_ROUTER_V3_MAP,
-  GMX_ROUTER_MAP,
-  GMX_VAULT_MAP,
-  GMX_WITHDRAWAL_HANDLER_MAP,
-  GMX_WITHDRAWAL_VAULT_MAP,
   GRAIL_MAP,
-  GRAIL_USDC_V3_POOL_MAP,
-  GRAIL_WETH_V3_POOL_MAP,
-  JONES_ECOSYSTEM_GOVERNOR_MAP,
-  JONES_GLP_ADAPTER_MAP,
-  JONES_GLP_VAULT_ROUTER_MAP,
-  JONES_JUSDC_FARM_MAP,
-  JONES_JUSDC_MAP,
-  JONES_JUSDC_RECEIPT_TOKEN_MAP,
   JONES_MAP,
-  JONES_WETH_V3_POOL_MAP,
-  JONES_WHITELIST_CONTROLLER_MAP,
   LINK_MAP,
   MAGIC_GLP_MAP,
   MAGIC_MAP,
   MIM_MAP,
   NATIVE_USDC_MAP,
-  ODOS_ROUTER_MAP,
-  PARASWAP_AUGUSTUS_ROUTER_MAP,
-  PARASWAP_FEE_CLAIMER_MAP,
-  PARASWAP_TRANSFER_PROXY_MAP,
   PENDLE_MAP,
-  PENDLE_PT_GLP_2024_MARKET_MAP,
-  PENDLE_PT_GLP_2024_TOKEN_MAP,
-  PENDLE_PT_ORACLE_MAP,
-  PENDLE_PT_RETH_MARKET_MAP,
-  PENDLE_PT_RETH_TOKEN_MAP,
-  PENDLE_PT_WST_ETH_2024_MARKET_MAP,
-  PENDLE_PT_WST_ETH_2024_TOKEN_MAP,
-  PENDLE_PT_WST_ETH_2025_MARKET_MAP,
-  PENDLE_PT_WST_ETH_2025_TOKEN_MAP,
-  PENDLE_ROUTER_MAP,
-  PENDLE_SY_GLP_TOKEN_MAP,
-  PENDLE_SY_RETH_TOKEN_MAP,
-  PENDLE_SY_WST_ETH_TOKEN_MAP,
-  PENDLE_YT_GLP_2024_TOKEN_MAP,
-  PLS_TOKEN_MAP,
-  PLV_GLP_FARM_MAP,
-  PLV_GLP_MAP,
-  PLV_GLP_ROUTER_MAP,
   PREMIA_MAP,
-  PREMIA_WETH_V3_POOL_MAP,
   RDNT_MAP,
   RETH_MAP,
-  S_GLP_MAP,
-  S_GMX_MAP,
-  SBF_GMX_MAP,
   SIZE_MAP,
-  SIZE_WETH_V3_POOL_MAP,
   ST_ETH_MAP,
-  UMAMI_CONFIGURATOR_MAP,
-  UMAMI_LINK_VAULT_MAP,
-  UMAMI_STORAGE_VIEWER_MAP,
-  UMAMI_UNI_VAULT_MAP,
-  UMAMI_USDC_VAULT_MAP,
-  UMAMI_WBTC_VAULT_MAP,
-  UMAMI_WETH_VAULT_MAP,
   USDC_MAP,
   USDT_MAP,
-  V_GLP_MAP,
-  V_GMX_MAP,
   WBTC_MAP,
   WETH_MAP,
   WST_ETH_MAP,
 } from '../../src/utils/constants';
-import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import {
   Network,
   NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
   NETWORK_TO_REGISTRY_PROXY_MAP,
   NetworkName,
 } from '../../src/utils/no-deps-constants';
-import { CoreProtocolArbitrumOne, CoreProtocolBase, CoreProtocolZkEvm } from './CoreProtocol';
+import { CoreProtocolArbitrumOne, CoreProtocolBase, CoreProtocolPolygonZkEvm } from './core-protocol';
 import { createDolomiteRegistryImplementation } from './dolomite';
 import { impersonate, impersonateOrFallback, resetFork } from './index';
+import { createTestEcosystem } from './ecosystem-utils/testers';
+import { createInterestSetters } from './ecosystem-utils/interest-setters';
+import { IChainlinkPriceOracle__factory, IChainlinkRegistry__factory } from '../../../../src/types';
+import { IChainlinkAutomationRegistry__factory } from '@dolomite-exchange/modules-jones/src/types';
+import { createAbraEcosystem } from './ecosystem-utils/abra';
+import { createArbEcosystem } from './ecosystem-utils/arb';
+import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
+import { createCamelotEcosystem } from './ecosystem-utils/camelot';
+import { createJonesEcosystem } from './ecosystem-utils/jones';
+import { createLiquidityMiningEcosystem } from './ecosystem-utils/liquidity-mining';
+import { createOdosEcosystem } from './ecosystem-utils/odos';
+import { createParaswapEcosystem } from './ecosystem-utils/paraswap';
+import { createPendleEcosystem } from './ecosystem-utils/pendle';
+import { createPlutusEcosystem } from './ecosystem-utils/plutus';
+import { createPremiaEcosystem } from './ecosystem-utils/premia';
+import { createUmamiEcosystem } from './ecosystem-utils/umami';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -479,9 +265,9 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 
 export type CoreProtocolType<T extends Network> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
-  : CoreProtocolZkEvm;
+  : CoreProtocolPolygonZkEvm;
 
-export type CoreProtocol = CoreProtocolArbitrumOne | CoreProtocolZkEvm;
+export type CoreProtocol = CoreProtocolArbitrumOne | CoreProtocolPolygonZkEvm;
 
 export async function setupCoreProtocol<T extends Network>(
   config: CoreProtocolSetupConfig<T>,
@@ -517,7 +303,7 @@ export async function setupCoreProtocol<T extends Network>(
 
   const chainlinkAutomationRegistry = getContractOpt(
     CHAINLINK_AUTOMATION_REGISTRY_MAP[config.network],
-    IChainlinkRegistry__factory.connect,
+    IChainlinkAutomationRegistry__factory.connect,
     governance,
   );
 
@@ -615,7 +401,7 @@ export async function setupCoreProtocol<T extends Network>(
 
   const tokenVaultActionsLibraries = await createTokenVaultActionsLibraries(config);
 
-  const coreProtocolBase: CoreProtocolBase = {
+  const coreProtocolBase: CoreProtocolBase<T> = {
     borrowPositionProxyV2,
     delayedMultiSig,
     depositWithdrawalProxy,
@@ -796,52 +582,6 @@ export async function setupTestMarket(
   );
 }
 
-async function createTestEcosystem<T extends Network>(
-  dolomiteMargin: IDolomiteMargin,
-  dolomiteRegistry: IDolomiteRegistry,
-  governor: SignerWithAddress,
-  signer: SignerWithAddress,
-  config: CoreProtocolSetupConfig<T>,
-): Promise<TestEcosystem | undefined> {
-  if (network.name !== 'hardhat') {
-    return undefined;
-  }
-
-  if (config.blockNumber >= NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[config.network]) {
-    const genericTrader = await dolomiteRegistry.genericTraderProxy();
-    await dolomiteMargin.ownerSetGlobalOperator(genericTrader, true);
-    const registryProxy = RegistryProxy__factory.connect(dolomiteRegistry.address, governor);
-    const newRegistry = await createContractWithAbi<DolomiteRegistryImplementation>(
-      DolomiteRegistryImplementation__factory.abi,
-      DolomiteRegistryImplementation__factory.bytecode,
-      [],
-    );
-    await registryProxy.upgradeTo(newRegistry.address);
-    await dolomiteRegistry.ownerSetSlippageToleranceForPauseSentinel('70000000000000000'); // 7%
-  }
-
-  const testExchangeWrapper = await createContractWithAbi<TestDolomiteMarginExchangeWrapper>(
-    TestDolomiteMarginExchangeWrapper__factory.abi,
-    TestDolomiteMarginExchangeWrapper__factory.bytecode,
-    [dolomiteMargin.address],
-  );
-  const testInterestSetter = await createContractWithAbi<TestInterestSetter>(
-    TestInterestSetter__factory.abi,
-    TestInterestSetter__factory.bytecode,
-    [],
-  );
-  const testPriceOracle = await createContractWithAbi<TestPriceOracle>(
-    TestPriceOracle__factory.abi,
-    TestPriceOracle__factory.bytecode,
-    [],
-  );
-  return {
-    testExchangeWrapper: testExchangeWrapper.connect(signer),
-    testInterestSetter: testInterestSetter.connect(signer),
-    testPriceOracle: testPriceOracle.connect(signer),
-  };
-}
-
 async function createTokenVaultActionsLibraries<T extends Network>(
   config: CoreProtocolSetupConfig<T>,
 ): Promise<Record<string, string>> {
@@ -858,583 +598,7 @@ async function createTokenVaultActionsLibraries<T extends Network>(
   };
 }
 
-async function createAbraEcosystem(network: Network, signer: SignerWithAddress): Promise<AbraEcosystem> {
-  if (network !== Network.ArbitrumOne) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  return {
-    magicGlp: getContract(MAGIC_GLP_MAP[network]?.address as string, IERC4626__factory.connect, signer),
-  };
-}
-
-async function createArbEcosystem(network: Network, signer: SignerWithAddress): Promise<ArbEcosystem> {
-  if (network !== Network.ArbitrumOne) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  return {
-    arb: getContract(ARB_MAP[network]?.address as string, IARB__factory.connect, signer),
-    live: {
-      dArb: getContract(
-        (Deployments.ARBIsolationModeVaultFactory as any)[network].address,
-        ARBIsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      arbRegistry: getContract(
-        (Deployments.ARBRegistryProxy as any)[network].address,
-        ARBRegistry__factory.connect,
-        signer,
-      ),
-      arbRegistryProxy: getContract(
-        (Deployments.ARBRegistryProxy as any)[network].address,
-        RegistryProxy__factory.connect,
-        signer,
-      ),
-    },
-  };
-}
-
-async function createCamelotEcosystem(
-  network: Network,
-  signer: SignerWithAddress,
-): Promise<CamelotEcosystem> {
-  if (network !== Network.ArbitrumOne) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  return {
-    dpxWethV3Pool: getContract(DPX_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
-    grailUsdcV3Pool: getContract(GRAIL_USDC_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
-    grailWethV3Pool: getContract(GRAIL_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
-    sizeWethV3Pool: getContract(SIZE_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
-  };
-}
-
-async function createGmxEcosystem(network: Network, signer: SignerWithAddress): Promise<GmxEcosystem> {
-  if (network !== Network.ArbitrumOne) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  const esGmxDistributorAddressForGlp = ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP[network]!;
-  const esGmxDistributorAddressForGmx = ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP[network]!;
-
-  const esGmxDistributorForGlp = getContract(esGmxDistributorAddressForGlp, IEsGmxDistributor__factory.connect, signer);
-  const esGmxAdminForGlp = await impersonateOrFallback(
-    await esGmxDistributorForGlp.connect(signer).admin(),
-    true,
-    signer,
-  );
-  const esGmxDistributorForGmx = getContract(esGmxDistributorAddressForGmx, IEsGmxDistributor__factory.connect, signer);
-  const esGmxAdminForGmx = await impersonateOrFallback(
-    await esGmxDistributorForGmx.connect(signer).admin(),
-    true,
-    signer,
-  );
-  return {
-    bnGmx: getContract(BN_GMX_MAP[network] as string, IERC20__factory.connect, signer),
-    esGmx: getContract(ES_GMX_MAP[network] as string, IERC20Mintable__factory.connect, signer),
-    esGmxDistributorForStakedGlp: esGmxDistributorForGlp.connect(esGmxAdminForGlp),
-    esGmxDistributorForStakedGmx: esGmxDistributorForGmx.connect(esGmxAdminForGmx),
-    fsGlp: getContract(FS_GLP_MAP[network] as string, IERC20__factory.connect, signer),
-    glp: getContract(GLP_MAP[network] as string, IERC20__factory.connect, signer),
-    glpManager: getContract(
-      GLP_MANAGER_MAP[network] as string,
-      IGLPManager__factory.connect,
-      signer,
-    ),
-    glpRewardsRouter: getContract(
-      GLP_REWARD_ROUTER_MAP[network] as string,
-      IGLPRewardsRouterV2__factory.connect,
-      signer,
-    ),
-    gmx: getContract(GMX_MAP[network]!.address, IERC20__factory.connect, signer),
-    gmxRewardsRouterV2: getContract(
-      GMX_REWARD_ROUTER_V2_MAP[network] as string,
-      IGmxRewardRouterV2__factory.connect,
-      signer,
-    ),
-    gmxRewardsRouterV3: getContract(
-      GMX_REWARD_ROUTER_V3_MAP[network] as string,
-      IGmxRewardRouterV2__factory.connect,
-      signer,
-    ),
-    gmxVault: getContract(GMX_VAULT_MAP[network] as string, IGmxVault__factory.connect, signer),
-    sGlp: getContract(S_GLP_MAP[network] as string, IERC20__factory.connect, signer),
-    sGmx: getContract(S_GMX_MAP[network] as string, ISGMX__factory.connect, signer),
-    sbfGmx: getContract(SBF_GMX_MAP[network] as string, IERC20__factory.connect, signer),
-    vGlp: getContract(V_GLP_MAP[network] as string, IGmxVester__factory.connect, signer),
-    vGmx: getContract(V_GMX_MAP[network] as string, IGmxVester__factory.connect, signer),
-    live: {
-      dGlp: getContract(
-        (Deployments.GLPIsolationModeVaultFactory as any)[network]?.address,
-        IGLPIsolationModeVaultFactoryOld__factory.connect,
-        signer,
-      ),
-      dGmx: getContract(
-        (Deployments.GMXIsolationModeVaultFactory as any)[network]?.address,
-        IGMXIsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      glpIsolationModeUnwrapperTraderV1: getContract(
-        (Deployments.GLPIsolationModeUnwrapperTraderV1 as any)[network]?.address,
-        GLPIsolationModeUnwrapperTraderV1__factory.connect,
-        signer,
-      ),
-      glpIsolationModeWrapperTraderV1: getContract(
-        (Deployments.GLPIsolationModeWrapperTraderV1 as any)[network]?.address,
-        GLPIsolationModeWrapperTraderV1__factory.connect,
-        signer,
-      ),
-      gmxRegistry: getContract(
-        (Deployments.GmxRegistryProxy as any)[network]?.address,
-        IGmxRegistryV1__factory.connect,
-        signer,
-      ),
-      gmxRegistryProxy: getContract(
-        (Deployments.GmxRegistryProxy as any)[network]?.address,
-        RegistryProxy__factory.connect,
-        signer,
-      ),
-    },
-  };
-}
-
-async function createInterestSetters(
-  network: Network,
-  signer: SignerWithAddress,
-): Promise<InterestSetters> {
-  return {
-    alwaysZeroInterestSetter: IDolomiteInterestSetter__factory.connect(
-      deployments.AlwaysZeroInterestSetter[network].address,
-      signer,
-    ),
-    linearStepFunction6L94UInterestSetter: IDolomiteInterestSetter__factory.connect(
-      deployments.Stablecoin6L94ULinearStepFunctionInterestSetter[network].address,
-      signer,
-    ),
-    linearStepFunction8L92UInterestSetter: IDolomiteInterestSetter__factory.connect(
-      deployments.Stablecoin8L92ULinearStepFunctionInterestSetter[network].address,
-      signer,
-    ),
-    linearStepFunction14L86UInterestSetter: IDolomiteInterestSetter__factory.connect(
-      deployments.Altcoin14L86ULinearStepFunctionInterestSetter[network].address,
-      signer,
-    ),
-  };
-}
-
-async function createJonesEcosystem(network: Network, signer: SignerWithAddress): Promise<JonesEcosystem> {
-  if (network !== Network.ArbitrumOne) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  const whitelist = getContract(
-    JONES_WHITELIST_CONTROLLER_MAP[network] as string,
-    IJonesWhitelistController__factory.connect,
-    signer,
-  );
-  return {
-    admin: await impersonateOrFallback(JONES_ECOSYSTEM_GOVERNOR_MAP[network]!, true, signer),
-    glpAdapter: getContract(
-      JONES_GLP_ADAPTER_MAP[network] as string,
-      IJonesGLPAdapter__factory.connect,
-      signer,
-    ),
-    glpVaultRouter: getContract(
-      JONES_GLP_VAULT_ROUTER_MAP[network] as string,
-      IJonesGLPVaultRouter__factory.connect,
-      signer,
-    ),
-    jonesWethV3Pool: getContract(JONES_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
-    jUSDC: getContract(JONES_JUSDC_MAP[network] as string, IERC4626__factory.connect, signer),
-    jUSDCFarm: getContract(JONES_JUSDC_FARM_MAP[network] as string, IJonesUSDCFarm__factory.connect, signer),
-    usdcReceiptToken: getContract(
-      JONES_JUSDC_RECEIPT_TOKEN_MAP[network] as string,
-      IERC4626__factory.connect,
-      signer,
-    ),
-    whitelistController: whitelist,
-    live: {
-      jUSDCIsolationModeFactory: getContract(
-        (Deployments.JonesUSDCIsolationModeVaultFactory as any)[network]?.address,
-        JonesUSDCIsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      jonesUSDCRegistry: getContract(
-        (Deployments.JonesUSDCRegistryProxy as any)[network]?.address,
-        IJonesUSDCRegistry__factory.connect,
-        signer,
-      ),
-      jonesUSDCRegistryProxy: getContract(
-        (Deployments.JonesUSDCRegistryProxy as any)[network]?.address,
-        RegistryProxy__factory.connect,
-        signer,
-      ),
-    },
-  };
-}
-
-async function createGmxEcosystemV2(network: Network, signer: SignerWithAddress): Promise<GmxEcosystemV2> {
-  if (network !== Network.ArbitrumOne) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  return {
-    gmxDepositHandler: getContract(
-      GMX_DEPOSIT_HANDLER_MAP[network] as string,
-      IGmxDepositHandler__factory.connect,
-      signer,
-    ),
-    gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network] as string, true, signer),
-    gmxEthUsdMarketToken: getContract(
-      GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
-      IGmxMarketToken__factory.connect,
-      signer,
-    ),
-    gmxDataStore: getContract(
-      GMX_DATASTORE_MAP[network] as string,
-      IGmxDataStore__factory.connect,
-      signer,
-    ),
-    gmxExchangeRouter: getContract(
-      GMX_EXCHANGE_ROUTER_MAP[network] as string,
-      IGmxExchangeRouter__factory.connect,
-      signer,
-    ),
-    gmxExecutor: await impersonateOrFallback(GMX_EXECUTOR_MAP[network] as string, true, signer),
-    gmxReader: getContract(GMX_READER_MAP[network] as string, IGmxReader__factory.connect, signer),
-    gmxRouter: getContract(GMX_ROUTER_MAP[network] as string, IGmxRouter__factory.connect, signer),
-    gmxWithdrawalHandler: getContract(
-      GMX_WITHDRAWAL_HANDLER_MAP[network] as string,
-      IGmxWithdrawalHandler__factory.connect,
-      signer,
-    ),
-    gmxWithdrawalVault: await impersonateOrFallback(GMX_WITHDRAWAL_VAULT_MAP[network] as string, true, signer),
-  };
-}
-
-async function createLiquidityMiningEcosystem(
-  network: Network,
-  signer: SignerWithAddress,
-): Promise<LiquidityMiningEcosystem> {
-  if (network !== '42161') {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  return {
-    oArbVester: VesterImplementationV1__factory.connect(deployments.VesterProxy[network].address, signer),
-    oArbVesterProxy: VesterProxy__factory.connect(deployments.VesterProxy[network].address, signer),
-  };
-}
-
-async function createOdosEcosystem(
-  network: Network,
-  signer: SignerWithAddress,
-): Promise<OdosEcosystem> {
-  if (!ODOS_ROUTER_MAP[network]) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  return {
-    odosRouter: IOdosRouter__factory.connect(ODOS_ROUTER_MAP[network]!, signer),
-  };
-}
-
-async function createParaswapEcosystem(
-  network: Network,
-  signer: SignerWithAddress,
-): Promise<ParaswapEcosystem> {
-  if (!PARASWAP_AUGUSTUS_ROUTER_MAP[network]) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  const paraswapTrader = getContract(
-    (Deployments.ParaswapAggregatorTraderV2 as any)[network]!.address,
-    ParaswapAggregatorTraderV2__factory.connect,
-    signer,
-  );
-
-  return {
-    augustusRouter: IParaswapAugustusRouter__factory.connect(PARASWAP_AUGUSTUS_ROUTER_MAP[network]!, signer),
-    feeClaimer: IParaswapFeeClaimer__factory.connect(PARASWAP_FEE_CLAIMER_MAP[network]!, signer),
-    transferProxy: PARASWAP_TRANSFER_PROXY_MAP[network]!,
-    live: {
-      paraswapTrader,
-    },
-  };
-}
-
-async function createPendleEcosystem(
-  network: Network,
-  signer: SignerWithAddress,
-): Promise<PendleEcosystem> {
-  if (network !== Network.ArbitrumOne) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  return {
-    pendleRouter: getContract(
-      PENDLE_ROUTER_MAP[network] as string,
-      IPendleRouter__factory.connect,
-      signer,
-    ),
-    glpMar2024: {
-      pendleRegistry: getContract(
-        (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
-        IPendleGLPRegistry__factory.connect,
-        signer,
-      ),
-      pendleRegistryProxy: getContract(
-        (Deployments.PendleGLP2024RegistryProxy as any)[network]?.address,
-        RegistryProxy__factory.connect,
-        signer,
-      ),
-      ptGlpMarket: getContract(
-        PENDLE_PT_GLP_2024_MARKET_MAP[network] as string,
-        IPendlePtMarket__factory.connect,
-        signer,
-      ),
-      ptGlpToken: getContract(
-        PENDLE_PT_GLP_2024_TOKEN_MAP[network] as string,
-        IPendlePtToken__factory.connect,
-        signer,
-      ),
-      ptOracle: getContract(
-        PENDLE_PT_ORACLE_MAP[network] as string,
-        IPendlePtOracle__factory.connect,
-        signer,
-      ),
-      ytGlpToken: getContract(
-        PENDLE_YT_GLP_2024_TOKEN_MAP[network] as string,
-        IPendleYtToken__factory.connect,
-        signer,
-      ),
-      dPtGlp2024: getContract(
-        (Deployments.PendlePtGLP2024IsolationModeVaultFactory as any)[network]?.address,
-        PendlePtGLP2024IsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      dYtGlp2024: getContract(
-        (Deployments.PendleYtGLP2024IsolationModeVaultFactory as any)[network]?.address,
-        PendleYtGLP2024IsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-    },
-    rEthJun2025: {
-      dPtREthJun2025: getContract(
-        deployments.PendlePtREthJun2025IsolationModeVaultFactory[network as '42161'].address,
-        PendlePtIsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      pendleRegistry: getContract(
-        deployments.PendleREthJun2025RegistryProxy[network as '42161'].address,
-        IPendleRegistry__factory.connect,
-        signer,
-      ),
-      ptOracle: getContract(
-        PENDLE_PT_ORACLE_MAP[network] as string,
-        IPendlePtOracle__factory.connect,
-        signer,
-      ),
-      ptREthMarket: getContract(
-        PENDLE_PT_RETH_MARKET_MAP[network] as string,
-        IPendlePtMarket__factory.connect,
-        signer,
-      ),
-      ptREthToken: getContract(
-        PENDLE_PT_RETH_TOKEN_MAP[network] as string,
-        IPendlePtToken__factory.connect,
-        signer,
-      ),
-    },
-    wstEthJun2024: {
-      dPtWstEthJun2024: getContract(
-        deployments.PendlePtWstEthJun2024IsolationModeVaultFactory[network as '42161'].address,
-        PendlePtIsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      pendleRegistry: getContract(
-        deployments.PendleWstEthJun2024RegistryProxy[network as '42161'].address,
-        IPendleRegistry__factory.connect,
-        signer,
-      ),
-      ptOracle: getContract(
-        PENDLE_PT_ORACLE_MAP[network] as string,
-        IPendlePtOracle__factory.connect,
-        signer,
-      ),
-      ptWstEthMarket: getContract(
-        PENDLE_PT_WST_ETH_2024_MARKET_MAP[network] as string,
-        IPendlePtMarket__factory.connect,
-        signer,
-      ),
-      ptWstEthToken: getContract(
-        PENDLE_PT_WST_ETH_2024_TOKEN_MAP[network] as string,
-        IPendlePtToken__factory.connect,
-        signer,
-      ),
-    },
-    wstEthJun2025: {
-      dPtWstEthJun2025: getContract(
-        deployments.PendlePtWstEthJun2025IsolationModeVaultFactory[network as '42161'].address,
-        PendlePtIsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      pendleRegistry: getContract(
-        deployments.PendleWstEthJun2025RegistryProxy[network as '42161'].address,
-        IPendleRegistry__factory.connect,
-        signer,
-      ),
-      ptOracle: getContract(
-        PENDLE_PT_ORACLE_MAP[network] as string,
-        IPendlePtOracle__factory.connect,
-        signer,
-      ),
-      ptWstEthMarket: getContract(
-        PENDLE_PT_WST_ETH_2025_MARKET_MAP[network] as string,
-        IPendlePtMarket__factory.connect,
-        signer,
-      ),
-      ptWstEthToken: getContract(
-        PENDLE_PT_WST_ETH_2025_TOKEN_MAP[network] as string,
-        IPendlePtToken__factory.connect,
-        signer,
-      ),
-    },
-    syGlpToken: getContract(
-      PENDLE_SY_GLP_TOKEN_MAP[network] as string,
-      IPendleSyToken__factory.connect,
-      signer,
-    ),
-    syREthToken: getContract(
-      PENDLE_SY_RETH_TOKEN_MAP[network] as string,
-      IPendleSyToken__factory.connect,
-      signer,
-    ),
-    syWstEthToken: getContract(
-      PENDLE_SY_WST_ETH_TOKEN_MAP[network] as string,
-      IPendleSyToken__factory.connect,
-      signer,
-    ),
-  };
-}
-
-async function createPlutusEcosystem(
-  network: Network,
-  signer: SignerWithAddress,
-): Promise<PlutusEcosystem> {
-  if (network !== Network.ArbitrumOne) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  const sGlpAddressForPlutus = '0x2F546AD4eDD93B956C8999Be404cdCAFde3E89AE';
-  return {
-    plvGlp: getContract(PLV_GLP_MAP[network] as string, IERC4626__factory.connect, signer),
-    plsToken: getContract(PLS_TOKEN_MAP[network] as string, IERC20__factory.connect, signer),
-    plvGlpFarm: getContract(
-      PLV_GLP_FARM_MAP[network] as string,
-      IPlutusVaultGLPFarm__factory.connect,
-      signer,
-    ),
-    plvGlpRouter: getContract(
-      PLV_GLP_ROUTER_MAP[network] as string,
-      IPlutusVaultGLPRouter__factory.connect,
-      signer,
-    ),
-    sGlp: getContract(sGlpAddressForPlutus, IERC20__factory.connect, signer),
-    live: {
-      dolomiteWhitelistForGlpDepositor: getContract(
-        (Deployments.DolomiteWhitelistForGlpDepositorV2 as any)[network]?.address,
-        DolomiteCompatibleWhitelistForPlutusDAO__factory.connect,
-        signer,
-      ),
-      dolomiteWhitelistForPlutusChef: getContract(
-        (Deployments.DolomiteWhitelistForPlutusChef as any)[network]?.address,
-        DolomiteCompatibleWhitelistForPlutusDAO__factory.connect,
-        signer,
-      ),
-      plutusVaultRegistry: getContract(
-        (Deployments.PlutusVaultRegistryProxy as any)[network]?.address,
-        IPlutusVaultRegistry__factory.connect,
-        signer,
-      ),
-      plvGlpIsolationModeFactory: getContract(
-        (Deployments.PlutusVaultGLPIsolationModeVaultFactory as any)[network]?.address,
-        IPlutusVaultGLPIsolationModeVaultFactory__factory.connect,
-        signer,
-      ),
-      plvGlpIsolationModeUnwrapperTraderV1: getContract(
-        (Deployments.PlutusVaultGLPIsolationModeUnwrapperTraderV1 as any)[network]?.address,
-        PlutusVaultGLPIsolationModeUnwrapperTraderV1__factory.connect,
-        signer,
-      ),
-      plvGlpIsolationModeWrapperTraderV1: getContract(
-        (Deployments.PlutusVaultGLPIsolationModeWrapperTraderV1 as any)[network]?.address,
-        PlutusVaultGLPIsolationModeWrapperTraderV1__factory.connect,
-        signer,
-      ),
-    },
-  };
-}
-
-async function createPremiaEcosystem(
-  network: Network,
-  signer: SignerWithAddress,
-): Promise<PremiaEcosystem> {
-  if (network !== Network.ArbitrumOne) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  return {
-    premiaWethV3Pool: getContract(PREMIA_WETH_V3_POOL_MAP[network] as string, IAlgebraV3Pool__factory.connect, signer),
-  };
-}
-
-async function createUmamiEcosystem(
-  network: Network,
-  signer: SignerWithAddress,
-): Promise<UmamiEcosystem> {
-  if (network !== Network.ArbitrumOne) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
-  return {
-    glpLink: getContract(
-      UMAMI_LINK_VAULT_MAP[network] as string,
-      IUmamiAssetVault__factory.connect,
-      signer,
-    ),
-    glpUni: getContract(
-      UMAMI_UNI_VAULT_MAP[network] as string,
-      IUmamiAssetVault__factory.connect,
-      signer,
-    ),
-    glpUsdc: getContract(
-      UMAMI_USDC_VAULT_MAP[network] as string,
-      IUmamiAssetVault__factory.connect,
-      signer,
-    ),
-    glpWbtc: getContract(
-      UMAMI_WBTC_VAULT_MAP[network] as string,
-      IUmamiAssetVault__factory.connect,
-      signer,
-    ),
-    glpWeth: getContract(
-      UMAMI_WETH_VAULT_MAP[network] as string,
-      IUmamiAssetVault__factory.connect,
-      signer,
-    ),
-    storageViewer: getContract(
-      UMAMI_STORAGE_VIEWER_MAP[network] as string,
-      IUmamiAssetVaultStorageViewer__factory.connect,
-      signer,
-    ),
-    configurator: await impersonateOrFallback(UMAMI_CONFIGURATOR_MAP[network] as string, true, signer),
-  };
-}
-
-function getContract<T>(
+export function getContract<T>(
   address: string,
   connector: (address: string, signerOrProvider: any) => T,
   signerOrProvider: Signer | Provider,
@@ -1442,7 +606,7 @@ function getContract<T>(
   return connector(address, signerOrProvider);
 }
 
-function getContractOpt<T>(
+export function getContractOpt<T>(
   address: string | undefined,
   connector: (address: string, signerOrProvider: any) => T,
   signerOrProvider: Signer | Provider,

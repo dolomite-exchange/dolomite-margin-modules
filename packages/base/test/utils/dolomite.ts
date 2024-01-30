@@ -4,6 +4,7 @@ import {
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
   EventEmitterRegistry__factory,
+  IDolomiteMarginV2,
   IsolationModeTraderProxy,
   IsolationModeTraderProxy__factory,
   RegistryProxy,
@@ -17,6 +18,9 @@ import {
 import { createContractWithAbi, createContractWithName, LibraryName } from '../../src/utils/dolomite-utils';
 import { CoreProtocol } from './setup';
 import { BigNumberish } from 'ethers';
+import { IDolomiteMargin } from '../../../../src/types';
+
+export type DolomiteMargin = IDolomiteMargin | IDolomiteMarginV2;
 
 export async function createIsolationModeTokenVaultV1ActionsImpl(): Promise<Record<LibraryName, address>> {
   const contract = await createContractWithName('IsolationModeTokenVaultV1ActionsImpl', []);

@@ -1,9 +1,12 @@
-import { TestInterestSetter } from '@dolomite-exchange/modules-interest-setters/src/types';
-import { IUmamiAssetVault, IUmamiAssetVaultStorageViewer } from '@dolomite-exchange/modules-umami/src/types';
-import { BigNumberish, Signer } from 'ethers';
+import { BigNumberish } from 'ethers';
 import {
   CustomTestToken,
-  HandlerRegistry, TestDolomiteMarginExchangeWrapper,
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+  IDolomiteRegistry,
+  RegistryProxy__factory,
+  TestDolomiteMarginExchangeWrapper,
+  TestDolomiteMarginExchangeWrapper__factory,
   TestFreezableIsolationModeVaultFactory,
   TestFreezableIsolationModeVaultFactory__factory,
   TestHandlerRegistry,
@@ -14,11 +17,17 @@ import {
   TestIsolationModeTokenVaultV1WithFreezable,
   TestIsolationModeTokenVaultV1WithFreezableAndPausable,
   TestIsolationModeTokenVaultV1WithPausable,
-  TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa, TestPriceOracle,
+  TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
+  TestPriceOracle,
+  TestPriceOracle__factory,
 } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { createRegistryProxy } from '../dolomite';
-import { CoreProtocol } from '../setup';
+import { createRegistryProxy, DolomiteMargin } from '../dolomite';
+import { CoreProtocol, CoreProtocolSetupConfig } from '../setup';
+import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP } from '../../../src/utils/no-deps-constants';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { network } from 'hardhat';
+import { TestInterestSetter, TestInterestSetter__factory } from '@dolomite-exchange/modules-interest-setters/src/types';
 
 type TestIsolationModeTokenVault =
   TestIsolationModeTokenVaultV1
@@ -86,4 +95,50 @@ export async function createTestFreezableIsolationModeVaultFactory(
       core.dolomiteMargin.address,
     ],
   );
+}
+
+export async function createTestEcosystem<T extends Network>(
+  dolomiteMargin: DolomiteMargin,
+  dolomiteRegistry: IDolomiteRegistry,
+  governor: SignerWithAddress,
+  signer: SignerWithAddress,
+  config: CoreProtocolSetupConfig<T>,
+): Promise<TestEcosystem | undefined> {
+  if (network.name !== 'hardhat') {
+    return undefined;
+  }
+
+  if (config.blockNumber >= NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[config.network]) {
+    const genericTrader = await dolomiteRegistry.genericTraderProxy();
+    await dolomiteMargin.ownerSetGlobalOperator(genericTrader, true);
+    const registryProxy = RegistryProxy__factory.connect(dolomiteRegistry.address, governor);
+    const newRegistry = await createContractWithAbi<DolomiteRegistryImplementation>(
+      DolomiteRegistryImplementation__factory.abi,
+      DolomiteRegistryImplementation__factory.bytecode,
+      [],
+    );
+    await registryProxy.upgradeTo(newRegistry.address);
+    await dolomiteRegistry.ownerSetSlippageToleranceForPauseSentinel('70000000000000000'); // 7%
+  }
+
+  const testExchangeWrapper = await createContractWithAbi<TestDolomiteMarginExchangeWrapper>(
+    TestDolomiteMarginExchangeWrapper__factory.abi,
+    TestDolomiteMarginExchangeWrapper__factory.bytecode,
+    [dolomiteMargin.address],
+  );
+  const testInterestSetter = await createContractWithAbi<TestInterestSetter>(
+    TestInterestSetter__factory.abi,
+    TestInterestSetter__factory.bytecode,
+    [],
+  );
+  const testPriceOracle = await createContractWithAbi<TestPriceOracle>(
+    TestPriceOracle__factory.abi,
+    TestPriceOracle__factory.bytecode,
+    [],
+  );
+  return {
+    testExchangeWrapper: testExchangeWrapper.connect(signer),
+    testInterestSetter: testInterestSetter.connect(signer),
+    testPriceOracle: testPriceOracle.connect(signer),
+  };
 }

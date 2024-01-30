@@ -1,10 +1,22 @@
-import {
-  IChainlinkPriceOracle,
-  IChainlinkRegistry,
-} from '@dolomite-exchange/modules-oracles/src/types';
 import { ApiToken } from '@dolomite-exchange/zap-sdk';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumberish } from 'ethers';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { CoreProtocolConfig, } from './setup';
+import { ArbEcosystem } from './ecosystem-utils/arb';
+import { AbraEcosystem } from './ecosystem-utils/abra';
+import { CamelotEcosystem } from './ecosystem-utils/camelot';
+import { GmxEcosystem, GmxEcosystemV2 } from './ecosystem-utils/gmx';
+import { JonesEcosystem } from './ecosystem-utils/jones';
+import { LiquidityMiningEcosystem } from './ecosystem-utils/liquidity-mining';
+import { OdosEcosystem } from './ecosystem-utils/odos';
+import { ParaswapEcosystem } from './ecosystem-utils/paraswap';
+import { PendleEcosystem } from './ecosystem-utils/pendle';
+import { PlutusEcosystem } from './ecosystem-utils/plutus';
+import { PremiaEcosystem } from './ecosystem-utils/premia';
+import { UmamiEcosystem } from './ecosystem-utils/umami';
+import { TestEcosystem } from './ecosystem-utils/testers';
+import { InterestSetters } from './ecosystem-utils/interest-setters';
 import {
   IBorrowPositionProxyV2,
   IDepositWithdrawalProxy,
@@ -21,27 +33,10 @@ import {
   ILiquidatorProxyV1WithAmm,
   ILiquidatorProxyV4WithGenericTrader,
   IPartiallyDelayedMultiSig,
-  IWETH,
   RegistryProxy,
 } from '../../src/types';
-import {
-  AbraEcosystem,
-  ArbEcosystem,
-  CamelotEcosystem,
-  CoreProtocolConfig,
-  GmxEcosystem,
-  GmxEcosystemV2,
-  InterestSetters,
-  JonesEcosystem,
-  LiquidityMiningEcosystem,
-  OdosEcosystem,
-  ParaswapEcosystem,
-  PendleEcosystem,
-  PlutusEcosystem,
-  PremiaEcosystem,
-  TestEcosystem,
-  UmamiEcosystem,
-} from './setup';
+import { IWETH } from '@pendle/sdk-v2';
+import { IChainlinkAutomationRegistry, IChainlinkPriceOracle } from '@dolomite-exchange/modules-oracles/src/types';
 
 interface CoreProtocolTokens {
   dai: IERC20;
@@ -111,14 +106,14 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   wstEth: BigNumberish;
 }
 
-export interface CoreProtocolBase {
+export interface CoreProtocolBase<T extends Network> {
   /// =========================
   /// Config and Signers
   /// =========================
   /**
    * Config passed through at Core Protocol's creation time
    */
-  config: CoreProtocolConfig;
+  config: CoreProtocolConfig<T>;
   governance: SignerWithAddress;
   hhUser1: SignerWithAddress;
   hhUser2: SignerWithAddress;
@@ -161,11 +156,11 @@ export interface CoreProtocolBase {
   tokens: CoreProtocolTokens;
 }
 
-export interface CoreProtocolArbitrumOne extends CoreProtocolBase {
+export interface CoreProtocolArbitrumOne extends CoreProtocolBase<Network.ArbitrumOne> {
   abraEcosystem: AbraEcosystem;
   arbEcosystem: ArbEcosystem;
   camelotEcosystem: CamelotEcosystem;
-  chainlinkAutomationRegistry: IChainlinkRegistry;
+  chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
   chainlinkPriceOracle: IChainlinkPriceOracle;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
@@ -181,9 +176,7 @@ export interface CoreProtocolArbitrumOne extends CoreProtocolBase {
   umamiEcosystem: UmamiEcosystem;
 }
 
-export interface CoreProtocolPolygonZkEvm extends CoreProtocolBase {
+// TODO: Update with correct network
+export interface CoreProtocolPolygonZkEvm extends CoreProtocolBase<Network.ArbitrumOne> {
 
-}
-
-export interface CoreProtocolZkEvm extends CoreProtocolBase {
 }

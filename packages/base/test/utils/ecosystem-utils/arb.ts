@@ -1,56 +1,17 @@
-import { IARB, IARBIsolationModeVaultFactory, IARBRegistry } from '@dolomite-exchange/modules-arb/src/types';
-import {
-  GLPIsolationModeUnwrapperTraderV1, GLPIsolationModeWrapperTraderV1,
-  IEsGmxDistributor, IGLPIsolationModeVaultFactoryOld,
-  IGLPManager,
-  IGLPRewardsRouterV2, IGMXIsolationModeVaultFactory, IGmxRegistryV1,
-  IGmxRewardRouterV2, IGmxVault, IGmxVester, ISGMX,
-} from '@dolomite-exchange/modules-glp/src/types';
-import {
-  IGmxDataStore,
-  IGmxDepositHandler,
-  IGmxExchangeRouter,
-  IGmxMarketToken, IGmxReader, IGmxRouter, IGmxWithdrawalHandler,
-} from '@dolomite-exchange/modules-gmx-v2/src/types';
-import { TestInterestSetter } from '@dolomite-exchange/modules-interest-setters/src/types';
-import {
-  IJonesGLPAdapter,
-  IJonesGLPVaultRouter, IJonesUSDCFarm, IJonesUSDCRegistry,
-  IJonesWhitelistController, JonesUSDCIsolationModeVaultFactory,
-} from '@dolomite-exchange/modules-jones/src/types';
-import { VesterImplementationV1, VesterProxy } from '@dolomite-exchange/modules-liquidity-mining/src/types';
-import {
-  IPendleGLPRegistry,
-  IPendlePtMarket,
-  IPendlePtOracle,
-  IPendlePtToken, IPendleRegistry,
-  IPendleRouter, IPendleSyToken,
-  IPendleYtToken,
-  PendlePtGLP2024IsolationModeVaultFactory,
-  PendlePtIsolationModeVaultFactory,
-  PendleYtGLP2024IsolationModeVaultFactory,
-} from '@dolomite-exchange/modules-pendle/src/types';
-import {
-  DolomiteCompatibleWhitelistForPlutusDAO,
-  IPlutusVaultGLPFarm,
-  IPlutusVaultGLPIsolationModeVaultFactory,
-  IPlutusVaultGLPRouter,
-  IPlutusVaultRegistry,
-  PlutusVaultGLPIsolationModeUnwrapperTraderV1,
-  PlutusVaultGLPIsolationModeWrapperTraderV1,
-} from '@dolomite-exchange/modules-plutus/src/types';
-import { IUmamiAssetVault, IUmamiAssetVaultStorageViewer } from '@dolomite-exchange/modules-umami/src/types';
-import { address } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { Signer } from 'ethers';
+import { RegistryProxy, RegistryProxy__factory, } from '../../../src/types';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { ARB_MAP } from '../../../src/utils/constants';
+import Deployments from '../../../../../scripts/deployments.json';
+import { getContract } from '../setup';
 import {
-  IAlgebraV3Pool,
-  IDolomiteInterestSetter,
-  IERC20,
-  IERC20Mintable,
-  IERC4626, IOdosRouter, IParaswapAugustusRouter, IParaswapFeeClaimer, ParaswapAggregatorTraderV2,
-  RegistryProxy, TestDolomiteMarginExchangeWrapper, TestPriceOracle,
-} from '../../../src/types';
+  ARBIsolationModeVaultFactory__factory,
+  ARBRegistry__factory,
+  IARB,
+  IARB__factory,
+  IARBIsolationModeVaultFactory,
+  IARBRegistry
+} from '@dolomite-exchange/modules-arb/src/types';
 
 export interface ArbEcosystem {
   arb: IARB;
@@ -58,5 +19,32 @@ export interface ArbEcosystem {
     dArb: IARBIsolationModeVaultFactory;
     arbRegistry: IARBRegistry;
     arbRegistryProxy: RegistryProxy;
+  };
+}
+
+export async function createArbEcosystem(network: Network, signer: SignerWithAddress): Promise<ArbEcosystem> {
+  if (network !== Network.ArbitrumOne) {
+    return Promise.reject(`Invalid network, found ${network}`);
+  }
+
+  return {
+    arb: getContract(ARB_MAP[network]?.address as string, IARB__factory.connect, signer),
+    live: {
+      dArb: getContract(
+        (Deployments.ARBIsolationModeVaultFactory as any)[network].address,
+        ARBIsolationModeVaultFactory__factory.connect,
+        signer,
+      ),
+      arbRegistry: getContract(
+        (Deployments.ARBRegistryProxy as any)[network].address,
+        ARBRegistry__factory.connect,
+        signer,
+      ),
+      arbRegistryProxy: getContract(
+        (Deployments.ARBRegistryProxy as any)[network].address,
+        RegistryProxy__factory.connect,
+        signer,
+      ),
+    },
   };
 }
