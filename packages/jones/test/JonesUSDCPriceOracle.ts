@@ -21,8 +21,8 @@ import {
 } from './jones-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
-const USDC_PRICE = BigNumber.from('999937000000000000000000000000'); // $0.999937
-const JONES_USDC_PRICE = BigNumber.from('1040697717999611268'); // $1.040697717999611268
+const USDC_PRICE = BigNumber.from('1000071010000000000000000000000'); // $1.00007101
+const JONES_USDC_PRICE = BigNumber.from('1068787202667035284'); // $1.068787202667035284
 
 describe('JonesUSDCPriceOracle', () => {
   let snapshotId: string;

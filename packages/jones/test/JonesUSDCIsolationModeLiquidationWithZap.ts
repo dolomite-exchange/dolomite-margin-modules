@@ -17,10 +17,12 @@ import {
   JonesUSDCPriceOracle__factory,
   JonesUSDCRegistry,
   JonesUSDCRegistry__factory,
+  JonesUSDCWithChainlinkAutomationPriceOracle,
+  JonesUSDCWithChainlinkAutomationPriceOracle__factory,
 } from '../src/types';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_BI, ONE_WEEK_SECONDS, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
@@ -31,6 +33,7 @@ import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-uti
 import { liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
+import { IERC20 } from 'packages/base/src/types';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -52,10 +55,11 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
   let heldMarketId: BigNumber;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let unwrapper: JonesUSDCIsolationModeUnwrapperTraderV2;
+  let unwrapperNoLiquidation: JonesUSDCIsolationModeUnwrapperTraderV2;
   let wrapper: JonesUSDCIsolationModeWrapperTraderV2;
   let factory: JonesUSDCIsolationModeVaultFactory;
   let vault: JonesUSDCIsolationModeTokenVaultV1;
-  let priceOracle: JonesUSDCPriceOracle;
+  let priceOracle: JonesUSDCWithChainlinkAutomationPriceOracle;
   let defaultAccountStruct: AccountInfoStruct;
   let liquidAccountStruct: AccountInfoStruct;
   let solidAccountStruct: AccountInfoStruct;
@@ -64,11 +68,12 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
 
   before(async () => {
     const network = Network.ArbitrumOne;
-    const blockNumber = await getRealLatestBlockNumber(true, network);
+    // Need to do this block number. After latest token vault staking update, and prior to Jones vault deadline
     core = await setupCoreProtocol({
-      blockNumber,
+      blockNumber: 172_417_376,
       network,
     });
+    await freezeAndGetOraclePrice(core.tokens.usdc);
     underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
     jonesUSDCRegistry = await JonesUSDCRegistry__factory.connect(
       deployments.JonesUSDCRegistryProxy[network].address,
@@ -82,13 +87,17 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
       deployments.JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation[network].address,
       core.hhUser1,
     );
+    unwrapperNoLiquidation = JonesUSDCIsolationModeUnwrapperTraderV2__factory.connect(
+      deployments.JonesUSDCIsolationModeUnwrapperTraderV2[network].address,
+      core.hhUser1,
+    );
     wrapper = JonesUSDCIsolationModeWrapperTraderV2__factory.connect(
       deployments.JonesUSDCIsolationModeWrapperTraderV2[network].address,
       core.hhUser1,
     );
     await createRoleAndWhitelistTrader(core, unwrapper, wrapper);
-    priceOracle = JonesUSDCPriceOracle__factory.connect(
-      deployments.JonesUSDCPriceOracle[network].address,
+    priceOracle = JonesUSDCWithChainlinkAutomationPriceOracle__factory.connect(
+      deployments.JonesUSDCWithChainlinkAutomationPriceOracle[network].address,
       core.hhUser1,
     );
 
@@ -108,7 +117,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
     );
 
     // admin setup
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
+    await priceOracle.connect(core.governance).ownerSetGracePeriod(ONE_WEEK_SECONDS * 52);
     await core.liquidatorAssetRegistry.connect(core.governance).ownerAddLiquidatorToAssetWhitelist(
       heldMarketId,
       core.liquidatorProxyV4.address,
@@ -125,12 +134,13 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
     liquidAccountStruct = { owner: vault.address, number: otherAccountNumber };
     solidAccountStruct = { owner: core.hhUser5.address, number: defaultAccountNumber };
 
+    await core.dolomiteMargin.ownerSetMaxWei(heldMarketId, 0);
     await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
     await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
     await core.jonesEcosystem!.jUSDC.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
-    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
+    expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(ZERO_BI);
     expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, heldMarketId)).value)
       .to
       .eq(heldAmountWei);
@@ -248,6 +258,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
   });
 
   describe('Perform expiration with full integration', () => {
+    // @follow-up This test is failing. Numbers off by a bit
     it('should work when expired account is borrowing the output token (USDC)', async () => {
       await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
       const [supplyValue, borrowValue] = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
@@ -345,4 +356,12 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
       await expectWalletBalanceOrDustyIfZero(core, unwrapper.address, core.tokens.usdc.address, ZERO_BI);
     });
   });
+
+  async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {
+    const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
+    const price = await core.dolomiteMargin.getMarketPrice(marketId);
+    await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
+    await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+    return price.value;
+  }
 });

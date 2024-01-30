@@ -4,15 +4,11 @@ import {
   PlutusVaultGLPIsolationModeVaultFactory,
   PlutusVaultRegistry,
 } from '../src/types';
-import {
-  TestGLPIsolationModeTokenVaultV1,
-  TestGLPIsolationModeTokenVaultV1__factory,
-} from '@dolomite-exchange/modules-glp/src/types';
-import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
+  createPlutusVaultGLPIsolationModeTokenVaultV1,
   createPlutusVaultGLPIsolationModeVaultFactory,
   createPlutusVaultRegistry,
 } from './plutus-ecosystem-utils';
@@ -25,17 +21,13 @@ describe('PlutusVaultGLPIsolationModeVaultFactory', () => {
 
   let core: CoreProtocol;
   let plutusVaultRegistry: PlutusVaultRegistry;
-  let vaultImplementation: TestGLPIsolationModeTokenVaultV1;
+  let vaultImplementation: PlutusVaultGLPIsolationModeTokenVaultV1;
   let factory: PlutusVaultGLPIsolationModeVaultFactory;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     plutusVaultRegistry = await createPlutusVaultRegistry(core);
-    vaultImplementation = await createContractWithAbi<TestGLPIsolationModeTokenVaultV1>(
-      TestGLPIsolationModeTokenVaultV1__factory.abi,
-      TestGLPIsolationModeTokenVaultV1__factory.bytecode,
-      [],
-    );
+    vaultImplementation = await createPlutusVaultGLPIsolationModeTokenVaultV1(core);
     factory = await createPlutusVaultGLPIsolationModeVaultFactory(
       core,
       plutusVaultRegistry,

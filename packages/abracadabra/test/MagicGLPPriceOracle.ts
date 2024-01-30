@@ -10,7 +10,7 @@ import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertio
 import { createMagicGLPPriceOracle } from './abracadabra-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
-const GLP_PRICE = BigNumber.from('1004371801993868870'); // $1.004371801993868870
+const GLP_PRICE = BigNumber.from('1157958974643177588'); // $1.157958974643177588
 
 describe('MagicGLPPriceOracle', () => {
   let snapshotId: string;

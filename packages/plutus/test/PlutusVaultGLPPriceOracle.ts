@@ -20,8 +20,8 @@ import {
 } from './plutus-ecosystem-utils';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
-const GLP_PRICE = BigNumber.from('1004371801993868870'); // $1.004371801993868870
-const PLV_GLP_PRICE = BigNumber.from('1200844314982579522'); // $1.200844314982579522
+const GLP_PRICE = BigNumber.from('1157958974643177588'); // $1.157958974643177588
+const PLV_GLP_PRICE = BigNumber.from('1449502506347951720'); // $1.449502506347951720
 
 describe('PlutusVaultGLPPriceOracle', () => {
   let snapshotId: string;

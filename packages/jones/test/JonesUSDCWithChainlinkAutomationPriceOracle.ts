@@ -25,14 +25,13 @@ import { createContractWithAbi, createTestVaultToken } from '@dolomite-exchange/
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   getBlockTimestamp,
-  getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createJonesUSDCWithChainlinkAutomationPriceOracle } from './jones-ecosystem-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.99998605
 const USDC_SCALE_DIFF = BigNumber.from('10').pow(12);
@@ -55,8 +54,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
 
   before(async () => {
     const network = Network.ArbitrumOne;
-    const blockNumber = await getRealLatestBlockNumber(true, network);
-    core = await setupCoreProtocol({ blockNumber, network });
+    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(network));
     chainlinkRegistry = await impersonate(CHAINLINK_AUTOMATION_REGISTRY_MAP[network]!, true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
@@ -91,6 +89,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
       factory,
     );
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
+    await jonesUSDCWithChainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(chainlinkRegistry.address);
 
     snapshotId = await snapshot();
   });
