@@ -590,6 +590,7 @@ export interface CoreProtocol {
     dPtWstEthJun2025: BigNumberish | undefined;
     dpx: BigNumberish | undefined;
     dYtGlp: BigNumberish | undefined;
+    gmx: BigNumberish | undefined;
     grail: BigNumberish | undefined;
     jones: BigNumberish | undefined;
     link: BigNumberish;
@@ -1037,6 +1038,7 @@ export async function setupCoreProtocol(
       dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[config.network]?.marketId,
       dpx: DPX_MAP[config.network]?.marketId,
       dYtGlp: DYT_GLP_2024_MAP[config.network]?.marketId,
+      gmx: GMX_MAP[config.network]?.marketId,
       grail: GRAIL_MAP[config.network]?.marketId,
       jones: JONES_MAP[config.network]?.marketId,
       link: LINK_MAP[config.network].marketId,
@@ -1243,13 +1245,13 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
     return undefined;
   }
 
-  const esGmxDistributorForGlp = getContract(esGmxDistributorAddressForGlp, IEsGmxDistributor__factory.connect, signer);
+  const esGmxDistributorForGlp : IEsGmxDistributor = getContract(esGmxDistributorAddressForGlp, IEsGmxDistributor__factory.connect, signer);
   const esGmxAdminForGlp = await impersonateOrFallback(
     await esGmxDistributorForGlp.connect(signer).admin(),
     true,
     signer,
   );
-  const esGmxDistributorForGmx = getContract(esGmxDistributorAddressForGmx, IEsGmxDistributor__factory.connect, signer);
+  const esGmxDistributorForGmx : IEsGmxDistributor = getContract(esGmxDistributorAddressForGmx, IEsGmxDistributor__factory.connect, signer);
   const esGmxAdminForGmx = await impersonateOrFallback(
     await esGmxDistributorForGmx.connect(signer).admin(),
     true,

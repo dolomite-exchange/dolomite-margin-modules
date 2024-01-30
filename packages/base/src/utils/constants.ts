@@ -412,7 +412,7 @@ export const GMX_ROUTER_MAP: Record<Network, string | undefined> = {
 export const GMX_MAP: Record<Network, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a',
-    marketId: 999, // TODO: fix me
+    marketId: 29,
   },
   [Network.ArbitrumGoerli]: undefined,
 };

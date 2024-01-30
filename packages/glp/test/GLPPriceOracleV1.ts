@@ -13,7 +13,7 @@ import {
 } from './glp-ecosystem-utils';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
-const GLP_PRICE = BigNumber.from('1004371801993868870'); // $1.004371801993868870
+const GLP_PRICE = BigNumber.from('1157958974643177588'); // $1.157958974643177588
 
 describe('GLPPriceOracleV1', () => {
   let snapshotId: string;
