@@ -20,7 +20,7 @@ import { Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectWalletBalance } from '../../utils/assertions';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
+import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,

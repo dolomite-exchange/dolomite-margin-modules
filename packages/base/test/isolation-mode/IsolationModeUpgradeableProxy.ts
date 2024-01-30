@@ -12,7 +12,7 @@ import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectThrow } from '../utils/assertions';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
-import { createTestIsolationModeFactory } from '../utils/ecosystem-token-utils/testers';
+import { createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,

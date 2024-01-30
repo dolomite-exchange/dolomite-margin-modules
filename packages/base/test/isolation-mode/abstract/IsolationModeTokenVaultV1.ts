@@ -25,7 +25,7 @@ import { MAX_UINT_256_BI, Network, ZERO_BI } from '../../../src/utils/no-deps-co
 import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
+import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,

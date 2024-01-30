@@ -1,3 +1,4 @@
+import { CoreProtocolArbitrumOne, CoreProtocolZkEvm } from '@dolomite-exchange/modules-base/test/utils/CoreProtocol';
 import { ADDRESSES } from '@dolomite-margin/dist/src';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -39,7 +40,7 @@ const USDC_SCALE_DIFF = BigNumber.from('10').pow(12);
 describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolZkEvm;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let jonesController: IJonesWhitelistController;
   let factory: JonesUSDCIsolationModeVaultFactory;
@@ -54,7 +55,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
 
   before(async () => {
     const network = Network.ArbitrumOne;
-    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(network));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(network));
     chainlinkRegistry = await impersonate(CHAINLINK_AUTOMATION_REGISTRY_MAP[network]!, true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 

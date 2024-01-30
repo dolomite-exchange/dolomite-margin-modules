@@ -8,7 +8,7 @@ import { depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../utils/assertions';
-import { createOdosAggregatorTrader } from '../utils/ecosystem-token-utils/traders';
+import { createOdosAggregatorTrader } from '../utils/ecosystem-utils/traders';
 import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
 import { getCalldataForOdos } from '../utils/trader-utils';
 

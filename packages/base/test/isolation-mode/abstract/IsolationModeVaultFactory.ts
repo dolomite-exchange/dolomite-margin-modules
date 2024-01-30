@@ -36,7 +36,7 @@ import {
   expectWalletBalance,
 } from '../../utils/assertions';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
+import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,

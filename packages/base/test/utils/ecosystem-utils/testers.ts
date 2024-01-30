@@ -1,7 +1,9 @@
-import { BigNumberish } from 'ethers';
+import { TestInterestSetter } from '@dolomite-exchange/modules-interest-setters/src/types';
+import { IUmamiAssetVault, IUmamiAssetVaultStorageViewer } from '@dolomite-exchange/modules-umami/src/types';
+import { BigNumberish, Signer } from 'ethers';
 import {
   CustomTestToken,
-  HandlerRegistry,
+  HandlerRegistry, TestDolomiteMarginExchangeWrapper,
   TestFreezableIsolationModeVaultFactory,
   TestFreezableIsolationModeVaultFactory__factory,
   TestHandlerRegistry,
@@ -12,7 +14,7 @@ import {
   TestIsolationModeTokenVaultV1WithFreezable,
   TestIsolationModeTokenVaultV1WithFreezableAndPausable,
   TestIsolationModeTokenVaultV1WithPausable,
-  TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
+  TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa, TestPriceOracle,
 } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { createRegistryProxy } from '../dolomite';
@@ -22,6 +24,12 @@ type TestIsolationModeTokenVault =
   TestIsolationModeTokenVaultV1
   | TestIsolationModeTokenVaultV1WithPausable
   | TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa;
+
+export interface TestEcosystem {
+  testExchangeWrapper: TestDolomiteMarginExchangeWrapper;
+  testInterestSetter: TestInterestSetter;
+  testPriceOracle: TestPriceOracle;
+}
 
 export async function createTestIsolationModeFactory(
   core: CoreProtocol,

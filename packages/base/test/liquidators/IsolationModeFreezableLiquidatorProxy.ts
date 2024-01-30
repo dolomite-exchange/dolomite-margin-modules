@@ -59,7 +59,7 @@ import {
   setupWETHBalance,
 } from '../utils/setup';
 import { getLiquidateIsolationModeZapPath } from '../utils/zap-utils';
-import { createSafeDelegateLibrary } from '../utils/ecosystem-token-utils/general';
+import { createSafeDelegateLibrary } from '../utils/ecosystem-utils/general';
 import { parseEther } from 'ethers/lib/utils';
 
 const defaultAccountNumber = ZERO_BI;

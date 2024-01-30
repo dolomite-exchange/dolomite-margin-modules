@@ -1,0 +1,43 @@
+import { TestInterestSetter } from '@dolomite-exchange/modules-interest-setters/src/types';
+import {
+  IPendleGLPRegistry,
+  IPendlePtMarket,
+  IPendlePtOracle,
+  IPendlePtToken, IPendleRegistry,
+  IPendleRouter, IPendleSyToken,
+  IPendleYtToken,
+  PendlePtGLP2024IsolationModeVaultFactory,
+  PendlePtIsolationModeVaultFactory,
+  PendleYtGLP2024IsolationModeVaultFactory,
+} from '@dolomite-exchange/modules-pendle/src/types';
+import {
+  DolomiteCompatibleWhitelistForPlutusDAO,
+  IPlutusVaultGLPFarm,
+  IPlutusVaultGLPIsolationModeVaultFactory,
+  IPlutusVaultGLPRouter,
+  IPlutusVaultRegistry,
+  PlutusVaultGLPIsolationModeUnwrapperTraderV1,
+  PlutusVaultGLPIsolationModeWrapperTraderV1,
+} from '@dolomite-exchange/modules-plutus/src/types';
+import { IUmamiAssetVault, IUmamiAssetVaultStorageViewer } from '@dolomite-exchange/modules-umami/src/types';
+import { address } from '@dolomite-margin/dist/src';
+import { Signer } from 'ethers';
+import {
+  IAlgebraV3Pool,
+  IERC20,
+  IERC4626,
+  IParaswapAugustusRouter,
+  IParaswapFeeClaimer,
+  ParaswapAggregatorTraderV2,
+  RegistryProxy, TestDolomiteMarginExchangeWrapper, TestPriceOracle,
+} from '../../../src/types';
+
+export interface ParaswapEcosystem {
+  augustusRouter: IParaswapAugustusRouter;
+  feeClaimer: IParaswapFeeClaimer;
+  transferProxy: address;
+  live: {
+    paraswapTrader: ParaswapAggregatorTraderV2;
+  };
+}
+

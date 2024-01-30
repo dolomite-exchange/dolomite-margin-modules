@@ -18,7 +18,7 @@ import {
   expectThrow,
   expectThrowWithMatchingReason,
 } from '../utils/assertions';
-import { createParaswapAggregatorTrader } from '../utils/ecosystem-token-utils/traders';
+import { createParaswapAggregatorTrader } from '../utils/ecosystem-utils/traders';
 import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
 import { getCalldataForParaswap } from '../utils/trader-utils';
 

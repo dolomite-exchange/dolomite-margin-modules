@@ -32,7 +32,7 @@ import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite
 import {
   createTestFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
-} from '../../utils/ecosystem-token-utils/testers';
+} from '../../utils/ecosystem-utils/testers';
 import {
   CoreProtocol,
   getDefaultCoreProtocolConfig,

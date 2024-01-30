@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { createContractWithLibrary, createContractWithLibraryAndArtifact, createTestToken } from '../../src/utils/dolomite-utils';
-import { createTestIsolationModeFactory } from '../utils/ecosystem-token-utils/testers';
+import { createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
 import {
   CustomTestToken,
   IsolationModeTraderProxy,
@@ -25,7 +25,7 @@ import {
 } from '../utils/dolomite';
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 import { createGmxV2Library } from '@dolomite-exchange/modules-gmx-v2/test/gmx-v2-ecosystem-utils';
-import { createSafeDelegateLibrary } from '../utils/ecosystem-token-utils/general';
+import { createSafeDelegateLibrary } from '../utils/ecosystem-utils/general';
 
 describe('IsolationModeTraderProxy', () => {
   let snapshotId: string;
