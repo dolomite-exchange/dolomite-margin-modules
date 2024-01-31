@@ -1439,6 +1439,15 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     });
   });
 
+  describe('#maxGmxUnstakeAmount', () => {
+    it('should fail if not called by gmx vault', async () => {
+      await expectThrow(
+        glpVault.connect(core.hhUser1).maxGmxUnstakeAmount(),
+        'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
+      );
+    })
+  });
+
   describe('#dolomiteRegistry', () => {
     it('should work', async () => {
       expect(await glpVault.dolomiteRegistry()).to.equal(core.dolomiteRegistry.address);

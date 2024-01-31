@@ -37,6 +37,7 @@ import {
   setupGMXBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { createGMXIsolationModeTokenVaultV1 } from './glp-ecosystem-utils';
 
 const gmxAmount = parseEther('10'); // 10 GMX
 const esGmxAmount = parseEther('0.01'); // 0.01 esGMX tokens
@@ -89,6 +90,9 @@ describe('GMXIsolationModeTokenVaultV1_swapExactInputForOutput', () => {
     gmxMarketId = core.marketIds.gmx!;
     await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.gmx!.address, '1000000000000000000');
     await core.dolomiteMargin.ownerSetPriceOracle(gmxMarketId, core.testEcosystem!.testPriceOracle.address);
+
+    const implementation = await createGMXIsolationModeTokenVaultV1();
+    await gmxFactory.connect(core.governance).ownerSetUserVaultImplementation(implementation.address);
 
     await gmxFactory.createVault(core.hhUser1.address);
     gmxVault = setupUserVaultProxy<TestGMXIsolationModeTokenVaultV1>(
