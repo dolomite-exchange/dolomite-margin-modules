@@ -6,6 +6,7 @@ import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import {
+  IERC20,
   IPendleSyToken,
   IPendleSyToken__factory,
   IPendleYtToken,
@@ -24,7 +25,6 @@ import {
   RegistryProxy__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import {
-  createContractWithAbi,
   createTestToken,
   depositIntoDolomiteMargin,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
@@ -50,6 +50,7 @@ import {
   createPendleYtGLP2024IsolationModeVaultFactory,
   createPendleYtGLP2024IsolationModeWrapperTraderV2,
   createPendleYtGLPPriceOracle,
+  createTestPendleYtGLP2024IsolationModeTokenVaultV1,
 } from '../pendle-ecosystem-utils';
 import {
   CoreProtocol,
@@ -91,11 +92,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.pendleEcosystem!.glpMar2024.ytGlpToken.connect(core.hhUser1);
-    const userVaultImplementation = await createContractWithAbi<TestPendleYtGLP2024IsolationModeTokenVaultV1>(
-      TestPendleYtGLP2024IsolationModeTokenVaultV1__factory.abi,
-      TestPendleYtGLP2024IsolationModeTokenVaultV1__factory.bytecode,
-      [],
-    );
+    const userVaultImplementation = await createTestPendleYtGLP2024IsolationModeTokenVaultV1();
     pendleRegistry = await createPendleGLPRegistry(core);
     factory = await createPendleYtGLP2024IsolationModeVaultFactory(
       core,
@@ -204,6 +201,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       await expectWalletBalance(vault.address, core.tokens.weth, ZERO_BI);
       await expectWalletBalance(core.hhUser1.address, core.tokens.weth, ZERO_BI);
 
+      await freezeAndGetOraclePrice(core.tokens.weth);
       await increaseToTimestamp((await underlyingToken.expiry()).toNumber());
       await vault.connect(core.hhUser1).redeemDueInterestAndRewards(true, true, [true], false);
 
@@ -489,7 +487,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
       expect(await core.expiry.getExpiry(accountInfo, otherMarketId1)).to.eq(timestamp + 2 * ONE_WEEK_SECONDS);
     });
 
-    it('should fail when not called by vault owner', async () => {
+    it('should fail when not called by vault owner or converter', async () => {
       const zapParams = await getSimpleZapParams(otherMarketId1, otherAmountWei, otherMarketId2, otherAmountWei, core);
       await expectThrow(
         vault.connect(core.hhUser2).swapExactInputForOutput(
@@ -501,7 +499,7 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+        `IsolationModeTokenVaultV1: Only owner or converter can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
 
@@ -787,6 +785,13 @@ describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
         'PendleYtGLP2024UserVaultV1: Position is about to expire',
       );
     });
-
   });
+
+  async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {
+    const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
+    const price = await core.dolomiteMargin.getMarketPrice(marketId);
+    await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
+    await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+    return price.value;
+  }
 });

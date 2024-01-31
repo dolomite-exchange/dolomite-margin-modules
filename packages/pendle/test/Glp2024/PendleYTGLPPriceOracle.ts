@@ -26,9 +26,9 @@ import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTes
  *
  * Keep in mind that Pendle's PT prices tick upward each second so YT prices tick downward
  */
-const PT_GLP_PRICE = BigNumber.from('923876121116027818'); // $0.923876121116027818
-const YT_GLP_PRICE = BigNumber.from('79759797083751374'); // $0.79759797083751374
-const GLP_PRICE = BigNumber.from('1003635918199779193'); // $1.003635918199779193
+const PT_GLP_PRICE = BigNumber.from('1121325780731123745'); // $1.121325780731123745
+const YT_GLP_PRICE = BigNumber.from('35919781432088543'); // $0.35919781432088543
+const GLP_PRICE = BigNumber.from('1157245562163212289'); // $1.157245562163212289
 const initialAllowableDebtMarketIds = [0, 1];
 const initialAllowableCollateralMarketIds = [2, 3];
 
@@ -111,6 +111,7 @@ describe('PendleYtGLPPriceOracle', () => {
   });
 
   describe('#getPrice', () => {
+    // @todo fix
     it('returns the correct value under normal conditions for dytGLP', async () => {
       await increaseToTimestamp(timestampTeleport);
       expect((await core.dolomiteMargin.getMarketPrice(core.marketIds.dPtGlp!)).value).to.eq(PT_GLP_PRICE);

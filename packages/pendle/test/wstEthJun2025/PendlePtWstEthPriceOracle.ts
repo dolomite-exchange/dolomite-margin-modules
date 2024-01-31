@@ -23,10 +23,10 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { STETH_USD_CHAINLINK_FEED_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 
-const PT_WST_ETH_PRICE = BigNumber.from('1909366766905154844965');
+const PT_WST_ETH_PRICE = BigNumber.from('4843076344353594664836639');
 
 describe('PendlePtWstEthJun2025PriceOracle', () => {
   let snapshotId: string;
@@ -39,11 +39,7 @@ describe('PendlePtWstEthJun2025PriceOracle', () => {
   let underlyingToken: IERC20;
 
   before(async () => {
-    const blockNumber = 152_347_300;
-    core = await setupCoreProtocol({
-      blockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
       DolomiteRegistryImplementation__factory.abi,
@@ -54,14 +50,15 @@ describe('PendlePtWstEthJun2025PriceOracle', () => {
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
       core.chainlinkPriceOracle!.address,
     );
+    underlyingToken = core.tokens.stEth!;
     await core.chainlinkPriceOracle!.connect(core.governance).ownerInsertOrUpdateOracleToken(
       core.tokens.stEth!.address,
       18,
       STETH_USD_CHAINLINK_FEED_MAP[core.config.network]!,
       ADDRESS_ZERO,
     );
+    await freezeAndGetOraclePrice(core.tokens.stEth!);
 
-    underlyingToken = core.tokens.stEth!;
     pendleRegistry = await createPendleRegistry(
       core,
       core.pendleEcosystem!.wstEthJun2025.ptWstEthMarket,
@@ -132,7 +129,8 @@ describe('PendlePtWstEthJun2025PriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
-      await advanceToTimestamp(1700502000);
+      await advanceToTimestamp(1705000000);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(core.testEcosystem!.testPriceOracle.address);
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_WST_ETH_PRICE);
     });
@@ -164,4 +162,10 @@ describe('PendlePtWstEthJun2025PriceOracle', () => {
       );
     });
   });
+
+  async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {
+    const price = await core.chainlinkPriceOracle!.getPrice(token.address);
+    await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
+    return price.value;
+  }
 });
