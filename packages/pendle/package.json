@@ -7,7 +7,7 @@
     "test": "hardhat --network hardhat test",
     "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/**/*.ts\" --solcoverjs ../../.solcover.js --network hardhat",
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts",
-    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/general/BaseRegistry.ts\" --solcoverjs ../../.solcover.js --network hardhat",
+    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/Glp2024/*.ts\" --solcoverjs ../../.solcover.js --network hardhat",
     "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/general/BaseRegistry.ts"
   },
   "private": false,

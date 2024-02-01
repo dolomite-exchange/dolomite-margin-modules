@@ -415,7 +415,7 @@ describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
         solidAccountStruct,
         core.marketIds.usdc,
         usdcAmountOut.sub(usdcDebtAmount),
-        '5',
+        '100',
       );
       await expectProtocolBalanceIsGreaterThan(
         core,
