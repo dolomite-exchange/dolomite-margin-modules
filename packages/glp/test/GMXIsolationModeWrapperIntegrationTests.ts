@@ -1,5 +1,7 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import deployments from '../../../scripts/deployments.json';
 import {
+  GenericEventEmissionType,
   GenericTraderParam,
   GenericTraderType,
   GenericUserConfig,
@@ -16,6 +18,7 @@ import {
   GMXIsolationModeTokenVaultV1__factory,
   GMXIsolationModeVaultFactory,
   GmxRegistryV1,
+  GmxRegistryV1__factory,
 } from '../src/types';
 import {
   CustomTestToken,
@@ -23,9 +26,11 @@ import {
   SimpleIsolationModeWrapperTraderV2,
   IIsolationModeUnwrapperTrader,
   IIsolationModeWrapperTrader,
+  SimpleIsolationModeUnwrapperTraderV2__factory,
+  SimpleIsolationModeWrapperTraderV2__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   createGLPIsolationModeTokenVaultV2,
   createGLPIsolationModeVaultFactory,
@@ -37,6 +42,7 @@ import {
 } from './glp-ecosystem-utils';
 import {
   CoreProtocol,
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupGMXBalance,
   setupTestMarket,
@@ -55,8 +61,8 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
   let snapshotId: string;
 
   let core: CoreProtocol;
-  let underlyingMarketIdGmx: BigNumber;
-  let gmxMarketId: BigNumber;
+  let underlyingMarketIdGmx: BigNumberish;
+  let gmxMarketId: BigNumberish;
   let gmxRegistry: GmxRegistryV1;
   let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
   let wrapper: SimpleIsolationModeWrapperTraderV2;
@@ -67,26 +73,36 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
   let otherMarketId1: BigNumber;
 
   before(async () => {
+    const network = Network.ArbitrumOne;
     core = await setupCoreProtocol({
-      blockNumber: DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING,
-      network: Network.ArbitrumOne,
+      blockNumber: await getRealLatestBlockNumber(true, network),
+      network,
     });
-    gmxRegistry = await createGmxRegistry(core);
+    gmxRegistry = GmxRegistryV1__factory.connect(
+      deployments.GmxRegistryProxy[network].address,
+      core.hhUser1,
+    );
+    glpFactory = core.gmxEcosystem!.live.dGlp.connect(core.hhUser1);
+    gmxFactory = core.gmxEcosystem!.live.dGmx.connect(core.hhUser1);
 
-    const gmxVaultImplementation = await createGMXIsolationModeTokenVaultV1();
-    gmxFactory = await createGMXIsolationModeVaultFactory(core, gmxRegistry, gmxVaultImplementation);
-    const glpVaultImplementation = await createGLPIsolationModeTokenVaultV2();
-    glpFactory = await createGLPIsolationModeVaultFactory(core, gmxRegistry, glpVaultImplementation);
+    await core.testEcosystem!.testPriceOracle.setPrice(glpFactory.address, '1000000000000000000');
+    await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.dfsGlp!, core.testEcosystem!.testPriceOracle.address);
 
-    // Setup markets. Using a test token with these GMX tests
-    gmxMarketId = await core.dolomiteMargin.getNumMarkets();
-    await core.testEcosystem!.testPriceOracle.setPrice(core.gmxEcosystem!.gmx.address, '1000000000000000000');
-    await setupTestMarket(core, core.gmxEcosystem!.gmx, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetMaxWei(gmxMarketId, ONE_BI);
-
-    underlyingMarketIdGmx = await core.dolomiteMargin.getNumMarkets();
+    unwrapper = SimpleIsolationModeUnwrapperTraderV2__factory.connect(
+      deployments.GMXIsolationModeUnwrapperTraderV4[network].address,
+      core.hhUser1,
+    );
+    wrapper = SimpleIsolationModeWrapperTraderV2__factory.connect(
+      deployments.GMXIsolationModeWrapperTraderV4[network].address,
+      core.hhUser1,
+    );
+    underlyingMarketIdGmx = core.marketIds.dGmx!;
     await core.testEcosystem!.testPriceOracle.setPrice(gmxFactory.address, '1000000000000000000');
-    await setupTestMarket(core, gmxFactory, true);
+    await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketIdGmx, core.testEcosystem!.testPriceOracle.address);
+
+    gmxMarketId = core.marketIds.gmx!;
+    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.gmx!.address, '1000000000000000000');
+    await core.dolomiteMargin.ownerSetPriceOracle(gmxMarketId, core.testEcosystem!.testPriceOracle.address);
 
     otherToken1 = await createTestToken();
     await core.testEcosystem!.testPriceOracle.setPrice(
@@ -95,18 +111,6 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
     );
     otherMarketId1 = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken1, false);
-
-    await core.testEcosystem!.testPriceOracle.setPrice(glpFactory.address, '1000000000000000000');
-    await setupTestMarket(core, glpFactory, true);
-
-    unwrapper = await createGMXUnwrapperTraderV2(core, gmxFactory);
-    wrapper = await createGMXWrapperTraderV2(core, gmxFactory);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(gmxFactory.address, true);
-    await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(glpFactory.address, true);
-    await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
-    await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(gmxFactory.address);
-    await gmxFactory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
-    await glpFactory.connect(core.governance).ownerInitialize([]);
 
     await gmxFactory.createVault(core.hhUser1.address);
     const vaultAddress = await gmxFactory.getVaultByAccount(core.hhUser1.address);
@@ -278,7 +282,7 @@ async function getUnwrapperToOtherMarketParams(
   outputMarket: BigNumberish,
   inputAmountWei: BigNumber,
   minOutputAmountWei: BigNumber,
-  unwrapper: IIsolationModeUnwrapperTrader,
+  unwrapper: SimpleIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader,
   core: CoreProtocol,
 ): Promise<ZapParam> {
   if (!core.testEcosystem) {
@@ -311,6 +315,7 @@ async function getUnwrapperToOtherMarketParams(
     userConfig: {
       deadline: '123123123123123',
       balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None,
     },
   };
 }
@@ -321,7 +326,7 @@ async function getWrapperToUnderlyingGmxMarketParams(
   outputMarket: BigNumberish,
   inputAmountWei: BigNumber,
   minOutputAmountWei: BigNumber,
-  wrapper: IIsolationModeWrapperTrader,
+  wrapper: SimpleIsolationModeWrapperTraderV2 | IIsolationModeWrapperTrader,
   core: CoreProtocol,
 ): Promise<ZapParam> {
   if (!core.testEcosystem) {
@@ -357,6 +362,7 @@ async function getWrapperToUnderlyingGmxMarketParams(
     userConfig: {
       deadline: '123123123123123',
       balanceCheckFlag: BalanceCheckFlag.None,
+      eventType: GenericEventEmissionType.None,
     },
   };
 }

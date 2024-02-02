@@ -83,7 +83,7 @@
     "@babel/eslint-parser": "^7.19.1",
     "@chainlink/contracts": "^0.6.1",
     "@dolomite-exchange/dolomite-margin": "^0.11.0",
-    "@dolomite-exchange/zap-sdk": "^0.1.24",
+    "@dolomite-exchange/zap-sdk": "^0.1.45",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-etherscan": "^3.1.7",

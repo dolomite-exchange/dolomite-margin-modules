@@ -24,9 +24,9 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
-const PT_RETH_PRICE = BigNumber.from('1808539032753997677827');
+const PT_RETH_PRICE = BigNumber.from('2176215596634254185360');
 
 describe('PendlePtREthJun2025PriceOracle', () => {
   let snapshotId: string;
@@ -39,11 +39,8 @@ describe('PendlePtREthJun2025PriceOracle', () => {
   let underlyingToken: IERC20;
 
   before(async () => {
-    const blockNumber = 148_468_519;
-    core = await setupCoreProtocol({
-      blockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
+    await freezeAndGetOraclePrice(core.tokens.weth);
 
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
       DolomiteRegistryImplementation__factory.abi,
@@ -126,7 +123,8 @@ describe('PendlePtREthJun2025PriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
-      await advanceToTimestamp(1699549200);
+      await advanceToTimestamp(1710000000);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(core.testEcosystem!.testPriceOracle.address);
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_RETH_PRICE);
     });
@@ -158,4 +156,12 @@ describe('PendlePtREthJun2025PriceOracle', () => {
       );
     });
   });
+
+  async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {
+    const marketId = await core.dolomiteMargin.getMarketIdByTokenAddress(token.address);
+    const price = await core.dolomiteMargin.getMarketPrice(marketId);
+    await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
+    await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+    return price.value;
+  }
 });

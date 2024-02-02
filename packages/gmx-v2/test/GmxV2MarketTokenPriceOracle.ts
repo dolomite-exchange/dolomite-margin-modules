@@ -137,7 +137,8 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       await core.dolomiteMargin.ownerSetMaxWei(marketId, MAX_WEI); // 10M tokens
       await setNextBlockTimestamp(1693923100);
       await mine();
-      expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_MAX_WEI);
+      // Should be same as above as we no longer factor it into slippage
+      expect((await gmPriceOracle.getPrice(factory.address)).value).to.eq(GM_ETH_USD_PRICE_NO_MAX_WEI);
     });
 
     it('returns the correct value when there is a max wei & 0 price impact', async () => {
