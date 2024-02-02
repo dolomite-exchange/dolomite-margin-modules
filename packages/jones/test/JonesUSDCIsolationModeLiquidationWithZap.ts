@@ -31,7 +31,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import { liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
 import { IERC20 } from 'packages/base/src/types';
 
@@ -74,6 +74,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
       network,
     });
     await freezeAndGetOraclePrice(core.tokens.usdc);
+    await disableInterestAccrual(core, core.marketIds.usdc);
     underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
     jonesUSDCRegistry = await JonesUSDCRegistry__factory.connect(
       deployments.JonesUSDCRegistryProxy[network].address,
@@ -206,6 +207,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
         liquidAccountStruct,
         zapOutputs,
       );
+
       const receipt = await txResult.wait();
       console.log('\tliquidatorProxy#liquidate gas used:', receipt.gasUsed.toString());
 
@@ -258,7 +260,6 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
   });
 
   describe('Perform expiration with full integration', () => {
-    // @follow-up This test is failing. Numbers off by a bit
     it('should work when expired account is borrowing the output token (USDC)', async () => {
       await vault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, heldAmountWei);
       const [supplyValue, borrowValue] = await core.dolomiteMargin.getAccountValues(liquidAccountStruct);
@@ -302,6 +303,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
         core.apiTokens.usdc,
         toZapBigNumber(usdcDebtAmount),
         core.hhUser5.address,
+        { isLiquidation: true },
       );
       const txResult = await liquidateV4WithZap(
         core,
@@ -333,7 +335,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
         solidAccountStruct,
         core.marketIds.usdc,
         usdcOutputAmount.sub(usdcDebtAmount),
-        '5',
+        '100',
       );
       await expectProtocolBalanceIsGreaterThan(
         core,

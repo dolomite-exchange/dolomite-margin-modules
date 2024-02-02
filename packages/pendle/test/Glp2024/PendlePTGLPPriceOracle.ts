@@ -21,11 +21,11 @@ import {
 import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 /**
- * This is the expected price at the following timestamp: 1700000000
+ * This is the expected price at the following timestamp: 1800000000
  *
  * Keep in mind that Pendle's prices tick upward each second.
  */
-const PT_GLP_PRICE = BigNumber.from('915069158541073688'); // $0.915069158541073688
+const PT_GLP_PRICE = BigNumber.from('1112129351600591032'); // $0.915069158541073688
 
 describe('PendlePtGLPPriceOracle', () => {
   let snapshotId: string;
@@ -103,7 +103,7 @@ describe('PendlePtGLPPriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for dptGLP', async () => {
-      await increaseToTimestamp(1_700_000_000);
+      await increaseToTimestamp(1_800_000_000);
       const price = await ptGlpOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_GLP_PRICE);
     });

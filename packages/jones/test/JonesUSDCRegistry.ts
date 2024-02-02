@@ -236,6 +236,30 @@ describe('JonesUSDCRegistry', () => {
     });
   });
 
+  describe('#ownerSetJUSDCFarm', () => {
+    it('should work normally', async () => {
+      const result = await registry.connect(core.governance).ownerSetJUSDCFarm(OTHER_ADDRESS_1);
+      await expectEvent(registry, result, 'JUSDCFarmSet', {
+        jUSDCFarm: OTHER_ADDRESS_1,
+      });
+      expect(await registry.jUSDCFarm()).to.equal(OTHER_ADDRESS_1);
+    });
+
+    it('should fail when not called by owner', async () => {
+      await expectThrow(
+        registry.connect(core.hhUser1).ownerSetJUSDCFarm(OTHER_ADDRESS_1),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if zero address is set', async () => {
+      await expectThrow(
+        registry.connect(core.governance).ownerSetJUSDCFarm(ZERO_ADDRESS),
+        'JonesUSDCRegistry: Invalid jUSDCFarm address',
+      );
+    });
+  });
+
   describe('#ownerSetUnwrapperTraderForLiquidation', () => {
     it('should work normally', async () => {
       const result = await registry.connect(core.governance).ownerSetUnwrapperTraderForLiquidation(OTHER_ADDRESS_1);

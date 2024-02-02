@@ -152,6 +152,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             (IDolomiteStructs.AssetReference, uint256, address, uint256, IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[])
         );
 
+
         if (tradeTypes[0] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.NoOp) {
             // This is a no-op, so we don't need to do anything
             return;
@@ -453,7 +454,8 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 actions[2] = AccountActionLib.encodeCallAction(
                     _params.primaryAccountId,
                     /* _callee */ address(this),
-                    /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(
+                    /* (assetReference, transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(
+                        IDolomiteStructs.AssetReference.Target,
                         _params.inputAmount,
                         _params.otherAccountOwner,
                         _params.otherAccountNumber,
@@ -464,7 +466,8 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 actions[3] = AccountActionLib.encodeCallAction(
                     _params.primaryAccountId,
                     /* _callee */ address(this),
-                    /* (transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(
+                    /* (assetReference, transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(
+                        IDolomiteStructs.AssetReference.Target,
                         _params.inputAmount,
                         _params.otherAccountOwner,
                         _params.otherAccountNumber,

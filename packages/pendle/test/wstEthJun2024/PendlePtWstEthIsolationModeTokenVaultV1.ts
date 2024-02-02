@@ -19,7 +19,7 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 describe('PendlePtWstEthJun2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -34,11 +34,7 @@ describe('PendlePtWstEthJun2024IsolationModeTokenVaultV1', () => {
   let vault: PendlePtIsolationModeTokenVaultV1;
 
   before(async () => {
-    const blockNumber = 148_468_519;
-    core = await setupCoreProtocol({
-      blockNumber,
-      network: Network.ArbitrumOne,
-    });
+    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(Network.ArbitrumOne));
 
     underlyingPtToken = core.pendleEcosystem!.wstEthJun2024.ptWstEthToken.connect(core.hhUser1);
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();

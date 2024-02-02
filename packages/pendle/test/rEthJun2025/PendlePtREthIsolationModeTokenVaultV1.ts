@@ -34,7 +34,7 @@ describe('PendlePtREthJun2025IsolationModeTokenVaultV1', () => {
   let vault: PendlePtIsolationModeTokenVaultV1;
 
   before(async () => {
-    const blockNumber = 148_468_519;
+    const blockNumber = 155_090_000;
     core = await setupCoreProtocol({
       blockNumber,
       network: Network.ArbitrumOne,

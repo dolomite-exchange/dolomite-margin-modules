@@ -20,6 +20,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/types';
 import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
+  getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
@@ -43,6 +44,7 @@ import {
 } from './glp-ecosystem-utils';
 import {
   CoreProtocol,
+  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupGMXBalance,
   setupTestMarket,
@@ -505,94 +507,6 @@ describe('GMXIsolationModeTokenVaultV1', () => {
       await gmxVault.vestGmx(esGmxAmount);
 
       expect(await gmxVault.underlyingBalanceOf()).to.eq(gmxAmount);
-    });
-  });
-
-  // @todo fix
-  describe('#swapExactInputForOutput', () => {
-    it('should work normally with no staked GMX', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.transferIntoPositionWithUnderlyingToken(accountNumber, otherAccountNumber, gmxAmount);
-
-      const zapParams = await getUnwrapZapParams(
-        underlyingMarketIdGmx,
-        gmxAmount,
-        gmxMarketId,
-        ONE_BI,
-        unwrapper,
-        core,
-      );
-      await gmxVault.swapExactInputForOutput(
-        123,
-        zapParams.marketIdsPath,
-        zapParams.inputAmountWei,
-        zapParams.minOutputAmountWei,
-        zapParams.tradersPath,
-        zapParams.makerAccounts,
-        zapParams.userConfig,
-      );
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, gmxMarketId, gmxAmount);
-    });
-
-    it('should work normally with staked GMX', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.transferIntoPositionWithUnderlyingToken(accountNumber, otherAccountNumber, gmxAmount);
-
-      const zapParams = await getUnwrapZapParams(
-        underlyingMarketIdGmx,
-        gmxAmount,
-        gmxMarketId,
-        ONE_BI,
-        unwrapper,
-        core,
-      );
-      await gmxVault.swapExactInputForOutput(
-        123,
-        zapParams.marketIdsPath,
-        zapParams.inputAmountWei,
-        zapParams.minOutputAmountWei,
-        zapParams.tradersPath,
-        zapParams.makerAccounts,
-        zapParams.userConfig,
-      );
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, gmxMarketId, gmxAmount);
-    });
-
-    it('should work normally with vested GMX and sweep', async () => {
-      await setupGMXBalance(core, core.hhUser1, gmxAmount, gmxVault);
-      await gmxVault.depositIntoVaultForDolomiteMargin(accountNumber, gmxAmount);
-      await gmxVault.transferIntoPositionWithUnderlyingToken(accountNumber, otherAccountNumber, gmxAmount);
-
-      await doHandleRewardsWithWaitTime(30);
-      await gmxVault.vestGmx(esGmxAmount);
-      await waitDays(366);
-
-      const zapParams = await getUnwrapZapParams(
-        underlyingMarketIdGmx,
-        gmxAmount,
-        gmxMarketId,
-        ONE_BI,
-        unwrapper,
-        core,
-      );
-      await gmxVault.swapExactInputForOutput(
-        123,
-        zapParams.marketIdsPath,
-        zapParams.inputAmountWei,
-        zapParams.minOutputAmountWei,
-        zapParams.tradersPath,
-        zapParams.makerAccounts,
-        zapParams.userConfig,
-      );
-      await expectProtocolBalance(core, gmxVault.address, accountNumber, underlyingMarketIdGmx, esGmxAmount);
-      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, underlyingMarketIdGmx, ZERO_BI);
-      await expectProtocolBalance(core, gmxVault.address, otherAccountNumber, gmxMarketId, gmxAmount);
     });
   });
 

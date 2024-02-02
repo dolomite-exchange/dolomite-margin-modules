@@ -45,6 +45,7 @@ import {
   PendleYtGLP2024IsolationModeWrapperTraderV2__factory,
   PendleYtGLPPriceOracle,
   PendleYtGLPPriceOracle__factory,
+  TestPendleYtGLP2024IsolationModeTokenVaultV1,
 } from '../src/types';
 import {
   RegistryProxy,
@@ -240,6 +241,16 @@ export async function createPendleYtGLP2024IsolationModeTokenVaultV1(
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibrary(
     'PendleYtGLP2024IsolationModeTokenVaultV1',
+    libraries,
+    [],
+  );
+}
+
+export async function createTestPendleYtGLP2024IsolationModeTokenVaultV1(
+): Promise<TestPendleYtGLP2024IsolationModeTokenVaultV1> {
+  const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+  return createContractWithLibrary(
+    'TestPendleYtGLP2024IsolationModeTokenVaultV1',
     libraries,
     [],
   );
