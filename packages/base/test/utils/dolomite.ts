@@ -21,6 +21,7 @@ import {
   getRegistryProxyConstructorParams,
 } from '../../src/utils/constructors/dolomite';
 import { createContractWithAbi, createContractWithName, LibraryName } from '../../src/utils/dolomite-utils';
+import { CoreProtocolType } from './setup';
 
 export type DolomiteMargin<T extends Network> = T extends Network.ArbitrumOne ? IDolomiteMargin : IDolomiteMarginV2;
 export type Expiry<T extends Network> = T extends Network.ArbitrumOne ? IExpiry : IExpiryV2;
@@ -43,7 +44,7 @@ export async function createAsyncIsolationModeWrapperTraderImpl(): Promise<Recor
 export async function createRegistryProxy(
   implementationAddress: string,
   initializationCalldata: string,
-  core: CoreProtocol,
+  core: CoreProtocolType<Network>,
 ): Promise<RegistryProxy> {
   return createContractWithAbi(
     RegistryProxy__factory.abi,
@@ -60,10 +61,10 @@ export async function createDolomiteRegistryImplementation(): Promise<DolomiteRe
   );
 }
 
-export async function createIsolationModeTraderProxy(
+export async function createIsolationModeTraderProxy<T extends Network>(
   implementationAddress: string,
   initializationCalldata: string,
-  core: CoreProtocol,
+  core: CoreProtocolType<T>,
 ): Promise<IsolationModeTraderProxy> {
   return createContractWithAbi(
     IsolationModeTraderProxy__factory.abi,
@@ -72,8 +73,8 @@ export async function createIsolationModeTraderProxy(
   );
 }
 
-export async function createEventEmitter(
-  core: CoreProtocol,
+export async function createEventEmitter<T extends Network>(
+  core: CoreProtocolType<T>,
 ): Promise<EventEmitterRegistry> {
   const implementation = await createContractWithAbi<EventEmitterRegistry>(
     EventEmitterRegistry__factory.abi,
@@ -88,7 +89,7 @@ export async function createEventEmitter(
   return EventEmitterRegistry__factory.connect(proxy.address, core.hhUser1) as EventEmitterRegistry;
 }
 
-export async function setupNewGenericTraderProxy(core: CoreProtocol, marketId: BigNumberish) {
+export async function setupNewGenericTraderProxy<T extends Network>(core: CoreProtocolType<T>, marketId: BigNumberish) {
   const implementation = await createDolomiteRegistryImplementation();
   await core.dolomiteRegistryProxy.upgradeTo(implementation.address);
 

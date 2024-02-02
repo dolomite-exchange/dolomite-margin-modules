@@ -1,3 +1,4 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
@@ -22,8 +23,6 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createJonesUSDCIsolationModeTokenVaultV2 } from './jones-ecosystem-utils';
 import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupUSDCBalance,
   setupUserVaultProxy,
@@ -37,7 +36,7 @@ const usableUsdcAmount = usdcAmount.div(2);
 describe('JonesUSDCIsolationModeTokenVaultV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC4626;
   let marketId: BigNumberish;
   let jonesUSDCRegistry: IJonesUSDCRegistry;

@@ -1,3 +1,4 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { expect } from 'chai';
 import {
   IERC4626,
@@ -21,7 +22,6 @@ import {
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
 import {
-  CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
@@ -32,7 +32,7 @@ import { createRoleAndWhitelistTrader, TRADER_ROLE } from './jones-utils';
 describe('JonesUSDCIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC4626;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let unwrapperForLiquidation: JonesUSDCIsolationModeUnwrapperTraderV2;

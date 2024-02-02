@@ -1,29 +1,33 @@
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import { CoreProtocol } from '../../../test/utils/setup';
-import { EventEmitterRegistry, IERC20 } from '../../../src/types';
-import { IDolomiteInterestSetter, IDolomiteStructs } from '../../../src/types/contracts/protocol/interfaces/IDolomiteMargin';
+import { CoreProtocolType } from '../../../test/utils/setup';
+import { EventEmitterRegistry, IERC20 } from '../../types';
+import {
+  IDolomiteInterestSetter,
+  IDolomiteStructs,
+} from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
+import { Network } from '../no-deps-constants';
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
 
-export function getRegistryProxyConstructorParams(
+export function getRegistryProxyConstructorParams<T extends Network>(
   implementationAddress: string,
   implementationCalldata: string,
-  core: CoreProtocol,
+  core: CoreProtocolType<T>,
 ): any[] {
   return [implementationAddress, core.dolomiteMargin.address, implementationCalldata];
 }
 
-export function getIsolationModeTraderProxyConstructorParams(
+export function getIsolationModeTraderProxyConstructorParams<T extends Network>(
   implementationAddress: string,
   implementationCalldata: string,
-  core: CoreProtocol,
+  core: CoreProtocolType<T>,
 ): any[] {
   return [implementationAddress, core.dolomiteMargin.address, implementationCalldata];
 }
 
-export async function getEventEmitterRegistryConstructorParams(
-  core: CoreProtocol,
+export async function getEventEmitterRegistryConstructorParams<T extends Network>(
+  core: CoreProtocolType<T>,
   implementation: EventEmitterRegistry,
 ): Promise<any[]> {
   const initializationCallData = await implementation.populateTransaction.initialize();
