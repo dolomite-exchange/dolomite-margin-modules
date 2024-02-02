@@ -1,3 +1,4 @@
+import { CoreProtocolPolygonZkEvm } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { CoreProtocolArbitrumOne, CoreProtocolZkEvm } from '@dolomite-exchange/modules-base/test/utils/CoreProtocol';
 import { ADDRESSES } from '@dolomite-margin/dist/src';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
@@ -40,7 +41,7 @@ const USDC_SCALE_DIFF = BigNumber.from('10').pow(12);
 describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocolZkEvm;
+  let core: CoreProtocolPolygonZkEvm;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let jonesController: IJonesWhitelistController;
   let factory: JonesUSDCIsolationModeVaultFactory;

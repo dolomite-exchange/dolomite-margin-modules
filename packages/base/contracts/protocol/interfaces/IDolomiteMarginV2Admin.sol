@@ -222,6 +222,14 @@ interface IDolomiteMarginV2Admin is IDolomiteStructs {
     external;
 
     /**
+     * Sets the account risk override setter by default for any account
+     */
+    function ownerSetDefaultAccountRiskOverride(
+        IDolomiteAccountRiskOverrideSetter accountRiskOverrideSetter
+    )
+    external;
+
+    /**
      * Sets the account risk override setter for a given wallet
      */
     function ownerSetAccountRiskOverride(

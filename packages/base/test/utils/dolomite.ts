@@ -1,10 +1,15 @@
 import { address } from '@dolomite-margin/dist/src';
+import { BigNumberish } from 'ethers';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
   EventEmitterRegistry__factory,
+  IDolomiteMargin,
   IDolomiteMarginV2,
+  IExpiry,
+  IExpiryV2,
   IsolationModeTraderProxy,
   IsolationModeTraderProxy__factory,
   RegistryProxy,
@@ -16,11 +21,9 @@ import {
   getRegistryProxyConstructorParams,
 } from '../../src/utils/constructors/dolomite';
 import { createContractWithAbi, createContractWithName, LibraryName } from '../../src/utils/dolomite-utils';
-import { CoreProtocol } from './setup';
-import { BigNumberish } from 'ethers';
-import { IDolomiteMargin } from '../../../../src/types';
 
-export type DolomiteMargin = IDolomiteMargin | IDolomiteMarginV2;
+export type DolomiteMargin<T extends Network> = T extends Network.ArbitrumOne ? IDolomiteMargin : IDolomiteMarginV2;
+export type Expiry<T extends Network> = T extends Network.ArbitrumOne ? IExpiry : IExpiryV2;
 
 export async function createIsolationModeTokenVaultV1ActionsImpl(): Promise<Record<LibraryName, address>> {
   const contract = await createContractWithName('IsolationModeTokenVaultV1ActionsImpl', []);

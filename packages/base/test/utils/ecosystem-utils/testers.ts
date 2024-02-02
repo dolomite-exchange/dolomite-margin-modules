@@ -98,7 +98,7 @@ export async function createTestFreezableIsolationModeVaultFactory(
 }
 
 export async function createTestEcosystem<T extends Network>(
-  dolomiteMargin: DolomiteMargin,
+  dolomiteMargin: DolomiteMargin<T>,
   dolomiteRegistry: IDolomiteRegistry,
   governor: SignerWithAddress,
   signer: SignerWithAddress,

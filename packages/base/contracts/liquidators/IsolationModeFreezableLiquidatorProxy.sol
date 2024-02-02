@@ -30,6 +30,7 @@ import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeFreezableLiquidatorProxy } from "../isolation-mode/interfaces/IIsolationModeFreezableLiquidatorProxy.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 
 
 /**
@@ -45,6 +46,7 @@ contract IsolationModeFreezableLiquidatorProxy is
 {
     using DecimalLib for uint256;
     using DecimalLib for IDolomiteStructs.Decimal;
+    using DolomiteMarginVersionWrapperLib for *;
 
     // ============================ Constants ============================
 
@@ -111,9 +113,13 @@ contract IsolationModeFreezableLiquidatorProxy is
             _params.expirationTimestamp
         );
 
-        (IDolomiteStructs.Decimal memory weight, uint256 otherMinOutputAmount) = abi.decode(_params.extraData, (IDolomiteStructs.Decimal, uint256));
+        (IDolomiteStructs.Decimal memory weight, uint256 otherMinOutputAmount) = abi.decode(
+            _params.extraData,
+            (IDolomiteStructs.Decimal, uint256)
+        );
 
         _checkMinAmountIsNotTooLarge(
+            _params.liquidAccount,
             _params.freezableMarketId,
             _params.outputMarketId,
             _params.inputTokenAmount.mul(DecimalLib.oneSub(weight)),
@@ -195,6 +201,7 @@ contract IsolationModeFreezableLiquidatorProxy is
     }
 
     function _checkMinAmountIsNotTooLarge(
+        IDolomiteStructs.AccountInfo memory _liquidAccount,
         uint256 _inputMarketId,
         uint256 _outputMarketId,
         uint256 _inputTokenAmount,
@@ -203,7 +210,8 @@ contract IsolationModeFreezableLiquidatorProxy is
         uint256 inputValue = DOLOMITE_MARGIN().getMarketPrice(_inputMarketId).value * _inputTokenAmount;
         uint256 outputValue = DOLOMITE_MARGIN().getMarketPrice(_outputMarketId).value * _minOutputAmount;
 
-        IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getLiquidationSpreadForPair(
+        IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
+            _liquidAccount,
             /* heldMarketId = */ _inputMarketId,
             /* ownedMarketId = */ _outputMarketId
         );

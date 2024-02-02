@@ -25,12 +25,12 @@ import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
- * @title   IExpiry
+ * @title   IExpiryV2
  * @author  Dolomite
  *
  * @notice  Interface for getting, setting, and executing the expiry of a position.
  */
-interface IExpiry {
+interface IExpiryV2 {
 
     // ============ Enums ============
 
@@ -53,14 +53,15 @@ interface IExpiry {
         uint32 minTimeDelta;
     }
 
-    function getSpreadAdjustedPrices(
+    function getLiquidationSpreadAdjustedPrices(
+        IDolomiteStructs.AccountInfo calldata liquidAccount,
         uint256 heldMarketId,
         uint256 owedMarketId,
         uint32 expiry
     )
     external
     view
-    returns (IDolomiteMargin.MonetaryPrice memory heldPrice, IDolomiteMargin.MonetaryPrice memory owedPriceAdj);
+    returns (IDolomiteStructs.MonetaryPrice memory heldPrice, IDolomiteStructs.MonetaryPrice memory owedPriceAdj);
 
     function getExpiry(
         IDolomiteMargin.AccountInfo calldata account,

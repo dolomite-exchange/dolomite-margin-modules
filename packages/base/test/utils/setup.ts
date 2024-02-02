@@ -1,14 +1,13 @@
+import { IChainlinkAutomationRegistry__factory } from '@dolomite-exchange/modules-jones/src/types';
+import { IChainlinkPriceOracle__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk/dist';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
-import * as DolomiteAmmFactoryJson from '@dolomite-margin/deployed-contracts/DolomiteAmmFactory.json';
-import * as DolomiteAmmRouterProxyJson from '@dolomite-margin/deployed-contracts/DolomiteAmmRouterProxy.json';
 import * as DolomiteMarginJson from '@dolomite-margin/deployed-contracts/DolomiteMargin.json';
 import * as ExpiryJson from '@dolomite-margin/deployed-contracts/Expiry.json';
 import * as IGenericTraderProxyV1Json from '@dolomite-margin/deployed-contracts/GenericTraderProxyV1.json';
 import * as LiquidatorAssetRegistryJson from '@dolomite-margin/deployed-contracts/LiquidatorAssetRegistry.json';
 import * as LiquidatorProxyV1Json from '@dolomite-margin/deployed-contracts/LiquidatorProxyV1.json';
-import * as LiquidatorProxyV1WithAmmJson from '@dolomite-margin/deployed-contracts/LiquidatorProxyV1WithAmm.json';
 import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -18,24 +17,22 @@ import Deployments, * as deployments from '../../../../scripts/deployments.json'
 import {
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
-  IDolomiteAmmFactory__factory,
-  IDolomiteAmmRouterProxy__factory,
   IDolomiteMargin,
   IDolomiteMargin__factory,
-  IDolomiteRegistry,
+  IDolomiteMarginV2,
+  IDolomiteMarginV2__factory,
   IDolomiteRegistry__factory,
   IERC20,
   IERC20__factory,
   IEventEmitterRegistry__factory,
   IExpiry__factory,
+  IExpiryV2__factory,
   IGenericTraderProxyV1__factory,
   ILiquidatorAssetRegistry__factory,
   ILiquidatorProxyV1__factory,
-  ILiquidatorProxyV1WithAmm__factory,
   ILiquidatorProxyV4WithGenericTrader__factory,
   IPartiallyDelayedMultiSig__factory,
   IWETH__factory,
-  RegistryProxy,
   RegistryProxy__factory,
 } from '../../src/types';
 import {
@@ -74,23 +71,20 @@ import {
   WETH_MAP,
   WST_ETH_MAP,
 } from '../../src/utils/constants';
+import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP } from '../../src/utils/no-deps-constants';
 import {
-  Network,
-  NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
-  NETWORK_TO_REGISTRY_PROXY_MAP,
-  NetworkName,
-} from '../../src/utils/no-deps-constants';
-import { CoreProtocolArbitrumOne, CoreProtocolBase, CoreProtocolPolygonZkEvm } from './core-protocol';
-import { createDolomiteRegistryImplementation } from './dolomite';
-import { impersonate, impersonateOrFallback, resetFork } from './index';
-import { createTestEcosystem } from './ecosystem-utils/testers';
-import { createInterestSetters } from './ecosystem-utils/interest-setters';
-import { IChainlinkPriceOracle__factory, IChainlinkRegistry__factory } from '../../../../src/types';
-import { IChainlinkAutomationRegistry__factory } from '@dolomite-exchange/modules-jones/src/types';
+  CoreProtocolAbstract,
+  CoreProtocolArbitrumOne,
+  CoreProtocolBase,
+  CoreProtocolParams,
+  CoreProtocolPolygonZkEvm,
+} from './core-protocol';
+import { DolomiteMargin, Expiry } from './dolomite';
 import { createAbraEcosystem } from './ecosystem-utils/abra';
 import { createArbEcosystem } from './ecosystem-utils/arb';
-import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
 import { createCamelotEcosystem } from './ecosystem-utils/camelot';
+import { createGmxEcosystem, createGmxEcosystemV2 } from './ecosystem-utils/gmx';
+import { createInterestSetters } from './ecosystem-utils/interest-setters';
 import { createJonesEcosystem } from './ecosystem-utils/jones';
 import { createLiquidityMiningEcosystem } from './ecosystem-utils/liquidity-mining';
 import { createOdosEcosystem } from './ecosystem-utils/odos';
@@ -98,7 +92,9 @@ import { createParaswapEcosystem } from './ecosystem-utils/paraswap';
 import { createPendleEcosystem } from './ecosystem-utils/pendle';
 import { createPlutusEcosystem } from './ecosystem-utils/plutus';
 import { createPremiaEcosystem } from './ecosystem-utils/premia';
+import { createTestEcosystem } from './ecosystem-utils/testers';
 import { createUmamiEcosystem } from './ecosystem-utils/umami';
+import { impersonate, impersonateOrFallback, resetFork } from './index';
 
 /**
  * Config to for setting up tests in the `before` function
@@ -117,19 +113,19 @@ export interface CoreProtocolConfig<T extends Network> {
   networkNumber: number;
 }
 
-export async function disableInterestAccrual(core: CoreProtocol, marketId: BigNumberish) {
+export async function disableInterestAccrual<T extends Network>(core: CoreProtocolAbstract<T>, marketId: BigNumberish) {
   return core.dolomiteMargin.ownerSetInterestSetter(marketId, core.interestSetters.alwaysZeroInterestSetter.address);
 }
 
-export async function enableInterestAccrual(core: CoreProtocol, marketId: BigNumberish) {
+export async function enableInterestAccrual<T extends Network>(core: CoreProtocolAbstract<T>, marketId: BigNumberish) {
   return core.dolomiteMargin.ownerSetInterestSetter(
     marketId,
     core.interestSetters.linearStepFunction8L92UInterestSetter.address,
   );
 }
 
-export async function setupWETHBalance(
-  core: CoreProtocol,
+export async function setupWETHBalance<T extends Network>(
+  core: CoreProtocolAbstract<T>,
   signer: SignerWithAddress,
   amount: BigNumberish,
   spender: { address: string },
@@ -150,8 +146,8 @@ export async function setupARBBalance(
   await core.tokens.arb!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupDAIBalance(
-  core: CoreProtocol,
+export async function setupDAIBalance<T extends Network>(
+  core: CoreProtocolAbstract<T>,
   signer: SignerWithAddress,
   amount: BigNumberish,
   spender: { address: string },
@@ -174,8 +170,8 @@ export async function setupNativeUSDCBalance(
   await core.tokens.nativeUsdc!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupUSDCBalance(
-  core: CoreProtocol,
+export async function setupUSDCBalance<T extends Network>(
+  core: CoreProtocolAbstract<T>,
   signer: SignerWithAddress,
   amount: BigNumberish,
   spender: { address: string },
@@ -265,9 +261,9 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
 
 export type CoreProtocolType<T extends Network> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
-  : CoreProtocolPolygonZkEvm;
-
-export type CoreProtocol = CoreProtocolArbitrumOne | CoreProtocolPolygonZkEvm;
+  : T extends Network.Base ? CoreProtocolBase
+    : T extends Network.PolygonZkEvm ? CoreProtocolPolygonZkEvm
+      : never;
 
 export async function setupCoreProtocol<T extends Network>(
   config: CoreProtocolSetupConfig<T>,
@@ -278,17 +274,17 @@ export async function setupCoreProtocol<T extends Network>(
     console.log('\tSkipping forking...');
   }
 
-  const DOLOMITE_MARGIN = new BaseContract(
-    DolomiteMarginJson.networks[config.network].address,
-    IDolomiteMargin__factory.createInterface(),
-  ) as IDolomiteMargin;
-
+  const dolomiteMarginAddress = DolomiteMarginJson.networks[config.network].address;
   const [hhUser1, hhUser2, hhUser3, hhUser4, hhUser5] = await ethers.getSigners();
   const governance: SignerWithAddress = await impersonateOrFallback(
-    await DOLOMITE_MARGIN.connect(hhUser1).owner(),
+    await IDolomiteMargin__factory.connect(dolomiteMarginAddress, hhUser1).owner(),
     true,
     hhUser1,
   );
+
+  const dolomiteMargin = (config.network === Network.ArbitrumOne
+    ? IDolomiteMargin__factory.connect(dolomiteMarginAddress, governance)
+    : IDolomiteMarginV2__factory.connect(dolomiteMarginAddress, governance)) as DolomiteMargin<T>;
 
   const borrowPositionProxyV2 = IBorrowPositionProxyV2__factory.connect(
     BorrowPositionProxyV2Json.networks[config.network].address,
@@ -308,7 +304,7 @@ export async function setupCoreProtocol<T extends Network>(
   );
 
   const delayedMultiSig = IPartiallyDelayedMultiSig__factory.connect(
-    await DOLOMITE_MARGIN.connect(hhUser1).owner(),
+    await dolomiteMargin.connect(hhUser1).owner(),
     governance,
   );
 
@@ -317,39 +313,14 @@ export async function setupCoreProtocol<T extends Network>(
     governance,
   );
 
-  const dolomiteAmmFactory = IDolomiteAmmFactory__factory.connect(
-    DolomiteAmmFactoryJson.networks[config.network].address,
+  const dolomiteRegistry = IDolomiteRegistry__factory.connect(
+    (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
     governance,
   );
-
-  const dolomiteAmmRouterProxy = IDolomiteAmmRouterProxy__factory.connect(
-    DolomiteAmmRouterProxyJson.networks[config.network].address,
+  const dolomiteRegistryProxy = RegistryProxy__factory.connect(
+    (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
     governance,
   );
-
-  const dolomiteMargin = DOLOMITE_MARGIN.connect(governance);
-
-  let dolomiteRegistry: IDolomiteRegistry;
-  let dolomiteRegistryProxy: RegistryProxy;
-  if (
-    config.blockNumber >= NETWORK_TO_REGISTRY_PROXY_MAP[config.network]
-    || network.name === NetworkName.ArbitrumOne
-  ) {
-    dolomiteRegistry = IDolomiteRegistry__factory.connect(
-      (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
-      governance,
-    );
-    dolomiteRegistryProxy = RegistryProxy__factory.connect(
-      (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
-      governance,
-    );
-  } else {
-    // Use a "dummy" implementation
-    const implementation = await createDolomiteRegistryImplementation();
-    dolomiteRegistry = IDolomiteRegistry__factory.connect(implementation.address, hhUser1);
-    dolomiteRegistryProxy = null as any;
-  }
-
   const eventEmitterRegistry = getContract(
     (Deployments.EventEmitterRegistryProxy as any)[config.network].address,
     IEventEmitterRegistry__factory.connect,
@@ -362,10 +333,9 @@ export async function setupCoreProtocol<T extends Network>(
     governance,
   );
 
-  const expiry = IExpiry__factory.connect(
-    ExpiryJson.networks[config.network].address,
-    governance,
-  );
+  const expiry = (config.network === Network.ArbitrumOne
+    ? IExpiry__factory.connect(ExpiryJson.networks[config.network].address, governance)
+    : IExpiryV2__factory.connect(ExpiryJson.networks[config.network].address, governance)) as Expiry<T>;
 
   const genericTraderProxy = getContract(
     (IGenericTraderProxyV1Json.networks as any)[config.network]!.address,
@@ -385,11 +355,6 @@ export async function setupCoreProtocol<T extends Network>(
     governance,
   );
 
-  const liquidatorProxyV1WithAmm = ILiquidatorProxyV1WithAmm__factory.connect(
-    LiquidatorProxyV1WithAmmJson.networks[config.network].address,
-    governance,
-  );
-
   const liquidatorProxyV4 = getContract(
     // LiquidatorProxyV4WithGenericTraderJson.networks[config.network].address,
     '0x34975624E992bF5c094EF0CF3344660f7AaB9CB3',
@@ -401,12 +366,10 @@ export async function setupCoreProtocol<T extends Network>(
 
   const tokenVaultActionsLibraries = await createTokenVaultActionsLibraries(config);
 
-  const coreProtocolBase: CoreProtocolBase<T> = {
+  const coreProtocolParams: CoreProtocolParams<T> = {
     borrowPositionProxyV2,
     delayedMultiSig,
     depositWithdrawalProxy,
-    dolomiteAmmFactory,
-    dolomiteAmmRouterProxy,
     dolomiteMargin,
     dolomiteRegistry,
     dolomiteRegistryProxy,
@@ -418,7 +381,6 @@ export async function setupCoreProtocol<T extends Network>(
     interestSetters,
     liquidatorAssetRegistry,
     liquidatorProxyV1,
-    liquidatorProxyV1WithAmm,
     liquidatorProxyV4,
     testEcosystem,
     tokenVaultActionsLibraries,
@@ -479,107 +441,126 @@ export async function setupCoreProtocol<T extends Network>(
     const premiaEcosystem = await createPremiaEcosystem(config.network, hhUser1);
     const umamiEcosystem = await createUmamiEcosystem(config.network, hhUser1);
 
-    return {
-      ...coreProtocolBase,
-      abraEcosystem,
-      arbEcosystem,
-      camelotEcosystem,
-      gmxEcosystem,
-      gmxEcosystemV2,
-      jonesEcosystem,
-      liquidityMiningEcosystem,
-      odosEcosystem,
-      paraswapEcosystem,
-      pendleEcosystem,
-      plutusEcosystem,
-      premiaEcosystem,
-      umamiEcosystem,
-      chainlinkAutomationRegistry: chainlinkAutomationRegistry!,
-      chainlinkPriceOracle: chainlinkPriceOracle!,
-      marketIds: {
-        ...coreProtocolBase.marketIds,
-        arb: ARB_MAP[config.network]!.marketId,
-        dArb: D_ARB_MAP[config.network]!.marketId,
-        dfsGlp: DFS_GLP_MAP[config.network]!.marketId,
-        dGmx: D_GMX_MAP[config.network]!.marketId,
-        djUSDC: DJ_USDC[config.network]!.marketId,
-        dplvGlp: DPLV_GLP_MAP[config.network]!.marketId,
-        dPtGlp: DPT_GLP_2024_MAP[config.network]!.marketId,
-        dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[config.network]!.marketId,
-        dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[config.network]!.marketId,
-        dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[config.network]!.marketId,
-        dpx: DPX_MAP[config.network]!.marketId,
-        dYtGlp: DYT_GLP_2024_MAP[config.network]!.marketId,
-        grail: GRAIL_MAP[config.network]!.marketId,
-        jones: JONES_MAP[config.network]!.marketId,
-        magic: MAGIC_MAP[config.network]!.marketId,
-        magicGlp: MAGIC_GLP_MAP[config.network]!.marketId,
-        mim: MIM_MAP[config.network]!.marketId,
-        nativeUsdc: NATIVE_USDC_MAP[config.network]!.marketId,
-        premia: PREMIA_MAP[config.network]!.marketId,
-        rEth: RETH_MAP[config.network]!.marketId,
-        radiant: RDNT_MAP[config.network]!.marketId,
-        pendle: PENDLE_MAP[config.network]!.marketId,
-        usdt: USDT_MAP[config.network]!.marketId,
-        wstEth: WST_ETH_MAP[config.network]!.marketId,
+    return new CoreProtocolArbitrumOne(
+      coreProtocolParams as CoreProtocolParams<Network.ArbitrumOne>,
+      {
+        abraEcosystem,
+        arbEcosystem,
+        camelotEcosystem,
+        gmxEcosystem,
+        gmxEcosystemV2,
+        jonesEcosystem,
+        liquidityMiningEcosystem,
+        odosEcosystem,
+        paraswapEcosystem,
+        pendleEcosystem,
+        plutusEcosystem,
+        premiaEcosystem,
+        umamiEcosystem,
+        chainlinkAutomationRegistry: chainlinkAutomationRegistry!,
+        chainlinkPriceOracle: chainlinkPriceOracle!,
+        marketIds: {
+          ...coreProtocolParams.marketIds,
+          arb: ARB_MAP[config.network]!.marketId,
+          dArb: D_ARB_MAP[config.network]!.marketId,
+          dfsGlp: DFS_GLP_MAP[config.network]!.marketId,
+          dGmx: D_GMX_MAP[config.network]!.marketId,
+          djUSDC: DJ_USDC[config.network]!.marketId,
+          dplvGlp: DPLV_GLP_MAP[config.network]!.marketId,
+          dPtGlp: DPT_GLP_2024_MAP[config.network]!.marketId,
+          dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[config.network]!.marketId,
+          dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[config.network]!.marketId,
+          dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[config.network]!.marketId,
+          dpx: DPX_MAP[config.network]!.marketId,
+          dYtGlp: DYT_GLP_2024_MAP[config.network]!.marketId,
+          grail: GRAIL_MAP[config.network]!.marketId,
+          jones: JONES_MAP[config.network]!.marketId,
+          magic: MAGIC_MAP[config.network]!.marketId,
+          magicGlp: MAGIC_GLP_MAP[config.network]!.marketId,
+          mim: MIM_MAP[config.network]!.marketId,
+          nativeUsdc: NATIVE_USDC_MAP[config.network]!.marketId,
+          premia: PREMIA_MAP[config.network]!.marketId,
+          rEth: RETH_MAP[config.network]!.marketId,
+          radiant: RDNT_MAP[config.network]!.marketId,
+          pendle: PENDLE_MAP[config.network]!.marketId,
+          usdt: USDT_MAP[config.network]!.marketId,
+          wstEth: WST_ETH_MAP[config.network]!.marketId,
+        },
+        tokens: {
+          ...coreProtocolParams.tokens,
+          arb: IERC20__factory.connect(ARB_MAP[config.network]!.address, hhUser1),
+          dArb: IERC20__factory.connect(D_ARB_MAP[config.network]!.address, hhUser1),
+          dfsGlp: IERC20__factory.connect(DFS_GLP_MAP[config.network]!.address, hhUser1),
+          dGmx: IERC20__factory.connect(D_GMX_MAP[config.network]!.address, hhUser1),
+          dPtGlp: IERC20__factory.connect(DPT_GLP_2024_MAP[config.network]!.address, hhUser1),
+          dPtREthJun2025: IERC20__factory.connect(DPT_R_ETH_JUN_2025_MAP[config.network]!.address, hhUser1),
+          dPtWstEthJun2024: IERC20__factory.connect(DPT_WST_ETH_JUN_2024_MAP[config.network]!.address, hhUser1),
+          dPtWstEthJun2025: IERC20__factory.connect(DPT_WST_ETH_JUN_2025_MAP[config.network]!.address, hhUser1),
+          dpx: IERC20__factory.connect(DPX_MAP[config.network]!.address, hhUser1),
+          dYtGlp: IERC20__factory.connect(DYT_GLP_2024_MAP[config.network]!.address, hhUser1),
+          gmx: IERC20__factory.connect(GMX_MAP[config.network]!.address, hhUser1),
+          grail: IERC20__factory.connect(GRAIL_MAP[config.network]!.address, hhUser1),
+          jones: IERC20__factory.connect(JONES_MAP[config.network]!.address, hhUser1),
+          magic: IERC20__factory.connect(MAGIC_MAP[config.network]!.address, hhUser1),
+          nativeUsdc: IERC20__factory.connect(NATIVE_USDC_MAP[config.network]!.address, hhUser1),
+          premia: IERC20__factory.connect(PREMIA_MAP[config.network]!.address, hhUser1),
+          pendle: IERC20__factory.connect(PENDLE_MAP[config.network]!.address, hhUser1),
+          rEth: IERC20__factory.connect(RETH_MAP[config.network]!.address, hhUser1),
+          radiant: IERC20__factory.connect(RDNT_MAP[config.network]!.address, hhUser1),
+          size: IERC20__factory.connect(SIZE_MAP[config.network]!.address, hhUser1),
+          stEth: IERC20__factory.connect(ST_ETH_MAP[config.network]!.address, hhUser1),
+          wstEth: IERC20__factory.connect(WST_ETH_MAP[config.network]!.address, hhUser1),
+        },
       },
-      tokens: {
-        ...coreProtocolBase.tokens,
-        arb: IERC20__factory.connect(ARB_MAP[config.network]!.address, hhUser1),
-        dArb: IERC20__factory.connect(D_ARB_MAP[config.network]!.address, hhUser1),
-        dfsGlp: IERC20__factory.connect(DFS_GLP_MAP[config.network]!.address, hhUser1),
-        dGmx: IERC20__factory.connect(D_GMX_MAP[config.network]!.address, hhUser1),
-        dPtGlp: IERC20__factory.connect(DPT_GLP_2024_MAP[config.network]!.address, hhUser1),
-        dPtREthJun2025: IERC20__factory.connect(DPT_R_ETH_JUN_2025_MAP[config.network]!.address, hhUser1),
-        dPtWstEthJun2024: IERC20__factory.connect(DPT_WST_ETH_JUN_2024_MAP[config.network]!.address, hhUser1),
-        dPtWstEthJun2025: IERC20__factory.connect(DPT_WST_ETH_JUN_2025_MAP[config.network]!.address, hhUser1),
-        dpx: IERC20__factory.connect(DPX_MAP[config.network]!.address, hhUser1),
-        dYtGlp: IERC20__factory.connect(DYT_GLP_2024_MAP[config.network]!.address, hhUser1),
-        gmx: IERC20__factory.connect(GMX_MAP[config.network]!.address, hhUser1),
-        grail: IERC20__factory.connect(GRAIL_MAP[config.network]!.address, hhUser1),
-        jones: IERC20__factory.connect(JONES_MAP[config.network]!.address, hhUser1),
-        magic: IERC20__factory.connect(MAGIC_MAP[config.network]!.address, hhUser1),
-        nativeUsdc: IERC20__factory.connect(NATIVE_USDC_MAP[config.network]!.address, hhUser1),
-        premia: IERC20__factory.connect(PREMIA_MAP[config.network]!.address, hhUser1),
-        pendle: IERC20__factory.connect(PENDLE_MAP[config.network]!.address, hhUser1),
-        rEth: IERC20__factory.connect(RETH_MAP[config.network]!.address, hhUser1),
-        radiant: IERC20__factory.connect(RDNT_MAP[config.network]!.address, hhUser1),
-        size: IERC20__factory.connect(SIZE_MAP[config.network]!.address, hhUser1),
-        stEth: IERC20__factory.connect(ST_ETH_MAP[config.network]!.address, hhUser1),
-        wstEth: IERC20__factory.connect(WST_ETH_MAP[config.network]!.address, hhUser1),
-      },
-    } as CoreProtocolArbitrumOne;
+    ) as any;
+  }
+  if (config.network === Network.Base) {
+    return new CoreProtocolBase(
+      coreProtocolParams as CoreProtocolParams<Network.Base>,
+    ) as any;
+  }
+  if (config.network === Network.PolygonZkEvm) {
+    return new CoreProtocolPolygonZkEvm(
+      coreProtocolParams as CoreProtocolParams<Network.PolygonZkEvm>,
+    ) as any;
   }
 
   return Promise.reject(new Error(`Invalid network, found: ${config.network}`));
 }
 
-function createIERC20Opt(address: string | undefined, signerOrProvider: SignerWithAddress): IERC20 | undefined {
-  if (!address) {
-    return undefined;
-  }
-
-  return IERC20__factory.connect(address, signerOrProvider);
-}
-
-export async function setupTestMarket(
-  core: CoreProtocol,
+export async function setupTestMarket<T extends Network>(
+  core: CoreProtocolType<T>,
   token: { address: address },
   isClosing: boolean,
   priceOracle?: { address: address },
   marginPremium?: BigNumberish,
   spreadPremium?: BigNumberish,
+  earningsRateOverride?: BigNumberish,
 ) {
-  await core.dolomiteMargin.connect(core.governance).ownerAddMarket(
-    token.address,
-    (priceOracle ?? core.testEcosystem!.testPriceOracle).address,
-    core.testEcosystem!.testInterestSetter.address,
-    { value: marginPremium ?? 0 },
-    { value: spreadPremium ?? 0 },
-    0,
-    isClosing,
-    false,
-  );
+  if (core.config.network === Network.ArbitrumOne) {
+    await (core.dolomiteMargin as IDolomiteMargin).connect(core.governance).ownerAddMarket(
+      token.address,
+      (priceOracle ?? core.testEcosystem!.testPriceOracle).address,
+      core.testEcosystem!.testInterestSetter.address,
+      { value: marginPremium ?? 0 },
+      { value: spreadPremium ?? 0 },
+      0,
+      isClosing,
+      false,
+    );
+  } else {
+    await (core.dolomiteMargin as IDolomiteMarginV2).connect(core.governance).ownerAddMarket(
+      token.address,
+      (priceOracle ?? core.testEcosystem!.testPriceOracle).address,
+      core.testEcosystem!.testInterestSetter.address,
+      { value: marginPremium ?? 0 },
+      { value: spreadPremium ?? 0 },
+      0,
+      0,
+      { value: earningsRateOverride ?? 0 },
+      isClosing,
+    );
+  }
 }
 
 async function createTokenVaultActionsLibraries<T extends Network>(
