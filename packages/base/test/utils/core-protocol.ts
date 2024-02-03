@@ -88,6 +88,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   dPtWstEthJun2025: BigNumberish;
   dpx: BigNumberish;
   dYtGlp: BigNumberish;
+  gmx: BigNumberish;
   grail: BigNumberish;
   jones: BigNumberish;
   magic: BigNumberish;
@@ -283,11 +284,19 @@ export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
   }
 }
 
+export interface ZkEvmParams {
+  paraswapEcosystem: ParaswapEcosystem;
+}
+
 export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.PolygonZkEvm> {
+
+  public readonly paraswapEcosystem: ParaswapEcosystem;
 
   constructor(
     params: CoreProtocolParams<Network.PolygonZkEvm>,
+    zkEvmParams: ZkEvmParams
   ) {
     super(params);
+    this.paraswapEcosystem = zkEvmParams.paraswapEcosystem;
   }
 }

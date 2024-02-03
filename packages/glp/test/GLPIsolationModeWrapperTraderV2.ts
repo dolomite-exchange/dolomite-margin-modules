@@ -13,7 +13,12 @@ import {
 } from '../src/types';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot
+} from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createGLPIsolationModeTokenVaultV1,
@@ -23,7 +28,6 @@ import {
   createGmxRegistry,
 } from './glp-ecosystem-utils';
 import {
-  CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
@@ -31,6 +35,7 @@ import {
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -41,7 +46,7 @@ const usableUsdcAmount = usdcAmount.div(2);
 describe('GLPIsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC20;
   let underlyingMarketId: BigNumber;
   let gmxRegistry: GmxRegistryV1;

@@ -24,7 +24,11 @@ import {
   snapshot,
   waitDays
 } from '@dolomite-exchange/modules-base/test/utils';
-import { expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import {
+  expectProtocolBalance,
+  expectThrow,
+  expectWalletBalance
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createGMXIsolationModeTokenVaultV1,
   createGMXIsolationModeVaultFactory,
@@ -32,7 +36,6 @@ import {
   createTestGLPIsolationModeTokenVaultV2,
 } from './glp-ecosystem-utils';
 import {
-  CoreProtocol,
   setupCoreProtocol,
   setupGMXBalance,
   setupTestMarket,
@@ -40,6 +43,7 @@ import {
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
 const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
@@ -51,7 +55,7 @@ const accountNumber = ZERO_BI;
 describe('GLPIsolationModeTokenVaultV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let glpFactory: IGLPIsolationModeVaultFactoryOld;
   let gmxFactory: GMXIsolationModeVaultFactory;
   let glpVault: TestGLPIsolationModeTokenVaultV2;

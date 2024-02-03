@@ -6,13 +6,20 @@ import { IERC4626 } from '@dolomite-exchange/modules-base/src/types';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
-  createMagicGLPPriceOracle,
-  createMagicGLPUnwrapperTraderV1,
-} from './abracadabra-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { createMagicGLPPriceOracle, createMagicGLPUnwrapperTraderV1, } from './abracadabra-ecosystem-utils';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupUSDCBalance
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -21,7 +28,7 @@ const otherAmountWei = BigNumber.from('10000000'); // $10
 describe('MagicGLPUnwrapperTraderV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let magicGlp: IERC4626;
   let marketId: BigNumber;
   let unwrapper: MagicGLPUnwrapperTraderV1;

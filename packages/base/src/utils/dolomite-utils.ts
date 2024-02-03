@@ -3,15 +3,15 @@ import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margi
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumber, BigNumberish, BytesLike } from 'ethers';
 import { ethers } from 'hardhat';
-import { CoreProtocol } from '../../test/utils/setup';
 import {
   CustomTestToken,
   CustomTestToken__factory,
   CustomTestVaultToken,
   CustomTestVaultToken__factory,
-} from '../../src/types';
+} from '../types';
 import { ActionArgsStruct } from './index';
 import { MAX_UINT_256_BI, Network, networkToNetworkNameMap } from './no-deps-constants';
+import { CoreProtocolType } from '../../test/utils/setup';
 
 /**
  * @return  The deployed contract
@@ -115,8 +115,8 @@ export function createWithdrawAction(
   };
 }
 
-export async function depositIntoDolomiteMargin(
-  core: CoreProtocol,
+export async function depositIntoDolomiteMargin<T extends Network>(
+  core: CoreProtocolType<T>,
   accountOwner: SignerWithAddress,
   accountNumber: BigNumberish,
   tokenId: BigNumberish,
@@ -131,8 +131,8 @@ export async function depositIntoDolomiteMargin(
     );
 }
 
-export async function withdrawFromDolomiteMargin(
-  core: CoreProtocol,
+export async function withdrawFromDolomiteMargin<T extends Network>(
+  core: CoreProtocolType<T>,
   user: SignerWithAddress,
   accountId: BigNumberish,
   tokenId: BigNumberish,
@@ -181,6 +181,8 @@ export function heldWeiToOwedWei(
 
 const NETWORK_TO_VALID_MAP: Record<Network, boolean> = {
   [Network.ArbitrumOne]: true,
+  [Network.Base]: true,
+  [Network.PolygonZkEvm]: true,
 };
 
 export async function getAnyNetwork(): Promise<Network> {

@@ -248,149 +248,145 @@ export const WST_ETH_MAP: Record<Network, TokenWithMarketId | undefined> = {
 
 // ************************* External Addresses *************************
 
-export const ATLAS_SI_TOKEN_MAP: Record<Network, string | undefined> = {
-  [Network.ArbitrumOne]: undefined,
-};
-
-export const BN_GMX_MAP: Record<Network, string | undefined> = {
+export const BN_GMX_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x35247165119B69A40edD5304969560D0ef486921',
 };
 
-export const DPX_WETH_V3_POOL_MAP: Record<Network, string | undefined> = {
+export const DPX_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x59a327d948db1810324a04d69cbe9fe9884f8f28',
 };
 
-export const ES_GMX_MAP: Record<Network, string | undefined> = {
+export const ES_GMX_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xf42Ae1D54fd613C9bb14810b0588FaAa09a426cA',
 };
 
-export const ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP: Record<Network, string | undefined> = {
+export const ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x60519b48ec4183a61ca2B8e37869E675FD203b34',
 };
 
-export const ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP: Record<Network, string | undefined> = {
+export const ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x23208B91A98c7C1CD9FE63085BFf68311494F193',
 };
 
-export const FS_GLP_MAP: Record<Network, string | undefined> = {
+export const FS_GLP_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x1aDDD80E6039594eE970E5872D247bf0414C8903',
 };
 
 /**
  * The underlying token the for IsolationModeVaultFactory
  */
-export const GLP_MAP: Record<Network, string | undefined> = {
+export const GLP_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x4277f8F2c384827B5273592FF7CeBd9f2C1ac258',
 };
 
-export const GLP_MANAGER_MAP: Record<Network, string | undefined> = {
+export const GLP_MANAGER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x3963FfC9dff443c2A94f21b129D429891E32ec18',
 };
 
-export const GLP_REWARD_ROUTER_MAP: Record<Network, string | undefined> = {
+export const GLP_REWARD_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xB95DB5B167D75e6d04227CfFFA61069348d271F5',
 };
 
-export const GMX_DEPOSIT_HANDLER_MAP: Record<Network, string | undefined> = {
+export const GMX_DEPOSIT_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x9Dc4f12Eb2d8405b499FB5B8AF79a5f64aB8a457',
 };
 
-export const GMX_DEPOSIT_VAULT_MAP: Record<Network, string | undefined> = {
+export const GMX_DEPOSIT_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xF89e77e8Dc11691C9e8757e84aaFbCD8A67d7A55',
 };
 
-export const GMX_DATASTORE_MAP: Record<Network, string | undefined> = {
+export const GMX_DATASTORE_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xFD70de6b91282D8017aA4E741e9Ae325CAb992d8',
 };
 
-export const GMX_EXCHANGE_ROUTER_MAP: Record<Network, string | undefined> = {
+export const GMX_EXCHANGE_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x7C68C7866A64FA2160F78EEaE12217FFbf871fa8',
 };
 
-export const GMX_EXECUTOR_MAP: Record<Network, string | undefined> = {
+export const GMX_EXECUTOR_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xC539cB358a58aC67185BaAD4d5E3f7fCfc903700',
 };
 
-export const GMX_ETH_USD_MARKET_TOKEN_MAP: Record<Network, string | undefined> = {
+export const GMX_ETH_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x70d95587d40A2caf56bd97485aB3Eec10Bee6336',
 };
 
-export const GMX_GOV_MAP: Record<Network, string | undefined> = {
+export const GMX_GOV_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xe7E740Fa40CA16b15B621B49de8E9F0D69CF4858',
 };
 
-export const GMX_REWARD_ROUTER_V2_MAP: Record<Network, string | undefined> = {
+export const GMX_REWARD_ROUTER_V2_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xA906F338CB21815cBc4Bc87ace9e68c87eF8d8F1',
 };
 
-export const GMX_REWARD_ROUTER_V3_MAP: Record<Network, string | undefined> = {
+export const GMX_REWARD_ROUTER_V3_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x159854e14A862Df9E39E1D128b8e5F70B4A3cE9B',
 };
 
-export const GMX_READER_MAP: Record<Network, string | undefined> = {
+export const GMX_READER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x38d91ED96283d62182Fc6d990C24097A918a4d9b',
 };
 
-export const GMX_ROUTER_MAP: Record<Network, string | undefined> = {
+export const GMX_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x7452c558d45f8afC8c83dAe62C3f8A5BE19c71f6',
 };
 
-export const GMX_MAP: Record<Network, TokenWithMarketId | undefined> = {
+export const GMX_MAP: Record<Network.ArbitrumOne, TokenWithMarketId | undefined> = {
   [Network.ArbitrumOne]: {
     address: '0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a',
     marketId: 29,
   },
 };
 
-export const GMX_VAULT_MAP: Record<Network, string | undefined> = {
+export const GMX_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x489ee077994B6658eAfA855C308275EAd8097C4A',
 };
 
-export const GMX_WITHDRAWAL_HANDLER_MAP: Record<Network, string | undefined> = {
+export const GMX_WITHDRAWAL_HANDLER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x9E32088F3c1a5EB38D32d1Ec6ba0bCBF499DC9ac',
 };
 
-export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network, string | undefined> = {
+export const GMX_WITHDRAWAL_VAULT_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0628d46b5d145f183adb6ef1f2c97ed1c4701c55',
 };
 
-export const GRAIL_USDC_V3_POOL_MAP: Record<Network, string | undefined> = {
+export const GRAIL_USDC_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x8cc8093218bCaC8B1896A1EED4D925F6F6aB289F',
 };
 
-export const GRAIL_WETH_V3_POOL_MAP: Record<Network, string | undefined> = {
+export const GRAIL_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x60451B6aC55E3C5F0f3aeE31519670EcC62DC28f',
 };
 
-export const JONES_ECOSYSTEM_GOVERNOR_MAP: Record<Network, string | undefined> = {
+export const JONES_ECOSYSTEM_GOVERNOR_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xDD0556DDCFE7CdaB3540E7F09cB366f498d90774',
 };
 
-export const JONES_GLP_ADAPTER_MAP: Record<Network, string | undefined> = {
+export const JONES_GLP_ADAPTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x42EfE3E686808ccA051A49BCDE34C5CbA2EBEfc1',
 };
 
-export const JONES_GLP_VAULT_ROUTER_MAP: Record<Network, string | undefined> = {
+export const JONES_GLP_VAULT_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x2F43c6475f1ecBD051cE486A9f3Ccc4b03F3d713',
 };
 
-export const JONES_JUSDC_MAP: Record<Network, string | undefined> = {
+export const JONES_JUSDC_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xe66998533a1992ecE9eA99cDf47686F4fc8458E0',
 };
 
-export const JONES_JUSDC_FARM_MAP: Record<Network, string | undefined> = {
+export const JONES_JUSDC_FARM_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0aEfaD19aA454bCc1B1Dd86e18A7d58D0a6FAC38',
 };
 
-export const JONES_JUSDC_RECEIPT_TOKEN_MAP: Record<Network, string | undefined> = {
+export const JONES_JUSDC_RECEIPT_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xa485a0bc44988B95245D5F20497CCaFF58a73E99',
 };
 
-export const JONES_WETH_V3_POOL_MAP: Record<Network, string | undefined> = {
+export const JONES_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x0e878029D18cD7F630823439cf389d1601d9dbD9',
 };
 
-export const JONES_WHITELIST_CONTROLLER_MAP: Record<Network, string | undefined> = {
+export const JONES_WHITELIST_CONTROLLER_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x2ACc798DA9487fdD7F4F653e04D8E8411cd73e88',
 };
 

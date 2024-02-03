@@ -1,24 +1,26 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-exchange/dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import { MagicGLPPriceOracle, MagicGLPWrapperTraderV2 } from '../src/types';
+import { MagicGLPWrapperTraderV2 } from '../src/types';
 import { IERC4626 } from '@dolomite-exchange/modules-base/src/types';
 import { AccountInfoStruct, ActionArgsStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot
+} from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalanceDustyOrZero, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { createMagicGLPWrapperTraderV2, } from './abracadabra-ecosystem-utils';
 import {
-  createMagicGLPPriceOracle,
-  createMagicGLPWrapperTraderV2,
-} from './abracadabra-ecosystem-utils';
-import {
-  CoreProtocol,
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupUSDCBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -29,17 +31,15 @@ const usableUsdcAmount = usdcAmount.div(2);
 describe('MagicGLPWrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let magicGlp: IERC4626;
   let marketId: BigNumber;
   let wrapper: MagicGLPWrapperTraderV2;
-  let magicGlpPriceOracle: MagicGLPPriceOracle;
   let defaultAccount: AccountInfoStruct;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     magicGlp = core.abraEcosystem!.magicGlp;
-    magicGlpPriceOracle = await createMagicGLPPriceOracle(core);
 
     marketId = BigNumber.from(core.marketIds.magicGlp!);
 

@@ -1,3 +1,4 @@
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   OdosAggregatorTrader,
   OdosAggregatorTrader__factory,
@@ -7,15 +8,16 @@ import {
   ParaswapAggregatorTraderV2__factory,
 } from '../../../src/types';
 import {
+  CoreProtocolWithOdos,
+  CoreProtocolWithParaswap,
   getOdosAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderConstructorParams,
   getParaswapAggregatorTraderV2ConstructorParams,
 } from '../../../src/utils/constructors/traders';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { CoreProtocol } from '../setup';
 
-export async function createParaswapAggregatorTrader(
-  core: CoreProtocol,
+export async function createParaswapAggregatorTrader<T extends Network>(
+  core: CoreProtocolWithParaswap<T>,
 ): Promise<ParaswapAggregatorTrader> {
   return await createContractWithAbi<ParaswapAggregatorTrader>(
     ParaswapAggregatorTrader__factory.abi,
@@ -24,8 +26,8 @@ export async function createParaswapAggregatorTrader(
   );
 }
 
-export async function createParaswapAggregatorTraderV2(
-  core: CoreProtocol,
+export async function createParaswapAggregatorTraderV2<T extends Network>(
+  core: CoreProtocolWithParaswap<T>,
 ): Promise<ParaswapAggregatorTraderV2> {
   return await createContractWithAbi<ParaswapAggregatorTraderV2>(
     ParaswapAggregatorTraderV2__factory.abi,
@@ -34,8 +36,8 @@ export async function createParaswapAggregatorTraderV2(
   );
 }
 
-export async function createOdosAggregatorTrader(
-  core: CoreProtocol,
+export async function createOdosAggregatorTrader<T extends Network>(
+  core: CoreProtocolWithOdos<T>,
 ): Promise<OdosAggregatorTrader> {
   return await createContractWithAbi<OdosAggregatorTrader>(
     OdosAggregatorTrader__factory.abi,

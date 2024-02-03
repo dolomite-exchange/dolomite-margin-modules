@@ -103,8 +103,8 @@ export interface CoreProtocolSetupConfig<T extends Network> {
   /**
    * The block number at which the tests will be run on Arbitrum
    */
-  blockNumber: number;
-  network: T;
+  readonly blockNumber: number;
+  readonly network: T;
 }
 
 export interface CoreProtocolConfig<T extends Network> {
@@ -266,7 +266,7 @@ export type CoreProtocolType<T extends Network> = T extends Network.ArbitrumOne
       : never;
 
 export async function setupCoreProtocol<T extends Network>(
-  config: CoreProtocolSetupConfig<T>,
+  config: Readonly<CoreProtocolSetupConfig<T>>,
 ): Promise<CoreProtocolType<T>> {
   if (network.name === 'hardhat') {
     await resetFork(config.blockNumber, config.network);
@@ -427,19 +427,20 @@ export async function setupCoreProtocol<T extends Network>(
   };
 
   if (config.network === Network.ArbitrumOne) {
-    const abraEcosystem = await createAbraEcosystem(config.network, hhUser1);
-    const arbEcosystem = await createArbEcosystem(config.network, hhUser1);
-    const camelotEcosystem = await createCamelotEcosystem(config.network, hhUser1);
-    const gmxEcosystem = await createGmxEcosystem(config.network, hhUser1);
-    const gmxEcosystemV2 = await createGmxEcosystemV2(config.network, hhUser1);
-    const jonesEcosystem = await createJonesEcosystem(config.network, hhUser1);
-    const liquidityMiningEcosystem = await createLiquidityMiningEcosystem(config.network, hhUser1);
-    const odosEcosystem = await createOdosEcosystem(config.network, hhUser1);
-    const paraswapEcosystem = await createParaswapEcosystem(config.network, hhUser1);
-    const pendleEcosystem = await createPendleEcosystem(config.network, hhUser1);
-    const plutusEcosystem = await createPlutusEcosystem(config.network, hhUser1);
-    const premiaEcosystem = await createPremiaEcosystem(config.network, hhUser1);
-    const umamiEcosystem = await createUmamiEcosystem(config.network, hhUser1);
+    const typedConfig = config as CoreProtocolSetupConfig<Network.ArbitrumOne>;
+    const abraEcosystem = await createAbraEcosystem(typedConfig.network, hhUser1);
+    const arbEcosystem = await createArbEcosystem(typedConfig.network, hhUser1);
+    const camelotEcosystem = await createCamelotEcosystem(typedConfig.network, hhUser1);
+    const gmxEcosystem = await createGmxEcosystem(typedConfig.network, hhUser1);
+    const gmxEcosystemV2 = await createGmxEcosystemV2(typedConfig.network, hhUser1);
+    const jonesEcosystem = await createJonesEcosystem(typedConfig.network, hhUser1);
+    const liquidityMiningEcosystem = await createLiquidityMiningEcosystem(typedConfig.network, hhUser1);
+    const odosEcosystem = await createOdosEcosystem(typedConfig.network, hhUser1);
+    const paraswapEcosystem = await createParaswapEcosystem(typedConfig.network, hhUser1);
+    const pendleEcosystem = await createPendleEcosystem(typedConfig.network, hhUser1);
+    const plutusEcosystem = await createPlutusEcosystem(typedConfig.network, hhUser1);
+    const premiaEcosystem = await createPremiaEcosystem(typedConfig.network, hhUser1);
+    const umamiEcosystem = await createUmamiEcosystem(typedConfig.network, hhUser1);
 
     return new CoreProtocolArbitrumOne(
       coreProtocolParams as CoreProtocolParams<Network.ArbitrumOne>,
@@ -461,55 +462,56 @@ export async function setupCoreProtocol<T extends Network>(
         chainlinkPriceOracle: chainlinkPriceOracle!,
         marketIds: {
           ...coreProtocolParams.marketIds,
-          arb: ARB_MAP[config.network]!.marketId,
-          dArb: D_ARB_MAP[config.network]!.marketId,
-          dfsGlp: DFS_GLP_MAP[config.network]!.marketId,
-          dGmx: D_GMX_MAP[config.network]!.marketId,
-          djUSDC: DJ_USDC[config.network]!.marketId,
-          dplvGlp: DPLV_GLP_MAP[config.network]!.marketId,
-          dPtGlp: DPT_GLP_2024_MAP[config.network]!.marketId,
-          dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[config.network]!.marketId,
-          dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[config.network]!.marketId,
-          dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[config.network]!.marketId,
-          dpx: DPX_MAP[config.network]!.marketId,
-          dYtGlp: DYT_GLP_2024_MAP[config.network]!.marketId,
-          grail: GRAIL_MAP[config.network]!.marketId,
-          jones: JONES_MAP[config.network]!.marketId,
-          magic: MAGIC_MAP[config.network]!.marketId,
-          magicGlp: MAGIC_GLP_MAP[config.network]!.marketId,
-          mim: MIM_MAP[config.network]!.marketId,
-          nativeUsdc: NATIVE_USDC_MAP[config.network]!.marketId,
-          premia: PREMIA_MAP[config.network]!.marketId,
-          rEth: RETH_MAP[config.network]!.marketId,
-          radiant: RDNT_MAP[config.network]!.marketId,
-          pendle: PENDLE_MAP[config.network]!.marketId,
-          usdt: USDT_MAP[config.network]!.marketId,
-          wstEth: WST_ETH_MAP[config.network]!.marketId,
+          arb: ARB_MAP[typedConfig.network]!.marketId,
+          dArb: D_ARB_MAP[typedConfig.network]!.marketId,
+          dfsGlp: DFS_GLP_MAP[typedConfig.network]!.marketId,
+          dGmx: D_GMX_MAP[typedConfig.network]!.marketId,
+          djUSDC: DJ_USDC[typedConfig.network]!.marketId,
+          dplvGlp: DPLV_GLP_MAP[typedConfig.network]!.marketId,
+          dPtGlp: DPT_GLP_2024_MAP[typedConfig.network]!.marketId,
+          dPtREthJun2025: DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,
+          dPtWstEthJun2024: DPT_WST_ETH_JUN_2024_MAP[typedConfig.network]!.marketId,
+          dPtWstEthJun2025: DPT_WST_ETH_JUN_2025_MAP[typedConfig.network]!.marketId,
+          dpx: DPX_MAP[typedConfig.network]!.marketId,
+          dYtGlp: DYT_GLP_2024_MAP[typedConfig.network]!.marketId,
+          gmx: GMX_MAP[typedConfig.network]!.marketId,
+          grail: GRAIL_MAP[typedConfig.network]!.marketId,
+          jones: JONES_MAP[typedConfig.network]!.marketId,
+          magic: MAGIC_MAP[typedConfig.network]!.marketId,
+          magicGlp: MAGIC_GLP_MAP[typedConfig.network]!.marketId,
+          mim: MIM_MAP[typedConfig.network]!.marketId,
+          nativeUsdc: NATIVE_USDC_MAP[typedConfig.network]!.marketId,
+          premia: PREMIA_MAP[typedConfig.network]!.marketId,
+          rEth: RETH_MAP[typedConfig.network]!.marketId,
+          radiant: RDNT_MAP[typedConfig.network]!.marketId,
+          pendle: PENDLE_MAP[typedConfig.network]!.marketId,
+          usdt: USDT_MAP[typedConfig.network]!.marketId,
+          wstEth: WST_ETH_MAP[typedConfig.network]!.marketId,
         },
         tokens: {
           ...coreProtocolParams.tokens,
-          arb: IERC20__factory.connect(ARB_MAP[config.network]!.address, hhUser1),
-          dArb: IERC20__factory.connect(D_ARB_MAP[config.network]!.address, hhUser1),
-          dfsGlp: IERC20__factory.connect(DFS_GLP_MAP[config.network]!.address, hhUser1),
-          dGmx: IERC20__factory.connect(D_GMX_MAP[config.network]!.address, hhUser1),
-          dPtGlp: IERC20__factory.connect(DPT_GLP_2024_MAP[config.network]!.address, hhUser1),
-          dPtREthJun2025: IERC20__factory.connect(DPT_R_ETH_JUN_2025_MAP[config.network]!.address, hhUser1),
-          dPtWstEthJun2024: IERC20__factory.connect(DPT_WST_ETH_JUN_2024_MAP[config.network]!.address, hhUser1),
-          dPtWstEthJun2025: IERC20__factory.connect(DPT_WST_ETH_JUN_2025_MAP[config.network]!.address, hhUser1),
-          dpx: IERC20__factory.connect(DPX_MAP[config.network]!.address, hhUser1),
-          dYtGlp: IERC20__factory.connect(DYT_GLP_2024_MAP[config.network]!.address, hhUser1),
-          gmx: IERC20__factory.connect(GMX_MAP[config.network]!.address, hhUser1),
-          grail: IERC20__factory.connect(GRAIL_MAP[config.network]!.address, hhUser1),
-          jones: IERC20__factory.connect(JONES_MAP[config.network]!.address, hhUser1),
-          magic: IERC20__factory.connect(MAGIC_MAP[config.network]!.address, hhUser1),
-          nativeUsdc: IERC20__factory.connect(NATIVE_USDC_MAP[config.network]!.address, hhUser1),
-          premia: IERC20__factory.connect(PREMIA_MAP[config.network]!.address, hhUser1),
-          pendle: IERC20__factory.connect(PENDLE_MAP[config.network]!.address, hhUser1),
-          rEth: IERC20__factory.connect(RETH_MAP[config.network]!.address, hhUser1),
-          radiant: IERC20__factory.connect(RDNT_MAP[config.network]!.address, hhUser1),
-          size: IERC20__factory.connect(SIZE_MAP[config.network]!.address, hhUser1),
-          stEth: IERC20__factory.connect(ST_ETH_MAP[config.network]!.address, hhUser1),
-          wstEth: IERC20__factory.connect(WST_ETH_MAP[config.network]!.address, hhUser1),
+          arb: IERC20__factory.connect(ARB_MAP[typedConfig.network]!.address, hhUser1),
+          dArb: IERC20__factory.connect(D_ARB_MAP[typedConfig.network]!.address, hhUser1),
+          dfsGlp: IERC20__factory.connect(DFS_GLP_MAP[typedConfig.network]!.address, hhUser1),
+          dGmx: IERC20__factory.connect(D_GMX_MAP[typedConfig.network]!.address, hhUser1),
+          dPtGlp: IERC20__factory.connect(DPT_GLP_2024_MAP[typedConfig.network]!.address, hhUser1),
+          dPtREthJun2025: IERC20__factory.connect(DPT_R_ETH_JUN_2025_MAP[typedConfig.network]!.address, hhUser1),
+          dPtWstEthJun2024: IERC20__factory.connect(DPT_WST_ETH_JUN_2024_MAP[typedConfig.network]!.address, hhUser1),
+          dPtWstEthJun2025: IERC20__factory.connect(DPT_WST_ETH_JUN_2025_MAP[typedConfig.network]!.address, hhUser1),
+          dpx: IERC20__factory.connect(DPX_MAP[typedConfig.network]!.address, hhUser1),
+          dYtGlp: IERC20__factory.connect(DYT_GLP_2024_MAP[typedConfig.network]!.address, hhUser1),
+          gmx: IERC20__factory.connect(GMX_MAP[typedConfig.network]!.address, hhUser1),
+          grail: IERC20__factory.connect(GRAIL_MAP[typedConfig.network]!.address, hhUser1),
+          jones: IERC20__factory.connect(JONES_MAP[typedConfig.network]!.address, hhUser1),
+          magic: IERC20__factory.connect(MAGIC_MAP[typedConfig.network]!.address, hhUser1),
+          nativeUsdc: IERC20__factory.connect(NATIVE_USDC_MAP[typedConfig.network]!.address, hhUser1),
+          premia: IERC20__factory.connect(PREMIA_MAP[typedConfig.network]!.address, hhUser1),
+          pendle: IERC20__factory.connect(PENDLE_MAP[typedConfig.network]!.address, hhUser1),
+          rEth: IERC20__factory.connect(RETH_MAP[typedConfig.network]!.address, hhUser1),
+          radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network]!.address, hhUser1),
+          size: IERC20__factory.connect(SIZE_MAP[typedConfig.network]!.address, hhUser1),
+          stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network]!.address, hhUser1),
+          wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network]!.address, hhUser1),
         },
       },
     ) as any;

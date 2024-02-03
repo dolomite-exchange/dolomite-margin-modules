@@ -250,7 +250,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         core.tokens.weth,
         18,
         core.hhUser5,
-        core.paraswapTrader!,
+        core.paraswapEcosystem.live.paraswapTrader,
         core,
       );
       const usdcLiquidatorBalanceBefore = await core.tokens.usdc.connect(core.hhUser1)
@@ -469,7 +469,7 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
         core.tokens.weth,
         18,
         core.hhUser5,
-        core.paraswapTrader!,
+        core.paraswapEcosystem.live.paraswapTrader,
         core,
       );
 

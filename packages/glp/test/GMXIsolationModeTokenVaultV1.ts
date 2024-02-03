@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
-import { getUnwrapZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
 import {
   GLPIsolationModeVaultFactory,
   GMXIsolationModeTokenVaultV1,
@@ -14,13 +13,11 @@ import {
   TestGMXIsolationModeTokenVaultV1__factory,
 } from '../src/types';
 import {
-  IGenericTraderProxyV1__factory,
   SimpleIsolationModeUnwrapperTraderV2,
   SimpleIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
-  getRealLatestBlockNumber,
   impersonate,
   revertToSnapshotAndCapture,
   snapshot,
@@ -31,7 +28,6 @@ import {
   expectProtocolBalanceIsGreaterThan,
   expectThrow,
   expectWalletBalance,
-  expectWalletBalanceIsGreaterThan,
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createGLPIsolationModeVaultFactory,
@@ -43,25 +39,22 @@ import {
   createTestGMXIsolationModeTokenVaultV1,
 } from './glp-ecosystem-utils';
 import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupGMXBalance,
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
-import { createDolomiteRegistryImplementation, createEventEmitter } from 'packages/base/test/utils/dolomite';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const gmxAmount = parseEther('10'); // 10 GMX
 const esGmxAmount = parseEther('0.01'); // 0.01 esGMX tokens
 const accountNumber = ZERO_BI;
-const otherAccountNumber = BigNumber.from('123');
 
 describe('GMXIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let gmxRegistry: GmxRegistryV1;
   let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
   let wrapper: SimpleIsolationModeWrapperTraderV2;

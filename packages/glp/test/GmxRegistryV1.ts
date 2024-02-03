@@ -5,14 +5,15 @@ import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-const
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createGmxRegistry } from './glp-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 describe('GmxRegistryV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let registry: GmxRegistryV1;
 
   before(async () => {
