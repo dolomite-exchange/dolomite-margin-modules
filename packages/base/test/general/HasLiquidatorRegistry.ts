@@ -3,12 +3,13 @@ import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectThrow } from '../utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 describe('HasLiquidatorRegistry', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let registry: TestHasLiquidatorRegistry;
 
   before(async () => {

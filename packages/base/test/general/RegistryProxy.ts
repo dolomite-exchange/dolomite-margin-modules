@@ -3,13 +3,14 @@ import { DolomiteRegistryImplementation, RegistryProxy } from '../../src/types';
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import { createDolomiteRegistryImplementation, createRegistryProxy } from '../utils/dolomite';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 describe('RegistryProxy', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let implementation: DolomiteRegistryImplementation;
   let registry: RegistryProxy;
 

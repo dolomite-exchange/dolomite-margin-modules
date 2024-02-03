@@ -11,9 +11,9 @@ import {
 import { MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectThrow } from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import { setExpiry } from '../utils/expiry-utils';
 import {
-  CoreProtocol,
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -32,7 +32,7 @@ const liquidAccount = {
 describe('BaseLiquidatorProxy', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let proxy: TestBaseLiquidatorProxy;
 
   before(async () => {

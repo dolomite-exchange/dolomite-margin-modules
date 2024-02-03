@@ -6,6 +6,7 @@ import {
   GenericUserConfig,
 } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   IIsolationModeUnwrapperTrader,
   IIsolationModeUnwrapperTraderV2,
@@ -14,7 +15,7 @@ import {
   TestIsolationModeWrapperTraderV2,
 } from '../../src/types';
 import { AccountInfoStruct } from '../../src/utils';
-import { CoreProtocol } from './setup';
+import { CoreProtocolType } from './setup';
 
 export interface ZapParam {
   marketIdsPath: BigNumberish[];
@@ -25,12 +26,12 @@ export interface ZapParam {
   userConfig: GenericUserConfig;
 }
 
-export async function getSimpleZapParams(
+export async function getSimpleZapParams<T extends Network>(
   inputMarket: BigNumberish,
   inputAmountWei: BigNumber,
   outputMarket: BigNumberish,
   minOutputAmountWei: BigNumber,
-  core: CoreProtocol,
+  core: CoreProtocolType<T>,
 ): Promise<ZapParam> {
   if (!core.testEcosystem) {
     return Promise.reject('Core protocol does not have a test ecosystem');
@@ -59,13 +60,13 @@ export async function getSimpleZapParams(
   };
 }
 
-export async function getUnwrapZapParams(
+export async function getUnwrapZapParams<T extends Network>(
   inputMarket: BigNumberish,
   inputAmountWei: BigNumber,
   outputMarket: BigNumberish,
   minOutputAmountWei: BigNumber,
   unwrapper: TestIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader | IIsolationModeUnwrapperTraderV2,
-  core: CoreProtocol,
+  core: CoreProtocolType<T>,
 ): Promise<ZapParam> {
   if (!core.testEcosystem) {
     return Promise.reject('Core protocol does not have a test ecosystem');
@@ -94,12 +95,12 @@ export async function getUnwrapZapParams(
   };
 }
 
-export async function getUnwrapAndCustomTradeZapParams(
+export async function getUnwrapAndCustomTradeZapParams<T extends Network>(
   marketsPath: BigNumberish[],
   amountsPath: BigNumber[],
   unwrapper: TestIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader,
   internalTrader: TestDolomiteMarginInternalTrader,
-  core: CoreProtocol,
+  core: CoreProtocolType<T>,
 ): Promise<ZapParam> {
   if (!core.testEcosystem) {
     return Promise.reject('Core protocol does not have a test ecosystem');
@@ -158,13 +159,13 @@ export async function getUnwrapAndCustomTradeZapParams(
   };
 }
 
-export async function getWrapZapParams(
+export async function getWrapZapParams<T extends Network>(
   inputMarket: BigNumberish,
   inputAmountWei: BigNumber,
   outputMarket: BigNumberish,
   minOutputAmountWei: BigNumber,
   wrapper: TestIsolationModeWrapperTraderV2 | IIsolationModeWrapperTrader,
-  core: CoreProtocol,
+  core: CoreProtocolType<T>,
 ): Promise<ZapParam> {
   if (!core.testEcosystem) {
     return Promise.reject('Core protocol does not have a test ecosystem');
@@ -193,11 +194,11 @@ export async function getWrapZapParams(
   };
 }
 
-export async function getLiquidateIsolationModeZapPath(
+export async function getLiquidateIsolationModeZapPath<T extends Network>(
   marketIdsPath: BigNumberish[],
   amounts: BigNumber[],
   unwrapper: TestIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader | IIsolationModeUnwrapperTraderV2,
-  core: CoreProtocol,
+  core: CoreProtocolType<T>,
 ): Promise<ZapParam> {
   const unwrap = await getUnwrapZapParams(marketIdsPath[0], amounts[0], marketIdsPath[1], amounts[1], unwrapper, core);
   const simple = await getSimpleZapParams(marketIdsPath[1], amounts[1], marketIdsPath[2], amounts[2], core);

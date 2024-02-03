@@ -1,5 +1,5 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { BaseContract, BigNumber, ContractTransaction } from 'ethers';
+import { BaseContract, BigNumber } from 'ethers';
 import {
   CustomTestToken,
   SimpleIsolationModeVaultFactory,
@@ -15,24 +15,21 @@ import { createContractWithAbi, createContractWithLibrary, createTestToken } fro
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectArrayEq, expectEvent, expectThrow } from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../utils/setup';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '../utils/setup';
 
 describe('SimpleIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
-  let underlyingMarketId: BigNumber;
   let otherToken: CustomTestToken;
-  let otherMarketId: BigNumber;
   let rewardToken: CustomTestToken;
-  let rewardMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV1;
   let tokenWrapper: TestIsolationModeWrapperTraderV1;
   let factory: SimpleIsolationModeVaultFactory;
   let userVaultImplementation: BaseContract;
-  let initializeResult: ContractTransaction;
 
   let solidAccount: SignerWithAddress;
 
@@ -70,10 +67,8 @@ describe('SimpleIsolationModeVaultFactory', () => {
       '1000000000000000000', // $1.00
     );
 
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true);
 
-    otherMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, otherToken, false);
 
     rewardToken = await createTestToken();
@@ -81,7 +76,6 @@ describe('SimpleIsolationModeVaultFactory', () => {
       rewardToken.address,
       '1000000000000000000', // $1.00
     );
-    rewardMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, rewardToken, false);
 
     tokenUnwrapper = await createContractWithAbi<TestIsolationModeUnwrapperTraderV1>(
@@ -99,8 +93,7 @@ describe('SimpleIsolationModeVaultFactory', () => {
       [factory.address, core.dolomiteMargin.address],
     );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(tokenWrapper.address, true);
-    initializeResult = await factory.connect(core.governance)
-      .ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
+    await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     solidAccount = core.hhUser5;

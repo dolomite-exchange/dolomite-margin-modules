@@ -1,38 +1,41 @@
+import TestGmxV2IsolationModeUnwrapperTraderV2Artifact
+  from '@dolomite-exchange/modules-gmx-v2/artifacts/contracts/test/TestGmxV2IsolationModeUnwrapperTraderV2.sol/TestGmxV2IsolationModeUnwrapperTraderV2.json';
+import {
+  TestGmxV2IsolationModeUnwrapperTraderV2,
+  TestGmxV2IsolationModeUnwrapperTraderV2__factory,
+} from '@dolomite-exchange/modules-gmx-v2/src/types';
+import { createGmxV2Library } from '@dolomite-exchange/modules-gmx-v2/test/gmx-v2-ecosystem-utils';
 import { expect } from 'chai';
-import { createContractWithLibrary, createContractWithLibraryAndArtifact, createTestToken } from '../../src/utils/dolomite-utils';
-import { createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
 import {
   CustomTestToken,
   IsolationModeTraderProxy,
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
 } from '../../src/types';
-// @todo create test contract for this
 import {
-  TestGmxV2IsolationModeUnwrapperTraderV2,
-  TestGmxV2IsolationModeUnwrapperTraderV2__factory,
-} from '@dolomite-exchange/modules-gmx-v2/src/types';
-import TestGmxV2IsolationModeUnwrapperTraderV2Artifact from '@dolomite-exchange/modules-gmx-v2/artifacts/contracts/test/TestGmxV2IsolationModeUnwrapperTraderV2.sol/TestGmxV2IsolationModeUnwrapperTraderV2.json';
+  createContractWithLibrary,
+  createContractWithLibraryAndArtifact,
+  createTestToken,
+} from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import {
   createAsyncIsolationModeUnwrapperTraderImpl,
-  createAsyncIsolationModeWrapperTraderImpl,
   createDolomiteRegistryImplementation,
   createIsolationModeTokenVaultV1ActionsImpl,
   createIsolationModeTraderProxy,
 } from '../utils/dolomite';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
-import { createGmxV2Library } from '@dolomite-exchange/modules-gmx-v2/test/gmx-v2-ecosystem-utils';
 import { createSafeDelegateLibrary } from '../utils/ecosystem-utils/general';
+import { createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 describe('IsolationModeTraderProxy', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
-  let otherToken: CustomTestToken;
   let implementation: TestGmxV2IsolationModeUnwrapperTraderV2;
   let factory: TestIsolationModeFactory;
   let proxy: IsolationModeTraderProxy;
@@ -40,7 +43,6 @@ describe('IsolationModeTraderProxy', () => {
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
-    otherToken = await createTestToken();
     const vaultLibraries = await createIsolationModeTokenVaultV1ActionsImpl();
     const userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1>(
       'TestIsolationModeTokenVaultV1',
@@ -60,7 +62,7 @@ describe('IsolationModeTraderProxy', () => {
     const calldata = await implementation.populateTransaction.initialize(
       factory.address,
       core.dolomiteMargin.address,
-      core.dolomiteRegistry.address
+      core.dolomiteRegistry.address,
     );
     proxy = await createIsolationModeTraderProxy(implementation.address, calldata.data!, core);
 

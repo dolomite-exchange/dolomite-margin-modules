@@ -2,8 +2,8 @@ import { BigNumber, INTEGERS } from '@dolomite-exchange/dolomite-margin';
 import { expect } from 'chai';
 import { TestDolomiteMarginMath, TestDolomiteMarginMath__factory } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { revertToSnapshotAndCapture, snapshot } from '../../../test/utils';
-import { expectThrow } from '../../../test/utils/assertions';
+import { revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { expectThrow } from '../../utils/assertions';
 
 describe('DolomiteMarginMath', () => {
   let snapshotId: string;

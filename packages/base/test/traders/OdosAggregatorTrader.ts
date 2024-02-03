@@ -8,8 +8,9 @@ import { depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan, expectThrow } from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import { createOdosAggregatorTrader } from '../utils/ecosystem-utils/traders';
-import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
+import { disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
 import { getCalldataForOdos } from '../utils/trader-utils';
 
 const defaultAccountNumber = '0';
@@ -19,7 +20,7 @@ const minAmountOut = BigNumber.from('123123123');
 describe('OdosAggregatorTrader', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let trader: OdosAggregatorTrader;
   let defaultAccount: AccountStruct;
 

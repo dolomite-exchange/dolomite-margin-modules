@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { TestTypes, TestTypes__factory } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
-import { revertToSnapshotAndCapture, snapshot } from '../../../test/utils';
+import { revertToSnapshotAndCapture, snapshot } from '../../utils';
 
 function parse(value: any) {
   return { sign: value[0], value: value[1].toString() };
