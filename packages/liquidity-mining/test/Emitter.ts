@@ -1,20 +1,28 @@
+import {
+  createContractWithAbi,
+  depositIntoDolomiteMargin,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectThrow,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { Emitter, Emitter__factory, OARB } from '../src/types';
-import { createContractWithAbi, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
-  CoreProtocol,
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupUSDCBalance,
 } from 'packages/base/test/utils/setup';
+import { Emitter, Emitter__factory, OARB } from '../src/types';
 import { createOARB } from './liquidity-mining-ecosystem-utils';
 
 const defaultAccountNumber = ZERO_BI;
@@ -24,7 +32,7 @@ const usdcAmount = BigNumber.from('100816979'); // Makes par value 100000000
 // Emitter contract is not in use in production. These tests don't all pass
 xdescribe('Emitter', () => {
   let snapshotId: string;
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
 
   let emitter: Emitter;
   let oARB: OARB;

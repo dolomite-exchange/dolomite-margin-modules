@@ -1,3 +1,12 @@
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import {
   IUmamiAggregateVault__factory,
@@ -10,8 +19,6 @@ import {
   UmamiAssetVaultPriceOracle,
   UmamiAssetVaultRegistry,
 } from '../src/types';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   createUmamiAssetVaultIsolationModeTokenVaultV1,
   createUmamiAssetVaultIsolationModeUnwrapperTraderV2,
@@ -20,18 +27,11 @@ import {
   createUmamiAssetVaultPriceOracle,
   createUmamiAssetVaultRegistry,
 } from './umami-ecosystem-utils';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 
 describe('UmamiAssetVaultIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IUmamiAssetVault;
   let umamiRegistry: UmamiAssetVaultRegistry;
   let unwrapper: UmamiAssetVaultIsolationModeUnwrapperTraderV2;

@@ -1,14 +1,22 @@
-import { CHAINLINK_PRICE_ORACLE_OLD_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
-import { BigNumberish } from 'ethers';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { IAlgebraV3Pool, IERC20 } from '@dolomite-exchange/modules-base/src/types';
-import { IChainlinkPriceOracleOld__factory } from './types';
+import { CHAINLINK_PRICE_ORACLE_OLD_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { BigNumberish } from 'ethers';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { IChainlinkPriceOracle, IChainlinkPriceOracleOld__factory } from './types';
 
-export async function getChainlinkPriceOracleParams(
-  core: CoreProtocol,
+export type CoreProtocolWithChainlink<T extends Network> = Extract<CoreProtocolType<T>, {
+  dolomiteMargin: DolomiteMargin<T>;
+  chainlinkPriceOracle: IChainlinkPriceOracle;
+}>;
+
+export async function getChainlinkPriceOracleParamsFromOldPriceOracle(
+  core: CoreProtocolArbitrumOne,
 ): Promise<[string[], string[], BigNumberish[], string[], string]> {
   const oldPriceOracle = IChainlinkPriceOracleOld__factory.connect(
-    CHAINLINK_PRICE_ORACLE_OLD_MAP[core.config.network]!,
+    CHAINLINK_PRICE_ORACLE_OLD_MAP[core.config.network],
     core.hhUser1,
   );
   const tokens: string[] = [];
@@ -29,8 +37,8 @@ export async function getChainlinkPriceOracleParams(
   return [tokens, aggregators, tokenDecimals, tokenPairs, core.dolomiteMargin.address];
 }
 
-export function getTWAPPriceOracleConstructorParams(
-  core: CoreProtocol,
+export function getTWAPPriceOracleConstructorParams<T extends Network>(
+  core: CoreProtocolType<T>,
   token: IERC20,
   tokenPairs: IAlgebraV3Pool[],
 ): any[] {

@@ -1,14 +1,15 @@
-import { expect } from 'chai';
-import { OARB } from '../src/types';
 import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
+import { OARB } from '../src/types';
 import { createOARB } from './liquidity-mining-ecosystem-utils';
 
 describe('OARB', () => {
   let snapshotId: string;
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let oARB: OARB;
 
   before(async () => {

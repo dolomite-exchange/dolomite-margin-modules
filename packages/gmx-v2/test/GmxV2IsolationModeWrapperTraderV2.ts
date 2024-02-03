@@ -1,25 +1,11 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
-import {
-  GmxV2IsolationModeTokenVaultV1,
-  GmxV2IsolationModeTokenVaultV1__factory,
-  GmxV2IsolationModeUnwrapperTraderV2,
-  GmxV2IsolationModeWrapperTraderV2,
-  GmxV2MarketTokenPriceOracle,
-  GmxV2Registry,
-  IGenericTraderProxyV1__factory,
-  IGmxMarketToken,
-  IGmxRoleStore__factory,
-  TestGmxDataStore,
-  TestGmxV2IsolationModeVaultFactory,
-} from '../src/types';
-import {
-  EventEmitterRegistry,
-} from 'packages/base/src/types';
+import { EventEmitterRegistry } from 'packages/base/src/types';
 import { depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { BYTES_EMPTY, BYTES_ZERO, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from 'packages/base/test/utils';
@@ -31,6 +17,30 @@ import {
   expectWalletBalance,
   expectWalletBalanceIsGreaterThan,
 } from 'packages/base/test/utils/assertions';
+import { createDolomiteRegistryImplementation, createEventEmitter } from 'packages/base/test/utils/dolomite';
+import {
+  disableInterestAccrual,
+  getDefaultCoreProtocolConfigForGmxV2,
+  setupCoreProtocol,
+  setupGMBalance,
+  setupNativeUSDCBalance,
+  setupTestMarket,
+  setupUserVaultProxy,
+  setupWETHBalance,
+} from 'packages/base/test/utils/setup';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
+import {
+  GmxV2IsolationModeTokenVaultV1,
+  GmxV2IsolationModeTokenVaultV1__factory,
+  GmxV2IsolationModeUnwrapperTraderV2,
+  GmxV2IsolationModeWrapperTraderV2,
+  GmxV2MarketTokenPriceOracle,
+  GmxV2Registry,
+  IGenericTraderProxyV1__factory,
+  IGmxMarketToken,
+  IGmxRoleStore__factory,
+  TestGmxV2IsolationModeVaultFactory,
+} from '../src/types';
 import {
   createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
@@ -43,19 +53,6 @@ import {
   getInitiateWrappingParams,
   getOracleParams,
 } from './gmx-v2-ecosystem-utils';
-import {
-  CoreProtocol,
-  disableInterestAccrual,
-  getDefaultCoreProtocolConfigForGmxV2,
-  setupCoreProtocol,
-  setupGMBalance,
-  setupNativeUSDCBalance,
-  setupTestMarket,
-  setupUserVaultProxy,
-  setupWETHBalance,
-} from 'packages/base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
-import { createDolomiteRegistryImplementation, createEventEmitter } from 'packages/base/test/utils/dolomite';
 
 enum ReversionType {
   None = 0,
@@ -85,7 +82,7 @@ const callbackGasLimit = process.env.COVERAGE !== 'true'
 describe('GmxV2IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IGmxMarketToken;
   let allowableMarketIds: BigNumberish[];
   let gmxV2Registry: GmxV2Registry;

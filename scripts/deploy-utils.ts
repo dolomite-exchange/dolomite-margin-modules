@@ -1,13 +1,4 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
-import { sleep } from '@openzeppelin/upgrades';
-import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
-import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
-import fs from 'fs';
-import { artifacts, network, run } from 'hardhat';
-import * as path from 'path';
-import {
-  IChainlinkAggregator__factory,
-} from '@dolomite-exchange/modules-oracles/src/types';
 import {
   IDolomiteInterestSetter,
   IDolomitePriceOracle,
@@ -17,6 +8,22 @@ import {
   IIsolationModeVaultFactory,
   IIsolationModeWrapperTrader,
 } from '@dolomite-exchange/modules-base/src/types';
+import {
+  createContractWithLibrary,
+  createContractWithName,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolWithChainlink } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
+import { IChainlinkAggregator__factory } from '@dolomite-exchange/modules-oracles/src/types';
+import {
+  CoreProtocolWithPendle,
+  getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
+  getPendlePtIsolationModeVaultFactoryConstructorParams,
+  getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
+  getPendlePtPriceOracleConstructorParams,
+  getPendleRegistryConstructorParams,
+} from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
 import {
   IPendlePtMarket,
   IPendlePtOracle,
@@ -33,6 +40,12 @@ import {
   PendlePtPriceOracle__factory,
   PendleRegistry__factory,
 } from '@dolomite-exchange/modules-pendle/src/types';
+import { sleep } from '@openzeppelin/upgrades';
+import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
+import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
+import fs from 'fs';
+import { artifacts, network, run } from 'hardhat';
+import * as path from 'path';
 import {
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
@@ -41,21 +54,14 @@ import {
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '../packages/base/src/utils/constructors/dolomite';
-import {
-  getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
-  getPendlePtIsolationModeVaultFactoryConstructorParams,
-  getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
-  getPendlePtPriceOracleConstructorParams,
-  getPendleRegistryConstructorParams,
-} from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
-import { createContractWithLibrary, createContractWithName } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 type ChainId = string;
 
 export const DEPLOYMENT_FILE_NAME = `${__dirname}/deployments.json`;
-export const CORE_DEPLOYMENT_FILE_NAME = path.resolve(__dirname, '../node_modules/@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json');
+export const CORE_DEPLOYMENT_FILE_NAME = path.resolve(
+  __dirname,
+  '../node_modules/@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json',
+);
 
 function readAllDeploymentFiles(): Record<string, Record<ChainId, any>> {
   const coreDeployments = JSON.parse(fs.readFileSync(CORE_DEPLOYMENT_FILE_NAME).toString());
@@ -155,7 +161,7 @@ export async function deployContractAndSave(
   return contract.address;
 }
 
-export function getTokenVaultLibrary(core: CoreProtocol): Record<string, string> {
+export function getTokenVaultLibrary<T extends Network>(core: CoreProtocolType<T>): Record<string, string> {
   const libraryName = 'IsolationModeTokenVaultV1ActionsImpl';
   const deploymentName = 'IsolationModeTokenVaultV1ActionsImplV3';
   const deployments = readAllDeploymentFiles();
@@ -171,9 +177,9 @@ export interface PendlePtSystem {
   wrapper: PendlePtIsolationModeWrapperTraderV2;
 }
 
-export async function deployPendlePtSystem(
-  network: Network,
-  core: CoreProtocol,
+export async function deployPendlePtSystem<T extends Network>(
+  network: T,
+  core: CoreProtocolWithPendle<T>,
   ptName: string,
   ptMarket: IPendlePtMarket,
   ptOracle: IPendlePtOracle,
@@ -332,7 +338,10 @@ export async function prettyPrintEncodedData(
 const numMarketsKey = 'numMarkets';
 const marketIdToMarketNameCache: Record<string, string | undefined> = {};
 
-async function getFormattedMarketName(core: CoreProtocol, marketId: BigNumberish): Promise<string> {
+async function getFormattedMarketName<T extends Network>(
+  core: CoreProtocolType<T>,
+  marketId: BigNumberish,
+): Promise<string> {
   let cachedNumMarkets = marketIdToMarketNameCache[numMarketsKey];
   if (!cachedNumMarkets) {
     cachedNumMarkets = (await core.dolomiteMargin.getNumMarkets()).toString();
@@ -354,7 +363,10 @@ async function getFormattedMarketName(core: CoreProtocol, marketId: BigNumberish
 
 const addressToNameCache: Record<string, string | undefined> = {};
 
-async function getFormattedTokenName(core: CoreProtocol, tokenAddress: string): Promise<string> {
+async function getFormattedTokenName<T extends Network>(
+  core: CoreProtocolType<T>,
+  tokenAddress: string,
+): Promise<string> {
   if (tokenAddress === ADDRESS_ZERO) {
     return '(None)';
   }
@@ -378,7 +390,10 @@ async function getFormattedTokenName(core: CoreProtocol, tokenAddress: string): 
   }
 }
 
-async function getFormattedChainlinkAggregatorName(core: CoreProtocol, aggregatorAddress: string): Promise<string> {
+async function getFormattedChainlinkAggregatorName<T extends Network>(
+  core: CoreProtocolType<T>,
+  aggregatorAddress: string,
+): Promise<string> {
   if (aggregatorAddress === ADDRESS_ZERO) {
     return 'None';
   }
@@ -438,12 +453,13 @@ function isOwnerFunction(methodName: string): boolean {
 }
 
 export async function prettyPrintEncodedDataWithTypeSafety<
+  N extends Network,
   T extends V[K],
   U extends keyof T['populateTransaction'],
   V extends Record<K, BaseContract>,
   K extends keyof V,
 >(
-  core: CoreProtocol,
+  core: CoreProtocolType<N>,
   liveMap: V,
   key: K,
   methodName: U,
@@ -496,8 +512,8 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 
 let mostRecentTokenDecimals: number | undefined = undefined;
 
-async function getReadableArg(
-  core: CoreProtocol,
+async function getReadableArg<T extends Network>(
+  core: CoreProtocolType<T>,
   inputParamType: ParamType,
   arg: any,
   decimals?: number,
@@ -589,14 +605,14 @@ async function getReadableArg(
   return `${formattedInputParamName} = ${arg}${specialName}`;
 }
 
-export async function prettyPrintEncodeInsertChainlinkOracle(
-  core: CoreProtocol,
+export async function prettyPrintEncodeInsertChainlinkOracle<T extends Network>(
+  core: CoreProtocolWithChainlink<T>,
   token: IERC20,
   chainlinkAggregatorAddress: address,
   tokenPairAddress: address,
 ): Promise<EncodedTransaction> {
   let tokenDecimals: number;
-  if (token.address === core.tokens.stEth?.address) {
+  if ('stEth' in core.tokens && token.address === core.tokens.stEth.address) {
     tokenDecimals = 18;
   } else {
     tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
@@ -605,7 +621,7 @@ export async function prettyPrintEncodeInsertChainlinkOracle(
   mostRecentTokenDecimals = tokenDecimals;
   return await prettyPrintEncodedDataWithTypeSafety(
     core,
-    { chainlinkPriceOracle: core.chainlinkPriceOracle! },
+    { chainlinkPriceOracle: core.chainlinkPriceOracle },
     'chainlinkPriceOracle',
     'ownerInsertOrUpdateOracleToken',
     [
@@ -617,8 +633,8 @@ export async function prettyPrintEncodeInsertChainlinkOracle(
   );
 }
 
-export async function prettyPrintEncodeAddIsolationModeMarket(
-  core: CoreProtocol,
+export async function prettyPrintEncodeAddIsolationModeMarket<T extends Network>(
+  core: CoreProtocolType<T>,
   factory: IIsolationModeVaultFactory,
   oracle: IDolomitePriceOracle,
   unwrapper: IIsolationModeUnwrapperTrader,
@@ -675,8 +691,8 @@ export async function prettyPrintEncodeAddIsolationModeMarket(
   return transactions;
 }
 
-export async function prettyPrintEncodeAddMarket(
-  core: CoreProtocol,
+export async function prettyPrintEncodeAddMarket<T extends Network>(
+  core: CoreProtocolType<T>,
   token: IERC20,
   oracle: IDolomitePriceOracle,
   interestSetter: IDolomiteInterestSetter,

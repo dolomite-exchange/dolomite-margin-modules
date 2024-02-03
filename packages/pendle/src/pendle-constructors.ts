@@ -1,26 +1,39 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { PendleEcosystem } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/pendle';
+import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumberish } from 'ethers';
-import { CoreProtocol } from '../../base/test/utils/setup';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import {
-  IPendlePtGLP2024IsolationModeTokenVaultV1,
-  IPendleYtGLP2024IsolationModeTokenVaultV1,
-  IPendlePtGLP2024IsolationModeVaultFactory,
+  IERC20,
   IPendleGLPRegistry,
+  IPendlePtGLP2024IsolationModeTokenVaultV1,
+  IPendlePtGLP2024IsolationModeVaultFactory,
+  IPendlePtIsolationModeVaultFactory,
+  IPendlePtMarket,
+  IPendlePtOracle,
   IPendlePtToken,
-  IPendleYtToken,
-  PendlePtGLP2024IsolationModeTokenVaultV1,
-  PendleYtGLP2024IsolationModeTokenVaultV1,
-  PendlePtGLP2024IsolationModeVaultFactory,
-  PendleGLPRegistry,
-  IPendleYtGLP2024IsolationModeVaultFactory,
-  PendleYtGLP2024IsolationModeVaultFactory,
-  PendleRegistry,
   IPendleRegistry,
+  IPendleSyToken,
+  IPendleYtGLP2024IsolationModeTokenVaultV1,
+  IPendleYtGLP2024IsolationModeVaultFactory,
+  IPendleYtToken,
+  PendleGLPRegistry,
+  PendlePtGLP2024IsolationModeTokenVaultV1,
+  PendlePtGLP2024IsolationModeVaultFactory,
   PendlePtIsolationModeVaultFactory,
-  IPendlePtIsolationModeVaultFactory, IERC20, IPendlePtMarket, IPendleSyToken, IPendlePtOracle,
+  PendleRegistry,
+  PendleYtGLP2024IsolationModeTokenVaultV1,
+  PendleYtGLP2024IsolationModeVaultFactory,
 } from './types';
 
+export type CoreProtocolWithPendle<T extends Network> = Extract<CoreProtocolType<T>, {
+  dolomiteMargin: DolomiteMargin<T>;
+  pendleEcosystem: PendleEcosystem;
+}>;
+
 export function getPendlePtGLPPriceOracleConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
@@ -38,7 +51,7 @@ export function getPendlePtGLPPriceOracleConstructorParams(
 
 export async function getPendleGLPRegistryConstructorParams(
   implementation: PendleGLPRegistry,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<any[]> {
   if (!core.pendleEcosystem) {
     throw new Error('Pendle ecosystem not initialized');
@@ -51,44 +64,40 @@ export async function getPendleGLPRegistryConstructorParams(
     core.pendleEcosystem!.glpMar2024.ptOracle.address,
     core.pendleEcosystem!.syGlpToken.address,
     core.pendleEcosystem!.glpMar2024.ytGlpToken.address,
-    core.dolomiteRegistry.address
+    core.dolomiteRegistry.address,
   );
 
   return [
     implementation.address,
     core.dolomiteMargin.address,
-    calldata.data
+    calldata.data,
   ];
 }
 
-export async function getPendleRegistryConstructorParams(
+export async function getPendleRegistryConstructorParams<T extends Network>(
   implementation: PendleRegistry,
-  core: CoreProtocol,
+  core: CoreProtocolWithPendle<T>,
   ptMarket: IPendlePtMarket,
   ptOracle: IPendlePtOracle,
   syToken: IPendleSyToken,
 ): Promise<any[]> {
-  if (!core.pendleEcosystem) {
-    throw new Error('Pendle ecosystem not initialized');
-  }
-
   const calldata = await implementation.populateTransaction.initialize(
     core.pendleEcosystem!.pendleRouter.address,
     ptMarket.address,
     ptOracle.address,
     syToken.address,
-    core.dolomiteRegistry.address
+    core.dolomiteRegistry.address,
   );
 
   return [
     implementation.address,
     core.dolomiteMargin.address,
-    calldata.data
+    calldata.data,
   ];
 }
 
-export function getPendlePtIsolationModeVaultFactoryConstructorParams(
-  core: CoreProtocol,
+export function getPendlePtIsolationModeVaultFactoryConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
   registry: IPendleRegistry | PendleRegistry,
   ptToken: IPendlePtToken,
   userVaultImplementation: IPendlePtGLP2024IsolationModeTokenVaultV1 | PendlePtGLP2024IsolationModeTokenVaultV1,
@@ -106,8 +115,8 @@ export function getPendlePtIsolationModeVaultFactoryConstructorParams(
   ];
 }
 
-export function getPendlePtPriceOracleConstructorParams(
-  core: CoreProtocol,
+export function getPendlePtPriceOracleConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
@@ -124,8 +133,8 @@ export function getPendlePtPriceOracleConstructorParams(
   ];
 }
 
-export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
   dptFactory: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
@@ -138,12 +147,12 @@ export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
     pendleRegistry.address,
     underlyingToken.address,
     dptFactory.address,
-    core.dolomiteMargin.address
+    core.dolomiteMargin.address,
   ];
 }
 
-export function getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+export function getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
@@ -156,12 +165,12 @@ export function getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
     pendleRegistry.address,
     underlyingToken.address,
     dptToken.address,
-    core.dolomiteMargin.address
+    core.dolomiteMargin.address,
   ];
 }
 
 export function getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
@@ -178,7 +187,7 @@ export function getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParam
 }
 
 export function getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
   ptGlpToken: IPendlePtToken,
   userVaultImplementation: IPendlePtGLP2024IsolationModeTokenVaultV1 | PendlePtGLP2024IsolationModeTokenVaultV1,
@@ -197,7 +206,7 @@ export function getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams(
 }
 
 export function getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
@@ -222,7 +231,7 @@ export function getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams(
 }
 
 export function getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
@@ -239,7 +248,7 @@ export function getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
 }
 
 export function getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
@@ -256,7 +265,7 @@ export function getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParam
 }
 
 export function getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {
@@ -273,7 +282,7 @@ export function getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
 }
 
 export function getPendleYtGLPPriceOracleConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): any[] {

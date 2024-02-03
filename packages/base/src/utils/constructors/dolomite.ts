@@ -112,7 +112,8 @@ export function getOwnerAddMarketParametersForIsolationMode(
   },
   marginPremium: BigNumberish,
   spreadPremium: BigNumberish,
-  maxWei: BigNumberish,
+  maxSupplyWei: BigNumberish,
+  maxBorrowWei: BigNumberish,
   isClosing: boolean = true,
   isRecyclable: boolean = false,
 ): OwnerAddMarketParameters {
@@ -122,7 +123,7 @@ export function getOwnerAddMarketParametersForIsolationMode(
     interestSetter.address,
     { value: marginPremium },
     { value: spreadPremium },
-    maxWei,
+    maxSupplyWei,
     isClosing,
     isRecyclable,
   ];

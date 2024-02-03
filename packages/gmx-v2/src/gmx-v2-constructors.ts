@@ -1,19 +1,18 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { BigNumber, BigNumberish } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
-import { CoreProtocol } from '../../base/test/utils/setup';
 import {
-  GmxV2Registry,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
+  GmxV2Registry,
   IGmxMarketToken,
-  IGmxV2Registry,
   IGmxV2IsolationModeVaultFactory,
+  IGmxV2Registry,
 } from './types';
 
 export async function getGmxV2RegistryConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   implementation: GmxV2Registry,
   callbackGasLimit: BigNumberish,
 ): Promise<any[]> {
@@ -43,7 +42,7 @@ export const GMX_V2_EXECUTION_FEE = BigNumber.from('13627562862500000');
 export const GMX_V2_CALLBACK_GAS_LIMIT = BigNumber.from('2000000');
 
 export function getGmxV2IsolationModeVaultFactoryConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   gmxRegistry: IGmxV2Registry,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
@@ -73,7 +72,7 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
 }
 
 export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   implementation: GmxV2IsolationModeUnwrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
@@ -92,7 +91,7 @@ export async function getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams(
 }
 
 export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   implementation: GmxV2IsolationModeWrapperTraderV2,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
@@ -111,7 +110,7 @@ export async function getGmxV2IsolationModeWrapperTraderV2ConstructorParams(
 }
 
 export function getGmxV2MarketTokenPriceOracleConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   gmxRegistryV2: IGmxV2Registry | GmxV2Registry,
 ): any[] {
   if (!core.gmxEcosystem) {

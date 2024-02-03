@@ -1,3 +1,5 @@
+import { MAX_UINT_256_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   IUmamiAggregateVault__factory,
   IUmamiAssetVaultRegistry,
@@ -5,11 +7,9 @@ import {
   IUmamiAssetVaultWhitelist__factory,
   UmamiAssetVaultRegistry,
 } from '../src/types';
-import { MAX_UINT_256_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 export async function setupWhitelistAndAggregateVault(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   umamiRegistry: UmamiAssetVaultRegistry | IUmamiAssetVaultRegistry,
 ) {
   const aggregateVault = IUmamiAggregateVault__factory.connect(

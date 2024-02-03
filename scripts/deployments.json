@@ -109,14 +109,14 @@
       "address": "0x36D9B05c13Af6C86e9100F05a9AFeaB766fd1930",
       "transaction": "0x71895c6cacea2da300f1c7de6e4c8bfc6d0b30c339eac2bbca8730cc2b638e75",
       "isVerified": true
-    },
+    }
   },
   "AlwaysZeroInterestSetter": {
     "42161": {
       "address": "0x37b6fF70654EDfBdAA3c9a723fdAdF5844De2168",
       "transaction": "0x6992828fe897b2b26ee8707e07019491f40b9b660760a39a8e85b46ef2057e7c",
       "isVerified": true
-    },
+    }
   },
   "AtlasSIUserVaultFactory": {
   },

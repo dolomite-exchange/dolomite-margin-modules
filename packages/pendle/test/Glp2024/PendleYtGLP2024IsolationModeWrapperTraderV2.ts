@@ -1,3 +1,22 @@
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { createDepositAction } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  impersonate,
+  revertToSnapshotAndCapture,
+  setEtherBalance,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
@@ -16,11 +35,6 @@ import {
   PendleYtGLP2024IsolationModeWrapperTraderV2,
   PendleYtGLPPriceOracle,
 } from '../../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { createDepositAction } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeTokenVaultV1,
@@ -29,16 +43,7 @@ import {
   createPendleYtGLP2024IsolationModeWrapperTraderV2,
   createPendleYtGLPPriceOracle,
 } from '../pendle-ecosystem-utils';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { encodeSwapExactTokensForYt } from '../pendle-utils';
-import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -54,7 +59,7 @@ const initialAllowableCollateralMarketIds = [2, 3];
 describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IPendleYtToken;
   let underlyingMarketId: BigNumber;
   let gmxRegistry: IGmxRegistryV1;
@@ -154,7 +159,13 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
           BYTES_EMPTY,
         );
 
-      const { extraOrderData, approxParams } = await encodeSwapExactTokensForYt(router, core, glpAmount, 0);
+      const { extraOrderData, approxParams } = await encodeSwapExactTokensForYt(
+        router,
+        glpAmount,
+        0,
+        core.pendleEcosystem.glpMar2024.ptGlpMarket.address,
+        core.gmxEcosystem.sGlp.address,
+      );
 
       const vaultImpersonater = await impersonate(vault.address);
       await setEtherBalance(vault.address, ethers.utils.parseEther('1'));

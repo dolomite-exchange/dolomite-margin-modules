@@ -1,16 +1,14 @@
 import { ApproxParamsStruct, BaseRouter, TokenInput, TokenOutput } from '@pendle/sdk-v2';
 import { BigNumberish, ethers } from 'ethers';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 export const ONE_TENTH_OF_ONE_BIPS_NUMBER = 0.00001; // 0.001%
 
 export async function encodeSwapExactPtForTokens(
   router: BaseRouter,
-  core: CoreProtocol,
   ptAmountIn: BigNumberish,
-  slippageTolerance: number = ONE_TENTH_OF_ONE_BIPS_NUMBER,
-  market: string = core.pendleEcosystem!.glpMar2024.ptGlpMarket.address,
-  tokenOut: string = core.gmxEcosystem!.sGlp.address,
+  slippageTolerance: number,
+  market: string,
+  tokenOut: string,
 ): Promise<{
   extraOrderData: string;
   tokenOutput: TokenOutput
@@ -47,11 +45,10 @@ export async function encodeSwapExactPtForTokens(
 
 export async function encodeSwapExactTokensForPt(
   router: BaseRouter,
-  core: CoreProtocol,
   tokenAmountIn: BigNumberish,
-  slippageTolerance: number = ONE_TENTH_OF_ONE_BIPS_NUMBER,
-  marketIn: string = core.pendleEcosystem!.glpMar2024.ptGlpMarket.address,
-  tokenIn: string = core.gmxEcosystem!.sGlp.address,
+  slippageTolerance: number,
+  marketIn: string,
+  tokenIn: string,
 ): Promise<{
   extraOrderData: string;
   tokenInput: TokenInput,
@@ -98,19 +95,19 @@ export async function encodeSwapExactTokensForPt(
 
 export async function encodeSwapExactYtForTokens(
   router: BaseRouter,
-  core: CoreProtocol,
   ytAmountIn: BigNumberish,
-  slippageTolerance: number = ONE_TENTH_OF_ONE_BIPS_NUMBER,
-  tokenOut: string = core.gmxEcosystem!.sGlp.address,
+  slippageTolerance: number,
+  ptMarket: string,
+  tokenOut: string,
 ): Promise<{
   extraOrderData: string;
   tokenOutput: TokenOutput
 }> {
   const [, , , tokenOutput] = await router.swapExactYtForToken(
-    core.pendleEcosystem!.glpMar2024.ptGlpMarket.address as any,
+    ptMarket as any,
     ytAmountIn,
     tokenOut as any,
-    ONE_TENTH_OF_ONE_BIPS_NUMBER,
+    slippageTolerance,
     { method: 'extractParams' },
   );
 
@@ -138,17 +135,17 @@ export async function encodeSwapExactYtForTokens(
 
 export async function encodeSwapExactTokensForYt(
   router: BaseRouter,
-  core: CoreProtocol,
   tokenAmountIn: BigNumberish,
-  slippageTolerance: number = ONE_TENTH_OF_ONE_BIPS_NUMBER,
-  tokenIn: string = core.gmxEcosystem!.sGlp.address,
+  slippageTolerance: number,
+  ptMarket: string,
+  tokenIn: string,
 ): Promise<{
   extraOrderData: string;
   tokenInput: TokenInput,
   approxParams: ApproxParamsStruct
 }> {
   const [, , , approxParams, tokenInput] = await router.swapExactTokenForYt(
-    core.pendleEcosystem!.glpMar2024.ptGlpMarket.address as any,
+    ptMarket as any,
     tokenIn as any,
     tokenAmountIn,
     slippageTolerance,

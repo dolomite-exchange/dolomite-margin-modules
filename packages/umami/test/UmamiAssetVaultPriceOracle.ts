@@ -1,4 +1,15 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
+import { IERC20, IWETH } from '@dolomite-exchange/modules-base/src/types';
+import { createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
@@ -9,20 +20,11 @@ import {
   UmamiAssetVaultRegistry,
 } from '../src/types';
 import {
-  IERC20,
-  IWETH,
-} from '@dolomite-exchange/modules-base/src/types';
-import { createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
   createUmamiAssetVaultIsolationModeTokenVaultV1,
   createUmamiAssetVaultIsolationModeVaultFactory,
   createUmamiAssetVaultPriceOracle,
   createUmamiAssetVaultRegistry,
 } from './umami-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const LINK_PRICE = BigNumber.from('8016000000000000000'); // $8.016000000000000000
 const USDC_PRICE = BigNumber.from('999937000000000000000000000000'); // $0.999937000000000000000000000000
@@ -39,7 +41,7 @@ const umamiPrices = [UMAMI_LINK_PRICE, UMAMI_USDC_PRICE, UMAMI_WBTC_PRICE, UMAMI
 describe('UmamiAssetVaultPriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let umamiRegistry: UmamiAssetVaultRegistry;
   let userVaultImplementation: UmamiAssetVaultIsolationModeTokenVaultV1;
   let umamiAssetVaultPriceOracles: UmamiAssetVaultPriceOracle[];

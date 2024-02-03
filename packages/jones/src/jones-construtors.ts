@@ -1,5 +1,5 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { address } from '@dolomite-margin/dist/src';
-import { CoreProtocol } from '../../base/test/utils/setup';
 import {
   IJonesUSDCIsolationModeTokenVaultV1,
   IJonesUSDCRegistry,
@@ -9,7 +9,7 @@ import {
 
 export async function getJonesUSDCRegistryConstructorParams(
   implementation: JonesUSDCRegistry,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<any[]> {
   if (!core.jonesEcosystem) {
     throw new Error('Jones ecosystem not initialized');
@@ -33,7 +33,7 @@ export async function getJonesUSDCRegistryConstructorParams(
 }
 
 export function getJonesUSDCPriceOracleConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): any[] {
@@ -50,7 +50,7 @@ export function getJonesUSDCPriceOracleConstructorParams(
 }
 
 export function getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): any[] {
@@ -60,7 +60,7 @@ export function getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams(
 
   return [
     core.dolomiteMargin.address,
-    core.chainlinkRegistry!.address,
+    core.chainlinkAutomationRegistry.address,
     jonesUSDCRegistry.address,
     core.marketIds.usdc,
     djUSDCToken.address,
@@ -68,7 +68,7 @@ export function getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams(
 }
 
 export function getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): any[] {
@@ -85,7 +85,7 @@ export function getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstruc
 }
 
 export function getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): any[] {
@@ -102,7 +102,7 @@ export function getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParam
 }
 
 export function getJonesUSDCIsolationModeVaultFactoryConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   jUSDCToken: { address: address },
   userVaultImplementation: IJonesUSDCIsolationModeTokenVaultV1 | JonesUSDCIsolationModeTokenVaultV1,
@@ -123,7 +123,7 @@ export function getJonesUSDCIsolationModeVaultFactoryConstructorParams(
 }
 
 export function getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): any[] {

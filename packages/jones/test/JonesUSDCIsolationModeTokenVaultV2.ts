@@ -1,4 +1,24 @@
+import { IERC4626, RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
+import { createContractWithName } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  advanceByTimeDelta,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectThrow,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  setupCoreProtocol,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
@@ -8,25 +28,7 @@ import {
   JonesUSDCIsolationModeTokenVaultV2__factory,
   JonesUSDCIsolationModeVaultFactory,
 } from '../src/types';
-import {
-  IERC4626,
-  RegistryProxy__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import { createContractWithName } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { advanceByTimeDelta, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectProtocolBalanceIsGreaterThan,
-  expectThrow,
-  expectWalletBalance,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createJonesUSDCIsolationModeTokenVaultV2 } from './jones-ecosystem-utils';
-import {
-  setupCoreProtocol,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200

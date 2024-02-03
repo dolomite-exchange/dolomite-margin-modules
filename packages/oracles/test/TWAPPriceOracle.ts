@@ -1,3 +1,4 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
@@ -8,7 +9,7 @@ import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils
 import { Network, ONE_DAY_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocol, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const ARB_TOKEN = '0x912CE59144191C1204E64559FE8253a0e49E6548';
 const ARB_WETH_POOL = '0xe51635ae8136aBAc44906A8f230C2D235E9c195F';
@@ -21,7 +22,7 @@ const FIFTEEN_MINUTES = BigNumber.from('900');
 describe('TWAPPriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let oracle: TWAPPriceOracle;
 
   before(async () => {

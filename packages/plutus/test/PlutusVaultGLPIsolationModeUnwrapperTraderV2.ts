@@ -1,4 +1,21 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
@@ -12,10 +29,6 @@ import {
   PlutusVaultGLPPriceOracle,
   PlutusVaultRegistry,
 } from '../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPlutusVaultGLPIsolationModeTokenVaultV1,
   createPlutusVaultGLPIsolationModeUnwrapperTraderV2,
@@ -24,16 +37,7 @@ import {
   createPlutusVaultGLPPriceOracle,
   createPlutusVaultRegistry,
 } from './plutus-ecosystem-utils';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createAndSetPlutusVaultWhitelist } from './plutus-utils';
-import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -42,7 +46,7 @@ const otherAmountWei = BigNumber.from('10000000'); // $10
 describe('PlutusVaultGLPIsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC4626;
   let underlyingMarketId: BigNumber;
   let gmxRegistry: IGmxRegistryV1;
@@ -56,8 +60,6 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV2', () => {
 
   let plvGlpExchangeRateNumerator: BigNumber;
   let plvGlpExchangeRateDenominator: BigNumber;
-
-  let solidUser: SignerWithAddress;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -82,8 +84,6 @@ describe('PlutusVaultGLPIsolationModeUnwrapperTraderV2', () => {
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-
-    solidUser = core.hhUser5;
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);

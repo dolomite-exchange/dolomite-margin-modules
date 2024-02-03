@@ -1,6 +1,16 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumberish } from 'ethers';
+import { ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
+import {
+  getDefaultCoreProtocolConfigForGmxV2,
+  setupCoreProtocol,
+  setupTestMarket,
+} from 'packages/base/test/utils/setup';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
@@ -9,8 +19,6 @@ import {
   GmxV2Registry,
   TestGmxV2IsolationModeTokenVaultV1,
 } from '../src/types';
-import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import {
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
@@ -19,21 +27,13 @@ import {
   createGmxV2Registry,
   createTestGmxV2IsolationModeTokenVaultV1,
 } from './gmx-v2-ecosystem-utils';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
-import { ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfigForGmxV2,
-  setupCoreProtocol,
-  setupTestMarket,
-} from 'packages/base/test/utils/setup';
 
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
 
 describe('GmxV2Registry', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let gmxV2Registry: GmxV2Registry;
   let gmxV2Library: GmxV2Library;
   let userVaultImplementation: TestGmxV2IsolationModeTokenVaultV1;

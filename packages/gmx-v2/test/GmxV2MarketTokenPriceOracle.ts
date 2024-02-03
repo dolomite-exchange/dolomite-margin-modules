@@ -1,8 +1,15 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
+import { setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
@@ -12,10 +19,6 @@ import {
   TestGmxReader,
   TestGmxReader__factory,
 } from '../src/types';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { Network, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import { expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import {
   createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
@@ -25,11 +28,8 @@ import {
   createGmxV2MarketTokenPriceOracle,
   createGmxV2Registry,
 } from './gmx-v2-ecosystem-utils';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from 'packages/base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
 
 const GM_ETH_USD_PRICE_NO_MAX_WEI = BigNumber.from('919979975416060612'); // $0.9199
-const GM_ETH_USD_PRICE_MAX_WEI = BigNumber.from('918897815809950545'); // $0.9188
 const MAX_WEI = BigNumber.from('10000000000000000000000000'); // 10M tokens
 const NEGATIVE_PRICE = BigNumber.from('-5');
 const FEE_BASIS_POINTS = BigNumber.from('7');
@@ -40,7 +40,7 @@ const blockNumber = 128_276_157;
 describe('GmxV2MarketTokenPriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let allowableMarketIds: BigNumberish[];
   let gmPriceOracle: GmxV2MarketTokenPriceOracle;
   let gmxV2Registry: GmxV2Registry;

@@ -1,3 +1,24 @@
+import { IERC4626 } from '@dolomite-exchange/modules-base/src/types';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import {
+  disableInterestAccrual,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { IGmxRegistryV1 } from '@dolomite-exchange/modules-glp/src/types';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
@@ -12,21 +33,6 @@ import {
   JonesUSDCRegistry,
 } from '../src/types';
 import {
-  IERC4626,
-} from '@dolomite-exchange/modules-base/src/types';
-import {
-  IGmxRegistryV1,
-} from '@dolomite-exchange/modules-glp/src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  encodeExternalSellActionDataWithNoData,
-  impersonate,
-  revertToSnapshotAndCapture,
-  snapshot,
-} from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
   createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForZap,
@@ -35,17 +41,7 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import {
-  CoreProtocol,
-  disableInterestAccrual,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
-import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -58,7 +54,7 @@ const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 describe('JonesUSDCIsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC4626;
   let underlyingMarketId: BigNumber;
   let gmxRegistry: IGmxRegistryV1;

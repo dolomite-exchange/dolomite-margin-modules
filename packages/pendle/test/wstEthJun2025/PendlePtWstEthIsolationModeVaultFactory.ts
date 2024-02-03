@@ -1,25 +1,22 @@
-import { expect } from 'chai';
-import {
-  PendlePtIsolationModeTokenVaultV1,
-  PendlePtIsolationModeVaultFactory,
-  PendleRegistry,
-} from '../../src/types';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
+import { PendlePtIsolationModeTokenVaultV1, PendlePtIsolationModeVaultFactory, PendleRegistry } from '../../src/types';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeVaultFactory,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 describe('PendlePtWstEthJun2025IsolationModeVaultFactory', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let pendleRegistry: PendleRegistry;
   let vaultImplementation: PendlePtIsolationModeTokenVaultV1;
   let factory: PendlePtIsolationModeVaultFactory;

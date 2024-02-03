@@ -1,3 +1,4 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -32,7 +33,6 @@ import {
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
 import {
-  CoreProtocol,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -53,7 +53,7 @@ const liquidationSpreadDenominator = BigNumber.from('1000000000000000000');
 describe('UmamiAssetVaultIsolationModeLiquidationWithUnwrapperV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IUmamiAssetVault;
   let underlyingMarketId: BigNumber;
   let umamiRegistry: UmamiAssetVaultRegistry;

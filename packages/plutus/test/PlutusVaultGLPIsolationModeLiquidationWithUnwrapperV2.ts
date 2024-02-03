@@ -1,3 +1,36 @@
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import {
+  BYTES_EMPTY,
+  Network,
+  NO_PARASWAP_TRADER_PARAM,
+  ONE_BI,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitTime,
+} from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceDustyOrZero,
+  expectProtocolBalanceIsGreaterThan,
+  expectWalletBalanceOrDustyIfZero,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
+import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import {
+  setupCoreProtocol,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  checkForParaswapSuccess,
+  getCalldataForParaswap,
+  getParaswapTraderParamStruct,
+} from '@dolomite-exchange/modules-base/test/utils/trader-utils';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
@@ -10,28 +43,11 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV2,
   PlutusVaultRegistry,
 } from '../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, NO_PARASWAP_TRADER_PARAM, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectProtocolBalanceDustyOrZero,
-  expectProtocolBalanceIsGreaterThan,
-  expectWalletBalanceOrDustyIfZero,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPlutusVaultGLPIsolationModeUnwrapperTraderV2,
   createPlutusVaultGLPIsolationModeWrapperTraderV2,
   createPlutusVaultRegistry,
 } from './plutus-ecosystem-utils';
-import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
-import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
-import {
-  checkForParaswapSuccess,
-  getCalldataForParaswap,
-  getParaswapTraderParamStruct,
-} from '@dolomite-exchange/modules-base/test/utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -46,7 +62,7 @@ const expirationCollateralizationDenominator = BigNumber.from('100');
 describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC4626;
   let underlyingMarketId: BigNumberish;
   let plutusVaultRegistry: PlutusVaultRegistry;
@@ -112,7 +128,6 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
     expect((await core.dolomiteMargin.getAccountWei(defaultAccountStruct, underlyingMarketId)).value)
       .to
       .eq(heldAmountWei);
-
 
     snapshotId = await snapshot();
   });

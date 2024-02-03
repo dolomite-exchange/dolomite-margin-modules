@@ -1,4 +1,12 @@
+import { BYTES_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import {
   IERC4626,
@@ -10,8 +18,6 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCRegistry,
 } from '../src/types';
-import { BYTES_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -21,12 +27,6 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import {
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createRoleAndWhitelistTrader, TRADER_ROLE } from './jones-utils';
 
 describe('JonesUSDCIsolationModeTokenVaultV1', () => {

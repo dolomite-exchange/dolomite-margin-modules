@@ -1,3 +1,33 @@
+import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitTime,
+} from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceDustyOrZero,
+  expectProtocolBalanceIsGreaterThan,
+  expectVaultBalanceToMatchAccountBalances,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
+import {
+  getLastZapAmountToBigNumber,
+  liquidateV4WithZap,
+  toZapBigNumber,
+} from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import {
+  disableInterestAccrual,
+  setupCoreProtocol,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
 import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
@@ -5,7 +35,6 @@ import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
 import 'dotenv/config';
 import { BigNumber } from 'ethers';
-import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
 import {
   IPendlePtToken,
   PendlePtGLP2024IsolationModeTokenVaultV1,
@@ -14,29 +43,8 @@ import {
   PendlePtGLP2024IsolationModeUnwrapperTraderV2__factory,
   PendlePtGLP2024IsolationModeVaultFactory,
   PendlePtGLP2024IsolationModeVaultFactory__factory,
-  PendlePtGLP2024IsolationModeWrapperTraderV2,
   PendlePtGLP2024IsolationModeWrapperTraderV2__factory,
 } from '../../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectProtocolBalanceDustyOrZero,
-  expectProtocolBalanceIsGreaterThan,
-  expectVaultBalanceToMatchAccountBalances,
-  expectWalletBalance,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
-import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
-import {
-  CoreProtocol,
-  disableInterestAccrual,
-  setupCoreProtocol,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
-import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '420';
@@ -51,11 +59,10 @@ const expirationCollateralizationDenominator = BigNumber.from('100');
 describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IPendlePtToken;
   let underlyingMarketId: BigNumber;
   let unwrapper: PendlePtGLP2024IsolationModeUnwrapperTraderV2;
-  let wrapper: PendlePtGLP2024IsolationModeWrapperTraderV2;
   let factory: PendlePtGLP2024IsolationModeVaultFactory;
   let vault: PendlePtGLP2024IsolationModeTokenVaultV1;
   let defaultAccountStruct: AccountInfoStruct;
@@ -93,13 +100,9 @@ describe('PendlePtGLP2024IsolationModeLiquidationWithZap', () => {
       deployments.PendlePtGLP2024IsolationModeUnwrapperTraderV2[Network.ArbitrumOne].address,
       core.hhUser1,
     );
-    wrapper = PendlePtGLP2024IsolationModeWrapperTraderV2__factory.connect(
-      deployments.PendlePtGLP2024IsolationModeWrapperTraderV2[Network.ArbitrumOne].address,
-      core.hhUser1,
-    );
     underlyingMarketId = await core.dolomiteMargin.getMarketIdByTokenAddress(factory.address);
     ptGlpApiToken = {
-      marketId: underlyingMarketId.toNumber(),
+      marketId: toZapBigNumber(underlyingMarketId.toNumber()),
       symbol: 'PT-GLP',
       name: 'Isolation Mode:',
       decimals: 18,

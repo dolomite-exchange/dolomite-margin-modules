@@ -1,12 +1,13 @@
-import { expect } from 'chai';
-import { defaultAbiCoder, keccak256 } from 'ethers/lib/utils';
-import { MerkleTree } from 'merkletreejs';
-import { OARB, OARB__factory, RewardsDistributor } from '../src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
+import { defaultAbiCoder, keccak256 } from 'ethers/lib/utils';
+import { MerkleTree } from 'merkletreejs';
+import { OARB, OARB__factory, RewardsDistributor } from '../src/types';
 import { createOARB, createRewardsDistributor } from './liquidity-mining-ecosystem-utils';
 
 const user1Rewards = [10, 20];
@@ -14,7 +15,7 @@ const user2Rewards = [15, 25];
 
 describe('RewardsDistributor', () => {
   let snapshotId: string;
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let oARB: OARB;
   let rewardsDistributor: RewardsDistributor;
   let merkleRoot1: string;

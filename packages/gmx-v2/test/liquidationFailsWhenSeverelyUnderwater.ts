@@ -1,7 +1,40 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import {
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+  EventEmitterRegistry,
+  IsolationModeFreezableLiquidatorProxy,
+  IsolationModeFreezableLiquidatorProxy__factory,
+} from 'packages/base/src/types';
+import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectWalletAllowance,
+  expectWalletBalance,
+} from 'packages/base/test/utils/assertions';
+import { createDolomiteRegistryImplementation, createEventEmitter } from 'packages/base/test/utils/dolomite';
+import { liquidateV4WithZapParam } from 'packages/base/test/utils/liquidation-utils';
+import {
+  disableInterestAccrual,
+  getDefaultCoreProtocolConfigForGmxV2,
+  setupCoreProtocol,
+  setupGMBalance,
+  setupTestMarket,
+  setupUserVaultProxy,
+  setupWETHBalance,
+} from 'packages/base/test/utils/setup';
+import { getLiquidateIsolationModeZapPath } from 'packages/base/test/utils/zap-utils';
+import { AccountStruct } from '../../../packages/base/src/utils/constants';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
@@ -14,27 +47,6 @@ import {
   IGmxMarketToken__factory,
 } from '../src/types';
 import {
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
-  EventEmitterRegistry,
-  IsolationModeFreezableLiquidatorProxy,
-  IsolationModeFreezableLiquidatorProxy__factory,
-} from 'packages/base/src/types';
-import { AccountStruct } from '../../../packages/base/src/utils/constants';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
-import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
-import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import {
-  expectEvent,
-  expectProtocolBalance,
-  expectProtocolBalanceIsGreaterThan,
-  expectThrow,
-  expectWalletAllowance,
-  expectWalletBalance,
-} from 'packages/base/test/utils/assertions';
-import { createDolomiteRegistryImplementation, createEventEmitter } from 'packages/base/test/utils/dolomite';
-import {
   createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
@@ -45,19 +57,6 @@ import {
   getInitiateWrappingParams,
   getOracleParams,
 } from './gmx-v2-ecosystem-utils';
-import { liquidateV4WithZapParam } from 'packages/base/test/utils/liquidation-utils';
-import {
-  CoreProtocol,
-  disableInterestAccrual,
-  getDefaultCoreProtocolConfigForGmxV2,
-  setupCoreProtocol,
-  setupGMBalance,
-  setupTestMarket,
-  setupUserVaultProxy,
-  setupWETHBalance,
-} from 'packages/base/test/utils/setup';
-import { getLiquidateIsolationModeZapPath } from 'packages/base/test/utils/zap-utils';
-import { parseEther } from 'ethers/lib/utils';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -65,14 +64,13 @@ const borrowAccountNumber2 = borrowAccountNumber.add(ONE_BI);
 
 const amountWei = ONE_ETH_BI.mul('1234'); // 1,234
 const smallAmountWei = amountWei.mul(1).div(100);
-const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IGmxMarketToken;
   let gmxV2Registry: GmxV2Registry;
   let allowableMarketIds: BigNumberish[];
@@ -639,7 +637,7 @@ describe('IsolationModeFreezableLiquidatorProxy::Issues', () => {
           solidAccount,
           liquidAccount,
           initialZapParam,
-      )).to.not.be.reverted;
+        )).to.not.be.reverted;
       return;
 
       // show account is not Vaporizable because not all of its markets are negative, specifically the GM one

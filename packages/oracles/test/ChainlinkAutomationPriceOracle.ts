@@ -1,3 +1,20 @@
+import { CustomTestVaultToken } from '@dolomite-exchange/modules-base/src/types';
+import { createContractWithAbi, createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network, ONE_WEEK_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  getBlockTimestamp,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
@@ -10,20 +27,6 @@ import {
   TestChainlinkAutomationPriceOracle__factory,
   TestChainlinkRegistry__factory,
 } from '../src/types';
-import {
-  CustomTestVaultToken,
-} from '@dolomite-exchange/modules-base/src/types';
-import { createContractWithAbi, createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_WEEK_SECONDS } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const UPKEEP_ID = '123';
@@ -32,7 +35,7 @@ const USDC_PRICE = BigNumber.from('1000000000000000000');
 describe('ChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let token: CustomTestVaultToken;
   let marketId: BigNumber;
   let chainlinkRegistry: SignerWithAddress;

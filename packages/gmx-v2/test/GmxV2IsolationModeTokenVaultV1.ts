@@ -1,10 +1,47 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { CustomTestToken, EventEmitterRegistry } from '@dolomite-exchange/modules-base/src/types';
+import {
+  createContractWithAbi,
+  createTestToken,
+  depositIntoDolomiteMargin,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import {
+  MAX_UINT_256_BI,
+  ONE_BI,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectThrow,
+  expectTotalSupply,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  createDolomiteRegistryImplementation,
+  createEventEmitter,
+} from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { getSimpleZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
 import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
+import {
+  disableInterestAccrual,
+  getDefaultCoreProtocolConfigForGmxV2,
+  setupCoreProtocol,
+  setupGMBalance,
+  setupTestMarket,
+  setupUserVaultProxy,
+  setupWETHBalance,
+} from 'packages/base/test/utils/setup';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
@@ -20,20 +57,6 @@ import {
   TestGmxV2IsolationModeTokenVaultV1__factory,
 } from '../src/types';
 import {
-  CustomTestToken,
-  EventEmitterRegistry,
-} from '@dolomite-exchange/modules-base/src/types';
-import { createContractWithAbi, createTestToken, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { MAX_UINT_256_BI, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectEvent,
-  expectProtocolBalance,
-  expectThrow,
-  expectTotalSupply,
-  expectWalletBalance,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
   createGmxV2IsolationModeUnwrapperTraderV2,
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
@@ -43,20 +66,6 @@ import {
   getInitiateUnwrappingParams,
   getInitiateWrappingParams,
 } from './gmx-v2-ecosystem-utils';
-import {
-  CoreProtocol,
-  disableInterestAccrual,
-  getDefaultCoreProtocolConfigForGmxV2,
-  setupCoreProtocol,
-  setupGMBalance,
-  setupTestMarket,
-  setupUserVaultProxy,
-  setupWETHBalance,
-} from 'packages/base/test/utils/setup';
-import { getSimpleZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
-import { createDolomiteRegistryImplementation, createEventEmitter } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { ethers } from 'hardhat';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
@@ -84,7 +93,7 @@ enum FreezeType {
 describe('GmxV2IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IGmxMarketToken;
   let gmxV2Registry: GmxV2Registry;
   let allowableMarketIds: BigNumberish[];

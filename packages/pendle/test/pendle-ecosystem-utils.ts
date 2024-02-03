@@ -1,4 +1,29 @@
+import { RegistryProxy, RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { BigNumberish } from 'ethers';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
+import {
+  CoreProtocolWithPendle,
+  getPendleGLPRegistryConstructorParams,
+  getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
+  getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams,
+  getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
+  getPendlePtGLPPriceOracleConstructorParams,
+  getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
+  getPendlePtIsolationModeVaultFactoryConstructorParams,
+  getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
+  getPendlePtPriceOracleConstructorParams,
+  getPendleRegistryConstructorParams,
+  getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
+  getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams,
+  getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
+  getPendleYtGLPPriceOracleConstructorParams,
+} from '../src/pendle-constructors';
 import {
   IERC20,
   IPendleGLPRegistry,
@@ -47,31 +72,8 @@ import {
   PendleYtGLPPriceOracle__factory,
   TestPendleYtGLP2024IsolationModeTokenVaultV1,
 } from '../src/types';
-import {
-  RegistryProxy,
-  RegistryProxy__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import {
-  getPendleGLPRegistryConstructorParams,
-  getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
-  getPendlePtGLP2024IsolationModeVaultFactoryConstructorParams,
-  getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
-  getPendlePtGLPPriceOracleConstructorParams,
-  getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams,
-  getPendlePtIsolationModeVaultFactoryConstructorParams,
-  getPendlePtIsolationModeWrapperTraderV2ConstructorParams,
-  getPendlePtPriceOracleConstructorParams,
-  getPendleRegistryConstructorParams,
-  getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams,
-  getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams,
-  getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
-  getPendleYtGLPPriceOracleConstructorParams,
-} from '../src/pendle-constructors';
-import { createContractWithAbi, createContractWithLibrary } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
-export async function createPendleGLPRegistry(core: CoreProtocol): Promise<PendleGLPRegistry> {
+export async function createPendleGLPRegistry(core: CoreProtocolArbitrumOne): Promise<PendleGLPRegistry> {
   const implementation = await createContractWithAbi<PendleGLPRegistry>(
     PendleGLPRegistry__factory.abi,
     PendleGLPRegistry__factory.bytecode,
@@ -86,8 +88,8 @@ export async function createPendleGLPRegistry(core: CoreProtocol): Promise<Pendl
   return PendleGLPRegistry__factory.connect(registry.address, core.hhUser1);
 }
 
-export async function createPendleRegistry(
-  core: CoreProtocol,
+export async function createPendleRegistry<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
   ptMarket: IPendlePtMarket,
   ptOracle: IPendlePtOracle,
   syToken: IPendleSyToken,
@@ -115,8 +117,8 @@ export async function createPendlePtIsolationModeTokenVaultV1(): Promise<PendleP
   );
 }
 
-export function createPendlePtIsolationModeVaultFactory(
-  core: CoreProtocol,
+export function createPendlePtIsolationModeVaultFactory<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
   registry: IPendleRegistry | PendleRegistry,
   ptToken: IPendlePtToken,
   userVaultImplementation: IPendlePtIsolationModeTokenVaultV1 | PendlePtIsolationModeTokenVaultV1,
@@ -133,8 +135,8 @@ export function createPendlePtIsolationModeVaultFactory(
   );
 }
 
-export function createPendlePtIsolationModeWrapperTraderV2(
-  core: CoreProtocol,
+export function createPendlePtIsolationModeWrapperTraderV2<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
@@ -146,8 +148,8 @@ export function createPendlePtIsolationModeWrapperTraderV2(
   );
 }
 
-export function createPendlePtIsolationModeUnwrapperTraderV2(
-  core: CoreProtocol,
+export function createPendlePtIsolationModeUnwrapperTraderV2<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
@@ -159,8 +161,8 @@ export function createPendlePtIsolationModeUnwrapperTraderV2(
   );
 }
 
-export function createPendlePtPriceOracle(
-  core: CoreProtocol,
+export function createPendlePtPriceOracle<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
   dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
   pendleRegistry: IPendleRegistry | PendleRegistry,
   underlyingToken: IERC20,
@@ -183,7 +185,7 @@ export async function createPendlePtGLP2024IsolationModeTokenVaultV1(
 }
 
 export function createPendlePtGLPPriceOracle(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): Promise<PendlePtGLPPriceOracle> {
@@ -195,7 +197,7 @@ export function createPendlePtGLPPriceOracle(
 }
 
 export function createPendlePtGLP2024IsolationModeUnwrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): Promise<PendlePtGLP2024IsolationModeUnwrapperTraderV2> {
@@ -207,7 +209,7 @@ export function createPendlePtGLP2024IsolationModeUnwrapperTraderV2(
 }
 
 export function createPendlePtGLP2024IsolationModeWrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dptGlp: IPendlePtGLP2024IsolationModeVaultFactory | PendlePtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): Promise<PendlePtGLP2024IsolationModeWrapperTraderV2> {
@@ -219,7 +221,7 @@ export function createPendlePtGLP2024IsolationModeWrapperTraderV2(
 }
 
 export function createPendlePtGLP2024IsolationModeVaultFactory(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   registry: IPendleGLPRegistry | PendleGLPRegistry,
   ptGlpToken: IPendlePtToken,
   userVaultImplementation: IPendlePtGLP2024IsolationModeTokenVaultV1 | PendlePtGLP2024IsolationModeTokenVaultV1,
@@ -257,7 +259,7 @@ export async function createTestPendleYtGLP2024IsolationModeTokenVaultV1(
 }
 
 export function createPendleYtGLP2024IsolationModeVaultFactory(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
@@ -279,7 +281,7 @@ export function createPendleYtGLP2024IsolationModeVaultFactory(
 }
 
 export function createPendleYtGLP2024IsolationModeUnwrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): Promise<PendleYtGLP2024IsolationModeUnwrapperTraderV2> {
@@ -291,7 +293,7 @@ export function createPendleYtGLP2024IsolationModeUnwrapperTraderV2(
 }
 
 export function createPendleYtGLP2024IsolationModeWrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): Promise<PendleYtGLP2024IsolationModeWrapperTraderV2> {
@@ -303,7 +305,7 @@ export function createPendleYtGLP2024IsolationModeWrapperTraderV2(
 }
 
 export function createPendleYtGLPPriceOracle(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dytGlp: IPendleYtGLP2024IsolationModeVaultFactory | PendleYtGLP2024IsolationModeVaultFactory,
   pendleRegistry: IPendleGLPRegistry | PendleGLPRegistry,
 ): Promise<PendleYtGLPPriceOracle> {

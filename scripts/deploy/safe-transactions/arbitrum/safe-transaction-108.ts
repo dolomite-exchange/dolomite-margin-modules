@@ -1,4 +1,4 @@
-import { getChainlinkPriceOracleParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
+import { getChainlinkPriceOracleParamsFromOldPriceOracle } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { getPendleYtGLPPriceOracleConstructorParams } from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
 import { BigNumber } from 'ethers';
 import { getAndCheckSpecificNetwork } from '../../../../packages/base/src/utils/dolomite-utils';
@@ -17,7 +17,7 @@ import * as Deployments from '../../../deployments.json';
 async function main() {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
-  const chainlinkPriceOracleParams = await getChainlinkPriceOracleParams(core);
+  const chainlinkPriceOracleParams = await getChainlinkPriceOracleParamsFromOldPriceOracle(core);
   const chainlinkPriceOracleAddress = await deployContractAndSave(
     Number(network),
     'ChainlinkPriceOracle',

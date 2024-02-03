@@ -23,7 +23,7 @@ import {
 } from '../../../src/types';
 import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
 import { createRegistryProxy, DolomiteMargin } from '../dolomite';
-import { CoreProtocol, CoreProtocolSetupConfig } from '../setup';
+import { CoreProtocolSetupConfig, CoreProtocolType } from '../setup';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { network } from 'hardhat';
@@ -40,8 +40,8 @@ export interface TestEcosystem {
   testPriceOracle: TestPriceOracle;
 }
 
-export async function createTestIsolationModeFactory(
-  core: CoreProtocol,
+export async function createTestIsolationModeFactory<T extends Network>(
+  core: CoreProtocolType<T>,
   underlyingToken: CustomTestToken,
   userVaultImplementation: TestIsolationModeTokenVault,
 ): Promise<TestIsolationModeFactory> {
@@ -62,8 +62,8 @@ type FreezableVault =
   TestIsolationModeTokenVaultV1WithFreezable
   | TestIsolationModeTokenVaultV1WithFreezableAndPausable;
 
-export async function createTestHandlerRegistry(
-  core: CoreProtocol,
+export async function createTestHandlerRegistry<T extends Network>(
+  core: CoreProtocolType<T>,
 ): Promise<TestHandlerRegistry> {
   const implementation = await createContractWithAbi<TestHandlerRegistry>(
     TestHandlerRegistry__factory.abi,
@@ -75,10 +75,10 @@ export async function createTestHandlerRegistry(
   return TestHandlerRegistry__factory.connect(proxy.address, core.hhUser1);
 }
 
-export async function createTestFreezableIsolationModeVaultFactory(
+export async function createTestFreezableIsolationModeVaultFactory<T extends Network>(
   executionFee: BigNumberish,
   registry: TestHandlerRegistry,
-  core: CoreProtocol,
+  core: CoreProtocolType<T>,
   underlyingToken: CustomTestToken,
   userVaultImplementation: FreezableVault,
 ): Promise<TestFreezableIsolationModeVaultFactory> {

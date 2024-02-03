@@ -20,7 +20,7 @@ export const ARB_MAP: Record<Network, TokenWithMarketId | undefined> = {
   },
 };
 
-export const CHAINLINK_PRICE_ORACLE_OLD_MAP: Record<Network, string | undefined> = {
+export const CHAINLINK_PRICE_ORACLE_OLD_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xeA3Fe12d8CC2E87f99e985EE271971C808006531',
 };
 

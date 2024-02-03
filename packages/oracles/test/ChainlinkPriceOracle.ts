@@ -1,3 +1,4 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -10,7 +11,7 @@ import {
 import {
   CustomTestToken,
 } from '@dolomite-exchange/modules-base/src/types';
-import { getChainlinkPriceOracleParams } from '../src/oracles-constructors';
+import { getChainlinkPriceOracleParamsFromOldPriceOracle } from '../src/oracles-constructors';
 import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/../../../packages/base/src/utils/dolomite-utils';
 import {
   MAX_INT_192_BI,
@@ -22,7 +23,7 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocol, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const WETH_PRICE = BigNumber.from('1883923360000000000000');
 const BTC_PRICE = BigNumber.from('299800328339800000000000000000000');
@@ -32,7 +33,7 @@ const TEST_TOKEN_PRICE = WETH_PRICE.mul(1).div(10);
 describe('ChainlinkPriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
 
   let oracle: ChainlinkPriceOracle;
   let testAggregator: TestChainlinkAggregator;
@@ -56,7 +57,7 @@ describe('ChainlinkPriceOracle', () => {
     oracle = (await createContractWithAbi<ChainlinkPriceOracle>(
       ChainlinkPriceOracle__factory.abi,
       ChainlinkPriceOracle__factory.bytecode,
-      await getChainlinkPriceOracleParams(core),
+      await getChainlinkPriceOracleParamsFromOldPriceOracle(core),
     )).connect(core.governance);
 
     snapshotId = await snapshot();

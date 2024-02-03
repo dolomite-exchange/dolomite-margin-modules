@@ -1,3 +1,12 @@
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import {
   IPendlePtToken,
@@ -9,8 +18,6 @@ import {
   PendlePtPriceOracle,
   PendleRegistry,
 } from '../../src/types';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeUnwrapperTraderV2,
@@ -19,12 +26,11 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 describe('PendlePtWstEthJun2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingPtToken: IPendlePtToken;
   let pendleRegistry: PendleRegistry;
   let unwrapper: PendlePtIsolationModeUnwrapperTraderV2;

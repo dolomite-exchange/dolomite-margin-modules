@@ -1,11 +1,34 @@
+import {
+  IsolationModeTraderProxy,
+  IsolationModeTraderProxy__factory,
+  RegistryProxy,
+  RegistryProxy__factory,
+} from '@dolomite-exchange/modules-base/src/types';
+import {
+  createContractWithAbi,
+  createContractWithLibraryAndArtifact,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  createAsyncIsolationModeUnwrapperTraderImpl,
+  createAsyncIsolationModeWrapperTraderImpl,
+  createIsolationModeTokenVaultV1ActionsImpl,
+} from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { createSafeDelegateLibrary } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/general';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { GenericEventEmissionType, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
-import hre from 'hardhat';
+import {
+  getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
+  getGmxV2IsolationModeVaultFactoryConstructorParams,
+  getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
+  getGmxV2MarketTokenPriceOracleConstructorParams,
+  getGmxV2RegistryConstructorParams,
+  GMX_V2_CALLBACK_GAS_LIMIT,
+} from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,
-  GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeUnwrapperTraderV2__factory,
   GmxV2IsolationModeVaultFactory,
@@ -25,30 +48,11 @@ import {
   TestGmxV2IsolationModeUnwrapperTraderV2__factory,
   TestGmxV2IsolationModeVaultFactory,
 } from '../src/types';
-import {
-  IsolationModeTraderProxy,
-  IsolationModeTraderProxy__factory,
-  RegistryProxy,
-  RegistryProxy__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import {
-  getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
-  getGmxV2IsolationModeVaultFactoryConstructorParams,
-  getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
-  getGmxV2MarketTokenPriceOracleConstructorParams,
-  getGmxV2RegistryConstructorParams,
-  GMX_V2_CALLBACK_GAS_LIMIT,
-} from '../src/gmx-v2-constructors';
-import { createContractWithAbi, createContractWithLibrary, createContractWithLibraryAndArtifact } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import {
-  createAsyncIsolationModeUnwrapperTraderImpl,
-  createAsyncIsolationModeWrapperTraderImpl,
-  createIsolationModeTokenVaultV1ActionsImpl,
-} from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { createSafeDelegateLibrary } from '@dolomite-exchange/modules-base/test/utils/ecosystem-token-utils/general';
 
-export async function createGmxV2Registry(core: CoreProtocol, callbackGasLimit: BigNumberish): Promise<GmxV2Registry> {
+export async function createGmxV2Registry(
+  core: CoreProtocolArbitrumOne,
+  callbackGasLimit: BigNumberish,
+): Promise<GmxV2Registry> {
   const implementation = await createContractWithAbi<GmxV2Registry>(
     GmxV2Registry__factory.abi,
     GmxV2Registry__factory.bytecode,
@@ -71,10 +75,12 @@ export async function createGmxV2Library(): Promise<GmxV2Library> {
 }
 
 export async function createGmxV2IsolationModeTokenVaultV1(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   library: GmxV2Library,
 ): Promise<GmxV2IsolationModeTokenVaultV1> {
-  let GmxV2IsolationModeTokenVaultV1Artifact = process.env.COVERAGE === 'true' ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeTokenVaultV1.sol/GmxV2IsolationModeTokenVaultV1.json') : await import('../artifacts/contracts/GmxV2IsolationModeTokenVaultV1.sol/GmxV2IsolationModeTokenVaultV1.json');
+  const GmxV2IsolationModeTokenVaultV1Artifact = process.env.COVERAGE === 'true'
+    ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeTokenVaultV1.sol/GmxV2IsolationModeTokenVaultV1.json')
+    : await import('../artifacts/contracts/GmxV2IsolationModeTokenVaultV1.sol/GmxV2IsolationModeTokenVaultV1.json');
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibraryAndArtifact<GmxV2IsolationModeTokenVaultV1>(
     GmxV2IsolationModeTokenVaultV1Artifact,
@@ -84,12 +90,14 @@ export async function createGmxV2IsolationModeTokenVaultV1(
 }
 
 export async function createTestGmxV2IsolationModeTokenVaultV1(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<TestGmxV2IsolationModeTokenVaultV1> {
   const actionsLib = await createIsolationModeTokenVaultV1ActionsImpl();
   const safeDelegateCallLibrary = await createSafeDelegateLibrary();
   const gmxV2Library = await createGmxV2Library();
-  let TestGmxV2IsolationModeTokenVaultV1Artifact = process.env.COVERAGE === 'true' ? await import('../artifacts/contracts_coverage/test/TestGmxV2IsolationModeTokenVaultV1.sol/TestGmxV2IsolationModeTokenVaultV1.json') : await import('../artifacts/contracts/test/TestGmxV2IsolationModeTokenVaultV1.sol/TestGmxV2IsolationModeTokenVaultV1.json');
+  const TestGmxV2IsolationModeTokenVaultV1Artifact = process.env.COVERAGE === 'true'
+    ? await import('../artifacts/contracts_coverage/test/TestGmxV2IsolationModeTokenVaultV1.sol/TestGmxV2IsolationModeTokenVaultV1.json')
+    : await import('../artifacts/contracts/test/TestGmxV2IsolationModeTokenVaultV1.sol/TestGmxV2IsolationModeTokenVaultV1.json');
   return await createContractWithLibraryAndArtifact<TestGmxV2IsolationModeTokenVaultV1>(
     TestGmxV2IsolationModeTokenVaultV1Artifact,
     {
@@ -102,7 +110,7 @@ export async function createTestGmxV2IsolationModeTokenVaultV1(
 }
 
 export async function createGmxV2IsolationModeVaultFactory(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   library: GmxV2Library,
   gmxRegistry: IGmxV2Registry,
   debtMarketIds: BigNumberish[],
@@ -111,7 +119,9 @@ export async function createGmxV2IsolationModeVaultFactory(
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
 ): Promise<GmxV2IsolationModeVaultFactory> {
-  let GmxV2IsolationModeVaultFactoryArtifact = process.env.COVERAGE === 'true' ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeVaultFactory.sol/GmxV2IsolationModeVaultFactory.json') : await import('../artifacts/contracts/GmxV2IsolationModeVaultFactory.sol/GmxV2IsolationModeVaultFactory.json');
+  const GmxV2IsolationModeVaultFactoryArtifact = process.env.COVERAGE === 'true'
+    ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeVaultFactory.sol/GmxV2IsolationModeVaultFactory.json')
+    : await import('../artifacts/contracts/GmxV2IsolationModeVaultFactory.sol/GmxV2IsolationModeVaultFactory.json');
   return createContractWithLibraryAndArtifact<GmxV2IsolationModeVaultFactory>(
     GmxV2IsolationModeVaultFactoryArtifact,
     { GmxV2Library: library.address },
@@ -128,7 +138,7 @@ export async function createGmxV2IsolationModeVaultFactory(
 }
 
 export async function createTestGmxV2IsolationModeVaultFactory(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   library: GmxV2Library,
   gmxRegistry: IGmxV2Registry,
   debtMarketIds: BigNumberish[],
@@ -137,7 +147,9 @@ export async function createTestGmxV2IsolationModeVaultFactory(
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
 ): Promise<TestGmxV2IsolationModeVaultFactory> {
-  let TestGmxV2IsolationModeVaultFactoryArtifact = process.env.COVERAGE === 'true' ? await import('../artifacts/contracts_coverage/test/TestGmxV2IsolationModeVaultFactory.sol/TestGmxV2IsolationModeVaultFactory.json') : await import('../artifacts/contracts/test/TestGmxV2IsolationModeVaultFactory.sol/TestGmxV2IsolationModeVaultFactory.json');
+  const TestGmxV2IsolationModeVaultFactoryArtifact = process.env.COVERAGE === 'true'
+    ? await import('../artifacts/contracts_coverage/test/TestGmxV2IsolationModeVaultFactory.sol/TestGmxV2IsolationModeVaultFactory.json')
+    : await import('../artifacts/contracts/test/TestGmxV2IsolationModeVaultFactory.sol/TestGmxV2IsolationModeVaultFactory.json');
   return createContractWithLibraryAndArtifact<TestGmxV2IsolationModeVaultFactory>(
     TestGmxV2IsolationModeVaultFactoryArtifact,
     { GmxV2Library: library.address },
@@ -154,12 +166,14 @@ export async function createTestGmxV2IsolationModeVaultFactory(
 }
 
 export async function createGmxV2IsolationModeUnwrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxV2Library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
-  let GmxV2IsolationModeUnwrapperTraderV2Artifact = process.env.COVERAGE === 'true' ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeUnwrapperTraderV2.sol/GmxV2IsolationModeUnwrapperTraderV2.json') : await import('../artifacts/contracts/GmxV2IsolationModeUnwrapperTraderV2.sol/GmxV2IsolationModeUnwrapperTraderV2.json');
+  const GmxV2IsolationModeUnwrapperTraderV2Artifact = process.env.COVERAGE === 'true'
+    ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeUnwrapperTraderV2.sol/GmxV2IsolationModeUnwrapperTraderV2.json')
+    : await import('../artifacts/contracts/GmxV2IsolationModeUnwrapperTraderV2.sol/GmxV2IsolationModeUnwrapperTraderV2.json');
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
   const implementation = await createContractWithLibraryAndArtifact<GmxV2IsolationModeUnwrapperTraderV2>(
     GmxV2IsolationModeUnwrapperTraderV2Artifact,
@@ -182,13 +196,15 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
 }
 
 export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   gmxV2Library: GmxV2Library,
   safeDelegateCallLibrary: BaseContract,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<TestGmxV2IsolationModeUnwrapperTraderV2> {
-  let TestGmxV2IsolationModeUnwrapperTraderV2Artifact = process.env.COVERAGE === 'true' ? await import('../artifacts/contracts_coverage/test/TestGmxV2IsolationModeUnwrapperTraderV2.sol/TestGmxV2IsolationModeUnwrapperTraderV2.json') : await import('../artifacts/contracts/test/TestGmxV2IsolationModeUnwrapperTraderV2.sol/TestGmxV2IsolationModeUnwrapperTraderV2.json');
+  const TestGmxV2IsolationModeUnwrapperTraderV2Artifact = process.env.COVERAGE === 'true'
+    ? await import('../artifacts/contracts_coverage/test/TestGmxV2IsolationModeUnwrapperTraderV2.sol/TestGmxV2IsolationModeUnwrapperTraderV2.json')
+    : await import('../artifacts/contracts/test/TestGmxV2IsolationModeUnwrapperTraderV2.sol/TestGmxV2IsolationModeUnwrapperTraderV2.json');
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
   const implementation = await createContractWithLibraryAndArtifact<TestGmxV2IsolationModeUnwrapperTraderV2>(
     TestGmxV2IsolationModeUnwrapperTraderV2Artifact,
@@ -211,12 +227,14 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
 }
 
 export async function createGmxV2IsolationModeWrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dGM: IGmxV2IsolationModeVaultFactory | GmxV2IsolationModeVaultFactory,
   library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<GmxV2IsolationModeWrapperTraderV2> {
-  let GmxV2IsolationModeWrapperTraderV2Artifact = process.env.COVERAGE === 'true' ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeWrapperTraderV2.sol/GmxV2IsolationModeWrapperTraderV2.json') : await import('../artifacts/contracts/GmxV2IsolationModeWrapperTraderV2.sol/GmxV2IsolationModeWrapperTraderV2.json');
+  const GmxV2IsolationModeWrapperTraderV2Artifact = process.env.COVERAGE === 'true'
+    ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeWrapperTraderV2.sol/GmxV2IsolationModeWrapperTraderV2.json')
+    : await import('../artifacts/contracts/GmxV2IsolationModeWrapperTraderV2.sol/GmxV2IsolationModeWrapperTraderV2.json');
   const libraries = await createAsyncIsolationModeWrapperTraderImpl();
   const implementation = await createContractWithLibraryAndArtifact<GmxV2IsolationModeWrapperTraderV2>(
     GmxV2IsolationModeWrapperTraderV2Artifact,
@@ -237,7 +255,7 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
 }
 
 export async function createGmxV2MarketTokenPriceOracle(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<GmxV2MarketTokenPriceOracle> {
   return createContractWithAbi(
