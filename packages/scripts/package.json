@@ -1,0 +1,53 @@
+{
+  "name": "@dolomite-exchange/modules-scripts",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "hardhat compile",
+    "clean": "hardhat clean",
+    "test": "hardhat --network hardhat test",
+    "execute:arbitrum-105": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-105.ts",
+    "execute:arbitrum-106": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-106.ts",
+    "execute:arbitrum-108": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-108.ts",
+    "execute:arbitrum-110": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-110.ts",
+    "execute:arbitrum-111": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-111.ts",
+    "execute:arbitrum-114": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-114.ts",
+    "execute:arbitrum-126": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-126.ts",
+    "execute:arbitrum-128": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-128.ts",
+    "execute:arbitrum-131": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-131.ts",
+    "execute:arbitrum-134": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-134.ts",
+    "execute:arbitrum-137": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-137.ts",
+    "execute:arbitrum-140": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-140.ts",
+    "execute:arbitrum-144": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-144.ts",
+    "execute:arbitrum-146": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-146.ts",
+    "execute:arbitrum-149": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-149.ts",
+    "execute:arbitrum-153": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-153.ts",
+    "execute:arbitrum-155": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-155.ts",
+    "execute:arbitrum-157": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-157.ts",
+    "execute:arbitrum-167": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-167.ts",
+    "execute:arbitrum-168": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-168.ts",
+    "execute:arbitrum-169": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-169.ts",
+    "execute:arbitrum-173": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-173.ts",
+    "execute:arbitrum-179": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-179.ts",
+    "execute:arbitrum-184": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-184.ts",
+    "execute:arbitrum-185": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-185.ts",
+    "execute:arbitrum-186": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-186.ts",
+    "execute:arbitrum-189": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-189.ts",
+    "execute:arbitrum-192": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-192.ts",
+    "execute:arbitrum-195": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-195.ts",
+    "execute:arbitrum-196": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-196.ts",
+    "execute:arbitrum-198": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-198.ts",
+    "execute:arbitrum-202": "hardhat --network arbitrum_one run src/deploy/safe-transactions/arbitrum/safe-transaction-202.ts"
+  },
+  "private": false,
+  "files": [
+    "contracts/**/*",
+    "!contracts/test/*",
+    "src/**/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dolomite-exchange/dolomite-margin-modules.git",
+    "directory": "packages/scripts"
+  },
+  "license": "GPL-2.0"
+}

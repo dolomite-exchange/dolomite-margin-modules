@@ -9,6 +9,8 @@ export enum Network {
   PolygonZkEvm = '1101',
 }
 
+export type NetworkType = Network.ArbitrumOne | Network.Base | Network.PolygonZkEvm;
+
 export enum NetworkName {
   ArbitrumOne = 'arbitrum_one',
   Base = 'base',

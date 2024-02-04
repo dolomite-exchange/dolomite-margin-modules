@@ -29,7 +29,7 @@ import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
-import deployments from '../../../scripts/deployments.json';
+import deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
 import {
   IERC4626,
   IPlutusVaultGLPIsolationModeVaultFactory,

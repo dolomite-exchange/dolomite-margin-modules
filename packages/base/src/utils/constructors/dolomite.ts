@@ -1,12 +1,15 @@
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { CoreProtocolType } from '../../../test/utils/setup';
-import { EventEmitterRegistry, IERC20 } from '../../types';
 import {
-  IDolomiteInterestSetter,
-  IDolomiteStructs,
-} from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
-import { Network } from '../no-deps-constants';
+  EventEmitterRegistry,
+  IDolomiteMargin,
+  IDolomiteMarginV2,
+  IERC20,
+  IIsolationModeVaultFactory,
+} from '../../types';
+import { IDolomiteInterestSetter, IDolomiteStructs } from '../../types/contracts/protocol/interfaces/IDolomiteMargin';
+import { Network, NetworkType, ZERO_BI } from '../no-deps-constants';
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
 
@@ -34,11 +37,9 @@ export async function getEventEmitterRegistryConstructorParams<T extends Network
   return [implementation.address, core.dolomiteMargin.address, initializationCallData.data!];
 }
 
-type OwnerAddMarketParameters = [
-  string, string, string, { value: BigNumberish }, {
-    value: BigNumberish
-  }, BigNumberish, boolean, boolean
-];
+type OwnerAddMarketParameters<T extends Network> = T extends Network.ArbitrumOne
+  ? Parameters<IDolomiteMargin['functions']['ownerAddMarket']>
+  : Parameters<IDolomiteMarginV2['functions']['ownerAddMarket']>;
 
 export interface BaseOracleContract {
   address: string;
@@ -50,29 +51,47 @@ export interface BaseInterestRateSetterContract {
   getInterestRate: (token: string, borrowWei: BigNumberish, supplyWei: BigNumberish) => Promise<InterestRateStruct>;
 }
 
-export function getOwnerAddMarketParameters(
+export function getOwnerAddMarketParameters<T extends NetworkType>(
+  core: CoreProtocolType<T>,
   token: IERC20,
   priceOracle: BaseOracleContract,
   interestSetter: BaseInterestRateSetterContract,
   marginPremium: BigNumberish,
   spreadPremium: BigNumberish,
-  maxWei: BigNumberish,
+  maxSupplyWei: BigNumberish,
+  maxBorrowWei: BigNumberish,
   isCollateralOnly: boolean,
-  isRecyclable: boolean = false,
-): OwnerAddMarketParameters {
+  earningsRateOverride: BigNumberish = ZERO_BI,
+): OwnerAddMarketParameters<T> {
+  if (core.network === Network.ArbitrumOne) {
+    const foo = core;
+    return [
+      token.address,
+      priceOracle.address,
+      interestSetter.address,
+      { value: marginPremium },
+      { value: spreadPremium },
+      maxSupplyWei,
+      isCollateralOnly,
+      false,
+    ] as Parameters<IDolomiteMargin['functions']['ownerAddMarket']> as any;
+  }
+
   return [
     token.address,
     priceOracle.address,
     interestSetter.address,
     { value: marginPremium },
     { value: spreadPremium },
-    maxWei,
+    maxSupplyWei,
+    maxBorrowWei,
+    { value: earningsRateOverride },
     isCollateralOnly,
-    isRecyclable,
-  ];
+  ] as Parameters<IDolomiteMarginV2['functions']['ownerAddMarket']> as any;
 }
 
 export enum TargetCollateralization {
+  Base = '1.00',
   _120 = '1.20',
   _125 = '1.25',
   _150 = '1.50',
@@ -88,6 +107,7 @@ export function getMarginPremiumForTargetCollateralization(
 }
 
 export enum TargetLiquidationPenalty {
+  Base = '0',
   _6 = '0.06',
   _7 = '0.07',
   _8 = '0.08',
@@ -103,8 +123,9 @@ export function getLiquidationPremiumForTargetLiquidationPenalty(
   return parseEther(targetPenalty).mul(one).div(baseAmount).sub(one);
 }
 
-export function getOwnerAddMarketParametersForIsolationMode(
-  token: { address: string, isIsolationAsset: () => Promise<boolean> },
+export function getOwnerAddMarketParametersForIsolationMode<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  token: IIsolationModeVaultFactory,
   priceOracle: { address: string; getPrice: (token: string) => Promise<MonetaryPriceStruct> },
   interestSetter: {
     address: string;
@@ -114,17 +135,19 @@ export function getOwnerAddMarketParametersForIsolationMode(
   spreadPremium: BigNumberish,
   maxSupplyWei: BigNumberish,
   maxBorrowWei: BigNumberish,
-  isClosing: boolean = true,
-  isRecyclable: boolean = false,
-): OwnerAddMarketParameters {
-  return [
-    token.address,
-    priceOracle.address,
-    interestSetter.address,
-    { value: marginPremium },
-    { value: spreadPremium },
+  isCollateralOnly: boolean = true,
+  earningsRateOverride: BigNumberish = ZERO_BI,
+): OwnerAddMarketParameters<T> {
+  return getOwnerAddMarketParameters(
+    core,
+    token as any as IERC20,
+    priceOracle,
+    interestSetter,
+    marginPremium,
+    spreadPremium,
     maxSupplyWei,
-    isClosing,
-    isRecyclable,
-  ];
+    maxBorrowWei,
+    isCollateralOnly,
+    earningsRateOverride,
+  );
 }

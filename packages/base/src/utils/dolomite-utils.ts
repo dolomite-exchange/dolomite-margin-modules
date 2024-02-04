@@ -10,7 +10,7 @@ import {
   CustomTestVaultToken__factory,
 } from '../types';
 import { ActionArgsStruct } from './index';
-import { MAX_UINT_256_BI, Network, networkToNetworkNameMap } from './no-deps-constants';
+import { MAX_UINT_256_BI, Network, networkToNetworkNameMap, NetworkType } from './no-deps-constants';
 import { CoreProtocolType } from '../../test/utils/setup';
 
 /**
@@ -115,7 +115,7 @@ export function createWithdrawAction(
   };
 }
 
-export async function depositIntoDolomiteMargin<T extends Network>(
+export async function depositIntoDolomiteMargin<T extends NetworkType>(
   core: CoreProtocolType<T>,
   accountOwner: SignerWithAddress,
   accountNumber: BigNumberish,
@@ -131,7 +131,7 @@ export async function depositIntoDolomiteMargin<T extends Network>(
     );
 }
 
-export async function withdrawFromDolomiteMargin<T extends Network>(
+export async function withdrawFromDolomiteMargin<T extends NetworkType>(
   core: CoreProtocolType<T>,
   user: SignerWithAddress,
   accountId: BigNumberish,
@@ -179,13 +179,13 @@ export function heldWeiToOwedWei(
   return getPartialRoundUp(heldWei, heldPrice, owedPrice);
 }
 
-const NETWORK_TO_VALID_MAP: Record<Network, boolean> = {
+const NETWORK_TO_VALID_MAP: Record<NetworkType, boolean> = {
   [Network.ArbitrumOne]: true,
   [Network.Base]: true,
   [Network.PolygonZkEvm]: true,
 };
 
-export async function getAnyNetwork(): Promise<Network> {
+export async function getAnyNetwork(): Promise<NetworkType> {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
   if (!NETWORK_TO_VALID_MAP[network]) {
     return Promise.reject(new Error(`Invalid network, found ${network}`));
@@ -194,7 +194,7 @@ export async function getAnyNetwork(): Promise<Network> {
   return network;
 }
 
-export async function getAndCheckSpecificNetwork<T extends Network>(networkInvariant: T): Promise<T> {
+export async function getAndCheckSpecificNetwork<T extends NetworkType>(networkInvariant: T): Promise<T> {
   const network = (await ethers.provider.getNetwork()).chainId.toString();
   if (network !== networkInvariant) {
     return Promise.reject(new Error(

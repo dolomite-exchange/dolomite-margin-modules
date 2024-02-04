@@ -13,7 +13,7 @@ import { Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
-import Deployments, * as deployments from '../../../../scripts/deployments.json';
+import Deployments, * as deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
 import {
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
@@ -71,7 +71,7 @@ import {
   WETH_MAP,
   WST_ETH_MAP,
 } from '../../src/utils/constants';
-import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP } from '../../src/utils/no-deps-constants';
+import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkType } from '../../src/utils/no-deps-constants';
 import {
   CoreProtocolAbstract,
   CoreProtocolArbitrumOne,
@@ -99,7 +99,7 @@ import { impersonate, impersonateOrFallback, resetFork } from './index';
 /**
  * Config to for setting up tests in the `before` function
  */
-export interface CoreProtocolSetupConfig<T extends Network> {
+export interface CoreProtocolSetupConfig<T extends NetworkType> {
   /**
    * The block number at which the tests will be run on Arbitrum
    */
@@ -107,24 +107,48 @@ export interface CoreProtocolSetupConfig<T extends Network> {
   readonly network: T;
 }
 
-export interface CoreProtocolConfig<T extends Network> {
-  blockNumber: number;
-  network: T;
-  networkNumber: number;
+export interface CoreProtocolConfigParent<T extends NetworkType> {
+  readonly blockNumber: number;
+  readonly network: T;
+  readonly networkNumber: number;
 }
 
-export async function disableInterestAccrual<T extends Network>(core: CoreProtocolAbstract<T>, marketId: BigNumberish) {
+interface CoreProtocolConfigArbitrumOne extends CoreProtocolConfigParent<Network.ArbitrumOne> {
+  readonly arbitrumOne: boolean;
+}
+
+interface CoreProtocolConfigBase extends CoreProtocolConfigParent<Network.Base> {
+  readonly base: boolean;
+}
+
+interface CoreProtocolConfigPolygonZkEvm extends CoreProtocolConfigParent<Network.PolygonZkEvm> {
+  readonly polygonZkEvm: boolean;
+}
+
+export type CoreProtocolConfig<T extends NetworkType> = T extends Network.ArbitrumOne
+  ? CoreProtocolConfigArbitrumOne
+  : T extends Network.Base ? CoreProtocolConfigBase : T extends Network.PolygonZkEvm
+    ? CoreProtocolConfigPolygonZkEvm
+    : never;
+
+export async function disableInterestAccrual<T extends NetworkType>(
+  core: CoreProtocolAbstract<T>,
+  marketId: BigNumberish,
+) {
   return core.dolomiteMargin.ownerSetInterestSetter(marketId, core.interestSetters.alwaysZeroInterestSetter.address);
 }
 
-export async function enableInterestAccrual<T extends Network>(core: CoreProtocolAbstract<T>, marketId: BigNumberish) {
+export async function enableInterestAccrual<T extends NetworkType>(
+  core: CoreProtocolAbstract<T>,
+  marketId: BigNumberish,
+) {
   return core.dolomiteMargin.ownerSetInterestSetter(
     marketId,
     core.interestSetters.linearStepFunction8L92UInterestSetter.address,
   );
 }
 
-export async function setupWETHBalance<T extends Network>(
+export async function setupWETHBalance<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
   signer: SignerWithAddress,
   amount: BigNumberish,
@@ -146,7 +170,7 @@ export async function setupARBBalance(
   await core.tokens.arb!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupDAIBalance<T extends Network>(
+export async function setupDAIBalance<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
   signer: SignerWithAddress,
   amount: BigNumberish,
@@ -170,7 +194,7 @@ export async function setupNativeUSDCBalance(
   await core.tokens.nativeUsdc!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
-export async function setupUSDCBalance<T extends Network>(
+export async function setupUSDCBalance<T extends NetworkType>(
   core: CoreProtocolAbstract<T>,
   signer: SignerWithAddress,
   amount: BigNumberish,
@@ -243,12 +267,39 @@ export function setupUserVaultProxy<T extends BaseContract>(
   ) as T;
 }
 
-export function getDefaultCoreProtocolConfig<T extends Network>(network: T): CoreProtocolConfig<T> {
-  return {
-    network,
-    blockNumber: NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[network],
-    networkNumber: parseInt(network, 10),
-  };
+export function getDefaultCoreProtocolConfig<T extends NetworkType>(network: T): CoreProtocolConfig<T> {
+  return getCoreProtocolConfig(network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[network]);
+}
+
+function getCoreProtocolConfig<T extends NetworkType>(network: T, blockNumber: number): CoreProtocolConfig<T> {
+  if (network === Network.ArbitrumOne) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      arbitrumOne: true,
+    } as CoreProtocolConfigArbitrumOne as any;
+  }
+
+  if (network === Network.Base) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      base: true,
+    } as CoreProtocolConfigBase as any;
+  }
+
+  if (network === Network.PolygonZkEvm) {
+    return {
+      network,
+      blockNumber,
+      networkNumber: parseInt(network, 10),
+      polygonZkEvm: true,
+    } as CoreProtocolConfigPolygonZkEvm as any;
+  }
+
+  throw new Error(`Invalid network, found: ${network}`);
 }
 
 export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Network.ArbitrumOne> {
@@ -256,16 +307,17 @@ export function getDefaultCoreProtocolConfigForGmxV2(): CoreProtocolConfig<Netwo
     network: Network.ArbitrumOne,
     networkNumber: parseInt(Network.ArbitrumOne, 10),
     blockNumber: 164_788_000,
+    arbitrumOne: true,
   };
 }
 
-export type CoreProtocolType<T extends Network> = T extends Network.ArbitrumOne
+export type CoreProtocolType<T extends NetworkType> = T extends Network.ArbitrumOne
   ? CoreProtocolArbitrumOne
   : T extends Network.Base ? CoreProtocolBase
     : T extends Network.PolygonZkEvm ? CoreProtocolPolygonZkEvm
       : never;
 
-export async function setupCoreProtocol<T extends Network>(
+export async function setupCoreProtocol<T extends NetworkType>(
   config: Readonly<CoreProtocolSetupConfig<T>>,
 ): Promise<CoreProtocolType<T>> {
   if (network.name === 'hardhat') {
@@ -294,12 +346,6 @@ export async function setupCoreProtocol<T extends Network>(
   const chainlinkPriceOracle = getContractOpt(
     CHAINLINK_PRICE_ORACLE_MAP[config.network],
     IChainlinkPriceOracle__factory.connect,
-    governance,
-  );
-
-  const chainlinkAutomationRegistry = getContractOpt(
-    CHAINLINK_AUTOMATION_REGISTRY_MAP[config.network],
-    IChainlinkAutomationRegistry__factory.connect,
     governance,
   );
 
@@ -389,11 +435,7 @@ export async function setupCoreProtocol<T extends Network>(
     hhUser3,
     hhUser4,
     hhUser5,
-    config: {
-      blockNumber: config.blockNumber,
-      network: config.network,
-      networkNumber: parseInt(config.network, 10),
-    },
+    config: getCoreProtocolConfig(config.network, config.blockNumber),
     apiTokens: {
       usdc: {
         marketId: new ZapBigNumber(USDC_MAP[config.network].marketId),
@@ -431,6 +473,11 @@ export async function setupCoreProtocol<T extends Network>(
     const abraEcosystem = await createAbraEcosystem(typedConfig.network, hhUser1);
     const arbEcosystem = await createArbEcosystem(typedConfig.network, hhUser1);
     const camelotEcosystem = await createCamelotEcosystem(typedConfig.network, hhUser1);
+    const chainlinkAutomationRegistry = getContract(
+      CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
+      IChainlinkAutomationRegistry__factory.connect,
+      governance,
+    );
     const gmxEcosystem = await createGmxEcosystem(typedConfig.network, hhUser1);
     const gmxEcosystemV2 = await createGmxEcosystemV2(typedConfig.network, hhUser1);
     const jonesEcosystem = await createJonesEcosystem(typedConfig.network, hhUser1);
@@ -524,13 +571,14 @@ export async function setupCoreProtocol<T extends Network>(
   if (config.network === Network.PolygonZkEvm) {
     return new CoreProtocolPolygonZkEvm(
       coreProtocolParams as CoreProtocolParams<Network.PolygonZkEvm>,
+      {},
     ) as any;
   }
 
   return Promise.reject(new Error(`Invalid network, found: ${config.network}`));
 }
 
-export async function setupTestMarket<T extends Network>(
+export async function setupTestMarket<T extends NetworkType>(
   core: CoreProtocolType<T>,
   token: { address: address },
   isClosing: boolean,
@@ -565,12 +613,12 @@ export async function setupTestMarket<T extends Network>(
   }
 }
 
-async function createTokenVaultActionsLibraries<T extends Network>(
+async function createTokenVaultActionsLibraries<T extends NetworkType>(
   config: CoreProtocolSetupConfig<T>,
 ): Promise<Record<string, string>> {
   const tokenVaultPrefix = 'IsolationModeTokenVaultV1ActionsImpl';
   const maxTokenVaultVersion = Object.keys(deployments)
-    .filter(k => k.startsWith(tokenVaultPrefix) && (deployments as any)[config.network])
+    .filter(k => k.startsWith(tokenVaultPrefix) && (deployments as any)[k][config.network])
     .sort((a, b) => a < b ? 1 : -1)[0];
   if (!maxTokenVaultVersion) {
     return Promise.reject(new Error(`Could not find token vault for network ${config.network}`));

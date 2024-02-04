@@ -2,7 +2,7 @@ import { IChainlinkAutomationRegistry, IChainlinkPriceOracle } from '@dolomite-e
 import { ApiToken } from '@dolomite-exchange/zap-sdk';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumberish } from 'ethers';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
   IBorrowPositionProxyV2,
   IDepositWithdrawalProxy,
@@ -103,7 +103,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   wstEth: BigNumberish;
 }
 
-export interface CoreProtocolParams<T extends Network> {
+export interface CoreProtocolParams<T extends NetworkType> {
   config: CoreProtocolConfig<T>;
   governance: SignerWithAddress;
   hhUser1: SignerWithAddress;
@@ -135,7 +135,7 @@ export interface CoreProtocolParams<T extends Network> {
   tokens: CoreProtocolTokens;
 }
 
-export class CoreProtocolAbstract<T extends Network> {
+export abstract class CoreProtocolAbstract<T extends NetworkType> {
   /// =========================
   /// Config and Signers
   /// =========================
@@ -209,6 +209,8 @@ export class CoreProtocolAbstract<T extends Network> {
     this.apiTokens = params.apiTokens;
     this.tokens = params.tokens;
   }
+
+  public abstract get network(): T;
 }
 
 interface CoreProtocolParamsArbitrumOne {
@@ -249,6 +251,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly premiaEcosystem: PremiaEcosystem;
   public override readonly tokens: CoreProtocolTokensArbitrumOne;
   public readonly umamiEcosystem: UmamiEcosystem;
+  public readonly network: Network.ArbitrumOne = Network.ArbitrumOne;
 
   constructor(
     params: CoreProtocolParams<Network.ArbitrumOne>,
@@ -277,6 +280,8 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
 
 export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
 
+  public readonly network: Network.Base = Network.Base;
+
   constructor(
     params: CoreProtocolParams<Network.Base>,
   ) {
@@ -291,6 +296,7 @@ export interface ZkEvmParams {
 export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.PolygonZkEvm> {
 
   public readonly paraswapEcosystem: ParaswapEcosystem;
+  public readonly network: Network.PolygonZkEvm = Network.PolygonZkEvm;
 
   constructor(
     params: CoreProtocolParams<Network.PolygonZkEvm>,
