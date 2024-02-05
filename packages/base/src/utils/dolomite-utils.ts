@@ -2,16 +2,16 @@ import { address } from '@dolomite-exchange/dolomite-margin';
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumber, BigNumberish, BytesLike } from 'ethers';
-import { ethers } from 'hardhat';
-import { CoreProtocol } from '../../test/utils/setup';
+import hardhat, { ethers } from 'hardhat';
 import {
   CustomTestToken,
   CustomTestToken__factory,
   CustomTestVaultToken,
   CustomTestVaultToken__factory,
-} from '../../src/types';
+} from '../types';
 import { ActionArgsStruct } from './index';
-import { MAX_UINT_256_BI, Network, networkToNetworkNameMap } from './no-deps-constants';
+import { MAX_UINT_256_BI, Network, networkToNetworkNameMap, NetworkType } from './no-deps-constants';
+import { CoreProtocolType } from '../../test/utils/setup';
 
 /**
  * @return  The deployed contract
@@ -115,8 +115,8 @@ export function createWithdrawAction(
   };
 }
 
-export async function depositIntoDolomiteMargin(
-  core: CoreProtocol,
+export async function depositIntoDolomiteMargin<T extends NetworkType>(
+  core: CoreProtocolType<T>,
   accountOwner: SignerWithAddress,
   accountNumber: BigNumberish,
   tokenId: BigNumberish,
@@ -131,8 +131,8 @@ export async function depositIntoDolomiteMargin(
     );
 }
 
-export async function withdrawFromDolomiteMargin(
-  core: CoreProtocol,
+export async function withdrawFromDolomiteMargin<T extends NetworkType>(
+  core: CoreProtocolType<T>,
   user: SignerWithAddress,
   accountId: BigNumberish,
   tokenId: BigNumberish,
@@ -179,12 +179,13 @@ export function heldWeiToOwedWei(
   return getPartialRoundUp(heldWei, heldPrice, owedPrice);
 }
 
-const NETWORK_TO_VALID_MAP: Record<Network, boolean> = {
+const NETWORK_TO_VALID_MAP: Record<NetworkType, boolean> = {
   [Network.ArbitrumOne]: true,
-  [Network.ArbitrumGoerli]: true,
+  [Network.Base]: true,
+  [Network.PolygonZkEvm]: true,
 };
 
-export async function getAnyNetwork(): Promise<Network> {
+export async function getAnyNetwork(): Promise<NetworkType> {
   const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
   if (!NETWORK_TO_VALID_MAP[network]) {
     return Promise.reject(new Error(`Invalid network, found ${network}`));
@@ -193,11 +194,21 @@ export async function getAnyNetwork(): Promise<Network> {
   return network;
 }
 
-export async function getAndCheckSpecificNetwork<T extends Network>(networkInvariant: T): Promise<T> {
-  const network = (await ethers.provider.getNetwork()).chainId.toString();
-  if (network !== networkInvariant) {
+export async function getAndCheckSpecificNetwork<T extends NetworkType>(networkInvariant: T): Promise<T> {
+  let foundNetwork: string;
+  if (hardhat.network.name === 'hardhat') {
+    if (!process.env.NETWORK) {
+      return Promise.reject(new Error(`Invalid network, found: ${process.env.NETWORK}`));
+    }
+    foundNetwork = hardhat.userConfig.networks![process.env.NETWORK]!.chainId!.toString();
+  } else {
+    foundNetwork = (await ethers.provider.getNetwork()).chainId.toString();
+  }
+
+  if (foundNetwork !== networkInvariant) {
+    const expectedName = networkToNetworkNameMap[networkInvariant];
     return Promise.reject(new Error(
-      `This script can only be run on ${networkInvariant} (${networkToNetworkNameMap[networkInvariant]})`,
+      `This script can only be run on ${networkInvariant} (${expectedName}), but found: ${foundNetwork}`,
     ));
   }
 

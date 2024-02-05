@@ -1,4 +1,19 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
+import {
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+} from '@dolomite-exchange/modules-base/src/types';
+import { STETH_USD_CHAINLINK_FEED_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
@@ -10,28 +25,18 @@ import {
   TestPendlePtOracle__factory,
 } from '../../src/types';
 import {
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { STETH_USD_CHAINLINK_FEED_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 
 const PT_WST_ETH_PRICE = BigNumber.from('4843076344353594664836639');
 
 describe('PendlePtWstEthJun2025PriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let ptOracle: PendlePtPriceOracle;
   let pendleRegistry: PendleRegistry;
   let factory: PendlePtIsolationModeVaultFactory;
@@ -130,7 +135,8 @@ describe('PendlePtWstEthJun2025PriceOracle', () => {
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
       await advanceToTimestamp(1705000000);
-      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
+      await core.dolomiteRegistry.connect(core.governance)
+        .ownerSetChainlinkPriceOracle(
         core.testEcosystem!.testPriceOracle.address
       );
       const price = await ptOracle.getPrice(factory.address);

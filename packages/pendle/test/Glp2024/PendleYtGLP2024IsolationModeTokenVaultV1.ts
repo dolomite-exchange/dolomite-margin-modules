@@ -1,3 +1,34 @@
+import {
+  CustomTestToken,
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+  RegistryProxy__factory,
+} from '@dolomite-exchange/modules-base/src/types';
+import { createTestToken, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  getBlockTimestamp,
+  impersonate,
+  increaseToTimestamp,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectThrow,
+  expectWalletBalance,
+  expectWalletBalanceIsGreaterThan,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { getSimpleZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
@@ -19,32 +50,6 @@ import {
   TestPendleYtGLP2024IsolationModeTokenVaultV1__factory,
 } from '../../src/types';
 import {
-  CustomTestToken,
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
-  RegistryProxy__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import {
-  createTestToken,
-  depositIntoDolomiteMargin,
-} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  getBlockTimestamp,
-  impersonate,
-  increaseToTimestamp,
-  revertToSnapshotAndCapture,
-  snapshot,
-} from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectProtocolBalanceIsGreaterThan,
-  expectThrow,
-  expectWalletBalance,
-  expectWalletBalanceIsGreaterThan,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import {
   createPendleGLPRegistry,
   createPendleYtGLP2024IsolationModeUnwrapperTraderV2,
   createPendleYtGLP2024IsolationModeVaultFactory,
@@ -52,14 +57,6 @@ import {
   createPendleYtGLPPriceOracle,
   createTestPendleYtGLP2024IsolationModeTokenVaultV1,
 } from '../pendle-ecosystem-utils';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
-import { getSimpleZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
 
 const ONE_WEEK_SECONDS = 7 * 86400;
 
@@ -72,7 +69,7 @@ const initialAllowableDebtMarketIds = [0, 1];
 describe('PendleYtGLP2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IPendleYtToken;
   let syGlp: IPendleSyToken;
   let pendleRegistry: PendleGLPRegistry;

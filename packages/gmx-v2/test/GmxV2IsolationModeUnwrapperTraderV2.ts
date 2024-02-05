@@ -1,9 +1,49 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
+import { EventEmitterRegistry } from '@dolomite-exchange/modules-base/src/types';
+import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import {
+  BYTES_EMPTY,
+  BYTES_ZERO,
+  MAX_UINT_256_BI,
+  ONE_BI,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  impersonate,
+  revertToSnapshotAndCapture,
+  setEtherBalance,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectThrow,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  createDolomiteRegistryImplementation,
+  createEventEmitter,
+} from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { createSafeDelegateLibrary } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/general';
 import { mine } from '@nomicfoundation/hardhat-network-helpers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import {
+  disableInterestAccrual,
+  getDefaultCoreProtocolConfigForGmxV2,
+  setupCoreProtocol,
+  setupGMBalance,
+  setupNativeUSDCBalance,
+  setupTestMarket,
+  setupUserVaultProxy,
+  setupWETHBalance,
+} from 'packages/base/test/utils/setup';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
@@ -18,19 +58,6 @@ import {
   TestGmxV2IsolationModeUnwrapperTraderV2,
 } from '../src/types';
 import {
-  EventEmitterRegistry,
-} from '@dolomite-exchange/modules-base/src/types';
-import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { BYTES_EMPTY, BYTES_ZERO, MAX_UINT_256_BI, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectEvent,
-  expectProtocolBalance,
-  expectProtocolBalanceIsGreaterThan,
-  expectThrow,
-  expectWalletBalance,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
   createGmxV2IsolationModeVaultFactory,
   createGmxV2IsolationModeWrapperTraderV2,
   createGmxV2Library,
@@ -41,21 +68,6 @@ import {
   getOracleParams,
   getWithdrawalObject,
 } from './gmx-v2-ecosystem-utils';
-import {
-  CoreProtocol,
-  disableInterestAccrual,
-  getDefaultCoreProtocolConfigForGmxV2,
-  setupCoreProtocol,
-  setupGMBalance,
-  setupNativeUSDCBalance,
-  setupTestMarket,
-  setupUserVaultProxy,
-  setupWETHBalance,
-} from 'packages/base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
-import { createDolomiteRegistryImplementation, createEventEmitter } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { createSafeDelegateLibrary } from '@dolomite-exchange/modules-base/test/utils/ecosystem-token-utils/general';
-import { IDolomiteStructs } from 'packages/pendle/src/types/contracts/PendlePtGLP2024IsolationModeTokenVaultV1';
 
 enum ReversionType {
   None = 0,
@@ -103,7 +115,7 @@ function encodeWithdrawalKeyForCallFunction(
 describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IGmxMarketToken;
   let allowableMarketIds: BigNumberish[];
   let gmxV2Registry: GmxV2Registry;
@@ -956,7 +968,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         core.tokens.weth.address,
         core.tokens.nativeUsdc!.address,
         BigNumber.from('100000000'),
-        ZERO_BI
+        ZERO_BI,
       );
       await unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
         withdrawalKey,
@@ -1076,7 +1088,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         core.tokens.weth.address,
         core.tokens.nativeUsdc!.address,
         BigNumber.from('100000000'),
-        ONE_BI
+        ONE_BI,
       );
       await expectThrow(
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
@@ -1103,7 +1115,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
         core.tokens.weth.address,
         core.tokens.nativeUsdc!.address,
         BigNumber.from('100000000'),
-        ONE_BI
+        ONE_BI,
       );
       await expectThrow(
         unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(

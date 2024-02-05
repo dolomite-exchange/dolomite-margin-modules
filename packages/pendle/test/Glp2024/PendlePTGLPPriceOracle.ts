@@ -1,4 +1,14 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
+import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { increaseToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
@@ -8,17 +18,12 @@ import {
   TestPendlePtOracle,
   TestPendlePtOracle__factory,
 } from '../../src/types';
-import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { increaseToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPendleGLPRegistry,
   createPendlePtGLP2024IsolationModeTokenVaultV1,
   createPendlePtGLP2024IsolationModeVaultFactory,
   createPendlePtGLPPriceOracle,
 } from '../pendle-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 /**
  * This is the expected price at the following timestamp: 1800000000
@@ -30,7 +35,7 @@ const PT_GLP_PRICE = BigNumber.from('1112129351600591032'); // $0.91506915854107
 describe('PendlePtGLPPriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let ptGlpOracle: PendlePtGLPPriceOracle;
   let pendleRegistry: PendleGLPRegistry;
   let factory: PendlePtGLP2024IsolationModeVaultFactory;

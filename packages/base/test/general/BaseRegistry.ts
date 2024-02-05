@@ -5,15 +5,16 @@ import { createContractWithAbi } from '../../src/utils/dolomite-utils';
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import { createRegistryProxy } from '../utils/dolomite';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 describe('BaseRegistry', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let registry: TestBaseRegistry;
 
   before(async () => {

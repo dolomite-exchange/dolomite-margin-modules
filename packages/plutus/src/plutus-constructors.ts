@@ -1,5 +1,5 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { address } from '@dolomite-margin/dist/src';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   IPlutusVaultGLPIsolationModeTokenVaultV1,
   IPlutusVaultRegistry,
@@ -10,11 +10,10 @@ import {
   PlutusVaultGLPIsolationModeWrapperTraderV2,
   PlutusVaultRegistry,
 } from './types';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 export async function getPlutusVaultRegistryConstructorParams(
   implementation: PlutusVaultRegistry,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<any[]> {
   if (!core.plutusEcosystem) {
     throw new Error('Plutus ecosystem not initialized');
@@ -36,7 +35,7 @@ export async function getPlutusVaultRegistryConstructorParams(
 }
 
 export function getPlutusVaultGLPPriceOracleConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dplvGlpToken: { address: address },
   unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
@@ -55,7 +54,7 @@ export function getPlutusVaultGLPPriceOracleConstructorParams(
 }
 
 export function getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dplvGlpToken: { address: address },
   unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
@@ -66,7 +65,7 @@ export function getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorPa
 
   return [
     core.dolomiteMargin.address,
-    core.chainlinkRegistry!.address,
+    core.chainlinkAutomationRegistry.address,
     core.marketIds.dfsGlp!,
     dplvGlpToken.address,
     plutusVaultRegistry.address,
@@ -75,7 +74,7 @@ export function getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorPa
 }
 
 export function getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },
 ): any[] {
@@ -93,7 +92,7 @@ export function getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams
 }
 
 export function getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },
 ): any[] {
@@ -110,7 +109,7 @@ export function getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams
 }
 
 export function getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   wrapperTrader: PlutusVaultGLPIsolationModeWrapperTraderV1 | PlutusVaultGLPIsolationModeWrapperTraderV2,
   plutusWhitelist: address,
@@ -130,7 +129,7 @@ export function getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams(
 }
 
 export function getPlutusVaultGLPIsolationModeVaultFactoryConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   plvGlpToken: { address: address },
   userVaultImplementation: IPlutusVaultGLPIsolationModeTokenVaultV1 | PlutusVaultGLPIsolationModeTokenVaultV1,
@@ -149,7 +148,7 @@ export function getPlutusVaultGLPIsolationModeVaultFactoryConstructorParams(
 }
 
 export function getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },
 ): any[] {
@@ -166,7 +165,7 @@ export function getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams(
 }
 
 export function getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },
 ): any[] {

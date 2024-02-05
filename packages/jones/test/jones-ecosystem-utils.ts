@@ -1,8 +1,25 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
+import { RegistryProxy, RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import {
+  getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
+  getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,
+  getJonesUSDCIsolationModeVaultFactoryConstructorParams,
+  getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
+  getJonesUSDCPriceOracleConstructorParams,
+  getJonesUSDCRegistryConstructorParams,
+  getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams,
+} from '../src/jones-construtors';
 import {
   IJonesUSDCIsolationModeTokenVaultV1,
   IJonesUSDCRegistry,
-  JonesUSDCIsolationModeTokenVaultV1, JonesUSDCIsolationModeTokenVaultV2,
+  JonesUSDCIsolationModeTokenVaultV1,
+  JonesUSDCIsolationModeTokenVaultV2,
   JonesUSDCIsolationModeUnwrapperTraderV2,
   JonesUSDCIsolationModeUnwrapperTraderV2__factory,
   JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -18,25 +35,9 @@ import {
   JonesUSDCWithChainlinkAutomationPriceOracle,
   JonesUSDCWithChainlinkAutomationPriceOracle__factory,
 } from '../src/types';
-import {
-  RegistryProxy,
-  RegistryProxy__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import {
-  getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams,
-  getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams,
-  getJonesUSDCIsolationModeVaultFactoryConstructorParams,
-  getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams,
-  getJonesUSDCPriceOracleConstructorParams,
-  getJonesUSDCRegistryConstructorParams,
-  getJonesUSDCWithChainlinkAutomationPriceOracleConstructorParams,
-} from '../src/jones-construtors';
-import { createContractWithAbi, createContractWithLibrary } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 export function createJonesUSDCIsolationModeVaultFactory(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   jUSDCToken: { address: address },
   userVaultImplementation: IJonesUSDCIsolationModeTokenVaultV1 | JonesUSDCIsolationModeTokenVaultV1,
@@ -72,7 +73,7 @@ export async function createJonesUSDCIsolationModeTokenVaultV2(): Promise<JonesU
 }
 
 export function createJonesUSDCPriceOracle(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesUSDCRegistry: JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): Promise<JonesUSDCPriceOracle> {
@@ -88,7 +89,7 @@ export function createJonesUSDCPriceOracle(
 }
 
 export async function createJonesUSDCWithChainlinkAutomationPriceOracle(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesUSDCRegistry: JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): Promise<JonesUSDCWithChainlinkAutomationPriceOracle> {
@@ -104,7 +105,7 @@ export async function createJonesUSDCWithChainlinkAutomationPriceOracle(
 }
 
 export function createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): Promise<JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation> {
@@ -116,7 +117,7 @@ export function createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation(
 }
 
 export function createJonesUSDCIsolationModeUnwrapperTraderV2ForZap(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesUSDCRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): Promise<JonesUSDCIsolationModeUnwrapperTraderV2> {
@@ -128,7 +129,7 @@ export function createJonesUSDCIsolationModeUnwrapperTraderV2ForZap(
 }
 
 export async function createJonesUSDCRegistry(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<JonesUSDCRegistry> {
   const implementation = await createContractWithAbi<JonesUSDCRegistry>(
     JonesUSDCRegistry__factory.abi,
@@ -144,7 +145,7 @@ export async function createJonesUSDCRegistry(
 }
 
 export function createJonesUSDCIsolationModeWrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   jonesRegistry: IJonesUSDCRegistry | JonesUSDCRegistry,
   djUSDCToken: { address: address },
 ): Promise<JonesUSDCIsolationModeWrapperTraderV2> {

@@ -1,4 +1,7 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
+import { RegistryProxy, RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
+import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   IUmamiAssetVault,
   IUmamiAssetVaultIsolationModeTokenVaultV1,
@@ -17,21 +20,15 @@ import {
   UmamiAssetVaultRegistry__factory,
 } from '../src/types';
 import {
-  RegistryProxy,
-  RegistryProxy__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import {
   getUmamiAssetVaultIsolationModeUnwrapperTraderV2ConstructorParams,
   getUmamiAssetVaultIsolationModeVaultFactoryConstructorParams,
   getUmamiAssetVaultIsolationModeWrapperTraderV2ConstructorParams,
   getUmamiAssetVaultPriceOracleConstructorParams,
   getUmamiAssetVaultRegistryConstructorParams,
 } from '../src/umami-constructors';
-import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 export async function createUmamiAssetVaultIsolationModeVaultFactory(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,
   umamiAssetVaultToken: IUmamiAssetVault,
   userVaultImplementation: IUmamiAssetVaultIsolationModeTokenVaultV1 | UmamiAssetVaultIsolationModeTokenVaultV1,
@@ -57,7 +54,7 @@ export function createUmamiAssetVaultIsolationModeTokenVaultV1(): Promise<UmamiA
 }
 
 export function createUmamiAssetVaultPriceOracle(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   umamiAssetVaultRegistry: UmamiAssetVaultRegistry,
   dUmamiAssetVaultToken: { address: address },
 ): Promise<UmamiAssetVaultPriceOracle> {
@@ -73,7 +70,7 @@ export function createUmamiAssetVaultPriceOracle(
 }
 
 export function createUmamiAssetVaultIsolationModeUnwrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,
   dUmamiAssetVaultToken: { address: address },
 ): Promise<UmamiAssetVaultIsolationModeUnwrapperTraderV2> {
@@ -89,7 +86,7 @@ export function createUmamiAssetVaultIsolationModeUnwrapperTraderV2(
 }
 
 export async function createUmamiAssetVaultRegistry(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<UmamiAssetVaultRegistry> {
   const implementation = await createContractWithAbi<UmamiAssetVaultRegistry>(
     UmamiAssetVaultRegistry__factory.abi,
@@ -106,7 +103,7 @@ export async function createUmamiAssetVaultRegistry(
 }
 
 export function createUmamiAssetVaultIsolationModeWrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,
   dUmamiAssetVaultToken: { address: address },
 ): Promise<UmamiAssetVaultIsolationModeWrapperTraderV2> {

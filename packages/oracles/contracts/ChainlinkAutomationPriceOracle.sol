@@ -23,7 +23,7 @@ pragma solidity ^0.8.9;
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IChainlinkAutomationPriceOracle } from "./interfaces/IChainlinkAutomationPriceOracle.sol";
-import { IChainlinkRegistry } from "./interfaces/IChainlinkRegistry.sol";
+import { IChainlinkAutomationRegistry } from "./interfaces/IChainlinkAutomationRegistry.sol";
 
 
 /**
@@ -96,7 +96,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
             _FILE,
             "Forwarder already initialized"
         );
-        _ownerSetForwarder(IChainlinkRegistry(chainlinkRegistry).getForwarder(_upkeepId));
+        _ownerSetForwarder(IChainlinkAutomationRegistry(chainlinkRegistry).getForwarder(_upkeepId));
     }
 
     function checkUpkeep(

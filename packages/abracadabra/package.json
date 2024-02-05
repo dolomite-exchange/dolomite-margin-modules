@@ -24,6 +24,5 @@
     "url": "https://github.com/dolomite-exchange/dolomite-margin-modules.git",
     "directory": "packages/abracadabra"
   },
-  "devDependencies": {
-  }
+  "license": "GPL-2.0"
 }

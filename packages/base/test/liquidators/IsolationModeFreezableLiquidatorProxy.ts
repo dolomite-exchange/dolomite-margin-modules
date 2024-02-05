@@ -1,40 +1,17 @@
-import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
-import { mine } from '@nomicfoundation/hardhat-network-helpers';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { expect } from 'chai';
-import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
 import {
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
-  EventEmitterRegistry,
-  IGenericTraderProxyV1__factory,
-  IsolationModeFreezableLiquidatorProxy,
-  IsolationModeFreezableLiquidatorProxy__factory,
-} from '../../src/types';
+  GMX_V2_CALLBACK_GAS_LIMIT,
+  GMX_V2_EXECUTION_FEE,
+} from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
 import {
-  IGmxMarketToken,
-  IGmxMarketToken__factory,
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
   GmxV2IsolationModeUnwrapperTraderV2,
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
-  GmxV2Registry
+  GmxV2Registry,
+  IGmxMarketToken,
+  IGmxMarketToken__factory,
 } from '@dolomite-exchange/modules-gmx-v2/src/types';
-import { AccountStruct } from '../../src/utils/constants';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
-import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
-import { BYTES_ZERO, MAX_UINT_256_BI, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
-import { getBlockTimestamp, impersonate, increaseByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../utils';
-import {
-  expectEvent,
-  expectProtocolBalance,
-  expectProtocolBalanceIsGreaterThan,
-  expectThrow,
-  expectWalletAllowance,
-  expectWalletBalance,
-} from '../utils/assertions';
-import { createDolomiteRegistryImplementation, createEventEmitter } from '../utils/dolomite';
 import {
   createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
@@ -46,10 +23,37 @@ import {
   getInitiateWrappingParams,
   getOracleParams,
 } from '@dolomite-exchange/modules-gmx-v2/test/gmx-v2-ecosystem-utils';
+import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { expect } from 'chai';
+import { BigNumber, BigNumberish, ContractTransaction, ethers } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import {
+  DolomiteRegistryImplementation,
+  DolomiteRegistryImplementation__factory,
+  EventEmitterRegistry,
+  IGenericTraderProxyV1__factory,
+  IsolationModeFreezableLiquidatorProxy,
+  IsolationModeFreezableLiquidatorProxy__factory,
+} from '../../src/types';
+import { AccountStruct } from '../../src/utils/constants';
+import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
+import { BYTES_ZERO, MAX_UINT_256_BI, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { getBlockTimestamp, impersonate, increaseByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../utils';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectThrow,
+  expectWalletAllowance,
+  expectWalletBalance,
+} from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+import { createDolomiteRegistryImplementation, createEventEmitter } from '../utils/dolomite';
 import { setExpiry } from '../utils/expiry-utils';
 import { liquidateV4WithZapParam } from '../utils/liquidation-utils';
 import {
-  CoreProtocol,
   disableInterestAccrual,
   getDefaultCoreProtocolConfigForGmxV2,
   setupCoreProtocol,
@@ -59,8 +63,6 @@ import {
   setupWETHBalance,
 } from '../utils/setup';
 import { getLiquidateIsolationModeZapPath } from '../utils/zap-utils';
-import { createSafeDelegateLibrary } from '../utils/ecosystem-token-utils/general';
-import { parseEther } from 'ethers/lib/utils';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -69,7 +71,6 @@ const borrowAccountNumber3 = borrowAccountNumber2.add(ONE_BI);
 
 const amountWei = ONE_ETH_BI.mul('1234'); // 1,234
 const smallAmountWei = amountWei.mul(1).div(100);
-const ONE_BI_ENCODED = '0x0000000000000000000000000000000000000000000000000000000000000001';
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
@@ -79,7 +80,7 @@ const executionFee = process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE : GM
 describe('IsolationModeFreezableLiquidatorProxy', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IGmxMarketToken;
   let gmxV2Registry: GmxV2Registry;
   let allowableMarketIds: BigNumberish[];
@@ -134,7 +135,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       allowableMarketIds,
       core.gmxEcosystemV2!.gmxEthUsdMarketToken,
       userVaultImplementation,
-      executionFee
+      executionFee,
     );
     underlyingToken = IGmxMarketToken__factory.connect(await factory.UNDERLYING_TOKEN(), core.hhUser1);
     unwrapper = await createGmxV2IsolationModeUnwrapperTraderV2(

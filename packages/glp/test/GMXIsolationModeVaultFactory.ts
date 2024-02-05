@@ -14,7 +14,12 @@ import {
 } from '../src/types';
 import { MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectThrow,
+  expectWalletBalance
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createGLPIsolationModeTokenVaultV1,
   createGLPIsolationModeTokenVaultV2,
@@ -24,7 +29,6 @@ import {
   createGmxRegistry,
 } from './glp-ecosystem-utils';
 import {
-  CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupGMXBalance,
@@ -32,6 +36,7 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const gmxAmount = parseEther('10');
 const toAccountNumber = '0';
@@ -41,7 +46,7 @@ const usdcAmount = BigNumber.from('2000000000'); // 2,000 USDC
 describe('GMXIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let gmxRegistry: GmxRegistryV1;
   let vaultImplementation: GMXIsolationModeTokenVaultV1;
   let gmxFactory: GMXIsolationModeVaultFactory;

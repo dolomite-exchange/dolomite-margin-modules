@@ -4,7 +4,8 @@ import { CustomTestToken, TestERC20Lib, TestERC20Lib__factory } from '../../src/
 import { createContractWithAbi, createTestToken } from '../../src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 const amount1 = BigNumber.from('200000000');
 const amount2 = BigNumber.from('500000000');
@@ -12,7 +13,7 @@ const amount2 = BigNumber.from('500000000');
 describe('ERC20Lib', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let testLib: TestERC20Lib;
   let token1: CustomTestToken;
   let token2: CustomTestToken;

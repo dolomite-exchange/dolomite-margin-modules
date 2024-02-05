@@ -1,3 +1,21 @@
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  disableInterestAccrual,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -12,13 +30,6 @@ import {
   UmamiAssetVaultRegistry,
 } from '../src/types';
 import {
-  IGmxRegistryV1,
-} from '@dolomite-exchange/modules-glp/src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
   createUmamiAssetVaultIsolationModeTokenVaultV1,
   createUmamiAssetVaultIsolationModeUnwrapperTraderV2,
   createUmamiAssetVaultIsolationModeVaultFactory,
@@ -26,15 +37,6 @@ import {
   createUmamiAssetVaultPriceOracle,
   createUmamiAssetVaultRegistry,
 } from './umami-ecosystem-utils';
-import {
-  CoreProtocol,
-  disableInterestAccrual,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { setupWhitelistAndAggregateVault } from './umami-utils';
 
 const defaultAccountNumber = '0';
@@ -49,10 +51,9 @@ const withdrawalFeeDenominator = BigNumber.from('100000000000000000000');
 describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IUmamiAssetVault;
   let underlyingMarketId: BigNumber;
-  let gmxRegistry: IGmxRegistryV1;
   let umamiRegistry: UmamiAssetVaultRegistry;
   let unwrapper: UmamiAssetVaultIsolationModeUnwrapperTraderV2;
   let wrapper: UmamiAssetVaultIsolationModeWrapperTraderV2;
@@ -67,7 +68,6 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = core.umamiEcosystem!.glpUsdc;
     const userVaultImplementation = await createUmamiAssetVaultIsolationModeTokenVaultV1();
-    gmxRegistry = core.gmxEcosystem!.live.gmxRegistry!;
     umamiRegistry = await createUmamiAssetVaultRegistry(core);
     factory = await createUmamiAssetVaultIsolationModeVaultFactory(
       core,
@@ -120,17 +120,19 @@ describe('UmamiAssetVaultIsolationModeUnwrapperTraderV2', () => {
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
-      const actions = await unwrapper.createActionsForUnwrapping(
-        solidAccountId,
-        liquidAccountId,
-        vault.address,
-        vault.address,
-        core.marketIds.usdc,
-        underlyingMarketId,
-        ZERO_BI,
-        amountWei,
-        BYTES_EMPTY,
-      );
+      const actions = await unwrapper.createActionsForUnwrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: vault.address,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: vault.address,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: core.marketIds.usdc,
+        inputMarket: underlyingMarketId,
+        minOutputAmount: ZERO_BI,
+        inputAmount: amountWei,
+        orderData: BYTES_EMPTY,
+      });
 
       const amountOut = await unwrapper.getExchangeCost(
         factory.address,

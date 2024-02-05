@@ -1,5 +1,5 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import deployments from '../../../scripts/deployments.json';
+import deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
 import {
   GenericEventEmissionType,
   GenericTraderParam,
@@ -13,42 +13,33 @@ import { createTestToken, depositIntoDolomiteMargin } from '@dolomite-exchange/m
 import { expectProtocolBalance, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { getSimpleZapParams, getUnwrapZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
 import {
-  GLPIsolationModeVaultFactory,
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeTokenVaultV1__factory,
-  GMXIsolationModeVaultFactory,
-  GmxRegistryV1,
-  GmxRegistryV1__factory,
+  IGLPIsolationModeVaultFactoryOld,
+  IGMXIsolationModeVaultFactory,
 } from '../src/types';
 import {
   CustomTestToken,
-  SimpleIsolationModeUnwrapperTraderV2,
-  SimpleIsolationModeWrapperTraderV2,
   IIsolationModeUnwrapperTrader,
   IIsolationModeWrapperTrader,
+  SimpleIsolationModeUnwrapperTraderV2,
   SimpleIsolationModeUnwrapperTraderV2__factory,
+  SimpleIsolationModeWrapperTraderV2,
   SimpleIsolationModeWrapperTraderV2__factory,
 } from '@dolomite-exchange/modules-base/src/types';
-import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
-  createGLPIsolationModeTokenVaultV2,
-  createGLPIsolationModeVaultFactory,
-  createGMXIsolationModeTokenVaultV1,
-  createGMXIsolationModeVaultFactory,
-  createGmxRegistry,
-  createGMXUnwrapperTraderV2,
-  createGMXWrapperTraderV2,
-} from './glp-ecosystem-utils';
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot
+} from '@dolomite-exchange/modules-base/test/utils';
 import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupGMXBalance,
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { DEFAULT_BLOCK_NUMBER_FOR_GLP_WITH_VESTING } from './glp-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const gmxAmount = BigNumber.from('10000000000000000000'); // 10 GMX
@@ -60,14 +51,13 @@ const otherAccountNumber = BigNumber.from('123');
 describe('GMXIsolationModeWrapperIntegrationTests', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingMarketIdGmx: BigNumberish;
   let gmxMarketId: BigNumberish;
-  let gmxRegistry: GmxRegistryV1;
   let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
   let wrapper: SimpleIsolationModeWrapperTraderV2;
-  let gmxFactory: GMXIsolationModeVaultFactory;
-  let glpFactory: GLPIsolationModeVaultFactory;
+  let gmxFactory: IGMXIsolationModeVaultFactory;
+  let glpFactory: IGLPIsolationModeVaultFactoryOld;
   let gmxVault: GMXIsolationModeTokenVaultV1;
   let otherToken1: CustomTestToken;
   let otherMarketId1: BigNumber;
@@ -78,10 +68,6 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
       network,
       blockNumber: await getRealLatestBlockNumber(true, network),
     });
-    gmxRegistry = GmxRegistryV1__factory.connect(
-      deployments.GmxRegistryProxy[network].address,
-      core.hhUser1,
-    );
     glpFactory = core.gmxEcosystem!.live.dGlp.connect(core.hhUser1);
     gmxFactory = core.gmxEcosystem!.live.dGmx.connect(core.hhUser1);
 
@@ -283,7 +269,7 @@ async function getUnwrapperToOtherMarketParams(
   inputAmountWei: BigNumber,
   minOutputAmountWei: BigNumber,
   unwrapper: SimpleIsolationModeUnwrapperTraderV2 | IIsolationModeUnwrapperTrader,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<ZapParam> {
   if (!core.testEcosystem) {
     return Promise.reject('Core protocol does not have a test ecosystem');
@@ -327,7 +313,7 @@ async function getWrapperToUnderlyingGmxMarketParams(
   inputAmountWei: BigNumber,
   minOutputAmountWei: BigNumber,
   wrapper: SimpleIsolationModeWrapperTraderV2 | IIsolationModeWrapperTrader,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<ZapParam> {
   if (!core.testEcosystem) {
     return Promise.reject('Core protocol does not have a test ecosystem');

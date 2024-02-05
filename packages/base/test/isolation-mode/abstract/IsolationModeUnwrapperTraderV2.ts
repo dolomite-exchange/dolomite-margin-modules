@@ -1,6 +1,5 @@
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import { defaultAbiCoder } from 'ethers/lib/utils';
@@ -26,10 +25,10 @@ import {
   snapshot,
 } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
+import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
 import {
-  CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
@@ -43,7 +42,7 @@ const otherAmountWei = BigNumber.from('10000000'); // $10
 describe('IsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
   let otherToken: CustomTestToken;
@@ -344,7 +343,7 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       expect(actions[0].otherAddress).to.eq(unwrapper.address);
       expect(actions[0].data).to.eq(ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'address', 'uint256'],
-        [amountWei, core.hhUser1.address, ZERO_BI]
+        [amountWei, core.hhUser1.address, ZERO_BI],
       ));
 
       // Inspect the sell action

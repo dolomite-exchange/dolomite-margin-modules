@@ -23,6 +23,5 @@
     "url": "https://github.com/dolomite-exchange/dolomite-margin-modules.git",
     "directory": "packages/gmx-v2"
   },
-  "devDependencies": {
-  }
+  "license": "GPL-2.0"
 }

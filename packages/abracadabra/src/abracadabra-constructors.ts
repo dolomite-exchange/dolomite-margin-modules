@@ -1,7 +1,6 @@
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { IChainlinkRegistry } from './types';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
-export function getMagicGLPPriceOracleConstructorParams(core: CoreProtocol): any[] {
+export function getMagicGLPPriceOracleConstructorParams(core: CoreProtocolArbitrumOne): any[] {
   return [
     core.dolomiteMargin.address,
     core.abraEcosystem!.magicGlp.address,
@@ -10,17 +9,17 @@ export function getMagicGLPPriceOracleConstructorParams(core: CoreProtocol): any
 }
 
 export function getMagicGLPWithChainlinkAutomationPriceOracleConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): any[] {
   return [
     core.dolomiteMargin.address,
-    core.chainlinkRegistry!.address,
+    core.chainlinkAutomationRegistry.address,
     core.abraEcosystem!.magicGlp.address,
     core.marketIds.dfsGlp!,
   ];
 }
 
-export function getMagicGLPUnwrapperTraderV1ConstructorParams(core: CoreProtocol): any[] {
+export function getMagicGLPUnwrapperTraderV1ConstructorParams(core: CoreProtocolArbitrumOne): any[] {
   if (!core.abraEcosystem) {
     throw new Error('Abra ecosystem not initialized');
   }
@@ -33,7 +32,7 @@ export function getMagicGLPUnwrapperTraderV1ConstructorParams(core: CoreProtocol
   ];
 }
 
-export function getMagicGLPUnwrapperTraderV2ConstructorParams(core: CoreProtocol): any[] {
+export function getMagicGLPUnwrapperTraderV2ConstructorParams(core: CoreProtocolArbitrumOne): any[] {
   if (!core.abraEcosystem) {
     throw new Error('Abra ecosystem not initialized');
   }
@@ -45,7 +44,7 @@ export function getMagicGLPUnwrapperTraderV2ConstructorParams(core: CoreProtocol
   ];
 }
 
-export function getMagicGLPWrapperTraderV1ConstructorParams(core: CoreProtocol): any[] {
+export function getMagicGLPWrapperTraderV1ConstructorParams(core: CoreProtocolArbitrumOne): any[] {
   if (!core.abraEcosystem) {
     throw new Error('Abra ecosystem not initialized');
   }
@@ -57,7 +56,7 @@ export function getMagicGLPWrapperTraderV1ConstructorParams(core: CoreProtocol):
   ];
 }
 
-export function getMagicGLPWrapperTraderV2ConstructorParams(core: CoreProtocol): any[] {
+export function getMagicGLPWrapperTraderV2ConstructorParams(core: CoreProtocolArbitrumOne): any[] {
   if (!core.abraEcosystem) {
     throw new Error('Abra ecosystem not initialized');
   }

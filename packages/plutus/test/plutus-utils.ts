@@ -1,3 +1,4 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   IPlutusVaultGLPFarm,
   IPlutusVaultGLPIsolationModeVaultFactory,
@@ -10,11 +11,10 @@ import {
 } from '../src/types';
 import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
 import { createDolomiteCompatibleWhitelistForPlutusDAO } from './plutus-ecosystem-utils';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 
 export async function createAndSetPlutusVaultWhitelist(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   routerOrFarm: IPlutusVaultGLPRouter | IPlutusVaultGLPFarm,
   unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   wrapperTrader: PlutusVaultGLPIsolationModeWrapperTraderV1 | PlutusVaultGLPIsolationModeWrapperTraderV2,

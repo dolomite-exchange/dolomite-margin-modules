@@ -1,4 +1,21 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+  setupWstETHBalance,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
@@ -17,15 +34,6 @@ import {
   PendlePtPriceOracle,
   PendleRegistry,
 } from '../../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  encodeExternalSellActionDataWithNoData,
-  impersonate,
-  revertToSnapshotAndCapture,
-  snapshot,
-} from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeUnwrapperTraderV2,
@@ -34,15 +42,7 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import {
-  CoreProtocol, getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-  setupWstETHBalance,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { encodeSwapExactTokensForPt, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
-import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying
@@ -55,7 +55,7 @@ const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 describe('PendlePtWstEthJun2025IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let ptToken: IPendlePtToken;
   let ptMarket: IPendlePtMarket;
   let marketId: BigNumber;
@@ -66,12 +66,9 @@ describe('PendlePtWstEthJun2025IsolationModeWrapperTraderV2', () => {
   let wrapper: PendlePtIsolationModeWrapperTraderV2;
   let factory: PendlePtIsolationModeVaultFactory;
   let vault: PendlePtIsolationModeTokenVaultV1;
-  let vaultSigner: SignerWithAddress;
   let priceOracle: PendlePtPriceOracle;
   let defaultAccount: AccountInfoStruct;
   let router: BaseRouter;
-
-  let solidUser: SignerWithAddress;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -106,8 +103,6 @@ describe('PendlePtWstEthJun2025IsolationModeWrapperTraderV2', () => {
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
-    solidUser = core.hhUser5;
-
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
     vault = setupUserVaultProxy<PendlePtIsolationModeTokenVaultV1>(
@@ -115,7 +110,6 @@ describe('PendlePtWstEthJun2025IsolationModeWrapperTraderV2', () => {
       PendlePtIsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
-    vaultSigner = await impersonate(vault.address, true);
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
     router = Router.getRouter({
@@ -154,7 +148,6 @@ describe('PendlePtWstEthJun2025IsolationModeWrapperTraderV2', () => {
 
       const { extraOrderData, approxParams } = await encodeSwapExactTokensForPt(
         router,
-        core,
         usableAmount,
         ONE_TENTH_OF_ONE_BIPS_NUMBER,
         ptMarket.address,

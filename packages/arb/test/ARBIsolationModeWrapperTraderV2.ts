@@ -14,8 +14,18 @@ import {
   SimpleIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ADDRESS_ZERO, BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  ADDRESS_ZERO,
+  BYTES_EMPTY,
+  Network,
+  ZERO_BI
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot
+} from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createARBIsolationModeTokenVaultV1,
@@ -25,15 +35,15 @@ import {
   createARBWrapperTraderV2,
 } from './arb-ecosystem-utils';
 import {
-  CoreProtocol, disableInterestAccrual,
+  disableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupARBBalance,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS } from './arb-utils';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '1';
@@ -43,7 +53,7 @@ const otherAmountWei = BigNumber.from('10000000'); // $10
 describe('ARBIsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let arbRegistry: ARBRegistry;
   let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
   let wrapper: SimpleIsolationModeWrapperTraderV2;

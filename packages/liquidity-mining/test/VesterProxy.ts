@@ -1,4 +1,14 @@
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
+import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
 import {
   OARB,
   OARB__factory,
@@ -9,17 +19,11 @@ import {
   VesterProxy,
   VesterProxy__factory,
 } from '../src/types';
-import { defaultAbiCoder, parseEther } from 'ethers/lib/utils';
-import { createContractWithAbi, createContractWithLibrary } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 describe('VesterProxy', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let implementation: TestVesterImplementationV2;
   let oARB: OARB;
   let library: VesterImplementationLibForV2;
@@ -47,7 +51,7 @@ describe('VesterProxy', () => {
     );
 
     const calldata = await implementation.populateTransaction.initialize(
-      defaultAbiCoder.encode(['address'], [oARB.address])
+      defaultAbiCoder.encode(['address'], [oARB.address]),
     );
 
     proxy = await createContractWithAbi<VesterProxy>(

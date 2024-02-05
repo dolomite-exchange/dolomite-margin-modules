@@ -1,22 +1,22 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { IERC20 } from 'packages/base/src/types';
+import { depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
+import { Network, ONE_ETH_BI, ONE_WEEK_SECONDS, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { expectThrow, expectWalletBalance } from 'packages/base/test/utils/assertions';
 import {
-  CoreProtocol,
   disableInterestAccrual,
   setupARBBalance,
   setupCoreProtocol,
-  setupWETHBalance
+  setupWETHBalance,
 } from 'packages/base/test/utils/setup';
 import { OARB, OARB__factory, TestVesterImplementationV2, VesterExploder } from '../src/types';
-import { BigNumber } from 'ethers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { createTestVesterV2Proxy, createVesterExploder } from './liquidity-mining-ecosystem-utils';
-import { Network, ONE_ETH_BI, ONE_WEEK_SECONDS, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import { expect } from 'chai';
-import { expectProtocolBalance, expectThrow, expectWalletBalance } from 'packages/base/test/utils/assertions';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { IERC20 } from 'packages/base/src/types';
-import { depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
-import { parseEther } from 'ethers/lib/utils';
 
 const defaultAccountNumber = ZERO_BI;
 const LIQUIDATION_BOT = '0x1fF6B8E1192eB0369006Bbad76dA9068B68961B2';
@@ -25,7 +25,7 @@ const WETH_BALANCE = parseEther('1000');
 describe('VesterExploder', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
 
   let vester: TestVesterImplementationV2;
   let vesterExploder: VesterExploder;

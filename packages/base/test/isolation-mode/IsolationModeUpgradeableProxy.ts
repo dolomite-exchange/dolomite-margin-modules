@@ -11,20 +11,15 @@ import { createContractWithAbi, createContractWithLibrary, createTestToken } fro
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectThrow } from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
-import { createTestIsolationModeFactory } from '../utils/ecosystem-token-utils/testers';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '../utils/setup';
+import { createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../utils/setup';
 
 describe('IsolationModeUpgradeableProxy', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let factory: TestIsolationModeFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
 

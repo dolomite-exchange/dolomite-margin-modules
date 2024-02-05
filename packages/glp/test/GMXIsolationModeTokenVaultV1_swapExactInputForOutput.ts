@@ -1,14 +1,11 @@
-import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
-import deployments from '../../../scripts/deployments.json';
+import deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
 import { parseEther } from 'ethers/lib/utils';
 import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { getUnwrapZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';
 import {
-  GLPIsolationModeVaultFactory,
-  GMXIsolationModeVaultFactory,
-  GmxRegistryV1,
-  GmxRegistryV1__factory,
+  IGLPIsolationModeVaultFactoryOld,
+  IGMXIsolationModeVaultFactory,
   TestGLPIsolationModeTokenVaultV2,
   TestGLPIsolationModeTokenVaultV2__factory,
   TestGMXIsolationModeTokenVaultV1,
@@ -17,8 +14,6 @@ import {
 import {
   SimpleIsolationModeUnwrapperTraderV2,
   SimpleIsolationModeUnwrapperTraderV2__factory,
-  SimpleIsolationModeWrapperTraderV2,
-  SimpleIsolationModeWrapperTraderV2__factory,
 } from '@dolomite-exchange/modules-base/src/types';
 import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
@@ -28,16 +23,14 @@ import {
   snapshot,
   waitDays
 } from '@dolomite-exchange/modules-base/test/utils';
+import { expectProtocolBalance, } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
-  expectProtocolBalance,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  CoreProtocol,
   setupCoreProtocol,
   setupGMXBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createGMXIsolationModeTokenVaultV1 } from './glp-ecosystem-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const gmxAmount = parseEther('10'); // 10 GMX
 const esGmxAmount = parseEther('0.01'); // 0.01 esGMX tokens
@@ -47,12 +40,10 @@ const otherAccountNumber = BigNumber.from('123');
 describe('GMXIsolationModeTokenVaultV1_swapExactInputForOutput', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
-  let gmxRegistry: GmxRegistryV1;
+  let core: CoreProtocolArbitrumOne;
   let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
-  let wrapper: SimpleIsolationModeWrapperTraderV2;
-  let gmxFactory: GMXIsolationModeVaultFactory;
-  let glpFactory: GLPIsolationModeVaultFactory;
+  let gmxFactory: IGMXIsolationModeVaultFactory;
+  let glpFactory: IGLPIsolationModeVaultFactoryOld;
   let gmxVault: TestGMXIsolationModeTokenVaultV1;
   let glpVault: TestGLPIsolationModeTokenVaultV2;
   let gmxMarketId: BigNumberish;
@@ -65,10 +56,6 @@ describe('GMXIsolationModeTokenVaultV1_swapExactInputForOutput', () => {
       blockNumber: await getRealLatestBlockNumber(true, network),
     });
 
-    gmxRegistry = GmxRegistryV1__factory.connect(
-      deployments.GmxRegistryProxy[network].address,
-      core.hhUser1,
-    );
     glpFactory = core.gmxEcosystem!.live.dGlp.connect(core.hhUser1);
     gmxFactory = core.gmxEcosystem!.live.dGmx.connect(core.hhUser1);
 
@@ -77,10 +64,6 @@ describe('GMXIsolationModeTokenVaultV1_swapExactInputForOutput', () => {
 
     unwrapper = SimpleIsolationModeUnwrapperTraderV2__factory.connect(
       deployments.GMXIsolationModeUnwrapperTraderV4[network].address,
-      core.hhUser1,
-    );
-    wrapper = SimpleIsolationModeWrapperTraderV2__factory.connect(
-      deployments.GMXIsolationModeWrapperTraderV4[network].address,
       core.hhUser1,
     );
     underlyingMarketIdGmx = core.marketIds.dGmx!;

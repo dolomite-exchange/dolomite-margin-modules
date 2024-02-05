@@ -96,6 +96,28 @@ contract TestAccountActionLib {
         );
     }
 
+    function encodeInternalTradeAction(
+        uint256 _fromAccountId,
+        uint256 _toAccountId,
+        uint256 _primaryMarketId,
+        uint256 _secondaryMarketId,
+        address _traderAddress,
+        uint256 _amountInWei,
+        bool _calculateAmountWithMakerAccount,
+        bytes memory _orderData
+    ) public view returns (IDolomiteStructs.ActionArgs memory) {
+        return AccountActionLib.encodeInternalTradeAction(
+            _fromAccountId,
+            _toAccountId,
+            _primaryMarketId,
+            _secondaryMarketId,
+            _traderAddress,
+            _amountInWei,
+            _calculateAmountWithMakerAccount,
+            _orderData
+        );
+    }
+
     function encodeCallAction(
         uint256 _accountId,
         address _callee,
@@ -155,26 +177,6 @@ contract TestAccountActionLib {
             _expiryProxy,
             _expiry,
             _flipMarkets
-        );
-    }
-
-    function encodeInternalTradeAction(
-        uint256 _fromAccountId,
-        uint256 _toAccountId,
-        uint256 _primaryMarketId,
-        uint256 _secondaryMarketId,
-        address _traderAddress,
-        uint256 _amountInWei,
-        uint256 _amountOutWei
-    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
-        return AccountActionLib.encodeInternalTradeAction(
-            _fromAccountId,
-            _toAccountId,
-            _primaryMarketId,
-            _secondaryMarketId,
-            _traderAddress,
-            _amountInWei,
-            _amountOutWei
         );
     }
 

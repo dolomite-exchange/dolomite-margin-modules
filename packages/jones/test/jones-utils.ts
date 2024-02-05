@@ -1,12 +1,12 @@
+import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { ethers } from 'ethers';
 import { JonesUSDCIsolationModeUnwrapperTraderV2, JonesUSDCIsolationModeWrapperTraderV2 } from '../src/types';
-import { impersonate } from '@dolomite-exchange/modules-base/test/utils';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 export const TRADER_ROLE = ethers.utils.solidityKeccak256(['uint256'], [Date.now()]);
 
 export async function createRoleAndWhitelistTrader(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   unwrapper: JonesUSDCIsolationModeUnwrapperTraderV2,
   wrapper: JonesUSDCIsolationModeWrapperTraderV2,
 ) {

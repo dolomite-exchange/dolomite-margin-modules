@@ -1,3 +1,17 @@
+import { CustomTestVaultToken } from '@dolomite-exchange/modules-base/src/types';
+import { CHAINLINK_AUTOMATION_REGISTRY_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
+import { createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  getBlockTimestamp,
+  getRealLatestBlockNumber,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ADDRESSES } from '@dolomite-margin/dist/src';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -6,7 +20,7 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import deployments from '../../../scripts/deployments.json';
+import deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
 import {
   IPlutusVaultGLP,
   IPlutusVaultGLP__factory,
@@ -21,22 +35,7 @@ import {
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory,
 } from '../src/types';
-import {
-  CustomTestVaultToken,
-} from '@dolomite-exchange/modules-base/src/types';
-import { CHAINLINK_REGISTRY_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
-import { createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  getBlockTimestamp,
-  getRealLatestBlockNumber,
-  impersonate,
-  revertToSnapshotAndCapture,
-  snapshot,
-} from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createPlutusVaultGLPWithChainlinkAutomationPriceOracle } from './plutus-ecosystem-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const GLP_PRICE = BigNumber.from('984588746906888510'); // $0.984588746906888510
 const FEE_PRECISION = BigNumber.from('10000');
@@ -44,7 +43,7 @@ const FEE_PRECISION = BigNumber.from('10000');
 describe('PlutusVaultGLPWithChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let plvGlpPriceOracle: PlutusVaultGLPWithChainlinkAutomationPriceOracle;
   let plvGlpToken: IPlutusVaultGLP;
   let plvGlpTokenNoSupply: CustomTestVaultToken;
@@ -61,7 +60,7 @@ describe('PlutusVaultGLPWithChainlinkAutomationPriceOracle', () => {
     const network = Network.ArbitrumOne;
     const blockNumber = await getRealLatestBlockNumber(true, network);
     core = await setupCoreProtocol({ blockNumber, network });
-    chainlinkRegistry = await impersonate(CHAINLINK_REGISTRY_MAP[network]!, true);
+    chainlinkRegistry = await impersonate(CHAINLINK_AUTOMATION_REGISTRY_MAP[network]!, true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
     await core.testEcosystem!.testPriceOracle!.setPrice(core.tokens.dfsGlp!.address, GLP_PRICE);

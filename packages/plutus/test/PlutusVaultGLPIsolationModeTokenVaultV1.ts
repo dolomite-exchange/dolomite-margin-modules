@@ -1,3 +1,4 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
@@ -32,7 +33,6 @@ import {
   createPlutusVaultRegistry,
 } from './plutus-ecosystem-utils';
 import {
-  CoreProtocol,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
@@ -49,7 +49,7 @@ const accountNumber = ZERO_BI;
 describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC4626;
   let plutusVaultRegistry: PlutusVaultRegistry;
   let unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1;

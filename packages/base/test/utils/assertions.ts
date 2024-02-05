@@ -6,8 +6,8 @@ import { ERC20__factory } from '../../src/types';
 import { AccountInfoStruct } from '../../src/utils';
 import { AccountStruct } from '../../src/utils/constants';
 import { valueStructToBigNumber } from '../../src/utils/dolomite-utils';
-import { ZERO_BI } from '../../src/utils/no-deps-constants';
-import { CoreProtocol } from './setup';
+import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { CoreProtocolType } from './setup';
 
 export async function expectThrowWithMatchingReason(call: Promise<any>, reason: RegExp) {
   if (reason) {
@@ -46,8 +46,8 @@ export async function expectNoThrow(call: Promise<any>) {
 
 // ========================= Balance Assertions =========================
 
-export async function expectProtocolBalanceIsGreaterThan(
-  coreProtocol: CoreProtocol,
+export async function expectProtocolBalanceIsGreaterThan<T extends Network>(
+  coreProtocol: CoreProtocolType<T>,
   accountStruct: AccountStruct,
   marketId: BigNumberish,
   expectedBalance: BigNumberish,
@@ -65,8 +65,8 @@ export async function expectProtocolBalanceIsGreaterThan(
 
 const ONE_CENT: BigNumber = BigNumber.from('10000000000000000000000000000000000'); // $1 eq 1e36. Take off 2 decimals
 
-export async function expectWalletBalanceOrDustyIfZero(
-  coreProtocol: CoreProtocol,
+export async function expectWalletBalanceOrDustyIfZero<T extends Network>(
+  coreProtocol: CoreProtocolType<T>,
   wallet: address,
   token: address,
   expectedBalance: BigNumberish,
@@ -101,8 +101,8 @@ export async function expectEvent(
   return expect(contractTransaction).to.emit(contract, eventName);
 }
 
-export async function expectProtocolBalance(
-  core: CoreProtocol,
+export async function expectProtocolBalance<T extends Network>(
+  core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,
   accountNumber: BigNumberish,
   marketId: BigNumberish,
@@ -121,8 +121,8 @@ export async function expectProtocolBalance(
     );
 }
 
-export async function expectProtocolBalanceDustyOrZero(
-  core: CoreProtocol,
+export async function expectProtocolBalanceDustyOrZero<T extends Network>(
+  core: CoreProtocolType<T>,
   accountOwner: { address: address } | address,
   accountNumber: BigNumberish,
   marketId: BigNumberish,
@@ -168,8 +168,8 @@ export async function expectWalletBalanceIsGreaterThan(
     );
 }
 
-export async function expectVaultBalanceToMatchAccountBalances(
-  core: CoreProtocol,
+export async function expectVaultBalanceToMatchAccountBalances<T extends Network>(
+  core: CoreProtocolType<T>,
   vault: { underlyingBalanceOf(overrides?: CallOverrides): Promise<BigNumber> },
   accounts: AccountInfoStruct[],
   marketId: BigNumberish,

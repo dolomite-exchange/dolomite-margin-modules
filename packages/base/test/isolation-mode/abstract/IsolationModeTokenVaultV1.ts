@@ -4,8 +4,6 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
   CustomTestToken,
-  TestDolomiteMarginInternalTrader,
-  TestDolomiteMarginInternalTrader__factory,
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1__factory,
@@ -22,12 +20,12 @@ import {
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
+import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
 import {
-  CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
@@ -45,11 +43,10 @@ const usdcAmount = BigNumber.from('100000000'); // $100
 describe('IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
   let isolationModeMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
-  let internalTrader: TestDolomiteMarginInternalTrader;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
   let factory: TestIsolationModeFactory;
   let userVaultImplementation: TestIsolationModeTokenVaultV1;
@@ -101,11 +98,6 @@ describe('IsolationModeTokenVaultV1', () => {
       TestIsolationModeUnwrapperTraderV2__factory.abi,
       TestIsolationModeUnwrapperTraderV2__factory.bytecode,
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
-    );
-    internalTrader = await createContractWithAbi(
-      TestDolomiteMarginInternalTrader__factory.abi,
-      TestDolomiteMarginInternalTrader__factory.bytecode,
-      [],
     );
     tokenWrapper = await createContractWithAbi(
       TestIsolationModeWrapperTraderV2__factory.abi,

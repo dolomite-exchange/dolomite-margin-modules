@@ -1,12 +1,10 @@
+import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { LinearStepFunctionInterestSetter, LinearStepFunctionInterestSetter__factory } from '../src/types';
-import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const zero = BigNumber.from(0);
 const lowerRate = BigNumber.from('60000000000000000');
@@ -16,11 +14,9 @@ const secondsPerYear = BigNumber.from(31_536_000);
 describe('LinearStepFunctionInterestSetter', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
   let interestSetter: LinearStepFunctionInterestSetter;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     interestSetter = await createContractWithAbi<LinearStepFunctionInterestSetter>(
       LinearStepFunctionInterestSetter__factory.abi,
       LinearStepFunctionInterestSetter__factory.bytecode,

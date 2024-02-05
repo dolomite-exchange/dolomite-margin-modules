@@ -12,11 +12,7 @@ import {
   TestIsolationModeWrapperTraderV1__factory,
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
-import {
-  createContractWithAbi,
-  createContractWithLibrary,
-  createTestToken,
-} from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../../src/utils/dolomite-utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
@@ -25,10 +21,10 @@ import {
   snapshot,
 } from '../../utils';
 import { expectThrow } from '../../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
-import { createTestIsolationModeFactory } from '../../utils/ecosystem-token-utils/testers';
+import { createTestIsolationModeFactory } from '../../utils/ecosystem-utils/testers';
 import {
-  CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
@@ -43,7 +39,7 @@ const TEN = BigNumber.from('10000000000000000000');
 describe('IsolationModeWrapperTraderV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
   let otherToken: CustomTestToken;

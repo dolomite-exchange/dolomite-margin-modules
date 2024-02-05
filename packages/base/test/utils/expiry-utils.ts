@@ -1,10 +1,11 @@
 import { ActionType, AmountDenomination, AmountReference, ExpiryCallFunctionType } from '@dolomite-margin/dist/src';
 import { BigNumberish, Contract, ContractTransaction } from 'ethers';
 import { ethers } from 'hardhat';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { ActionArgsStruct } from '../../src/utils';
 import { AccountStruct } from '../../src/utils/constants';
 import { impersonate } from './index';
-import { CoreProtocol } from './setup';
+import { CoreProtocolType } from './setup';
 
 const abiCoder = ethers.utils.defaultAbiCoder;
 
@@ -13,8 +14,8 @@ export async function createExpirationLibrary(): Promise<Contract> {
   return await ExpirationLib.deploy();
 }
 
-export async function setExpiry(
-  core: CoreProtocol,
+export async function setExpiry<T extends Network>(
+  core: CoreProtocolType<T>,
   account: AccountStruct,
   owedMarketId: BigNumberish,
   timeDelta: number,

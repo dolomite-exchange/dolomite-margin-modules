@@ -3,8 +3,8 @@ import { BigNumber as ZapBigNumber, ZapOutputParam } from '@dolomite-exchange/za
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
 import { AccountInfoStruct, GenericTraderParamStruct } from '../../src/utils';
-import { BYTES_EMPTY, MAX_UINT_256_BI, NO_EXPIRY, NO_PARASWAP_TRADER_PARAM } from '../../src/utils/no-deps-constants';
-import { CoreProtocol } from './setup';
+import { BYTES_EMPTY, MAX_UINT_256_BI, Network, NO_EXPIRY, NO_PARASWAP_TRADER_PARAM } from '../../src/utils/no-deps-constants';
+import { CoreProtocolType } from './setup';
 import { ZapParam } from './zap-utils';
 
 export function toZapBigNumber(amount: BigNumberish): ZapBigNumber {
@@ -15,8 +15,8 @@ export function getLastZapAmountToBigNumber(zapOutput: ZapOutputParam): BigNumbe
   return BigNumber.from(zapOutput.amountWeisPath[zapOutput.amountWeisPath.length - 1].toString());
 }
 
-export async function liquidateV4WithIsolationMode(
-  core: CoreProtocol,
+export async function liquidateV4WithIsolationMode<T extends Network>(
+  core: CoreProtocolType<T>,
   solidAccountStruct: AccountInfoStruct,
   liquidAccountStruct: AccountInfoStruct,
   marketIdsPath: BigNumberish[],
@@ -49,8 +49,8 @@ export async function liquidateV4WithIsolationMode(
   );
 }
 
-export async function liquidateV4WithLiquidityToken(
-  core: CoreProtocol,
+export async function liquidateV4WithLiquidityToken<T extends Network>(
+  core: CoreProtocolType<T>,
   solidAccountStruct: AccountInfoStruct,
   liquidAccountStruct: AccountInfoStruct,
   marketIdsPath: BigNumberish[],
@@ -84,8 +84,8 @@ export async function liquidateV4WithLiquidityToken(
   );
 }
 
-export async function liquidateV4WithZap(
-  core: CoreProtocol,
+export async function liquidateV4WithZap<T extends Network>(
+  core: CoreProtocolType<T>,
   solidAccountStruct: AccountInfoStruct,
   liquidAccountStruct: AccountInfoStruct,
   zapOutputs: ZapOutputParam[],
@@ -114,8 +114,8 @@ export async function liquidateV4WithZap(
   return Promise.reject(latestError);
 }
 
-export async function liquidateV4WithZapParam(
-  core: CoreProtocol,
+export async function liquidateV4WithZapParam<T extends Network>(
+  core: CoreProtocolType<T>,
   solidAccountStruct: AccountInfoStruct,
   liquidAccountStruct: AccountInfoStruct,
   zapParam: ZapParam,

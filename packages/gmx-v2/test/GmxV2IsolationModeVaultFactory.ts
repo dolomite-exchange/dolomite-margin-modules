@@ -1,6 +1,16 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { expect } from 'chai';
-import { BigNumber, BigNumberish, Contract, Signer } from 'ethers';
+import { BigNumber, BigNumberish, Signer } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
+import { expectArrayEq, expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
+import {
+  getDefaultCoreProtocolConfigForGmxV2,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from 'packages/base/test/utils/setup';
+import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeTokenVaultV1__factory,
@@ -10,8 +20,6 @@ import {
   GmxV2Library,
   GmxV2Registry,
 } from '../src/types';
-import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
-import { expectArrayEq, expectEvent, expectThrow } from 'packages/base/test/utils/assertions';
 import {
   createGmxV2IsolationModeTokenVaultV1,
   createGmxV2IsolationModeUnwrapperTraderV2,
@@ -20,15 +28,6 @@ import {
   createGmxV2Library,
   createGmxV2Registry,
 } from './gmx-v2-ecosystem-utils';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfigForGmxV2,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from 'packages/base/test/utils/setup';
-import { GMX_V2_CALLBACK_GAS_LIMIT, GMX_V2_EXECUTION_FEE } from '../src/gmx-v2-constructors';
-import { createExpirationLibrary } from 'packages/base/test/utils/expiry-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 const amountWei = parseEther('1');
@@ -37,7 +36,7 @@ const defaultAccountNumber = 0;
 describe('GmxV2IsolationModeVaultFactory', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let gmxV2Registry: GmxV2Registry;
   let gmxV2Library: GmxV2Library;
   let allowableMarketIds: BigNumberish[];

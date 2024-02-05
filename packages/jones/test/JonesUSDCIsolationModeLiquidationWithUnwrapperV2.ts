@@ -1,6 +1,37 @@
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import {
+  BYTES_EMPTY,
+  Network,
+  NO_PARASWAP_TRADER_PARAM,
+  ONE_BI,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitDays,
+  waitTime,
+} from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectWalletBalanceOrDustyIfZero,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
+import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import {
+  CoreProtocolType,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { IERC20 } from 'packages/base/src/types';
 import {
   IERC4626,
   JonesUSDCIsolationModeTokenVaultV1,
@@ -12,21 +43,6 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCRegistry,
 } from '../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import {
-  BYTES_EMPTY,
-  Network,
-  NO_PARASWAP_TRADER_PARAM,
-  ONE_BI,
-  ZERO_BI,
-} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectProtocolBalanceIsGreaterThan,
-  expectWalletBalanceOrDustyIfZero,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -36,17 +52,7 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
-import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
-import {
-  CoreProtocol,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
-import { IERC20 } from 'packages/base/src/types';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -60,10 +66,12 @@ const liquidationSpreadDenominator = BigNumber.from('100');
 const expirationCollateralizationNumerator = BigNumber.from('150');
 const expirationCollateralizationDenominator = BigNumber.from('100');
 
+const network = Network.ArbitrumOne;
+
 describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolType<typeof network>;
   let underlyingToken: IERC4626;
   let underlyingMarketId: BigNumber;
   let jonesUSDCRegistry: JonesUSDCRegistry;
@@ -78,12 +86,12 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
   let solidAccountStruct: AccountInfoStruct;
 
   before(async () => {
-    const blockNumber = await getRealLatestBlockNumber(true, Network.ArbitrumOne);
+    const blockNumber = await getRealLatestBlockNumber(true, network);
     core = await setupCoreProtocol({
       blockNumber,
-      network: Network.ArbitrumOne,
+      network,
     });
-    underlyingToken = core.jonesEcosystem!.jUSDC.connect(core.hhUser1);
+    underlyingToken = core.jonesEcosystem.jUSDC.connect(core.hhUser1);
     const userVaultImplementation = await createJonesUSDCIsolationModeTokenVaultV1();
     jonesUSDCRegistry = await createJonesUSDCRegistry(core);
     factory = await createJonesUSDCIsolationModeVaultFactory(
@@ -132,9 +140,9 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
     liquidAccountStruct = { owner: vault.address, number: otherAccountNumber };
     solidAccountStruct = { owner: core.hhUser5.address, number: defaultAccountNumber };
 
-    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem!.glpAdapter);
-    await core.jonesEcosystem!.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
-    await core.jonesEcosystem!.jUSDC.connect(core.hhUser1).approve(vault.address, heldAmountWei);
+    await setupUSDCBalance(core, core.hhUser1, usdcAmount, core.jonesEcosystem.glpAdapter);
+    await core.jonesEcosystem.glpAdapter.connect(core.hhUser1).depositStable(usableUsdcAmount, true);
+    await core.jonesEcosystem.jUSDC.connect(core.hhUser1).approve(vault.address, heldAmountWei);
     await vault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, heldAmountWei);
 
     expect(await underlyingToken.connect(core.hhUser1).balanceOf(vault.address)).to.eq(heldAmountWei);
@@ -247,7 +255,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectWalletBalanceOrDustyIfZero(
         core,
         unwrapperForLiquidation.address,
-        core.jonesEcosystem!.jUSDC.address,
+        core.jonesEcosystem.jUSDC.address,
         ZERO_BI,
       );
       await expectWalletBalanceOrDustyIfZero(core, unwrapperForLiquidation.address, core.tokens.usdc.address, ZERO_BI);
@@ -347,7 +355,7 @@ describe('JonesUSDCLiquidationWithUnwrapperV2', () => {
       await expectWalletBalanceOrDustyIfZero(
         core,
         unwrapperForLiquidation.address,
-        core.jonesEcosystem!.jUSDC.address,
+        core.jonesEcosystem.jUSDC.address,
         ZERO_BI,
       );
       await expectWalletBalanceOrDustyIfZero(core, unwrapperForLiquidation.address, core.tokens.usdc.address, ZERO_BI);

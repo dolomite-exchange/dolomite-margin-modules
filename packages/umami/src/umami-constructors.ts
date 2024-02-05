@@ -1,6 +1,6 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { address } from '@dolomite-margin/dist/src';
 import { BigNumber } from 'ethers';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   IUmamiAssetVault,
   IUmamiAssetVaultIsolationModeTokenVaultV1,
@@ -14,7 +14,7 @@ const GLOBAL_COLLATERALIZATION = BigNumber.from('1150000000000000000');
 
 export function getUmamiTokenCollateralization(
   asset: IUmamiAssetVault,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): {
   minCollateralization: BigNumber;
   liquidationSpread: BigNumber;
@@ -37,7 +37,7 @@ export function getUmamiTokenCollateralization(
 }
 
 export async function getUmamiAssetVaultRegistryConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   implementation: UmamiAssetVaultRegistry,
 ): Promise<any[]> {
   if (!core.umamiEcosystem) {
@@ -56,7 +56,7 @@ export async function getUmamiAssetVaultRegistryConstructorParams(
 }
 
 export function getUmamiAssetVaultPriceOracleConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,
   umamiVaultIsolationModeToken: { address: address },
 ): any[] {
@@ -72,7 +72,7 @@ export function getUmamiAssetVaultPriceOracleConstructorParams(
 }
 
 export function getUmamiAssetVaultIsolationModeUnwrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,
   umamiVaultIsolationModeToken: { address: address },
 ): any[] {
@@ -87,7 +87,7 @@ export function getUmamiAssetVaultIsolationModeUnwrapperTraderV2ConstructorParam
 }
 
 export async function getUmamiAssetVaultIsolationModeVaultFactoryConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,
   umamiVaultToken: IUmamiAssetVault,
   userVaultImplementation: IUmamiAssetVaultIsolationModeTokenVaultV1 | UmamiAssetVaultIsolationModeTokenVaultV1,
@@ -108,7 +108,7 @@ export async function getUmamiAssetVaultIsolationModeVaultFactoryConstructorPara
 }
 
 export function getUmamiAssetVaultIsolationModeWrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   umamiAssetVaultRegistry: IUmamiAssetVaultRegistry | UmamiAssetVaultRegistry,
   umamiVaultIsolationModeToken: { address: address },
 ): any[] {

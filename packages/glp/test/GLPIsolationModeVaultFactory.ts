@@ -16,20 +16,20 @@ import {
   createTestGLPIsolationModeTokenVaultV1,
 } from './glp-ecosystem-utils';
 import {
-  CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 describe('GLPIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let gmxRegistry: GmxRegistryV1;
   let vaultImplementation: TestGLPIsolationModeTokenVaultV1;
   let factory: GLPIsolationModeVaultFactory;

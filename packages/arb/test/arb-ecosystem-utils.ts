@@ -21,11 +21,14 @@ import {
   getARBUnwrapperTraderV2ConstructorParams,
   getARBWrapperTraderV2ConstructorParams,
 } from '../src/arb-constructors';
-import { createContractWithAbi, createContractWithLibrary } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import {
+  createContractWithAbi,
+  createContractWithLibrary
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
-export async function createARBRegistry(core: CoreProtocol): Promise<ARBRegistry> {
+export async function createARBRegistry(core: CoreProtocolArbitrumOne): Promise<ARBRegistry> {
   const implementation = await createContractWithAbi<ARBRegistry>(
     ARBRegistry__factory.abi,
     ARBRegistry__factory.bytecode,
@@ -51,7 +54,7 @@ export async function createARBIsolationModeTokenVaultV1(): Promise<ARBIsolation
 export async function createARBIsolationModeVaultFactory(
   arbRegistry: IARBRegistry | ARBRegistry,
   userVaultImplementation: ARBIsolationModeTokenVaultV1,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<ARBIsolationModeVaultFactory> {
   return createContractWithAbi<ARBIsolationModeVaultFactory>(
     ARBIsolationModeVaultFactory__factory.abi,
@@ -62,7 +65,7 @@ export async function createARBIsolationModeVaultFactory(
 
 export async function createARBUnwrapperTraderV2(
   factory: IARBIsolationModeVaultFactory | ARBIsolationModeVaultFactory,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<SimpleIsolationModeUnwrapperTraderV2> {
   return createContractWithAbi<SimpleIsolationModeUnwrapperTraderV2>(
     SimpleIsolationModeUnwrapperTraderV2__factory.abi,
@@ -73,7 +76,7 @@ export async function createARBUnwrapperTraderV2(
 
 export async function createARBWrapperTraderV2(
   factory: IARBIsolationModeVaultFactory | ARBIsolationModeVaultFactory,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<SimpleIsolationModeWrapperTraderV2> {
   return createContractWithAbi<SimpleIsolationModeWrapperTraderV2>(
     SimpleIsolationModeWrapperTraderV2__factory.abi,
