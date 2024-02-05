@@ -58,9 +58,11 @@ import {
 import { sleep } from '@openzeppelin/upgrades';
 import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
 import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
-import fs from 'fs';
-import { artifacts, network, run } from 'hardhat';
+import fs, { readFileSync } from 'fs';
+import hardhat, { artifacts, network, run } from 'hardhat';
+import { BUILD_INFO_DIR_NAME } from 'hardhat/internal/constants';
 import * as path from 'path';
+import { join } from 'path';
 
 type ChainId = string;
 
@@ -70,9 +72,13 @@ export const CORE_DEPLOYMENT_FILE_NAME = path.resolve(
   '../../../../node_modules/@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json',
 );
 
+export function readDeploymentFile(): Record<string, Record<ChainId, any>> {
+  return JSON.parse(fs.readFileSync(DEPLOYMENT_FILE_NAME).toString());
+}
+
 function readAllDeploymentFiles(): Record<string, Record<ChainId, any>> {
   const coreDeployments = JSON.parse(fs.readFileSync(CORE_DEPLOYMENT_FILE_NAME).toString());
-  const deployments = JSON.parse(fs.readFileSync(DEPLOYMENT_FILE_NAME).toString());
+  const deployments = readDeploymentFile();
   return {
     ...coreDeployments,
     ...deployments,
@@ -89,7 +95,7 @@ export async function verifyContract(
     return Promise.reject(new Error('Failed to verify contract'));
   }
   try {
-    console.log('Verifying contract...');
+    console.log('\tVerifying contract...');
     await run('verify:verify', {
       address,
       constructorArguments,
@@ -98,7 +104,7 @@ export async function verifyContract(
     });
   } catch (e: any) {
     if (e?.message.toLowerCase().includes('already verified')) {
-      console.log('EtherscanVerification: Swallowing already verified error');
+      console.log('\tEtherscanVerification: Swallowing already verified error');
     } else {
       await verifyContract(address, constructorArguments, contractName, attempts + 1);
     }
@@ -107,8 +113,30 @@ export async function verifyContract(
 
 type ConstructorArgument = string | BigNumberish | boolean | ConstructorArgument[];
 
+async function createArtifactFromWorkspaceIfNotExists(artifactName: string) {
+  if (await artifacts.artifactExists(artifactName)) {
+    // GUARD STATEMENT!
+    return;
+  }
+
+  const packagesPath = '../../../../packages';
+  const children = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
+    .filter(d => d.isDirectory())
+    .map(d => path.join(packagesPath, d.name));
+
+  for (const child of children) {
+    const artifactPath = join(__dirname,  child, `artifacts/contracts/${artifactName}.sol/${artifactName}.json`);
+    if (fs.existsSync(artifactPath)) {
+      const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
+      await artifacts.saveArtifactAndDebugFile(artifact);
+      return;
+    }
+  }
+
+  return Promise.reject(new Error(`Could not find ${artifactName}`));
+}
+
 export async function deployContractAndSave(
-  chainId: number,
   contractName: string,
   args: ConstructorArgument[],
   contractRename?: string,
@@ -116,7 +144,7 @@ export async function deployContractAndSave(
   attempts: number = 0,
 ): Promise<address> {
   if (attempts === 3) {
-    return Promise.reject(new Error(`Could not deploy after ${attempts} attempts!`));
+    return Promise.reject(new Error(`\tCould not deploy after ${attempts} attempts!`));
   }
 
   const fileBuffer = fs.readFileSync(DEPLOYMENT_FILE_NAME);
@@ -128,17 +156,19 @@ export async function deployContractAndSave(
     file = {};
   }
 
+  await createArtifactFromWorkspaceIfNotExists(contractName);
+  const chainId = network.config.chainId!;
   const usedContractName = contractRename ?? contractName;
   if (file[usedContractName]?.[chainId.toString()]) {
     const contract = file[usedContractName][chainId.toString()];
-    console.log(`Contract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`);
+    console.log(`\tContract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`);
     if (!contract.isVerified) {
       await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args);
     }
     return contract.address;
   }
 
-  console.log(`Deploying ${usedContractName} to chainId ${chainId}...`);
+  console.log(`\tDeploying ${usedContractName} to chainId ${chainId}...`);
 
   let contract: BaseContract;
   try {
@@ -146,8 +176,8 @@ export async function deployContractAndSave(
       ? await createContractWithLibrary(contractName, libraries, args)
       : await createContractWithName(contractName, args);
   } catch (e) {
-    console.error(`Could not deploy at attempt ${attempts + 1} due to error:`, e);
-    return deployContractAndSave(chainId, contractName, args, contractRename, libraries, attempts + 1);
+    console.error(`\tCould not deploy at attempt ${attempts + 1} due to error:`, e);
+    return deployContractAndSave(contractName, args, contractRename, libraries, attempts + 1);
   }
 
   file[usedContractName] = {
@@ -196,7 +226,6 @@ export async function deployPendlePtSystem<T extends NetworkType>(
 ): Promise<PendlePtSystem> {
   const libraries = getTokenVaultLibrary(core);
   const userVaultImplementationAddress = await deployContractAndSave(
-    Number(network),
     'PendlePtIsolationModeTokenVaultV1',
     [],
     `PendlePt${ptName}IsolationModeTokenVaultV1'`,
@@ -208,14 +237,12 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   );
 
   const registryImplementationAddress = await deployContractAndSave(
-    Number(network),
     'PendleRegistry',
     [],
     'PendleRegistryImplementationV1',
   );
   const registryImplementation = PendleRegistry__factory.connect(registryImplementationAddress, core.governance);
   const registryAddress = await deployContractAndSave(
-    Number(network),
     'RegistryProxy',
     await getPendleRegistryConstructorParams(registryImplementation, core, ptMarket, ptOracle, syToken),
     `Pendle${ptName}RegistryProxy`,
@@ -223,7 +250,6 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   const registry = PendleRegistry__factory.connect(registryAddress, core.governance);
 
   const factoryAddress = await deployContractAndSave(
-    Number(network),
     'PendlePtIsolationModeVaultFactory',
     getPendlePtIsolationModeVaultFactoryConstructorParams(core, registry, ptToken, userVaultImplementation),
     `PendlePt${ptName}IsolationModeVaultFactory`,
@@ -231,21 +257,18 @@ export async function deployPendlePtSystem<T extends NetworkType>(
   const factory = PendlePtIsolationModeVaultFactory__factory.connect(factoryAddress, core.governance);
 
   const unwrapperAddress = await deployContractAndSave(
-    Number(network),
     'PendlePtIsolationModeUnwrapperTraderV2',
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(core, registry, underlyingToken, factory),
     `PendlePt${ptName}IsolationModeUnwrapperTraderV2`,
   );
 
   const wrapperAddress = await deployContractAndSave(
-    Number(network),
     'PendlePtIsolationModeWrapperTraderV2',
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(core, registry, underlyingToken, factory),
     `PendlePt${ptName}IsolationModeWrapperTraderV2`,
   );
 
   const oracleAddress = await deployContractAndSave(
-    Number(network),
     'PendlePtPriceOracle',
     getPendlePtPriceOracleConstructorParams(core, factory, registry, underlyingToken),
     `PendlePt${ptName}PriceOracle`,
@@ -284,7 +307,6 @@ export async function deployLinearInterestSetterAndSave(
   const upperName = upperOptimal.div(ONE_PERCENT).toString().concat('U');
 
   return deployContractAndSave(
-    chainId,
     'LinearStepFunctionInterestSetter',
     [lowerOptimal, upperOptimal],
     `${interestSetterType}${lowerName}${upperName}LinearStepFunctionInterestSetter`,
@@ -307,21 +329,25 @@ async function prettyPrintAndVerifyContract(
   contractRename: string,
   args: any[],
 ) {
+  if (network.name === 'hardhat') {
+    return;
+  }
+
   const contract = file[contractRename][chainId.toString()];
 
   console.log(`========================= ${contractRename} =========================`);
   console.log('Address: ', contract.address);
   console.log('='.repeat(52 + contractRename.length));
 
-  if (process.env.SKIP_VERIFICATION !== 'true' && network.name !== 'hardhat') {
-    console.log('Sleeping for 5s to wait for the transaction to be indexed by Etherscan...');
+  if (process.env.SKIP_VERIFICATION) {
+    console.log('\tSleeping for 5s to wait for the transaction to be indexed by Etherscan...');
     await sleep(3000);
     const sourceName = (await artifacts.readArtifact(contractName)).sourceName;
     await verifyContract(contract.address, [...args], `${sourceName}:${contractName}`);
     file[contractRename][chainId].isVerified = true;
     writeDeploymentFile(file);
   } else {
-    console.log('Skipping Etherscan verification...');
+    console.log('\tSkipping Etherscan verification...');
   }
 }
 
@@ -446,7 +472,7 @@ export interface EncodedTransaction {
 }
 
 export interface DenJsonUpload {
-  chainId: string;
+  chainId: NetworkType;
   transactions: EncodedTransaction[];
 }
 
@@ -474,22 +500,26 @@ export async function prettyPrintEncodedDataWithTypeSafety<
 ): Promise<EncodedTransaction> {
   const contract = liveMap[key];
   const transaction = await contract.populateTransaction[methodName.toString()](...(args as any));
-  const fragment = contract.interface.getFunction(methodName.toString());
-  const mappedArgs: string[] = [];
-  for (let i = 0; i < (args as any[]).length; i++) {
-    mappedArgs.push(await getReadableArg(core, fragment.inputs[i], (args as any[])[i]));
-  }
 
-  console.log(''); // add a new line
-  console.log(`=================================== ${counter++} - ${key}.${methodName} ===================================`);
-  console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
-  console.log(
-    'To:\t\t',
-    (await getReadableArg(core, ParamType.fromString('address to'), transaction.to)).substring(13),
-  );
-  console.log('Data:\t\t', transaction.data);
-  console.log('='.repeat(76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length));
-  console.log(''); // add a new line
+  if (hardhat.network.name !== 'hardhat') {
+    const fragment = contract.interface.getFunction(methodName.toString());
+    const mappedArgs: string[] = [];
+    for (let i = 0; i < (args as any[]).length; i++) {
+      mappedArgs.push(await getReadableArg(core, fragment.inputs[i], (args as any[])[i]));
+    }
+
+    const repeatLength = 76 + (counter - 1).toString().length + key.toString().length + methodName.toString().length;
+    console.log(''); // add a new line
+    console.log(`=================================== ${counter++} - ${key}.${methodName} ===================================`);
+    console.log('Readable:\t', `${key}.${methodName}(\n\t\t\t${mappedArgs.join(' ,\n\t\t\t')}\n\t\t)`);
+    console.log(
+      'To:\t\t',
+      (await getReadableArg(core, ParamType.fromString('address to'), transaction.to)).substring(13),
+    );
+    console.log('Data:\t\t', transaction.data);
+    console.log('='.repeat(repeatLength));
+    console.log(''); // add a new line
+  }
 
   if (
     typeof methodName === 'string'
@@ -514,7 +544,6 @@ export async function prettyPrintEncodedDataWithTypeSafety<
     value: transaction.value?.toString() ?? '0',
     data: transaction.data!,
   };
-
 }
 
 let mostRecentTokenDecimals: number | undefined = undefined;

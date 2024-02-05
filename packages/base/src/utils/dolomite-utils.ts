@@ -2,7 +2,7 @@ import { address } from '@dolomite-exchange/dolomite-margin';
 import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margin/dist/src';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumber, BigNumberish, BytesLike } from 'ethers';
-import { ethers } from 'hardhat';
+import hardhat, { ethers } from 'hardhat';
 import {
   CustomTestToken,
   CustomTestToken__factory,
@@ -195,10 +195,20 @@ export async function getAnyNetwork(): Promise<NetworkType> {
 }
 
 export async function getAndCheckSpecificNetwork<T extends NetworkType>(networkInvariant: T): Promise<T> {
-  const network = (await ethers.provider.getNetwork()).chainId.toString();
-  if (network !== networkInvariant) {
+  let foundNetwork: string;
+  if (hardhat.network.name === 'hardhat') {
+    if (!process.env.NETWORK) {
+      return Promise.reject(new Error(`Invalid network, found: ${process.env.NETWORK}`));
+    }
+    foundNetwork = hardhat.userConfig.networks![process.env.NETWORK]!.chainId!.toString();
+  } else {
+    foundNetwork = (await ethers.provider.getNetwork()).chainId.toString();
+  }
+
+  if (foundNetwork !== networkInvariant) {
+    const expectedName = networkToNetworkNameMap[networkInvariant];
     return Promise.reject(new Error(
-      `This script can only be run on ${networkInvariant} (${networkToNetworkNameMap[networkInvariant]})`,
+      `This script can only be run on ${networkInvariant} (${expectedName}), but found: ${foundNetwork}`,
     ));
   }
 

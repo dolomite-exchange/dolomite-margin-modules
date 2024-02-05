@@ -21,4 +21,6 @@ if (process.env.COVERAGE !== 'true') {
 }
 
 // noinspection JSUnusedGlobalSymbols
-export default base_config;
+export default {
+  ...base_config,
+};

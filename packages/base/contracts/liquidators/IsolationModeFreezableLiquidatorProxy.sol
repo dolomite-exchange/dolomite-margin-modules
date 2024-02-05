@@ -127,6 +127,7 @@ contract IsolationModeFreezableLiquidatorProxy is
         );
 
         _checkMinAmountIsNotTooLarge(
+            _params.liquidAccount,
             _params.freezableMarketId,
             _params.outputMarketId,
             _params.inputTokenAmount.mul(weight),

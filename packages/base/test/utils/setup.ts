@@ -343,7 +343,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
-  const chainlinkPriceOracle = getContractOpt(
+  const chainlinkPriceOracle = getContract(
     CHAINLINK_PRICE_ORACLE_MAP[config.network],
     IChainlinkPriceOracle__factory.connect,
     governance,
@@ -456,57 +456,39 @@ export async function setupCoreProtocol<T extends NetworkType>(
       dai: DAI_MAP[config.network].marketId,
       link: LINK_MAP[config.network].marketId,
       usdc: USDC_MAP[config.network].marketId,
-      wbtc: WBTC_MAP[config.network].marketId,
       weth: WETH_MAP[config.network].marketId,
     },
     tokens: {
       dai: IERC20__factory.connect(DAI_MAP[config.network].address, hhUser1),
       link: IERC20__factory.connect(LINK_MAP[config.network].address, hhUser1),
       usdc: IERC20__factory.connect(USDC_MAP[config.network].address, hhUser1),
-      wbtc: IERC20__factory.connect(WBTC_MAP[config.network].address, hhUser1),
       weth: IWETH__factory.connect(WETH_MAP[config.network].address, hhUser1),
     },
   };
 
   if (config.network === Network.ArbitrumOne) {
     const typedConfig = config as CoreProtocolSetupConfig<Network.ArbitrumOne>;
-    const abraEcosystem = await createAbraEcosystem(typedConfig.network, hhUser1);
-    const arbEcosystem = await createArbEcosystem(typedConfig.network, hhUser1);
-    const camelotEcosystem = await createCamelotEcosystem(typedConfig.network, hhUser1);
-    const chainlinkAutomationRegistry = getContract(
-      CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
-      IChainlinkAutomationRegistry__factory.connect,
-      governance,
-    );
-    const gmxEcosystem = await createGmxEcosystem(typedConfig.network, hhUser1);
-    const gmxEcosystemV2 = await createGmxEcosystemV2(typedConfig.network, hhUser1);
-    const jonesEcosystem = await createJonesEcosystem(typedConfig.network, hhUser1);
-    const liquidityMiningEcosystem = await createLiquidityMiningEcosystem(typedConfig.network, hhUser1);
-    const odosEcosystem = await createOdosEcosystem(typedConfig.network, hhUser1);
-    const paraswapEcosystem = await createParaswapEcosystem(typedConfig.network, hhUser1);
-    const pendleEcosystem = await createPendleEcosystem(typedConfig.network, hhUser1);
-    const plutusEcosystem = await createPlutusEcosystem(typedConfig.network, hhUser1);
-    const premiaEcosystem = await createPremiaEcosystem(typedConfig.network, hhUser1);
-    const umamiEcosystem = await createUmamiEcosystem(typedConfig.network, hhUser1);
-
     return new CoreProtocolArbitrumOne(
       coreProtocolParams as CoreProtocolParams<Network.ArbitrumOne>,
       {
-        abraEcosystem,
-        arbEcosystem,
-        camelotEcosystem,
-        gmxEcosystem,
-        gmxEcosystemV2,
-        jonesEcosystem,
-        liquidityMiningEcosystem,
-        odosEcosystem,
-        paraswapEcosystem,
-        pendleEcosystem,
-        plutusEcosystem,
-        premiaEcosystem,
-        umamiEcosystem,
-        chainlinkAutomationRegistry: chainlinkAutomationRegistry!,
-        chainlinkPriceOracle: chainlinkPriceOracle!,
+        chainlinkPriceOracle,
+        abraEcosystem: await createAbraEcosystem(typedConfig.network, hhUser1),
+        arbEcosystem: await createArbEcosystem(typedConfig.network, hhUser1),
+        camelotEcosystem: await createCamelotEcosystem(typedConfig.network, hhUser1),
+        chainlinkAutomationRegistry: IChainlinkAutomationRegistry__factory.connect(
+          CHAINLINK_AUTOMATION_REGISTRY_MAP[typedConfig.network],
+          governance
+        ),
+        gmxEcosystem: await createGmxEcosystem(typedConfig.network, hhUser1),
+        gmxEcosystemV2: await createGmxEcosystemV2(typedConfig.network, hhUser1),
+        jonesEcosystem: await createJonesEcosystem(typedConfig.network, hhUser1),
+        liquidityMiningEcosystem: await createLiquidityMiningEcosystem(typedConfig.network, hhUser1),
+        odosEcosystem: await createOdosEcosystem(typedConfig.network, hhUser1),
+        paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
+        pendleEcosystem: await createPendleEcosystem(typedConfig.network, hhUser1),
+        plutusEcosystem: await createPlutusEcosystem(typedConfig.network, hhUser1),
+        premiaEcosystem: await createPremiaEcosystem(typedConfig.network, hhUser1),
+        umamiEcosystem: await createUmamiEcosystem(typedConfig.network, hhUser1),
         marketIds: {
           ...coreProtocolParams.marketIds,
           arb: ARB_MAP[typedConfig.network]!.marketId,
@@ -533,6 +515,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
           radiant: RDNT_MAP[typedConfig.network]!.marketId,
           pendle: PENDLE_MAP[typedConfig.network]!.marketId,
           usdt: USDT_MAP[typedConfig.network]!.marketId,
+          wbtc: WBTC_MAP[typedConfig.network]!.marketId,
           wstEth: WST_ETH_MAP[typedConfig.network]!.marketId,
         },
         tokens: {
@@ -558,20 +541,28 @@ export async function setupCoreProtocol<T extends NetworkType>(
           radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network]!.address, hhUser1),
           size: IERC20__factory.connect(SIZE_MAP[typedConfig.network]!.address, hhUser1),
           stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network]!.address, hhUser1),
+          wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
           wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network]!.address, hhUser1),
         },
       },
     ) as any;
   }
   if (config.network === Network.Base) {
+    const typedConfig = config as CoreProtocolSetupConfig<Network.Base>;
     return new CoreProtocolBase(
       coreProtocolParams as CoreProtocolParams<Network.Base>,
+      {
+        paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
+      },
     ) as any;
   }
   if (config.network === Network.PolygonZkEvm) {
+    const typedConfig = config as CoreProtocolSetupConfig<Network.PolygonZkEvm>;
     return new CoreProtocolPolygonZkEvm(
       coreProtocolParams as CoreProtocolParams<Network.PolygonZkEvm>,
-      {},
+      {
+        paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
+      },
     ) as any;
   }
 

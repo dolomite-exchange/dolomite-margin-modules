@@ -38,7 +38,6 @@ interface CoreProtocolTokens {
   dai: IERC20;
   link: IERC20;
   usdc: IERC20;
-  wbtc: IERC20;
   weth: IWETH;
 }
 
@@ -46,7 +45,6 @@ interface CoreProtocolMarketIds {
   dai: BigNumberish;
   link: BigNumberish;
   usdc: BigNumberish;
-  wbtc: BigNumberish;
   weth: BigNumberish;
 }
 
@@ -72,6 +70,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   pendle: IERC20;
   size: IERC20;
   stEth: IERC20;
+  wbtc: IERC20;
   wstEth: IERC20;
 }
 
@@ -100,6 +99,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   radiant: BigNumberish;
   pendle: BigNumberish;
   usdt: BigNumberish;
+  wbtc: BigNumberish;
   wstEth: BigNumberish;
 }
 
@@ -278,18 +278,25 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   }
 }
 
+export interface CoreProtocolParamsBase {
+  paraswapEcosystem: ParaswapEcosystem;
+}
+
 export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
 
+  public readonly paraswapEcosystem: ParaswapEcosystem;
   public readonly network: Network.Base = Network.Base;
 
   constructor(
     params: CoreProtocolParams<Network.Base>,
+    baseParams: CoreProtocolParamsBase,
   ) {
     super(params);
+    this.paraswapEcosystem = baseParams.paraswapEcosystem;
   }
 }
 
-export interface ZkEvmParams {
+export interface CoreProtocolParamsZkEvm {
   paraswapEcosystem: ParaswapEcosystem;
 }
 
@@ -300,7 +307,7 @@ export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.Polyg
 
   constructor(
     params: CoreProtocolParams<Network.PolygonZkEvm>,
-    zkEvmParams: ZkEvmParams
+    zkEvmParams: CoreProtocolParamsZkEvm,
   ) {
     super(params);
     this.paraswapEcosystem = zkEvmParams.paraswapEcosystem;

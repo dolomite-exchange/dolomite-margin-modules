@@ -1,9 +1,9 @@
-import { ethers } from 'hardhat';
-import { getParaswapAggregatorTraderConstructorParams } from '../../../packages/base/src/utils/constructors/traders';
-import { getAnyNetwork } from '../../../packages/base/src/utils/dolomite-utils';
-import { Network } from '../../../packages/base/src/utils/no-deps-constants';
-import { setupCoreProtocol } from '../../../packages/base/test/utils/setup';
-import { deployContractAndSave } from '../../deploy-utils';
+import {
+  getParaswapAggregatorTraderConstructorParams,
+} from '@dolomite-exchange/modules-base/src/utils/constructors/traders';
+import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { deployContractAndSave } from '../../utils/deploy-utils';
 
 async function main() {
   const network = await getAnyNetwork();

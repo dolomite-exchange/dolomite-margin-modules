@@ -7,13 +7,12 @@ import {
   Network,
   NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/types';
-
 import 'tsconfig-paths/register';
-
 import path from 'path';
 
-require('dotenv').config({ path: path.resolve(process.cwd(), '../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 const arbitrumOneWeb3Url = process.env.ARBITRUM_ONE_WEB3_PROVIDER_URL;
 if (!arbitrumOneWeb3Url) {
@@ -109,8 +108,35 @@ export const base_config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      arbitrumOne: arbiscanApiKey,
-      arbitrumGoerli: arbiscanApiKey,
+      [NetworkName.ArbitrumOne]: arbiscanApiKey,
+      [NetworkName.Base]: basescanApiKey,
+      [NetworkName.PolygonZkEvm]: polygonscanApiKey,
     },
+    customChains: [
+      {
+        network: NetworkName.ArbitrumOne,
+        chainId: parseInt(Network.ArbitrumOne, 10),
+        urls: {
+          apiURL: 'https://api.arbiscan.io/api',
+          browserURL: 'https://arbiscan.io',
+        },
+      },
+      {
+        network: NetworkName.Base,
+        chainId: parseInt(Network.Base, 10),
+        urls: {
+          apiURL: 'https://api.basescan.org/api',
+          browserURL: 'https://basescan.org/',
+        },
+      },
+      {
+        network: NetworkName.PolygonZkEvm,
+        chainId: parseInt(Network.PolygonZkEvm, 10),
+        urls: {
+          apiURL: 'https://api-zkevm.polygonscan.com/api',
+          browserURL: 'https://zkevm.polygonscan.com/',
+        },
+      },
+    ],
   },
 };

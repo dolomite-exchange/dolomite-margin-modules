@@ -29,10 +29,6 @@ export async function createParaswapEcosystem(
   network: Network,
   signer: SignerWithAddress,
 ): Promise<ParaswapEcosystem> {
-  if (!PARASWAP_AUGUSTUS_ROUTER_MAP[network]) {
-    return Promise.reject(`Invalid network, found ${network}`);
-  }
-
   const paraswapTrader = getContract(
     (Deployments.ParaswapAggregatorTraderV2 as any)[network]!.address,
     ParaswapAggregatorTraderV2__factory.connect,

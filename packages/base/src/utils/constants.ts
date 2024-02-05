@@ -12,6 +12,21 @@ interface TokenWithMarketId {
 
 type ArbitrumOrZkEvm = Network.ArbitrumOne | Network.PolygonZkEvm;
 
+// export enum Workspaces {
+//   Abracadabra = 'modules-abracadabra',
+//   Arbitrum = 'modules-arb',
+//   Base = 'modules-base',
+//   Glp = 'modules-glp',
+//   GmxV2 = 'modules-gmx-v2',
+//   InterestSetters = 'modules-interest-setters',
+//   Jones = 'modules-jones',
+//   LiquidityMining = 'modules-liquidity-mining',
+//   Oracles = 'modules-oracles',
+//   Pendle = 'modules-pendle',
+//   Plutus = 'modules-plutus',
+//   Umami = 'modules-umami',
+// }
+
 // ************************* External Contract Addresses *************************
 
 export const ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
@@ -27,6 +42,8 @@ export const CHAINLINK_PRICE_ORACLE_OLD_MAP: Record<Network.ArbitrumOne, string>
 
 export const CHAINLINK_PRICE_ORACLE_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xA07e80C08D8bae7fFA3e46534eaBdBb6Ca98da1D',
+  [Network.Base]: '0xc38372FA7e6431DcC490F354a1BcC36A5D6c32E6',
+  [Network.PolygonZkEvm]: '0xA5F4CEB032a1d7C711BB8AE687F9AB13a976e2E9',
 };
 
 export const CHAINLINK_AUTOMATION_REGISTRY_MAP: Record<Network.ArbitrumOne | Network.Base, string> = {
@@ -400,6 +417,12 @@ export const GRAIL_WETH_V3_POOL_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x60451B6aC55E3C5F0f3aeE31519670EcC62DC28f',
 };
 
+export const KYBER_AGGREGATOR_ROUTER_MAP: Record<Network, string> = {
+  [Network.ArbitrumOne]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
+  [Network.Base]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
+  [Network.PolygonZkEvm]: '0x6131B5fae19EA4f9D964eAc0408E4408b66337b5',
+};
+
 export const JONES_ECOSYSTEM_GOVERNOR_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xDD0556DDCFE7CdaB3540E7F09cB366f498d90774',
 };
@@ -438,14 +461,20 @@ export const ODOS_ROUTER_MAP: Record<Network.ArbitrumOne, string> = {
 
 export const PARASWAP_AUGUSTUS_ROUTER_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57',
+  [Network.Base]: '0x59C7C832e96D2568bea6db468C1aAdcbbDa08A52',
+  [Network.PolygonZkEvm]: '0xB83B554730d29cE4Cb55BB42206c3E2c03E4A40A',
 };
 
 export const PARASWAP_FEE_CLAIMER_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xA7465CCD97899edcf11C56D2d26B49125674e45F',
+  [Network.Base]: '0x9aaB4B24541af30fD72784ED98D8756ac0eFb3C7',
+  [Network.PolygonZkEvm]: '0x593F39A4Ba26A9c8ed2128ac95D109E8e403C485',
 };
 
 export const PARASWAP_TRANSFER_PROXY_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0x216B4B4Ba9F3e719726886d34a177484278Bfcae',
+  [Network.Base]: '0x93aAAe79a53759cD164340E4C8766E4Db5331cD7',
+  [Network.PolygonZkEvm]: '0xC8a21FcD5A100c3ecc037c97e2f9C53a8D3A02A1',
 };
 
 export const PENDLE_PT_GLP_2024_MARKET_MAP: Record<Network.ArbitrumOne, string> = {

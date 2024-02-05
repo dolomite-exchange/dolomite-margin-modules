@@ -42,6 +42,24 @@ interface IPartiallyDelayedMultiSig {
     }
 
     // ===================================================
+    // ====================== Events =====================
+    // ===================================================
+
+    event Confirmation(address indexed sender, uint256 indexed transactionId);
+    event Revocation(address indexed sender, uint256 indexed transactionId);
+    event Submission(uint256 indexed transactionId);
+    event Execution(uint256 indexed transactionId);
+    event ExecutionFailure(uint256 indexed transactionId, string error);
+    event OwnerAddition(address indexed owner);
+    event OwnerRemoval(address indexed owner);
+    event RequirementChange(uint256 required);
+
+    event ConfirmationTimeSet(uint256 indexed transactionId, uint256 confirmationTime);
+    event TimeLockChange(uint32 secondsTimeLocked);
+
+    event SelectorSet(address destination, bytes4 selector, bool approved);
+
+    // ===================================================
     // ==================== Functions ====================
     // ===================================================
 
@@ -108,4 +126,14 @@ interface IPartiallyDelayedMultiSig {
     function isConfirmed(
         uint256 transactionId
     ) external view returns (bool);
+
+    /**
+     * @return  The number of seconds that the multi sig time-locks transactions
+     */
+    function secondsTimeLocked() external view returns (uint32);
+
+    /**
+     * @return  The owners of this multi sig
+     */
+    function getOwners() external view returns (address[] memory);
 }

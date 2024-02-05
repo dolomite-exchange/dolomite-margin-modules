@@ -19,6 +19,9 @@ import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { GenericEventEmissionType, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
+import fs, { readFileSync } from 'fs';
+import { artifacts } from 'hardhat';
+import path, { join } from 'path';
 import {
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
   getGmxV2IsolationModeVaultFactoryConstructorParams,
@@ -49,6 +52,34 @@ import {
   TestGmxV2IsolationModeVaultFactory,
 } from '../src/types';
 
+async function createArtifactFromWorkspaceIfNotExists(artifactName: string) {
+  if (await artifacts.artifactExists(artifactName)) {
+    // GUARD STATEMENT!
+    return;
+  }
+
+  const packagesPath = '../../../../packages';
+  const children = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
+    .filter(d => d.isDirectory())
+    .map(d => path.join(packagesPath, d.name));
+
+  const contractsFolder = process.env.COVERAGE === 'true' ? 'contracts_coverage' : 'contracts';
+  for (const child of children) {
+    const artifactPath = join(
+      __dirname,
+      child,
+      `artifacts/${contractsFolder}/${artifactName}.sol/${artifactName}.json`,
+    );
+    if (fs.existsSync(artifactPath)) {
+      const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
+      await artifacts.saveArtifactAndDebugFile(artifact);
+      return;
+    }
+  }
+
+  return Promise.reject(new Error(`Could not find ${artifactName}`));
+}
+
 export async function createGmxV2Registry(
   core: CoreProtocolArbitrumOne,
   callbackGasLimit: BigNumberish,
@@ -78,12 +109,12 @@ export async function createGmxV2IsolationModeTokenVaultV1(
   core: CoreProtocolArbitrumOne,
   library: GmxV2Library,
 ): Promise<GmxV2IsolationModeTokenVaultV1> {
-  const GmxV2IsolationModeTokenVaultV1Artifact = process.env.COVERAGE === 'true'
-    ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeTokenVaultV1.sol/GmxV2IsolationModeTokenVaultV1.json')
-    : await import('../artifacts/contracts/GmxV2IsolationModeTokenVaultV1.sol/GmxV2IsolationModeTokenVaultV1.json');
+  // TODO: test
+  const contract = 'GmxV2IsolationModeTokenVaultV1';
+  await createArtifactFromWorkspaceIfNotExists(contract);
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibraryAndArtifact<GmxV2IsolationModeTokenVaultV1>(
-    GmxV2IsolationModeTokenVaultV1Artifact,
+    contract,
     { GmxV2Library: library.address, ...libraries },
     [core.tokens.weth.address],
   );

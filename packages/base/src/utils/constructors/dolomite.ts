@@ -64,7 +64,6 @@ export function getOwnerAddMarketParameters<T extends NetworkType>(
   earningsRateOverride: BigNumberish = ZERO_BI,
 ): OwnerAddMarketParameters<T> {
   if (core.network === Network.ArbitrumOne) {
-    const foo = core;
     return [
       token.address,
       priceOracle.address,
@@ -101,6 +100,10 @@ export enum TargetCollateralization {
 export function getMarginPremiumForTargetCollateralization(
   targetCollateralization: TargetCollateralization,
 ): BigNumber {
+  if (targetCollateralization === TargetCollateralization.Base) {
+    return ZERO_BI;
+  }
+
   const one = parseEther('1');
   const baseCollateralization = parseEther('1.15');
   return parseEther(targetCollateralization).mul(one).div(baseCollateralization).sub(one);
@@ -118,6 +121,10 @@ export enum TargetLiquidationPenalty {
 export function getLiquidationPremiumForTargetLiquidationPenalty(
   targetPenalty: TargetLiquidationPenalty,
 ): BigNumber {
+  if (targetPenalty === TargetLiquidationPenalty.Base) {
+    return ZERO_BI;
+  }
+
   const one = parseEther('1');
   const baseAmount = parseEther('0.05');
   return parseEther(targetPenalty).mul(one).div(baseAmount).sub(one);
