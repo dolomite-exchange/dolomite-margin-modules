@@ -61,8 +61,8 @@ describe('GMXIsolationModeTokenVaultV1_swapExactInputForOutput', () => {
   before(async () => {
     const network = Network.ArbitrumOne;
     core = await setupCoreProtocol({
+      network,
       blockNumber: await getRealLatestBlockNumber(true, network),
-      network
     });
 
     gmxRegistry = GmxRegistryV1__factory.connect(

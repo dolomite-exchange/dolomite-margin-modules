@@ -75,8 +75,8 @@ describe('GMXIsolationModeWrapperIntegrationTests', () => {
   before(async () => {
     const network = Network.ArbitrumOne;
     core = await setupCoreProtocol({
-      blockNumber: await getRealLatestBlockNumber(true, network),
       network,
+      blockNumber: await getRealLatestBlockNumber(true, network),
     });
     gmxRegistry = GmxRegistryV1__factory.connect(
       deployments.GmxRegistryProxy[network].address,

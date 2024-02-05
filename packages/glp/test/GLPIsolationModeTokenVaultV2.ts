@@ -1445,7 +1445,7 @@ describe('GLPIsolationModeTokenVaultV2', () => {
         glpVault.connect(core.hhUser1).maxGmxUnstakeAmount(),
         'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
       );
-    })
+    });
   });
 
   describe('#dolomiteRegistry', () => {

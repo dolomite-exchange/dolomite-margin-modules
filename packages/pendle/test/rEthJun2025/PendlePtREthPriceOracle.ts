@@ -124,7 +124,9 @@ describe('PendlePtREthJun2025PriceOracle', () => {
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
       await advanceToTimestamp(1710000000);
-      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(core.testEcosystem!.testPriceOracle.address);
+      await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
+        core.testEcosystem!.testPriceOracle.address
+      );
       const price = await ptOracle.getPrice(factory.address);
       expect(price.value).to.eq(PT_RETH_PRICE);
     });
