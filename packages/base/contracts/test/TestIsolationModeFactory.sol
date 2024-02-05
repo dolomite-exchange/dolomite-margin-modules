@@ -72,6 +72,8 @@ contract TestIsolationModeFactory is IsolationModeVaultFactory {
         });
     }
 
+    function testRequireIsTokenConverterOrVault() requireIsTokenConverterOrVault(msg.sender) external view {}
+
     function createVaultNoInitialize(
         address _account
     ) external {

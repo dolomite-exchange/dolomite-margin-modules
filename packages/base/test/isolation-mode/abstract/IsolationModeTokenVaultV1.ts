@@ -40,6 +40,7 @@ const borrowAccountNumber = '123';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const bigOtherAmountWei = BigNumber.from('100000000000'); // $100,000
+const usdcAmount = BigNumber.from('100000000'); // $100
 
 describe('IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -2111,6 +2112,51 @@ describe('IsolationModeTokenVaultV1', () => {
       await expectThrow(
         userVault.connect(core.hhUser1).executeWithdrawalFromVault(core.hhUser1.address, amountWei),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#requireNotLiquidatable', () => {
+    it('should pass if not liquidatable', async () => {
+      await expect(userVault.connect(core.hhUser1).testRequireNotLiquidatable(ZERO_BI)).to.not.be.reverted;
+    });
+
+    it('should fail if liquidatable', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei
+      );
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcAmount,
+        BalanceCheckFlag.None
+      );
+
+      await core.testEcosystem!.testPriceOracle.setPrice(
+        factory.address,
+        '10'
+      );
+      await expectThrow(
+        userVault.connect(core.hhUser1).testRequireNotLiquidatable(borrowAccountNumber),
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable'
+      );
+    });
+  });
+
+  describe('#requireOnlyConverter', () => {
+    it('should pass if token converter', async () => {
+      const wrapperImpersonator = await impersonate(tokenWrapper.address, true);
+      await expect(userVault.connect(wrapperImpersonator).testRequireOnlyConverter()).to.not.be.reverted;
+    });
+
+    it('should fail if not token converter', async () => {
+      await expectThrow(
+        userVault.connect(core.hhUser1).testRequireOnlyConverter(),
+        `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });

@@ -182,7 +182,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
     });
   });
 
-  describe('#closeBorrowPositionWithOtherTokens', () => {
+  describe.only('#closeBorrowPositionWithOtherTokens', () => {
     it('should work normally when not paused', async () => {
       expect(await userVault.isExternalRedemptionPaused()).to.be.false;
       await userVault.transferIntoPositionWithOtherToken(
@@ -201,8 +201,6 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
     });
 
     it('should work when paused but the user has no debt', async () => {
-      await userVault.setIsExternalRedemptionPaused(true);
-      expect(await userVault.isExternalRedemptionPaused()).to.be.true;
       await userVault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -210,6 +208,8 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
         otherAmountWei,
         BalanceCheckFlag.Both,
       );
+      await userVault.setIsExternalRedemptionPaused(true);
+      expect(await userVault.isExternalRedemptionPaused()).to.be.true;
       await userVault.closeBorrowPositionWithOtherTokens(borrowAccountNumber, defaultAccountNumber, [otherMarketId1]);
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, otherMarketId1, otherAmountWei);

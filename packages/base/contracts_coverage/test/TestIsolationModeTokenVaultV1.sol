@@ -75,6 +75,14 @@ contract TestIsolationModeTokenVaultV1 is SimpleIsolationModeTokenVaultV1 {
         }
     }
 
+    function testRequireNotLiquidatable(uint256 _accountNumber) requireNotLiquidatable(_accountNumber) public view {
+        // This function is just to test the requireNotLiquidatable modifier.
+    }
+
+    function testRequireOnlyConverter() external view {
+        _requireOnlyConverter(msg.sender);
+    }
+
     function dolomiteRegistry() public override(IsolationModeTokenVaultV1) view returns (IDolomiteRegistry) {
         return TestSimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
     }
