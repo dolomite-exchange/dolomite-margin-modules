@@ -1,6 +1,7 @@
 import { BYTES_EMPTY, BYTES_ZERO, Network, ONE_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { EventEmitterRegistry, IIsolationModeVaultFactory, IIsolationModeVaultFactory__factory } from '../../src/types';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 import { createEventEmitter } from '../utils/dolomite';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -11,7 +12,7 @@ import { GenericTraderParamStruct } from 'packages/base/src/utils';
 describe('EventEmitterRegistry', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let eventEmitter: EventEmitterRegistry;
   let factory: IIsolationModeVaultFactory;
   let defaultAccountOwner: SignerWithAddress;

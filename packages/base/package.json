@@ -9,6 +9,7 @@
     "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts",
     "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/isolation-mode/abstract/AsyncIsolationModeTraderBase.ts\" --solcoverjs ../../.solcover.js --network hardhat",
     "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/general/*.ts",
+    "test:specific2": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/general/BaseLiquidatorProxy.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:sol": "hardhat check && python scripts/lint-contracts.py fix",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"

@@ -1,16 +1,16 @@
 import { expect } from 'chai';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
-import { TestHandlerRegistry, TestHandlerRegistry__factory } from '../../src/types';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { TestHandlerRegistry } from '../../src/types';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
-import { createTestHandlerRegistry } from '../utils/ecosystem-token-utils/testers';
 import { expectEvent, expectThrow } from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+import { createTestHandlerRegistry } from '../utils/ecosystem-utils/testers';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 describe('HandlerRegistry', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let handlerRegistry: TestHandlerRegistry;
 
   before(async () => {
@@ -29,7 +29,7 @@ describe('HandlerRegistry', () => {
       const result = await handlerRegistry.connect(core.governance).ownerSetIsHandler(core.hhUser1.address, true);
       await expectEvent(handlerRegistry, result, 'HandlerSet', {
         handler: core.hhUser1.address,
-        isTrusted: true
+        isTrusted: true,
       });
       expect(await handlerRegistry.isHandler(core.hhUser1.address)).to.be.true;
     });
@@ -37,7 +37,7 @@ describe('HandlerRegistry', () => {
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         handlerRegistry.connect(core.hhUser1).ownerSetIsHandler(core.hhUser1.address, true),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -46,7 +46,7 @@ describe('HandlerRegistry', () => {
     it('should work normally', async () => {
       const result = await handlerRegistry.connect(core.governance).ownerSetCallbackGasLimit(1000);
       await expectEvent(handlerRegistry, result, 'CallbackGasLimitSet', {
-        gasLimit: 1000
+        gasLimit: 1000,
       });
       expect(await handlerRegistry.callbackGasLimit()).to.eq(1000);
     });
@@ -54,7 +54,7 @@ describe('HandlerRegistry', () => {
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         handlerRegistry.connect(core.hhUser1).ownerSetCallbackGasLimit(1000),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -63,14 +63,14 @@ describe('HandlerRegistry', () => {
     it('should work normally', async () => {
       const result = await handlerRegistry.connect(core.governance).ownerSetUnwrapperByToken(
         core.tokens.dfsGlp!.address,
-        core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1.address
+        core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1.address,
       );
       await expectEvent(handlerRegistry, result, 'UnwrapperTraderSet', {
         token: core.tokens.dfsGlp!.address,
-        unwrapper: core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1.address
+        unwrapper: core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1.address,
       });
       expect(await handlerRegistry.getUnwrapperByToken(core.tokens.dfsGlp!.address)).to.eq(
-        core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1.address
+        core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1.address,
       );
     });
 
@@ -78,9 +78,9 @@ describe('HandlerRegistry', () => {
       await expectThrow(
         handlerRegistry.connect(core.governance).ownerSetUnwrapperByToken(
           core.tokens.dfsGlp!.address,
-          core.plutusEcosystem!.live.plvGlpIsolationModeUnwrapperTraderV1.address
+          core.plutusEcosystem!.live.plvGlpIsolationModeUnwrapperTraderV1.address,
         ),
-        'HandlerRegistry: Invalid unwrapper trader'
+        'HandlerRegistry: Invalid unwrapper trader',
       );
     });
 
@@ -88,9 +88,9 @@ describe('HandlerRegistry', () => {
       await expectThrow(
         handlerRegistry.connect(core.hhUser1).ownerSetUnwrapperByToken(
           core.tokens.dfsGlp!.address,
-          core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1.address
+          core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1.address,
         ),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
@@ -99,14 +99,14 @@ describe('HandlerRegistry', () => {
     it('should work normally', async () => {
       const result = await handlerRegistry.connect(core.governance).ownerSetWrapperByToken(
         core.tokens.dfsGlp!.address,
-        core.gmxEcosystem!.live.glpIsolationModeWrapperTraderV1.address
+        core.gmxEcosystem!.live.glpIsolationModeWrapperTraderV1.address,
       );
       await expectEvent(handlerRegistry, result, 'WrapperTraderSet', {
         token: core.tokens.dfsGlp!.address,
-        wrapper: core.gmxEcosystem!.live.glpIsolationModeWrapperTraderV1.address
+        wrapper: core.gmxEcosystem!.live.glpIsolationModeWrapperTraderV1.address,
       });
       expect(await handlerRegistry.getWrapperByToken(core.tokens.dfsGlp!.address)).to.eq(
-        core.gmxEcosystem!.live.glpIsolationModeWrapperTraderV1.address
+        core.gmxEcosystem!.live.glpIsolationModeWrapperTraderV1.address,
       );
     });
 
@@ -114,9 +114,9 @@ describe('HandlerRegistry', () => {
       await expectThrow(
         handlerRegistry.connect(core.governance).ownerSetWrapperByToken(
           core.tokens.dfsGlp!.address,
-          core.plutusEcosystem!.live.plvGlpIsolationModeWrapperTraderV1.address
+          core.plutusEcosystem!.live.plvGlpIsolationModeWrapperTraderV1.address,
         ),
-        'HandlerRegistry: Invalid wrapper trader'
+        'HandlerRegistry: Invalid wrapper trader',
       );
     });
 
@@ -124,9 +124,9 @@ describe('HandlerRegistry', () => {
       await expectThrow(
         handlerRegistry.connect(core.hhUser1).ownerSetWrapperByToken(
           core.tokens.dfsGlp!.address,
-          core.gmxEcosystem!.live.glpIsolationModeWrapperTraderV1.address
+          core.gmxEcosystem!.live.glpIsolationModeWrapperTraderV1.address,
         ),
-        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
       );
     });
   });
