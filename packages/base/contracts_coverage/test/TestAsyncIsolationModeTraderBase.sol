@@ -22,6 +22,7 @@ pragma solidity ^0.8.9;
 
 import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
 import { AsyncIsolationModeTraderBase } from "../isolation-mode/abstract/AsyncIsolationModeTraderBase.sol";
+import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 
 
 /**
@@ -48,12 +49,20 @@ contract TestAsyncIsolationModeTraderBase is AsyncIsolationModeTraderBase {
     }
 
     function triggerInternalInitializer(
-        address _gmxV2Registry
+        address _registry
     ) external {
         // solhint-disable-previous-line no-empty-blocks
     }
 
     function testOnlyHandler() external onlyHandler(msg.sender) {} // solhint-disable-line no-empty-blocks
+
+    function testValidateIsRetryable(bool _retryable) external pure {
+        _validateIsRetryable(_retryable);
+    }
+
+    function testEventEmitter() external view returns (IEventEmitterRegistry) {
+        return _eventEmitter();
+    }
 
     function HANDLER_REGISTRY() public view override returns (IHandlerRegistry) {
         return IHandlerRegistry(_getAddress(_HANDLER_SLOT));

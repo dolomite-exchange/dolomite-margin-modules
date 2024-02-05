@@ -1245,13 +1245,19 @@ async function createGmxEcosystem(network: Network, signer: SignerWithAddress): 
     return undefined;
   }
 
-  const esGmxDistributorForGlp : IEsGmxDistributor = getContract(esGmxDistributorAddressForGlp, IEsGmxDistributor__factory.connect, signer);
+  const esGmxDistributorForGlp : IEsGmxDistributor = getContract(
+    esGmxDistributorAddressForGlp,
+    IEsGmxDistributor__factory.connect, signer
+  );
   const esGmxAdminForGlp = await impersonateOrFallback(
     await esGmxDistributorForGlp.connect(signer).admin(),
     true,
     signer,
   );
-  const esGmxDistributorForGmx : IEsGmxDistributor = getContract(esGmxDistributorAddressForGmx, IEsGmxDistributor__factory.connect, signer);
+  const esGmxDistributorForGmx : IEsGmxDistributor = getContract(
+    esGmxDistributorAddressForGmx,
+    IEsGmxDistributor__factory.connect, signer
+  );
   const esGmxAdminForGmx = await impersonateOrFallback(
     await esGmxDistributorForGmx.connect(signer).admin(),
     true,

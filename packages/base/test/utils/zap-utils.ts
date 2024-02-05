@@ -9,7 +9,7 @@ import { BigNumber, BigNumberish, ethers } from 'ethers';
 import {
   IIsolationModeUnwrapperTrader,
   IIsolationModeUnwrapperTraderV2,
-  IIsolationModeWrapperTrader, TestDolomiteMarginInternalTrader,
+  IIsolationModeWrapperTrader, SimpleIsolationModeWrapperTraderV2, TestDolomiteMarginInternalTrader,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeWrapperTraderV2,
 } from '../../src/types';
@@ -163,7 +163,7 @@ export async function getWrapZapParams(
   inputAmountWei: BigNumber,
   outputMarket: BigNumberish,
   minOutputAmountWei: BigNumber,
-  wrapper: TestIsolationModeWrapperTraderV2 | IIsolationModeWrapperTrader,
+  wrapper: TestIsolationModeWrapperTraderV2 | SimpleIsolationModeWrapperTraderV2 | IIsolationModeWrapperTrader,
   core: CoreProtocol,
 ): Promise<ZapParam> {
   if (!core.testEcosystem) {

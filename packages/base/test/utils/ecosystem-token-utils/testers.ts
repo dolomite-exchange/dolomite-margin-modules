@@ -2,6 +2,8 @@ import { BigNumberish } from 'ethers';
 import {
   CustomTestToken,
   HandlerRegistry,
+  TestAsyncIsolationModeTraderBase,
+  TestAsyncIsolationModeTraderBase__factory,
   TestFreezableIsolationModeVaultFactory,
   TestFreezableIsolationModeVaultFactory__factory,
   TestHandlerRegistry,
@@ -56,6 +58,19 @@ export async function createTestHandlerRegistry(
   const data = await implementation.populateTransaction.initialize(core.dolomiteRegistryProxy.address);
   const proxy = await createRegistryProxy(implementation.address, data.data!, core);
   return TestHandlerRegistry__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createTestAsyncIsolationModeTraderBase(
+  core: CoreProtocol,
+  registry: TestHandlerRegistry,
+): Promise<TestAsyncIsolationModeTraderBase> {
+  const implementation = await createContractWithAbi<TestAsyncIsolationModeTraderBase>(
+    TestAsyncIsolationModeTraderBase__factory.abi,
+    TestAsyncIsolationModeTraderBase__factory.bytecode,
+    [core.tokens.weth.address],
+  );
+
+  const data = await implementation.populateTransaction.initialize(registry.address, core.dolomiteMargin.address);
 }
 
 export async function createTestFreezableIsolationModeVaultFactory(
