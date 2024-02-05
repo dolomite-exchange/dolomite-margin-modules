@@ -99,20 +99,6 @@ export async function createTestFreezableIsolationModeVaultFactory<T extends Net
   );
 }
 
-// TODO: oriole fix
-export async function createTestAsyncIsolationModeTraderBase<T extends NetworkType>(
-  core: CoreProtocolType<T>,
-  registry: TestHandlerRegistry,
-): Promise<TestAsyncIsolationModeTraderBase> {
-  const implementation = await createContractWithAbi<TestAsyncIsolationModeTraderBase>(
-    TestAsyncIsolationModeTraderBase__factory.abi,
-    TestAsyncIsolationModeTraderBase__factory.bytecode,
-    [core.tokens.weth.address],
-  );
-
-  const data = await implementation.populateTransaction.initialize(registry.address, core.dolomiteMargin.address);
-}
-
 export async function createTestEcosystem<T extends NetworkType>(
   dolomiteMargin: DolomiteMargin<T>,
   dolomiteRegistry: IDolomiteRegistry,

@@ -1100,6 +1100,27 @@ describe('IsolationModeVaultFactory', () => {
     });
   });
 
+  describe('#requireIsTokenConverterOrVault', () => {
+    it('should work normally if token converter', async () => {
+      const wrapperImpersonator = await impersonate(tokenWrapperV1.address, true);
+      await expect(factory.connect(wrapperImpersonator).testRequireIsTokenConverterOrVault()).to.not.be.reverted;
+    })
+
+    it('should work normally if vault', async () => {
+      await factory.createVault(core.hhUser1.address);
+      const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
+      const vaultImpersonator = await impersonate(vaultAddress, true);
+      await expect(factory.connect(vaultImpersonator).testRequireIsTokenConverterOrVault()).to.not.be.reverted;
+    });
+
+    it('should fail if not token converter or vault', async () => {
+      await expectThrow(
+        factory.testRequireIsTokenConverterOrVault(),
+        `IsolationModeVaultFactory: Caller is not a authorized <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
   describe('#name', () => {
     it('should work normally', async () => {
       expect(await factory.name()).to.eq('Dolomite Isolation: Test Token');

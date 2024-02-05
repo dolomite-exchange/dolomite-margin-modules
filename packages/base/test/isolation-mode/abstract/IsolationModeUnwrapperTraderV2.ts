@@ -12,8 +12,12 @@ import {
   TestIsolationModeUnwrapperTraderV2__factory,
 } from '../../../src/types';
 import { AccountInfoStruct } from '../../../src/utils';
-import { createContractWithAbi, createContractWithLibrary, createTestToken } from '../../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+  createTestToken,
+} from '../../../src/utils/dolomite-utils';
+import { BYTES_EMPTY, MAX_UINT_256_BI, Network, ONE_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   impersonate,
@@ -148,6 +152,22 @@ describe('IsolationModeUnwrapperTraderV2', () => {
         core.genericTraderProxy!.address,
         { owner: vault.address, number: defaultAccountNumber },
         defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [amountWei, vault.address, ZERO_BI]),
+      );
+      const cursor = await factory.transferCursor();
+      expect(cursor).to.eq(2);
+      const transfer = await factory.getQueuedTransferByCursor(cursor);
+      expect(transfer.from).to.eq(core.dolomiteMargin.address);
+      expect(transfer.to).to.eq(unwrapper.address);
+      expect(transfer.amount).to.eq(amountWei);
+      expect(transfer.vault).to.eq(vault.address);
+    });
+
+    it('should work if invoked with max amount', async () => {
+      const dolomiteMarginCaller = await impersonate(core.dolomiteMargin.address, true);
+      await unwrapper.connect(dolomiteMarginCaller).callFunction(
+        core.genericTraderProxy!.address,
+        { owner: vault.address, number: defaultAccountNumber },
+        defaultAbiCoder.encode(['uint256', 'address', 'uint256'], [MAX_UINT_256_BI, vault.address, ZERO_BI]),
       );
       const cursor = await factory.transferCursor();
       expect(cursor).to.eq(2);
