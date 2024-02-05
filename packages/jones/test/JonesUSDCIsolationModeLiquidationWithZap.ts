@@ -70,8 +70,8 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
     const network = Network.ArbitrumOne;
     // Need to do this block number. After latest token vault staking update, and prior to Jones vault deadline
     core = await setupCoreProtocol({
-      blockNumber: 172_417_376,
       network,
+      blockNumber: 172_417_376,
     });
     await freezeAndGetOraclePrice(core.tokens.usdc);
     await disableInterestAccrual(core, core.marketIds.usdc);

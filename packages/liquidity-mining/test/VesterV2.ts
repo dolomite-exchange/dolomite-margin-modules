@@ -4,7 +4,14 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import { IERC20, OARB, OARB__factory, TestVesterImplementationV2, TestVesterImplementationV2__factory, VesterImplementationLibForV2, VesterImplementationLibForV2__factory } from '../src/types';
+import {
+  IERC20,
+  OARB,
+  OARB__factory,
+  TestVesterImplementationV2,
+  VesterImplementationLibForV2,
+  VesterImplementationLibForV2__factory
+} from '../src/types';
 import { createContractWithAbi, depositIntoDolomiteMargin, getPartialRoundHalfUp, withdrawFromDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceByTimeDelta, getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
@@ -464,7 +471,10 @@ describe('VesterV2', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb!, core.testEcosystem!.testPriceOracle.address);
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
-      const preArbBalance = (await core.dolomiteMargin.getAccountWei({ owner: vester.address, number: vesterAccountNumber}, core.marketIds.arb!!)).value;
+      const preArbBalance = (await core.dolomiteMargin.getAccountWei(
+        { owner: vester.address, number: vesterAccountNumber },
+        core.marketIds.arb!!
+      )).value;
       await vester.closePositionAndBuyTokens(
         nftId,
         defaultAccountNumber,
@@ -488,7 +498,13 @@ describe('VesterV2', () => {
         core.marketIds.weth,
         WETH_BALANCE.sub(vestingPosition.amount.mul(9_750).div(10_000)),
       );
-      await expectProtocolBalanceIsGreaterThan(core, { owner: core.governance.address, number: ZERO_BI }, core.marketIds.weth, vestingPosition.amount.mul(9_750).div(10_000), ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: core.governance.address, number: ZERO_BI },
+        core.marketIds.weth,
+        vestingPosition.amount.mul(9_750).div(10_000),
+        ZERO_BI
+      );
       expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
       expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
@@ -514,7 +530,10 @@ describe('VesterV2', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb!, core.testEcosystem!.testPriceOracle.address);
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
-      const preArbBalance = (await core.dolomiteMargin.getAccountWei({ owner: vester.address, number: vesterAccountNumber}, core.marketIds.arb!!)).value;
+      const preArbBalance = (await core.dolomiteMargin.getAccountWei(
+        { owner: vester.address, number: vesterAccountNumber },
+        core.marketIds.arb!!
+      )).value;
       await vester.closePositionAndBuyTokens(
         nftId,
         defaultAccountNumber,
@@ -538,7 +557,13 @@ describe('VesterV2', () => {
         core.marketIds.weth,
         WETH_BALANCE.sub(vestingPosition.amount.mul(9_500).div(10_000)),
       );
-      await expectProtocolBalanceIsGreaterThan(core, { owner: core.governance.address, number: ZERO_BI }, core.marketIds.weth, vestingPosition.amount.mul(9_500).div(10_000), ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: core.governance.address, number: ZERO_BI },
+        core.marketIds.weth,
+        vestingPosition.amount.mul(9_500).div(10_000),
+        ZERO_BI
+      );
       expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
       expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
@@ -564,7 +589,10 @@ describe('VesterV2', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb!, core.testEcosystem!.testPriceOracle.address);
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
-      const preArbBalance = (await core.dolomiteMargin.getAccountWei({ owner: vester.address, number: vesterAccountNumber}, core.marketIds.arb!!)).value;
+      const preArbBalance = (await core.dolomiteMargin.getAccountWei(
+        { owner: vester.address, number: vesterAccountNumber },
+        core.marketIds.arb!!
+      )).value;
       await vester.closePositionAndBuyTokens(
         nftId,
         defaultAccountNumber,
@@ -588,7 +616,13 @@ describe('VesterV2', () => {
         core.marketIds.weth,
         WETH_BALANCE.sub(vestingPosition.amount.mul(9_000).div(10_000)),
       );
-      await expectProtocolBalanceIsGreaterThan(core, { owner: core.governance.address, number: ZERO_BI }, core.marketIds.weth, vestingPosition.amount.mul(9_000).div(10_000), ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: core.governance.address, number: ZERO_BI },
+        core.marketIds.weth,
+        vestingPosition.amount.mul(9_000).div(10_000),
+        ZERO_BI
+      );
       expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
       expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
@@ -614,7 +648,10 @@ describe('VesterV2', () => {
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.arb!, core.testEcosystem!.testPriceOracle.address);
       await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
 
-      const preArbBalance = (await core.dolomiteMargin.getAccountWei({ owner: vester.address, number: vesterAccountNumber}, core.marketIds.arb!!)).value;
+      const preArbBalance = (await core.dolomiteMargin.getAccountWei(
+        { owner: vester.address, number: vesterAccountNumber },
+        core.marketIds.arb!!
+      )).value;
       await vester.closePositionAndBuyTokens(
         nftId,
         defaultAccountNumber,
@@ -638,7 +675,13 @@ describe('VesterV2', () => {
         core.marketIds.weth,
         WETH_BALANCE.sub(vestingPosition.amount.mul(8_000).div(10_000)),
       );
-      await expectProtocolBalanceIsGreaterThan(core, { owner: core.governance.address, number: ZERO_BI }, core.marketIds.weth, vestingPosition.amount.mul(8_000).div(10_000), ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: core.governance.address, number: ZERO_BI },
+        core.marketIds.weth,
+        vestingPosition.amount.mul(8_000).div(10_000),
+        ZERO_BI
+      );
       expect(await vester.promisedArbTokens()).to.eq(PROMISED_ARB_VESTER_BALANCE.sub(vestingPosition.amount));
       expect(await vester.availableArbTokens()).to.eq(AVAILABLE_ARB_VESTER_BALANCE);
 
@@ -1400,7 +1443,7 @@ describe('VesterV2', () => {
       );
       expect(await library.grandfatheredUpgradedMinVestingDuration()).to.eq(FOUR_WEEKS.mul(2));
     });
-  })
+  });
 
   async function getNftId(signer: SignerWithAddress): Promise<BigNumber> {
     const filter = vester.filters.VestingStarted(signer.address);

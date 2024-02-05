@@ -90,7 +90,9 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
       factory,
     );
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
-    await jonesUSDCWithChainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(chainlinkRegistry.address);
+    await jonesUSDCWithChainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(
+      chainlinkRegistry.address
+    );
 
     snapshotId = await snapshot();
   });

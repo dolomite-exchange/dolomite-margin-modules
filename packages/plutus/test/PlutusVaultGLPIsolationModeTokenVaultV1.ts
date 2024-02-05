@@ -201,7 +201,7 @@ describe('PlutusVaultGLPIsolationModeTokenVaultV1', () => {
   });
 
   describe('#executeDepositIntoVault', () => {
-    it("should fail when not called by vault factory", async () => {
+    it('should fail when not called by vault factory', async () => {
       await expectThrow(
         vault.connect(core.hhUser2).executeDepositIntoVault(core.hhUser2.address, amountWei),
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`,

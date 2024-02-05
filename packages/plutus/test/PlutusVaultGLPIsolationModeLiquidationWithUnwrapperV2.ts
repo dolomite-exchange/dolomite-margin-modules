@@ -113,7 +113,6 @@ describe('PlutusVaultGLPLiquidationWithUnwrapperV2', () => {
       .to
       .eq(heldAmountWei);
 
-
     snapshotId = await snapshot();
   });
 
