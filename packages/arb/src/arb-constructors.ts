@@ -1,12 +1,17 @@
-import { CoreProtocol } from '../../base/test/utils/setup';
 import {
-  ARBIsolationModeTokenVaultV1, ARBIsolationModeVaultFactory,
+  ARBIsolationModeTokenVaultV1,
+  ARBIsolationModeVaultFactory,
   ARBRegistry,
   IARBIsolationModeTokenVaultV1,
-  IARBIsolationModeVaultFactory, IARBRegistry,
+  IARBIsolationModeVaultFactory,
+  IARBRegistry,
 } from './types';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
-export async function getARBRegistryConstructorParams(implementation: ARBRegistry, core: CoreProtocol): Promise<any[]> {
+export async function getARBRegistryConstructorParams(
+  implementation: ARBRegistry,
+  core: CoreProtocolArbitrumOne
+): Promise<any[]> {
   const calldata = await implementation.populateTransaction.initialize(core.dolomiteRegistry.address);
   return [
     implementation.address,
@@ -18,7 +23,7 @@ export async function getARBRegistryConstructorParams(implementation: ARBRegistr
 export function getARBIsolationModeVaultFactoryConstructorParams(
   arbRegistry: IARBRegistry | ARBRegistry,
   vaultImplementation: IARBIsolationModeTokenVaultV1 | ARBIsolationModeTokenVaultV1,
-  core: CoreProtocol
+  core: CoreProtocolArbitrumOne
 ): any[] {
   return [
     arbRegistry.address,
@@ -31,7 +36,7 @@ export function getARBIsolationModeVaultFactoryConstructorParams(
 
 export function getARBUnwrapperTraderV2ConstructorParams(
   factory: IARBIsolationModeVaultFactory | ARBIsolationModeVaultFactory,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): any[] {
   return [
     factory.address,
@@ -42,7 +47,7 @@ export function getARBUnwrapperTraderV2ConstructorParams(
 
 export function getARBWrapperTraderV2ConstructorParams(
   factory: IARBIsolationModeVaultFactory | ARBIsolationModeVaultFactory,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): any[] {
   return [
     factory.address,

@@ -1,19 +1,19 @@
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
 import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from '../../src/types';
 import { Network } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import { createDolomiteRegistryImplementation, createRegistryProxy } from '../utils/dolomite';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 describe('DolomiteRegistryImplementation', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let implementation: DolomiteRegistryImplementation;
   let registry: DolomiteRegistryImplementation;
 
@@ -127,7 +127,7 @@ describe('DolomiteRegistryImplementation', () => {
     it('should work normally', async () => {
       const slippageTolerance = '123';
       const result = await registry.connect(core.governance)
-      .ownerSetSlippageToleranceForPauseSentinel(slippageTolerance);
+        .ownerSetSlippageToleranceForPauseSentinel(slippageTolerance);
       await expectEvent(registry, result, 'SlippageToleranceForPauseSentinelSet', {
         slippageTolerance,
       });

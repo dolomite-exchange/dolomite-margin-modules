@@ -1,21 +1,19 @@
-import { BigNumber, BigNumberish } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
-import { CoreProtocol } from '../../base/test/utils/setup';
 import {
   GLPIsolationModeTokenVaultV1,
+  GLPIsolationModeTokenVaultV2,
   GLPIsolationModeVaultFactory,
+  GMXIsolationModeTokenVaultV1,
+  GMXIsolationModeVaultFactory,
   GmxRegistryV1,
   IGLPIsolationModeTokenVaultV1,
   IGLPIsolationModeVaultFactory,
   IGLPIsolationModeVaultFactoryOld,
+  IGMXIsolationModeVaultFactory,
   IGmxRegistryV1,
   TestGLPIsolationModeTokenVaultV1,
-  GMXIsolationModeTokenVaultV1,
-  GLPIsolationModeTokenVaultV2,
   TestGLPIsolationModeTokenVaultV2,
-  IGMXIsolationModeVaultFactory,
-  GMXIsolationModeVaultFactory,
 } from './types';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 export function getGLPPriceOracleV1ConstructorParams(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
@@ -25,7 +23,7 @@ export function getGLPPriceOracleV1ConstructorParams(
 }
 
 export function getGLPUnwrapperTraderV1ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
@@ -38,7 +36,7 @@ export function getGLPUnwrapperTraderV1ConstructorParams(
 }
 
 export function getGLPIsolationModeUnwrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
@@ -57,7 +55,7 @@ export type GmxUserVaultImplementation =
   | TestGLPIsolationModeTokenVaultV2;
 
 export function getGLPIsolationModeVaultFactoryConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
   userVaultImplementation: GmxUserVaultImplementation,
 ): any[] {
@@ -73,7 +71,7 @@ export function getGLPIsolationModeVaultFactoryConstructorParams(
 }
 
 export function getGLPWrapperTraderV1ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
@@ -86,7 +84,7 @@ export function getGLPWrapperTraderV1ConstructorParams(
 }
 
 export function getGLPIsolationModeWrapperTraderV2ConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): any[] {
@@ -99,7 +97,7 @@ export function getGLPIsolationModeWrapperTraderV2ConstructorParams(
 
 export async function getGmxRegistryConstructorParams(
   implementation: GmxRegistryV1,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<any[]> {
   if (!core.gmxEcosystem) {
     throw new Error('GMX ecosystem not initialized');
@@ -132,7 +130,7 @@ export async function getGmxRegistryConstructorParams(
 export function getGMXIsolationModeVaultFactoryConstructorParams(
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
   userVaultImplementation: GMXIsolationModeTokenVaultV1,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): any[] {
   return [
     gmxRegistry.address,
@@ -145,7 +143,7 @@ export function getGMXIsolationModeVaultFactoryConstructorParams(
 
 export function getGMXWrapperTraderV2ConstructorParams(
   dGmx: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): any[] {
   return [
     dGmx.address,
@@ -156,7 +154,7 @@ export function getGMXWrapperTraderV2ConstructorParams(
 
 export function getGMXUnwrapperTraderV2ConstructorParams(
   dGmx: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): any[] {
   return [
     dGmx.address,

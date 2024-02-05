@@ -12,7 +12,12 @@ import { IERC4626 } from '@dolomite-exchange/modules-base/src/types';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, NO_EXPIRY, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitTime
+} from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceDustyOrZero,
@@ -22,9 +27,14 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createMagicGLPUnwrapperTraderV2 } from './abracadabra-ecosystem-utils';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
-import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  getLastZapAmountToBigNumber,
+  liquidateV4WithZap,
+  toZapBigNumber
+} from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import { setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -39,7 +49,7 @@ const expirationCollateralizationDenominator = BigNumber.from('100');
 describe('MagicGLPLiquidationWithZap', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let heldMarketId: BigNumber;
   let unwrapper: MagicGLPUnwrapperTraderV2;
   let magicGlp: IERC4626;

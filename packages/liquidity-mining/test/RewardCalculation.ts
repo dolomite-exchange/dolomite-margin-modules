@@ -1,21 +1,24 @@
-import { mine } from '@nomicfoundation/hardhat-network-helpers';
-import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { BigNumber } from 'ethers';
-import { parseEther } from 'ethers/lib/utils';
-import { ethers } from 'hardhat';
-import { Emitter, Emitter__factory, OARB } from '../src/types';
-import { createContractWithAbi, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import {
+  createContractWithAbi,
+  depositIntoDolomiteMargin,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectProtocolBalance, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
-  CoreProtocol,
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupDAIBalance,
   setupWETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { mine } from '@nomicfoundation/hardhat-network-helpers';
+import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { BigNumber } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
+import { ethers } from 'hardhat';
+import { Emitter, Emitter__factory, OARB } from '../src/types';
 import { createOARB } from './liquidity-mining-ecosystem-utils';
 
 const defaultAccountNumber = ZERO_BI;
@@ -26,7 +29,7 @@ const daiAmount = BigNumber.from('1010674517719246597'); // Makes par value 1 et
 // This contract is not used in production. These tests won't all pass
 xdescribe('Reward Calculation', () => {
   let snapshotId: string;
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
 
   let emitter: Emitter;
   let oARB: OARB;

@@ -13,7 +13,12 @@ import {
 } from '../src/types';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitTime
+} from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceDustyOrZero,
@@ -22,9 +27,18 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from './glp-ecosystem-utils';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
-import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  getLastZapAmountToBigNumber,
+  liquidateV4WithZap,
+  toZapBigNumber
+} from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import {
+  setupCoreProtocol,
+  setupUSDCBalance,
+  setupUserVaultProxy
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -39,7 +53,7 @@ const expirationCollateralizationDenominator = BigNumber.from('100');
 describe('GLPIsolationModeLiquidationWithZap', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC20;
   let heldMarketId: BigNumberish;
   let gmxRegistry: IGmxRegistryV1;

@@ -4,7 +4,6 @@ import {
   ARBIsolationModeTokenVaultV1__factory,
   ARBIsolationModeVaultFactory,
   ARBRegistry,
-  IARB__factory,
 } from '../src/types';
 import {
   SimpleIsolationModeUnwrapperTraderV2,
@@ -20,13 +19,18 @@ import {
   createARBUnwrapperTraderV2,
   createARBWrapperTraderV2,
 } from './arb-ecosystem-utils';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUserVaultProxy
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS } from './arb-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 describe('ARBIsolationModeTokenVaultV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let arbRegistry: ARBRegistry;
   let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
   let wrapper: SimpleIsolationModeWrapperTraderV2;

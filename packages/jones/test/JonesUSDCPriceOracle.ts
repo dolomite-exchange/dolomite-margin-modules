@@ -1,4 +1,14 @@
 import { ADDRESSES } from '@dolomite-exchange/dolomite-margin';
+import { createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import {
@@ -7,10 +17,6 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCRegistry,
 } from '../src/types';
-import { createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -19,7 +25,6 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const USDC_PRICE = BigNumber.from('1000071010000000000000000000000'); // $1.00007101
 const JONES_USDC_PRICE = BigNumber.from('1068787202667035284'); // $1.068787202667035284
@@ -27,7 +32,7 @@ const JONES_USDC_PRICE = BigNumber.from('1068787202667035284'); // $1.0687872026
 describe('JonesUSDCPriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let jonesUSDCPriceOracle: JonesUSDCPriceOracle;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let factory: JonesUSDCIsolationModeVaultFactory;

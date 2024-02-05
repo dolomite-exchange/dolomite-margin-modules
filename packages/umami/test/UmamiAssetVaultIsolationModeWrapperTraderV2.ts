@@ -1,31 +1,14 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { expect } from 'chai';
-import { BigNumber } from 'ethers';
-import {
-  IUmamiAssetVault,
-  UmamiAssetVaultIsolationModeTokenVaultV1,
-  UmamiAssetVaultIsolationModeTokenVaultV1__factory,
-  UmamiAssetVaultIsolationModeUnwrapperTraderV2,
-  UmamiAssetVaultIsolationModeVaultFactory,
-  UmamiAssetVaultIsolationModeWrapperTraderV2,
-  UmamiAssetVaultPriceOracle,
-  UmamiAssetVaultRegistry,
-} from '../src/types';
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
 import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
-  createUmamiAssetVaultIsolationModeTokenVaultV1,
-  createUmamiAssetVaultIsolationModeUnwrapperTraderV2,
-  createUmamiAssetVaultIsolationModeVaultFactory,
-  createUmamiAssetVaultIsolationModeWrapperTraderV2,
-  createUmamiAssetVaultPriceOracle,
-  createUmamiAssetVaultRegistry,
-} from './umami-ecosystem-utils';
-import {
-  CoreProtocol,
   disableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
@@ -33,6 +16,25 @@ import {
   setupUSDCBalance,
   setupUserVaultProxy,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import {
+  IUmamiAssetVault,
+  UmamiAssetVaultIsolationModeTokenVaultV1,
+  UmamiAssetVaultIsolationModeTokenVaultV1__factory,
+  UmamiAssetVaultIsolationModeVaultFactory,
+  UmamiAssetVaultIsolationModeWrapperTraderV2,
+  UmamiAssetVaultPriceOracle,
+  UmamiAssetVaultRegistry,
+} from '../src/types';
+import {
+  createUmamiAssetVaultIsolationModeTokenVaultV1,
+  createUmamiAssetVaultIsolationModeVaultFactory,
+  createUmamiAssetVaultIsolationModeWrapperTraderV2,
+  createUmamiAssetVaultPriceOracle,
+  createUmamiAssetVaultRegistry,
+} from './umami-ecosystem-utils';
 import { setupWhitelistAndAggregateVault } from './umami-utils';
 
 const defaultAccountNumber = '0';
@@ -49,17 +51,15 @@ const depositFeeDenominator = BigNumber.from('100000000000000000000');
 describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IUmamiAssetVault;
   let underlyingMarketId: BigNumber;
   let umamiRegistry: UmamiAssetVaultRegistry;
-  let unwrapper: UmamiAssetVaultIsolationModeUnwrapperTraderV2;
   let wrapper: UmamiAssetVaultIsolationModeWrapperTraderV2;
   let factory: UmamiAssetVaultIsolationModeVaultFactory;
   let vault: UmamiAssetVaultIsolationModeTokenVaultV1;
   let priceOracle: UmamiAssetVaultPriceOracle;
   let defaultAccount: AccountInfoStruct;
-  let solidUser: SignerWithAddress;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
@@ -74,7 +74,6 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
       userVaultImplementation,
     );
 
-    unwrapper = await createUmamiAssetVaultIsolationModeUnwrapperTraderV2(core, umamiRegistry, factory);
     wrapper = await createUmamiAssetVaultIsolationModeWrapperTraderV2(core, umamiRegistry, factory);
     priceOracle = await createUmamiAssetVaultPriceOracle(core, umamiRegistry, factory);
 
@@ -85,8 +84,6 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
     await core.dolomiteMargin.ownerSetPriceOracle(underlyingMarketId, priceOracle.address);
     await factory.connect(core.governance).ownerInitialize([wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
-
-    solidUser = core.hhUser5;
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
@@ -120,17 +117,19 @@ describe('UmamiAssetVaultIsolationModeWrapperTraderV2', () => {
     it('should work when called with the normal conditions', async () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
-      const actions = await wrapper.createActionsForWrapping(
-        solidAccountId,
-        liquidAccountId,
-        ZERO_ADDRESS,
-        ZERO_ADDRESS,
-        underlyingMarketId,
-        core.marketIds.usdc,
-        ZERO_BI,
-        usableUsdcAmount,
-        BYTES_EMPTY,
-      );
+      const actions = await wrapper.createActionsForWrapping({
+        primaryAccountId: solidAccountId,
+        otherAccountId: liquidAccountId,
+        primaryAccountOwner: ZERO_ADDRESS,
+        primaryAccountNumber: defaultAccountNumber,
+        otherAccountOwner: ZERO_ADDRESS,
+        otherAccountNumber: defaultAccountNumber,
+        outputMarket: underlyingMarketId,
+        inputMarket: core.marketIds.usdc,
+        minOutputAmount: ZERO_BI,
+        inputAmount: usableUsdcAmount,
+        orderData: BYTES_EMPTY,
+      });
 
       const amountOut = await wrapper.getExchangeCost(
         core.tokens.usdc.address,

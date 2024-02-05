@@ -1,16 +1,17 @@
-import { expect } from 'chai';
-import { OARB, OARBStorageVault, OARBStorageVault__factory } from '../src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
+import { OARB, OARBStorageVault, OARBStorageVault__factory } from '../src/types';
 import { createOARB } from './liquidity-mining-ecosystem-utils';
 
 // OARB Storage Vault contract is not in use in production. These tests don't all pass
 xdescribe('OARBStorageVault', () => {
   let snapshotId: string;
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let oARB: OARB;
   let oARBStorageVault: OARBStorageVault;
 

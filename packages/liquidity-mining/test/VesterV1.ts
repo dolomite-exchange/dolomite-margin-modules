@@ -1,3 +1,37 @@
+import {
+  depositIntoDolomiteMargin,
+  getPartialRoundHalfUp,
+  withdrawFromDolomiteMargin,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import {
+  MAX_UINT_256_BI,
+  Network,
+  ONE_BI,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  advanceByTimeDelta,
+  getBlockTimestamp,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectThrow,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  disableInterestAccrual,
+  enableInterestAccrual,
+  setupARBBalance,
+  setupCoreProtocol,
+  setupUSDCBalance,
+  setupWETHBalance,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
@@ -5,20 +39,6 @@ import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { IERC20, OARB, TestVesterImplementationV1 } from '../src/types';
-import { depositIntoDolomiteMargin, getPartialRoundHalfUp, withdrawFromDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { advanceByTimeDelta, getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  CoreProtocol,
-  disableInterestAccrual,
-  enableInterestAccrual,
-  getDefaultCoreProtocolConfig,
-  setupARBBalance,
-  setupCoreProtocol,
-  setupUSDCBalance,
-  setupWETHBalance,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createOARB, createTestVesterV1Proxy } from './liquidity-mining-ecosystem-utils';
 import { expectEmptyPosition } from './liquidityMining-utils';
 
@@ -35,7 +55,7 @@ const WETH_BALANCE = parseEther('10');
 describe('VesterV1', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
 
   let vester: TestVesterImplementationV1;
   let oARB: OARB;
@@ -45,7 +65,7 @@ describe('VesterV1', () => {
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 114_200_000,
-      network: Network.ArbitrumOne
+      network: Network.ArbitrumOne,
     });
     arbMarketId = core.marketIds.arb!;
     arb = core.tokens.arb!;

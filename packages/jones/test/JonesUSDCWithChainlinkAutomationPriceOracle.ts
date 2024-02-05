@@ -1,25 +1,5 @@
-import { ADDRESSES } from '@dolomite-margin/dist/src';
-import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { expect } from 'chai';
-import { BigNumber, BigNumberish } from 'ethers';
-import { ethers } from 'hardhat';
 import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
-import {
-  IJonesWhitelistController,
-  IJonesWhitelistController__factory,
-  JonesUSDCIsolationModeVaultFactory,
-  JonesUSDCIsolationModeVaultFactory__factory,
-  JonesUSDCRegistry,
-  JonesUSDCRegistry__factory,
-  JonesUSDCWithChainlinkAutomationPriceOracle,
-  JonesUSDCWithChainlinkAutomationPriceOracle__factory,
-} from '../src/types';
-import {
-  CustomTestVaultToken,
-  IERC4626,
-} from '@dolomite-exchange/modules-base/src/types';
+import { CustomTestVaultToken, IERC4626 } from '@dolomite-exchange/modules-base/src/types';
 import { CHAINLINK_AUTOMATION_REGISTRY_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { createContractWithAbi, createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
@@ -30,8 +10,30 @@ import {
   snapshot,
 } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupUSDCBalance,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { ADDRESSES } from '@dolomite-margin/dist/src';
+import { increase } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { expect } from 'chai';
+import { BigNumber, BigNumberish } from 'ethers';
+import { ethers } from 'hardhat';
+import {
+  IJonesWhitelistController,
+  IJonesWhitelistController__factory,
+  JonesUSDCIsolationModeVaultFactory,
+  JonesUSDCIsolationModeVaultFactory__factory,
+  JonesUSDCRegistry,
+  JonesUSDCRegistry__factory,
+  JonesUSDCWithChainlinkAutomationPriceOracle,
+  JonesUSDCWithChainlinkAutomationPriceOracle__factory,
+} from '../src/types';
 import { createJonesUSDCWithChainlinkAutomationPriceOracle } from './jones-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const USDC_PRICE = BigNumber.from('999986050000000000000000000000'); // $0.99998605
 const USDC_SCALE_DIFF = BigNumber.from('10').pow(12);
@@ -39,7 +41,7 @@ const USDC_SCALE_DIFF = BigNumber.from('10').pow(12);
 describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let jonesController: IJonesWhitelistController;
   let factory: JonesUSDCIsolationModeVaultFactory;
@@ -54,7 +56,7 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
 
   before(async () => {
     const network = Network.ArbitrumOne;
-    core = await setupCoreProtocol(await getDefaultCoreProtocolConfig(network));
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(network));
     chainlinkRegistry = await impersonate(CHAINLINK_AUTOMATION_REGISTRY_MAP[network]!, true);
     zeroAddress = await impersonate(ZERO_ADDRESS);
 
@@ -89,7 +91,8 @@ describe('JonesUSDCWithChainlinkAutomationPriceOracle', () => {
       factory,
     );
     deploymentTimestamp = await getBlockTimestamp(await ethers.provider.getBlockNumber());
-    await jonesUSDCWithChainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(
+    await jonesUSDCWithChainlinkAutomationPriceOracle.connect(core.governance)
+      .ownerSetForwarder(
       chainlinkRegistry.address
     );
 

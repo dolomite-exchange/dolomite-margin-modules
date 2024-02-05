@@ -1,8 +1,33 @@
+import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import {
+  BYTES_EMPTY,
+  Network,
+  ONE_BI,
+  ONE_WEEK_SECONDS,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectWalletBalanceOrDustyIfZero,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
+import { liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import {
+  disableInterestAccrual,
+  setupCoreProtocol,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk/dist';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
-import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
+import { IERC20 } from 'packages/base/src/types';
 import {
   IERC4626,
   JonesUSDCIsolationModeTokenVaultV1,
@@ -13,27 +38,12 @@ import {
   JonesUSDCIsolationModeVaultFactory__factory,
   JonesUSDCIsolationModeWrapperTraderV2,
   JonesUSDCIsolationModeWrapperTraderV2__factory,
-  JonesUSDCPriceOracle,
-  JonesUSDCPriceOracle__factory,
   JonesUSDCRegistry,
   JonesUSDCRegistry__factory,
   JonesUSDCWithChainlinkAutomationPriceOracle,
   JonesUSDCWithChainlinkAutomationPriceOracle__factory,
 } from '../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ONE_BI, ONE_WEEK_SECONDS, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectProtocolBalanceIsGreaterThan,
-  expectWalletBalanceOrDustyIfZero,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
-import { liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
-import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
-import { IERC20 } from 'packages/base/src/types';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -50,7 +60,7 @@ const expirationCollateralizationDenominator = BigNumber.from('100');
 describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC4626;
   let heldMarketId: BigNumber;
   let jonesUSDCRegistry: JonesUSDCRegistry;
@@ -105,7 +115,7 @@ describe('JonesUSDCIsolationModeLiquidationWithZap', () => {
     heldMarketId = await core.dolomiteMargin.getMarketIdByTokenAddress(factory.address);
 
     jUsdcApiToken = {
-      marketId: heldMarketId.toNumber(),
+      marketId: toZapBigNumber(heldMarketId),
       symbol: 'jUSDC',
       name: 'Dolomite Isolation: Jones USDC',
       decimals: 18,

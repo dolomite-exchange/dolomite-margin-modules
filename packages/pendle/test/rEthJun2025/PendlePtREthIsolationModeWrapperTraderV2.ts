@@ -1,3 +1,21 @@
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupRETHBalance,
+  setupTestMarket,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
@@ -17,15 +35,6 @@ import {
   PendlePtPriceOracle,
   PendleRegistry,
 } from '../../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  encodeExternalSellActionDataWithNoData,
-  impersonate,
-  revertToSnapshotAndCapture,
-  snapshot,
-} from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeUnwrapperTraderV2,
@@ -34,15 +43,7 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import {
-  CoreProtocol, getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupRETHBalance,
-  setupTestMarket,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { encodeSwapExactTokensForPt, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
-import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying
@@ -55,7 +56,7 @@ const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 describe('PendlePtREthJun2025IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let ptToken: IPendlePtToken;
   let ptMarket: IPendlePtMarket;
   let marketId: BigNumber;
@@ -153,7 +154,6 @@ describe('PendlePtREthJun2025IsolationModeWrapperTraderV2', () => {
 
       const { extraOrderData, approxParams } = await encodeSwapExactTokensForPt(
         router,
-        core,
         usableAmount,
         ONE_TENTH_OF_ONE_BIPS_NUMBER,
         ptMarket.address,

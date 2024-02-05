@@ -8,14 +8,18 @@ import {
   GMXIsolationModeTokenVaultV1__factory,
   GMXIsolationModeVaultFactory,
   GmxRegistryV1,
-  IERC20,
 } from '../src/types';
 import {
   SimpleIsolationModeUnwrapperTraderV2,
   SimpleIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
 import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot
+} from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createGLPIsolationModeTokenVaultV2,
@@ -27,7 +31,6 @@ import {
   createGMXWrapperTraderV2,
 } from './glp-ecosystem-utils';
 import {
-  CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupGMXBalance,
@@ -36,6 +39,7 @@ import {
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -44,8 +48,7 @@ const otherAmountWei = BigNumber.from('10000000'); // $10
 describe('GmxIsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
-  let underlyingToken: IERC20;
+  let core: CoreProtocolArbitrumOne;
   let dGmxMarketId: BigNumber;
   let gmxMarketId: BigNumber;
   let gmxRegistry: GmxRegistryV1;
@@ -58,7 +61,6 @@ describe('GmxIsolationModeWrapperTraderV2', () => {
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
-    underlyingToken = core.gmxEcosystem!.gmx;
     gmxRegistry = await createGmxRegistry(core);
 
     const gmxVaultImplementation = await createGMXIsolationModeTokenVaultV1();

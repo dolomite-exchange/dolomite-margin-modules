@@ -47,11 +47,12 @@ import {
   getGMXWrapperTraderV2ConstructorParams,
   GmxUserVaultImplementation,
 } from '../src/glp-constructors';
-import { createContractWithAbi, createContractWithLibrary } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
-  createIsolationModeTokenVaultV1ActionsImpl,
-} from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+  createContractWithAbi,
+  createContractWithLibrary
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { createIsolationModeTokenVaultV1ActionsImpl, } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 export async function createGLPPriceOracleV1(
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
@@ -65,7 +66,7 @@ export async function createGLPPriceOracleV1(
 }
 
 export async function createGLPUnwrapperTraderV1(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): Promise<GLPIsolationModeUnwrapperTraderV1> {
@@ -77,7 +78,7 @@ export async function createGLPUnwrapperTraderV1(
 }
 
 export async function createGLPUnwrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): Promise<GLPIsolationModeUnwrapperTraderV2> {
@@ -125,7 +126,7 @@ export async function createTestGLPIsolationModeTokenVaultV2(): Promise<TestGLPI
 }
 
 export async function createGLPIsolationModeVaultFactory(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
   userVaultImplementation: GmxUserVaultImplementation,
 ): Promise<GLPIsolationModeVaultFactory> {
@@ -137,7 +138,7 @@ export async function createGLPIsolationModeVaultFactory(
 }
 
 export async function createGLPWrapperTraderV1(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): Promise<GLPIsolationModeWrapperTraderV1> {
@@ -149,7 +150,7 @@ export async function createGLPWrapperTraderV1(
 }
 
 export async function createGLPWrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   dfsGlp: IGLPIsolationModeVaultFactory | GLPIsolationModeVaultFactory | IGLPIsolationModeVaultFactoryOld,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
 ): Promise<GLPIsolationModeWrapperTraderV2> {
@@ -160,7 +161,7 @@ export async function createGLPWrapperTraderV2(
   );
 }
 
-export async function createGmxRegistry(core: CoreProtocol): Promise<GmxRegistryV1> {
+export async function createGmxRegistry(core: CoreProtocolArbitrumOne): Promise<GmxRegistryV1> {
   const implementation = await createContractWithAbi<GmxRegistryV1>(
     GmxRegistryV1__factory.abi,
     GmxRegistryV1__factory.bytecode,
@@ -193,7 +194,7 @@ export async function createTestGMXIsolationModeTokenVaultV1(): Promise<TestGMXI
 }
 
 export async function createGMXIsolationModeVaultFactory(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   gmxRegistry: IGmxRegistryV1 | GmxRegistryV1,
   userVaultImplementation: GMXIsolationModeTokenVaultV1,
 ): Promise<GMXIsolationModeVaultFactory> {
@@ -205,7 +206,7 @@ export async function createGMXIsolationModeVaultFactory(
 }
 
 export async function createGMXUnwrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   factory: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
 ): Promise<SimpleIsolationModeUnwrapperTraderV2> {
   return createContractWithAbi<SimpleIsolationModeUnwrapperTraderV2>(
@@ -216,7 +217,7 @@ export async function createGMXUnwrapperTraderV2(
 }
 
 export async function createGMXWrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   factory: IGMXIsolationModeVaultFactory | GMXIsolationModeVaultFactory,
 ): Promise<SimpleIsolationModeWrapperTraderV2> {
   return createContractWithAbi<SimpleIsolationModeWrapperTraderV2>(

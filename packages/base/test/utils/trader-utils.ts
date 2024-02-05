@@ -2,9 +2,11 @@ import { address } from '@dolomite-exchange/dolomite-margin';
 import { GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import axios from 'axios';
 import { BigNumber, ContractTransaction } from 'ethers';
+import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { GenericTraderParamStruct } from '../../src/utils';
 import { expectThrow } from './assertions';
-import { CoreProtocol } from './setup';
+import { CoreProtocolArbitrumOne } from './core-protocol';
+import { CoreProtocolType } from './setup';
 
 const ODOS_API_URL = 'https://api.odos.xyz';
 const PARASWAP_API_URL = 'https://apiv5.paraswap.io';
@@ -32,7 +34,7 @@ export enum ParaswapSwapSelector {
   Simple = '0x54e3f31b',
 }
 
-export async function getCalldataForOdos(
+export async function getCalldataForOdos<T extends Network>(
   inputAmount: BigNumber,
   inputToken: { address: address },
   inputDecimals: number,
@@ -40,7 +42,7 @@ export async function getCalldataForOdos(
   outputToken: { address: address },
   outputDecimals: number,
   txOrigin: { address: address },
-  core: CoreProtocol,
+  core: CoreProtocolType<T>,
 ): Promise<TraderOutput> {
   const quoteResponse = await axios.post(`${ODOS_API_URL}/sor/quote/v2`, {
     chainId: core.config.network, // Replace with desired chainId
@@ -100,7 +102,7 @@ export async function getCalldataForOdos(
   };
 }
 
-export async function getCalldataForParaswap(
+export async function getCalldataForParaswap<T extends Network>(
   inputAmount: BigNumber,
   inputToken: { address: address },
   inputDecimals: number,
@@ -109,7 +111,7 @@ export async function getCalldataForParaswap(
   outputDecimals: number,
   txOrigin: { address: address },
   receiver: { address: address },
-  core: CoreProtocol,
+  core: CoreProtocolType<T>,
   swapTypes: ParaswapSwapType[] = allSwapTypes,
 ): Promise<TraderOutput> {
   if (swapTypes.length === 0) {
@@ -199,13 +201,13 @@ export function swapTypeToSelector(swapType: ParaswapSwapType): ParaswapSwapSele
 }
 
 export function getParaswapTraderParamStruct(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   encodedTradeData: string,
 ): GenericTraderParamStruct {
   return {
     traderType: GenericTraderType.ExternalLiquidity,
     makerAccountIndex: 0,
-    trader: core.paraswapTrader!.address,
+    trader: core.paraswapEcosystem.live.paraswapTrader.address,
     tradeData: encodedTradeData,
   };
 }

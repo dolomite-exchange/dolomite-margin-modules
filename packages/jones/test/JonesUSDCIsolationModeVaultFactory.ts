@@ -1,3 +1,12 @@
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import {
@@ -5,14 +14,6 @@ import {
   JonesUSDCIsolationModeVaultFactory,
   JonesUSDCRegistry,
 } from '../src/types';
-import {
-  TestGLPIsolationModeTokenVaultV1,
-  TestGLPIsolationModeTokenVaultV1__factory,
-} from '@dolomite-exchange/modules-glp/src/types';
-import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -22,7 +23,6 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
@@ -30,7 +30,7 @@ const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 describe('JonesUSDCIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let jonesUSDCRegistry: JonesUSDCRegistry;
   let vaultImplementation: JonesUSDCIsolationModeTokenVaultV1;
   let factory: JonesUSDCIsolationModeVaultFactory;

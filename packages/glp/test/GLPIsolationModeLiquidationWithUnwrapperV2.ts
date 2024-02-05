@@ -19,7 +19,12 @@ import {
   ONE_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitTime
+} from '@dolomite-exchange/modules-base/test/utils';
 import {
   expectProtocolBalance,
   expectProtocolBalanceDustyOrZero,
@@ -29,12 +34,17 @@ import {
 import { createGLPUnwrapperTraderV2, createGLPWrapperTraderV2 } from './glp-ecosystem-utils';
 import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
 import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  setupCoreProtocol,
+  setupUSDCBalance,
+  setupUserVaultProxy
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
   checkForParaswapSuccess,
   getCalldataForParaswap,
   getParaswapTraderParamStruct,
 } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -49,7 +59,7 @@ const expirationCollateralizationDenominator = BigNumber.from('100');
 describe('GLPLiquidationWithUnwrapperV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC20;
   let underlyingMarketId: BigNumberish;
   let gmxRegistry: IGmxRegistryV1;
@@ -237,7 +247,7 @@ describe('GLPLiquidationWithUnwrapperV2', () => {
         core.tokens.weth,
         18,
         core.hhUser5,
-        core.paraswapTrader!,
+        core.paraswapEcosystem.live.paraswapTrader,
         core,
       );
       const usdcLiquidatorBalanceBefore = await core.tokens.usdc.connect(core.hhUser1)
@@ -457,7 +467,7 @@ describe('GLPLiquidationWithUnwrapperV2', () => {
         core.tokens.weth,
         18,
         core.hhUser5,
-        core.paraswapTrader!,
+        core.paraswapEcosystem.live.paraswapTrader,
         core,
       );
 

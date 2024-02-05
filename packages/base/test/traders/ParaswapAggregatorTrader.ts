@@ -18,8 +18,9 @@ import {
   expectThrow,
   expectThrowWithMatchingReason,
 } from '../utils/assertions';
-import { createParaswapAggregatorTrader } from '../utils/ecosystem-token-utils/traders';
-import { CoreProtocol, disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+import { createParaswapAggregatorTrader } from '../utils/ecosystem-utils/traders';
+import { disableInterestAccrual, setupCoreProtocol, setupWETHBalance } from '../utils/setup';
 import { getCalldataForParaswap } from '../utils/trader-utils';
 
 const defaultAccountNumber = '0';
@@ -29,7 +30,7 @@ const minAmountOut = BigNumber.from('123123123');
 describe('ParaswapAggregatorTrader', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let trader: ParaswapAggregatorTrader;
   let defaultAccount: AccountStruct;
 

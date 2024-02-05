@@ -1,3 +1,12 @@
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import {
@@ -8,9 +17,6 @@ import {
   PlutusVaultGLPIsolationModeVaultFactory,
   PlutusVaultGLPIsolationModeWrapperTraderV1,
 } from '../src/types';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createDolomiteCompatibleWhitelistForPlutusDAO,
   createPlutusVaultGLPIsolationModeTokenVaultV1,
@@ -19,14 +25,13 @@ import {
   createPlutusVaultGLPIsolationModeWrapperTraderV1,
   createPlutusVaultRegistry,
 } from './plutus-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 describe('DolomiteCompatibleWhitelistForPlutusDAO', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let dolomiteWhitelist: DolomiteCompatibleWhitelistForPlutusDAO;
   let unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1;
   let wrapperTrader: PlutusVaultGLPIsolationModeWrapperTraderV1;

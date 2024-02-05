@@ -1,5 +1,13 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ethers } from 'ethers';
+import { createContractWithAbi, createContractWithLibrary } from '../../base/src/utils/dolomite-utils';
+import {
+  getOARBConstructorParams,
+  getRewardsDistributorConstructorParams,
+  getVesterExploderConstructorParams,
+  getVesterImplementationConstructorParams,
+} from '../src/liquidity-mining-constructors';
 import {
   OARB,
   OARB__factory,
@@ -16,17 +24,9 @@ import {
   VesterProxy,
   VesterProxy__factory,
 } from '../src/types';
-import {
-  getOARBConstructorParams,
-  getRewardsDistributorConstructorParams,
-  getVesterExploderConstructorParams,
-  getVesterImplementationConstructorParams,
-} from '../src/liquidity-mining-constructors';
-import { createContractWithAbi, createContractWithLibrary } from '../../base/src/utils/dolomite-utils';
-import { CoreProtocol } from '../../base/test/utils/setup';
 
 export async function createTestVesterV1Proxy(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   oARB: OARB,
   baseUri: string,
 ): Promise<TestVesterImplementationV1> {
@@ -52,7 +52,7 @@ export async function createTestVesterV1Proxy(
 }
 
 export async function createTestVesterV2Proxy(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   handler: SignerWithAddress,
 ): Promise<TestVesterImplementationV2> {
   const library = await createContractWithAbi<VesterImplementationLibForV2>(
@@ -79,7 +79,7 @@ export async function createTestVesterV2Proxy(
 }
 
 export async function createVesterExploder(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   vester: TestVesterImplementationV2 | TestVesterImplementationV1 | VesterProxy,
 ): Promise<VesterExploder> {
   return createContractWithAbi<VesterExploder>(
@@ -89,7 +89,7 @@ export async function createVesterExploder(
   );
 }
 
-export async function createOARB(core: CoreProtocol): Promise<OARB> {
+export async function createOARB(core: CoreProtocolArbitrumOne): Promise<OARB> {
   return createContractWithAbi<OARB>(
     OARB__factory.abi,
     OARB__factory.bytecode,
@@ -98,7 +98,7 @@ export async function createOARB(core: CoreProtocol): Promise<OARB> {
 }
 
 export async function createRewardsDistributor(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   oARB: OARB,
   initialHandlers: string[],
 ): Promise<RewardsDistributor> {

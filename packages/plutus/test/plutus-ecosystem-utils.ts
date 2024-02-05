@@ -1,4 +1,22 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
+import { RegistryProxy, RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
+import {
+  createContractWithAbi,
+  createContractWithLibrary,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { getTokenVaultLibrary } from '../../scripts/src/utils/deploy-utils'; // @follow-up Why can't i use base package
+import {
+  getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
+  getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams,
+  getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
+  getPlutusVaultGLPIsolationModeVaultFactoryConstructorParams,
+  getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
+  getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
+  getPlutusVaultGLPPriceOracleConstructorParams,
+  getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
+  getPlutusVaultRegistryConstructorParams,
+} from '../src/plutus-constructors';
 import {
   DolomiteCompatibleWhitelistForPlutusDAO,
   DolomiteCompatibleWhitelistForPlutusDAO__factory,
@@ -22,27 +40,9 @@ import {
   PlutusVaultRegistry,
   PlutusVaultRegistry__factory,
 } from '../src/types';
-import {
-  RegistryProxy,
-  RegistryProxy__factory,
-} from '@dolomite-exchange/modules-base/src/types';
-import {
-  getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
-  getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams,
-  getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams,
-  getPlutusVaultGLPIsolationModeVaultFactoryConstructorParams,
-  getPlutusVaultGLPIsolationModeWrapperTraderV1ConstructorParams,
-  getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams,
-  getPlutusVaultGLPPriceOracleConstructorParams,
-  getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
-  getPlutusVaultRegistryConstructorParams,
-} from '../src/plutus-constructors';
-import { createContractWithAbi, createContractWithLibrary } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { CoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { getTokenVaultLibrary } from '../../../scripts/deploy-utils'; // @follow-up Why can't i use base package
 
 export function createDolomiteCompatibleWhitelistForPlutusDAO(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   unwrapperTrader: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   wrapperTrader: PlutusVaultGLPIsolationModeWrapperTraderV1 | PlutusVaultGLPIsolationModeWrapperTraderV2,
   plutusWhitelist: address,
@@ -62,7 +62,7 @@ export function createDolomiteCompatibleWhitelistForPlutusDAO(
 }
 
 export function createPlutusVaultGLPIsolationModeVaultFactory(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   plvGlpToken: { address: address },
   userVaultImplementation: IPlutusVaultGLPIsolationModeTokenVaultV1 | PlutusVaultGLPIsolationModeTokenVaultV1,
@@ -80,7 +80,7 @@ export function createPlutusVaultGLPIsolationModeVaultFactory(
 }
 
 export function createPlutusVaultGLPIsolationModeTokenVaultV1(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
 ): Promise<PlutusVaultGLPIsolationModeTokenVaultV1> {
   return createContractWithLibrary(
     'PlutusVaultGLPIsolationModeTokenVaultV1',
@@ -90,7 +90,7 @@ export function createPlutusVaultGLPIsolationModeTokenVaultV1(
 }
 
 export function createPlutusVaultGLPPriceOracle(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: PlutusVaultRegistry,
   dplvGlpToken: { address: address },
   unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
@@ -108,7 +108,7 @@ export function createPlutusVaultGLPPriceOracle(
 }
 
 export function createPlutusVaultGLPWithChainlinkAutomationPriceOracle(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: PlutusVaultRegistry,
   dplvGlpToken: { address: address },
   unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV1 | PlutusVaultGLPIsolationModeUnwrapperTraderV2,
@@ -126,7 +126,7 @@ export function createPlutusVaultGLPWithChainlinkAutomationPriceOracle(
 }
 
 export function createPlutusVaultGLPIsolationModeUnwrapperTraderV1(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },
 ): Promise<PlutusVaultGLPIsolationModeUnwrapperTraderV1> {
@@ -138,7 +138,7 @@ export function createPlutusVaultGLPIsolationModeUnwrapperTraderV1(
 }
 
 export function createPlutusVaultGLPIsolationModeUnwrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },
 ): Promise<PlutusVaultGLPIsolationModeUnwrapperTraderV2> {
@@ -149,7 +149,7 @@ export function createPlutusVaultGLPIsolationModeUnwrapperTraderV2(
   );
 }
 
-export async function createPlutusVaultRegistry(core: CoreProtocol): Promise<PlutusVaultRegistry> {
+export async function createPlutusVaultRegistry(core: CoreProtocolArbitrumOne): Promise<PlutusVaultRegistry> {
   const implementation = await createContractWithAbi<PlutusVaultRegistry>(
     PlutusVaultRegistry__factory.abi,
     PlutusVaultRegistry__factory.bytecode,
@@ -164,7 +164,7 @@ export async function createPlutusVaultRegistry(core: CoreProtocol): Promise<Plu
 }
 
 export function createPlutusVaultGLPIsolationModeWrapperTraderV1(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },
 ): Promise<PlutusVaultGLPIsolationModeWrapperTraderV1> {
@@ -176,7 +176,7 @@ export function createPlutusVaultGLPIsolationModeWrapperTraderV1(
 }
 
 export function createPlutusVaultGLPIsolationModeWrapperTraderV2(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   plutusVaultRegistry: IPlutusVaultRegistry | PlutusVaultRegistry,
   dPlvGlpToken: { address: address },
 ): Promise<PlutusVaultGLPIsolationModeWrapperTraderV2> {

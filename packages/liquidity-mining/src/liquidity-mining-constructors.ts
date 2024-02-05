@@ -1,8 +1,8 @@
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { ethers } from 'ethers';
-import { CoreProtocol } from '../../base/test/utils/setup';
 import { OARB, VesterImplementationV1, VesterImplementationV2, VesterProxy } from './types';
 
-export function getVesterImplementationConstructorParams(core: CoreProtocol): any[] {
+export function getVesterImplementationConstructorParams(core: CoreProtocolArbitrumOne): any[] {
   return [
     core.dolomiteMargin.address,
     core.dolomiteRegistry.address,
@@ -12,10 +12,10 @@ export function getVesterImplementationConstructorParams(core: CoreProtocol): an
 }
 
 export async function getVesterV1ProxyConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   vesterImplementation: VesterImplementationV1,
   oARB: OARB,
-  baseUri: string
+  baseUri: string,
 ): Promise<any[]> {
   const bytes = ethers.utils.defaultAbiCoder.encode(['address', 'string'], [oARB.address, baseUri]);
   const calldata = await vesterImplementation.populateTransaction.initialize(bytes);
@@ -23,12 +23,12 @@ export async function getVesterV1ProxyConstructorParams(
   return [vesterImplementation.address, core.dolomiteMargin.address, calldata.data!];
 }
 
-export function getOARBConstructorParams(core: CoreProtocol): any[] {
+export function getOARBConstructorParams(core: CoreProtocolArbitrumOne): any[] {
   return [core.dolomiteMargin.address];
 }
 
 export function getVesterExploderConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   vester: VesterImplementationV1 | VesterImplementationV2 | VesterProxy,
 ): any[] {
   return [
@@ -39,7 +39,7 @@ export function getVesterExploderConstructorParams(
 }
 
 export function getRewardsDistributorConstructorParams(
-  core: CoreProtocol,
+  core: CoreProtocolArbitrumOne,
   oARB: OARB,
   initialHandlers: string[],
 ): any[] {

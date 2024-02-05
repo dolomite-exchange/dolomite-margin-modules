@@ -1,3 +1,33 @@
+import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitTime,
+} from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceDustyOrZero,
+  expectProtocolBalanceIsGreaterThan,
+  expectVaultBalanceToMatchAccountBalances,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
+import {
+  getLastZapAmountToBigNumber,
+  liquidateV4WithZap,
+  toZapBigNumber,
+} from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import {
+  disableInterestAccrual,
+  setupCoreProtocol,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
 import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
@@ -5,7 +35,6 @@ import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
 import { expect } from 'chai';
 import 'dotenv/config';
 import { BigNumber } from 'ethers';
-import deployments from '@dolomite-exchange/dolomite-margin-modules/scripts/deployments.json';
 import {
   IPendleYtToken,
   PendleYtGLP2024IsolationModeTokenVaultV1,
@@ -15,26 +44,6 @@ import {
   PendleYtGLP2024IsolationModeVaultFactory,
   PendleYtGLP2024IsolationModeVaultFactory__factory,
 } from '../../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectProtocolBalanceDustyOrZero,
-  expectProtocolBalanceIsGreaterThan,
-  expectVaultBalanceToMatchAccountBalances,
-  expectWalletBalance,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
-import { getLastZapAmountToBigNumber, liquidateV4WithZap, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
-import {
-  CoreProtocol,
-  disableInterestAccrual,
-  setupCoreProtocol,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
-import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '420';
@@ -49,7 +58,7 @@ const expirationCollateralizationDenominator = BigNumber.from('100');
 describe('PendleYtGLP2024IsolationModeLiquidationWithZap', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IPendleYtToken;
   let underlyingMarketId: BigNumber;
   let unwrapper: PendleYtGLP2024IsolationModeUnwrapperTraderV2;

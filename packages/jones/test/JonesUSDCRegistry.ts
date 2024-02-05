@@ -1,3 +1,8 @@
+import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
 import {
@@ -5,9 +10,6 @@ import {
   JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
   JonesUSDCRegistry,
 } from '../src/types';
-import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -15,7 +17,6 @@ import {
   createJonesUSDCIsolationModeVaultFactory,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 
 const OTHER_ADDRESS_1 = '0x1234567812345678123456781234567812345671';
 const OTHER_ADDRESS_2 = '0x1234567812345678123456781234567812345672';
@@ -23,7 +24,7 @@ const OTHER_ADDRESS_2 = '0x1234567812345678123456781234567812345672';
 describe('JonesUSDCRegistry', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let registry: JonesUSDCRegistry;
   let unwrapperForLiquidation: JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation;
   let unwrapperForZap: JonesUSDCIsolationModeUnwrapperTraderV2;

@@ -541,11 +541,11 @@ interface IDolomiteMarginV2 is IDolomiteMarginV2Admin {
      * Get the global minimum margin-ratio that every position must maintain to prevent being
      * liquidated.
      *
-     * @param accountOwner  The account whose margin ratio is being queried. This is used to determine if there is an
+     * @param account       The account whose margin ratio is being queried. This is used to determine if there is an
      *                      override that supersedes the global minimum.
      * @return  The margin ratio for this account
      */
-    function getMarginRatioForAccount(address accountOwner) external view returns (Decimal memory);
+    function getMarginRatioForAccount(AccountInfo calldata account) external view returns (Decimal memory);
 
     /**
      * Get the global liquidation spread. This is the spread between oracle prices that incentivizes
@@ -574,14 +574,14 @@ interface IDolomiteMarginV2 is IDolomiteMarginV2Admin {
      *
      * If the pair is in e-mode and has a liquidation spread override, then the override is used instead.
      *
-     * @param  accountOwner     The account whose liquidation spread is being queried. This is used to determine if
-     *                          there is an override in place.
-     * @param  heldMarketId     The market for which the account has collateral
-     * @param  owedMarketId     The market for which the account has borrowed tokens
-     * @return                  The adjusted liquidation spread
+     * @param  account      The account whose liquidation spread is being queried. This is used to determine if there is
+     *                      an override in place.
+     * @param  heldMarketId The market for which the account has collateral
+     * @param  owedMarketId The market for which the account has borrowed tokens
+     * @return              The adjusted liquidation spread
      */
     function getLiquidationSpreadForAccountAndPair(
-        address accountOwner,
+        AccountInfo calldata account,
         uint256 heldMarketId,
         uint256 owedMarketId
     ) external view returns (Decimal memory);
@@ -633,11 +633,20 @@ interface IDolomiteMarginV2 is IDolomiteMarginV2Admin {
     function getCallbackGasLimit() external view returns (uint256);
 
     /**
+     * Get the account risk override getter for global use. This contract enables e-mode based on the assets held in a
+     * position.
+     *
+     * @return  The contract that contains risk override information for any account that does NOT have an account-
+     *          specific override.
+     */
+    function getDefaultAccountRiskOverrideSetter() external view returns (IDolomiteAccountRiskOverrideSetter);
+
+    /**
      * Get the account risk override getter for an account owner. This contract enables e-mode for certain isolation
      * mode vaults.
      *
      * @param accountOwner  The address of the account to check if there is a margin ratio override.
-     * @return  The margin ratio override for an account owner. Defaults to 0 if there's no override in place.
+     * @return  The contract that contains risk override information for this account.
      */
     function getAccountRiskOverrideSetterByAccountOwner(
         address accountOwner
@@ -646,36 +655,36 @@ interface IDolomiteMarginV2 is IDolomiteMarginV2Admin {
     /**
      * Get the margin ratio override for an account owner. Used to enable e-mode for certain isolation mode vaults.
      *
-     * @param accountOwner                  The address of the account to check if there is a risk override.
+     * @param account                       The account to check if there is a risk override.
      * @return marginRatioOverride          The margin ratio override for an account owner. Defaults to 0 if there's no
      *                                      override in place.
      * @return liquidationSpreadOverride    The margin ratio override for an account owner. Defaults to 0 if there's no
      *                                      override in place.
      */
-    function getAccountRiskOverrideByAccountOwner(
-        address accountOwner
+    function getAccountRiskOverrideByAccount(
+        AccountInfo calldata account
     )
     external
     view
     returns (Decimal memory marginRatioOverride, Decimal memory liquidationSpreadOverride);
 
     /**
-     * Get the margin ratio override for an account owner. Used to enable e-mode for certain isolation mode vaults.
+     * Get the margin ratio override for an account. Used to enable e-mode for certain accounts/positions.
      *
-     * @param accountOwner  The address of the account to check if there is a margin ratio override.
+     * @param account   The account to check if there is a margin ratio override.
      * @return  The margin ratio override for an account owner. Defaults to 0 if there's no override in place.
      */
-    function getMarginRatioOverrideByAccountOwner(address accountOwner) external view returns (Decimal memory);
+    function getMarginRatioOverrideByAccount(AccountInfo calldata account) external view returns (Decimal memory);
 
     /**
      * Get the liquidation reward override for an account owner. Used to enable e-mode for certain isolation mode
      * vaults.
      *
-     * @param accountOwner  The address of the account to check if there is a liquidation spread override.
+     * @param account   The account to check if there is a liquidation spread override.
      * @return  The liquidation spread override for an account owner. Defaults to 0 if there's no override in place.
      */
-    function getLiquidationSpreadOverrideByAccountOwner(
-        address accountOwner
+    function getLiquidationSpreadOverrideByAccount(
+        AccountInfo calldata account
     ) external view returns (Decimal memory);
 
     /**

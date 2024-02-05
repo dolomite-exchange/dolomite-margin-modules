@@ -1,8 +1,35 @@
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitTime,
+} from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceDustyOrZero,
+  expectProtocolBalanceIsGreaterThan,
+  expectWalletBalanceOrDustyIfZero,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
+import {
+  getLastZapAmountToBigNumber,
+  liquidateV4WithZap,
+  toZapBigNumber,
+} from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import {
+  setupCoreProtocol,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
 import { ApiToken, DolomiteZap, Network as ZapNetwork } from '@dolomite-exchange/zap-sdk';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
-import deployments from '../../../scripts/deployments.json';
+import deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
 import {
   IERC4626,
   IPlutusVaultGLPIsolationModeVaultFactory,
@@ -10,25 +37,7 @@ import {
   PlutusVaultGLPIsolationModeTokenVaultV1__factory,
   PlutusVaultGLPIsolationModeUnwrapperTraderV2,
   PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory,
-  PlutusVaultGLPIsolationModeWrapperTraderV2,
-  PlutusVaultGLPIsolationModeWrapperTraderV2__factory,
-  PlutusVaultRegistry,
-  PlutusVaultRegistry__factory,
 } from '../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { Network, ONE_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectProtocolBalanceDustyOrZero,
-  expectProtocolBalanceIsGreaterThan,
-  expectWalletBalanceOrDustyIfZero,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
-import { getLastZapAmountToBigNumber, liquidateV4WithZap, liquidateV4WithZapParam, toZapBigNumber } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
-import { CoreProtocol, setupCoreProtocol, setupUSDCBalance, setupUserVaultProxy } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { checkForParaswapSuccess } from '@dolomite-exchange/modules-base/test/utils/trader-utils';
-import { getLiquidateIsolationModeZapPath } from 'packages/base/test/utils/zap-utils';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';
@@ -43,12 +52,10 @@ const expirationCollateralizationDenominator = BigNumber.from('100');
 describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IERC4626;
   let heldMarketId: BigNumberish;
-  let plutusVaultRegistry: PlutusVaultRegistry;
   let unwrapper: PlutusVaultGLPIsolationModeUnwrapperTraderV2;
-  let wrapper: PlutusVaultGLPIsolationModeWrapperTraderV2;
   let factory: IPlutusVaultGLPIsolationModeVaultFactory;
   let vault: PlutusVaultGLPIsolationModeTokenVaultV1;
   let defaultAccountStruct: AccountInfoStruct;
@@ -65,23 +72,15 @@ describe('PlutusVaultGLPIsolationModeLiquidationWithZap', () => {
       network,
     });
     underlyingToken = core.plutusEcosystem!.plvGlp.connect(core.hhUser1);
-    plutusVaultRegistry = PlutusVaultRegistry__factory.connect(
-      deployments.PlutusVaultRegistryProxy[network].address,
-      core.hhUser1,
-    );
     factory = core.plutusEcosystem!.live.plvGlpIsolationModeFactory.connect(core.hhUser1);
     unwrapper = PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory.connect(
       deployments.PlutusVaultGLPIsolationModeUnwrapperTraderV4[network].address,
       core.hhUser1,
     );
-    wrapper = PlutusVaultGLPIsolationModeWrapperTraderV2__factory.connect(
-      deployments.PlutusVaultGLPIsolationModeWrapperTraderV4[network].address,
-      core.hhUser1,
-    );
 
     heldMarketId = BigNumber.from(core.marketIds.dplvGlp!);
     plvGlpApiToken = {
-      marketId: heldMarketId.toNumber(),
+      marketId: toZapBigNumber(heldMarketId.toNumber()),
       symbol: 'dplvGLP',
       name: 'Dolomite Isolation: Plutus Vault GLP',
       decimals: 18,

@@ -1,3 +1,23 @@
+import {
+  createContractWithAbi,
+  depositIntoDolomiteMargin,
+} from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectEvent,
+  expectProtocolBalance,
+  expectThrow,
+  expectWalletBalance,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import {
+  disableInterestAccrual,
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupUSDCBalance,
+  setupWETHBalance,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
@@ -10,18 +30,6 @@ import {
   OARBStorageVault,
   OARBStorageVault__factory,
 } from '../src/types';
-import { createContractWithAbi, depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getBlockTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectEvent, expectProtocolBalance, expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  CoreProtocol,
-  disableInterestAccrual,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupUSDCBalance,
-  setupWETHBalance,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createOARB } from './liquidity-mining-ecosystem-utils';
 
 const defaultAccountNumber = ZERO_BI;
@@ -33,7 +41,7 @@ const wethParAmount = BigNumber.from('1000000000000000000');
 // Emitter contract is not in use in production. These tests don't all pass
 xdescribe('EmitterMultipleRewardTokens', () => {
   let snapshotId: string;
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
 
   let emitter: EmitterMultipleRewardTokens;
   let oARB: OARB;

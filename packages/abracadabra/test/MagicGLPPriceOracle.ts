@@ -8,7 +8,12 @@ import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-const
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createMagicGLPPriceOracle } from './abracadabra-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const GLP_PRICE = BigNumber.from('1157958974643177588'); // $1.157958974643177588
 
@@ -19,7 +24,7 @@ describe('MagicGLPPriceOracle', () => {
   let magicGlpPriceOracleWithNoTotalSupply: MagicGLPPriceOracle;
   let magicGlp: IERC4626;
   let magicGlpWithNoTotalSupply: CustomTestToken;
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));

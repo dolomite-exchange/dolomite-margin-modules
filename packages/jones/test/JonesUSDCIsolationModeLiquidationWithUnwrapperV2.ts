@@ -1,6 +1,37 @@
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import {
+  BYTES_EMPTY,
+  Network,
+  NO_PARASWAP_TRADER_PARAM,
+  ONE_BI,
+  ZERO_BI,
+} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  getRealLatestBlockNumber,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitDays,
+  waitTime,
+} from '@dolomite-exchange/modules-base/test/utils';
+import {
+  expectProtocolBalance,
+  expectProtocolBalanceIsGreaterThan,
+  expectWalletBalanceOrDustyIfZero,
+} from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
+import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
+import {
+  CoreProtocolType,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { expect } from 'chai';
 import { BigNumber } from 'ethers';
+import { IERC20 } from 'packages/base/src/types';
 import {
   IERC4626,
   JonesUSDCIsolationModeTokenVaultV1,
@@ -12,21 +43,6 @@ import {
   JonesUSDCPriceOracle,
   JonesUSDCRegistry,
 } from '../src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { depositIntoDolomiteMargin } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import {
-  BYTES_EMPTY,
-  Network,
-  NO_PARASWAP_TRADER_PARAM,
-  ONE_BI,
-  ZERO_BI,
-} from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, revertToSnapshotAndCapture, snapshot, waitDays, waitTime } from '@dolomite-exchange/modules-base/test/utils';
-import {
-  expectProtocolBalance,
-  expectProtocolBalanceIsGreaterThan,
-  expectWalletBalanceOrDustyIfZero,
-} from '@dolomite-exchange/modules-base/test/utils/assertions';
 import {
   createJonesUSDCIsolationModeTokenVaultV1,
   createJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation,
@@ -36,17 +52,7 @@ import {
   createJonesUSDCPriceOracle,
   createJonesUSDCRegistry,
 } from './jones-ecosystem-utils';
-import { setExpiry } from '@dolomite-exchange/modules-base/test/utils/expiry-utils';
-import { liquidateV4WithIsolationMode } from '@dolomite-exchange/modules-base/test/utils/liquidation-utils';
-import {
-  CoreProtocolType,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { createRoleAndWhitelistTrader } from './jones-utils';
-import { IERC20 } from 'packages/base/src/types';
 
 const defaultAccountNumber = '0';
 const otherAccountNumber = '420';

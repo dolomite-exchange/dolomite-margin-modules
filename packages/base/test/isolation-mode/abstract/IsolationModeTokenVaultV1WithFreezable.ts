@@ -20,7 +20,7 @@ import {
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
 import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
-import { getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
+import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
   expectProtocolBalance,
@@ -28,13 +28,13 @@ import {
   expectTotalSupply,
   expectWalletBalance,
 } from '../../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import {
   createTestFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
-} from '../../utils/ecosystem-token-utils/testers';
+} from '../../utils/ecosystem-utils/testers';
 import {
-  CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
@@ -64,7 +64,7 @@ const EXECUTION_FEE = ONE_ETH_BI.div(4);
 describe('IsolationModeTokenVaultV1WithFreezable', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
@@ -173,14 +173,14 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   });
 
   async function freezeVault(
-    accountNumber: BigNumber = ZERO_BI
+    accountNumber: BigNumber = ZERO_BI,
   ): Promise<ContractTransaction> {
     return factory.connect(impersonatedVault).setVaultAccountPendingAmountForFrozenStatus(
       userVault.address,
       accountNumber,
       FreezeType.Deposit,
       PLUS_ONE_BI,
-      core.tokens.usdc.address
+      core.tokens.usdc.address,
     );
   }
 
@@ -1028,7 +1028,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         otherAmountWei,
         underlyingMarketId,
         outputAmount,
-        core
+        core,
       );
       await expectThrow(
         userVault.addCollateralAndSwapExactInputForOutput(
@@ -1041,7 +1041,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        'IsolationModeVaultV1ActionsImpl: Account liquidatable'
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable',
       );
     });
 
@@ -1356,7 +1356,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         otherAmountWei,
         underlyingMarketId,
         outputAmount,
-        core
+        core,
       );
       await expectThrow(
         userVault.swapExactInputForOutputAndRemoveCollateral(
@@ -1369,7 +1369,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        'IsolationModeVaultV1ActionsImpl: Account liquidatable'
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable',
       );
     });
 
@@ -1488,7 +1488,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         otherAmountWei,
         underlyingMarketId,
         outputAmount,
-        core
+        core,
       );
       await expectThrow(
         userVault.swapExactInputForOutput(
@@ -1500,7 +1500,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
           zapParams.makerAccounts,
           zapParams.userConfig,
         ),
-        'IsolationModeVaultV1ActionsImpl: Account liquidatable'
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable',
       );
     });
 

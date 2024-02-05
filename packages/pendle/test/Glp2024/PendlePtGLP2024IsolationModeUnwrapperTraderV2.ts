@@ -1,3 +1,22 @@
+import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
+import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import {
+  encodeExternalSellActionDataWithNoData,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+} from '@dolomite-exchange/modules-base/test/utils';
+import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket,
+  setupUSDCBalance,
+  setupUserVaultProxy,
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { IGmxRegistryV1 } from '@dolomite-exchange/modules-glp/src/types';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
@@ -14,18 +33,6 @@ import {
   PendlePtGLPPriceOracle,
 } from '../../src/types';
 import {
-  IGmxRegistryV1,
-} from '@dolomite-exchange/modules-glp/src/types';
-import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  encodeExternalSellActionDataWithNoData,
-  impersonate,
-  revertToSnapshotAndCapture,
-  snapshot,
-} from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
   createPendleGLPRegistry,
   createPendlePtGLP2024IsolationModeTokenVaultV1,
   createPendlePtGLP2024IsolationModeUnwrapperTraderV2,
@@ -33,16 +40,7 @@ import {
   createPendlePtGLP2024IsolationModeWrapperTraderV2,
   createPendlePtGLPPriceOracle,
 } from '../pendle-ecosystem-utils';
-import {
-  CoreProtocol,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-  setupTestMarket,
-  setupUSDCBalance,
-  setupUserVaultProxy,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
 import { encodeSwapExactPtForTokens, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
-import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -51,7 +49,7 @@ const otherAmountWei = BigNumber.from('10000000'); // $10
 describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: IPendlePtToken;
   let underlyingMarketId: BigNumber;
   let gmxRegistry: IGmxRegistryV1;
@@ -60,7 +58,6 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
   let wrapper: PendlePtGLP2024IsolationModeWrapperTraderV2;
   let factory: PendlePtGLP2024IsolationModeVaultFactory;
   let vault: PendlePtGLP2024IsolationModeTokenVaultV1;
-  let vaultSigner: SignerWithAddress;
   let priceOracle: PendlePtGLPPriceOracle;
   let defaultAccount: AccountInfoStruct;
   let router: BaseRouter;
@@ -100,7 +97,6 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
       PendlePtGLP2024IsolationModeTokenVaultV1__factory,
       core.hhUser1,
     );
-    vaultSigner = await impersonate(vault.address, true);
     defaultAccount = { owner: vault.address, number: defaultAccountNumber };
 
     router = Router.getRouter({
@@ -143,7 +139,13 @@ describe('PendlePtGLP2024IsolationModeUnwrapperTraderV2', () => {
       const solidAccountId = 0;
       const liquidAccountId = 0;
 
-      const { tokenOutput, extraOrderData } = await encodeSwapExactPtForTokens(router, core, amountWei);
+      const { tokenOutput, extraOrderData } = await encodeSwapExactPtForTokens(
+        router,
+        amountWei,
+        ONE_TENTH_OF_ONE_BIPS_NUMBER,
+        core.pendleEcosystem.glpMar2024.ptGlpMarket.address,
+        core.gmxEcosystem.sGlp.address,
+      );
       const amountOut = await core.gmxEcosystem!.live.glpIsolationModeUnwrapperTraderV1!.connect(core.hhUser5)
         .getExchangeCost(
           core.tokens.dfsGlp!.address,

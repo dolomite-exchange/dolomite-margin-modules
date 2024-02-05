@@ -9,7 +9,8 @@ import {
 } from '../../src/utils/dolomite-utils';
 import { Network, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot, waitDays } from '../utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../utils/setup';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupUSDCBalance } from '../utils/setup';
 
 const depositAmount = BigNumber.from('5000000000'); // 5,000 USDC
 const withdrawAmount = BigNumber.from('1000000000000000000'); // 1 ETH
@@ -28,7 +29,7 @@ const defaultAccountNumber = ZERO_BI;
 describe('InterestIndexLib', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let testLib: TestInterestIndexLib;
   let defaultAccount: AccountInfoStruct;
   let marketIdPositive: BigNumberish;

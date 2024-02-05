@@ -13,10 +13,20 @@ import {
 import { CustomTestVaultToken, IERC4626 } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi, createTestVaultToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { getBlockTimestamp, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  getBlockTimestamp,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot
+} from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createMagicGLPWithChainlinkAutomationPriceOracle } from './abracadabra-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import {
+  getDefaultCoreProtocolConfig,
+  setupCoreProtocol,
+  setupTestMarket
+} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const GLP_PRICE = BigNumber.from('1004682394802947459'); // $1.004682394802947459
 
@@ -27,7 +37,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
   let magicGLPWithChainlinkAutomationPriceOracleNoSupply: MagicGLPWithChainlinkAutomationPriceOracle;
   let magicGlp: IERC4626;
   let magicGlpWithNoTotalSupply: CustomTestVaultToken;
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let zeroAddress: SignerWithAddress;
   let deploymentTimestamp: BigNumberish;
   let chainlinkRegistryImpersonated: SignerWithAddress;
@@ -49,7 +59,7 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
         MagicGLPWithChainlinkAutomationPriceOracle__factory.bytecode,
         [
           core.dolomiteMargin.address,
-          core.chainlinkRegistry!.address,
+          core.chainlinkAutomationRegistry.address,
           magicGlpWithNoTotalSupply.address,
           core.marketIds.dfsGlp!,
         ],
@@ -59,8 +69,9 @@ describe('MagicGLPWithChainlinkAutomationPriceOracle', () => {
 
     // Do this just to reset time for heartbeat and grace period tests
     await increase(24 * 3600);
-    chainlinkRegistryImpersonated = await impersonate(core.chainlinkRegistry!.address, true);
-    await magicGLPWithChainlinkAutomationPriceOracle.connect(core.governance).ownerSetForwarder(
+    chainlinkRegistryImpersonated = await impersonate(core.chainlinkAutomationRegistry.address, true);
+    await magicGLPWithChainlinkAutomationPriceOracle.connect(core.governance)
+      .ownerSetForwarder(
       chainlinkRegistryImpersonated.address
     );
     await magicGLPWithChainlinkAutomationPriceOracle.connect(chainlinkRegistryImpersonated).performUpkeep('0x');

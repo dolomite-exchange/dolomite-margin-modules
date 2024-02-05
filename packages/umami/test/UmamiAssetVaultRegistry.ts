@@ -1,37 +1,24 @@
-import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
-import { expect } from 'chai';
-import { UmamiAssetVaultIsolationModeUnwrapperTraderV2, UmamiAssetVaultRegistry } from '../src/types';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import {
-  createUmamiAssetVaultIsolationModeTokenVaultV1,
-  createUmamiAssetVaultIsolationModeUnwrapperTraderV2,
-  createUmamiAssetVaultIsolationModeVaultFactory,
-  createUmamiAssetVaultRegistry,
-} from './umami-ecosystem-utils';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
+import { expect } from 'chai';
+import { UmamiAssetVaultRegistry } from '../src/types';
+import { createUmamiAssetVaultRegistry } from './umami-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 describe('UmamiAssetVaultRegistry', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let registry: UmamiAssetVaultRegistry;
-  let unwrapper: UmamiAssetVaultIsolationModeUnwrapperTraderV2;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     registry = await createUmamiAssetVaultRegistry(core);
-    const userVaultImplementation = await createUmamiAssetVaultIsolationModeTokenVaultV1();
-    const factory = await createUmamiAssetVaultIsolationModeVaultFactory(
-      core,
-      registry,
-      core.umamiEcosystem!.glpUsdc,
-      userVaultImplementation,
-    );
-    unwrapper = await createUmamiAssetVaultIsolationModeUnwrapperTraderV2(core, registry, factory);
 
     snapshotId = await snapshot();
   });

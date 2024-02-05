@@ -19,7 +19,14 @@ import {
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import {
+  ADDRESS_ZERO,
+  MAX_UINT_256_BI,
+  Network,
+  ONE_BI,
+  ONE_ETH_BI,
+  ZERO_BI,
+} from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
@@ -28,13 +35,13 @@ import {
   expectTotalSupply,
   expectWalletBalance,
 } from '../../utils/assertions';
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite';
 import {
   createTestFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
-} from '../../utils/ecosystem-token-utils/testers';
+} from '../../utils/ecosystem-utils/testers';
 import {
-  CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
@@ -63,7 +70,7 @@ const EXECUTION_FEE = ONE_ETH_BI.div(4);
 describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
@@ -177,7 +184,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
       defaultAccountNumber,
       FreezeType.Deposit,
       PLUS_ONE_BI,
-      ADDRESS_ZERO
+      ADDRESS_ZERO,
     );
   }
 
@@ -2122,7 +2129,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
           defaultAccountNumber,
           FreezeType.Deposit,
           PLUS_ONE_BI,
-          ADDRESS_ZERO
+          ADDRESS_ZERO,
         ),
         `FreezableVaultFactory: Caller is not a authorized <${core.hhUser1.address.toLowerCase()}>`,
       );
@@ -2135,7 +2142,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
           defaultAccountNumber,
           FreezeType.Deposit,
           PLUS_ONE_BI,
-          ADDRESS_ZERO
+          ADDRESS_ZERO,
         ),
         `IsolationModeVaultFactory: Invalid vault <${core.hhUser1.address.toLowerCase()}>`,
       );

@@ -1,10 +1,11 @@
-import { expect } from 'chai';
-import { parseEther } from 'ethers/lib/utils';
-import { OARB, RewardsDistributor } from '../src/types';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { expect } from 'chai';
+import { parseEther } from 'ethers/lib/utils';
+import { OARB, RewardsDistributor } from '../src/types';
 import { createOARB, createRewardsDistributor } from './liquidity-mining-ecosystem-utils';
 
 const USER1 = '0x0321be949876c2545ac121379c620c2a0480b758';
@@ -12,7 +13,7 @@ const USER2 = '0x1702acf734116cd8faf86d139aa91843f81510a1';
 
 describe('RewardsDistributorIntegration', () => {
   let snapshotId: string;
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let oARB: OARB;
   let rewardsDistributor: RewardsDistributor;
   let merkleRoot1: string;

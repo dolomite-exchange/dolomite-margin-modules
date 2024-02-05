@@ -25,6 +25,7 @@ import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
+import { ChainHelperLib } from "./ChainHelperLib.sol";
 
 
 /**
@@ -40,8 +41,6 @@ library AccountActionLib {
     bytes32 private constant _FILE = "AccountActionLib";
 
     uint256 private constant _ALL = type(uint256).max;
-    uint256 private constant _ARBITRUM_ONE = 42161;
-    uint256 private constant _ARBITRUM_SEPOLIA = 421614;
 
     // ===================================================================
     // ========================= Write Functions =========================
@@ -188,20 +187,22 @@ library AccountActionLib {
         bytes memory _orderData
     ) internal view returns (IDolomiteStructs.ActionArgs memory) {
         return IDolomiteStructs.ActionArgs({
-            actionType : IDolomiteStructs.ActionType.Trade,
-            accountId : _fromAccountId,
-            amount : IDolomiteStructs.AssetAmount({
-            sign: true,
-            denomination: IDolomiteStructs.AssetDenomination.Wei,
-            ref: IDolomiteStructs.AssetReference.Delta,
-            value: _amountInWei
-        }),
-            primaryMarketId : _primaryMarketId,
-            secondaryMarketId : _secondaryMarketId,
-            otherAddress : _traderAddress,
-            otherAccountId : _toAccountId,
-            data : _isArbitrum() ? abi.encode(_orderData) : abi.encode(_calculateAmountWithMakerAccount, _orderData)
-        });
+                actionType: IDolomiteStructs.ActionType.Trade,
+                accountId: _fromAccountId,
+                amount: IDolomiteStructs.AssetAmount({
+                    sign: true,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Delta,
+                    value: _amountInWei
+                }),
+                primaryMarketId: _primaryMarketId,
+                secondaryMarketId: _secondaryMarketId,
+                otherAddress: _traderAddress,
+                otherAccountId: _toAccountId,
+                data: ChainHelperLib.isArbitrum()
+                        ? abi.encode(_orderData)
+                        : abi.encode(_calculateAmountWithMakerAccount, _orderData)
+            });
     }
 
     // ===============================================================
@@ -330,7 +331,6 @@ library AccountActionLib {
         });
     }
 
-    // @todo Create new function to set target amount
     function encodeExternalSellActionWithTarget(
         uint256 _fromAccountId,
         uint256 _primaryMarketId,
@@ -449,13 +449,5 @@ library AccountActionLib {
             otherAccountId: 0,
             data: bytes("")
         });
-    }
-
-    // =================================================
-    // =============== Private Functions ===============
-    // =================================================
-
-    function _isArbitrum() private view returns (bool) {
-        return block.chainid == _ARBITRUM_ONE || block.chainid == _ARBITRUM_SEPOLIA;
     }
 }

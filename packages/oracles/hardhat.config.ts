@@ -9,18 +9,17 @@ import '@typechain/hardhat';
 import chai from 'chai';
 import { solidity } from 'ethereum-waffle';
 import 'hardhat-gas-reporter';
-import { HardhatUserConfig } from 'hardhat/types';
 import 'solidity-coverage';
 
 import 'tsconfig-paths/register';
 
-import { base_config } from '../../hardhat-base-config'
+import { base_config } from '../../hardhat-base-config';
+
 chai.use(solidity);
 if (process.env.COVERAGE !== 'true') {
   require('hardhat-tracer');
 }
 
-export const config: HardhatUserConfig = base_config;
 
 // noinspection JSUnusedGlobalSymbols
-export default config;
+export default base_config;

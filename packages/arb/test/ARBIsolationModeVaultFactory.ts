@@ -1,9 +1,5 @@
 import { expect } from 'chai';
-import {
-  ARBIsolationModeTokenVaultV1,
-  ARBIsolationModeVaultFactory,
-  ARBRegistry,
-} from '../src/types';
+import { ARBIsolationModeTokenVaultV1, ARBIsolationModeVaultFactory, ARBRegistry, } from '../src/types';
 import {
   SimpleIsolationModeUnwrapperTraderV2,
   SimpleIsolationModeWrapperTraderV2,
@@ -18,15 +14,16 @@ import {
   createARBUnwrapperTraderV2,
   createARBWrapperTraderV2,
 } from './arb-ecosystem-utils';
-import { CoreProtocol, setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
+import { setupCoreProtocol, setupTestMarket } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { DEFAULT_BLOCK_NUMBER_FOR_ARB_TESTS } from './arb-utils';
+import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
 describe('ARBIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let arbRegistry: ARBRegistry;
   let unwrapper: SimpleIsolationModeUnwrapperTraderV2;
   let wrapper: SimpleIsolationModeWrapperTraderV2;
