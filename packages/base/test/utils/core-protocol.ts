@@ -296,13 +296,28 @@ export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
   }
 }
 
+interface CoreProtocolTokensZkEvm extends CoreProtocolTokens {
+  matic: IERC20;
+  usdt: IERC20;
+}
+
+interface CoreProtocolMarketIdsZkEvm extends CoreProtocolMarketIds {
+  matic: BigNumberish;
+  usdt: BigNumberish;
+}
+
 export interface CoreProtocolParamsZkEvm {
+  marketIds: CoreProtocolMarketIdsZkEvm;
   paraswapEcosystem: ParaswapEcosystem;
+  tokens: CoreProtocolTokensZkEvm;
 }
 
 export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.PolygonZkEvm> {
 
   public readonly paraswapEcosystem: ParaswapEcosystem;
+
+  public override readonly marketIds: CoreProtocolMarketIdsZkEvm;
+  public override readonly tokens: CoreProtocolTokensZkEvm;
   public readonly network: Network.PolygonZkEvm = Network.PolygonZkEvm;
 
   constructor(
@@ -310,6 +325,8 @@ export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.Polyg
     zkEvmParams: CoreProtocolParamsZkEvm,
   ) {
     super(params);
+    this.marketIds = zkEvmParams.marketIds;
     this.paraswapEcosystem = zkEvmParams.paraswapEcosystem;
+    this.tokens = zkEvmParams.tokens;
   }
 }

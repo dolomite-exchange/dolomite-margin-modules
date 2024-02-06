@@ -55,7 +55,7 @@ import {
   JONES_MAP,
   LINK_MAP,
   MAGIC_GLP_MAP,
-  MAGIC_MAP,
+  MAGIC_MAP, MATIC_MAP,
   MIM_MAP,
   NATIVE_USDC_MAP,
   PENDLE_MAP,
@@ -560,7 +560,17 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolPolygonZkEvm(
       coreProtocolParams as CoreProtocolParams<Network.PolygonZkEvm>,
       {
+        marketIds: {
+          ...coreProtocolParams.marketIds,
+          matic: MATIC_MAP[typedConfig.network].marketId,
+          usdt: USDT_MAP[typedConfig.network].marketId,
+        },
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
+        tokens: {
+          ...coreProtocolParams.tokens,
+          matic: IERC20__factory.connect(MATIC_MAP[typedConfig.network].address, hhUser1),
+          usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+        }
       },
     ) as any;
   }

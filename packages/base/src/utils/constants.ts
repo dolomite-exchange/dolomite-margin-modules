@@ -186,6 +186,13 @@ export const MAGIC_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   },
 };
 
+export const MATIC_MAP: Record<Network.PolygonZkEvm, TokenWithMarketId> = {
+  [Network.PolygonZkEvm]: {
+    address: '0xa2036f0538221a77A3937F1379699f44945018d0',
+    marketId: 4,
+  },
+};
+
 export const MIM_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0xFEa7a6a0B346362BF88A9e4A88416B77a57D6c2A',
