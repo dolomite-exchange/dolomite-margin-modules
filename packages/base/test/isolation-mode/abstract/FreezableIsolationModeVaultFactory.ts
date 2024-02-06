@@ -29,14 +29,14 @@ import { createIsolationModeTokenVaultV1ActionsImpl } from '../../utils/dolomite
 import {
   createTestFreezableIsolationModeVaultFactory,
   createTestHandlerRegistry,
-} from '../../utils/ecosystem-token-utils/testers';
+} from '../../utils/ecosystem-utils/testers';
 import {
-  CoreProtocol,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
   setupUserVaultProxy,
 } from '../../utils/setup';
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -63,7 +63,7 @@ const EXECUTION_FEE = ONE_ETH_BI.div(4);
 describe('FreezableIsolationModeVaultFactory', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;

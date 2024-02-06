@@ -22,11 +22,11 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title   IChainlinkRegistry
+ * @title   IChainlinkAutomationRegistry
  * @author  Dolomite
  *
  */
-interface IChainlinkRegistry {
+interface IChainlinkAutomationRegistry {
 
     /**
      *

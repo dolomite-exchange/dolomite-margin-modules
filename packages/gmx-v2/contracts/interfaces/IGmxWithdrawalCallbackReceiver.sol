@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { GmxEventUtils } from "./GmxEventUtils.sol";
-import { GmxWithdrawal } from "./GmxWithdrawal.sol";
+import { GmxEventUtils } from "../lib/GmxEventUtils.sol";
+import { GmxWithdrawal } from "../lib/GmxWithdrawal.sol";
 
 
 /**

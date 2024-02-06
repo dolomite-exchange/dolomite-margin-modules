@@ -30,9 +30,9 @@ import { IAsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/c
 import { IIsolationModeUpgradeableProxy } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
-import { GmxEventUtils } from "./interfaces/GmxEventUtils.sol";
-import { GmxMarket } from "./interfaces/GmxMarket.sol";
-import { GmxPrice } from "./interfaces/GmxPrice.sol";
+import { GmxEventUtils } from "./lib/GmxEventUtils.sol";
+import { GmxMarket } from "./lib/GmxMarket.sol";
+import { GmxPrice } from "./lib/GmxPrice.sol";
 import { IGmxDataStore } from "./interfaces/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "./interfaces/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "./interfaces/IGmxV2IsolationModeTokenVaultV1.sol";

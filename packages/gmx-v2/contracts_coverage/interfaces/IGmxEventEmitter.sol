@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { GmxEventUtils } from "./GmxEventUtils.sol";
+import { GmxEventUtils } from "../lib/GmxEventUtils.sol";
 
 
 /**

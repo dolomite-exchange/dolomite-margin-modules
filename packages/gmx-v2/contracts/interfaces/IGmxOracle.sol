@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { GmxPrice } from "./GmxPrice.sol";
+import { GmxPrice } from "../lib/GmxPrice.sol";
 
 
 /**

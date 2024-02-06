@@ -34,14 +34,16 @@ contract TestBaseLiquidatorProxy is BaseLiquidatorProxy {
     // ============ Constructors ============
 
     constructor(
+        address _liquidatorAssetRegistry,
         address _dolomiteMargin,
         address _expiry,
-        address _liquidatorAssetRegistry
+        uint256 _chainId
     )
     BaseLiquidatorProxy(
+        _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,
-        _liquidatorAssetRegistry
+        _chainId
     ) { /* solhint-disable-line no-empty-blocks */ }
 
     // ============ Internal Functions ============

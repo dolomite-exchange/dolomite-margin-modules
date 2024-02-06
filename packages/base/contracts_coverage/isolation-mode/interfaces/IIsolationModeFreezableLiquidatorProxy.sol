@@ -46,21 +46,6 @@ interface IIsolationModeFreezableLiquidatorProxy {
     }
 
     // ===========================================================
-    // ========================= Events ==========================
-    // ===========================================================
-
-    event MinOutputPercentageUpperBoundSet(uint256 newMinOutputPercentageUpperBound);
-
-    // ===========================================================
-    // ===================== Admin Functions =====================
-    // ===========================================================
-
-    function ownerSetMinOutputPercentageUpperBound(
-        uint256 _minOutputPercentageUpperBound
-    )
-    external;
-
-    // ===========================================================
     // ===================== Public Functions ====================
     // ===========================================================
 

@@ -13,7 +13,7 @@ import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { AccountStruct } from '../../base/src/utils/constants';
 import { createContractWithAbi } from '../../base/src/utils/dolomite-utils';
-import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
+import { NO_EXPIRY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../base/test/utils';
 import { expectEvent, expectProtocolBalance, expectWalletBalance } from '../../base/test/utils/assertions';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../base/test/utils/dolomite';
@@ -49,6 +49,7 @@ import {
   getInitiateWrappingParams,
   getOracleParams,
 } from './gmx-v2-ecosystem-utils';
+import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -60,7 +61,7 @@ const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const executionFee = process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE : GMX_V2_EXECUTION_FEE.mul(10);
 
-describe('IsolationModeFreezableLiquidatorProxy', () => {
+describe('POC: dosLiquidationBytes32', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -93,12 +94,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      [
-        core.dolomiteRegistry.address,
-        core.dolomiteMargin.address,
-        core.expiry.address,
-        core.liquidatorAssetRegistry.address,
-      ],
+      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core)
     );
 
     const gmxV2Library = await createGmxV2Library();

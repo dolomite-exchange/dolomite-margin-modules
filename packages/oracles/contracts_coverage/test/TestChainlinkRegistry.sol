@@ -19,7 +19,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IChainlinkRegistry } from "../interfaces/IChainlinkRegistry.sol";
+import { IChainlinkAutomationRegistry } from "../interfaces/IChainlinkAutomationRegistry.sol";
 
 
 /**
@@ -28,7 +28,7 @@ import { IChainlinkRegistry } from "../interfaces/IChainlinkRegistry.sol";
  *
  * A test implementation of the Chainlink registry interface.
  */
-contract TestChainlinkRegistry is IChainlinkRegistry {
+contract TestChainlinkRegistry is IChainlinkAutomationRegistry {
 
     address public forwarder;
 
