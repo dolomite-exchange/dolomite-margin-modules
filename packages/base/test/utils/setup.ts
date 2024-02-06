@@ -1,5 +1,4 @@
-import { IChainlinkAutomationRegistry__factory } from '@dolomite-exchange/modules-jones/src/types';
-import { IChainlinkPriceOracle__factory } from '@dolomite-exchange/modules-oracles/src/types';
+import { IChainlinkAutomationRegistry__factory, IChainlinkPriceOracle__factory } from '@dolomite-exchange/modules-oracles/src/types';
 import { BigNumber as ZapBigNumber } from '@dolomite-exchange/zap-sdk/dist';
 import * as BorrowPositionProxyV2Json from '@dolomite-margin/deployed-contracts/BorrowPositionProxyV2.json';
 import * as DepositWithdrawalProxyJson from '@dolomite-margin/deployed-contracts/DepositWithdrawalProxy.json';
