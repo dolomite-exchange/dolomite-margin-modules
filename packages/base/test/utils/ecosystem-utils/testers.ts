@@ -8,8 +8,6 @@ import {
   DolomiteRegistryImplementation__factory,
   IDolomiteRegistry,
   RegistryProxy__factory,
-  TestAsyncIsolationModeTraderBase,
-  TestAsyncIsolationModeTraderBase__factory,
   TestDolomiteMarginExchangeWrapper,
   TestDolomiteMarginExchangeWrapper__factory,
   TestFreezableIsolationModeVaultFactory,

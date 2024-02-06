@@ -22,12 +22,10 @@ async function main() {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
   const chainlinkPriceOracleParams = await getChainlinkPriceOracleParamsFromOldPriceOracle(core);
   const chainlinkPriceOracleAddress = await deployContractAndSave(
-    Number(network),
     'ChainlinkPriceOracle',
     chainlinkPriceOracleParams,
   );
   const pendleYtGlpPriceOracleAddress = await deployContractAndSave(
-    Number(network),
     'PendleYtGLPPriceOracle',
     getPendleYtGLPPriceOracleConstructorParams(
       core,

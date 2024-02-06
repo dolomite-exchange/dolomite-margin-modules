@@ -52,14 +52,12 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const arbRegistryImplementationAddress = await deployContractAndSave(
-    Number(network),
     'ARBRegistry',
     [],
     'ARBRegistryImplementationV1',
   );
   const arbRegistryImplementation = ARBRegistry__factory.connect(arbRegistryImplementationAddress, core.hhUser1);
   const arbRegistryAddress = await deployContractAndSave(
-    Number(network),
     'RegistryProxy',
     await getARBRegistryConstructorParams(arbRegistryImplementation, core),
     'ARBRegistryProxy',
@@ -67,7 +65,6 @@ async function main(): Promise<DenJsonUpload> {
   const arbRegistry = ARBRegistry__factory.connect(arbRegistryAddress, core.hhUser1);
 
   const arbVaultImplementationAddress = await deployContractAndSave(
-    Number(network),
     'ARBIsolationModeTokenVaultV1',
     [],
     'ARBIsolationModeTokenVaultV3',
@@ -78,14 +75,12 @@ async function main(): Promise<DenJsonUpload> {
     core.hhUser1,
   );
   const arbFactoryAddress = await deployContractAndSave(
-    Number(network),
     'ARBIsolationModeVaultFactory',
     getARBIsolationModeVaultFactoryConstructorParams(arbRegistry, arbVaultImplementation, core),
   );
   const arbFactory = ARBIsolationModeVaultFactory__factory.connect(arbFactoryAddress, core.hhUser1);
 
   const arbUnwrapperAddress = await deployContractAndSave(
-    Number(network),
     'SimpleIsolationModeUnwrapperTraderV2',
     getARBUnwrapperTraderV2ConstructorParams(arbFactory, core),
     'ARBIsolationModeUnwrapperTraderV2',
@@ -93,7 +88,6 @@ async function main(): Promise<DenJsonUpload> {
   const arbUnwrapper = SimpleIsolationModeUnwrapperTraderV2__factory.connect(arbUnwrapperAddress, core.hhUser1);
 
   const arbWrapperAddress = await deployContractAndSave(
-    Number(network),
     'SimpleIsolationModeWrapperTraderV2',
     getARBWrapperTraderV2ConstructorParams(arbFactory, core),
     'ARBIsolationModeWrapperTraderV2',
@@ -101,14 +95,12 @@ async function main(): Promise<DenJsonUpload> {
   const arbWrapper = SimpleIsolationModeWrapperTraderV2__factory.connect(arbWrapperAddress, core.hhUser1);
 
   const gmxRegistryImplementationAddress = await deployContractAndSave(
-    Number(network),
     'GmxRegistryV1',
     [],
   );
   const gmxRegistry = core.gmxEcosystem!.live.gmxRegistry;
 
   const gmxVaultImplementationAddress = await deployContractAndSave(
-    Number(network),
     'GMXIsolationModeTokenVaultV1',
     [],
     undefined,
@@ -119,14 +111,12 @@ async function main(): Promise<DenJsonUpload> {
     core.hhUser1,
   );
   const gmxFactoryAddress = await deployContractAndSave(
-    Number(network),
     'GMXIsolationModeVaultFactory',
     getGMXIsolationModeVaultFactoryConstructorParams(gmxRegistry, gmxVaultImplementation, core),
   );
   const gmxFactory = GMXIsolationModeVaultFactory__factory.connect(gmxFactoryAddress, core.hhUser1);
 
   const gmxUnwrapperAddress = await deployContractAndSave(
-    Number(network),
     'SimpleIsolationModeUnwrapperTraderV2',
     getGMXUnwrapperTraderV2ConstructorParams(gmxFactory, core),
     'GMXIsolationModeUnwrapperTraderV2',
@@ -134,7 +124,6 @@ async function main(): Promise<DenJsonUpload> {
   const gmxUnwrapper = SimpleIsolationModeUnwrapperTraderV2__factory.connect(gmxUnwrapperAddress, core.hhUser1);
 
   const gmxWrapperAddress = await deployContractAndSave(
-    Number(network),
     'SimpleIsolationModeWrapperTraderV2',
     getGMXWrapperTraderV2ConstructorParams(gmxFactory, core),
     'GMXIsolationModeWrapperTraderV2',

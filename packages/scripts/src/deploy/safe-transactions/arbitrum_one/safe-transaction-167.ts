@@ -43,7 +43,6 @@ import {
 
 async function deployGlpUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'GLPIsolationModeUnwrapperTraderV2',
     getGLPIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
@@ -53,7 +52,6 @@ async function deployGlpUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedT
     'GLPIsolationModeUnwrapperTraderV3',
   );
   const wrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'GLPIsolationModeWrapperTraderV2',
     getGLPIsolationModeWrapperTraderV2ConstructorParams(
       core,
@@ -104,7 +102,6 @@ async function deployGlpUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedT
 
 async function deployPlutusVaultGlpUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PlutusVaultGLPIsolationModeUnwrapperTraderV2',
     getPlutusVaultGLPIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
@@ -114,7 +111,6 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocolArbitrumOne): Promi
     'PlutusVaultGLPIsolationModeUnwrapperTraderV3',
   );
   const wrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PlutusVaultGLPIsolationModeWrapperTraderV2',
     getPlutusVaultGLPIsolationModeWrapperTraderV2ConstructorParams(
       core,
@@ -124,7 +120,6 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocolArbitrumOne): Promi
     'PlutusVaultGLPIsolationModeWrapperTraderV3',
   );
   const oracle = await deployContractAndSave(
-    core.config.networkNumber,
     'PlutusVaultGLPWithChainlinkAutomationPriceOracle',
     getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams(
       core,
@@ -222,7 +217,6 @@ async function deployPlutusVaultGlpUpdates(core: CoreProtocolArbitrumOne): Promi
 
 async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3ForLiquidation = await deployContractAndSave(
-    core.config.networkNumber,
     'JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation',
     getJonesUSDCIsolationModeUnwrapperTraderV2ForLiquidationConstructorParams(
       core,
@@ -232,7 +226,6 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     'JonesUSDCIsolationModeUnwrapperTraderV3ForLiquidation',
   );
   const unwrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'JonesUSDCIsolationModeUnwrapperTraderV2',
     getJonesUSDCIsolationModeUnwrapperTraderV2ForZapConstructorParams(
       core,
@@ -242,7 +235,6 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     'JonesUSDCIsolationModeUnwrapperTraderV3',
   );
   const wrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'JonesUSDCIsolationModeWrapperTraderV2',
     getJonesUSDCIsolationModeWrapperTraderV2ConstructorParams(
       core,
@@ -329,7 +321,6 @@ async function deployJUsdcUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
 
 async function deployPtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtGLP2024IsolationModeUnwrapperTraderV2',
     getPendlePtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
       core,
@@ -339,7 +330,6 @@ async function deployPtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     'PendlePtGLP2024IsolationModeUnwrapperTraderV3',
   );
   const wrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtGLP2024IsolationModeWrapperTraderV2',
     getPendlePtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
       core,
@@ -390,7 +380,6 @@ async function deployPtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
 
 async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendleYtGLP2024IsolationModeUnwrapperTraderV2',
     getPendleYtGLP2024IsolationModeUnwrapperTraderV2ConstructorParams(
       core,
@@ -400,7 +389,6 @@ async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
     'PendleYtGLP2024IsolationModeUnwrapperTraderV3',
   );
   const wrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendleYtGLP2024IsolationModeWrapperTraderV2',
     getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams(
       core,
@@ -451,7 +439,6 @@ async function deployYtGlpUpdates(core: CoreProtocolArbitrumOne): Promise<Encode
 
 async function deployPtREthUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtIsolationModeUnwrapperTraderV2',
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
@@ -462,7 +449,6 @@ async function deployPtREthUpdates(core: CoreProtocolArbitrumOne): Promise<Encod
     'PendlePtREthJun2025IsolationModeUnwrapperTraderV3',
   );
   const wrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtIsolationModeWrapperTraderV2',
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
       core,
@@ -514,7 +500,6 @@ async function deployPtREthUpdates(core: CoreProtocolArbitrumOne): Promise<Encod
 
 async function deployPtWstEthJun2024Updates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtIsolationModeUnwrapperTraderV2',
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
@@ -525,7 +510,6 @@ async function deployPtWstEthJun2024Updates(core: CoreProtocolArbitrumOne): Prom
     'PendlePtWstEthJun2024IsolationModeUnwrapperTraderV3',
   );
   const wrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtIsolationModeWrapperTraderV2',
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
       core,
@@ -577,7 +561,6 @@ async function deployPtWstEthJun2024Updates(core: CoreProtocolArbitrumOne): Prom
 
 async function deployPtWstEthJun2025Updates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtIsolationModeUnwrapperTraderV2',
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
@@ -588,7 +571,6 @@ async function deployPtWstEthJun2025Updates(core: CoreProtocolArbitrumOne): Prom
     'PendlePtWstEthJun2025IsolationModeUnwrapperTraderV3',
   );
   const wrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtIsolationModeWrapperTraderV2',
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
       core,
@@ -640,7 +622,6 @@ async function deployPtWstEthJun2025Updates(core: CoreProtocolArbitrumOne): Prom
 
 async function deployVARBUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'SimpleIsolationModeUnwrapperTraderV2',
     getARBUnwrapperTraderV2ConstructorParams(
       core.arbEcosystem!.live.dArb,
@@ -649,7 +630,6 @@ async function deployVARBUpdates(core: CoreProtocolArbitrumOne): Promise<Encoded
     'ARBIsolationModeUnwrapperTraderV3',
   );
   const wrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'SimpleIsolationModeWrapperTraderV2',
     getARBWrapperTraderV2ConstructorParams(
       core.arbEcosystem!.live.dArb,
@@ -699,7 +679,6 @@ async function deployVARBUpdates(core: CoreProtocolArbitrumOne): Promise<Encoded
 
 async function deployStakedGmxUpdates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'SimpleIsolationModeUnwrapperTraderV2',
     getGMXUnwrapperTraderV2ConstructorParams(
       core.gmxEcosystem!.live.dGmx,
@@ -708,7 +687,6 @@ async function deployStakedGmxUpdates(core: CoreProtocolArbitrumOne): Promise<En
     'GMXIsolationModeUnwrapperTraderV3',
   );
   const wrapperV3 = await deployContractAndSave(
-    core.config.networkNumber,
     'SimpleIsolationModeWrapperTraderV2',
     getGMXWrapperTraderV2ConstructorParams(
       core.gmxEcosystem!.live.dGmx,

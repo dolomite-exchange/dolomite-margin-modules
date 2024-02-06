@@ -22,10 +22,9 @@ import {
 async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
-  const eventEmitterRegistryProxy = await createEventEmitterProxy(core, network);
+  const eventEmitterRegistryProxy = await createEventEmitterProxy(core);
 
   const newDolomiteRegistryImplementation = await deployContractAndSave(
-    Number(network),
     'DolomiteRegistryImplementation',
     [],
     'DolomiteRegistryImplementationV4',
@@ -57,9 +56,8 @@ async function main(): Promise<DenJsonUpload> {
   };
 }
 
-async function createEventEmitterProxy(core: CoreProtocolArbitrumOne, network: Network): Promise<EventEmitterRegistry> {
+async function createEventEmitterProxy(core: CoreProtocolArbitrumOne): Promise<EventEmitterRegistry> {
   const eventEmitterImplementationAddress = await deployContractAndSave(
-    Number(network),
     'EventEmitterRegistry',
     [],
     'EventEmitterRegistryImplementationV1',
@@ -70,7 +68,6 @@ async function createEventEmitterProxy(core: CoreProtocolArbitrumOne, network: N
   );
   const implementationCalldata = await eventEmitterImplementation.populateTransaction.initialize();
   const eventEmitterRegistryProxyAddress = await deployContractAndSave(
-    Number(network),
     'RegistryProxy',
     getRegistryProxyConstructorParams(eventEmitterImplementationAddress, implementationCalldata.data!, core),
     'EventEmitterRegistryProxy',

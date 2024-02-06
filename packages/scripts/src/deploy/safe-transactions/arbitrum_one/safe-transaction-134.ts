@@ -30,7 +30,6 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const jonesTwapAddress = await deployContractAndSave(
-    Number(network),
     'TWAPPriceOracle',
     getTWAPPriceOracleConstructorParams(core, core.tokens.jones!, [core.jonesEcosystem!.jonesWethV3Pool]),
     'JonesTWAPPriceOracleV1',
@@ -38,7 +37,6 @@ async function main(): Promise<DenJsonUpload> {
   const jonesTwap = TWAPPriceOracle__factory.connect(jonesTwapAddress, core.governance);
 
   const premiaTwapAddress = await deployContractAndSave(
-    Number(network),
     'TWAPPriceOracle',
     getTWAPPriceOracleConstructorParams(core, core.tokens.premia!, [core.premiaEcosystem!.premiaWethV3Pool]),
     'PremiaTWAPPriceOracleV1',

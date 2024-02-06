@@ -40,7 +40,12 @@ describe('BaseLiquidatorProxy', () => {
     proxy = await createContractWithAbi<TestBaseLiquidatorProxy>(
       TestBaseLiquidatorProxy__factory.abi,
       TestBaseLiquidatorProxy__factory.bytecode,
-      [core.dolomiteMargin.address, core.expiry.address, core.liquidatorAssetRegistry.address],
+      [
+        core.liquidatorAssetRegistry.address,
+        core.dolomiteMargin.address,
+        core.expiry.address,
+        core.config.networkNumber,
+      ],
     );
 
     snapshotId = await snapshot();

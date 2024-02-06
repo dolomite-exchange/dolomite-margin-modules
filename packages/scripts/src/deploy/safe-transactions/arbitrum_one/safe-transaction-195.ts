@@ -18,7 +18,6 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const vaultV7 = await deployContractAndSave(
-    core.config.networkNumber,
     'JonesUSDCIsolationModeTokenVaultV2',
     [],
     'JonesUSDCIsolationModeTokenVaultV7',

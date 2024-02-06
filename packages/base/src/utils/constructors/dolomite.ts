@@ -13,12 +13,41 @@ import { Network, NetworkType, ZERO_BI } from '../no-deps-constants';
 import InterestRateStruct = IDolomiteInterestSetter.InterestRateStruct;
 import MonetaryPriceStruct = IDolomiteStructs.MonetaryPriceStruct;
 
+export enum TargetCollateralization {
+  Base = '1.00',
+  _120 = '1.20',
+  _125 = '1.25',
+  _150 = '1.50',
+  _166 = '1.66666666',
+}
+
+export enum TargetLiquidationPenalty {
+  Base = '0',
+  _6 = '0.06',
+  _7 = '0.07',
+  _8 = '0.08',
+  _10 = '0.10',
+  _15 = '0.15',
+}
+
 export function getRegistryProxyConstructorParams<T extends Network>(
   implementationAddress: string,
   implementationCalldata: string,
   core: CoreProtocolType<T>,
 ): any[] {
   return [implementationAddress, core.dolomiteMargin.address, implementationCalldata];
+}
+
+export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends Network>(
+  core: CoreProtocolType<T>,
+): any[] {
+  return [
+    core.dolomiteRegistry.address,
+    core.liquidatorAssetRegistry.address,
+    core.dolomiteMargin.address,
+    core.expiry.address,
+    core.config.networkNumber,
+  ];
 }
 
 export function getIsolationModeTraderProxyConstructorParams<T extends Network>(
@@ -89,14 +118,6 @@ export function getOwnerAddMarketParameters<T extends NetworkType>(
   ] as Parameters<IDolomiteMarginV2['functions']['ownerAddMarket']> as any;
 }
 
-export enum TargetCollateralization {
-  Base = '1.00',
-  _120 = '1.20',
-  _125 = '1.25',
-  _150 = '1.50',
-  _166 = '1.66666666',
-}
-
 export function getMarginPremiumForTargetCollateralization(
   targetCollateralization: TargetCollateralization,
 ): BigNumber {
@@ -107,15 +128,6 @@ export function getMarginPremiumForTargetCollateralization(
   const one = parseEther('1');
   const baseCollateralization = parseEther('1.15');
   return parseEther(targetCollateralization).mul(one).div(baseCollateralization).sub(one);
-}
-
-export enum TargetLiquidationPenalty {
-  Base = '0',
-  _6 = '0.06',
-  _7 = '0.07',
-  _8 = '0.08',
-  _10 = '0.10',
-  _15 = '0.15',
 }
 
 export function getLiquidationPremiumForTargetLiquidationPenalty(

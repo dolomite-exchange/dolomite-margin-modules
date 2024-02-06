@@ -60,9 +60,7 @@ import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'eth
 import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs, { readFileSync } from 'fs';
 import hardhat, { artifacts, network, run } from 'hardhat';
-import { BUILD_INFO_DIR_NAME } from 'hardhat/internal/constants';
-import * as path from 'path';
-import { join } from 'path';
+import path, { join } from 'path';
 
 type ChainId = string;
 
@@ -125,7 +123,7 @@ async function createArtifactFromWorkspaceIfNotExists(artifactName: string) {
     .map(d => path.join(packagesPath, d.name));
 
   for (const child of children) {
-    const artifactPath = join(__dirname,  child, `artifacts/contracts/${artifactName}.sol/${artifactName}.json`);
+    const artifactPath = join(__dirname, child, `artifacts/contracts/${artifactName}.sol/${artifactName}.json`);
     if (fs.existsSync(artifactPath)) {
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
       await artifacts.saveArtifactAndDebugFile(artifact);
@@ -215,7 +213,6 @@ export interface PendlePtSystem {
 }
 
 export async function deployPendlePtSystem<T extends NetworkType>(
-  network: T,
   core: CoreProtocolWithPendle<T>,
   ptName: string,
   ptMarket: IPendlePtMarket,
@@ -291,7 +288,6 @@ export enum InterestSetterType {
 const ONE_PERCENT = parseEther('0.01');
 
 export async function deployLinearInterestSetterAndSave(
-  chainId: number,
   interestSetterType: InterestSetterType,
   lowerOptimal: BigNumber,
   upperOptimal: BigNumber,

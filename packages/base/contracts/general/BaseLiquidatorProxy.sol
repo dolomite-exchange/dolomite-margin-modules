@@ -90,18 +90,21 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
     // ============ Immutable Fields ============
 
     IExpiry public immutable EXPIRY; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable CHAIN_ID;
 
     // ================ Constructor ===============
 
     constructor(
+        address _liquidatorAssetRegistry,
         address _dolomiteMargin,
         address _expiry,
-        address _liquidatorAssetRegistry
+        uint256 _chainId
     )
         HasLiquidatorRegistry(_liquidatorAssetRegistry)
         OnlyDolomiteMargin(_dolomiteMargin)
     {
         EXPIRY = IExpiry(_expiry);
+        CHAIN_ID = _chainId;
     }
 
     // ============ Internal Functions ============
@@ -122,6 +125,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
         uint256 owedPriceAdj;
         if (_constants.expirationTimestamp > 0) {
             (, IDolomiteMargin.MonetaryPrice memory owedPricePrice) = EXPIRY.getVersionedSpreadAdjustedPrices(
+                CHAIN_ID,
                 _constants.liquidAccount,
                 _constants.heldMarket,
                 _constants.owedMarket,
@@ -130,6 +134,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             owedPriceAdj = owedPricePrice.value;
         } else {
             IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
+                CHAIN_ID,
                 _constants.liquidAccount,
                 _constants.heldMarket,
                 _constants.owedMarket

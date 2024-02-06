@@ -22,7 +22,6 @@ const old2025Wrapper = '0xb88653715b5E53874bC0A569f48eF2D0c01e4a0E';
 
 async function deployPtWstEthJun2024Updates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV4 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtIsolationModeUnwrapperTraderV2',
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
@@ -33,7 +32,6 @@ async function deployPtWstEthJun2024Updates(core: CoreProtocolArbitrumOne): Prom
     'PendlePtWstEthJun2024IsolationModeUnwrapperTraderV4',
   );
   const wrapperV4 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtIsolationModeWrapperTraderV2',
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
       core,
@@ -85,7 +83,6 @@ async function deployPtWstEthJun2024Updates(core: CoreProtocolArbitrumOne): Prom
 
 async function deployPtWstEthJun2025Updates(core: CoreProtocolArbitrumOne): Promise<EncodedTransaction[]> {
   const unwrapperV4 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtIsolationModeUnwrapperTraderV2',
     getPendlePtIsolationModeUnwrapperTraderV2ConstructorParams(
       core,
@@ -96,7 +93,6 @@ async function deployPtWstEthJun2025Updates(core: CoreProtocolArbitrumOne): Prom
     'PendlePtWstEthJun2025IsolationModeUnwrapperTraderV4',
   );
   const wrapperV4 = await deployContractAndSave(
-    core.config.networkNumber,
     'PendlePtIsolationModeWrapperTraderV2',
     getPendlePtIsolationModeWrapperTraderV2ConstructorParams(
       core,

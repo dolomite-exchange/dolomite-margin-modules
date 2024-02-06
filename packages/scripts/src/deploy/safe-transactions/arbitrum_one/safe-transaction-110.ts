@@ -32,14 +32,12 @@ async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
   const oARBAddress = await deployContractAndSave(
-    Number(network),
     'OARB',
     getOARBConstructorParams(core),
   );
   const oARB = OARB__factory.connect(oARBAddress, core.hhUser1);
   const vesterProxy = await createVesterProxy(core, network, oARB);
   const vesterExploderAddress = await deployContractAndSave(
-    Number(network),
     'VesterExploder',
     getVesterExploderConstructorParams(core, vesterProxy),
   );
@@ -94,7 +92,6 @@ async function createVesterProxy(
   oARB: OARB,
 ): Promise<VesterImplementationV1> {
   const vesterImplementationAddress = await deployContractAndSave(
-    Number(network),
     'VesterImplementationV1',
     getVesterImplementationConstructorParams(core),
     'VesterImplementationV1V1',
@@ -104,7 +101,6 @@ async function createVesterProxy(
     core.hhUser1,
   );
   const vesterProxyAddress = await deployContractAndSave(
-    Number(network),
     'VesterProxy',
     await getVesterV1ProxyConstructorParams(
       core,

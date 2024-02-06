@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import "hardhat/console.sol";
+
 
 /**
  * @title   ChainHelperLib
@@ -37,7 +39,7 @@ library ChainHelperLib {
 
     // ============ Functions ============
 
-    function isArbitrum() internal view returns (bool) {
-        return block.chainid == _ARBITRUM_ONE || block.chainid == _ARBITRUM_SEPOLIA;
+    function isArbitrum(uint256 chainId) internal pure returns (bool) {
+        return chainId == _ARBITRUM_ONE || chainId == _ARBITRUM_SEPOLIA;
     }
 }

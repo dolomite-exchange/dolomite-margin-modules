@@ -24,13 +24,11 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const newDolomiteRegistryImplementationAddress = await deployContractAndSave(
-    Number(network),
     'DolomiteRegistryImplementation',
     [],
     'DolomiteRegistryImplementationV5',
   );
   const ptREthJun2025OracleAddress = await deployContractAndSave(
-    Number(network),
     'PendlePtPriceOracle',
     getPendlePtPriceOracleConstructorParams(
       core,
@@ -41,7 +39,6 @@ async function main(): Promise<DenJsonUpload> {
     'PendlePtREthJun2025PriceOracle',
   );
   const ptWstEthJun2024OracleAddress = await deployContractAndSave(
-    Number(network),
     'PendlePtPriceOracle',
     getPendlePtPriceOracleConstructorParams(
       core,
@@ -52,7 +49,6 @@ async function main(): Promise<DenJsonUpload> {
     'PendlePtWstEthJun2024PriceOracle',
   );
   const ptWstEthJun2025OracleAddress = await deployContractAndSave(
-    Number(network),
     'PendlePtPriceOracle',
     getPendlePtPriceOracleConstructorParams(
       core,

@@ -33,6 +33,8 @@ const defaultAmountStruct = {
   value: ZERO_BI,
 };
 
+const abiCoder = ethers.utils.defaultAbiCoder;
+
 describe('AccountActionLib', () => {
   let snapshotId: string;
 
@@ -444,7 +446,7 @@ describe('AccountActionLib', () => {
     it('should work normally', async () => {
       const accountId = '123';
       const expiryTimeDelta = '3600';
-      const callData = ethers.utils.defaultAbiCoder.encode(
+      const callData = abiCoder.encode(
         ['uint8', '((address,uint256),uint256,uint32,bool)[]'],
         [
           ExpiryCallFunctionType.SetExpiry,
@@ -491,7 +493,7 @@ describe('AccountActionLib', () => {
       const owedMarketId = underlyingMarketId;
       const heldMarketId = otherMarketId;
       const expiry = '1900000000';
-      const callData = ethers.utils.defaultAbiCoder.encode(
+      const callData = abiCoder.encode(
         ['uint256', 'uint32'],
         [owedMarketId, expiry],
       );
@@ -525,7 +527,7 @@ describe('AccountActionLib', () => {
       const owedMarketId = underlyingMarketId;
       const heldMarketId = otherMarketId;
       const expiry = '1900000000';
-      const callData = ethers.utils.defaultAbiCoder.encode(
+      const callData = abiCoder.encode(
         ['uint256', 'uint32'],
         [owedMarketId, expiry],
       );
@@ -555,14 +557,13 @@ describe('AccountActionLib', () => {
   });
 
   describe('#encodeInternalTradeAction', () => {
-    // TODO: test on zkEVM / Base
-    it('should work normally', async () => {
+    it('should work normally on Arbitrum', async () => {
       const fromAccountId = '1';
       const toAccountId = '9';
       const primaryMarketId = underlyingMarketId;
       const secondaryMarketId = otherMarketId;
       const amountInWei = amountWei;
-      const callData = ethers.utils.defaultAbiCoder.encode(
+      const callData = abiCoder.encode(
         ['uint256'],
         [amountWeiBig],
       );
@@ -573,8 +574,9 @@ describe('AccountActionLib', () => {
         secondaryMarketId,
         core.expiry.address,
         amountInWei,
+        Network.ArbitrumOne,
         true,
-        BYTES_EMPTY,
+        callData,
       );
       expect(tradeAction.actionType).to.eq(ActionType.Trade);
       expect(tradeAction.accountId).to.eq(fromAccountId);
@@ -589,6 +591,80 @@ describe('AccountActionLib', () => {
       expect(tradeAction.otherAddress).to.eq(core.expiry.address);
       expect(tradeAction.otherAccountId).to.eq(toAccountId);
       expect(tradeAction.data).to.eq(callData);
+    });
+
+    it('should work normally on Base', async () => {
+      const fromAccountId = '1';
+      const toAccountId = '9';
+      const primaryMarketId = underlyingMarketId;
+      const secondaryMarketId = otherMarketId;
+      const amountInWei = amountWei;
+      const callData = abiCoder.encode(
+        ['uint256'],
+        [amountWeiBig],
+      );
+      const calculateAmountWithMaker = true;
+      const tradeAction = await testLib.connect(core.hhUser1).encodeInternalTradeAction(
+        fromAccountId,
+        toAccountId,
+        primaryMarketId,
+        secondaryMarketId,
+        core.expiry.address,
+        amountInWei,
+        Network.Base,
+        calculateAmountWithMaker,
+        callData,
+      );
+      expect(tradeAction.actionType).to.eq(ActionType.Trade);
+      expect(tradeAction.accountId).to.eq(fromAccountId);
+      expectAssetAmountToEq(tradeAction.amount, {
+        sign: true,
+        denomination: AmountDenomination.Wei,
+        ref: AmountReference.Delta,
+        value: amountInWei,
+      });
+      expect(tradeAction.primaryMarketId).to.eq(primaryMarketId);
+      expect(tradeAction.secondaryMarketId).to.eq(secondaryMarketId);
+      expect(tradeAction.otherAddress).to.eq(core.expiry.address);
+      expect(tradeAction.otherAccountId).to.eq(toAccountId);
+      expect(tradeAction.data).to.eq(abiCoder.encode(['bool', 'bytes'], [calculateAmountWithMaker, callData]));
+    });
+
+    it('should work normally on ZkEVM', async () => {
+      const fromAccountId = '1';
+      const toAccountId = '9';
+      const primaryMarketId = underlyingMarketId;
+      const secondaryMarketId = otherMarketId;
+      const amountInWei = amountWei;
+      const callData = abiCoder.encode(
+        ['uint256'],
+        [amountWeiBig],
+      );
+      const calculateAmountWithMaker = false;
+      const tradeAction = await testLib.connect(core.hhUser1).encodeInternalTradeAction(
+        fromAccountId,
+        toAccountId,
+        primaryMarketId,
+        secondaryMarketId,
+        core.expiry.address,
+        amountInWei,
+        Network.PolygonZkEvm,
+        calculateAmountWithMaker,
+        callData,
+      );
+      expect(tradeAction.actionType).to.eq(ActionType.Trade);
+      expect(tradeAction.accountId).to.eq(fromAccountId);
+      expectAssetAmountToEq(tradeAction.amount, {
+        sign: true,
+        denomination: AmountDenomination.Wei,
+        ref: AmountReference.Delta,
+        value: amountInWei,
+      });
+      expect(tradeAction.primaryMarketId).to.eq(primaryMarketId);
+      expect(tradeAction.secondaryMarketId).to.eq(secondaryMarketId);
+      expect(tradeAction.otherAddress).to.eq(core.expiry.address);
+      expect(tradeAction.otherAccountId).to.eq(toAccountId);
+      expect(tradeAction.data).to.eq(abiCoder.encode(['bool', 'bytes'], [calculateAmountWithMaker, callData]));
     });
   });
 
@@ -629,7 +705,7 @@ describe('AccountActionLib', () => {
       const secondaryMarketId = otherMarketId;
       const amountInWei = amountWei;
       const amountOutMinWei = amountWeiBig;
-      const callData = ethers.utils.defaultAbiCoder.encode(
+      const callData = abiCoder.encode(
         ['uint256', 'bytes'],
         [amountOutMinWei, BYTES_EMPTY],
       );
@@ -663,7 +739,7 @@ describe('AccountActionLib', () => {
       const secondaryMarketId = otherMarketId;
       const amountInWei = ethers.constants.MaxUint256;
       const amountOutMinWei = amountWeiBig;
-      const callData = ethers.utils.defaultAbiCoder.encode(
+      const callData = abiCoder.encode(
         ['uint256', 'bytes'],
         [amountOutMinWei, BYTES_EMPTY],
       );

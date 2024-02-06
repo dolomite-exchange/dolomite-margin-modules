@@ -23,7 +23,6 @@ async function main() {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
   const oARB = OARB__factory.connect(Deployments.OARB[network].address, core.hhUser1);
   const rewardsDistributorAddress = await deployContractAndSave(
-    Number(network),
     'RewardsDistributor',
     getRewardsDistributorConstructorParams(
       core,

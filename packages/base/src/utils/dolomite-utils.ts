@@ -3,6 +3,7 @@ import { ActionType, AmountDenomination, AmountReference } from '@dolomite-margi
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumber, BigNumberish, BytesLike } from 'ethers';
 import hardhat, { ethers } from 'hardhat';
+import { CoreProtocolType } from '../../test/utils/setup';
 import {
   CustomTestToken,
   CustomTestToken__factory,
@@ -11,7 +12,6 @@ import {
 } from '../types';
 import { ActionArgsStruct } from './index';
 import { MAX_UINT_256_BI, Network, networkToNetworkNameMap, NetworkType } from './no-deps-constants';
-import { CoreProtocolType } from '../../test/utils/setup';
 
 /**
  * @return  The deployed contract
@@ -27,7 +27,7 @@ export async function createContractWithName<T extends BaseContract>(
 export async function createContractWithAbi<T extends BaseContract>(
   abi: readonly any[],
   bytecode: BytesLike,
-  args: (number | string | BigNumberish | object)[],
+  args: (number | string | BigNumberish | object | undefined)[],
 ): Promise<T> {
   const ContractFactory = await ethers.getContractFactory(abi as any[], bytecode);
   return await ContractFactory.deploy(...args) as T;

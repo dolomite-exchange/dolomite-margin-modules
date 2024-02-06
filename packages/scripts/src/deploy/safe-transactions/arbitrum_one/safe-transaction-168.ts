@@ -115,83 +115,71 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const dolomiteRegistryImplementationAddressV6 = await deployContractAndSave(
-    Number(network),
     'DolomiteRegistryImplementation',
     [],
     'DolomiteRegistryImplementationV6',
   );
   const eventEmitterRegistryImplementationV2Address = await deployContractAndSave(
-    Number(network),
     'EventEmitterRegistry',
     [],
     'EventEmitterRegistryImplementationV2',
   );
   const libraries = getTokenVaultLibrary(core);
   const newGlpUserVaultImplementationAddress = await deployContractAndSave(
-    Number(core.config.network),
     'GLPIsolationModeTokenVaultV2',
     [],
     'GLPIsolationModeTokenVaultV3',
     libraries,
   );
   const plvGlpUserVaultImplementationAddress = await deployContractAndSave(
-    Number(core.config.network),
     'PlutusVaultGLPIsolationModeTokenVaultV1',
     [],
     'PlutusVaultGLPIsolationModeTokenVaultV2',
     libraries,
   );
   const jonesUsdcUserVaultImplementationAddress = await deployContractAndSave(
-    Number(core.config.network),
     'JonesUSDCIsolationModeTokenVaultV1',
     [],
     'JonesUSDCIsolationModeTokenVaultV3',
     libraries,
   );
   const ptGlpUserVaultImplementationAddress = await deployContractAndSave(
-    Number(core.config.network),
     'PendlePtGLP2024IsolationModeTokenVaultV1',
     [],
     'PendlePtGLP2024IsolationModeTokenVaultV2',
     libraries,
   );
   const ytGlpUserVaultImplementationAddress = await deployContractAndSave(
-    Number(core.config.network),
     'PendleYtGLP2024IsolationModeTokenVaultV1',
     [],
     'PendleYtGLP2024IsolationModeTokenVaultV2',
     libraries,
   );
   const ptREthUserVaultImplementationAddress = await deployContractAndSave(
-    Number(core.config.network),
     'PendlePtIsolationModeTokenVaultV1',
     [],
     'PendlePtREthJun2025IsolationModeTokenVaultV2',
     libraries,
   );
   const ptWstEthJun2024UserVaultImplementationAddress = await deployContractAndSave(
-    Number(core.config.network),
     'PendlePtIsolationModeTokenVaultV1',
     [],
     'PendlePtWstEthJun2024IsolationModeTokenVaultV2',
     libraries,
   );
   const ptWstEthJun2025UserVaultImplementationAddress = await deployContractAndSave(
-    Number(core.config.network),
     'PendlePtIsolationModeTokenVaultV1',
     [],
     'PendlePtWstEthJun2025IsolationModeTokenVaultV2',
     libraries,
   );
   const vArbUserVaultImplementationAddress = await deployContractAndSave(
-    Number(core.config.network),
     'ARBIsolationModeTokenVaultV1',
     [],
     'ARBIsolationModeTokenVaultV4',
     libraries,
   );
   const gmxUserVaultImplementationAddress = await deployContractAndSave(
-    Number(core.config.network),
     'GMXIsolationModeTokenVaultV1',
     [],
     'GMXIsolationModeTokenVaultV2',

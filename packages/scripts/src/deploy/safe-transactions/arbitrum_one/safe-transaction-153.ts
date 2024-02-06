@@ -19,7 +19,6 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const glpVaultImplementationAddress = await deployContractAndSave(
-    Number(network),
     'GLPIsolationModeTokenVaultV2',
     [],
     undefined,

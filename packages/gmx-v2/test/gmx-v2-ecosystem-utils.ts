@@ -21,6 +21,7 @@ import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseContract, BigNumber, BigNumberish, ethers } from 'ethers';
 import fs, { readFileSync } from 'fs';
 import { artifacts } from 'hardhat';
+import { Artifact } from 'hardhat/types';
 import path, { join } from 'path';
 import {
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
@@ -52,13 +53,13 @@ import {
   TestGmxV2IsolationModeVaultFactory,
 } from '../src/types';
 
-async function createArtifactFromWorkspaceIfNotExists(artifactName: string) {
+async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Promise<Artifact> {
   if (await artifacts.artifactExists(artifactName)) {
     // GUARD STATEMENT!
-    return;
+    return artifacts.readArtifact(artifactName);
   }
 
-  const packagesPath = '../../../../packages';
+  const packagesPath = '../../../packages';
   const children = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
     .filter(d => d.isDirectory())
     .map(d => path.join(packagesPath, d.name));
@@ -73,7 +74,7 @@ async function createArtifactFromWorkspaceIfNotExists(artifactName: string) {
     if (fs.existsSync(artifactPath)) {
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
       await artifacts.saveArtifactAndDebugFile(artifact);
-      return;
+      return artifact;
     }
   }
 
@@ -109,12 +110,10 @@ export async function createGmxV2IsolationModeTokenVaultV1(
   core: CoreProtocolArbitrumOne,
   library: GmxV2Library,
 ): Promise<GmxV2IsolationModeTokenVaultV1> {
-  // TODO: test
-  const contract = 'GmxV2IsolationModeTokenVaultV1';
-  await createArtifactFromWorkspaceIfNotExists(contract);
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeTokenVaultV1');
   const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
   return createContractWithLibraryAndArtifact<GmxV2IsolationModeTokenVaultV1>(
-    contract,
+    artifact,
     { GmxV2Library: library.address, ...libraries },
     [core.tokens.weth.address],
   );
@@ -126,11 +125,9 @@ export async function createTestGmxV2IsolationModeTokenVaultV1(
   const actionsLib = await createIsolationModeTokenVaultV1ActionsImpl();
   const safeDelegateCallLibrary = await createSafeDelegateLibrary();
   const gmxV2Library = await createGmxV2Library();
-  const TestGmxV2IsolationModeTokenVaultV1Artifact = process.env.COVERAGE === 'true'
-    ? await import('../artifacts/contracts_coverage/test/TestGmxV2IsolationModeTokenVaultV1.sol/TestGmxV2IsolationModeTokenVaultV1.json')
-    : await import('../artifacts/contracts/test/TestGmxV2IsolationModeTokenVaultV1.sol/TestGmxV2IsolationModeTokenVaultV1.json');
+  const artifact = await createArtifactFromWorkspaceIfNotExists('TestGmxV2IsolationModeTokenVaultV1');
   return await createContractWithLibraryAndArtifact<TestGmxV2IsolationModeTokenVaultV1>(
-    TestGmxV2IsolationModeTokenVaultV1Artifact,
+    artifact,
     {
       GmxV2Library: gmxV2Library.address,
       SafeDelegateCallLib: safeDelegateCallLibrary.address,
@@ -150,11 +147,9 @@ export async function createGmxV2IsolationModeVaultFactory(
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
 ): Promise<GmxV2IsolationModeVaultFactory> {
-  const GmxV2IsolationModeVaultFactoryArtifact = process.env.COVERAGE === 'true'
-    ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeVaultFactory.sol/GmxV2IsolationModeVaultFactory.json')
-    : await import('../artifacts/contracts/GmxV2IsolationModeVaultFactory.sol/GmxV2IsolationModeVaultFactory.json');
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeVaultFactory');
   return createContractWithLibraryAndArtifact<GmxV2IsolationModeVaultFactory>(
-    GmxV2IsolationModeVaultFactoryArtifact,
+    artifact,
     { GmxV2Library: library.address },
     getGmxV2IsolationModeVaultFactoryConstructorParams(
       core,
@@ -178,11 +173,9 @@ export async function createTestGmxV2IsolationModeVaultFactory(
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
 ): Promise<TestGmxV2IsolationModeVaultFactory> {
-  const TestGmxV2IsolationModeVaultFactoryArtifact = process.env.COVERAGE === 'true'
-    ? await import('../artifacts/contracts_coverage/test/TestGmxV2IsolationModeVaultFactory.sol/TestGmxV2IsolationModeVaultFactory.json')
-    : await import('../artifacts/contracts/test/TestGmxV2IsolationModeVaultFactory.sol/TestGmxV2IsolationModeVaultFactory.json');
+  const artifact = await createArtifactFromWorkspaceIfNotExists('TestGmxV2IsolationModeVaultFactory');
   return createContractWithLibraryAndArtifact<TestGmxV2IsolationModeVaultFactory>(
-    TestGmxV2IsolationModeVaultFactoryArtifact,
+    artifact,
     { GmxV2Library: library.address },
     getGmxV2IsolationModeVaultFactoryConstructorParams(
       core,
@@ -202,12 +195,10 @@ export async function createGmxV2IsolationModeUnwrapperTraderV2(
   gmxV2Library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<GmxV2IsolationModeUnwrapperTraderV2> {
-  const GmxV2IsolationModeUnwrapperTraderV2Artifact = process.env.COVERAGE === 'true'
-    ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeUnwrapperTraderV2.sol/GmxV2IsolationModeUnwrapperTraderV2.json')
-    : await import('../artifacts/contracts/GmxV2IsolationModeUnwrapperTraderV2.sol/GmxV2IsolationModeUnwrapperTraderV2.json');
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeUnwrapperTraderV2');
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
   const implementation = await createContractWithLibraryAndArtifact<GmxV2IsolationModeUnwrapperTraderV2>(
-    GmxV2IsolationModeUnwrapperTraderV2Artifact,
+    artifact,
     { GmxV2Library: gmxV2Library.address, ...libraries },
     [core.tokens.weth.address],
   );
@@ -233,12 +224,10 @@ export async function createTestGmxV2IsolationModeUnwrapperTraderV2(
   safeDelegateCallLibrary: BaseContract,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<TestGmxV2IsolationModeUnwrapperTraderV2> {
-  const TestGmxV2IsolationModeUnwrapperTraderV2Artifact = process.env.COVERAGE === 'true'
-    ? await import('../artifacts/contracts_coverage/test/TestGmxV2IsolationModeUnwrapperTraderV2.sol/TestGmxV2IsolationModeUnwrapperTraderV2.json')
-    : await import('../artifacts/contracts/test/TestGmxV2IsolationModeUnwrapperTraderV2.sol/TestGmxV2IsolationModeUnwrapperTraderV2.json');
+  const artifact = await createArtifactFromWorkspaceIfNotExists('TestGmxV2IsolationModeUnwrapperTraderV2');
   const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
   const implementation = await createContractWithLibraryAndArtifact<TestGmxV2IsolationModeUnwrapperTraderV2>(
-    TestGmxV2IsolationModeUnwrapperTraderV2Artifact,
+    artifact,
     { GmxV2Library: gmxV2Library.address, SafeDelegateCallLib: safeDelegateCallLibrary.address, ...libraries },
     [core.tokens.weth.address],
   );
@@ -263,12 +252,10 @@ export async function createGmxV2IsolationModeWrapperTraderV2(
   library: GmxV2Library,
   gmxV2Registry: IGmxV2Registry | GmxV2Registry,
 ): Promise<GmxV2IsolationModeWrapperTraderV2> {
-  const GmxV2IsolationModeWrapperTraderV2Artifact = process.env.COVERAGE === 'true'
-    ? await import('../artifacts/contracts_coverage/GmxV2IsolationModeWrapperTraderV2.sol/GmxV2IsolationModeWrapperTraderV2.json')
-    : await import('../artifacts/contracts/GmxV2IsolationModeWrapperTraderV2.sol/GmxV2IsolationModeWrapperTraderV2.json');
+  const artifact = await createArtifactFromWorkspaceIfNotExists('GmxV2IsolationModeWrapperTraderV2');
   const libraries = await createAsyncIsolationModeWrapperTraderImpl();
   const implementation = await createContractWithLibraryAndArtifact<GmxV2IsolationModeWrapperTraderV2>(
-    GmxV2IsolationModeWrapperTraderV2Artifact,
+    artifact,
     { GmxV2Library: library.address, ...libraries },
     [core.tokens.weth.address],
   );

@@ -21,7 +21,6 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const dpxPriceOracle = await deployContractAndSave(
-    core.config.networkNumber,
     'TWAPPriceOracle',
     getTWAPPriceOracleConstructorParams(core, core.tokens.dpx!, [core.camelotEcosystem!.dpxWethV3Pool]),
     'DPXTWAPPriceOracleV1',

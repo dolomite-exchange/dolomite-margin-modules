@@ -20,14 +20,12 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const jUSDCTokenVaultV2Address = await deployContractAndSave(
-    Number(network),
     'JonesUSDCIsolationModeTokenVaultV2',
     [],
     undefined,
     core.tokenVaultActionsLibraries,
   );
   const jonesUSDCRegistryAddress = await deployContractAndSave(
-    Number(network),
     'JonesUSDCRegistry',
     [],
   );

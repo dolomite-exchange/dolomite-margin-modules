@@ -38,6 +38,7 @@ import {
   IsolationModeFreezableLiquidatorProxy__factory,
 } from '../../src/types';
 import { AccountStruct } from '../../src/utils/constants';
+import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from '../../src/utils/constructors/dolomite';
 import { createContractWithAbi, depositIntoDolomiteMargin } from '../../src/utils/dolomite-utils';
 import { BYTES_ZERO, MAX_UINT_256_BI, NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { getBlockTimestamp, impersonate, increaseByTimeDelta, revertToSnapshotAndCapture, snapshot } from '../utils';
@@ -114,12 +115,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      [
-        core.dolomiteRegistry.address,
-        core.dolomiteMargin.address,
-        core.expiry.address,
-        core.liquidatorAssetRegistry.address,
-      ],
+      getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
     );
 
     const gmxV2Library = await createGmxV2Library();

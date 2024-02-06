@@ -65,14 +65,16 @@ contract IsolationModeFreezableLiquidatorProxy is
 
     constructor(
         address _dolomiteRegistry,
+        address _liquidatorAssetRegistry,
         address _dolomiteMargin,
         address _expiry,
-        address _liquidatorAssetRegistry
+        uint256 _chainId
     )
     BaseLiquidatorProxy(
+        _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,
-        _liquidatorAssetRegistry
+        _chainId
     ) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
@@ -212,6 +214,7 @@ contract IsolationModeFreezableLiquidatorProxy is
         uint256 outputValue = DOLOMITE_MARGIN().getMarketPrice(_outputMarketId).value * _minOutputAmount;
 
         IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
+            CHAIN_ID,
             _liquidAccount,
             /* heldMarketId = */ _inputMarketId,
             /* ownedMarketId = */ _outputMarketId

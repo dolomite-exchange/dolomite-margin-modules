@@ -26,12 +26,10 @@ async function main(): Promise<DenJsonUpload> {
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
 
   const libAddress = await deployContractAndSave(
-    Number(network),
     'VesterImplementationLibForV2',
     [],
   );
   const implementationAddress = await deployContractAndSave(
-    Number(network),
     'VesterImplementationV2',
     getVesterImplementationConstructorParams(core),
     undefined,

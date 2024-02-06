@@ -48,11 +48,12 @@ library DolomiteMarginVersionWrapperLib {
 
     function getVersionedLiquidationSpreadForPair(
         IDolomiteMargin _dolomiteMargin,
+        uint256 _chainId,
         IDolomiteStructs.AccountInfo memory _liquidAccount,
         uint256 _heldMarketId,
         uint256 _owedMarketId
     ) internal view returns (IDolomiteStructs.Decimal memory) {
-        if (ChainHelperLib.isArbitrum()) {
+        if (ChainHelperLib.isArbitrum(_chainId)) {
             return _dolomiteMargin.getLiquidationSpreadForPair(_heldMarketId, _owedMarketId);
         } else {
             return dv2(_dolomiteMargin).getLiquidationSpreadForAccountAndPair(
@@ -65,6 +66,7 @@ library DolomiteMarginVersionWrapperLib {
 
     function getVersionedSpreadAdjustedPrices(
         IExpiry _expiry,
+        uint256 _chainId,
         IDolomiteStructs.AccountInfo memory _liquidAccount,
         uint256 _heldMarketId,
         uint256 _owedMarketId,
@@ -73,7 +75,7 @@ library DolomiteMarginVersionWrapperLib {
         IDolomiteStructs.MonetaryPrice memory heldPrice,
         IDolomiteStructs.MonetaryPrice memory owedPriceAdj
     ) {
-        if (ChainHelperLib.isArbitrum()) {
+        if (ChainHelperLib.isArbitrum(_chainId)) {
             (heldPrice, owedPriceAdj) = _expiry.getSpreadAdjustedPrices(_heldMarketId, _owedMarketId, _expiration);
         } else {
             (heldPrice, owedPriceAdj) = ev2(_expiry).getLiquidationSpreadAdjustedPrices(

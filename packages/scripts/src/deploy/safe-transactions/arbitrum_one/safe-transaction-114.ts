@@ -27,7 +27,6 @@ async function main() {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
   const grailTwapPriceOracleAddress = await deployContractAndSave(
-    Number(network),
     'TWAPPriceOracle',
     getTWAPPriceOracleConstructorParams(
       core,
@@ -39,7 +38,6 @@ async function main() {
   const grailTwapPriceOracle = TWAPPriceOracle__factory.connect(grailTwapPriceOracleAddress, core.hhUser1);
 
   const altcoinInterestSetterAddress = await deployLinearInterestSetterAndSave(
-    Number(network),
     InterestSetterType.Altcoin,
     parseEther('0.14'),
     parseEther('0.86'),

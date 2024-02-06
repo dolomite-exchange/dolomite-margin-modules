@@ -6,7 +6,6 @@ import {
   GMXIsolationModeTokenVaultV1,
   GMXIsolationModeTokenVaultV1__factory,
 } from '@dolomite-exchange/modules-glp/src/types';
-import hardhat from 'hardhat';
 import { assertHardhatInvariant } from 'hardhat/internal/core/errors';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../../utils/dry-run-utils';

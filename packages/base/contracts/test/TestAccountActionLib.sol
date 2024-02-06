@@ -103,9 +103,10 @@ contract TestAccountActionLib {
         uint256 _secondaryMarketId,
         address _traderAddress,
         uint256 _amountInWei,
+        uint256 _chainId,
         bool _calculateAmountWithMakerAccount,
         bytes memory _orderData
-    ) public view returns (IDolomiteStructs.ActionArgs memory) {
+    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
         return AccountActionLib.encodeInternalTradeAction(
             _fromAccountId,
             _toAccountId,
@@ -113,6 +114,7 @@ contract TestAccountActionLib {
             _secondaryMarketId,
             _traderAddress,
             _amountInWei,
+            _chainId,
             _calculateAmountWithMakerAccount,
             _orderData
         );

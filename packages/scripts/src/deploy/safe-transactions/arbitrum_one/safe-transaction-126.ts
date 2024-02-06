@@ -31,7 +31,6 @@ async function main(): Promise<DenJsonUpload> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
   const rEthSystem = await deployPendlePtSystem(
-    network,
     core,
     PtName.REthJun2025,
     core.pendleEcosystem!.rEthJun2025.ptREthMarket,
@@ -41,7 +40,6 @@ async function main(): Promise<DenJsonUpload> {
     core.tokens.rEth!,
   );
   const wstEthJun2024System = await deployPendlePtSystem(
-    network,
     core,
     PtName.WstEthJun2024,
     core.pendleEcosystem!.wstEthJun2024.ptWstEthMarket,
@@ -51,7 +49,6 @@ async function main(): Promise<DenJsonUpload> {
     core.tokens.wstEth!,
   );
   const wstEthJun2025System = await deployPendlePtSystem(
-    network,
     core,
     PtName.WstEthJun2025,
     core.pendleEcosystem!.wstEthJun2025.ptWstEthMarket,

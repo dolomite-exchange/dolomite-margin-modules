@@ -173,39 +173,6 @@ library AccountActionLib {
     }
 
     // ===============================================================
-    // ========================= View Functions ======================
-    // ===============================================================
-
-    function encodeInternalTradeAction(
-        uint256 _fromAccountId,
-        uint256 _toAccountId,
-        uint256 _primaryMarketId,
-        uint256 _secondaryMarketId,
-        address _traderAddress,
-        uint256 _amountInWei,
-        bool _calculateAmountWithMakerAccount,
-        bytes memory _orderData
-    ) internal view returns (IDolomiteStructs.ActionArgs memory) {
-        return IDolomiteStructs.ActionArgs({
-                actionType: IDolomiteStructs.ActionType.Trade,
-                accountId: _fromAccountId,
-                amount: IDolomiteStructs.AssetAmount({
-                    sign: true,
-                    denomination: IDolomiteStructs.AssetDenomination.Wei,
-                    ref: IDolomiteStructs.AssetReference.Delta,
-                    value: _amountInWei
-                }),
-                primaryMarketId: _primaryMarketId,
-                secondaryMarketId: _secondaryMarketId,
-                otherAddress: _traderAddress,
-                otherAccountId: _toAccountId,
-                data: ChainHelperLib.isArbitrum()
-                        ? abi.encode(_orderData)
-                        : abi.encode(_calculateAmountWithMakerAccount, _orderData)
-            });
-    }
-
-    // ===============================================================
     // ========================= Pure Functions ======================
     // ===============================================================
 
@@ -395,6 +362,36 @@ library AccountActionLib {
             otherAddress : _trader,
             otherAccountId : 0,
             data : abi.encode(_amountOutMinWei, _orderData)
+        });
+    }
+
+    function encodeInternalTradeAction(
+        uint256 _fromAccountId,
+        uint256 _toAccountId,
+        uint256 _primaryMarketId,
+        uint256 _secondaryMarketId,
+        address _traderAddress,
+        uint256 _amountInWei,
+        uint256 _chainId,
+        bool _calculateAmountWithMakerAccount,
+        bytes memory _orderData
+    ) internal pure returns (IDolomiteStructs.ActionArgs memory) {
+        return IDolomiteStructs.ActionArgs({
+            actionType: IDolomiteStructs.ActionType.Trade,
+            accountId: _fromAccountId,
+            amount: IDolomiteStructs.AssetAmount({
+                sign: true,
+                denomination: IDolomiteStructs.AssetDenomination.Wei,
+                ref: IDolomiteStructs.AssetReference.Delta,
+                value: _amountInWei
+            }),
+            primaryMarketId: _primaryMarketId,
+            secondaryMarketId: _secondaryMarketId,
+            otherAddress: _traderAddress,
+            otherAccountId: _toAccountId,
+            data: ChainHelperLib.isArbitrum(_chainId)
+                ? _orderData
+                : abi.encode(_calculateAmountWithMakerAccount, _orderData)
         });
     }
 
