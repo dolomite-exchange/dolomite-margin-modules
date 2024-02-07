@@ -54,6 +54,7 @@ import {
   createGmxV2Registry,
   getOracleParams,
 } from './gmx-v2-ecosystem-utils';
+import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -64,7 +65,7 @@ const amountWeiForSecond = ONE_ETH_BI.mul('1234');
 const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
-describe('IsolationModeFreezableLiquidatorProxy', () => {
+describe('POC: liquidationWithdrawalKeyHijacking', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -99,12 +100,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      [
-        core.dolomiteRegistry.address,
-        core.dolomiteMargin.address,
-        core.expiry.address,
-        core.liquidatorAssetRegistry.address,
-      ],
+      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core)
     );
 
     const gmxV2Library = await createGmxV2Library();

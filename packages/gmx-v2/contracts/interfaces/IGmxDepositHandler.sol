@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { GmxDeposit } from "./GmxDeposit.sol";
-import { GmxOracleUtils } from "./GmxOracleUtils.sol";
+import { GmxDeposit } from "../lib/GmxDeposit.sol";
+import { GmxOracleUtils } from "../lib/GmxOracleUtils.sol";
 
 
 /**

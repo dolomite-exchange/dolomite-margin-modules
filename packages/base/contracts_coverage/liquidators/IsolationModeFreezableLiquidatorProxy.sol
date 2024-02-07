@@ -57,10 +57,6 @@ contract IsolationModeFreezableLiquidatorProxy is
 
     IDolomiteRegistry public immutable DOLOMITE_REGISTRY; // solhint-disable-line var-name-mixedcase
 
-    // ========================= State Variables ==========================
-
-    uint256 public minOutputPercentageUpperBound = 500;
-
     // ============================ Constructor ============================
 
     constructor(
@@ -77,16 +73,6 @@ contract IsolationModeFreezableLiquidatorProxy is
         _chainId
     ) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
-    }
-
-    function ownerSetMinOutputPercentageUpperBound(
-        uint256 _minOutputPercentageUpperBound
-    )
-        external
-        onlyDolomiteMarginOwner(msg.sender)
-    {
-        minOutputPercentageUpperBound = _minOutputPercentageUpperBound;
-        emit MinOutputPercentageUpperBoundSet(_minOutputPercentageUpperBound);
     }
 
     function prepareForLiquidation(

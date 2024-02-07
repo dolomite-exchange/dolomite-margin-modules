@@ -5,22 +5,23 @@ import {
   TestHandlerRegistry
 } from '@dolomite-exchange/modules-base/src/types';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
-import { ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { Network, ONE_ETH_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, setEtherBalance, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { createIsolationModeTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
-import { CoreProtocol, getDefaultCoreProtocolConfigForGmxV2, setupCoreProtocol } from 'packages/base/test/utils/setup';
-import { createTestHandlerRegistry } from '../../utils/ecosystem-token-utils/testers';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol } from 'packages/base/test/utils/setup';
+import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
+import { createTestHandlerRegistry } from '../../utils/ecosystem-utils/testers';
 
 describe('AsyncIsolationModeTraderBase', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let handlerRegistry: TestHandlerRegistry;
   let trader: TestAsyncIsolationModeTraderBase;
 
   before(async () => {
-    core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
+    core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     handlerRegistry = await createTestHandlerRegistry(core);
 
     const implementation = await createContractWithAbi<TestAsyncIsolationModeTraderBase>(

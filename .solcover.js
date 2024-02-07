@@ -2,6 +2,10 @@ module.exports = {
   measureStatementCoverage: false,
   measureFunctionCoverage: true,
   measureModifierCoverage: true,
+  modifierWhitelist: [
+    '_transferFromPositionWithOtherTokenPausableValidator',
+    '_closeBorrowPositionWithOtherTokensPausableValidator'
+  ],
   skipFiles: [
     'external/interfaces',
     'test/',

@@ -182,7 +182,7 @@ describe('IsolationModeTokenVaultV1WithPausable', () => {
     });
   });
 
-  describe.only('#closeBorrowPositionWithOtherTokens', () => {
+  describe('#closeBorrowPositionWithOtherTokens', () => {
     it('should work normally when not paused', async () => {
       expect(await userVault.isExternalRedemptionPaused()).to.be.false;
       await userVault.transferIntoPositionWithOtherToken(
