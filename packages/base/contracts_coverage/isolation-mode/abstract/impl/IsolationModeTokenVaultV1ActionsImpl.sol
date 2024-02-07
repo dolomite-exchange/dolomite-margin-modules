@@ -81,6 +81,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _amountWei
     ) public {
         _checkFromAccountNumberIsZero(_fromAccountNumber);
+        if (_toAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _toAccountNumber != 0,
             _FILE,
@@ -126,6 +127,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         _checkBorrowAccountNumberIsNotZero(_borrowAccountNumber, /* _bypassAccountNumberCheck = */ false);
         uint256 underlyingMarketId = _vault.marketId();
         for (uint256 i = 0; i < _collateralMarketIds.length; i++) {
+            if (_collateralMarketIds[i] != underlyingMarketId) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _collateralMarketIds[i] != underlyingMarketId,
                 _FILE,
@@ -269,6 +271,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
     ) public {
         if (_borrowAccountNumber == 0) {
             uint256 marketId = _vault.marketId();
+            if (_marketIdsPath[0] != marketId && _marketIdsPath[_marketIdsPath.length - 1] == marketId) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _marketIdsPath[0] != marketId && _marketIdsPath[_marketIdsPath.length - 1] == marketId,
                 _FILE,
@@ -334,6 +337,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 outputMarketId = _marketIdsPath[_marketIdsPath.length - 1];
         if (_borrowAccountNumber == 0) {
             uint256 marketId = _vault.marketId();
+            if (outputMarketId != marketId && _marketIdsPath[0] == marketId) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 outputMarketId != marketId && _marketIdsPath[0] == marketId,
                 _FILE,
@@ -372,7 +376,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         }
 
         // Panic if the balance delta is not positive
-        assert(balanceDelta.isPositive());
+        /*assert(balanceDelta.isPositive());*/
 
         if (outputMarketId == _vault.marketId()) {
             transferFromPositionWithUnderlyingToken(
@@ -407,6 +411,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         bool _bypassAccountNumberCheck
     ) public {
         if (!_bypassAccountNumberCheck) {
+            if (_tradeAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _tradeAccountNumber != 0,
                 _FILE,
@@ -471,6 +476,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         );
 
         IDolomiteStructs.Decimal memory marginRatio = dolomiteMargin.getMarginRatio();
+        if (dolomiteMargin.getAccountStatus(liquidAccount) != IDolomiteStructs.AccountStatus.Liquid && _isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             dolomiteMargin.getAccountStatus(liquidAccount) != IDolomiteStructs.AccountStatus.Liquid
                 && _isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio),
@@ -496,6 +502,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
             }),
             _marketId
         );
+        if (balanceWei.isPositive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             balanceWei.isPositive(),
             _FILE,
@@ -533,6 +540,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
                         break;
                     }
                 }
+                if (isAllowable) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     isAllowable,
                     _FILE,
@@ -570,6 +578,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
                         break;
                     }
                 }
+                if (isAllowable) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     isAllowable,
                     _FILE,
@@ -584,6 +593,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         IIsolationModeTokenVaultV1 _vault,
         uint256 _marketId
     ) private view {
+        if (_marketId != _vault.marketId()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _marketId != _vault.marketId(),
             _FILE,
@@ -682,6 +692,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
 
 
     function _checkFromAccountNumberIsZero(uint256 _fromAccountNumber) private pure {
+        if (_fromAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _fromAccountNumber == 0,
             _FILE,
@@ -691,6 +702,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
     }
 
     function _checkToAccountNumberIsZero(uint256 _toAccountNumber) private pure {
+        if (_toAccountNumber == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _toAccountNumber == 0,
             _FILE,
@@ -704,6 +716,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         bool _bypassAccountNumberCheck
     ) private pure {
         if (!_bypassAccountNumberCheck) {
+            if (_borrowAccountNumber != 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _borrowAccountNumber != 0,
                 _FILE,

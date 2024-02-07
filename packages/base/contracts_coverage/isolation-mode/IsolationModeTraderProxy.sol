@@ -87,6 +87,7 @@ contract IsolationModeTraderProxy is ProxyContractHelpers, OnlyDolomiteMarginFor
     // ===================== Internal Functions =====================
 
     function _setImplementation(address _newImplementation) internal {
+        if (Address.isContract(_newImplementation)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             Address.isContract(_newImplementation),
             _FILE,

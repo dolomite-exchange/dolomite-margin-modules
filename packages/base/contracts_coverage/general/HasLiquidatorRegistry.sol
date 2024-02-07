@@ -60,6 +60,7 @@ abstract contract HasLiquidatorRegistry {
     // ============ Internal Functions ============
 
     function _validateAssetForLiquidation(uint256 _marketId) internal view {
+        if (LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketId, address(this))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketId, address(this)),
             _FILE,
@@ -70,6 +71,7 @@ abstract contract HasLiquidatorRegistry {
 
     function _validateAssetsForLiquidation(uint256[] memory _marketIds) internal view {
         for (uint256 i = 0; i < _marketIds.length; i++) {
+            if (LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketIds[i], address(this))) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 LIQUIDATOR_ASSET_REGISTRY.isAssetWhitelistedForLiquidation(_marketIds[i], address(this)),
                 _FILE,

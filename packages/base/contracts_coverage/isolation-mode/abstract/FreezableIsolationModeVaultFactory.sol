@@ -69,6 +69,7 @@ abstract contract FreezableIsolationModeVaultFactory is
     // ===========================================================
 
     modifier requireIsTokenConverterOrVaultOrDolomiteMarginOwner(address _caller) {
+        if (_tokenConverterToIsTrustedMap[_caller] || _vaultToUserMap[_caller] != address(0) || DOLOMITE_MARGIN().owner() == _caller) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _tokenConverterToIsTrustedMap[_caller]
                 || _vaultToUserMap[_caller] != address(0)
@@ -170,6 +171,7 @@ abstract contract FreezableIsolationModeVaultFactory is
         requireIsVault(_vault)
     {
         address expectedConversionToken = _accountInfoToOutputTokenMap[_vault][_accountNumber];
+        if (expectedConversionToken == address(0) || expectedConversionToken == _conversionToken) { /* FOR COVERAGE TESTING */ }
         Require.that(
             expectedConversionToken == address(0) || expectedConversionToken == _conversionToken,
             _FILE,
@@ -239,6 +241,7 @@ abstract contract FreezableIsolationModeVaultFactory is
     function _ownerSetExecutionFee(
         uint256 _executionFee
     ) internal {
+        if (_executionFee <= maxExecutionFee) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _executionFee <= maxExecutionFee,
             _FILE,

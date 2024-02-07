@@ -77,6 +77,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         uint256 _outputAmountDeltaWei,
         DepositInfo calldata _depositInfo
     ) external {
+        if (msg.sender == address(HANDLER_REGISTRY().getUnwrapperByToken(VAULT_FACTORY()))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == address(HANDLER_REGISTRY().getUnwrapperByToken(VAULT_FACTORY())),
             _FILE,
@@ -111,24 +112,28 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
+        if (VAULT_FACTORY().getAccountByVault(_tradeOriginator) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             VAULT_FACTORY().getAccountByVault(_tradeOriginator) != address(0),
             _FILE,
             "Invalid trade originator",
             _tradeOriginator
         );
+        if (isValidInputToken(_inputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isValidInputToken(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
+        if (_outputToken == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _outputToken == address(VAULT_FACTORY()),
             _FILE,
             "Invalid output token",
             _outputToken
         );
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputAmount > 0,
             _FILE,
@@ -146,6 +151,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             _inputAmount,
             _extraOrderData
         );
+        if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             outputAmount >= minOutputAmount,
             _FILE,
@@ -191,18 +197,21 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     override
     view
     returns (uint256) {
+        if (isValidInputToken(_inputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isValidInputToken(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
+        if (_outputToken == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _outputToken == address(VAULT_FACTORY()),
             _FILE,
             "Invalid output token",
             _outputToken
         );
+        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _desiredInputAmount > 0,
             _FILE,
@@ -266,6 +275,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
         IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(address(VAULT_FACTORY()));
 
         // Disallow the deposit if there's already an action waiting for it
+        if (!factory.isVaultFrozen(_tradeOriginator)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !factory.isVaultFrozen(_tradeOriginator),
             _FILE,
@@ -514,6 +524,7 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
     }
 
     function _validateDepositExists(DepositInfo memory _depositInfo) internal pure {
+        if (_depositInfo.vault != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _depositInfo.vault != address(0),
             _FILE,

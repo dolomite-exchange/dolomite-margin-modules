@@ -100,6 +100,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         _;
 
         if (isExternalRedemptionPaused()) {
+            if (valueBefore.isPositive()) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 valueBefore.isPositive(),
                 _FILE,
@@ -128,6 +129,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
         if (isPaused) {
             uint256 outputMarket = _marketIdsPath[_marketIdsPath.length - 1];
             // If the ecosystem is paused, we cannot swap into more of the irredeemable asset
+            if (outputMarket != marketId()) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 outputMarket != marketId(),
                 _FILE,
@@ -135,6 +137,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
                 outputMarket
             );
             outputBalanceBefore = DOLOMITE_MARGIN().getAccountWei(tradeAccount, outputMarket);
+            if (outputBalanceBefore.isNegative()) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 outputBalanceBefore.isNegative(),
                 _FILE,
@@ -153,6 +156,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
                 tradeAccount,
                 inputMarket
             );
+            if (inputBalanceAfter.isPositive() || inputBalanceAfter.value == 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 inputBalanceAfter.isPositive() || inputBalanceAfter.value == 0,
                 _FILE,
@@ -168,6 +172,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             uint256 slippageNumerator = dolomiteRegistry().slippageToleranceForPauseSentinel();
             uint256 slippageDenominator = dolomiteRegistry().slippageToleranceForPauseSentinelBase();
             // Confirm the user is doing a fair trade and there is not more than the acceptable slippage while paused
+            if (outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenominator)) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 outputDeltaValue >= inputValue - (inputValue * slippageNumerator / slippageDenominator),
                 _FILE,
@@ -303,6 +308,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
     // ===================================================
 
     function _requireExternalRedemptionNotPaused() private view {
+        if (!isExternalRedemptionPaused()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !isExternalRedemptionPaused(),
             _FILE,
@@ -318,6 +324,7 @@ abstract contract IsolationModeTokenVaultV1WithPausable is
             })
         );
         // If the user has debt, withdrawing collateral decreases their collateralization
+        if (numberOfMarketsWithDebt == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             numberOfMarketsWithDebt == 0,
             _FILE,

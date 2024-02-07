@@ -28,7 +28,9 @@ import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
+import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
+import { ChainHelperLib } from "../lib/ChainHelperLib.sol";
 
 /**
  * @title   BaseLiquidatorProxy
@@ -39,6 +41,7 @@ import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMargin {
     using DecimalLib for IDolomiteMargin.Decimal;
     using TypesLib for IDolomiteMargin.Par;
+    using DolomiteMarginVersionWrapperLib for *;
 
     // ============ Structs ============
 
@@ -87,18 +90,21 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
     // ============ Immutable Fields ============
 
     IExpiry public immutable EXPIRY; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable CHAIN_ID;
 
     // ================ Constructor ===============
 
     constructor(
+        address _liquidatorAssetRegistry,
         address _dolomiteMargin,
         address _expiry,
-        address _liquidatorAssetRegistry
+        uint256 _chainId
     )
         HasLiquidatorRegistry(_liquidatorAssetRegistry)
         OnlyDolomiteMargin(_dolomiteMargin)
     {
         EXPIRY = IExpiry(_expiry);
+        CHAIN_ID = _chainId;
     }
 
     // ============ Internal Functions ============
@@ -118,14 +124,18 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
 
         uint256 owedPriceAdj;
         if (_constants.expirationTimestamp > 0) {
-            (, IDolomiteMargin.MonetaryPrice memory owedPricePrice) = EXPIRY.getSpreadAdjustedPrices(
+            (, IDolomiteMargin.MonetaryPrice memory owedPricePrice) = EXPIRY.getVersionedSpreadAdjustedPrices(
+                CHAIN_ID,
+                _constants.liquidAccount,
                 _constants.heldMarket,
                 _constants.owedMarket,
                 uint32(_constants.expirationTimestamp)
             );
             owedPriceAdj = owedPricePrice.value;
         } else {
-            IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getLiquidationSpreadForPair(
+            IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
+                CHAIN_ID,
+                _constants.liquidAccount,
                 _constants.heldMarket,
                 _constants.owedMarket
             );
@@ -171,9 +181,10 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
     view
     {
         // panic if the developer didn't set these variables already
-        assert(_constants.solidAccount.owner != address(0));
-        assert(_constants.liquidAccount.owner != address(0));
+        /*assert(_constants.solidAccount.owner != address(0));*/
+        /*assert(_constants.liquidAccount.owner != address(0));*/
 
+        if (_constants.owedMarket != _constants.heldMarket) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _constants.owedMarket != _constants.heldMarket,
             _FILE,
@@ -181,6 +192,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             _constants.owedMarket
         );
 
+        if (!DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.owedMarket).isPositive(),
             _FILE,
@@ -188,6 +200,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             _constants.owedMarket
         );
 
+        if (DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_MARGIN().getAccountPar(_constants.liquidAccount, _constants.heldMarket).isPositive(),
             _FILE,
@@ -195,6 +208,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             _constants.heldMarket
         );
 
+        if (uint32(_constants.expirationTimestamp) == _constants.expirationTimestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
             uint32(_constants.expirationTimestamp) == _constants.expirationTimestamp,
             _FILE,
@@ -202,6 +216,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
             _constants.expirationTimestamp
         );
 
+        if (_constants.expirationTimestamp <= block.timestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _constants.expirationTimestamp <= block.timestamp,
             _FILE,
@@ -222,6 +237,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
     view
     {
         // check credentials for msg.sender
+        if (_constants.solidAccount.owner == msg.sender || DOLOMITE_MARGIN().getIsLocalOperator(_constants.solidAccount.owner, msg.sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _constants.solidAccount.owner == msg.sender
                 || DOLOMITE_MARGIN().getIsLocalOperator(_constants.solidAccount.owner, msg.sender),
@@ -233,6 +249,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
         if (_constants.expirationTimestamp != 0) {
             // check the expiration is valid
             uint32 expirationTimestamp = EXPIRY.getExpiry(_constants.liquidAccount, _constants.owedMarket);
+            if (expirationTimestamp == _constants.expirationTimestamp) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 expirationTimestamp == _constants.expirationTimestamp,
                 _FILE,
@@ -362,7 +379,7 @@ abstract contract BaseLiquidatorProxy is HasLiquidatorRegistry, OnlyDolomiteMarg
         returns (uint256 _newInputAmountWei, uint256 _newMinOutputAmountWei)
     {
         // at this point, _cache.owedWeiToLiquidate should be the max amount that can be liquidated on the user.
-        assert(_cache.owedWeiToLiquidate > 0); // assert it was initialized
+        /*assert(_cache.owedWeiToLiquidate > 0);*/ // assert it was initialized
 
         uint256 desiredLiquidationOwedAmount = _minOutputAmountWei;
         if (

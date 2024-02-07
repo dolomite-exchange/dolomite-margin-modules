@@ -72,6 +72,7 @@ abstract contract ReentrancyGuardUpgradeable is ProxyContractHelpers {
     function _nonReentrantBefore() private {
         // @audit:  This MUST stay as `value != _ENTERED` otherwise it will DOS old vaults that don't have the
         //          `initialize` fix
+        if (_getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
             _FILE,

@@ -49,6 +49,7 @@ contract IsolationModeUpgradeableProxy is
     // ======== Modifiers =========
 
     modifier requireIsInitialized() {
+        if (isInitialized()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isInitialized(),
             _FILE,
@@ -75,11 +76,13 @@ contract IsolationModeUpgradeableProxy is
     function initialize(
         address _account
     ) external {
+        if (!isInitialized()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !isInitialized(),
             _FILE,
             "Already initialized"
         );
+        if (IIsolationModeVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             IIsolationModeVaultFactory(vaultFactory()).getVaultByAccount(_account) == address(this),
             _FILE,
@@ -110,7 +113,7 @@ contract IsolationModeUpgradeableProxy is
     function _safeDelegateCall(address _target, bytes memory _calldata) internal returns (bytes memory) {
         // solhint-disable-next-line avoid-low-level-calls
         (bool isSuccessful, bytes memory result) = _target.delegatecall(_calldata);
-        assert(isSuccessful);
+        /*assert(isSuccessful);*/
 
         return result;
     }

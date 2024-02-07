@@ -81,6 +81,7 @@ abstract contract IsolationModeTraderBaseV2 is OnlyDolomiteMargin {
 
     function _validateIsGenericTraderOrTrustedLiquidator(address _from) private view {
         uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(address(VAULT_FACTORY));
+        if (_isValidLiquidator(_from, marketId) || _from == address(DOLOMITE_REGISTRY.genericTraderProxy())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _isValidLiquidator(_from, marketId) || _from == address(DOLOMITE_REGISTRY.genericTraderProxy()),
             _FILE,

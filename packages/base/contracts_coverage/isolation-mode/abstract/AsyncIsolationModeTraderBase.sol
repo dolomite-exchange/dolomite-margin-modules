@@ -103,6 +103,7 @@ abstract contract AsyncIsolationModeTraderBase is
     }
 
     function _validateIsHandler(address _from) internal view {
+        if (isHandler(_from)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isHandler(_from),
             _FILE,
@@ -112,6 +113,7 @@ abstract contract AsyncIsolationModeTraderBase is
     }
 
     function _validateIsRetryable(bool _isRetryable) internal pure {
+        if (_isRetryable) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _isRetryable,
             _FILE,

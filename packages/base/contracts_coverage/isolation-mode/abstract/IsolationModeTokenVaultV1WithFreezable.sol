@@ -34,7 +34,6 @@ import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
-import "hardhat/console.sol";
 
 
 /**
@@ -274,6 +273,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
                 _setIsVaultDepositSourceWrapper(/* _isDepositSourceWrapper = */ false);
             }
         } else {
+            if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 isVaultFrozen(),
                 _FILE,
@@ -296,6 +296,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         if (!shouldSkipTransfer()) {
             IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
         } else {
+            if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 isVaultFrozen(),
                 _FILE,
@@ -594,6 +595,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     ) internal virtual;
 
     function _validateIsLiquidator(address _from) internal view {
+        if (dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation( IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).marketId(), _from )) { /* FOR COVERAGE TESTING */ }
         Require.that(
             dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(
                 IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).marketId(),
@@ -642,6 +644,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _withdrawalAmount,
         bool _isLiquidation
     ) private view {
+        if (_withdrawalAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _withdrawalAmount > 0,
             _FILE,
@@ -669,6 +672,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
 
         if (!_isLiquidation) {
             // The requested withdrawal cannot be for more than the user's balance, minus any pending.
+            if (balance - (withdrawalPendingAmount + depositPendingAmount) >= _withdrawalAmount) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 balance - (withdrawalPendingAmount + depositPendingAmount) >= _withdrawalAmount,
                 _FILE,
@@ -678,6 +682,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             );
         } else {
             // The requested withdrawal must be for the entirety of the user's balance
+            if (balance - (withdrawalPendingAmount + depositPendingAmount) > 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 balance - (withdrawalPendingAmount + depositPendingAmount) > 0,
                 _FILE,
@@ -685,6 +690,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
                 vault,
                 _accountNumber
             );
+            if (balance - (withdrawalPendingAmount + depositPendingAmount) == _withdrawalAmount) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 balance - (withdrawalPendingAmount + depositPendingAmount) == _withdrawalAmount,
                 _FILE,
@@ -696,6 +702,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     }
 
     function _requireNotFrozen() private view {
+        if (!isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !isVaultFrozen(),
             _FILE,
@@ -704,6 +711,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     }
 
     function _requireVaultAccountNotFrozen(uint256 _accountNumber) private view {
+        if (!isVaultAccountFrozen(_accountNumber)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !isVaultAccountFrozen(_accountNumber),
             _FILE,

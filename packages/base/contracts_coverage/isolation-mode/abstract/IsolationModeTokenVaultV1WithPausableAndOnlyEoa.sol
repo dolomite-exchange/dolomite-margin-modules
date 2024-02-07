@@ -47,6 +47,7 @@ abstract contract IsolationModeTokenVaultV1WithPausableAndOnlyEoa is IsolationMo
     function _requireOnlyVaultOwner(address _from) internal override view {
         super._requireOnlyVaultOwner(_from);
         // solhint-disable avoid-tx-origin
+        if (_from == tx.origin) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _from == tx.origin,
             _FILE,
@@ -59,6 +60,7 @@ abstract contract IsolationModeTokenVaultV1WithPausableAndOnlyEoa is IsolationMo
     function _requireOnlyVaultOwnerOrConverter(address _from) internal override view {
         super._requireOnlyVaultOwnerOrConverter(_from);
         // solhint-disable avoid-tx-origin
+        if (_from == tx.origin || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _from == tx.origin || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
             _FILE,
@@ -71,6 +73,7 @@ abstract contract IsolationModeTokenVaultV1WithPausableAndOnlyEoa is IsolationMo
     function _requireOnlyVaultOwnerOrVaultFactory(address _from) internal override view {
         super._requireOnlyVaultOwnerOrVaultFactory(_from);
         // solhint-disable avoid-tx-origin
+        if (OWNER() == tx.origin) { /* FOR COVERAGE TESTING */ }
         Require.that(
             OWNER() == tx.origin,
             _FILE,

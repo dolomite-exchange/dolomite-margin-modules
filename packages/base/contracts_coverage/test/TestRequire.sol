@@ -42,6 +42,7 @@ contract TestRequire {
     external
     pure
     {
+        if (false) { /* FOR COVERAGE TESTING */ }
         Require.that(
             false,
             _FILE,
@@ -56,6 +57,7 @@ contract TestRequire {
     external
     pure
     {
+        if (false) { /* FOR COVERAGE TESTING */ }
         Require.that(
             false,
             _FILE,
@@ -72,6 +74,7 @@ contract TestRequire {
     external
     pure
     {
+        if (false) { /* FOR COVERAGE TESTING */ }
         Require.that(
             false,
             _FILE,
@@ -89,6 +92,7 @@ contract TestRequire {
     external
     pure
     {
+        if (true) { /* FOR COVERAGE TESTING */ }
         Require.that(
             true,
             _FILE,
@@ -105,6 +109,7 @@ contract TestRequire {
     external
     pure
     {
+        if (false) { /* FOR COVERAGE TESTING */ }
         Require.that(
             false,
             _FILE,
@@ -120,6 +125,7 @@ contract TestRequire {
     external
     pure
     {
+        if (true) { /* FOR COVERAGE TESTING */ }
         Require.that(
             true,
             _FILE,
@@ -136,6 +142,7 @@ contract TestRequire {
     external
     pure
     {
+        if (false) { /* FOR COVERAGE TESTING */ }
         Require.that(
             false,
             _FILE,
@@ -153,6 +160,7 @@ contract TestRequire {
     external
     pure
     {
+        if (true) { /* FOR COVERAGE TESTING */ }
         Require.that(
             true,
             _FILE,
@@ -171,6 +179,7 @@ contract TestRequire {
     external
     pure
     {
+        if (false) { /* FOR COVERAGE TESTING */ }
         Require.that(
             false,
             _FILE,
@@ -190,6 +199,7 @@ contract TestRequire {
     external
     pure
     {
+        if (true) { /* FOR COVERAGE TESTING */ }
         Require.that(
             true,
             _FILE,
@@ -207,6 +217,7 @@ contract TestRequire {
     external
     pure
     {
+        if (false) { /* FOR COVERAGE TESTING */ }
         Require.that(
             false,
             _FILE,
@@ -222,6 +233,7 @@ contract TestRequire {
     external
     pure
     {
+        if (true) { /* FOR COVERAGE TESTING */ }
         Require.that(
             true,
             _FILE,
@@ -239,6 +251,7 @@ contract TestRequire {
     external
     pure
     {
+        if (false) { /* FOR COVERAGE TESTING */ }
         Require.that(
             false,
             _FILE,
@@ -258,6 +271,7 @@ contract TestRequire {
     external
     pure
     {
+        if (true) { /* FOR COVERAGE TESTING */ }
         Require.that(
             true,
             _FILE,

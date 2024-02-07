@@ -152,6 +152,7 @@ contract DolomiteRegistryImplementation is
     function _ownerSetGenericTraderProxy(
         address _genericTraderProxy
     ) internal {
+        if (_genericTraderProxy != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _genericTraderProxy != address(0),
             _FILE,
@@ -171,6 +172,7 @@ contract DolomiteRegistryImplementation is
     function _ownerSetExpiry(
         address _expiry
     ) internal {
+        if (_expiry != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _expiry != address(0),
             _FILE,
@@ -190,6 +192,7 @@ contract DolomiteRegistryImplementation is
     function _ownerSetSlippageToleranceForPauseSentinel(
         uint256 _slippageToleranceForPauseSentinel
     ) internal {
+        if (_slippageToleranceForPauseSentinel > 0 && _slippageToleranceForPauseSentinel < 1e18) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _slippageToleranceForPauseSentinel > 0 && _slippageToleranceForPauseSentinel < 1e18,
             _FILE,
@@ -203,6 +206,7 @@ contract DolomiteRegistryImplementation is
     function _ownerSetLiquidatorAssetRegistry(
         address _liquidatorAssetRegistry
     ) internal {
+        if (_liquidatorAssetRegistry != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _liquidatorAssetRegistry != address(0),
             _FILE,
@@ -222,6 +226,7 @@ contract DolomiteRegistryImplementation is
     function _ownerSetEventEmitter(
         address _eventEmitter
     ) internal {
+        if (_eventEmitter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _eventEmitter != address(0),
             _FILE,
@@ -235,6 +240,7 @@ contract DolomiteRegistryImplementation is
     function _ownerSetChainlinkPriceOracle(
         address _chainlinkPriceOracle
     ) internal {
+        if (_chainlinkPriceOracle != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _chainlinkPriceOracle != address(0),
             _FILE,

@@ -7,7 +7,7 @@ pragma solidity ^0.8.9;
  * @title   IAlgebraPoolErrors
  *
  * @notice  Contains custom errors emitted by the pool
- * @dev     Custom errors are separated from the common pool interface for compatibility with older versions of Solidity  
+ * @dev     Custom errors are separated from the common pool interface for compatibility with older versions of Solidity
  */
 interface IAlgebraPoolErrors {
 

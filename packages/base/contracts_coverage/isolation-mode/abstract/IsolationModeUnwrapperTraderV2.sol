@@ -90,18 +90,21 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
+        if (_inputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid input token",
             _inputToken
         );
+        if (isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token",
             _outputToken
         );
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputAmount > 0,
             _FILE,
@@ -112,6 +115,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
 
         {
             uint256 balance = IERC20(VAULT_FACTORY.UNDERLYING_TOKEN()).balanceOf(address(this));
+            if (balance >= _inputAmount) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 balance >= _inputAmount,
                 _FILE,
@@ -130,6 +134,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
             _inputAmount,
             extraOrderData
         );
+        if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             outputAmount >= minOutputAmount,
             _FILE,
@@ -154,12 +159,14 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         view
         returns (IDolomiteMargin.ActionArgs[] memory)
     {
+        if (DOLOMITE_MARGIN().getMarketTokenAddress(_params.inputMarket) == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_MARGIN().getMarketTokenAddress(_params.inputMarket) == address(VAULT_FACTORY),
             _FILE,
             "Invalid input market",
             _params.inputMarket
         );
+        if (isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_params.outputMarket))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isValidOutputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_params.outputMarket)),
             _FILE,
@@ -210,18 +217,21 @@ abstract contract IsolationModeUnwrapperTraderV2 is
     override
     view
     returns (uint256) {
+        if (_inputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid input token",
             _inputToken
         );
+        if (isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token",
             _outputToken
         );
+        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _desiredInputAmount > 0,
             _FILE,
@@ -252,6 +262,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
             (uint256, address, uint256)
         );
 
+        if (VAULT_FACTORY.getAccountByVault(vaultOwner) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             VAULT_FACTORY.getAccountByVault(vaultOwner) != address(0),
             _FILE,
@@ -265,10 +276,11 @@ abstract contract IsolationModeUnwrapperTraderV2 is
             /// @note   We can safely get the _accountInfo's (the Zap account for ordinary unwraps or Solid account for
             ///         liquidations) balance here without worrying about read-only reentrancy
             IDolomiteStructs.Wei memory balanceWei = DOLOMITE_MARGIN().getAccountWei(_accountInfo, marketId);
-            assert(balanceWei.sign || balanceWei.value == 0);
+            /*assert(balanceWei.sign || balanceWei.value == 0);*/
 
             transferAmount = balanceWei.value;
         }
+        if (transferAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             transferAmount > 0,
             _FILE,
@@ -276,6 +288,7 @@ abstract contract IsolationModeUnwrapperTraderV2 is
         );
 
         uint256 underlyingBalanceOf = IIsolationModeTokenVaultV1(vaultOwner).underlyingBalanceOf();
+        if (underlyingBalanceOf >= transferAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             underlyingBalanceOf >= transferAmount,
             _FILE,

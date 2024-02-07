@@ -43,6 +43,7 @@ abstract contract OnlyDolomiteMarginForUpgradeable is IOnlyDolomiteMargin, Proxy
     // ============ Modifiers ============
 
     modifier onlyDolomiteMargin(address _from) {
+        if (_from == address(DOLOMITE_MARGIN())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _from == address(DOLOMITE_MARGIN()),
             _FILE,
@@ -53,6 +54,7 @@ abstract contract OnlyDolomiteMarginForUpgradeable is IOnlyDolomiteMargin, Proxy
     }
 
     modifier onlyDolomiteMarginOwner(address _from) {
+        if (_from == DOLOMITE_MARGIN().owner()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _from == DOLOMITE_MARGIN().owner(),
             _FILE,
@@ -63,6 +65,7 @@ abstract contract OnlyDolomiteMarginForUpgradeable is IOnlyDolomiteMargin, Proxy
     }
 
     modifier onlyDolomiteMarginGlobalOperator(address _from) {
+        if (DOLOMITE_MARGIN().getIsGlobalOperator(_from)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_MARGIN().getIsGlobalOperator(_from),
             _FILE,

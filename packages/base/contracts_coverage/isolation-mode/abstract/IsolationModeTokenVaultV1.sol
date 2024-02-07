@@ -373,7 +373,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     public
     virtual
     onlyVaultFactory(msg.sender) {
-        assert(_recipient != address(this));
+        /*assert(_recipient != address(this));*/
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
@@ -410,6 +410,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     // ============ Internal Functions ============
 
     function _initialize() internal virtual {
+        if (_getUint256(_IS_INITIALIZED_SLOT) == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _getUint256(_IS_INITIALIZED_SLOT) == 0,
             _FILE,
@@ -650,6 +651,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     }
 
     function _requireOnlyVaultFactory(address _from) internal view {
+        if (_from == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _from == address(VAULT_FACTORY()),
             _FILE,
@@ -659,6 +661,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     }
 
     function _requireOnlyVaultOwner(address _from) internal virtual view {
+        if (_from == OWNER()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _from == OWNER(),
             _FILE,
@@ -668,6 +671,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     }
 
     function _requireOnlyVaultOwnerOrConverter(address _from) internal virtual view {
+        if (_from == address(OWNER()) || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _from == address(OWNER())
                 || IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
@@ -678,6 +682,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     }
 
     function _requireOnlyVaultOwnerOrVaultFactory(address _from) internal virtual view {
+        if (_from == address(OWNER()) || _from == VAULT_FACTORY()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _from == address(OWNER()) || _from == VAULT_FACTORY(),
             _FILE,
@@ -687,6 +692,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     }
 
     function _requireOnlyConverter(address _from) internal virtual view {
+        if (IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             IIsolationModeVaultFactory(VAULT_FACTORY()).isTokenConverterTrusted(_from),
             _FILE,
@@ -707,6 +713,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
      *  transaction.
      */
     function _checkMsgValue() internal virtual view {
+        if (msg.value == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.value == 0,
             _FILE,
@@ -721,6 +728,7 @@ abstract contract IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1, Proxy
     function _nonReentrantBefore() private {
         // @notice:  This MUST stay as `value != _ENTERED` otherwise it will DOS old vaults that don't have the
         //          `initialize` fix
+        if (_getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _getUint256(_REENTRANCY_GUARD_SLOT) != _ENTERED,
             _FILE,

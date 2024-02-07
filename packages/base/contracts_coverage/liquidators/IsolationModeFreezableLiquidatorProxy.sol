@@ -30,6 +30,7 @@ import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeFreezableLiquidatorProxy } from "../isolation-mode/interfaces/IIsolationModeFreezableLiquidatorProxy.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 
 
 /**
@@ -45,6 +46,7 @@ contract IsolationModeFreezableLiquidatorProxy is
 {
     using DecimalLib for uint256;
     using DecimalLib for IDolomiteStructs.Decimal;
+    using DolomiteMarginVersionWrapperLib for *;
 
     // ============================ Constants ============================
 
@@ -63,14 +65,16 @@ contract IsolationModeFreezableLiquidatorProxy is
 
     constructor(
         address _dolomiteRegistry,
+        address _liquidatorAssetRegistry,
         address _dolomiteMargin,
         address _expiry,
-        address _liquidatorAssetRegistry
+        uint256 _chainId
     )
     BaseLiquidatorProxy(
+        _liquidatorAssetRegistry,
         _dolomiteMargin,
         _expiry,
-        _liquidatorAssetRegistry
+        _chainId
     ) {
         DOLOMITE_REGISTRY = IDolomiteRegistry(_dolomiteRegistry);
     }
@@ -94,6 +98,7 @@ contract IsolationModeFreezableLiquidatorProxy is
         requireIsAssetWhitelistedForLiquidation(_params.freezableMarketId)
     {
         address freezableToken = DOLOMITE_MARGIN().getMarketTokenAddress(_params.freezableMarketId);
+        if (IIsolationModeVaultFactory(freezableToken).getAccountByVault(_params.liquidAccount.owner) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             IIsolationModeVaultFactory(freezableToken).getAccountByVault(_params.liquidAccount.owner) != address(0),
             _FILE,
@@ -111,9 +116,13 @@ contract IsolationModeFreezableLiquidatorProxy is
             _params.expirationTimestamp
         );
 
-        (IDolomiteStructs.Decimal memory weight, uint256 otherMinOutputAmount) = abi.decode(_params.extraData, (IDolomiteStructs.Decimal, uint256));
+        (IDolomiteStructs.Decimal memory weight, uint256 otherMinOutputAmount) = abi.decode(
+            _params.extraData,
+            (IDolomiteStructs.Decimal, uint256)
+        );
 
         _checkMinAmountIsNotTooLarge(
+            _params.liquidAccount,
             _params.freezableMarketId,
             _params.outputMarketId,
             _params.inputTokenAmount.mul(DecimalLib.oneSub(weight)),
@@ -121,6 +130,7 @@ contract IsolationModeFreezableLiquidatorProxy is
         );
 
         _checkMinAmountIsNotTooLarge(
+            _params.liquidAccount,
             _params.freezableMarketId,
             _params.outputMarketId,
             _params.inputTokenAmount.mul(weight),
@@ -151,16 +161,19 @@ contract IsolationModeFreezableLiquidatorProxy is
         uint256 _expirationTimestamp
     ) internal view {
         if (_expirationTimestamp != 0) {
+            if (_expirationTimestamp == uint32(_expirationTimestamp)) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _expirationTimestamp == uint32(_expirationTimestamp),
                 _FILE,
                 "Invalid expiration timestamp"
             );
+            if (_expirationTimestamp <= block.timestamp) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _expirationTimestamp <= block.timestamp,
                 _FILE,
                 "Account not expired"
             );
+            if (EXPIRY.getExpiry(_liquidAccount, _outputMarketId) == uint32(_expirationTimestamp)) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 EXPIRY.getExpiry(_liquidAccount, _outputMarketId) == uint32(_expirationTimestamp),
                 _FILE,
@@ -178,6 +191,7 @@ contract IsolationModeFreezableLiquidatorProxy is
             );
 
             // Panic if there's no supply value
+            if (liquidSupplyValue.value != 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 liquidSupplyValue.value != 0,
                 _FILE,
@@ -185,6 +199,7 @@ contract IsolationModeFreezableLiquidatorProxy is
             );
 
             IDolomiteStructs.Decimal memory marginRatio = DOLOMITE_MARGIN().getMarginRatio();
+            if (DOLOMITE_MARGIN().getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid || !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio)) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 DOLOMITE_MARGIN().getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
                     || !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio),
@@ -195,6 +210,7 @@ contract IsolationModeFreezableLiquidatorProxy is
     }
 
     function _checkMinAmountIsNotTooLarge(
+        IDolomiteStructs.AccountInfo memory _liquidAccount,
         uint256 _inputMarketId,
         uint256 _outputMarketId,
         uint256 _inputTokenAmount,
@@ -203,13 +219,16 @@ contract IsolationModeFreezableLiquidatorProxy is
         uint256 inputValue = DOLOMITE_MARGIN().getMarketPrice(_inputMarketId).value * _inputTokenAmount;
         uint256 outputValue = DOLOMITE_MARGIN().getMarketPrice(_outputMarketId).value * _minOutputAmount;
 
-        IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getLiquidationSpreadForPair(
+        IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
+            CHAIN_ID,
+            _liquidAccount,
             /* heldMarketId = */ _inputMarketId,
             /* ownedMarketId = */ _outputMarketId
         );
         spread.value /= 2;
         uint256 inputValueAdj = inputValue - inputValue.mul(spread);
 
+        if (outputValue <= inputValueAdj) { /* FOR COVERAGE TESTING */ }
         Require.that(
             outputValue <= inputValueAdj,
             _FILE,

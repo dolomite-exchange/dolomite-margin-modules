@@ -108,7 +108,7 @@ contract OdosAggregatorTrader is OnlyDolomiteMargin, IDolomiteMarginExchangeWrap
         }
 
         // Panic if the output amount is insufficient
-        assert(outputAmount >= minAmountOutWei);
+        /*assert(outputAmount >= minAmountOutWei);*/
 
         IERC20(_outputToken).safeApprove(_receiver, outputAmount);
 

@@ -167,7 +167,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         }
         _validateVaultExists(factory, accountOwner);
 
-        assert(tradeTypes.length == keys.length && keys.length > 0);
+        /*assert(tradeTypes.length == keys.length && keys.length > 0);*/
 
 
         address vault;
@@ -178,6 +178,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo =
                     state.withdrawalInfo[keys[i]];
                 if (withdrawalInfo.isLiquidation) {
+                    if (withdrawalInfo.accountNumber == accountNumber) { /* FOR COVERAGE TESTING */ }
                     Require.that(
                         withdrawalInfo.accountNumber == accountNumber,
                         _FILE,
@@ -187,7 +188,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 vault = withdrawalInfo.vault;
                 inputAmountForIteration = withdrawalInfo.inputAmount;
             } else {
-                assert(tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit);
+                /*assert(tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit);*/
                 IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo =
                     IHandlerRegistry(state.handlerRegistry).getWrapperByToken(factory).getDepositInfo(keys[i]);
 
@@ -197,6 +198,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
             // Require that the vault is either the account owner or the input amount is 0 (meaning, it has been fully
             // spent)
+            if ((inputAmountForIteration == 0 && vault == address(0)) || vault == accountOwner) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 (inputAmountForIteration == 0 && vault == address(0)) || vault == accountOwner,
                 _FILE,
@@ -207,6 +209,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         }
 
         uint256 underlyingVirtualBalance = IIsolationModeTokenVaultV1WithFreezable(vault).virtualBalance();
+        if (underlyingVirtualBalance >= transferAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             underlyingVirtualBalance >= transferAmount,
             _FILE,
@@ -215,6 +218,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             transferAmount
         );
 
+        if (transferAmount > 0 && transferAmount <= inputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             transferAmount > 0 && transferAmount <= inputAmount,
             _FILE,
@@ -245,7 +249,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
         (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[] memory tradeTypes, bytes32[] memory keys) =
             abi.decode(_extraOrderData, (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[]));
-        assert(tradeTypes.length == keys.length && keys.length > 0);
+        /*assert(tradeTypes.length == keys.length && keys.length > 0);*/
 
         uint256 inputAmountNeeded = _inputAmount; // decays toward 0
         uint256 outputAmount;
@@ -282,7 +286,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 outputAmount = outputAmount + outputAmountToCollect;
             } else {
                 // panic if the trade type isn't correct (somehow).
-                assert(tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit);
+                /*assert(tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit);*/
                 IUpgradeableAsyncIsolationModeWrapperTrader wrapperTrader =
                     IHandlerRegistry(state.handlerRegistry).getWrapperByToken(
                         IIsolationModeVaultFactory(state.vaultFactory)
@@ -319,7 +323,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         }
 
         // Panic if the developer didn't set this up to consume enough of the structs
-        assert(inputAmountNeeded == 0);
+        /*assert(inputAmountNeeded == 0);*/
 
         return outputAmount;
     }
@@ -330,12 +334,14 @@ library AsyncIsolationModeUnwrapperTraderImpl {
     ) external view returns (IDolomiteMargin.ActionArgs[] memory) {
         {
             IDolomiteMargin dolomiteMargin = _unwrapper.DOLOMITE_MARGIN();
+            if (dolomiteMargin.getMarketTokenAddress(_params.inputMarket) == address(_unwrapper.VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 dolomiteMargin.getMarketTokenAddress(_params.inputMarket) == address(_unwrapper.VAULT_FACTORY()),
                 _FILE,
                 "Invalid input market",
                 _params.inputMarket
             );
+            if (_unwrapper.isValidOutputToken(dolomiteMargin.getMarketTokenAddress(_params.outputMarket))) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _unwrapper.isValidOutputToken(dolomiteMargin.getMarketTokenAddress(_params.outputMarket)),
                 _FILE,
@@ -349,6 +355,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             bytes32[] memory keys,
             bool shouldExecuteTransferForOtherAccount
         ) = abi.decode(_params.orderData, (IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[], bool));
+        if (tradeTypes.length == keys.length && keys.length > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             tradeTypes.length == keys.length && keys.length > 0,
             _FILE,
@@ -366,7 +373,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 structInputAmount += withdrawalInfo.inputAmount;
                 isRetryableList[i] = withdrawalInfo.isRetryable;
             } else {
-                assert(tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit);
+                /*assert(tradeTypes[i] == IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType.FromDeposit);*/
                 UpgradeableAsyncIsolationModeUnwrapperTrader unwrapperForStackTooDeep = _unwrapper;
                 IUpgradeableAsyncIsolationModeWrapperTrader.DepositInfo memory depositInfo =
                                         _getWrapperTrader(unwrapperForStackTooDeep).getDepositInfo(keys[i]);
@@ -375,6 +382,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 isRetryableList[i] = depositInfo.isRetryable;
             }
         }
+        if (_params.inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _params.inputAmount > 0,
             _FILE,
@@ -411,6 +419,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             // We need to spend the whole withdrawal amount, so we need to add an extra sale to spend the difference.
             // This can only happen during a liquidation
             for (uint256 i; i < isRetryableList.length; ++i) {
+                if (isRetryableList[i]) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     isRetryableList[i],
                     _FILE,
@@ -525,6 +534,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
     function validateNotReentered(
         IUpgradeableAsyncIsolationModeUnwrapperTrader.State storage _state
     ) public view {
+        if (_state.reentrancyGuard != _ENTERED) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _state.reentrancyGuard != _ENTERED,
             _FILE,
@@ -559,6 +569,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
 
     // solhint-disable-next-line private-vars-leading-underscore
     function _validateVaultExists(IIsolationModeVaultFactory _factory, address _vault) internal view {
+        if (_factory.getAccountByVault(_vault) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _factory.getAccountByVault(_vault) != address(0),
             _FILE,
@@ -595,6 +606,7 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         address _structOutputToken,
         address _outputToken
     ) private pure {
+        if (_structOutputToken == _outputToken) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _structOutputToken == _outputToken,
             _FILE,

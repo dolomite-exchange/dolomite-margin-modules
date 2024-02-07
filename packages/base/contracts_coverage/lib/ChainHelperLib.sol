@@ -20,38 +20,26 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "../protocol/lib/Require.sol";
+import "hardhat/console.sol";
 
 
 /**
- * @title   ValidationLib
+ * @title   ChainHelperLib
  * @author  Dolomite
  *
- * @notice  Library contract that checks generic calls to be successful (useful when validation config changes)
+ * @notice  Library contract that discovers which chain we're on
  */
-library ValidationLib {
+library ChainHelperLib {
+
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "ValidationLib";
+    bytes32 private constant _FILE = "ChainHelperLib";
+    uint256 private constant _ARBITRUM_ONE = 42161;
+    uint256 private constant _ARBITRUM_SEPOLIA = 421614;
 
     // ============ Functions ============
 
-    /**
-     *  Converts the scaled Par value to an actual Wei value
-     */
-    function callAndCheckSuccess(
-        address _target,
-        bytes4 _selector,
-        bytes memory _data
-    ) internal view returns (bytes memory) {
-        (bool success, bytes memory returnData) = _target.staticcall(abi.encodePacked(_selector, _data));
-        if (success && returnData.length > 0) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            success && returnData.length > 0,
-            _FILE,
-            "Call to target failed",
-            _target
-        );
-        return returnData;
+    function isArbitrum(uint256 chainId) internal pure returns (bool) {
+        return chainId == _ARBITRUM_ONE || chainId == _ARBITRUM_SEPOLIA;
     }
 }

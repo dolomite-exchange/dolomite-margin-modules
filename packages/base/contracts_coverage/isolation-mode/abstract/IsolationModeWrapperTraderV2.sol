@@ -72,24 +72,28 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTraderV2,
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
+        if (VAULT_FACTORY.getAccountByVault(_tradeOriginator) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             VAULT_FACTORY.getAccountByVault(_tradeOriginator) != address(0),
             _FILE,
             "Invalid trade originator",
             _tradeOriginator
         );
+        if (isValidInputToken(_inputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isValidInputToken(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
+        if (_outputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _outputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid output token",
             _outputToken
         );
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputAmount > 0,
             _FILE,
@@ -107,6 +111,7 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTraderV2,
             _inputAmount,
             _extraOrderData
         );
+        if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             outputAmount >= minOutputAmount,
             _FILE,
@@ -131,12 +136,14 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTraderV2,
     override
     view
     returns (IDolomiteMargin.ActionArgs[] memory) {
+        if (isValidInputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_params.inputMarket))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isValidInputToken(DOLOMITE_MARGIN().getMarketTokenAddress(_params.inputMarket)),
             _FILE,
             "Invalid input market",
             _params.inputMarket
         );
+        if (DOLOMITE_MARGIN().getMarketTokenAddress(_params.outputMarket) == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_MARGIN().getMarketTokenAddress(_params.outputMarket) == address(VAULT_FACTORY),
             _FILE,
@@ -173,18 +180,21 @@ abstract contract IsolationModeWrapperTraderV2 is IIsolationModeWrapperTraderV2,
     override
     view
     returns (uint256) {
+        if (isValidInputToken(_inputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isValidInputToken(_inputToken),
             _FILE,
             "Invalid input token",
             _inputToken
         );
+        if (_outputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _outputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid output token",
             _outputToken
         );
+        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _desiredInputAmount > 0,
             _FILE,

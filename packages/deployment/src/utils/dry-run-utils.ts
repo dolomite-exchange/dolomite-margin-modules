@@ -79,6 +79,8 @@ async function doStuffInternal<T extends NetworkType>(
       console.log('\tChecking invariants...');
       await result.invariants();
       console.log('\tInvariants passed!');
+    } else {
+      console.log('\tNo invariants found, skipping...');
     }
   } else {
     return executionFn().then(result => {

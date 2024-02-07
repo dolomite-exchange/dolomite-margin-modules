@@ -85,6 +85,7 @@ contract TestDolomiteMarginInternalTrader is IDolomiteMarginInternalTrader {
     returns (IDolomiteStructs.AssetAmount memory)
     {
         if (requireInputMarketId != 0) {
+            if (requireInputMarketId == inputMarketId) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireInputMarketId == inputMarketId,
                 _FILE,
@@ -92,6 +93,7 @@ contract TestDolomiteMarginInternalTrader is IDolomiteMarginInternalTrader {
             );
         }
         if (requireOutputMarketId != 0) {
+            if (requireOutputMarketId == outputMarketId) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireOutputMarketId == outputMarketId,
                 _FILE,
@@ -99,11 +101,13 @@ contract TestDolomiteMarginInternalTrader is IDolomiteMarginInternalTrader {
             );
         }
         if (requireMakerAccount.owner != address(0)) {
+            if (requireMakerAccount.owner == makerAccount.owner) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireMakerAccount.owner == makerAccount.owner,
                 _FILE,
                 "maker account owner mismatch"
             );
+            if (requireMakerAccount.number == makerAccount.number) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireMakerAccount.number == makerAccount.number,
                 _FILE,
@@ -111,11 +115,13 @@ contract TestDolomiteMarginInternalTrader is IDolomiteMarginInternalTrader {
             );
         }
         if (requireTakerAccount.owner != address(0)) {
+            if (requireTakerAccount.owner == takerAccount.owner) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireTakerAccount.owner == takerAccount.owner,
                 _FILE,
                 "taker account owner mismatch"
             );
+            if (requireTakerAccount.number == takerAccount.number) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireTakerAccount.number == takerAccount.number,
                 _FILE,
@@ -123,11 +129,13 @@ contract TestDolomiteMarginInternalTrader is IDolomiteMarginInternalTrader {
             );
         }
         if (requireOldInputPar.value != 0) {
+            if (requireOldInputPar.sign == oldInputPar.sign) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireOldInputPar.sign == oldInputPar.sign,
                 _FILE,
                 "oldInputPar sign mismatch"
             );
+            if (requireOldInputPar.value == oldInputPar.value) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireOldInputPar.value == oldInputPar.value,
                 _FILE,
@@ -135,11 +143,13 @@ contract TestDolomiteMarginInternalTrader is IDolomiteMarginInternalTrader {
             );
         }
         if (requireNewInputPar.value != 0) {
+            if (requireNewInputPar.sign == newInputPar.sign) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireNewInputPar.sign == newInputPar.sign,
                 _FILE,
                 "newInputPar sign mismatch"
             );
+            if (requireNewInputPar.value == newInputPar.value) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireNewInputPar.value == newInputPar.value,
                 _FILE,
@@ -147,11 +157,13 @@ contract TestDolomiteMarginInternalTrader is IDolomiteMarginInternalTrader {
             );
         }
         if (requireInputWei.value != 0) {
+            if (requireInputWei.sign == inputWei.sign) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireInputWei.sign == inputWei.sign,
                 _FILE,
                 "inputWei sign mismatch"
             );
+            if (requireInputWei.value == inputWei.value) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 requireInputWei.value == inputWei.value,
                 _FILE,
@@ -251,6 +263,7 @@ contract TestDolomiteMarginInternalTrader is IDolomiteMarginInternalTrader {
         private
         returns (IDolomiteStructs.AssetAmount memory)
     {
+        if (valid[input]) { /* FOR COVERAGE TESTING */ }
         Require.that(
             valid[input],
             _FILE,
@@ -270,6 +283,7 @@ contract TestDolomiteMarginInternalTrader is IDolomiteMarginInternalTrader {
         pure
         returns (uint256)
     {
+        if (tradeData.length == 32) { /* FOR COVERAGE TESTING */ }
         Require.that(
             tradeData.length == 32,
             _FILE,

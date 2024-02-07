@@ -112,18 +112,21 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     virtual
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
+        if (_inputToken == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputToken == address(VAULT_FACTORY()),
             _FILE,
             "Invalid input token",
             _inputToken
         );
+        if (isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token",
             _outputToken
         );
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputAmount > 0,
             _FILE,
@@ -143,6 +146,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
             _inputAmount,
             extraOrderData
         );
+        if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             outputAmount >= minOutputAmount,
             _FILE,
@@ -195,18 +199,21 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     override
     view
     returns (uint256) {
+        if (_inputToken == address(VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputToken == address(VAULT_FACTORY()),
             _FILE,
             "Invalid input token",
             _inputToken
         );
+        if (isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token",
             _outputToken
         );
+        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _desiredInputAmount > 0,
             _FILE,
@@ -255,7 +262,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     ) internal {
 
         // Panic if the key is already used
-        assert(_getWithdrawalSlot(_key).vault == address(0));
+        /*assert(_getWithdrawalSlot(_key).vault == address(0));*/
 
         WithdrawalInfo memory withdrawalInfo = WithdrawalInfo({
             key: _key,
@@ -356,6 +363,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function _validateVaultExists(IIsolationModeVaultFactory _factory, address _vault) internal view {
+        if (_factory.getAccountByVault(_vault) != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _factory.getAccountByVault(_vault) != address(0),
             _FILE,
@@ -370,6 +378,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
 
     function _validateIsBalanceSufficient(uint256 _inputAmount) internal virtual view {
         uint256 balance = IERC20(VAULT_FACTORY().UNDERLYING_TOKEN()).balanceOf(address(this));
+        if (balance >= _inputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             balance >= _inputAmount,
             _FILE,
@@ -392,6 +401,7 @@ abstract contract UpgradeableAsyncIsolationModeUnwrapperTrader is
     }
 
     function _validateWithdrawalExists(WithdrawalInfo memory _withdrawalInfo) internal pure {
+        if (_withdrawalInfo.vault != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _withdrawalInfo.vault != address(0),
             _FILE,

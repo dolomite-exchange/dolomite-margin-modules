@@ -107,12 +107,14 @@ library AsyncIsolationModeWrapperTraderImpl {
         IIsolationModeWrapperTraderV2.CreateActionsForWrappingParams calldata _params
     ) external view returns (IDolomiteMargin.ActionArgs[] memory) {
         IDolomiteMargin dolomiteMargin = _wrapper.DOLOMITE_MARGIN();
+        if (_wrapper.isValidInputToken(dolomiteMargin.getMarketTokenAddress(_params.inputMarket))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _wrapper.isValidInputToken(dolomiteMargin.getMarketTokenAddress(_params.inputMarket)),
             _FILE,
             "Invalid input market",
             _params.inputMarket
         );
+        if (dolomiteMargin.getMarketTokenAddress(_params.outputMarket) == address(_wrapper.VAULT_FACTORY())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             dolomiteMargin.getMarketTokenAddress(_params.outputMarket) == address(_wrapper.VAULT_FACTORY()),
             _FILE,

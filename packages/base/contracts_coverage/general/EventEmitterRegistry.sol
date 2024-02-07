@@ -271,8 +271,9 @@ contract EventEmitterRegistry is
 
     function _validateOnlyTrustedConverter(address _token, address _from) internal view {
         uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token);
-        assert(marketId != 0); // getMarketIdByTokenAddress throws if the token is not listed.
+        /*assert(marketId != 0);*/ // getMarketIdByTokenAddress throws if the token is not listed.
 
+        if (IIsolationModeVaultFactory(_token).isTokenConverterTrusted(_from)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             IIsolationModeVaultFactory(_token).isTokenConverterTrusted(_from),
             _FILE,

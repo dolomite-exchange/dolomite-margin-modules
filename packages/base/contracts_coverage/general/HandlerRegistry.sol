@@ -139,6 +139,7 @@ abstract contract HandlerRegistry is
             _unwrapperTrader.VAULT_FACTORY.selector,
             /* _data = */ bytes("")
         );
+        if (abi.decode(result, (address)) == address(_factoryToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             abi.decode(result, (address)) == address(_factoryToken),
             _FILE,
@@ -160,6 +161,7 @@ abstract contract HandlerRegistry is
             _wrapperTrader.VAULT_FACTORY.selector,
             /* _data = */ bytes("")
         );
+        if (abi.decode(result, (address)) == address(_factoryToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             abi.decode(result, (address)) == address(_factoryToken),
             _FILE,
@@ -177,6 +179,7 @@ abstract contract HandlerRegistry is
             _factoryToken.marketId.selector,
             /* _data = */ bytes("")
         );
+        if (abi.decode(result, (uint256)) != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             abi.decode(result, (uint256)) != 0,
             _FILE,
