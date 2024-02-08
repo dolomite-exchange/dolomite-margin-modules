@@ -10,13 +10,53 @@ import { getRegistryProxyConstructorParams } from '@dolomite-exchange/modules-ba
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
+import {
+  getLinearStepFunctionInterestSetterConstructorParams,
+} from '@dolomite-exchange/modules-interest-setters/src/interest-setters-constructors';
+import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 import { deployContractAndSave } from '../../utils/deploy-utils';
 import { doDryRunAndCheckDeployment, DryRunOutput } from '../../utils/dry-run-utils';
 import getScriptName from '../../utils/get-script-name';
 
 async function deployInterestSetters(): Promise<void> {
-  await deployContractAndSave('LinearStepFunctionInterestSetter', []);
+  const NINETY_PERCENT = parseEther('0.90');
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(
+      parseEther('0.06'),
+      parseEther('0.94'),
+      NINETY_PERCENT,
+    ),
+    'Stablecoin6L94ULinearStepFunctionInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(
+      parseEther('0.08'),
+      parseEther('0.92'),
+      NINETY_PERCENT,
+    ),
+    'Stablecoin8L92ULinearStepFunctionInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(
+      parseEther('0.10'),
+      parseEther('0.90'),
+      parseEther('0.95'),
+    ),
+    'Stablecoin10L90U95OLinearStepFunctionInterestSetter',
+  );
+  await deployContractAndSave(
+    'LinearStepFunctionInterestSetter',
+    getLinearStepFunctionInterestSetterConstructorParams(
+      parseEther('0.14'),
+      parseEther('0.86'),
+      NINETY_PERCENT,
+    ),
+    'Altcoin14L86ULinearStepFunctionInterestSetter',
+  );
 }
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {

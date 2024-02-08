@@ -12,21 +12,6 @@ interface TokenWithMarketId {
 
 type ArbitrumOrZkEvm = Network.ArbitrumOne | Network.PolygonZkEvm;
 
-// export enum Workspaces {
-//   Abracadabra = 'modules-abracadabra',
-//   Arbitrum = 'modules-arb',
-//   Base = 'modules-base',
-//   Glp = 'modules-glp',
-//   GmxV2 = 'modules-gmx-v2',
-//   InterestSetters = 'modules-interest-setters',
-//   Jones = 'modules-jones',
-//   LiquidityMining = 'modules-liquidity-mining',
-//   Oracles = 'modules-oracles',
-//   Pendle = 'modules-pendle',
-//   Plutus = 'modules-plutus',
-//   Umami = 'modules-umami',
-// }
-
 // ************************* External Contract Addresses *************************
 
 export const ARB_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
@@ -631,4 +616,21 @@ export const STETH_ETH_CHAINLINK_FEED_MAP: Record<Network.ArbitrumOne, string> =
 
 export const WSTETH_STETH_CHAINLINK_FEED_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xb1552c5e96b312d0bf8b554186f846c40614a540',
+};
+
+export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, string>> = {
+  [Network.ArbitrumOne]: {}, // already deployed
+  [Network.Base]: {
+    [WETH_MAP[Network.Base].address]: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70',
+    [DAI_MAP[Network.Base].address]: '0x591e79239a7d679378eC8c847e5038150364C78F',
+    [USDC_MAP[Network.Base].address]: '', // TODO
+    [LINK_MAP[Network.Base].address]: '0xc5E65227fe3385B88468F9A01600017cDC9F3A12',
+  },
+  [Network.PolygonZkEvm]: {
+    [WETH_MAP[Network.PolygonZkEvm].address]: '0x97d9F9A00dEE0004BE8ca0A8fa374d486567eE2D',
+    [DAI_MAP[Network.PolygonZkEvm].address]: '0xa4Fd5C39d975067c877F287E78D600da07E8344c',
+    [USDC_MAP[Network.PolygonZkEvm].address]: '0x0167D934CB7240e65c35e347F00Ca5b12567523a',
+    [LINK_MAP[Network.PolygonZkEvm].address]: '0x2eeCADd4D8d3a4939440f07419741C4898095317',
+    [MATIC_MAP[Network.PolygonZkEvm].address]: '0x7C85dD6eBc1d318E909F22d51e756Cf066643341',
+  },
 };

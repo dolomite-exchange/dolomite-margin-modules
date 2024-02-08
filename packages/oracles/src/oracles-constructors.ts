@@ -4,15 +4,20 @@ import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/ut
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumberish } from 'ethers';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { IChainlinkPriceOracle, IChainlinkPriceOracleOld__factory } from './types';
+import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import {
+  IChainlinkAggregator,
+  IChainlinkPriceOracle,
+  IChainlinkPriceOracleOld__factory,
+  IERC20Metadata, IERC20Metadata__factory,
+} from './types';
 
 export type CoreProtocolWithChainlink<T extends Network> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
   chainlinkPriceOracle: IChainlinkPriceOracle;
 }>;
 
-export async function getChainlinkPriceOracleParamsFromOldPriceOracle(
+export async function getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(
   core: CoreProtocolArbitrumOne,
 ): Promise<[string[], string[], BigNumberish[], string[], string]> {
   const oldPriceOracle = IChainlinkPriceOracleOld__factory.connect(
@@ -35,6 +40,22 @@ export async function getChainlinkPriceOracleParamsFromOldPriceOracle(
     }
   }
   return [tokens, aggregators, tokenDecimals, tokenPairs, core.dolomiteMargin.address];
+}
+
+export async function getChainlinkPriceOracleConstructorParams<T extends NetworkType>(
+  tokens: IERC20[],
+  aggregators: IChainlinkAggregator[],
+  tokenPairs: IERC20[],
+  core: CoreProtocolType<T>,
+): Promise<[string[], string[], BigNumberish[], string[], string]> {
+  const tokenDecimals: number[] = [];
+  return [
+    tokens.map(t => t.address),
+    aggregators.map(t => t.address),
+    await Promise.all(tokens.map(t => IERC20Metadata__factory.connect(t.address, t.signer).decimals())),
+    tokenPairs.map(t => t.address),
+    core.dolomiteMargin.address,
+  ];
 }
 
 export function getTWAPPriceOracleConstructorParams<T extends Network>(

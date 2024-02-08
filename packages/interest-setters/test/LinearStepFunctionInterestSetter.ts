@@ -1,14 +1,18 @@
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { WeiPerEther } from '@ethersproject/constants/src.ts/bignumbers';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
+import { getLinearStepFunctionInterestSetterConstructorParams } from '../src/interest-setters-constructors';
 import { LinearStepFunctionInterestSetter, LinearStepFunctionInterestSetter__factory } from '../src/types';
 
 const zero = BigNumber.from(0);
 const lowerRate = BigNumber.from('60000000000000000');
 const upperRate = BigNumber.from('1000000000000000000');
+const optimalRate = BigNumber.from('900000000000000000');
 const maximumRate = lowerRate.add(upperRate); // 106%
 const secondsPerYear = BigNumber.from(31_536_000);
 describe('LinearStepFunctionInterestSetter', () => {
@@ -20,7 +24,7 @@ describe('LinearStepFunctionInterestSetter', () => {
     interestSetter = await createContractWithAbi<LinearStepFunctionInterestSetter>(
       LinearStepFunctionInterestSetter__factory.abi,
       LinearStepFunctionInterestSetter__factory.bytecode,
-      [lowerRate, upperRate],
+      getLinearStepFunctionInterestSetterConstructorParams(lowerRate, upperRate, optimalRate),
     );
     expect(await interestSetter.interestSetterType()).to.eq(1); // linear
 
@@ -37,9 +41,31 @@ describe('LinearStepFunctionInterestSetter', () => {
         createContractWithAbi<LinearStepFunctionInterestSetter>(
           LinearStepFunctionInterestSetter__factory.abi,
           LinearStepFunctionInterestSetter__factory.bytecode,
-          [upperRate, lowerRate],
+          getLinearStepFunctionInterestSetterConstructorParams(upperRate, lowerRate, optimalRate),
         ),
         'LinearStepFunctionInterestSetter: Lower optimal percent too high',
+      );
+    });
+
+    it('should fail when optimal is too low', async () => {
+      await expectThrow(
+        createContractWithAbi<LinearStepFunctionInterestSetter>(
+          LinearStepFunctionInterestSetter__factory.abi,
+          LinearStepFunctionInterestSetter__factory.bytecode,
+          getLinearStepFunctionInterestSetterConstructorParams(lowerRate, upperRate, ZERO_BI),
+        ),
+        'LinearStepFunctionInterestSetter: Invalid optimal utilization',
+      );
+    });
+
+    it('should fail when optimal is too high', async () => {
+      await expectThrow(
+        createContractWithAbi<LinearStepFunctionInterestSetter>(
+          LinearStepFunctionInterestSetter__factory.abi,
+          LinearStepFunctionInterestSetter__factory.bytecode,
+          getLinearStepFunctionInterestSetterConstructorParams(lowerRate, upperRate, ethers.constants.WeiPerEther),
+        ),
+        'LinearStepFunctionInterestSetter: Invalid optimal utilization',
       );
     });
   });

@@ -14,7 +14,7 @@ import {
   PARASWAP_TRANSFER_PROXY_MAP
 } from '../../../src/utils/constants';
 import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
-import { getContract } from '../setup';
+import { getContract, getContractOpt } from '../setup';
 
 export interface ParaswapEcosystem {
   augustusRouter: IParaswapAugustusRouter;
@@ -29,8 +29,8 @@ export async function createParaswapEcosystem(
   network: Network,
   signer: SignerWithAddress,
 ): Promise<ParaswapEcosystem> {
-  const paraswapTrader = getContract(
-    (Deployments.ParaswapAggregatorTraderV2 as any)[network]!.address,
+  const paraswapTrader = getContractOpt(
+    (Deployments.ParaswapAggregatorTraderV2 as any)[network]?.address,
     ParaswapAggregatorTraderV2__factory.connect,
     signer,
   );
@@ -40,7 +40,7 @@ export async function createParaswapEcosystem(
     feeClaimer: IParaswapFeeClaimer__factory.connect(PARASWAP_FEE_CLAIMER_MAP[network]!, signer),
     transferProxy: PARASWAP_TRANSFER_PROXY_MAP[network]!,
     live: {
-      paraswapTrader,
+      paraswapTrader: paraswapTrader as any,
     },
   };
 }

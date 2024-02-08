@@ -105,6 +105,16 @@
     }
   },
   "Altcoin14L86ULinearStepFunctionInterestSetter": {
+    "1101": {
+      "address": "0x09b49051ff3F1087c583a8B4ea68fA5eF3Ac7FF7",
+      "transaction": "0xadadecbc556394868432d239bf43c9549b068eb99630c598197398d76d7f316a",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0x7656b1417886B89D6D72e8360923146D500c6c63",
+      "transaction": "0x50bfb705c965d34e7a69f613382596a262e110282ddd4f8a3af63d88e3b2daf6",
+      "isVerified": true
+    },
     "42161": {
       "address": "0x36D9B05c13Af6C86e9100F05a9AFeaB766fd1930",
       "transaction": "0x71895c6cacea2da300f1c7de6e4c8bfc6d0b30c339eac2bbca8730cc2b638e75",
@@ -121,6 +131,11 @@
   "AtlasSIUserVaultFactory": {},
   "AtlasSIUserVaultV1": {},
   "ChainlinkPriceOracle": {
+    "1101": {
+      "address": "0xcE29B273fdd21cef1cE4dfd104dD608941D781a0",
+      "transaction": "0xb7611c218a68c709d736c1d592cfba96fb575a65befd6bd7290fdf6afbaa7227",
+      "isVerified": true
+    },
     "42161": {
       "address": "0xA07e80C08D8bae7fFA3e46534eaBdBb6Ca98da1D",
       "transaction": "0xd7d3f02f9b7036a0e0e1c855db27f421370dc5fdfa0a8ec28dd2cd753a47ed59",
@@ -766,6 +781,16 @@
     }
   },
   "ParaswapAggregatorTraderV2": {
+    "1101": {
+      "address": "0xc4d82e8e5240ac7C816aCA138eb41534c9aD76e1",
+      "transaction": "0x091abaed346f505470f7c61f1019dc608693201ed13cedfa25147b2127542444",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0x3d05E4041d3a7388d566BCF4B2a5A3f0977eA9a3",
+      "transaction": "0x71e3c54413fc80b351254b803def65d29bef31007f2c8ab2f8cbbc28d3ce5824",
+      "isVerified": true
+    },
     "42161": {
       "address": "0xd991d9E0a22a51391c25B258eeF8C1c4a392383a",
       "transaction": "0xaf6cecf15044ebb61a0eebfc533424fc5358227a4e98618399b2ca4478c8fe85",
@@ -1388,7 +1413,34 @@
       "isVerified": true
     }
   },
+  "Stablecoin10L90U95OLinearStepFunctionInterestSetter": {
+    "1101": {
+      "address": "0x14B83b01091636709A468386877619d34D431C63",
+      "transaction": "0x0d80b8d75c2997dfb07820f800d494d066267fc68a4b57a81c59815e7ff3673b",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0x0A21D2995F7Acac4b46fc4C2c5B93FcBD69083DB",
+      "transaction": "0x7c53774b0c8d8cb8cc81b89fdb65ac201e50bbc5994858441d536a507026e4ca",
+      "isVerified": true
+    },
+    "42161": {
+      "address": "0xD80B6EB30a41f0387E7fB9Aff9Cf22eCF52E69D3",
+      "transaction": "0x05a956cbc96cc3968fa529ff5e9920adcc13b8a9a63b92a995dda93bcd37e6c9",
+      "isVerified": true
+    }
+  },
   "Stablecoin6L94ULinearStepFunctionInterestSetter": {
+    "1101": {
+      "address": "0x958a9C230360003b548d572Cb88bb25B8A744bf7",
+      "transaction": "0x190d0d76c5400dd88217c2d8b2eaac4dd76d31ee5e2212b41993ecaacd36aa01",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0xc4d82e8e5240ac7C816aCA138eb41534c9aD76e1",
+      "transaction": "0xcc52d60a196c2b3f70677452a8c803f151e364c888dedc7d37f6c4867331169e",
+      "isVerified": true
+    },
     "42161": {
       "address": "0xD3D3803177bd12cC8735cB360Ec1C06208d4a94a",
       "transaction": "0xcb917ae8109a407089912e7710e1eccc05aa34a399b2ebc312591281c0f31c60",
@@ -1396,6 +1448,16 @@
     }
   },
   "Stablecoin8L92ULinearStepFunctionInterestSetter": {
+    "1101": {
+      "address": "0xa7dC4C2b6B08e967adb15EA24dCf2fE73A08a71F",
+      "transaction": "0x7f7a6c4aa713c87384c92b7b1da60c0811525acb2a8ff003c7e572e862bbf123",
+      "isVerified": true
+    },
+    "8453": {
+      "address": "0xcE29B273fdd21cef1cE4dfd104dD608941D781a0",
+      "transaction": "0x5af4ae12ba3b92baae8013723c7f169b588fb470e146a850e4f1c81b04e79a80",
+      "isVerified": true
+    },
     "42161": {
       "address": "0xad9F52c7E9c8b3cF0ae85cCf71b51b47cAB3D48b",
       "transaction": "0xd37eb92f872dfbd311ce27d16cf649f62a298a2cc28d7bbb603deae2b64a62a2",

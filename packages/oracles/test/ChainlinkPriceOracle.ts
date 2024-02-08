@@ -11,7 +11,7 @@ import {
 import {
   CustomTestToken,
 } from '@dolomite-exchange/modules-base/src/types';
-import { getChainlinkPriceOracleParamsFromOldPriceOracle } from '../src/oracles-constructors';
+import { getChainlinkPriceOracleConstructorParamsFromOldPriceOracle } from '../src/oracles-constructors';
 import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/../../../packages/base/src/utils/dolomite-utils';
 import {
   MAX_INT_192_BI,
@@ -57,7 +57,7 @@ describe('ChainlinkPriceOracle', () => {
     oracle = (await createContractWithAbi<ChainlinkPriceOracle>(
       ChainlinkPriceOracle__factory.abi,
       ChainlinkPriceOracle__factory.bytecode,
-      await getChainlinkPriceOracleParamsFromOldPriceOracle(core),
+      await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core),
     )).connect(core.governance);
 
     snapshotId = await snapshot();

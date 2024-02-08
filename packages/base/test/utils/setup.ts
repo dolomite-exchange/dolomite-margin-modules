@@ -37,7 +37,7 @@ import {
 } from '../../src/types';
 import {
   ARB_MAP,
-  CHAINLINK_AUTOMATION_REGISTRY_MAP,
+  CHAINLINK_AUTOMATION_REGISTRY_MAP, CHAINLINK_PRICE_AGGREGATORS_MAP,
   CHAINLINK_PRICE_ORACLE_MAP,
   D_ARB_MAP,
   D_GMX_MAP,
@@ -455,6 +455,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     config: getCoreProtocolConfig(config.network, config.blockNumber),
     constants: {
       slippageToleranceForPauseSentinel: SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
+      chainlinkAggregators: CHAINLINK_PRICE_AGGREGATORS_MAP[config.network],
     },
     marketIds: {
       dai: DAI_MAP[config.network].marketId,

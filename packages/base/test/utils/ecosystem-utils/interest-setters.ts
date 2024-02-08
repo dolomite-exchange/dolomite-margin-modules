@@ -1,12 +1,14 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { IDolomiteInterestSetter, IDolomiteInterestSetter__factory, } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
-import * as deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import coreDeployments from  '@dolomite-exchange/dolomite-margin/dist/migrations/deployed.json';
 
 export interface InterestSetters {
   alwaysZeroInterestSetter: IDolomiteInterestSetter;
   linearStepFunction6L94UInterestSetter: IDolomiteInterestSetter;
   linearStepFunction8L92UInterestSetter: IDolomiteInterestSetter;
+  linearStepFunction10L90U95OInterestSetter: IDolomiteInterestSetter;
   linearStepFunction14L86UInterestSetter: IDolomiteInterestSetter;
 }
 
@@ -16,7 +18,7 @@ export async function createInterestSetters(
 ): Promise<InterestSetters> {
   return {
     alwaysZeroInterestSetter: IDolomiteInterestSetter__factory.connect(
-      deployments.AlwaysZeroInterestSetter[network].address,
+      coreDeployments.AlwaysZeroInterestSetter[network].address,
       signer,
     ),
     linearStepFunction6L94UInterestSetter: IDolomiteInterestSetter__factory.connect(
@@ -25,6 +27,10 @@ export async function createInterestSetters(
     ),
     linearStepFunction8L92UInterestSetter: IDolomiteInterestSetter__factory.connect(
       deployments.Stablecoin8L92ULinearStepFunctionInterestSetter[network].address,
+      signer,
+    ),
+    linearStepFunction10L90U95OInterestSetter: IDolomiteInterestSetter__factory.connect(
+      deployments.Stablecoin10L90U95OLinearStepFunctionInterestSetter[network].address,
       signer,
     ),
     linearStepFunction14L86UInterestSetter: IDolomiteInterestSetter__factory.connect(

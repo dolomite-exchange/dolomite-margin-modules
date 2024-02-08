@@ -98,6 +98,7 @@ export async function verifyContract(
     customChain.urls.browserURL,
   );
   if (await instance.isVerified(address)) {
+    console.log('\tContract is already verified. Skipping verification...');
     return;
   }
 
@@ -137,6 +138,10 @@ function findArtifactPath(parentPath: string, artifactName: string): string | un
   const childPath = join(parentPath, `${artifactName}.sol`, `${artifactName}.json`);
   if (fs.existsSync(childPath)) {
     return childPath;
+  }
+
+  if (!fs.existsSync(parentPath)) {
+    return undefined;
   }
 
   const childDirectories = fs.readdirSync(parentPath, { withFileTypes: true });

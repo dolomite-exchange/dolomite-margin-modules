@@ -17,6 +17,7 @@ import {
   IWETH,
   RegistryProxy,
 } from '../../src/types';
+import { CHAINLINK_PRICE_AGGREGATORS_MAP } from '../../src/utils/constants';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { AbraEcosystem } from './ecosystem-utils/abra';
 import { ArbEcosystem } from './ecosystem-utils/arb';
@@ -138,6 +139,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
 
 export interface CoreProtocolConstants<T extends NetworkType> {
   slippageToleranceForPauseSentinel: BigNumberish;
+  chainlinkAggregators: typeof CHAINLINK_PRICE_AGGREGATORS_MAP[T];
 }
 
 export abstract class CoreProtocolAbstract<T extends NetworkType> {
