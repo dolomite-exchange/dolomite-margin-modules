@@ -69,7 +69,11 @@ async function createEventEmitterProxy(core: CoreProtocolArbitrumOne): Promise<E
   const implementationCalldata = await eventEmitterImplementation.populateTransaction.initialize();
   const eventEmitterRegistryProxyAddress = await deployContractAndSave(
     'RegistryProxy',
-    getRegistryProxyConstructorParams(eventEmitterImplementationAddress, implementationCalldata.data!, core),
+    getRegistryProxyConstructorParams(
+      eventEmitterImplementationAddress,
+      implementationCalldata.data!,
+      core.dolomiteMargin,
+    ),
     'EventEmitterRegistryProxy',
   );
 

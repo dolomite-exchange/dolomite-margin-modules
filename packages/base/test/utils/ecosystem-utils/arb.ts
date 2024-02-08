@@ -2,7 +2,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { RegistryProxy, RegistryProxy__factory, } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
 import { ARB_MAP } from '../../../src/utils/constants';
-import Deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { getContract } from '../setup';
 import {
   ARBIsolationModeVaultFactory__factory,

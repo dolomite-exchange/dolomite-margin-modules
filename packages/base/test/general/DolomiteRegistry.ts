@@ -23,7 +23,10 @@ describe('DolomiteRegistryImplementation', () => {
     const calldata = await implementation.populateTransaction.initialize(
       core.genericTraderProxy!.address,
       core.expiry!.address,
+      core.constants.slippageToleranceForPauseSentinel,
       core.liquidatorAssetRegistry.address,
+      core.eventEmitterRegistryProxy.address,
+      core.chainlinkPriceOracle.address,
     );
     const registryProxy = await createRegistryProxy(implementation.address, calldata.data!, core);
     registry = DolomiteRegistryImplementation__factory.connect(registryProxy.address, core.governance);
@@ -46,7 +49,10 @@ describe('DolomiteRegistryImplementation', () => {
         registry.initialize(
           core.genericTraderProxy!.address,
           core.expiry!.address,
+          core.constants.slippageToleranceForPauseSentinel,
           core.liquidatorAssetRegistry.address,
+          core.eventEmitterRegistryProxy.address,
+          core.chainlinkPriceOracle.address,
         ),
         'Initializable: contract is already initialized',
       );

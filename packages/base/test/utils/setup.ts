@@ -7,12 +7,13 @@ import * as ExpiryJson from '@dolomite-margin/deployed-contracts/Expiry.json';
 import * as IGenericTraderProxyV1Json from '@dolomite-margin/deployed-contracts/GenericTraderProxyV1.json';
 import * as LiquidatorAssetRegistryJson from '@dolomite-margin/deployed-contracts/LiquidatorAssetRegistry.json';
 import * as LiquidatorProxyV1Json from '@dolomite-margin/deployed-contracts/LiquidatorProxyV1.json';
+import * as LiquidatorProxyV4WithGenericTraderJson from '@dolomite-margin/deployed-contracts/LiquidatorProxyV4WithGenericTrader.json';
 import { address } from '@dolomite-margin/dist/src';
 import { Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
-import Deployments, * as deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import Deployments, * as deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,
@@ -62,7 +63,7 @@ import {
   PREMIA_MAP,
   RDNT_MAP,
   RETH_MAP,
-  SIZE_MAP,
+  SIZE_MAP, SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
   ST_ETH_MAP,
   USDC_MAP,
   USDT_MAP,
@@ -359,21 +360,23 @@ export async function setupCoreProtocol<T extends NetworkType>(
   );
 
   const dolomiteRegistry = IDolomiteRegistry__factory.connect(
-    (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
+    Deployments.DolomiteRegistryProxy[config.network]?.address,
     governance,
   );
+
   const dolomiteRegistryProxy = RegistryProxy__factory.connect(
-    (Deployments.DolomiteRegistryProxy as any)[config.network]?.address,
+    Deployments.DolomiteRegistryProxy[config.network]?.address,
     governance,
   );
+
   const eventEmitterRegistry = getContract(
-    (Deployments.EventEmitterRegistryProxy as any)[config.network].address,
+    Deployments.EventEmitterRegistryProxy[config.network].address,
     IEventEmitterRegistry__factory.connect,
     governance,
   );
 
   const eventEmitterRegistryProxy = getContract(
-    (Deployments.EventEmitterRegistryProxy as any)[config.network].address,
+    Deployments.EventEmitterRegistryProxy[config.network].address,
     RegistryProxy__factory.connect,
     governance,
   );
@@ -383,7 +386,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     : IExpiryV2__factory.connect(ExpiryJson.networks[config.network].address, governance)) as Expiry<T>;
 
   const genericTraderProxy = getContract(
-    (IGenericTraderProxyV1Json.networks as any)[config.network]!.address,
+    IGenericTraderProxyV1Json.networks[config.network]!.address,
     IGenericTraderProxyV1__factory.connect,
     governance,
   );
@@ -401,8 +404,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
   );
 
   const liquidatorProxyV4 = getContract(
-    // LiquidatorProxyV4WithGenericTraderJson.networks[config.network].address,
-    '0x34975624E992bF5c094EF0CF3344660f7AaB9CB3',
+    LiquidatorProxyV4WithGenericTraderJson.networks[config.network].address,
     ILiquidatorProxyV4WithGenericTrader__factory.connect,
     governance,
   );
@@ -434,7 +436,6 @@ export async function setupCoreProtocol<T extends NetworkType>(
     hhUser3,
     hhUser4,
     hhUser5,
-    config: getCoreProtocolConfig(config.network, config.blockNumber),
     apiTokens: {
       usdc: {
         marketId: new ZapBigNumber(USDC_MAP[config.network].marketId),
@@ -450,6 +451,10 @@ export async function setupCoreProtocol<T extends NetworkType>(
         decimals: 18,
         tokenAddress: WETH_MAP[config.network].address,
       },
+    },
+    config: getCoreProtocolConfig(config.network, config.blockNumber),
+    constants: {
+      slippageToleranceForPauseSentinel: SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL,
     },
     marketIds: {
       dai: DAI_MAP[config.network].marketId,

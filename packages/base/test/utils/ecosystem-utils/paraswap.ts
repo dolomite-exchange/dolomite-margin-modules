@@ -13,7 +13,7 @@ import {
   PARASWAP_FEE_CLAIMER_MAP,
   PARASWAP_TRANSFER_PROXY_MAP
 } from '../../../src/utils/constants';
-import Deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { getContract } from '../setup';
 
 export interface ParaswapEcosystem {

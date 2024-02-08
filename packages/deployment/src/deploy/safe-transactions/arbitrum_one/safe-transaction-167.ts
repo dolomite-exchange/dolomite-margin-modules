@@ -31,7 +31,7 @@ import {
   getPlutusVaultGLPWithChainlinkAutomationPriceOracleConstructorParams,
 } from '@dolomite-exchange/modules-plutus/src/plutus-constructors';
 import { PlutusVaultGLPIsolationModeUnwrapperTraderV2__factory } from '@dolomite-exchange/modules-plutus/src/types';
-import Deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   createFolder,
   DenJsonUpload,

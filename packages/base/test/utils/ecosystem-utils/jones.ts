@@ -33,7 +33,7 @@ import {
   JONES_WHITELIST_CONTROLLER_MAP
 } from '../../../src/utils/constants';
 import { impersonateOrFallback } from '../index';
-import Deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { getContract } from '../setup';
 
 export interface JonesEcosystem {

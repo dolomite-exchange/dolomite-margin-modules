@@ -39,7 +39,7 @@ import {
 } from '../../../src/utils/constants';
 import { impersonateOrFallback } from '../index';
 import { getContract } from '../setup';
-import Deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   GLPIsolationModeUnwrapperTraderV1,
   GLPIsolationModeUnwrapperTraderV1__factory,

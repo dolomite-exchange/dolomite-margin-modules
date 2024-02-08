@@ -1,4 +1,4 @@
-import { BigNumberish } from 'ethers';
+import { BigNumber, BigNumberish } from 'ethers';
 import { Network } from './no-deps-constants';
 
 export interface AccountStruct {
@@ -574,6 +574,8 @@ export const S_GMX_MAP: Record<Network.ArbitrumOne, string> = {
 export const SBF_GMX_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xd2D1162512F927a7e282Ef43a362659E4F2a728F',
 };
+
+export const SLIPPAGE_TOLERANCE_FOR_PAUSE_SENTINEL = BigNumber.from('70000000000000000');
 
 export const UMAMI_CONFIGURATOR_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x4e5645bee4eD80C6FEe04DCC15D14A3AC956748A',

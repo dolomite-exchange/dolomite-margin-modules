@@ -48,16 +48,22 @@ contract LinearStepFunctionInterestSetter is ILinearStepFunctionInterestSetter {
 
     constructor(
         uint256 _lowerOptimalPercent,
-        uint256 _upperOptimalPercent
+        uint256 _upperOptimalPercent,
+        uint256 _optimalUtilization
     ) {
         Require.that(
             _lowerOptimalPercent < _upperOptimalPercent,
             _FILE,
             "Lower optimal percent too high"
         );
+        Require.that(
+            _optimalUtilization < ONE_HUNDRED_PERCENT && _optimalUtilization > 0,
+            _FILE,
+            "Invalid optimal utilization"
+        );
         LOWER_OPTIMAL_PERCENT = _lowerOptimalPercent;
         UPPER_OPTIMAL_PERCENT = _upperOptimalPercent;
-        OPTIMAL_UTILIZATION = NINETY_PERCENT;
+        OPTIMAL_UTILIZATION = _optimalUtilization;
     }
 
     function getInterestRate(

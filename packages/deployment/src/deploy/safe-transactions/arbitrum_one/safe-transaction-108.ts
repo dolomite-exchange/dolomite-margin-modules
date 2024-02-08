@@ -6,7 +6,7 @@ import {
 } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { getPendleYtGLPPriceOracleConstructorParams } from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
 import { IPendleYtGLP2024IsolationModeVaultFactory__factory } from '@dolomite-exchange/modules-pendle/src/types';
-import Deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { BigNumber } from 'ethers';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';

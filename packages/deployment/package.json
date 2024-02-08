@@ -1,15 +1,16 @@
 {
-  "name": "@dolomite-exchange/modules-scripts",
+  "name": "@dolomite-exchange/modules-deployments",
   "version": "0.0.1",
   "scripts": {
     "build": "hardhat compile",
     "clean": "hardhat clean",
     "test": "hardhat --network hardhat test",
-    "deploy:dolomite-registry": "hardhat --network $NETWORK run scripts/deploy/deploy-dolomite-registry.ts",
-    "deploy-isolation-mode-token-vault-library": "hardhat --network $NETWORK run scripts/deploy/deploy-isolation-mode-token-vault-library.ts",
-    "deploy:odos-ecosystem": "hardhat --network $NETWORK run scripts/deploy/traders/deploy-odos-ecosystem.ts",
-    "deploy:paraswap-ecosystem": "hardhat --network $NETWORK run scripts/deploy/traders/deploy-paraswap-ecosystem.ts",
-    "deploy:stablecoin-interest-setter": "hardhat --network $NETWORK run scripts/deploy/interest-setters/deploy-stablecoin-interest-setter.ts",
+    "deploy:dolomite-registry": "hardhat --network $NETWORK run src/deploy/deploy-dolomite-registry.ts",
+    "deploy-isolation-mode-token-vault-library": "hardhat --network $NETWORK run src/deploy/deploy-isolation-mode-token-vault-library.ts",
+    "deploy:dolomite-ecosystem": "hardhat --network $NETWORK run src/deploy/ecosystems/deploy-dolomite-ecosystem.ts",
+    "deploy:odos-ecosystem": "hardhat --network $NETWORK run src/deploy/ecosystems/deploy-odos-ecosystem.ts",
+    "deploy:paraswap-ecosystem": "hardhat --network $NETWORK run src/deploy/ecosystems/deploy-paraswap-ecosystem.ts",
+    "deploy:interest-setters": "hardhat --network $NETWORK run src/deploy/interest-setters/deploy-stablecoin-interest-setter.ts",
     "execute:arbitrum": "NETWORK=arbitrum_one ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:base": "NETWORK=base ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:polygon_zkevm": "NETWORK=polygon_zkevm ts-node src/deploy/safe-transactions/execute-safe-transaction.ts"

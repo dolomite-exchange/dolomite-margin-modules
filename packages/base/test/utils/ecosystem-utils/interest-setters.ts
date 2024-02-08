@@ -1,7 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { IDolomiteInterestSetter, IDolomiteInterestSetter__factory, } from '../../../src/types';
 import { Network } from '../../../src/utils/no-deps-constants';
-import * as deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import * as deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 
 export interface InterestSetters {
   alwaysZeroInterestSetter: IDolomiteInterestSetter;

@@ -41,7 +41,7 @@ import {
   PENDLE_SY_WST_ETH_TOKEN_MAP,
   PENDLE_YT_GLP_2024_TOKEN_MAP
 } from '../../../src/utils/constants';
-import Deployments, * as deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import Deployments, * as deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { getContract } from '../setup';
 
 export interface PendleEcosystem {

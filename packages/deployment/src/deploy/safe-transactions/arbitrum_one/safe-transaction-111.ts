@@ -4,7 +4,7 @@ import {
   getRewardsDistributorConstructorParams,
 } from '@dolomite-exchange/modules-liquidity-mining/src/liquidity-mining-constructors';
 import { OARB__factory, RewardsDistributor__factory } from '@dolomite-exchange/modules-liquidity-mining/src/types';
-import Deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { BYTES_ZERO, Network } from 'packages/base/src/utils/no-deps-constants';
 import {
   createFolder,
