@@ -68,8 +68,8 @@ interface IFreezableIsolationModeVaultFactory is IIsolationModeVaultFactory {
 
     /**
      *
-     * @param  _maxExecutionFee     The max amount of gas (in ETH) that can be sent with a position so the user can pay the
-     *                              gas fees to be liquidated. The gas fees are refunded when a position is closed.
+     * @param  _maxExecutionFee     The max amount of gas (in ETH) that can be sent with a position so the user can pay
+     *                              the gas fees to be liquidated. The gas fees are refunded when a position is closed.
      */
     function ownerSetMaxExecutionFee(uint256 _maxExecutionFee) external;
 

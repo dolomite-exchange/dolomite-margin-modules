@@ -17,6 +17,7 @@ import {
   IWETH,
   RegistryProxy,
 } from '../../src/types';
+import { CHAINLINK_PRICE_AGGREGATORS_MAP } from '../../src/utils/constants';
 import { DolomiteMargin, Expiry } from './dolomite';
 import { AbraEcosystem } from './ecosystem-utils/abra';
 import { ArbEcosystem } from './ecosystem-utils/arb';
@@ -112,6 +113,7 @@ export interface CoreProtocolParams<T extends NetworkType> {
   hhUser4: SignerWithAddress;
   hhUser5: SignerWithAddress;
   borrowPositionProxyV2: IBorrowPositionProxyV2;
+  constants: CoreProtocolConstants<T>;
   delayedMultiSig: IPartiallyDelayedMultiSig;
   depositWithdrawalProxy: IDepositWithdrawalProxy;
   dolomiteMargin: DolomiteMargin<T>;
@@ -135,6 +137,11 @@ export interface CoreProtocolParams<T extends NetworkType> {
   tokens: CoreProtocolTokens;
 }
 
+export interface CoreProtocolConstants<T extends NetworkType> {
+  slippageToleranceForPauseSentinel: BigNumberish;
+  chainlinkAggregators: typeof CHAINLINK_PRICE_AGGREGATORS_MAP[T];
+}
+
 export abstract class CoreProtocolAbstract<T extends NetworkType> {
   /// =========================
   /// Config and Signers
@@ -153,6 +160,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
   /// Contracts and Ecosystems
   /// =========================
   public readonly borrowPositionProxyV2: IBorrowPositionProxyV2;
+  public readonly constants: CoreProtocolConstants<T>;
   public readonly delayedMultiSig: IPartiallyDelayedMultiSig;
   public readonly depositWithdrawalProxy: IDepositWithdrawalProxy;
   public readonly dolomiteMargin: DolomiteMargin<T>;
@@ -190,6 +198,7 @@ export abstract class CoreProtocolAbstract<T extends NetworkType> {
     this.hhUser4 = params.hhUser4;
     this.hhUser5 = params.hhUser5;
     this.borrowPositionProxyV2 = params.borrowPositionProxyV2;
+    this.constants = params.constants;
     this.delayedMultiSig = params.delayedMultiSig;
     this.depositWithdrawalProxy = params.depositWithdrawalProxy;
     this.dolomiteMargin = params.dolomiteMargin;

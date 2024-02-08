@@ -252,7 +252,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is
         internal
         virtual
         override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
-        _addCollateralAndSwapExactInputForOutputFreezableValidator(_borrowAccountNumber, _marketIdsPath[_marketIdsPath.length - 1])
+        _addCollateralAndSwapExactInputForOutputFreezableValidator(
+            _borrowAccountNumber,
+            _marketIdsPath[_marketIdsPath.length - 1]
+        )
     {
         IsolationModeTokenVaultV1._addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
@@ -279,7 +282,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezableAndPausable is
         internal
         virtual
         override (IsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1)
-        _swapExactInputForOutputAndRemoveCollateralFreezableValidator(_borrowAccountNumber, _marketIdsPath[_marketIdsPath.length - 1])
+        _swapExactInputForOutputAndRemoveCollateralFreezableValidator(
+            _borrowAccountNumber,
+            _marketIdsPath[_marketIdsPath.length - 1]
+        )
     {
         IsolationModeTokenVaultV1._swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,

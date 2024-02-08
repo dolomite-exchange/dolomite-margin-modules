@@ -36,8 +36,6 @@ contract LinearStepFunctionInterestSetter is ILinearStepFunctionInterestSetter {
 
     bytes32 private constant _FILE = "LinearStepFunctionInterestSetter";
     uint256 public constant ONE_HUNDRED_PERCENT = 1 ether;
-    uint256 public constant NINETY_PERCENT = 0.9 ether;
-    uint256 public constant TEN_PERCENT = 0.1 ether;
     uint256 public constant SECONDS_IN_A_YEAR = 60 * 60 * 24 * 365;
 
     // =============== Immutable Storage ===============
@@ -45,19 +43,27 @@ contract LinearStepFunctionInterestSetter is ILinearStepFunctionInterestSetter {
     uint256 public immutable override LOWER_OPTIMAL_PERCENT; // solhint-disable-line
     uint256 public immutable override UPPER_OPTIMAL_PERCENT; // solhint-disable-line
     uint256 public immutable override OPTIMAL_UTILIZATION; // solhint-disable-line
+    uint256 public immutable REMAINING_OPTIMAL_UTILIZATION; // solhint-disable-line
 
     constructor(
         uint256 _lowerOptimalPercent,
-        uint256 _upperOptimalPercent
+        uint256 _upperOptimalPercent,
+        uint256 _optimalUtilization
     ) {
         Require.that(
             _lowerOptimalPercent < _upperOptimalPercent,
             _FILE,
             "Lower optimal percent too high"
         );
+        Require.that(
+            _optimalUtilization < ONE_HUNDRED_PERCENT && _optimalUtilization > 0,
+            _FILE,
+            "Invalid optimal utilization"
+        );
         LOWER_OPTIMAL_PERCENT = _lowerOptimalPercent;
         UPPER_OPTIMAL_PERCENT = _upperOptimalPercent;
-        OPTIMAL_UTILIZATION = NINETY_PERCENT;
+        OPTIMAL_UTILIZATION = _optimalUtilization;
+        REMAINING_OPTIMAL_UTILIZATION = ONE_HUNDRED_PERCENT - OPTIMAL_UTILIZATION;
     }
 
     function getInterestRate(
@@ -85,15 +91,16 @@ contract LinearStepFunctionInterestSetter is ILinearStepFunctionInterestSetter {
             return InterestRate({
                 value: (LOWER_OPTIMAL_PERCENT + UPPER_OPTIMAL_PERCENT) / SECONDS_IN_A_YEAR
             });
-        } else if (utilization > NINETY_PERCENT) {
+        } else if (utilization > OPTIMAL_UTILIZATION) {
             // interest is equal to lowerOptimalPercent + linear progress to upperOptimalPercent APR
-            uint256 interestToAdd = UPPER_OPTIMAL_PERCENT * (utilization - NINETY_PERCENT) / TEN_PERCENT;
+            uint256 utilizationDiff = utilization - OPTIMAL_UTILIZATION;
+            uint256 interestToAdd = UPPER_OPTIMAL_PERCENT * utilizationDiff / REMAINING_OPTIMAL_UTILIZATION;
             return InterestRate({
                 value: (interestToAdd + LOWER_OPTIMAL_PERCENT) / SECONDS_IN_A_YEAR
             });
         } else {
             return InterestRate({
-                value: LOWER_OPTIMAL_PERCENT * utilization / NINETY_PERCENT / SECONDS_IN_A_YEAR
+                value: LOWER_OPTIMAL_PERCENT * utilization / OPTIMAL_UTILIZATION / SECONDS_IN_A_YEAR
             });
         }
     }

@@ -1,5 +1,6 @@
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import { DolomiteMargin } from '../../../test/utils/dolomite';
 import { CoreProtocolType } from '../../../test/utils/setup';
 import {
   EventEmitterRegistry,
@@ -30,12 +31,12 @@ export enum TargetLiquidationPenalty {
   _15 = '0.15',
 }
 
-export function getRegistryProxyConstructorParams<T extends Network>(
+export function getRegistryProxyConstructorParams<T extends NetworkType>(
   implementationAddress: string,
   implementationCalldata: string,
-  core: CoreProtocolType<T>,
+  dolomiteMargin: DolomiteMargin<T>,
 ): any[] {
-  return [implementationAddress, core.dolomiteMargin.address, implementationCalldata];
+  return [implementationAddress, dolomiteMargin.address, implementationCalldata];
 }
 
 export function getIsolationModeFreezableLiquidatorProxyConstructorParams<T extends Network>(

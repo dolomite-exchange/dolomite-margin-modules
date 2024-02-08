@@ -1,6 +1,6 @@
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import * as deployments from '@dolomite-exchange/modules-deployment/src/deploy/deployments.json';
+import * as deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   VesterImplementationV1,
   VesterImplementationV1__factory,

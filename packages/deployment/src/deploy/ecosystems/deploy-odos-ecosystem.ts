@@ -15,7 +15,6 @@ async function main() {
 
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
   await deployContractAndSave(
-    Number(network),
     'OdosAggregatorTrader',
     getOdosAggregatorTraderConstructorParams(core),
   );

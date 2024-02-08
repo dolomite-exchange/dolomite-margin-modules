@@ -49,7 +49,7 @@ export async function createRegistryProxy(
   return createContractWithAbi(
     RegistryProxy__factory.abi,
     RegistryProxy__factory.bytecode,
-    getRegistryProxyConstructorParams(implementationAddress, initializationCalldata, core),
+    getRegistryProxyConstructorParams(implementationAddress, initializationCalldata, core.dolomiteMargin),
   );
 }
 

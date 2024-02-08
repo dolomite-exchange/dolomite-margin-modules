@@ -55,11 +55,13 @@ import {
   PendlePtPriceOracle__factory,
   PendleRegistry__factory,
 } from '@dolomite-exchange/modules-pendle/src/types';
+import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan';
 import { sleep } from '@openzeppelin/upgrades';
 import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
 import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
 import fs, { readFileSync } from 'fs';
-import hardhat, { artifacts, network, run } from 'hardhat';
+import fsExtra from 'fs-extra';
+import hardhat, { artifacts, ethers, network } from 'hardhat';
 import path, { join } from 'path';
 
 type ChainId = string;
@@ -86,45 +88,99 @@ function readAllDeploymentFiles(): Record<string, Record<ChainId, any>> {
 export async function verifyContract(
   address: string,
   constructorArguments: any[],
-  contractName: string | undefined,
+  contractName: string,
   attempts: number = 0,
 ): Promise<void> {
-  if (attempts === 3) {
-    return Promise.reject(new Error('Failed to verify contract'));
+  const customChain = hardhat.config.etherscan.customChains.filter(c => c.network === hardhat.network.name)[0];
+  const instance = new Etherscan(
+    (hardhat.config.etherscan.apiKey as Record<string, string>)[customChain.network],
+    customChain.urls.apiURL,
+    customChain.urls.browserURL,
+  );
+  if (await instance.isVerified(address)) {
+    console.log('\tContract is already verified. Skipping verification...');
+    return;
   }
+
   try {
     console.log('\tVerifying contract...');
-    await run('verify:verify', {
+    const artifact = await artifacts.readArtifact(contractName);
+    const factory = await ethers.getContractFactoryFromArtifact(artifact);
+    const buildInfo = artifacts.getBuildInfoSync(contractName);
+    const { message: guid } = await instance.verify(
       address,
-      constructorArguments,
-      noCompile: true,
-      contract: contractName,
-    });
+      JSON.stringify(buildInfo!.input),
+      contractName,
+      `v${buildInfo!.solcLongVersion}`,
+      factory.interface.encodeDeploy(constructorArguments).slice(2),
+    );
+
+    await sleep(1000);
+    const verificationStatus = await instance.getVerificationStatus(guid);
+    if (verificationStatus.isSuccess()) {
+      const contractURL = instance.getContractUrl(address);
+      console.log(`\tSuccessfully verified contract "${contractName}": ${contractURL}`);
+    }
   } catch (e: any) {
     if (e?.message.toLowerCase().includes('already verified')) {
       console.log('\tEtherscanVerification: Swallowing already verified error');
-    } else {
+    } else if (attempts < 2) {
       await verifyContract(address, constructorArguments, contractName, attempts + 1);
+    } else {
+      return Promise.reject(e);
     }
   }
 }
 
 type ConstructorArgument = string | BigNumberish | boolean | ConstructorArgument[];
 
-async function createArtifactFromWorkspaceIfNotExists(artifactName: string) {
-  if (await artifacts.artifactExists(artifactName)) {
-    // GUARD STATEMENT!
-    return;
+function findArtifactPath(parentPath: string, artifactName: string): string | undefined {
+  const childPath = join(parentPath, `${artifactName}.sol`, `${artifactName}.json`);
+  if (fs.existsSync(childPath)) {
+    return childPath;
   }
 
+  if (!fs.existsSync(parentPath)) {
+    return undefined;
+  }
+
+  const childDirectories = fs.readdirSync(parentPath, { withFileTypes: true });
+  for (const childDirectory of childDirectories) {
+    const fullPath = path.join(parentPath, childDirectory.name);
+    if (childDirectory.isDirectory() && !childDirectory.name.includes('.sol')) {
+      const artifactPath = findArtifactPath(fullPath, artifactName);
+      if (artifactPath) {
+        return artifactPath;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+async function getFreshArtifactFromWorkspace(artifactName: string) {
   const packagesPath = '../../../../packages';
-  const children = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
+  const deploymentsArtifactsPath = path.join(__dirname, packagesPath, 'deployment', 'artifacts');
+  await fsExtra.remove(deploymentsArtifactsPath);
+
+  const workspaces = fs.readdirSync(join(__dirname, packagesPath), { withFileTypes: true })
     .filter(d => d.isDirectory())
     .map(d => path.join(packagesPath, d.name));
 
-  for (const child of children) {
-    const artifactPath = join(__dirname, child, `artifacts/contracts/${artifactName}.sol/${artifactName}.json`);
-    if (fs.existsSync(artifactPath)) {
+  const contractsFolder = process.env.COVERAGE === 'true' ? 'contracts_coverage' : 'contracts';
+  for (const workspace of workspaces) {
+    const parentPath = join(__dirname, workspace, `artifacts/${contractsFolder}`);
+    const artifactPath = findArtifactPath(parentPath, artifactName);
+    if (artifactPath) {
+      await fsExtra.copy(
+        path.join(__dirname, workspace, 'artifacts'),
+        deploymentsArtifactsPath,
+        { overwrite: true },
+      );
+      // const packageDebugPath = artifactPath.replace('.json', '.dbg.json');
+      // const deploymentDebugPath = packageDebugPath.replace(workspace.substring(21), 'deployment');
+      // console.log('deploymentDebugPath', workspace.substring(21), deploymentDebugPath);
+      // await fsExtra.copy(packageDebugPath, deploymentDebugPath, { overwrite: true });
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
       await artifacts.saveArtifactAndDebugFile(artifact);
       return;
@@ -154,7 +210,7 @@ export async function deployContractAndSave(
     file = {};
   }
 
-  await createArtifactFromWorkspaceIfNotExists(contractName);
+  await getFreshArtifactFromWorkspace(contractName);
   const chainId = network.config.chainId!;
   const usedContractName = contractRename ?? contractName;
   if (file[usedContractName]?.[chainId.toString()]) {
@@ -335,11 +391,11 @@ async function prettyPrintAndVerifyContract(
   console.log('Address: ', contract.address);
   console.log('='.repeat(52 + contractRename.length));
 
-  if (process.env.SKIP_VERIFICATION) {
+  if (!(process.env.SKIP_VERIFICATION === 'true')) {
     console.log('\tSleeping for 5s to wait for the transaction to be indexed by Etherscan...');
     await sleep(3000);
-    const sourceName = (await artifacts.readArtifact(contractName)).sourceName;
-    await verifyContract(contract.address, [...args], `${sourceName}:${contractName}`);
+    const artifact = await artifacts.readArtifact(contractName);
+    await verifyContract(contract.address, [...args], `${artifact.sourceName}:${contractName}`);
     file[contractRename][chainId].isVerified = true;
     writeDeploymentFile(file);
   } else {

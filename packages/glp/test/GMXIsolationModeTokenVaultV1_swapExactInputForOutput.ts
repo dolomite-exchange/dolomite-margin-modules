@@ -1,5 +1,5 @@
 import { BigNumber, BigNumberish } from 'ethers';
-import deployments from '@dolomite-exchange/modules-deployment/src/deploy/deployments.json';
+import deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { parseEther } from 'ethers/lib/utils';
 import { GMX_GOV_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { getUnwrapZapParams } from '@dolomite-exchange/modules-base/test/utils/zap-utils';

@@ -2,11 +2,11 @@ import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import {
-  getChainlinkPriceOracleParamsFromOldPriceOracle,
+  getChainlinkPriceOracleConstructorParamsFromOldPriceOracle,
 } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import { getPendleYtGLPPriceOracleConstructorParams } from '@dolomite-exchange/modules-pendle/src/pendle-constructors';
 import { IPendleYtGLP2024IsolationModeVaultFactory__factory } from '@dolomite-exchange/modules-pendle/src/types';
-import Deployments from '@dolomite-exchange/modules-deployment/src/deploy/deployments.json';
+import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import { BigNumber } from 'ethers';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
 import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../../../utils/deploy-utils';
@@ -20,7 +20,7 @@ import { deployContractAndSave, prettyPrintEncodedDataWithTypeSafety } from '../
 async function main() {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
   const core = await setupCoreProtocol({ network, blockNumber: 0 });
-  const chainlinkPriceOracleParams = await getChainlinkPriceOracleParamsFromOldPriceOracle(core);
+  const chainlinkPriceOracleParams = await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core);
   const chainlinkPriceOracleAddress = await deployContractAndSave(
     'ChainlinkPriceOracle',
     chainlinkPriceOracleParams,
