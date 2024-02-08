@@ -1006,7 +1006,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
       await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
-      const withdrawalInfo = getWithdrawalObject(
+      let withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
         ONE_BI,
@@ -1070,6 +1070,34 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
           withdrawalInfo.eventData,
         ),
         'GmxV2Library: Unexpected secondaryOutputAmount',
+      );
+    });
+
+    it('should fail if output token is short token but outputToken does not equal secondaryOutputToken', async () => {
+      await setupBalances(core.tokens.nativeUsdc!);
+      const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
+      const unwrapperImpersonate = await impersonate(unwrapper.address, true);
+      await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
+      let withdrawalInfo = getWithdrawalObject(
+        unwrapper.address,
+        underlyingToken.address,
+        ONE_BI,
+        ONE_BI,
+        amountWei,
+        parseEther('.01'),
+        core.tokens.nativeUsdc!.address,
+        core.tokens.weth.address,
+        BigNumber.from('100000000'),
+      );
+
+      withdrawalInfo.eventData.addressItems.items[1].value = core.tokens.wbtc.address;
+      await expectThrow(
+        unwrapper.connect(withdrawalExecutor).afterWithdrawalExecution(
+          withdrawalKey,
+          withdrawalInfo.withdrawal,
+          withdrawalInfo.eventData,
+        ),
+        'GmxV2Library: Output token is incorrect',
       );
     });
 

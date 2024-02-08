@@ -136,6 +136,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     onlyHandler(msg.sender) {
         WithdrawalInfo memory withdrawalInfo = _getWithdrawalSlot(_key);
         _validateWithdrawalExists(withdrawalInfo);
+        if (_withdrawal.numbers.marketTokenAmount >= withdrawalInfo.inputAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _withdrawal.numbers.marketTokenAmount >= withdrawalInfo.inputAmount,
             _FILE,
@@ -218,6 +219,7 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
     }
 
     function _validateIsWrapper(address _from) internal view {
+        if (_from == address(_getWrapperTrader())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _from == address(_getWrapperTrader()),
             _FILE,

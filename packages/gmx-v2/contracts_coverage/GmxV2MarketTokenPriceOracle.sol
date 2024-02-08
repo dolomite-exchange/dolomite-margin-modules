@@ -85,6 +85,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
+        if (marketTokens[_token]) { /* FOR COVERAGE TESTING */ }
         Require.that(
             marketTokens[_token],
             _FILE,
@@ -92,6 +93,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             _token
         );
 
+        if (DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_MARGIN().getMarketIsClosing(DOLOMITE_MARGIN().getMarketIdByTokenAddress(_token)),
             _FILE,
@@ -115,6 +117,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
     // ============================ Internal Functions ============================
 
     function _ownerSetMarketToken(address _token, bool _status) internal {
+        if (IERC20Metadata(_token).decimals() == 18) { /* FOR COVERAGE TESTING */ }
         Require.that(
             IERC20Metadata(_token).decimals() == 18,
             _FILE,
@@ -180,6 +183,7 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         );
 
         // @audit Is there a better way to handle this? When could the reader return negative here?
+        if (value > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             value > 0,
             _FILE,
