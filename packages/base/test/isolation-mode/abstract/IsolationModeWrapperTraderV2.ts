@@ -146,6 +146,33 @@ describe('IsolationModeWrapperTraderV2', () => {
   });
 
   describe('#exchange', () => {
+    it('should work normally', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await wrapper.connect(dolomiteMarginImpersonator).exchange(
+        vault.address,
+        core.dolomiteMargin.address,
+        factory.address,
+        otherToken.address,
+        amountWei.div(1e12), // normalize the amount to match the # of decimals otherToken has
+        defaultAbiCoder.encode(['uint256', 'bytes'], [amountWei, BYTES_EMPTY]), // minOutputAmount is too large
+      );
+    });
+
+    it('should fail if input amount is zero', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
+          vault.address,
+          core.dolomiteMargin.address,
+          factory.address,
+          otherToken.address,
+          ZERO_BI, // normalize the amount to match the # of decimals otherToken has
+          defaultAbiCoder.encode(['uint256', 'bytes'], [amountWei, BYTES_EMPTY]), // minOutputAmount is too large
+        ),
+        'IsolationModeWrapperTraderV2: Invalid input amount',
+      );
+    });
+
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
         wrapper.connect(core.hhUser1).exchange(
@@ -187,6 +214,21 @@ describe('IsolationModeWrapperTraderV2', () => {
           BYTES_EMPTY,
         ),
         `IsolationModeWrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if input token is incorrect', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
+          vault.address,
+          core.dolomiteMargin.address,
+          factory.address,
+          core.tokens.weth.address,
+          amountWei.div(1e12), // normalize the amount to match the # of decimals otherToken has
+          defaultAbiCoder.encode(['uint256', 'bytes'], [amountWei, BYTES_EMPTY]), // minOutputAmount is too large
+        ),
+        `IsolationModeWrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 

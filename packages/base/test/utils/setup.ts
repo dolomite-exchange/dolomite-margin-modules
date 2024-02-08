@@ -12,7 +12,7 @@ import { Provider } from '@ethersproject/providers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BaseContract, BigNumberish, ContractInterface, Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
-import Deployments, * as deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import Deployments, * as deployments from '@dolomite-exchange/modules-deployment/src/deploy/deployments.json';
 import {
   IBorrowPositionProxyV2__factory,
   IDepositWithdrawalProxy__factory,

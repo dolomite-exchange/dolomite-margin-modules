@@ -20,24 +20,20 @@
 
 pragma solidity ^0.8.9;
 
+import { ChainHelperLib } from "../lib/ChainHelperLib.sol";
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+
 
 /**
- * @title   ChainHelperLib
+ * @title   TestChainHelperLib
  * @author  Dolomite
  *
- * @notice  Library contract that discovers which chain we're on
+ * @notice  Contract for testing chain helper lib
  */
-library ChainHelperLib {
+contract TestChainHelperLib {
 
-    // ============ Constants ============
-
-    bytes32 private constant _FILE = "ChainHelperLib";
-    uint256 private constant _ARBITRUM_ONE = 42161;
-    uint256 private constant _ARBITRUM_SEPOLIA = 421614;
-
-    // ============ Functions ============
-
-    function isArbitrum(uint256 chainId) internal pure returns (bool) {
-        return chainId == _ARBITRUM_ONE || chainId == _ARBITRUM_SEPOLIA;
+    function isArbitrum(uint256 _chainId) public pure returns (bool) {
+        return ChainHelperLib.isArbitrum(_chainId);
     }
 }

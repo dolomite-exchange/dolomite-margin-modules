@@ -36,6 +36,8 @@ import {
   IGenericTraderProxyV1__factory,
   IsolationModeFreezableLiquidatorProxy,
   IsolationModeFreezableLiquidatorProxy__factory,
+  TestIsolationModeFreezableLiquidatorProxy,
+  TestIsolationModeFreezableLiquidatorProxy__factory,
 } from '../../src/types';
 import { AccountStruct } from '../../src/utils/constants';
 import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from '../../src/utils/constructors/dolomite';
@@ -90,7 +92,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
   let factory: GmxV2IsolationModeVaultFactory;
   let vault: GmxV2IsolationModeTokenVaultV1;
   let marketId: BigNumber;
-  let liquidatorProxy: IsolationModeFreezableLiquidatorProxy;
+  let liquidatorProxy: TestIsolationModeFreezableLiquidatorProxy;
   let eventEmitter: EventEmitterRegistry;
 
   let solidAccount: AccountStruct;
@@ -112,9 +114,9 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     );
     await core.dolomiteRegistryProxy.upgradeTo(newImplementation.address);
 
-    liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
-      IsolationModeFreezableLiquidatorProxy__factory.abi,
-      IsolationModeFreezableLiquidatorProxy__factory.bytecode,
+    liquidatorProxy = await createContractWithAbi<TestIsolationModeFreezableLiquidatorProxy>(
+      TestIsolationModeFreezableLiquidatorProxy__factory.abi,
+      TestIsolationModeFreezableLiquidatorProxy__factory.bytecode,
       getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
     );
 
@@ -973,6 +975,54 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       await expectThrow(
         performLiquidationAndCheckState(amountWei, true, false),
         'AsyncIsolationModeUnwrapperImpl: All trades must be retryable',
+      );
+    });
+
+    it('should fail if reentered', async () => {
+      await setupBalances(borrowAccountNumber, true, false);
+      await expectThrow(
+        liquidatorProxy.callPrepareForLiquidationAndTriggerReentrancy({
+          liquidAccount,
+          freezableMarketId: marketId,
+          inputTokenAmount: amountWei.div(3),
+          outputMarketId: core.marketIds.weth,
+          minOutputAmount: ONE_BI,
+          expirationTimestamp: NO_EXPIRY,
+          extraData: DEFAULT_EXTRA_DATA,
+        }),
+        'ReentrancyGuard: reentrant call',
+      );
+    });
+
+    it('should fail if asset is not whitelisted for liquidation', async () => {
+      await core.liquidatorAssetRegistry.ownerRemoveLiquidatorFromAssetWhitelist(marketId, liquidatorProxy.address);
+      await setupBalances(borrowAccountNumber, true, false);
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation({
+          liquidAccount,
+          freezableMarketId: marketId,
+          inputTokenAmount: amountWei.div(3),
+          outputMarketId: core.marketIds.weth,
+          minOutputAmount: ONE_BI,
+          expirationTimestamp: NO_EXPIRY,
+          extraData: DEFAULT_EXTRA_DATA,
+        }),
+        `HasLiquidatorRegistry: Asset not whitelisted <${marketId.toString()}>`,
+      );
+    });
+
+    it('should fail if account is not liquidatable', async () => {
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation({
+          liquidAccount,
+          freezableMarketId: marketId,
+          inputTokenAmount: amountWei.div(3),
+          outputMarketId: core.marketIds.weth,
+          minOutputAmount: ONE_BI,
+          expirationTimestamp: NO_EXPIRY,
+          extraData: DEFAULT_EXTRA_DATA,
+        }),
+        'FreezableVaultLiquidatorProxy: Liquid account not liquidatable',
       );
     });
   });

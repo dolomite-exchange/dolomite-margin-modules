@@ -16,10 +16,11 @@ import { BYTES_EMPTY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../src/uti
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectProtocolBalance } from '../utils/assertions';
 import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
-import { CoreProtocol, getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../utils/setup';
+import { getDefaultCoreProtocolConfig, setupCoreProtocol, setupTestMarket, setupUserVaultProxy } from '../utils/setup';
 import { expect } from 'chai';
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 import { getWrapZapParams } from '../utils/zap-utils';
+import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 
 const defaultAccountNumber = 0;
 const otherAccountNumber = 123;
@@ -28,7 +29,7 @@ const amountWei = ONE_ETH_BI;
 describe('SimpleIsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
-  let core: CoreProtocol;
+  let core: CoreProtocolArbitrumOne;
   let underlyingToken: CustomTestToken;
   let underlyingMarketId: BigNumber;
   let factoryMarketId: BigNumber;

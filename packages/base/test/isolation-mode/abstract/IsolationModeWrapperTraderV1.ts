@@ -135,6 +135,33 @@ describe('IsolationModeWrapperTraderV1', () => {
   });
 
   describe('#exchange', () => {
+    it('should work normally', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await wrapper.connect(dolomiteMarginImpersonator).exchange(
+        vault.address,
+        core.dolomiteMargin.address,
+        factory.address,
+        otherToken.address,
+        amountWei.div(1e12), // normalize the amount to match the # of decimals otherToken has
+        encodeExternalSellActionDataWithNoData(amountWei), // minOutputAmount is too large
+      );
+    });
+
+    it('should fail if input amount is zero', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        wrapper.connect(dolomiteMarginImpersonator).exchange(
+          vault.address,
+          core.dolomiteMargin.address,
+          factory.address,
+          otherToken.address,
+          ZERO_BI, // normalize the amount to match the # of decimals otherToken has
+          encodeExternalSellActionDataWithNoData(amountWei), // minOutputAmount is too large
+        ),
+        'IsolationModeWrapperTraderV1: Invalid input amount'
+      );
+    });
+
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
         wrapper.connect(core.hhUser1).exchange(

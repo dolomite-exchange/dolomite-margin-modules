@@ -20,24 +20,28 @@
 
 pragma solidity ^0.8.9;
 
+import { MinimalERC20 } from "../general/MinimalERC20.sol";
+
 
 /**
- * @title   ChainHelperLib
+ * @title   TestMinimalERC20
  * @author  Dolomite
  *
- * @notice  Library contract that discovers which chain we're on
+ * @notice  Test contract for MinimalERC20
  */
-library ChainHelperLib {
+contract TestMinimalERC20 is MinimalERC20 {
 
-    // ============ Constants ============
+    constructor(string memory name_, string memory symbol_, uint8 decimals_) MinimalERC20(name_, symbol_, decimals_) {}
 
-    bytes32 private constant _FILE = "ChainHelperLib";
-    uint256 private constant _ARBITRUM_ONE = 42161;
-    uint256 private constant _ARBITRUM_SEPOLIA = 421614;
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
 
-    // ============ Functions ============
+    function burn(address from, uint256 amount) external {
+        _burn(from, amount);
+    }
 
-    function isArbitrum(uint256 chainId) internal pure returns (bool) {
-        return chainId == _ARBITRUM_ONE || chainId == _ARBITRUM_SEPOLIA;
+    function transferFromZeroAddress(address to, uint256 amount) external {
+        _transfer(address(0), to, amount);
     }
 }

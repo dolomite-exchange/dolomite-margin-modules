@@ -20,24 +20,38 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { ExpirationLib } from "../lib/ExpirationLib.sol";
+
 
 /**
- * @title   ChainHelperLib
+ * @title   TestExpirationLib
  * @author  Dolomite
  *
- * @notice  Library contract that discovers which chain we're on
+ * @notice  Test ExpirationLib contract
  */
-library ChainHelperLib {
+contract TestExpirationLib {
 
     // ============ Constants ============
 
-    bytes32 private constant _FILE = "ChainHelperLib";
-    uint256 private constant _ARBITRUM_ONE = 42161;
-    uint256 private constant _ARBITRUM_SEPOLIA = 421614;
+    bytes32 private constant _FILE = "TestExpirationLib";
 
     // ============ Functions ============
 
-    function isArbitrum(uint256 chainId) internal pure returns (bool) {
-        return chainId == _ARBITRUM_ONE || chainId == _ARBITRUM_SEPOLIA;
+    function clearExpirationIfNeeded(
+        IDolomiteMargin _dolomiteMargin,
+        IDolomiteRegistry _registry,
+        address _liquidAccountOwner,
+        uint256 _liquidAccountNumber,
+        uint256 _owedMarketId
+    ) public {
+        ExpirationLib.clearExpirationIfNeeded(
+            _dolomiteMargin,
+            _registry,
+            _liquidAccountOwner,
+            _liquidAccountNumber,
+            _owedMarketId
+        );
     }
 }

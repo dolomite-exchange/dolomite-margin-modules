@@ -1,21 +1,33 @@
 import { expect } from 'chai';
 import { Network } from 'packages/base/src/utils/no-deps-constants';
-import { TestHandlerRegistry } from '../../src/types';
+import { CustomTestToken, TestHandlerRegistry, TestIsolationModeFactory, TestIsolationModeTokenVaultV1 } from '../../src/types';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import { expectEvent, expectThrow } from '../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
-import { createTestHandlerRegistry } from '../utils/ecosystem-utils/testers';
+import { createTestHandlerRegistry, createTestIsolationModeFactory } from '../utils/ecosystem-utils/testers';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
+import { createContractWithLibrary, createTestToken } from 'packages/base/src/utils/dolomite-utils';
+import { createIsolationModeTokenVaultV1ActionsImpl } from '../utils/dolomite';
 
 describe('HandlerRegistry', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
   let handlerRegistry: TestHandlerRegistry;
+  let factory: TestIsolationModeFactory;
+  let underlyingToken: CustomTestToken;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     handlerRegistry = await createTestHandlerRegistry(core);
+    underlyingToken = await createTestToken();
+    const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
+    const userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1>(
+      'TestIsolationModeTokenVaultV1',
+      libraries,
+      [],
+    );
+    factory = await createTestIsolationModeFactory(core, underlyingToken, userVaultImplementation);
 
     snapshotId = await snapshot();
   });
@@ -84,6 +96,16 @@ describe('HandlerRegistry', () => {
       );
     });
 
+    it('should fail if invalid factory token', async () => {
+      await expectThrow(
+        handlerRegistry.connect(core.governance).ownerSetUnwrapperByToken(
+          factory.address,
+          core.plutusEcosystem!.live.plvGlpIsolationModeUnwrapperTraderV1.address,
+        ),
+        'HandlerRegistry: Invalid factory token',
+      );
+    });
+
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         handlerRegistry.connect(core.hhUser1).ownerSetUnwrapperByToken(
@@ -117,6 +139,16 @@ describe('HandlerRegistry', () => {
           core.plutusEcosystem!.live.plvGlpIsolationModeWrapperTraderV1.address,
         ),
         'HandlerRegistry: Invalid wrapper trader',
+      );
+    });
+
+    it('should fail if invalid factory token', async () => {
+      await expectThrow(
+        handlerRegistry.connect(core.governance).ownerSetWrapperByToken(
+          factory.address,
+          core.plutusEcosystem!.live.plvGlpIsolationModeUnwrapperTraderV1.address,
+        ),
+        'HandlerRegistry: Invalid factory token',
       );
     });
 

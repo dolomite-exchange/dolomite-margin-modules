@@ -18,7 +18,7 @@ import { IERC20, IERC20__factory, IERC4626, IERC4626__factory, } from '../../../
 import { Network } from '../../../src/utils/no-deps-constants';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { PLS_TOKEN_MAP, PLV_GLP_FARM_MAP, PLV_GLP_MAP, PLV_GLP_ROUTER_MAP } from '../../../src/utils/constants';
-import Deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import Deployments from '@dolomite-exchange/modules-deployment/src/deploy/deployments.json';
 import { getContract } from '../setup';
 
 export interface PlutusEcosystem {

@@ -20,24 +20,38 @@
 
 pragma solidity ^0.8.9;
 
+import { SafeDelegateCallLib } from "../lib/SafeDelegateCallLib.sol";
+
 
 /**
- * @title   ChainHelperLib
+ * @title   TestSafeDelegateCallLib
  * @author  Dolomite
  *
- * @notice  Library contract that discovers which chain we're on
+ * @notice  Contract for testing SafeDelegateCallLib
  */
-library ChainHelperLib {
+contract TestSafeDelegateCallLib {
 
-    // ============ Constants ============
+    uint256 public value;
 
-    bytes32 private constant _FILE = "ChainHelperLib";
-    uint256 private constant _ARBITRUM_ONE = 42161;
-    uint256 private constant _ARBITRUM_SEPOLIA = 421614;
+    function safeDelegateCall(
+        address _target,
+        bytes memory _calldata
+    ) public returns (bytes memory) {
+        return SafeDelegateCallLib.safeDelegateCall(
+            _target,
+            _calldata
+        );
+    }
 
-    // ============ Functions ============
+    function setValue(uint256 _value) external {
+        value = _value;
+    }
 
-    function isArbitrum(uint256 chainId) internal pure returns (bool) {
-        return chainId == _ARBITRUM_ONE || chainId == _ARBITRUM_SEPOLIA;
+    function revertFunction() external {
+        revert();
+    }
+
+    function revertFunctionWithMessage() external {
+        revert("TestSafeDelegateCallLib: revertFunction");
     }
 }
