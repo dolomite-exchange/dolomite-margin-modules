@@ -20,7 +20,7 @@ import { expect } from 'chai';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
-import deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import deployments from '@dolomite-exchange/modules-deployment/src/deploy/deployments.json';
 import {
   IPlutusVaultGLP,
   IPlutusVaultGLP__factory,

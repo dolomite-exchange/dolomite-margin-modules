@@ -20,7 +20,7 @@
 pragma solidity ^0.8.9;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol"; 
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
@@ -63,7 +63,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
     mapping(uint256 => PoolInfo) public poolInfo;
 
     IOARB public oARB;
-    uint256 public oARBPerSecond; 
+    uint256 public oARBPerSecond;
     uint256 public totalAllocPoint;
     uint256 public startTime;
 
@@ -100,11 +100,13 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
              number: uint256(uint160(msg.sender))
         });
 
+        if (_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _pools.contains(_marketId),
             _FILE,
             "Pool not initialized"
         );
+        if (_amountWei > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _amountWei > 0,
             _FILE,
@@ -132,9 +134,9 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
             /* _marketId = */ _marketId,
             /* _amountWei */ _amountWei
         );
-        IDolomiteStructs.Par memory changeAccountPar = 
+        IDolomiteStructs.Par memory changeAccountPar =
             DOLOMITE_MARGIN().getAccountPar(info, _marketId).sub(beforeAccountPar);
-        assert(changeAccountPar.sign);
+        /*assert(changeAccountPar.sign);*/
 
         pool.totalPar += changeAccountPar.value;
         user.amount += changeAccountPar.value;
@@ -150,11 +152,12 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
     ) external {
         PoolInfo storage pool = poolInfo[_marketId];
         UserInfo storage user = userInfo[_marketId][msg.sender];
-        IDolomiteStructs.AccountInfo memory info = IDolomiteStructs.AccountInfo({ 
+        IDolomiteStructs.AccountInfo memory info = IDolomiteStructs.AccountInfo({
             owner: address(this),
             number: uint256(uint160(msg.sender))
         });
 
+        if (_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _pools.contains(_marketId),
             _FILE,
@@ -166,6 +169,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
             withdrawalAmount = (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value;
         }
         else {
+            if ((DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value >= _amountWei) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value >= _amountWei,
                 _FILE,
@@ -195,9 +199,9 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
                 /* _marketId = */ _marketId,
                 /* _amountWei */ withdrawalAmount
             );
-            IDolomiteStructs.Par memory changeAccountPar = 
+            IDolomiteStructs.Par memory changeAccountPar =
                 beforeAccountPar.sub(DOLOMITE_MARGIN().getAccountPar(info, _marketId));
-            assert(changeAccountPar.sign);
+            /*assert(changeAccountPar.sign);*/
 
             user.amount = user.amount - changeAccountPar.value;
             pool.totalPar -= changeAccountPar.value;
@@ -211,12 +215,13 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
     function emergencyWithdraw(uint256 _marketId) external {
         PoolInfo storage pool = poolInfo[_marketId];
         UserInfo storage user = userInfo[_marketId][msg.sender];
-        IDolomiteStructs.AccountInfo memory info = IDolomiteStructs.AccountInfo({ 
+        IDolomiteStructs.AccountInfo memory info = IDolomiteStructs.AccountInfo({
             owner: address(this),
             number: uint256(uint160(msg.sender))
         });
 
         uint256 amountWei = (DOLOMITE_MARGIN().getAccountWei(info, _marketId)).value;
+        if (amountWei > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             amountWei > 0,
             _FILE,
@@ -235,9 +240,9 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
             /* _marketId = */ _marketId,
             /* _amountWei */ amountWei
         );
-        IDolomiteStructs.Par memory changeAccountPar = 
+        IDolomiteStructs.Par memory changeAccountPar =
             beforeAccountPar.sub(DOLOMITE_MARGIN().getAccountPar(info, _marketId));
-        assert(changeAccountPar.sign);
+        /*assert(changeAccountPar.sign);*/
 
         pool.totalPar -= changeAccountPar.value;
         emit EmergencyWithdraw(msg.sender, _marketId, amountWei);
@@ -276,6 +281,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         uint256 _allocPoint,
         bool _withUpdate
     ) external onlyDolomiteMarginOwner(msg.sender) {
+        if (!_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !_pools.contains(_marketId),
             _FILE,
@@ -287,7 +293,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
 
         uint256 lastRewardTime = block.timestamp > startTime ? block.timestamp : startTime;
         totalAllocPoint = totalAllocPoint + _allocPoint;
-        poolInfo[_marketId] = 
+        poolInfo[_marketId] =
             PoolInfo({
                 marketId: _marketId,
                 allocPoint: _allocPoint,
@@ -302,6 +308,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         uint256 _marketId,
         uint256 _allocPoint
     ) external onlyDolomiteMarginOwner(msg.sender) {
+        if (_pools.contains(_marketId)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _pools.contains(_marketId),
             _FILE,
@@ -315,6 +322,7 @@ contract Emitter is OnlyDolomiteMargin, IEmitter {
         uint256 _startTime,
         IOARB _oARB
     ) external onlyDolomiteMarginOwner(msg.sender) {
+        if (_startTime >= block.timestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _startTime >= block.timestamp,
             _FILE,

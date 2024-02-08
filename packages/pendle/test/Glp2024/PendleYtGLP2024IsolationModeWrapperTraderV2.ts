@@ -11,6 +11,7 @@ import { expectThrow, expectWalletBalance } from '@dolomite-exchange/modules-bas
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
+  disableInterestAccrual,
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
   setupTestMarket,
@@ -93,6 +94,7 @@ describe('PendleYtGLP2024IsolationModeWrapperTraderV2', () => {
     unwrapper = await createPendleYtGLP2024IsolationModeUnwrapperTraderV2(core, factory, pendleRegistry);
     wrapper = await createPendleYtGLP2024IsolationModeWrapperTraderV2(core, factory, pendleRegistry);
     priceOracle = await createPendleYtGLPPriceOracle(core, factory, pendleRegistry);
+    await disableInterestAccrual(core, core.marketIds.usdc);
 
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, factory, true, priceOracle);

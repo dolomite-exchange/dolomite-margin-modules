@@ -122,6 +122,7 @@ contract PendleRegistry is IPendleRegistry, BaseRegistry {
     // ============================================================
 
     function _ownerSetPendleRouter(address _pendleRouter) internal {
+        if (_pendleRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _pendleRouter != address(0),
             _FILE,
@@ -132,6 +133,7 @@ contract PendleRegistry is IPendleRegistry, BaseRegistry {
     }
 
     function _ownerSetPtMarket(address _ptMarket) internal {
+        if (_ptMarket != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _ptMarket != address(0),
             _FILE,
@@ -142,6 +144,7 @@ contract PendleRegistry is IPendleRegistry, BaseRegistry {
     }
 
     function _ownerSetPtOracle(address _ptOracle) internal {
+        if (_ptOracle != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _ptOracle != address(0),
             _FILE,
@@ -152,6 +155,7 @@ contract PendleRegistry is IPendleRegistry, BaseRegistry {
     }
 
     function _ownerSetSyToken(address _syToken) internal {
+        if (_syToken != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _syToken != address(0),
             _FILE,

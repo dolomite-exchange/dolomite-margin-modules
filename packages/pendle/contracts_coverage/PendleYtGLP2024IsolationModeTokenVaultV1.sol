@@ -118,6 +118,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         address interestToken = IPendleYtToken(underlyingToken).SY();
         uint256 rewardTokenLength = rewardTokens.length;
 
+        if (_depositRewardsIntoDolomite.length == rewardTokenLength) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _depositRewardsIntoDolomite.length == rewardTokenLength,
             _FILE,
@@ -134,7 +135,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         );
 
         for (uint256 i; i < rewardTokenLength; ++i) {
-            assert(rewardTokens[i] != underlyingToken);
+            /*assert(rewardTokens[i] != underlyingToken);*/
             _depositOtherTokenIntoDolomiteMarginForVaultOwnerOrTransferOut(
                 /* _toAccountNumber = */ 0,
                 rewardTokens[i],
@@ -143,7 +144,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
             );
         }
 
-        assert(interestToken != underlyingToken);
+        /*assert(interestToken != underlyingToken);*/
         _depositOtherTokenIntoDolomiteMarginForVaultOwnerOrTransferOut(
             /* _toAccountNumber = */ 0,
             interestToken,
@@ -181,6 +182,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         override
     {
         uint256 ytMaturityTimestamp = IPendleYtGLP2024IsolationModeVaultFactory(VAULT_FACTORY()).ytMaturityTimestamp();
+        if (block.timestamp + _ONE_WEEK < ytMaturityTimestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp + _ONE_WEEK < ytMaturityTimestamp,
             _FILE,
@@ -212,6 +214,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
 
         // check if balanceAfterWei is negative and it is within 1 week of expiry. If so, revert
         uint256 ytMaturityTimestamp = vaultFactory.ytMaturityTimestamp();
+        if (block.timestamp + _ONE_WEEK < ytMaturityTimestamp || balanceAfterWei.isPositive() || balanceAfterWei.isZero()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp + _ONE_WEEK < ytMaturityTimestamp
                 || balanceAfterWei.isPositive()
@@ -254,6 +257,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
 
         // check if balanceAfterWei is negative and it is within 1 week of expiry. If so, revert
         uint256 ytMaturityTimestamp = vaultFactory.ytMaturityTimestamp();
+        if (block.timestamp + _ONE_WEEK < ytMaturityTimestamp || balanceAfterWei.isPositive() || balanceAfterWei.isZero()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp + _ONE_WEEK < ytMaturityTimestamp
                 || balanceAfterWei.isPositive()
@@ -285,6 +289,7 @@ contract PendleYtGLP2024IsolationModeTokenVaultV1 is
         IExpiry expiry = vaultFactory.pendleGLPRegistry().dolomiteRegistry().expiry();
 
         uint256 expirationTimestamp = _getExistingExpirationTimestampFromAccount(_accountInfo, expiry);
+        if (expirationTimestamp == 0 || expirationTimestamp > _SAFETY_BUFFER_SECONDS + block.timestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
             expirationTimestamp == 0 || expirationTimestamp > _SAFETY_BUFFER_SECONDS + block.timestamp,
             _FILE,

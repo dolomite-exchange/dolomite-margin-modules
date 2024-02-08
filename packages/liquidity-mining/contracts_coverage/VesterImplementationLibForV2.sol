@@ -60,11 +60,13 @@ library VesterImplementationLibForV2 {
         public
     {
         address positionOwner = _implementation.ownerOf(_nftId);
+        if (positionOwner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             positionOwner == msg.sender,
             _FILE,
             "Invalid position owner"
         );
+        if (_duration >= _GRANDFATHERED_UPGRADED_MIN_DURATION && _duration <= _MAX_VESTING_DURATION && _duration % _MIN_VESTING_DURATION == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _duration >= _GRANDFATHERED_UPGRADED_MIN_DURATION
                 && _duration <= _MAX_VESTING_DURATION
@@ -72,12 +74,14 @@ library VesterImplementationLibForV2 {
             _FILE,
             "Invalid duration"
         );
+        if (_nftId <= _implementation.grandfatheredIdCutoff()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _nftId <= _implementation.grandfatheredIdCutoff(),
             _FILE,
             "Invalid NFT ID"
         );
 
+        if (_vestingPosition.duration <= _OLD_MAX_VESTING_DURATION) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _vestingPosition.duration <= _OLD_MAX_VESTING_DURATION,
             _FILE,
@@ -101,7 +105,7 @@ library VesterImplementationLibForV2 {
             } else if (_duration == 3 weeks) {
                 return 9_000;
             } else {
-                assert(_duration == 4 weeks);
+                /*assert(_duration == 4 weeks);*/
                 return 8_000;
             }
         } else {
