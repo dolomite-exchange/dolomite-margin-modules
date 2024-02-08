@@ -65,21 +65,21 @@ contract GMXIsolationModeTokenVaultV1 is
 
     function unstakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
-        assert(glpVault != address(0));
+        /*assert(glpVault != address(0));*/
 
         IGLPIsolationModeTokenVaultV2(glpVault).unstakeGmx(_amount);
     }
 
     function vestGmx(uint256 _esGmxAmount) external onlyVaultOwner(msg.sender) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
-        assert(glpVault != address(0));
+        /*assert(glpVault != address(0));*/
 
         IGLPIsolationModeTokenVaultV2(glpVault).vestGmx(_esGmxAmount);
     }
 
     function unvestGmx(bool _shouldStakeGmx) external onlyVaultOwner(msg.sender) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(msg.sender);
-        assert(glpVault != address(0));
+        /*assert(glpVault != address(0));*/
 
         IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(_shouldStakeGmx, /* _addDepositIntoDolomite = */ true);
     }
@@ -123,7 +123,7 @@ contract GMXIsolationModeTokenVaultV1 is
         uint256 underlyingBalance = super.underlyingBalanceOf();
         if (underlyingBalance < _amount) {
             address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
-            assert(glpVault != address(0));
+            /*assert(glpVault != address(0));*/
 
             uint256 maxUnstakeAmount = IGLPIsolationModeTokenVaultV2(glpVault).maxGmxUnstakeAmount();
             uint256 diff = _amount - underlyingBalance;
@@ -138,7 +138,7 @@ contract GMXIsolationModeTokenVaultV1 is
             }
         }
 
-        assert(_recipient != address(this));
+        /*assert(_recipient != address(this));*/
         IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
     }
 
@@ -191,7 +191,7 @@ contract GMXIsolationModeTokenVaultV1 is
 
     function _stakeGmx(uint256 _amount) internal {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
-        assert(glpVault != address(0));
+        /*assert(glpVault != address(0));*/
 
         IERC20 gmx = IERC20(registry().gmx());
         gmx.safeApprove(glpVault, _amount);

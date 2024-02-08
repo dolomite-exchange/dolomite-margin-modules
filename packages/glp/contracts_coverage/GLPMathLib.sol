@@ -65,6 +65,7 @@ library GLPMathLib {
         address _inputToken,
         uint256 _inputAmount
     ) internal view returns (uint256 usdgAmount) {
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputAmount > 0,
             _FILE,
@@ -104,7 +105,7 @@ library GLPMathLib {
         // https://arbiscan.io/address/0x3963ffc9dff443c2a94f21b129d429891e32ec18#code
         uint256 aumInUsdg = _gmxRegistry.glpManager().getAumInUsdg(false);
         uint256 glpSupply = _gmxRegistry.glp().totalSupply();
-        assert(glpSupply > 0); // GLP supply is always > 0 here if a user wants to sell it;
+        /*assert(glpSupply > 0);*/ // GLP supply is always > 0 here if a user wants to sell it;
         usdgAmount = _glpAmount * aumInUsdg / glpSupply;
     }
 

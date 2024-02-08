@@ -1,5 +1,5 @@
 import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
-import deployments from '@dolomite-exchange/modules-scripts/src/deploy/deployments.json';
+import deployments from '@dolomite-exchange/modules-deployment/src/deploy/deployments.json';
 import {
   GenericEventEmissionType,
   GenericTraderParam,
