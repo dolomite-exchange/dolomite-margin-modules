@@ -178,15 +178,22 @@ contract IsolationModeFreezableLiquidatorProxy is
                 _FILE,
                 "Liquid account has no supply"
             );
-
-            IDolomiteStructs.Decimal memory marginRatio = DOLOMITE_MARGIN().getMarginRatio();
-            Require.that(
-                DOLOMITE_MARGIN().getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
-                    || !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio),
-                _FILE,
-                "Liquid account not liquidatable"
-            );
+            _checkIsLiquidatable(_liquidAccount, liquidSupplyValue, liquidBorrowValue);
         }
+    }
+
+    function _checkIsLiquidatable(
+        IDolomiteStructs.AccountInfo memory _liquidAccount,
+        IDolomiteStructs.MonetaryValue memory _liquidSupplyValue,
+        IDolomiteStructs.MonetaryValue memory _liquidBorrowValue
+    ) internal view {
+        IDolomiteStructs.Decimal memory marginRatio = DOLOMITE_MARGIN().getMarginRatio();
+        Require.that(
+            DOLOMITE_MARGIN().getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
+                || !_isCollateralized(_liquidSupplyValue.value, _liquidBorrowValue.value, marginRatio),
+            _FILE,
+            "Liquid account not liquidatable"
+        );
     }
 
     function _checkMinAmountIsNotTooLarge(

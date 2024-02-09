@@ -86,4 +86,22 @@ contract TestIsolationModeFreezableLiquidatorProxy is
             revert(errorMessage);
         }
     }
+
+    function testCheckIsLiquidatable(
+        IDolomiteStructs.AccountInfo memory _liquidAccount
+    ) external view {
+        MarketInfo[] memory marketInfos = _getMarketInfos(
+            /* _solidMarketIds = */ new uint256[](0),
+            DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidAccount)
+        );
+        (
+            IDolomiteStructs.MonetaryValue memory liquidSupplyValue,
+            IDolomiteStructs.MonetaryValue memory liquidBorrowValue
+        ) = _getAdjustedAccountValues(
+            marketInfos,
+            _liquidAccount,
+            DOLOMITE_MARGIN().getAccountMarketsWithBalances(_liquidAccount)
+        );
+        _checkIsLiquidatable(_liquidAccount, liquidSupplyValue, liquidBorrowValue);
+    }
 }

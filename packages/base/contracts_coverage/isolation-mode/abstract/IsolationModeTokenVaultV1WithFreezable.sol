@@ -134,7 +134,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _;
     }
 
-    modifier _addCollateralAndSwapExactInputForOutputFreezableValidator(uint256 _borrowAccountNumber, uint256 _outputMarketId) {
+    modifier _addCollateralAndSwapExactInputForOutputFreezableValidator(
+        uint256 _borrowAccountNumber,
+        uint256 _outputMarketId
+    ) {
         _requireNotFrozen();
         _requireNotLiquidatableIfWrapToUnderlying(
             /* _accountNumber = */ _borrowAccountNumber,
@@ -143,7 +146,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _;
     }
 
-    modifier _swapExactInputForOutputAndRemoveCollateralFreezableValidator(uint256 _borrowAccountNumber, uint256 _outputMarketId) {
+    modifier _swapExactInputForOutputAndRemoveCollateralFreezableValidator(
+        uint256 _borrowAccountNumber,
+        uint256 _outputMarketId
+    ) {
         _requireNotFrozen();
         _requireNotLiquidatableIfWrapToUnderlying(
             /* _accountNumber = */ _borrowAccountNumber,
@@ -504,7 +510,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _addCollateralAndSwapExactInputForOutputFreezableValidator(_borrowAccountNumber, _marketIdsPath[_marketIdsPath.length - 1])
+        _addCollateralAndSwapExactInputForOutputFreezableValidator(
+            _borrowAccountNumber,
+            _marketIdsPath[_marketIdsPath.length - 1]
+        )
     {
         super._addCollateralAndSwapExactInputForOutput(
             _fromAccountNumber,
@@ -531,7 +540,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         internal
         virtual
         override
-        _swapExactInputForOutputAndRemoveCollateralFreezableValidator(_borrowAccountNumber, _marketIdsPath[_marketIdsPath.length - 1])
+        _swapExactInputForOutputAndRemoveCollateralFreezableValidator(
+            _borrowAccountNumber,
+            _marketIdsPath[_marketIdsPath.length - 1]
+        )
     {
         super._swapExactInputForOutputAndRemoveCollateral(
             _toAccountNumber,

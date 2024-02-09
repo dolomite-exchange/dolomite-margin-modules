@@ -1026,4 +1026,59 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       );
     });
   });
+
+  describe('#testCheckIsLiquidatble', () => {
+    it('should fail if not liquidatable', async () => {
+      await expectThrow(
+        liquidatorProxy.testCheckIsLiquidatable(liquidAccount),
+        'FreezableVaultLiquidatorProxy: Liquid account not liquidatable',
+      );
+    });
+
+    it('should pass if liquidatable', async () => {
+      let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
+      let wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+      const wethAmount = amountWei.mul(gmPrice).div(wethPrice).mul(100).div(121);
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.To,
+      );
+
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '10');
+      await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+      await expect(liquidatorProxy.testCheckIsLiquidatable(liquidAccount)).to.not.be.reverted;
+    });
+
+    it('should pass if account is liquid status', async () => {
+      let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
+      let wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+      const wethAmount = amountWei.mul(gmPrice).div(wethPrice).mul(100).div(121);
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.To,
+      );
+
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '10');
+      await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+
+      await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.liquidatorProxyV1.address);
+      await setupWETHBalance(core, core.hhUser5, parseEther('.2'), { address: core.dolomiteMargin.address });
+      await depositIntoDolomiteMargin(core, core.hhUser5, defaultAccountNumber, core.marketIds.weth, parseEther('.2'));
+      await core.liquidatorProxyV1!.connect(core.hhUser5).liquidate(
+        solidAccount,
+        liquidAccount,
+        { value: BigNumber.from('150000000000000000')},
+        ONE_BI,
+        [core.marketIds.weth],
+        [marketId]
+      )
+      await liquidatorProxy.testCheckIsLiquidatable(liquidAccount);
+    });
+  });
 });

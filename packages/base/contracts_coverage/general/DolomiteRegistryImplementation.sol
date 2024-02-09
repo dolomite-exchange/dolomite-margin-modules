@@ -60,11 +60,17 @@ contract DolomiteRegistryImplementation is
     function initialize(
         address _genericTraderProxy,
         address _expiry,
-        address _liquidatorAssetRegistry
+        uint256 _slippageToleranceForPauseSentinel,
+        address _liquidatorAssetRegistry,
+        address _eventEmitter,
+        address _chainlinkPriceOracle
     ) external initializer {
         _ownerSetGenericTraderProxy(_genericTraderProxy);
         _ownerSetExpiry(_expiry);
+        _ownerSetSlippageToleranceForPauseSentinel(_slippageToleranceForPauseSentinel);
         _ownerSetLiquidatorAssetRegistry(_liquidatorAssetRegistry);
+        _ownerSetEventEmitter(_eventEmitter);
+        _ownerSetChainlinkPriceOracle(_chainlinkPriceOracle);
     }
 
     // ===================== Functions =====================

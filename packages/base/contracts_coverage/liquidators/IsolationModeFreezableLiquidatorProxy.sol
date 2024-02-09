@@ -27,8 +27,8 @@ import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IIsolationModeFreezableLiquidatorProxy } from "../isolation-mode/interfaces/IIsolationModeFreezableLiquidatorProxy.sol";
-import { IIsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IIsolationModeFreezableLiquidatorProxy } from "../isolation-mode/interfaces/IIsolationModeFreezableLiquidatorProxy.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 
@@ -183,16 +183,23 @@ contract IsolationModeFreezableLiquidatorProxy is
                 _FILE,
                 "Liquid account has no supply"
             );
-
-            IDolomiteStructs.Decimal memory marginRatio = DOLOMITE_MARGIN().getMarginRatio();
-            if (DOLOMITE_MARGIN().getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid || !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio)) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                DOLOMITE_MARGIN().getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
-                    || !_isCollateralized(liquidSupplyValue.value, liquidBorrowValue.value, marginRatio),
-                _FILE,
-                "Liquid account not liquidatable"
-            );
+            _checkIsLiquidatable(_liquidAccount, liquidSupplyValue, liquidBorrowValue);
         }
+    }
+
+    function _checkIsLiquidatable(
+        IDolomiteStructs.AccountInfo memory _liquidAccount,
+        IDolomiteStructs.MonetaryValue memory _liquidSupplyValue,
+        IDolomiteStructs.MonetaryValue memory _liquidBorrowValue
+    ) internal view {
+        IDolomiteStructs.Decimal memory marginRatio = DOLOMITE_MARGIN().getMarginRatio();
+        if (DOLOMITE_MARGIN().getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid || !_isCollateralized(_liquidSupplyValue.value, _liquidBorrowValue.value, marginRatio)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            DOLOMITE_MARGIN().getAccountStatus(_liquidAccount) == IDolomiteStructs.AccountStatus.Liquid
+                || !_isCollateralized(_liquidSupplyValue.value, _liquidBorrowValue.value, marginRatio),
+            _FILE,
+            "Liquid account not liquidatable"
+        );
     }
 
     function _checkMinAmountIsNotTooLarge(
