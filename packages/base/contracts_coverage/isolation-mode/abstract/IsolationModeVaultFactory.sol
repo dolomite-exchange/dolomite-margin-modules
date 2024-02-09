@@ -440,12 +440,7 @@ abstract contract IsolationModeVaultFactory is
             keccak256(abi.encodePacked(_account)),
             type(IsolationModeUpgradeableProxy).creationCode
         );
-        if (vault != address(0)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            vault != address(0),
-            _FILE,
-            "Vault is zero address"
-        );
+        /*assert(vault != address(0));*/
         emit VaultCreated(_account, vault);
         _vaultToUserMap[vault] = _account;
         _userToVaultMap[_account] = vault;

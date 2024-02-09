@@ -58,6 +58,7 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     // ===========================================================
 
     modifier onlyHandler(address _from) {
+        if (_handlerMap[_from]) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _handlerMap[_from],
             _FILE,
@@ -111,11 +112,13 @@ contract RewardsDistributor is OnlyDolomiteMargin, IRewardsDistributor {
     function claim(ClaimInfo[] calldata _claimInfo) external {
         uint256 len = _claimInfo.length;
         for (uint256 i; i < len; ++i) {
+            if (_verifyMerkleProof(_claimInfo[i])) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _verifyMerkleProof(_claimInfo[i]),
                 _FILE,
                 "Invalid merkle proof"
             );
+            if (!_userToEpochToClaimStatusMap[msg.sender][_claimInfo[i].epoch]) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 !_userToEpochToClaimStatusMap[msg.sender][_claimInfo[i].epoch],
                 _FILE,

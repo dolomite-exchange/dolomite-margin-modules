@@ -240,6 +240,19 @@ describe('IsolationModeUnwrapperTraderV2', () => {
   });
 
   describe('#exchange', () => {
+    it('should work normally', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await underlyingToken.addBalance(unwrapper.address, amountWei);
+      await unwrapper.connect(dolomiteMarginImpersonator).exchange(
+        core.hhUser1.address,
+        core.dolomiteMargin.address,
+        otherToken.address,
+        factory.address,
+        amountWei,
+        encodeExternalSellActionDataWithNoData(amountWei), // minOutputAmount
+      );
+    });
+
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
         unwrapper.connect(core.hhUser1).exchange(
@@ -254,6 +267,23 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       );
     });
 
+    it('should fail if input amount is zero', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await underlyingToken.addBalance(unwrapper.address, amountWei);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          otherToken.address,
+          factory.address,
+          ZERO_BI,
+          encodeExternalSellActionDataWithNoData(amountWei), // minOutputAmount
+        ),
+        'IsolationModeUnwrapperTraderV2: Invalid input amount',
+      );
+    });
+
+
     it('should fail if input token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(
@@ -266,6 +296,21 @@ describe('IsolationModeUnwrapperTraderV2', () => {
           BYTES_EMPTY,
         ),
         `IsolationModeUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if output token is incorrect', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          core.tokens.weth.address,
+          factory.address,
+          amountWei,
+          BYTES_EMPTY,
+        ),
+        `IsolationModeUnwrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
       );
     });
 

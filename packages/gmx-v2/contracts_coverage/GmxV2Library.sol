@@ -39,6 +39,7 @@ import { IGmxV2IsolationModeTokenVaultV1 } from "./interfaces/IGmxV2IsolationMod
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
+import "hardhat/console.sol";
 
 
 /**
@@ -88,6 +89,7 @@ library GmxV2Library {
             _EXECUTE_DEPOSIT_FEATURE_DISABLED,
             exchangeRouter.depositHandler()
         ));
+        if (!_registry.gmxDataStore().getBool(executeDepositKey)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !_registry.gmxDataStore().getBool(executeDepositKey),
             _FILE,
@@ -129,6 +131,7 @@ library GmxV2Library {
     function initiateCancelWithdrawal(IGmxV2IsolationModeUnwrapperTraderV2 _unwrapper, bytes32 _key) public {
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo =
                             _unwrapper.getWithdrawalInfo(_key);
+        if (msg.sender == withdrawalInfo.vault || IAsyncIsolationModeTraderBase(address(_unwrapper)).isHandler(msg.sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == withdrawalInfo.vault
                 || IAsyncIsolationModeTraderBase(address(_unwrapper)).isHandler(msg.sender),
@@ -163,6 +166,7 @@ library GmxV2Library {
             exchangeRouter.sendTokens(swapPath[0], withdrawalVault, _inputAmount);
         }
 
+        if (_extraData.length == 64) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _extraData.length == 64,
             _FILE,
@@ -192,6 +196,7 @@ library GmxV2Library {
     }
 
     function depositAndApproveWethForWrapping(IGmxV2IsolationModeTokenVaultV1 _vault) public {
+        if (msg.value > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.value > 0,
             _FILE,
@@ -216,11 +221,13 @@ library GmxV2Library {
         uint256 _toAccountNumber
     ) public view {
         address factory = IIsolationModeUpgradeableProxy(address(_vault)).vaultFactory();
+        if (msg.value == IGmxV2IsolationModeVaultFactory(factory).executionFee()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.value == IGmxV2IsolationModeVaultFactory(factory).executionFee(),
             _FILE,
             "Invalid execution fee"
         );
+        if (_vault.getExecutionFeeForAccountNumber(_toAccountNumber) == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _vault.getExecutionFeeForAccountNumber(_toAccountNumber) == 0,
             _FILE,
@@ -304,11 +311,13 @@ library GmxV2Library {
         uint256 _longMarketId,
         uint256 _shortMarketId
     ) public pure {
+        if (_marketIds.length == 2) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _marketIds.length == 2,
             _FILE,
             "Invalid market IDs length"
         );
+        if ((_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId) || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             (_marketIds[0] == _longMarketId && _marketIds[1] == _shortMarketId)
             || (_marketIds[0] == _shortMarketId && _marketIds[1] == _longMarketId),
@@ -325,24 +334,28 @@ library GmxV2Library {
         GmxEventUtils.UintKeyValue memory _secondaryOutputTokenAmount,
         IGmxV2IsolationModeUnwrapperTraderV2.WithdrawalInfo memory _withdrawalInfo
     ) public view {
+        if (keccak256(abi.encodePacked(_outputTokenAddress.key)) == keccak256(abi.encodePacked("outputToken"))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             keccak256(abi.encodePacked(_outputTokenAddress.key))
                 == keccak256(abi.encodePacked("outputToken")),
             _FILE,
             "Unexpected outputToken"
         );
+        if (keccak256(abi.encodePacked(_outputTokenAmount.key)) == keccak256(abi.encodePacked("outputAmount"))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             keccak256(abi.encodePacked(_outputTokenAmount.key))
                 == keccak256(abi.encodePacked("outputAmount")),
             _FILE,
             "Unexpected outputAmount"
         );
+        if (keccak256(abi.encodePacked(_secondaryOutputTokenAddress.key)) == keccak256(abi.encodePacked("secondaryOutputToken"))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             keccak256(abi.encodePacked(_secondaryOutputTokenAddress.key))
                 == keccak256(abi.encodePacked("secondaryOutputToken")),
             _FILE,
             "Unexpected secondaryOutputToken"
         );
+        if (keccak256(abi.encodePacked(_secondaryOutputTokenAmount.key)) == keccak256(abi.encodePacked("secondaryOutputAmount"))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             keccak256(abi.encodePacked(_secondaryOutputTokenAmount.key))
                 == keccak256(abi.encodePacked("secondaryOutputAmount")),
@@ -352,6 +365,7 @@ library GmxV2Library {
 
         // @follow-up Double check this logic with long token and short token swaps and withdrawals
         if (_withdrawalInfo.outputToken == _factory.LONG_TOKEN()) {
+            if (_withdrawalInfo.outputToken == _outputTokenAddress.value) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _withdrawalInfo.outputToken == _outputTokenAddress.value,
                 _FILE,
@@ -359,6 +373,7 @@ library GmxV2Library {
             );
 
             if (_secondaryOutputTokenAmount.value > 0) {
+                if (_outputTokenAddress.value == _secondaryOutputTokenAddress.value) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     _outputTokenAddress.value == _secondaryOutputTokenAddress.value,
                     _FILE,
@@ -366,6 +381,8 @@ library GmxV2Library {
                 );
             }
         } else {
+            console.log('here');
+            if (_withdrawalInfo.outputToken == _secondaryOutputTokenAddress.value) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _withdrawalInfo.outputToken == _secondaryOutputTokenAddress.value,
                 _FILE,
@@ -373,6 +390,7 @@ library GmxV2Library {
             );
 
             if (_outputTokenAmount.value > 0) {
+                if (_outputTokenAddress.value == _secondaryOutputTokenAddress.value) { /* FOR COVERAGE TESTING */ }
                 Require.that(
                     _outputTokenAddress.value == _secondaryOutputTokenAddress.value,
                     _FILE,

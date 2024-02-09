@@ -120,6 +120,7 @@ contract PlutusVaultRegistry is IPlutusVaultRegistry, BaseRegistry {
     // ==================== Internal Functions ====================
 
     function _ownerSetPlutusToken(address _plutusToken) internal {
+        if (_plutusToken != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _plutusToken != address(0),
             _FILE,
@@ -130,6 +131,7 @@ contract PlutusVaultRegistry is IPlutusVaultRegistry, BaseRegistry {
     }
 
     function _ownerSetPlvGlpToken(address _plvGlpToken) internal {
+        if (_plvGlpToken != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _plvGlpToken != address(0),
             _FILE,
@@ -140,6 +142,7 @@ contract PlutusVaultRegistry is IPlutusVaultRegistry, BaseRegistry {
     }
 
     function _ownerSetPlvGlpRouter(address _plvGlpRouter) internal {
+        if (_plvGlpRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _plvGlpRouter != address(0),
             _FILE,
@@ -150,6 +153,7 @@ contract PlutusVaultRegistry is IPlutusVaultRegistry, BaseRegistry {
     }
 
     function _ownerSetPlvGlpFarm(address _plvGlpFarm) internal {
+        if (_plvGlpFarm != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _plvGlpFarm != address(0),
             _FILE,

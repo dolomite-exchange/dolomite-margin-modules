@@ -90,12 +90,14 @@ contract MagicGLPUnwrapperTraderV1 is IDolomiteMarginUnwrapperTraderForLiquidato
     external
     onlyDolomiteMargin(msg.sender)
     returns (uint256) {
+        if (_inputToken == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputToken == address(MAGIC_GLP),
             _FILE,
             "Invalid input token",
             _inputToken
         );
+        if (GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken) && DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
                 && DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
@@ -103,6 +105,7 @@ contract MagicGLPUnwrapperTraderV1 is IDolomiteMarginUnwrapperTraderForLiquidato
             "Invalid output token",
             _outputToken
         );
+        if (_inputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputAmount > 0,
             _FILE,
@@ -136,12 +139,14 @@ contract MagicGLPUnwrapperTraderV1 is IDolomiteMarginUnwrapperTraderForLiquidato
     override
     view
     returns (uint256) {
+        if (_inputToken == address(MAGIC_GLP)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputToken == address(MAGIC_GLP),
             _FILE,
             "Invalid input token",
             _inputToken
         );
+        if (GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken) && DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             GMX_REGISTRY.gmxVault().whitelistedTokens(_outputToken)
                 && DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken) == outputMarketId(),
@@ -149,6 +154,7 @@ contract MagicGLPUnwrapperTraderV1 is IDolomiteMarginUnwrapperTraderForLiquidato
             "Invalid output token",
             _outputToken
         );
+        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _desiredInputAmount > 0,
             _FILE,

@@ -149,7 +149,14 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             bytes32[] memory keys
         ) = abi.decode(
             _data,
-            (IDolomiteStructs.AssetReference, uint256, address, uint256, IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[], bytes32[])
+            (
+                IDolomiteStructs.AssetReference,
+                uint256,
+                address,
+                uint256,
+                IUpgradeableAsyncIsolationModeUnwrapperTrader.TradeType[],
+                bytes32[]
+            )
         );
 
 
@@ -163,7 +170,10 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             // @follow-up Is this the correct number
             transferAmount = _unwrapper.DOLOMITE_MARGIN().getAccountWei(_accountInfo, factory.marketId()).value;
         } else if (assetReference == IDolomiteStructs.AssetReference.Target) {
-            transferAmount = _unwrapper.DOLOMITE_MARGIN().getAccountWei(_accountInfo, factory.marketId()).value - transferAmount;
+            transferAmount = _unwrapper.DOLOMITE_MARGIN().getAccountWei(
+                _accountInfo,
+                factory.marketId()
+            ).value - transferAmount;
         }
         _validateVaultExists(factory, accountOwner);
 
@@ -440,7 +450,8 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 actions[2] = AccountActionLib.encodeCallAction(
                     _params.otherAccountId,
                     /* _callee */ address(this),
-                    /* (assetReference, transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(
+                    /* (assetReference, transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */
+                    abi.encode(
                         IDolomiteStructs.AssetReference.Target,
                         targetAmount,
                         _params.otherAccountOwner,
@@ -463,7 +474,8 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 actions[2] = AccountActionLib.encodeCallAction(
                     _params.primaryAccountId,
                     /* _callee */ address(this),
-                    /* (assetReference, transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(
+                    /* (assetReference, transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */
+                    abi.encode(
                         IDolomiteStructs.AssetReference.Target,
                         _params.inputAmount,
                         _params.otherAccountOwner,
@@ -475,7 +487,8 @@ library AsyncIsolationModeUnwrapperTraderImpl {
                 actions[3] = AccountActionLib.encodeCallAction(
                     _params.primaryAccountId,
                     /* _callee */ address(this),
-                    /* (assetReference, transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */ abi.encode(
+                    /* (assetReference, transferAmount, accountOwner, accountNumber, tradeTypes, keys)[encoded] = */
+                    abi.encode(
                         IDolomiteStructs.AssetReference.Target,
                         _params.inputAmount,
                         _params.otherAccountOwner,

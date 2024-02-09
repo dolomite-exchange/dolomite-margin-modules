@@ -218,6 +218,26 @@ contract TestAccountActionLib {
         );
     }
 
+    function encodeExternalSellActionWithTarget(
+        uint256 _fromAccountId,
+        uint256 _primaryMarketId,
+        uint256 _secondaryMarketId,
+        address _trader,
+        uint256 _targetAmountWei,
+        uint256 _amountOutMinWei,
+        bytes memory _orderData
+    ) public pure returns (IDolomiteStructs.ActionArgs memory) {
+        return AccountActionLib.encodeExternalSellActionWithTarget(
+            _fromAccountId,
+            _primaryMarketId,
+            _secondaryMarketId,
+            _trader,
+            _targetAmountWei,
+            _amountOutMinWei,
+            _orderData
+        );
+    }
+
     function encodeTransferAction(
         uint256 _fromAccountId,
         uint256 _toAccountId,

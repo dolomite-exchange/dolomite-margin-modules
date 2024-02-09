@@ -5,6 +5,7 @@ import { BigNumber, ContractTransaction } from 'ethers';
 import {
   CustomTestToken,
   TestFreezableIsolationModeVaultFactory,
+  TestHandlerRegistry,
   TestIsolationModeTokenVaultV1WithFreezable,
   TestIsolationModeTokenVaultV1WithFreezable__factory,
   TestIsolationModeUnwrapperTraderV2,
@@ -19,7 +20,7 @@ import {
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, MAX_UINT_256_BI, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import {
   expectEvent,
@@ -73,6 +74,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   let userVaultImplementation: TestIsolationModeTokenVaultV1WithFreezable;
   let userVault: TestIsolationModeTokenVaultV1WithFreezable;
   let impersonatedVault: SignerWithAddress;
+  let registry: TestHandlerRegistry;
 
   let solidUser: SignerWithAddress;
   let otherToken1: CustomTestToken;
@@ -89,7 +91,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       libraries,
       [core.tokens.weth.address],
     );
-    const registry = await createTestHandlerRegistry(core);
+    registry = await createTestHandlerRegistry(core);
     factory = await createTestFreezableIsolationModeVaultFactory(
       EXECUTION_FEE,
       registry,
@@ -134,6 +136,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       [otherToken1.address, factory.address, core.dolomiteMargin.address, core.dolomiteRegistry.address],
     );
     await factory.connect(core.governance).ownerInitialize([tokenUnwrapper.address, tokenWrapper.address]);
+    await factory.connect(core.governance).ownerSetExecutionFee(ZERO_BI);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
 
     await factory.createVault(core.hhUser1.address);
@@ -371,6 +374,21 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await userVault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber);
+
+      await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+      await expectProtocolBalance(core, userVault, defaultAccountNumber, underlyingMarketId, amountWei);
+      await expectProtocolBalance(core, userVault, borrowAccountNumber, underlyingMarketId, ZERO_BI);
+    });
+
+    it('should work normally with execution fee', async () => {
+      await factory.connect(core.governance).ownerSetExecutionFee(ONE_ETH_BI);
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: ONE_ETH_BI });
+      expect(await userVault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ONE_ETH_BI);
+      await expect(() => userVault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber))
+        .to.changeEtherBalance(core.hhUser1, ONE_ETH_BI);
+      expect(await userVault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
       await expectProtocolBalance(core, core.hhUser1, borrowAccountNumber, underlyingMarketId, ZERO_BI);
@@ -1668,6 +1686,47 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   });
 
   describe('#executeDepositIntoVault', () => {
+    it('should work normally', async () => {
+      const factoryImpersonator = await impersonate(factory.address, true);
+      await underlyingToken.addBalance(core.hhUser1.address, amountWei);
+      await underlyingToken.connect(core.hhUser1).approve(userVault.address, amountWei);
+
+      await userVault.connect(factoryImpersonator).executeDepositIntoVault(core.hhUser1.address, amountWei);
+    });
+
+    it('should work normally if isDepositSourceWrapper is true', async () => {
+      const factoryImpersonator = await impersonate(factory.address, true);
+      const wrapperImpersonator = await impersonate(tokenWrapper.address, true);
+      await registry.connect(core.governance).ownerSetWrapperByToken(factory.address, tokenWrapper.address);
+      await underlyingToken.addBalance(tokenWrapper.address, amountWei);
+      await underlyingToken.connect(wrapperImpersonator).approve(userVault.address, amountWei);
+
+      await userVault.connect(factoryImpersonator).setIsVaultDepositSourceWrapper(true);
+      await userVault.connect(factoryImpersonator).executeDepositIntoVault(core.hhUser1.address, amountWei);
+    });
+
+    it('should work normally if shouldSkipTransfer is true', async () => {
+      const factoryImpersonator = await impersonate(factory.address, true);
+      await underlyingToken.addBalance(core.hhUser1.address, amountWei);
+      await underlyingToken.connect(core.hhUser1).approve(userVault.address, amountWei);
+
+      await userVault.connect(factoryImpersonator).setShouldVaultSkipTransfer(true);
+      await freezeVault();
+      await userVault.connect(factoryImpersonator).executeDepositIntoVault(core.hhUser1.address, amountWei);
+    });
+
+    it('should fail if shouldSkipTransfer is true and vault is NOT frozen', async () => {
+      const factoryImpersonator = await impersonate(factory.address, true);
+      await underlyingToken.addBalance(core.hhUser1.address, amountWei);
+      await underlyingToken.connect(core.hhUser1).approve(userVault.address, amountWei);
+
+      await userVault.connect(factoryImpersonator).setShouldVaultSkipTransfer(true);
+      await expectThrow(
+        userVault.connect(factoryImpersonator).executeDepositIntoVault(core.hhUser1.address, amountWei),
+        'IsolationModeVaultV1Freezable: Vault should be frozen',
+      );
+    });
+
     it('should fail when not called by factory', async () => {
       await expectThrow(
         userVault.connect(core.hhUser1).executeDepositIntoVault(core.hhUser1.address, amountWei),
@@ -1677,6 +1736,27 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
   });
 
   describe('#executeWithdrawalFromVault', () => {
+    it('should work if shouldSkipTransfer', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      const factoryImpersonator = await impersonate(factory.address, true);
+      await userVault.connect(factoryImpersonator).setShouldVaultSkipTransfer(true);
+      await freezeVault();
+
+      await userVault.connect(factoryImpersonator).executeWithdrawalFromVault(core.hhUser1.address, amountWei);
+      await expectWalletBalance(userVault.address, underlyingToken, amountWei);
+    });
+
+    it('should fail if shouldSkipTransfer and vault is NOT frozen', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      const factoryImpersonator = await impersonate(factory.address, true);
+      await userVault.connect(factoryImpersonator).setShouldVaultSkipTransfer(true);
+
+      await expectThrow(
+        userVault.connect(factoryImpersonator).executeWithdrawalFromVault(core.hhUser1.address, amountWei),
+        'IsolationModeVaultV1Freezable: Vault should be frozen',
+      );
+    });
+
     it('should fail when not called by factory', async () => {
       await expectThrow(
         userVault.connect(core.hhUser1).executeWithdrawalFromVault(core.hhUser1.address, amountWei),
@@ -1695,6 +1775,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         isVaultFrozen: true,
       });
       expect(await userVault.isVaultFrozen()).to.eq(true);
+      expect(await userVault.getOutputTokenByVaultAccount(defaultAccountNumber)).to.eq(core.tokens.usdc.address);
     });
 
     it('should fail if not called by vault', async () => {
@@ -1723,4 +1804,234 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       );
     });
   });
+
+  describe('#initiateUnwrapping', () => {
+    it('should work normally', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.initiateUnwrapping(
+        defaultAccountNumber,
+        amountWei,
+        otherToken1.address,
+        ONE_BI,
+        BYTES_EMPTY
+      );
+    });
+
+    it('should fail if not called by vault owner', async () => {
+      await expectThrow(
+        userVault.connect(core.hhUser2).initiateUnwrapping(
+          defaultAccountNumber,
+          amountWei,
+          otherToken1.address,
+          ONE_BI,
+          BYTES_EMPTY
+        ),
+        `IsolationModeTokenVaultV1: Only owner can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if input amount is zero', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectThrow(
+        userVault.initiateUnwrapping(
+          defaultAccountNumber,
+          ZERO_BI,
+          otherToken1.address,
+          ONE_BI,
+          BYTES_EMPTY
+        ),
+        'IsolationModeVaultV1Freezable: Invalid withdrawal amount'
+      );
+    });
+
+    it('should fail if input amount is greater than users balance', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectThrow(
+        userVault.initiateUnwrapping(
+          defaultAccountNumber,
+          amountWei.add(1),
+          otherToken1.address,
+          ONE_BI,
+          BYTES_EMPTY
+        ),
+        `IsolationModeVaultV1Freezable: Withdrawal too large <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`
+      );
+    });
+
+    it('should fail if vault is frozen', async () => {
+      await factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(userVault.address, defaultAccountNumber, FreezeType.Deposit, PLUS_ONE_BI, otherToken1.address);
+      await expectThrow(
+        userVault.initiateUnwrapping(
+          defaultAccountNumber,
+          amountWei,
+          otherToken1.address,
+          ONE_BI,
+          BYTES_EMPTY
+        ),
+        'IsolationModeVaultV1Freezable: Vault is frozen',
+      );
+    });
+
+    it('should fail if liquidatable', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.openBorrowPosition(
+        defaultAccountNumber,
+        borrowAccountNumber,
+        amountWei
+      );
+      await userVault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.usdc,
+        usdcAmount,
+        BalanceCheckFlag.None
+      );
+
+      await core.testEcosystem!.testPriceOracle.setPrice(
+        factory.address,
+        '10'
+      );
+      await expectThrow(
+        userVault.initiateUnwrapping(
+          borrowAccountNumber,
+          amountWei,
+          otherToken1.address,
+          ONE_BI,
+          BYTES_EMPTY
+        ),
+        'IsolationModeVaultV1ActionsImpl: Account liquidatable',
+      );
+    });
+
+    it('should fail if reentrant', async () => {
+      await expectThrow(
+        userVault.callInitiateUnwrappingAndTriggerReentrancy(
+          borrowAccountNumber,
+          amountWei,
+          otherToken1.address,
+          ONE_BI,
+          BYTES_EMPTY
+        ),
+        'IsolationModeTokenVaultV1: Reentrant call'
+      );
+    });
+  });
+
+  describe('#initiateUnwrappingForLiquidation', () => {
+    it('should work normally', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await userVault.connect(core.hhUser3).initiateUnwrappingForLiquidation(
+        defaultAccountNumber,
+        amountWei,
+        otherToken1.address,
+        ONE_BI,
+        BYTES_EMPTY
+      );
+    });
+
+    it('should fail if not liquidator', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(underlyingMarketId, core.hhUser2.address);
+      await expectThrow(
+        userVault.connect(core.hhUser3).initiateUnwrappingForLiquidation(
+          defaultAccountNumber,
+          amountWei,
+          otherToken1.address,
+          ONE_BI,
+          BYTES_EMPTY
+        ),
+        `IsolationModeVaultV1Freezable: Only liquidator can call <${core.hhUser3.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if not requested for users entire balance', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      await expectThrow(
+        userVault.connect(core.hhUser3).initiateUnwrappingForLiquidation(
+          defaultAccountNumber,
+          amountWei.sub(1),
+          otherToken1.address,
+          ONE_BI,
+          BYTES_EMPTY
+        ),
+        `IsolationModeVaultV1Freezable: Liquidation must be full balance <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`
+      );
+    });
+
+    it('should fail if user has no balance or pending amounts', async () => {
+      await expectThrow(
+        userVault.connect(core.hhUser3).initiateUnwrappingForLiquidation(
+          defaultAccountNumber,
+          amountWei,
+          otherToken1.address,
+          ONE_BI,
+          BYTES_EMPTY
+        ),
+        `IsolationModeVaultV1Freezable: Account is frozen <${userVault.address.toLowerCase()}, ${defaultAccountNumber}>`
+      );
+    });
+
+    it('should fail if reentrant', async () => {
+      await expectThrow(
+        userVault.callInitiateUnwrappingForLiquidationAndTriggerReentrancy(
+          borrowAccountNumber,
+          amountWei,
+          otherToken1.address,
+          ONE_BI,
+          BYTES_EMPTY
+        ),
+        'IsolationModeTokenVaultV1: Reentrant call'
+      );
+    });
+  });
+
+  describe('#requireVaultAccountNotFrozen', () => {
+    it('should work normally', async () => {
+      await userVault.testRequireVaultAccountNotFrozen(defaultAccountNumber);
+    });
+
+    it('should fail if vault account is frozen', async () => {
+      await factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(userVault.address, defaultAccountNumber, FreezeType.Deposit, PLUS_ONE_BI, otherToken1.address);
+      await expectThrow(
+        userVault.testRequireVaultAccountNotFrozen(defaultAccountNumber),
+        ''
+      );
+    });
+  })
+
+  describe('#setIsVaultDepositSourceWrapper', () => {
+    it('should work normally', async () => {
+      const factoryImpersonator = await impersonate(factory.address, true);
+      await userVault.connect(factoryImpersonator).setIsVaultDepositSourceWrapper(true);
+      expect(await userVault.isDepositSourceWrapper()).to.eq(true);
+    });
+
+    it('should fail if not called by factory', async () => {
+      await expectThrow(
+        userVault.connect(core.hhUser2).setIsVaultDepositSourceWrapper(true),
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#setShouldVaultSkipTransfer', () => {
+    it('should work normally', async () => {
+      const factoryImpersonator = await impersonate(factory.address, true);
+      await userVault.connect(factoryImpersonator).setShouldVaultSkipTransfer(true);
+      expect(await userVault.shouldSkipTransfer()).to.eq(true);
+    });
+
+    it('should fail if not called by factory', async () => {
+      await expectThrow(
+        userVault.connect(core.hhUser2).setShouldVaultSkipTransfer(true),
+        `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`,
+      );
+    });
+  })
+
+  describe('#handlerRegistry', () => {
+    it('should work normally', async () => {
+      expect(await userVault.handlerRegistry()).to.eq(registry.address);
+    })
+  })
 });

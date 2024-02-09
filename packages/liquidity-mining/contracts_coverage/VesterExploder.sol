@@ -49,6 +49,7 @@ contract VesterExploder is IVesterExploder, OnlyDolomiteMargin {
     // ===================================================
 
     modifier requireOnlyHandler(address _from) {
+        if (isHandler(_from)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isHandler(_from),
             _FILE,

@@ -174,6 +174,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
     // ============================================================
 
     function _ownerSetGmxDataStore(address _gmxDataStore) internal {
+        if (_gmxDataStore != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _gmxDataStore != address(0),
             _FILE,
@@ -184,6 +185,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
     }
 
     function _ownerSetGmxDepositVault(address _gmxDepositVault) internal {
+        if (_gmxDepositVault != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _gmxDepositVault != address(0),
             _FILE,
@@ -194,6 +196,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
     }
 
     function _ownerSetGmxExchangeRouter(address _gmxExchangeRouter) internal {
+        if (_gmxExchangeRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _gmxExchangeRouter != address(0),
             _FILE,
@@ -204,6 +207,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
     }
 
     function _ownerSetGmxReader(address _gmxReader) internal {
+        if (_gmxReader != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _gmxReader != address(0),
             _FILE,
@@ -214,6 +218,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
     }
 
     function _ownerSetGmxRouter(address _gmxRouter) internal {
+        if (_gmxRouter != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _gmxRouter != address(0),
             _FILE,
@@ -224,6 +229,7 @@ contract GmxV2Registry is IGmxV2Registry, BaseRegistry, HandlerRegistry {
     }
 
     function _ownerSetGmxWithdrawalVault(address _gmxWithdrawalVault) internal {
+        if (_gmxWithdrawalVault != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _gmxWithdrawalVault != address(0),
             _FILE,

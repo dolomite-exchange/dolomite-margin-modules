@@ -768,6 +768,42 @@ describe('AccountActionLib', () => {
     });
   });
 
+  describe('#encodeExternalSellActionWithTarget', () => {
+    it('should work normally', async () => {
+      const fromAccountId = '1';
+      const primaryMarketId = underlyingMarketId;
+      const secondaryMarketId = otherMarketId;
+      const amountInWei = amountWei;
+      const amountOutMinWei = amountWeiBig;
+      const callData = abiCoder.encode(
+        ['uint256', 'bytes'],
+        [amountOutMinWei, BYTES_EMPTY],
+      );
+      const tradeAction = await testLib.connect(core.hhUser1).encodeExternalSellActionWithTarget(
+        fromAccountId,
+        primaryMarketId,
+        secondaryMarketId,
+        core.expiry.address,
+        ZERO_BI,
+        amountOutMinWei,
+        BYTES_EMPTY,
+      );
+      expect(tradeAction.actionType).to.eq(ActionType.Sell);
+      expect(tradeAction.accountId).to.eq(fromAccountId);
+      expectAssetAmountToEq(tradeAction.amount, {
+        sign: true,
+        denomination: AmountDenomination.Wei,
+        ref: AmountReference.Target,
+        value: ZERO_BI,
+      });
+      expect(tradeAction.primaryMarketId).to.eq(primaryMarketId);
+      expect(tradeAction.secondaryMarketId).to.eq(secondaryMarketId);
+      expect(tradeAction.otherAddress).to.eq(core.expiry.address);
+      expect(tradeAction.otherAccountId).to.eq(0);
+      expect(tradeAction.data).to.eq(callData);
+    });
+  });
+
   describe('#encodeTransferAction', () => {
     it('should work normally', async () => {
       const fromAccountId = '1';

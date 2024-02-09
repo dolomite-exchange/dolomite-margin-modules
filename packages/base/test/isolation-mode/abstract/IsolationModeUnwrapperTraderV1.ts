@@ -222,6 +222,19 @@ describe('IsolationModeUnwrapperTraderV1', () => {
   });
 
   describe('#exchange', () => {
+    it('should work normally', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await underlyingToken.addBalance(unwrapper.address, amountWei);
+      await unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          otherToken.address,
+          factory.address,
+          amountWei,
+          encodeExternalSellActionDataWithNoData(amountWei), // minOutputAmount
+      );
+    });
+
     it('should fail if not called by DolomiteMargin', async () => {
       await expectThrow(
         unwrapper.connect(core.hhUser1).exchange(
@@ -233,6 +246,21 @@ describe('IsolationModeUnwrapperTraderV1', () => {
           BYTES_EMPTY,
         ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('should fail if input amount is zero', async () => {
+      const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+      await expectThrow(
+        unwrapper.connect(dolomiteMarginImpersonator).exchange(
+          core.hhUser1.address,
+          core.dolomiteMargin.address,
+          otherToken.address,
+          factory.address,
+          ZERO_BI,
+          encodeExternalSellActionDataWithNoData(amountWei), // minOutputAmount
+        ),
+        'IsolationModeUnwrapperTraderV1: Invalid input amount'
       );
     });
 

@@ -70,6 +70,7 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
             bool oldestObservationSatisfied
         ) = REGISTRY.ptOracle().getOracleState(address(REGISTRY.ptGlpMarket()), TWAP_DURATION);
 
+        if (!increaseCardinalityRequired && oldestObservationSatisfied) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !increaseCardinalityRequired && oldestObservationSatisfied,
             _FILE,
@@ -83,12 +84,14 @@ contract PendleYtGLPPriceOracle is IDolomitePriceOracle {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
+        if (_token == address(DYT_GLP)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _token == address(DYT_GLP),
             _FILE,
             "Invalid token",
             _token
         );
+        if (DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
             _FILE,

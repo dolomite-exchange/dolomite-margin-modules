@@ -94,18 +94,21 @@ contract PlutusVaultGLPIsolationModeUnwrapperTraderV1 is IsolationModeUnwrapperT
     override
     view
     returns (uint256) {
+        if (_inputToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _inputToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid input token",
             _inputToken
         );
+        if (_outputToken == USDC) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _outputToken == USDC,
             _FILE,
             "Invalid output token",
             _outputToken
         );
+        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _desiredInputAmount > 0,
             _FILE,
@@ -135,6 +138,7 @@ contract PlutusVaultGLPIsolationModeUnwrapperTraderV1 is IsolationModeUnwrapperT
     internal
     override
     returns (uint256) {
+        if (_outputToken == USDC) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _outputToken == USDC,
             _FILE,

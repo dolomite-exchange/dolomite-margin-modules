@@ -91,6 +91,7 @@ contract ARBIsolationModeTokenVaultV1 is
     }
 
     function _delegate(address _delegatee) internal {
+        if (_delegatee != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _delegatee != address(0),
             _FILE,

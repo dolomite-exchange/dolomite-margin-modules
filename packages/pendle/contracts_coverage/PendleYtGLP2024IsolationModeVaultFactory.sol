@@ -83,9 +83,9 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
 
     function ownerSetPendleGLPRegistry(
         address _pendleGLPRegistry
-    ) 
-    external 
-    override 
+    )
+    external
+    override
     onlyDolomiteMarginOwner(msg.sender) {
         pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
         emit PendleGLPRegistrySet(_pendleGLPRegistry);
@@ -93,9 +93,9 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
 
     function ownerSetYtMaturityTimestamp(
         uint256 _ytMaturityTimestamp
-    ) 
-    external 
-    override 
+    )
+    external
+    override
     onlyDolomiteMarginOwner(msg.sender) {
         ytMaturityTimestamp = _ytMaturityTimestamp;
         emit YtMaturityTimestampSet(_ytMaturityTimestamp);
@@ -104,6 +104,7 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
     function _ownerSetAllowableDebtMarketIds(
         uint256[] memory _newAllowableDebtMarketIds
     ) internal override {
+        if (_newAllowableDebtMarketIds.length > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _newAllowableDebtMarketIds.length > 0,
             _FILE,

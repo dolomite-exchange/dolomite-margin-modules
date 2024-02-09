@@ -105,7 +105,7 @@ contract TestGmxV2IsolationModeTokenVaultV1 is GmxV2IsolationModeTokenVaultV1 {
         } else if (_reversionType == ReversionType.Require) {
             require(false, "Reverting");
         } else {
-            assert(_reversionType == ReversionType.None);
+            /*assert(_reversionType == ReversionType.None);*/
         }
     }
 }

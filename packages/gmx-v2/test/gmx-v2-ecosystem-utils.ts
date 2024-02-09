@@ -64,17 +64,19 @@ async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Pro
     .filter(d => d.isDirectory())
     .map(d => path.join(packagesPath, d.name));
 
-  const contractsFolder = process.env.COVERAGE === 'true' ? 'contracts_coverage' : 'contracts';
-  for (const child of children) {
-    const artifactPath = join(
-      __dirname,
-      child,
-      `artifacts/${contractsFolder}/${artifactName}.sol/${artifactName}.json`,
-    );
-    if (fs.existsSync(artifactPath)) {
-      const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
-      await artifacts.saveArtifactAndDebugFile(artifact);
-      return artifact;
+  const contractsFolders =  ['contracts_coverage', 'contracts'];
+  for (const contractFolder of contractsFolders) {
+    for (const child of children) {
+      const artifactPath = join(
+        __dirname,
+        child,
+        `artifacts/${contractFolder}/${artifactName}.sol/${artifactName}.json`,
+      );
+      if (fs.existsSync(artifactPath)) {
+        const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
+        await artifacts.saveArtifactAndDebugFile(artifact);
+        return artifact;
+      }
     }
   }
 

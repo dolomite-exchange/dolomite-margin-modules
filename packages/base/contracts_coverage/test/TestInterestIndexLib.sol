@@ -63,4 +63,20 @@ contract TestInterestIndexLib {
     {
         return InterestIndexLib.weiToPar(DOLOMITE_MARGIN, _marketId, _amountWei);
     }
+
+    function parToWeiWithInterestIndex(
+        uint256 _marketId,
+        IDolomiteStructs.Par calldata _amountPar
+    ) external view returns (IDolomiteStructs.Wei memory) {
+        IDolomiteStructs.InterestIndex memory index = DOLOMITE_MARGIN.getMarketCurrentIndex(_marketId);
+        return InterestIndexLib.parToWei(_amountPar, index);
+    }
+
+    function weiToParWithInterestIndex(
+        uint256 _marketId,
+        IDolomiteStructs.Wei calldata _amountWei
+    ) external view returns (IDolomiteStructs.Par memory) {
+        IDolomiteStructs.InterestIndex memory index = DOLOMITE_MARGIN.getMarketCurrentIndex(_marketId);
+        return InterestIndexLib.weiToPar(_amountWei, index);
+    }
 }

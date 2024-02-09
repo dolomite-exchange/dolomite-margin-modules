@@ -71,4 +71,8 @@ contract TestAsyncIsolationModeTraderBase is AsyncIsolationModeTraderBase {
     function _setHandlerViaSlot(address _handler) internal {
         _setAddress(_HANDLER_SLOT, _handler);
     }
+
+    function testRevert() external pure {
+        revert("TestAsyncIsolationModeTraderBase: revert");
+    }
 }

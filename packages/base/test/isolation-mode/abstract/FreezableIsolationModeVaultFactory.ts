@@ -37,6 +37,7 @@ import {
   setupUserVaultProxy,
 } from '../../utils/setup';
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
+import { parseEther } from 'ethers/lib/utils';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
@@ -199,6 +200,13 @@ describe('FreezableIsolationModeVaultFactory', () => {
         executionFee: newFee
       });
       expect(await factory.executionFee()).to.eq(newFee);
+    });
+
+    it('should fail if greater than max', async () => {
+      await expectThrow(
+        factory.connect(core.governance).ownerSetExecutionFee(parseEther('1000')),
+        'FreezableVaultFactory: Invalid execution fee',
+      );
     });
 
     it('should fail if not called by owner', async () => {
@@ -378,6 +386,26 @@ describe('FreezableIsolationModeVaultFactory', () => {
       expect(await factory.getPendingAmountByVault(userVault.address, FreezeType.Deposit)).to.eq(ZERO_BI);
       expect(await factory.getOutputTokenByAccount(userVault.address, defaultAccountNumber)).to.eq(ADDRESS_ZERO);
       expect(await factory.isVaultAccountFrozen(userVault.address, defaultAccountNumber)).to.be.false;
+    });
+
+    it('should fail if expectedConversionToken is not conversion token', async () => {
+      await factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(
+        userVault.address,
+        defaultAccountNumber,
+        FreezeType.Withdrawal,
+        PLUS_ONE_BI,
+        core.tokens.usdc.address
+      );
+      await expectThrow(
+        factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(
+          userVault.address,
+          defaultAccountNumber,
+          FreezeType.Withdrawal,
+          MINUS_ONE_BI,
+          core.tokens.weth.address
+        ),
+        `FreezableVaultFactory: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`,
+      );
     });
 
     it('should work normally with zero', async () => {

@@ -80,6 +80,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
         // @follow-up Switched to use 0 instead of len-1
         // @audit Don't use len - 1 but use index value
         GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[0];
+        if (keccak256(abi.encodePacked(receivedMarketTokens.key)) == keccak256(abi.encodePacked("receivedMarketTokens"))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             keccak256(abi.encodePacked(receivedMarketTokens.key))
                 == keccak256(abi.encodePacked("receivedMarketTokens")),
@@ -91,7 +92,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     }
 
     /**
-     * 
+     *
      * @dev  This contract is designed to work with 1 token. If a GMX deposit is cancelled,
      *       any excess tokens other than the inputToken will be stuck in the contract
      */
@@ -111,6 +112,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
 
     function initiateCancelDeposit(bytes32 _key) external {
         DepositInfo memory depositInfo = _getDepositSlot(_key);
+        if (msg.sender == depositInfo.vault || isHandler(msg.sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == depositInfo.vault || isHandler(msg.sender),
             _FILE,

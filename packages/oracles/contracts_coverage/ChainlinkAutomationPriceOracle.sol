@@ -91,6 +91,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function initializeForwarder(uint256 _upkeepId) external {
+        if (forwarder == address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             forwarder == address(0),
             _FILE,
@@ -106,6 +107,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
         returns (bool upkeepNeeded, bytes memory /* performData */)
     {
         // solhint-disable avoid-tx-origin
+        if (tx.origin == address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             tx.origin == address(0),
             _FILE,
@@ -117,11 +119,13 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function performUpkeep(bytes calldata /* performData */) external {
+        if (msg.sender == forwarder) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == forwarder,
             _FILE,
             "Caller is not forwarder"
         );
+        if (_checkUpkeepConditions()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _checkUpkeepConditions(),
             _FILE,
@@ -144,6 +148,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function _ownerSetUpperEdge(uint256 _upperEdge) internal {
+        if (_upperEdge > 10_000) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _upperEdge > 10_000,
             _FILE,
@@ -154,6 +159,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function _ownerSetLowerEdge(uint256 _lowerEdge) internal {
+        if (_lowerEdge < 10_000) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _lowerEdge < 10_000,
             _FILE,
@@ -164,6 +170,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function _ownerSetChainlinkRegistry(address _chainlinkRegistry) internal {
+        if (_chainlinkRegistry != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _chainlinkRegistry != address(0),
             _FILE,
@@ -175,6 +182,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function _ownerSetForwarder(address _forwarder) internal {
+        if (_forwarder != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _forwarder != address(0),
             _FILE,
@@ -210,6 +218,7 @@ abstract contract ChainlinkAutomationPriceOracle is IChainlinkAutomationPriceOra
     }
 
     function _checkIsPriceExpired() internal view {
+        if (lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp) { /* FOR COVERAGE TESTING */ }
         Require.that(
             lastUpdateTimestamp + heartbeat + gracePeriod > block.timestamp,
             _FILE,

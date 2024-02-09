@@ -69,6 +69,7 @@ contract JonesUSDCIsolationModeUnwrapperTraderV2ForLiquidation is JonesUSDCIsola
     )
     internal
     override {
+        if (_isValidLiquidator(_sender, VAULT_FACTORY.marketId())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _isValidLiquidator(_sender, VAULT_FACTORY.marketId()),
             _FILE,

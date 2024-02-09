@@ -92,6 +92,7 @@ contract VesterImplementationV1 is
     // =========================================================
 
     modifier requireVestingActive() {
+        if (isVestingActive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isVestingActive(),
             _FILE,
@@ -146,11 +147,13 @@ contract VesterImplementationV1 is
         requireVestingActive
         returns (uint256)
     {
+        if (ARB.balanceOf(address(this)) >= _amount + promisedArbTokens()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             ARB.balanceOf(address(this)) >= _amount + promisedArbTokens(),
             _FILE,
             "Not enough ARB tokens available"
         );
+        if (_duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _duration >= _MIN_DURATION && _duration <= _MAX_DURATION && _duration % _MIN_DURATION == 0,
             _FILE,
@@ -199,16 +202,19 @@ contract VesterImplementationV1 is
         VestingPosition memory position = _getVestingPositionSlot(_id);
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(position.creator, _id)));
         address positionOwner = ownerOf(_id);
+        if (positionOwner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             positionOwner == msg.sender,
             _FILE,
             "Invalid position owner"
         );
+        if (block.timestamp > position.startTime + position.duration) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + position.duration,
             _FILE,
             "Position not vested"
         );
+        if (block.timestamp <= position.startTime + position.duration + closePositionWindow()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp <= position.startTime + position.duration + closePositionWindow(),
             _FILE,
@@ -234,6 +240,7 @@ contract VesterImplementationV1 is
         uint256 arbPriceAdj = DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID).value * discount / _BASE;
 
         uint256 cost = position.amount * arbPriceAdj / wethPrice;
+        if (cost <= _maxPaymentAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             cost <= _maxPaymentAmount,
             _FILE,
@@ -263,6 +270,7 @@ contract VesterImplementationV1 is
         VestingPosition memory position = _getVestingPositionSlot(_id);
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(position.creator, _id)));
         address positionOwner = ownerOf(_id);
+        if (block.timestamp > position.startTime + position.duration + closePositionWindow()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + position.duration + closePositionWindow(),
             _FILE,
@@ -302,6 +310,7 @@ contract VesterImplementationV1 is
         VestingPosition memory position = _getVestingPositionSlot(_id);
         uint256 accountNumber = uint256(keccak256(abi.encodePacked(position.creator, _id)));
         address owner = ownerOf(_id);
+        if (owner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             owner == msg.sender,
             _FILE,
@@ -348,6 +357,7 @@ contract VesterImplementationV1 is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         if (!_shouldBypassAvailableAmounts) {
+            if (_amount <= availableArbTokens()) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _amount <= availableArbTokens(),
                 _FILE,
@@ -463,6 +473,7 @@ contract VesterImplementationV1 is
     }
 
     function _ownerSetOARB(address _oARB) internal {
+        if (promisedArbTokens() == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             promisedArbTokens() == 0,
             _FILE,
@@ -473,6 +484,7 @@ contract VesterImplementationV1 is
     }
 
     function _ownerSetClosePositionWindow(uint256 _closePositionWindow) internal {
+        if (_closePositionWindow >= _MIN_DURATION) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _closePositionWindow >= _MIN_DURATION,
             _FILE,
@@ -483,6 +495,7 @@ contract VesterImplementationV1 is
     }
 
     function _ownerSetForceClosePositionTax(uint256 _forceClosePositionTax) internal {
+        if (_forceClosePositionTax >= 0 && _forceClosePositionTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _forceClosePositionTax >= 0 && _forceClosePositionTax < _BASE,
             _FILE,
@@ -496,6 +509,7 @@ contract VesterImplementationV1 is
         uint256 _emergencyWithdrawTax
     )
     internal {
+        if (_emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _BASE,
             _FILE,
@@ -633,7 +647,7 @@ contract VesterImplementationV1 is
         } else if (_duration == 3 weeks) {
             return 9_000;
         } else {
-            assert(_duration == 4 weeks);
+            /*assert(_duration == 4 weeks);*/
             return 8_000;
         }
     }

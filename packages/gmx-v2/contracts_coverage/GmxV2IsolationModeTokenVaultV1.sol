@@ -97,6 +97,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory withdrawalInfo
             = unwrapper.getWithdrawalInfo(_key);
         _validateVaultOwnerForStruct(withdrawalInfo.vault);
+        if (!withdrawalInfo.isLiquidation) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !withdrawalInfo.isLiquidation,
             _FILE,
@@ -154,6 +155,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     )
     internal
     override {
+        if (getExecutionFeeForAccountNumber(_borrowAccountNumber) != 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             getExecutionFeeForAccountNumber(_borrowAccountNumber) != 0,
             _FILE,
@@ -179,6 +181,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
         uint256 len = _params.tradersPath.length;
         if (_params.tradersPath[len - 1].traderType == IGenericTraderBase.TraderType.IsolationModeWrapper) {
             GmxV2Library.depositAndApproveWethForWrapping(this);
+            if (msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee()) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
                 _FILE,
@@ -186,6 +189,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
             );
             _params.tradersPath[len - 1].tradeData = abi.encode(_params.tradeAccountNumber, abi.encode(msg.value));
         } else {
+            if (msg.value == 0) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 msg.value == 0,
                 _FILE,
@@ -215,12 +219,14 @@ contract GmxV2IsolationModeTokenVaultV1 is
         bytes calldata _extraData
     ) internal override {
         IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
+        if (registry().getUnwrapperByToken(factory).isValidOutputToken(_outputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             registry().getUnwrapperByToken(factory).isValidOutputToken(_outputToken),
             _FILE,
             "Invalid output token"
         );
 
+        if (msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.value <= IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).maxExecutionFee(),
             _FILE,
@@ -246,6 +252,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     }
 
     function _validateVaultOwnerForStruct(address _vault) internal view {
+        if (_vault == address(this)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _vault == address(this),
             _FILE,

@@ -36,6 +36,8 @@ import {
   IGenericTraderProxyV1__factory,
   IsolationModeFreezableLiquidatorProxy,
   IsolationModeFreezableLiquidatorProxy__factory,
+  TestIsolationModeFreezableLiquidatorProxy,
+  TestIsolationModeFreezableLiquidatorProxy__factory,
 } from '../../src/types';
 import { AccountStruct } from '../../src/utils/constants';
 import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from '../../src/utils/constructors/dolomite';
@@ -90,7 +92,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
   let factory: GmxV2IsolationModeVaultFactory;
   let vault: GmxV2IsolationModeTokenVaultV1;
   let marketId: BigNumber;
-  let liquidatorProxy: IsolationModeFreezableLiquidatorProxy;
+  let liquidatorProxy: TestIsolationModeFreezableLiquidatorProxy;
   let eventEmitter: EventEmitterRegistry;
 
   let solidAccount: AccountStruct;
@@ -112,9 +114,9 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     );
     await core.dolomiteRegistryProxy.upgradeTo(newImplementation.address);
 
-    liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
-      IsolationModeFreezableLiquidatorProxy__factory.abi,
-      IsolationModeFreezableLiquidatorProxy__factory.bytecode,
+    liquidatorProxy = await createContractWithAbi<TestIsolationModeFreezableLiquidatorProxy>(
+      TestIsolationModeFreezableLiquidatorProxy__factory.abi,
+      TestIsolationModeFreezableLiquidatorProxy__factory.bytecode,
       getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
     );
 
@@ -974,6 +976,109 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
         performLiquidationAndCheckState(amountWei, true, false),
         'AsyncIsolationModeUnwrapperImpl: All trades must be retryable',
       );
+    });
+
+    it('should fail if reentered', async () => {
+      await setupBalances(borrowAccountNumber, true, false);
+      await expectThrow(
+        liquidatorProxy.callPrepareForLiquidationAndTriggerReentrancy({
+          liquidAccount,
+          freezableMarketId: marketId,
+          inputTokenAmount: amountWei.div(3),
+          outputMarketId: core.marketIds.weth,
+          minOutputAmount: ONE_BI,
+          expirationTimestamp: NO_EXPIRY,
+          extraData: DEFAULT_EXTRA_DATA,
+        }),
+        'ReentrancyGuard: reentrant call',
+      );
+    });
+
+    it('should fail if asset is not whitelisted for liquidation', async () => {
+      await core.liquidatorAssetRegistry.ownerRemoveLiquidatorFromAssetWhitelist(marketId, liquidatorProxy.address);
+      await setupBalances(borrowAccountNumber, true, false);
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation({
+          liquidAccount,
+          freezableMarketId: marketId,
+          inputTokenAmount: amountWei.div(3),
+          outputMarketId: core.marketIds.weth,
+          minOutputAmount: ONE_BI,
+          expirationTimestamp: NO_EXPIRY,
+          extraData: DEFAULT_EXTRA_DATA,
+        }),
+        `HasLiquidatorRegistry: Asset not whitelisted <${marketId.toString()}>`,
+      );
+    });
+
+    it('should fail if account is not liquidatable', async () => {
+      await expectThrow(
+        liquidatorProxy.prepareForLiquidation({
+          liquidAccount,
+          freezableMarketId: marketId,
+          inputTokenAmount: amountWei.div(3),
+          outputMarketId: core.marketIds.weth,
+          minOutputAmount: ONE_BI,
+          expirationTimestamp: NO_EXPIRY,
+          extraData: DEFAULT_EXTRA_DATA,
+        }),
+        'FreezableVaultLiquidatorProxy: Liquid account not liquidatable',
+      );
+    });
+  });
+
+  describe('#testCheckIsLiquidatble', () => {
+    it('should fail if not liquidatable', async () => {
+      await expectThrow(
+        liquidatorProxy.testCheckIsLiquidatable(liquidAccount),
+        'FreezableVaultLiquidatorProxy: Liquid account not liquidatable',
+      );
+    });
+
+    it('should pass if liquidatable', async () => {
+      let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
+      let wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+      const wethAmount = amountWei.mul(gmPrice).div(wethPrice).mul(100).div(121);
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.To,
+      );
+
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '10');
+      await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+      await expect(liquidatorProxy.testCheckIsLiquidatable(liquidAccount)).to.not.be.reverted;
+    });
+
+    it('should pass if account is liquid status', async () => {
+      let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
+      let wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+      const wethAmount = amountWei.mul(gmPrice).div(wethPrice).mul(100).div(121);
+      await vault.transferFromPositionWithOtherToken(
+        borrowAccountNumber,
+        defaultAccountNumber,
+        core.marketIds.weth,
+        wethAmount,
+        BalanceCheckFlag.To,
+      );
+
+      await core.testEcosystem!.testPriceOracle.setPrice(factory.address, '10');
+      await core.dolomiteMargin.ownerSetPriceOracle(marketId, core.testEcosystem!.testPriceOracle.address);
+
+      await core.liquidatorAssetRegistry.ownerAddLiquidatorToAssetWhitelist(marketId, core.liquidatorProxyV1.address);
+      await setupWETHBalance(core, core.hhUser5, parseEther('.2'), { address: core.dolomiteMargin.address });
+      await depositIntoDolomiteMargin(core, core.hhUser5, defaultAccountNumber, core.marketIds.weth, parseEther('.2'));
+      await core.liquidatorProxyV1!.connect(core.hhUser5).liquidate(
+        solidAccount,
+        liquidAccount,
+        { value: BigNumber.from('150000000000000000')},
+        ONE_BI,
+        [core.marketIds.weth],
+        [marketId]
+      )
+      await liquidatorProxy.testCheckIsLiquidatable(liquidAccount);
     });
   });
 });

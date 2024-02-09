@@ -161,11 +161,13 @@ contract VesterImplementationV2 is
         requireVestingActive
         returns (uint256)
     {
+        if (ARB.balanceOf(address(this)) >= _amount + promisedArbTokens()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             ARB.balanceOf(address(this)) >= _amount + promisedArbTokens(),
             _FILE,
             "Not enough ARB tokens available"
         );
+        if (_duration >= _MIN_VESTING_DURATION && _duration <= _MAX_VESTING_DURATION && _duration % _MIN_VESTING_DURATION == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _duration >= _MIN_VESTING_DURATION
                 && _duration <= _MAX_VESTING_DURATION
@@ -224,12 +226,14 @@ contract VesterImplementationV2 is
         VestingPosition memory position = _getVestingPositionSlot(_nftId);
         uint256 accountNumber = _getAccountNumberByPosition(position);
         address positionOwner = ownerOf(_nftId);
+        if (positionOwner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             positionOwner == msg.sender,
             _FILE,
             "Invalid position owner"
         );
         uint256 level = getEffectiveLevelByUser(positionOwner);
+        if (block.timestamp > position.startTime + _calculateEffectiveDuration(position.duration, level)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + _calculateEffectiveDuration(position.duration, level),
             _FILE,
@@ -255,6 +259,7 @@ contract VesterImplementationV2 is
         uint256 arbPriceAdj = DOLOMITE_MARGIN().getMarketPrice(ARB_MARKET_ID).value * effectiveRate / _BASE;
 
         uint256 cost = position.amount * arbPriceAdj / wethPrice;
+        if (cost <= _maxPaymentAmount) { /* FOR COVERAGE TESTING */ }
         Require.that(
             cost <= _maxPaymentAmount,
             _FILE,
@@ -284,6 +289,7 @@ contract VesterImplementationV2 is
         VestingPosition memory position = _getVestingPositionSlot(_nftId);
         uint256 accountNumber = _getAccountNumberByPosition(position);
         address positionOwner = ownerOf(_nftId);
+        if (block.timestamp > position.startTime + position.duration + closePositionWindow()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             block.timestamp > position.startTime + position.duration + closePositionWindow(),
             _FILE,
@@ -323,6 +329,7 @@ contract VesterImplementationV2 is
         VestingPosition memory position = _getVestingPositionSlot(_nftId);
         uint256 accountNumber = _getAccountNumberByPosition(position);
         address owner = ownerOf(_nftId);
+        if (owner == msg.sender) { /* FOR COVERAGE TESTING */ }
         Require.that(
             owner == msg.sender,
             _FILE,
@@ -358,11 +365,13 @@ contract VesterImplementationV2 is
     }
 
     function initiateLevelRequest(address _user) external payable {
+        if (msg.value == levelRequestFee()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.value == levelRequestFee(),
             _FILE,
             "Invalid fee"
         );
+        if (getLevelRequestByUser(_user) == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             getLevelRequestByUser(_user) == 0,
             _FILE,
@@ -388,6 +397,7 @@ contract VesterImplementationV2 is
     external
     onlyDolomiteMarginOwner(msg.sender) {
         if (!_shouldBypassAvailableAmounts) {
+            if (_amount <= availableArbTokens()) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _amount <= availableArbTokens(),
                 _FILE,
@@ -482,6 +492,7 @@ contract VesterImplementationV2 is
         external
         requireIsHandler(msg.sender)
     {
+        if (_requestId == 0 || _requestId == getLevelRequestByUser(_user)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _requestId == 0 || _requestId == getLevelRequestByUser(_user),
             _FILE,
@@ -607,6 +618,7 @@ contract VesterImplementationV2 is
     }
 
     function _ownerSetClosePositionWindow(uint256 _closePositionWindow) internal {
+        if (_closePositionWindow >= _MIN_VESTING_DURATION) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _closePositionWindow >= _MIN_VESTING_DURATION,
             _FILE,
@@ -617,6 +629,7 @@ contract VesterImplementationV2 is
     }
 
     function _ownerSetForceClosePositionTax(uint256 _forceClosePositionTax) internal {
+        if (_forceClosePositionTax >= 0 && _forceClosePositionTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _forceClosePositionTax >= 0 && _forceClosePositionTax < _BASE,
             _FILE,
@@ -630,6 +643,7 @@ contract VesterImplementationV2 is
         uint256 _emergencyWithdrawTax
     )
     internal {
+        if (_emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _BASE) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _emergencyWithdrawTax >= 0 && _emergencyWithdrawTax < _BASE,
             _FILE,
@@ -651,6 +665,7 @@ contract VesterImplementationV2 is
     }
 
     function _ownerSetLevelExpirationWindow(uint256 _levelExpirationWindow) internal {
+        if (_levelExpirationWindow >= _MIN_VESTING_DURATION) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _levelExpirationWindow >= _MIN_VESTING_DURATION,
             _FILE,
@@ -661,6 +676,7 @@ contract VesterImplementationV2 is
     }
 
     function _ownerSetLevelRequestFee(uint256 _fee) internal {
+        if (_fee < 0.1 ether) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _fee < 0.1 ether,
             _FILE,
@@ -805,6 +821,7 @@ contract VesterImplementationV2 is
     }
 
     function _validateIsVestingActive() internal view {
+        if (isVestingActive()) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isVestingActive(),
             _FILE,
@@ -813,6 +830,7 @@ contract VesterImplementationV2 is
     }
 
     function _validateIsHandler(address _from) internal view {
+        if (isHandler(_from)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             isHandler(_from),
             _FILE,

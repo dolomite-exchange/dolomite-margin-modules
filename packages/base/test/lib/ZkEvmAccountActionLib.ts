@@ -10,7 +10,7 @@ import { expect } from 'chai';
 import { BigNumber, ethers } from 'ethers';
 import { CustomTestToken, TestAccountActionLib, TestAccountActionLib__factory } from '../../src/types';
 import { createContractWithAbi, createTestToken } from '../../src/utils/dolomite-utils';
-import { BYTES_EMPTY, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { BYTES_EMPTY, Network, ONE_BI, ZERO_BI } from '../../src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../utils';
 import {
   expectAssetAmountToEq,
@@ -33,7 +33,7 @@ const defaultAmountStruct = {
   value: ZERO_BI,
 };
 
-describe('AccountActionLib', () => {
+describe('ZkEvmAccountActionLib', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -555,7 +555,6 @@ describe('AccountActionLib', () => {
   });
 
   describe('#encodeInternalTradeAction', () => {
-    // TODO: test on zkEVM / Base
     it('should work normally', async () => {
       const fromAccountId = '1';
       const toAccountId = '9';
@@ -563,8 +562,8 @@ describe('AccountActionLib', () => {
       const secondaryMarketId = otherMarketId;
       const amountInWei = amountWei;
       const callData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256'],
-        [amountWeiBig],
+        ['uint256', 'bytes'],
+        [ONE_BI, BYTES_EMPTY],
       );
       const tradeAction = await testLib.connect(core.hhUser1).encodeInternalTradeAction(
         fromAccountId,
@@ -573,6 +572,7 @@ describe('AccountActionLib', () => {
         secondaryMarketId,
         core.expiry.address,
         amountInWei,
+        Network.PolygonZkEvm,
         true,
         BYTES_EMPTY,
       );

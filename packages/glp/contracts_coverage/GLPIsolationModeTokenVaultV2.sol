@@ -62,6 +62,7 @@ contract GLPIsolationModeTokenVaultV2 is
     uint256 private constant _DEFAULT_ACCOUNT_NUMBER = 0;
 
     modifier onlyGmxVault(address _sender) {
+        if (OWNER() == registry().gmxVaultFactory().getAccountByVault(_sender)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             OWNER() == registry().gmxVaultFactory().getAccountByVault(_sender),
             _FILE,
@@ -153,11 +154,13 @@ contract GLPIsolationModeTokenVaultV2 is
     override
     nonReentrant
     onlyVaultOwnerOrVaultFactory(msg.sender) {
+        if (_sender != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _sender != address(0),
             _FILE,
             "Invalid sender"
         );
+        if (!hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             !hasAcceptedFullAccountTransfer() && underlyingBalanceOf() == 0 && gmxBalanceOf() == 0,
             _FILE,
@@ -177,7 +180,7 @@ contract GLPIsolationModeTokenVaultV2 is
         if (hasSynced()) {
             uint256 amountGmx = gmxBalanceOf();
             address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
-            assert(gmxVault != address(0));
+            /*assert(gmxVault != address(0));*/
 
             _depositIntoGMXVault(gmxVault, _DEFAULT_ACCOUNT_NUMBER, amountGmx, /* shouldSkipTransfer = */ true);
         } else {
@@ -218,6 +221,7 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function sync(address _gmxVault) external {
+        if (msg.sender == address(registry().gmxVaultFactory())) { /* FOR COVERAGE TESTING */ }
         Require.that(
             msg.sender == address(registry().gmxVaultFactory()),
             _FILE,
@@ -259,7 +263,7 @@ contract GLPIsolationModeTokenVaultV2 is
     onlyVaultFactory(msg.sender) {
         if (isAcceptingFullAccountTransfer()) {
             // The fsGLP is already in this vault, so don't materialize a transfer from the vault owner
-            assert(_amount == underlyingBalanceOf());
+            /*assert(_amount == underlyingBalanceOf());*/
         } else {
             sGlp().safeTransferFrom(_from, address(this), _amount);
         }
@@ -277,7 +281,7 @@ contract GLPIsolationModeTokenVaultV2 is
             vGlp().withdraw();
         }
 
-        assert(_recipient != address(this));
+        /*assert(_recipient != address(this));*/
         // we can't use the fsGLP because it's not transferable. sGLP contains the authorization and logic for
         // transferring fsGLP tokens.
         sGlp().safeTransfer(_recipient, _amount);
@@ -403,6 +407,7 @@ contract GLPIsolationModeTokenVaultV2 is
         uint256 _depositAccountNumberForWeth
     ) internal {
         address gmxVault = getGmxVaultOrCreate();
+        if ((!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth) { /* FOR COVERAGE TESTING */ }
         Require.that(
             (!_shouldClaimWeth && !_shouldDepositWethIntoDolomite) || _shouldClaimWeth,
             _FILE,
@@ -500,6 +505,7 @@ contract GLPIsolationModeTokenVaultV2 is
     }
 
     function _sync(address _gmxVault) internal {
+        if (_getUint256(_HAS_SYNCED) == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _getUint256(_HAS_SYNCED) == 0,
             _FILE,

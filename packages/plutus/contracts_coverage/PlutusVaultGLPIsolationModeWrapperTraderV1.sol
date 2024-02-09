@@ -79,6 +79,7 @@ contract PlutusVaultGLPIsolationModeWrapperTraderV1 is IsolationModeWrapperTrade
     override
     view
     returns (uint256) {
+        if (GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,
@@ -86,12 +87,14 @@ contract PlutusVaultGLPIsolationModeWrapperTraderV1 is IsolationModeWrapperTrade
             _inputToken
         );
         // VAULT_FACTORY is the DFS_GLP token
+        if (_vaultToken == address(VAULT_FACTORY)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _vaultToken == address(VAULT_FACTORY),
             _FILE,
             "Invalid output token",
             _vaultToken
         );
+        if (_desiredInputAmount > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _desiredInputAmount > 0,
             _FILE,
@@ -117,6 +120,7 @@ contract PlutusVaultGLPIsolationModeWrapperTraderV1 is IsolationModeWrapperTrade
     internal
     override
     returns (uint256) {
+        if (GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             GMX_REGISTRY.gmxVault().whitelistedTokens(_inputToken),
             _FILE,

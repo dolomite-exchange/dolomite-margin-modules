@@ -111,12 +111,14 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
         uint256 len = _pairs.length();
+        if (_token == TOKEN) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _token == TOKEN,
             _FILE,
             "Invalid token",
             _token
         );
+        if (len > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             len > 0,
             _FILE,
@@ -150,6 +152,7 @@ contract TWAPPriceOracle is ITWAPPriceOracle, OnlyDolomiteMargin {
     )
     internal {
         IAlgebraV3Pool pool = IAlgebraV3Pool(_pair);
+        if (pool.token0() == TOKEN || pool.token1() == TOKEN) { /* FOR COVERAGE TESTING */ }
         Require.that(
             pool.token0() == TOKEN || pool.token1() == TOKEN,
             _FILE,

@@ -56,6 +56,7 @@ contract GMXIsolationModeVaultFactory is
     // ============ Modifiers ============
 
     modifier onlyGLPVault(address _glpVault, address _vault) {
+        if (gmxRegistry.glpVaultFactory().getAccountByVault(_glpVault) == _vaultToUserMap[_vault]) { /* FOR COVERAGE TESTING */ }
         Require.that(
             gmxRegistry.glpVaultFactory().getAccountByVault(_glpVault) == _vaultToUserMap[_vault],
             _FILE,

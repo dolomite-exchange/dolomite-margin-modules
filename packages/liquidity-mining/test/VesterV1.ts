@@ -813,6 +813,13 @@ describe('VesterV1', () => {
   });
 
   describe('#ownerSetForceClosePositionTax', () => {
+    it('should fail if tax is greater than base', async () => {
+      await expectThrow(
+        vester.connect(core.governance).ownerSetForceClosePositionTax(100_000),
+        'VesterImplementationV1: Invalid force close position tax',
+      );
+    });
+
     it('should fail if not called by dolomite margin owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1).ownerSetForceClosePositionTax(500),
