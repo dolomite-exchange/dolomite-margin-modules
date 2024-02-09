@@ -1,11 +1,8 @@
 import { IERC20__factory } from '@dolomite-exchange/modules-base/src/types';
 import { getAnyNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, NetworkType } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import {
-  CoreProtocolType,
-  getDefaultCoreProtocolConfig,
-  setupCoreProtocol,
-} from '@dolomite-exchange/modules-base/test/utils/setup';
+import { getRealLatestBlockNumber } from '@dolomite-exchange/modules-base/test/utils';
+import { CoreProtocolType, setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { getChainlinkPriceOracleConstructorParams } from '@dolomite-exchange/modules-oracles/src/oracles-constructors';
 import {
   ChainlinkPriceOracle__factory,
@@ -19,7 +16,10 @@ import getScriptName from '../../utils/get-script-name';
 
 async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   const network = await getAnyNetwork() as T;
-  const core = await setupCoreProtocol(getDefaultCoreProtocolConfig(network)) as CoreProtocolType<T>;
+  const core = await setupCoreProtocol({
+    network,
+    blockNumber: await getRealLatestBlockNumber(true, network),
+  }) as CoreProtocolType<T>;
 
   const tokens = [
     core.tokens.weth,
@@ -38,34 +38,35 @@ async function main<T extends NetworkType>(): Promise<DryRunOutput<T>> {
   );
   const chainlinkPriceOracle = ChainlinkPriceOracle__factory.connect(chainlinkPriceOracleAddress, core.hhUser1);
 
-  // TODO: adjust these prices to reflect the time of deployment
-  const ethPrice = (await chainlinkPriceOracle.getPrice(core.tokens.weth.address)).value;
-  assertHardhatInvariant(
-    ethPrice.gt(parseEther('2400')) && ethPrice.lt(parseEther('2500')),
-    'Invalid ETH price',
-  );
-
-  const daiPrice = (await chainlinkPriceOracle.getPrice(core.tokens.dai.address)).value;
-  assertHardhatInvariant(
-    daiPrice.gt(parseEther('0.99')) && daiPrice.lt(parseEther('1.01')),
-    'Invalid DAI price',
-  );
-
-  const usdcPrice = (await chainlinkPriceOracle.getPrice(core.tokens.usdc.address)).value;
-  const scaleDiff = '1000000000000';
-  assertHardhatInvariant(
-    usdcPrice.div(scaleDiff).gt(parseEther('0.99')) && usdcPrice.div(scaleDiff).lt(parseEther('1.01')),
-    'Invalid USDC price',
-  );
-
-  const linkPrice = (await chainlinkPriceOracle.getPrice(core.tokens.link.address)).value;
-  assertHardhatInvariant(
-    linkPrice.gt(parseEther('18')) && linkPrice.lt(parseEther('20')),
-    'Invalid LINK price',
-  );
-
   return {
     core,
+    invariants: async () => {
+      // NOTE: You may have to adjust these prices to reflect what they are at the time of deployment
+      const ethPrice = (await chainlinkPriceOracle.getPrice(core.tokens.weth.address)).value;
+      assertHardhatInvariant(
+        ethPrice.gt(parseEther('2400')) && ethPrice.lt(parseEther('2500')),
+        'Invalid ETH price',
+      );
+
+      const daiPrice = (await chainlinkPriceOracle.getPrice(core.tokens.dai.address)).value;
+      assertHardhatInvariant(
+        daiPrice.gt(parseEther('0.99')) && daiPrice.lt(parseEther('1.01')),
+        'Invalid DAI price',
+      );
+
+      const usdcPrice = (await chainlinkPriceOracle.getPrice(core.tokens.usdc.address)).value;
+      const scaleDiff = '1000000000000';
+      assertHardhatInvariant(
+        usdcPrice.div(scaleDiff).gt(parseEther('0.99')) && usdcPrice.div(scaleDiff).lt(parseEther('1.01')),
+        'Invalid USDC price',
+      );
+
+      const linkPrice = (await chainlinkPriceOracle.getPrice(core.tokens.link.address)).value;
+      assertHardhatInvariant(
+        linkPrice.gt(parseEther('18')) && linkPrice.lt(parseEther('20')),
+        'Invalid LINK price',
+      );
+    },
     scriptName: getScriptName(__filename),
     upload: {
       chainId: network,

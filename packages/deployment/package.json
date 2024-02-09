@@ -5,19 +5,17 @@
     "build": "hardhat compile",
     "clean": "hardhat clean",
     "test": "hardhat --network hardhat test",
-    "deploy:chainlink-price-oracle-ecosystem": "hardhat --network $NETWORK run src/deploy/ecosystems/deploy-chainlink-price-oracle-ecosystem.ts",
-    "deploy:dolomite-ecosystem": "hardhat --network $NETWORK run src/deploy/ecosystems/deploy-dolomite-ecosystem.ts",
-    "deploy:odos-ecosystem": "hardhat --network $NETWORK run src/deploy/ecosystems/deploy-odos-ecosystem.ts",
-    "deploy:paraswap-ecosystem": "hardhat --network $NETWORK run src/deploy/ecosystems/deploy-paraswap-ecosystem.ts",
+    "deploy:chainlink-price-oracle-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts chainlink-price-oracle",
+    "deploy:dolomite-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts dolomite",
+    "deploy:odos-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts odos",
+    "deploy:paraswap-ecosystem": "ts-node src/deploy/ecosystems/execute-ecosystem-deployment.ts paraswap",
     "execute:arbitrum": "NETWORK=arbitrum_one ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:base": "NETWORK=base ts-node src/deploy/safe-transactions/execute-safe-transaction.ts",
     "execute:polygon_zkevm": "NETWORK=polygon_zkevm ts-node src/deploy/safe-transactions/execute-safe-transaction.ts"
   },
   "private": false,
   "files": [
-    "contracts/**/*",
-    "!contracts/test/*",
-    "src/**/*"
+    "src/deploy/deployments.json"
   ],
   "repository": {
     "type": "git",
