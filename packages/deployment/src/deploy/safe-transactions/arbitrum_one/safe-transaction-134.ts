@@ -43,14 +43,11 @@ async function main(): Promise<DenJsonUpload> {
   );
   const premiaTwap = TWAPPriceOracle__factory.connect(premiaTwapAddress, core.governance);
 
-  const radiantUsdChainlinkAggregator = '0x20d0fcab0ecfd078b036b6caf1fac69a6453b352';
-
   const transactions: EncodedTransaction[] = [];
   transactions.push(
     await prettyPrintEncodeInsertChainlinkOracle(
       core,
       core.tokens.radiant!,
-      radiantUsdChainlinkAggregator,
       ADDRESS_ZERO,
     ),
   );

@@ -50,7 +50,6 @@ async function main() {
   await prettyPrintEncodeInsertChainlinkOracle(
     core,
     core.tokens.dpx!,
-    '0xc373b9db0707fd451bc56ba5e9b029ba26629df0',
     ADDRESS_ZERO,
   );
   const dpxMaxWei = parseEther('2000');
@@ -82,7 +81,6 @@ async function main() {
   await prettyPrintEncodeInsertChainlinkOracle(
     core,
     core.tokens.magic!,
-    '0x47e55ccec6582838e173f252d08afd8116c2202d',
     ADDRESS_ZERO,
   );
   const magicMaxWei = parseEther('1250000'); // 1.25M
@@ -101,7 +99,6 @@ async function main() {
   await prettyPrintEncodeInsertChainlinkOracle(
     core,
     core.tokens.pendle!,
-    '0x66853e19d73c0f9301fe099c324a1e9726953433',
     ADDRESS_ZERO,
   );
   const pendleMaxWei = parseEther('1250000'); // 1.25M

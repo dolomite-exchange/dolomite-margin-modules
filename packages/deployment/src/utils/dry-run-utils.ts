@@ -67,8 +67,10 @@ async function doStuffInternal<T extends NetworkType>(
       transactionIds.push((await delayedMultiSig.queryFilter(filter, txResult.blockHash))[0].args.transactionId);
     }
 
+    console.log('\tSubmitted transactions. Advancing time forward...');
     await advanceByTimeDelta((await delayedMultiSig.secondsTimeLocked()) + 1);
 
+    console.log('\tExecuting chunked transactions...');
     const transactionIdChunks = chunkify(transactionIds, CHUNK_SIZE);
     for (const transactionIdChunk of transactionIdChunks) {
       await delayedMultiSig.executeMultipleTransactions(transactionIdChunk);
@@ -92,7 +94,7 @@ async function doStuffInternal<T extends NetworkType>(
       const networkName = networkToNetworkNameMap[result.upload.chainId];
       const dir = `${__dirname}/../deploy/safe-transactions/${networkName}/output`;
       createFolder(dir);
-      writeFile(`${dir}/${scriptName}.json`, JSON.stringify(result, null, 2));
+      writeFile(`${dir}/${scriptName}.json`, JSON.stringify(result.upload, null, 2));
     });
   }
 }
@@ -106,7 +108,7 @@ export async function doDryRunAndCheckDeployment<T extends NetworkType>(
       process.exit(0);
     })
     .catch(e => {
-      console.error(e);
+      console.error(new Error(e.stack));
       process.exit(1);
     });
 }

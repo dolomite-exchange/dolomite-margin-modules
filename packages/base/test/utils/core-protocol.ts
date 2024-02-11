@@ -288,11 +288,13 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
 }
 
 export interface CoreProtocolParamsBase {
+  chainlinkPriceOracle: IChainlinkPriceOracle;
   paraswapEcosystem: ParaswapEcosystem;
 }
 
 export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
 
+  public readonly chainlinkPriceOracle: IChainlinkPriceOracle;
   public readonly paraswapEcosystem: ParaswapEcosystem;
   public readonly network: Network.Base = Network.Base;
 
@@ -301,6 +303,7 @@ export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
     baseParams: CoreProtocolParamsBase,
   ) {
     super(params);
+    this.chainlinkPriceOracle = baseParams.chainlinkPriceOracle;
     this.paraswapEcosystem = baseParams.paraswapEcosystem;
   }
 }
@@ -308,14 +311,17 @@ export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
 interface CoreProtocolTokensZkEvm extends CoreProtocolTokens {
   matic: IERC20;
   usdt: IERC20;
+  wbtc: IERC20;
 }
 
 interface CoreProtocolMarketIdsZkEvm extends CoreProtocolMarketIds {
   matic: BigNumberish;
   usdt: BigNumberish;
+  wbtc: BigNumberish;
 }
 
 export interface CoreProtocolParamsZkEvm {
+  chainlinkPriceOracle: IChainlinkPriceOracle;
   marketIds: CoreProtocolMarketIdsZkEvm;
   paraswapEcosystem: ParaswapEcosystem;
   tokens: CoreProtocolTokensZkEvm;
@@ -323,6 +329,7 @@ export interface CoreProtocolParamsZkEvm {
 
 export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.PolygonZkEvm> {
 
+  public readonly chainlinkPriceOracle: IChainlinkPriceOracle;
   public readonly paraswapEcosystem: ParaswapEcosystem;
 
   public override readonly marketIds: CoreProtocolMarketIdsZkEvm;
@@ -334,6 +341,7 @@ export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.Polyg
     zkEvmParams: CoreProtocolParamsZkEvm,
   ) {
     super(params);
+    this.chainlinkPriceOracle = zkEvmParams.chainlinkPriceOracle;
     this.marketIds = zkEvmParams.marketIds;
     this.paraswapEcosystem = zkEvmParams.paraswapEcosystem;
     this.tokens = zkEvmParams.tokens;

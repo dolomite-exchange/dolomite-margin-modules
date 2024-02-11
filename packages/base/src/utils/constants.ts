@@ -28,7 +28,7 @@ export const CHAINLINK_PRICE_ORACLE_OLD_MAP: Record<Network.ArbitrumOne, string>
 export const CHAINLINK_PRICE_ORACLE_MAP: Record<Network, string> = {
   [Network.ArbitrumOne]: '0xA07e80C08D8bae7fFA3e46534eaBdBb6Ca98da1D',
   [Network.Base]: '0xc38372FA7e6431DcC490F354a1BcC36A5D6c32E6',
-  [Network.PolygonZkEvm]: '0xA5F4CEB032a1d7C711BB8AE687F9AB13a976e2E9',
+  [Network.PolygonZkEvm]: '0xcE29B273fdd21cef1cE4dfd104dD608941D781a0',
 };
 
 export const CHAINLINK_AUTOMATION_REGISTRY_MAP: Record<Network.ArbitrumOne | Network.Base, string> = {
@@ -174,7 +174,7 @@ export const MAGIC_GLP_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
 export const MATIC_MAP: Record<Network.PolygonZkEvm, TokenWithMarketId> = {
   [Network.PolygonZkEvm]: {
     address: '0xa2036f0538221a77A3937F1379699f44945018d0',
-    marketId: 4,
+    marketId: 6,
   },
 };
 
@@ -611,19 +611,24 @@ export const STETH_USD_CHAINLINK_FEED_MAP: Record<Network.ArbitrumOne, string> =
 };
 
 export const STETH_ETH_CHAINLINK_FEED_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0xded2c52b75b24732e9107377b7ba93ec1ffa4baf',
-};
-
-export const WSTETH_STETH_CHAINLINK_FEED_MAP: Record<Network.ArbitrumOne, string> = {
-  [Network.ArbitrumOne]: '0xb1552c5e96b312d0bf8b554186f846c40614a540',
+  [Network.ArbitrumOne]: '',
 };
 
 export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, string>> = {
-  [Network.ArbitrumOne]: {}, // already deployed
+  [Network.ArbitrumOne]: {
+    [ARB_MAP[Network.ArbitrumOne].address]: '0xb2A824043730FE05F3DA2efaFa1CBbe83fa548D6',
+    [DPX_MAP[Network.ArbitrumOne].address]: '0xc373b9db0707fd451bc56ba5e9b029ba26629df0',
+    [GMX_MAP[Network.ArbitrumOne].address]: '0xdb98056fecfff59d032ab628337a4887110df3db',
+    [MAGIC_MAP[Network.ArbitrumOne].address]: '0x47e55ccec6582838e173f252d08afd8116c2202d',
+    [PENDLE_MAP[Network.ArbitrumOne].address]: '0x66853e19d73c0f9301fe099c324a1e9726953433',
+    [RDNT_MAP[Network.ArbitrumOne].address]: '0x20d0fcab0ecfd078b036b6caf1fac69a6453b352',
+    [ST_ETH_MAP[Network.ArbitrumOne].address]: '0xded2c52b75b24732e9107377b7ba93ec1ffa4baf',
+    [WST_ETH_MAP[Network.ArbitrumOne].address]: '0xb1552c5e96b312d0bf8b554186f846c40614a540',
+  }, // already deployed
   [Network.Base]: {
     [WETH_MAP[Network.Base].address]: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70',
     [DAI_MAP[Network.Base].address]: '0x591e79239a7d679378eC8c847e5038150364C78F',
-    [USDC_MAP[Network.Base].address]: '', // TODO
+    [USDC_MAP[Network.Base].address]: undefined as any, // TODO
     [LINK_MAP[Network.Base].address]: '0xc5E65227fe3385B88468F9A01600017cDC9F3A12',
   },
   [Network.PolygonZkEvm]: {
@@ -631,6 +636,8 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, str
     [DAI_MAP[Network.PolygonZkEvm].address]: '0xa4Fd5C39d975067c877F287E78D600da07E8344c',
     [USDC_MAP[Network.PolygonZkEvm].address]: '0x0167D934CB7240e65c35e347F00Ca5b12567523a',
     [LINK_MAP[Network.PolygonZkEvm].address]: '0x2eeCADd4D8d3a4939440f07419741C4898095317',
+    [USDT_MAP[Network.PolygonZkEvm].address]: '0x8499f6E7D6Ac56C83f66206035D33bD1908a8b5D',
+    [WBTC_MAP[Network.PolygonZkEvm].address]: '0xAE243804e1903BdbE26ae5f35bc6E4794Be21574',
     [MATIC_MAP[Network.PolygonZkEvm].address]: '0x7C85dD6eBc1d318E909F22d51e756Cf066643341',
   },
 };

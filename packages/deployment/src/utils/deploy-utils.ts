@@ -1,20 +1,19 @@
 import { address } from '@dolomite-exchange/dolomite-margin';
 import {
   IDolomiteInterestSetter,
-  IDolomiteMargin,
-  IDolomiteMarginV2,
   IDolomitePriceOracle,
   IERC20,
+  IERC20__factory,
   IERC20Metadata__factory,
   IIsolationModeUnwrapperTraderV2,
   IIsolationModeVaultFactory,
   IIsolationModeWrapperTraderV2,
 } from '@dolomite-exchange/modules-base/src/types';
+import { CHAINLINK_PRICE_AGGREGATORS_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import {
   getLiquidationPremiumForTargetLiquidationPenalty,
   getMarginPremiumForTargetCollateralization,
   getOwnerAddMarketParameters,
-  getOwnerAddMarketParametersForIsolationMode,
   TargetCollateralization,
   TargetLiquidationPenalty,
 } from '@dolomite-exchange/modules-base/src/utils/constructors/dolomite';
@@ -24,8 +23,8 @@ import {
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   ADDRESS_ZERO,
-  Network,
   NetworkType,
+  TEN_BI,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -696,14 +695,22 @@ async function getReadableArg<T extends NetworkType>(
 export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkType>(
   core: CoreProtocolWithChainlink<T>,
   token: IERC20,
-  chainlinkAggregatorAddress: address,
-  tokenPairAddress: address,
+  tokenPairAddress: address = ADDRESS_ZERO,
+  aggregatorAddress: string = CHAINLINK_PRICE_AGGREGATORS_MAP[core.network][token.address],
 ): Promise<EncodedTransaction> {
   let tokenDecimals: number;
   if ('stEth' in core.tokens && token.address === core.tokens.stEth.address) {
     tokenDecimals = 18;
   } else {
     tokenDecimals = await IERC20Metadata__factory.connect(token.address, core.hhUser1).decimals();
+  }
+
+  const aggregator = IChainlinkAggregator__factory.connect(aggregatorAddress, core.governance);
+
+  const description = await aggregator.description();
+  const symbol = await IERC20Metadata__factory.connect(token.address, token.signer).symbol();
+  if (!description.includes(symbol) && !description.includes(symbol.substring(1))) {
+    return Promise.reject(new Error(`Invalid aggregator for symbol, found: ${description}, expected: ${symbol}`));
   }
 
   mostRecentTokenDecimals = tokenDecimals;
@@ -715,7 +722,7 @@ export async function prettyPrintEncodeInsertChainlinkOracle<T extends NetworkTy
     [
       token.address,
       tokenDecimals,
-      chainlinkAggregatorAddress,
+      aggregator.address,
       tokenPairAddress,
     ],
   );
@@ -732,48 +739,17 @@ export async function prettyPrintEncodeAddIsolationModeMarket<T extends NetworkT
   targetLiquidationPremium: TargetLiquidationPenalty,
   maxSupplyWei: BigNumberish,
 ): Promise<EncodedTransaction[]> {
-  const transactions: EncodedTransaction[] = [];
-  if (core.network === Network.ArbitrumOne) {
-    const liveMap = { dolomiteMargin: core.dolomiteMargin as IDolomiteMargin };
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        liveMap,
-        'dolomiteMargin',
-        'ownerAddMarket',
-        getOwnerAddMarketParametersForIsolationMode<Network.ArbitrumOne>(
-          core,
-          factory,
-          oracle,
-          core.interestSetters.alwaysZeroInterestSetter,
-          getMarginPremiumForTargetCollateralization(targetCollateralization),
-          getLiquidationPremiumForTargetLiquidationPenalty(targetLiquidationPremium),
-          maxSupplyWei,
-          ZERO_BI,
-        ),
-      ),
-    );
-  } else {
-    const liveMap = { dolomiteMargin: core.dolomiteMargin as IDolomiteMarginV2 };
-    transactions.push(
-      await prettyPrintEncodedDataWithTypeSafety(
-        core,
-        liveMap,
-        'dolomiteMargin',
-        'ownerAddMarket',
-        getOwnerAddMarketParametersForIsolationMode<Network.Base | Network.PolygonZkEvm>(
-          core,
-          factory,
-          oracle,
-          core.interestSetters.alwaysZeroInterestSetter,
-          getMarginPremiumForTargetCollateralization(targetCollateralization),
-          getLiquidationPremiumForTargetLiquidationPenalty(targetLiquidationPremium),
-          maxSupplyWei,
-          ZERO_BI,
-        ),
-      ),
-    );
-  }
+  const transactions: EncodedTransaction[] = await prettyPrintEncodeAddMarket(
+    core,
+    IERC20__factory.connect(factory.address, factory.signer),
+    oracle,
+    core.interestSetters.alwaysZeroInterestSetter,
+    targetCollateralization,
+    targetLiquidationPremium,
+    maxSupplyWei,
+    ZERO_BI,
+    true,
+  );
 
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -817,6 +793,15 @@ export async function prettyPrintEncodeAddMarket<T extends NetworkType>(
   isCollateralOnly: boolean,
   earningsRateOverride: BigNumberish = ZERO_BI,
 ): Promise<EncodedTransaction[]> {
+  if (!await isValidAmount(token, maxSupplyWei)) {
+    const name = await getFormattedTokenName(core, token.address);
+    return Promise.reject(new Error(`Invalid max supply wei for ${name}, found: ${maxSupplyWei.toString()}`));
+  }
+  if (!await isValidAmount(token, maxBorrowWei)) {
+    const name = await getFormattedTokenName(core, token.address);
+    return Promise.reject(new Error(`Invalid max borrow wei for ${name}, found: ${maxBorrowWei.toString()}`));
+  }
+
   const transactions = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -865,4 +850,15 @@ export function writeFile(
     fileContent,
     { encoding: 'utf8', flag: 'w' },
   );
+}
+
+async function isValidAmount(token: IERC20, amount: BigNumberish) {
+  const realAmount = BigNumber.from(amount);
+  if (realAmount.eq(ZERO_BI)) {
+    return true;
+  }
+
+  const decimals = await IERC20Metadata__factory.connect(token.address, token.signer).decimals();
+  const scale = TEN_BI.pow(decimals);
+  return realAmount.div(scale).gte(TEN_BI) && realAmount.div(scale).lte(100_000_000);
 }
