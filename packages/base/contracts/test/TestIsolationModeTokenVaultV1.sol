@@ -27,6 +27,10 @@ import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { SimpleIsolationModeTokenVaultV1 } from "../isolation-mode/SimpleIsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1 } from "../isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
+import { IsolationModeTokenVaultV1ActionsImpl } from "../isolation-mode/abstract/impl/IsolationModeTokenVaultV1ActionsImpl.sol";
+import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**
@@ -77,6 +81,49 @@ contract TestIsolationModeTokenVaultV1 is SimpleIsolationModeTokenVaultV1 {
 
     function testRequireNotLiquidatable(uint256 _accountNumber) requireNotLiquidatable(_accountNumber) public view {
         // This function is just to test the requireNotLiquidatable modifier.
+    }
+
+    function testGetMarketInfos(uint256[] memory _solidMarketIds, uint256[] memory _liquidMarketIds) public view returns (BaseLiquidatorProxy.MarketInfo[] memory) {
+        return IsolationModeTokenVaultV1ActionsImpl._getMarketInfos(DOLOMITE_MARGIN(), _solidMarketIds, _liquidMarketIds);
+    }
+
+    function testBinarySearch(
+        uint256[] memory _markets,
+        uint256 _beginInclusive,
+        uint256 _endExclusive,
+        uint256 _marketId
+    ) external view returns (BaseLiquidatorProxy.MarketInfo memory) {
+        BaseLiquidatorProxy.MarketInfo[] memory marketInfos = testGetMarketInfos(
+            new uint256[](0),
+            _markets
+        );
+        return IsolationModeTokenVaultV1ActionsImpl._binarySearch(marketInfos, _beginInclusive, _endExclusive, _marketId);
+    }
+
+    function testGetAccountValuesWithAdjustMarginPremium(
+        uint256 _accountNumber
+    ) external view returns (
+        IDolomiteStructs.MonetaryValue memory supplyValue,
+        IDolomiteStructs.MonetaryValue memory borrowValue
+    ) {
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
+        IDolomiteStructs.AccountInfo memory liquidAccount = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _accountNumber
+        });
+        uint256[] memory marketsWithBalances = dolomiteMargin.getAccountMarketsWithBalances(liquidAccount);
+        BaseLiquidatorProxy.MarketInfo[] memory marketInfos = IsolationModeTokenVaultV1ActionsImpl._getMarketInfos(
+            dolomiteMargin,
+            /* _solidMarketIds = */ new uint256[](0),
+            marketsWithBalances
+        );
+        return IsolationModeTokenVaultV1ActionsImpl._getAccountValues(
+            dolomiteMargin,
+            marketInfos,
+            liquidAccount,
+            marketsWithBalances,
+            false
+        );
     }
 
     function testRequireOnlyConverter() external view {

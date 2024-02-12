@@ -19,7 +19,7 @@ import {
   depositIntoDolomiteMargin,
   withdrawFromDolomiteMargin,
 } from '../../../src/utils/dolomite-utils';
-import { MAX_UINT_256_BI, Network, ZERO_BI } from '../../../src/utils/no-deps-constants';
+import { MAX_UINT_256_BI, Network, ONE_ETH_BI, ZERO_BI } from '../../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../../utils';
 import { expectProtocolBalance, expectThrow, expectTotalSupply, expectWalletBalance } from '../../utils/assertions';
 import { CoreProtocolArbitrumOne } from '../../utils/core-protocol';
@@ -2150,6 +2150,36 @@ describe('IsolationModeTokenVaultV1', () => {
         userVault.connect(core.hhUser1).testRequireOnlyConverter(),
         `IsolationModeTokenVaultV1: Only converter can call <${core.hhUser1.address.toLowerCase()}>`,
       );
+    });
+  });
+
+  describe('#testGetMarketInfos', () => {
+    it('should work normally', async () => {
+      await userVault.testGetMarketInfos([], [0,0]);
+    });
+  });
+
+  describe('#testBinarySearch', () => {
+    it('should fail if len is 0', async () => {
+      await expectThrow(
+        userVault.testBinarySearch([], 0, 0, 0),
+        'BaseLiquidatorProxy: Market not found'
+      );
+    });
+
+    it('should fail if len is 1 and marketIds are not equal', async () => {
+      await expectThrow(
+        userVault.testBinarySearch([0], 0, 1, 3),
+        'BaseLiquidatorProxy: Market not found'
+      );
+    });
+  })
+
+  describe('#testGetAccountValuesWithAdjustMarginPremium', async () => {
+    it('should work normally', async () => {
+      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
+      const values = await userVault.testGetAccountValuesWithAdjustMarginPremium(defaultAccountNumber);
+      expect(values.supplyValue.value).to.equal(amountWei.mul(ONE_ETH_BI));
     });
   });
 });

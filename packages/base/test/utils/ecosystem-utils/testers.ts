@@ -7,7 +7,14 @@ import {
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
   IDolomiteRegistry,
+  IERC20,
+  IIsolationModeTokenVaultV1,
+  IsolationModeTraderProxy,
+  IsolationModeTraderProxy__factory,
   RegistryProxy__factory,
+  TestAsyncProtocol,
+  TestAsyncProtocolIsolationModeVaultFactory,
+  TestAsyncProtocolIsolationModeVaultFactory__factory,
   TestDolomiteMarginExchangeWrapper,
   TestDolomiteMarginExchangeWrapper__factory,
   TestFreezableIsolationModeVaultFactory,
@@ -23,10 +30,14 @@ import {
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
   TestPriceOracle,
   TestPriceOracle__factory,
+  TestUpgradeableAsyncIsolationModeUnwrapperTrader,
+  TestUpgradeableAsyncIsolationModeUnwrapperTrader__factory,
+  TestUpgradeableAsyncIsolationModeWrapperTrader,
+  TestUpgradeableAsyncIsolationModeWrapperTrader__factory,
 } from '../../../src/types';
-import { createContractWithAbi } from '../../../src/utils/dolomite-utils';
+import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
 import { NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkType } from '../../../src/utils/no-deps-constants';
-import { createRegistryProxy, DolomiteMargin } from '../dolomite';
+import { createAsyncIsolationModeUnwrapperTraderImpl, createAsyncIsolationModeWrapperTraderImpl, createRegistryProxy, DolomiteMargin } from '../dolomite';
 import { CoreProtocolSetupConfig, CoreProtocolType } from '../setup';
 
 type TestIsolationModeTokenVault =
@@ -79,8 +90,8 @@ export async function createTestFreezableIsolationModeVaultFactory<T extends Net
   executionFee: BigNumberish,
   registry: TestHandlerRegistry,
   core: CoreProtocolType<T>,
-  underlyingToken: CustomTestToken,
-  userVaultImplementation: FreezableVault,
+  underlyingToken: CustomTestToken | IERC20,
+  userVaultImplementation: FreezableVault | IIsolationModeTokenVaultV1,
 ): Promise<TestFreezableIsolationModeVaultFactory> {
   return await createContractWithAbi<TestFreezableIsolationModeVaultFactory>(
     TestFreezableIsolationModeVaultFactory__factory.abi,
@@ -95,6 +106,83 @@ export async function createTestFreezableIsolationModeVaultFactory<T extends Net
       core.dolomiteMargin.address,
     ],
   );
+}
+
+export async function createTestAsyncProtocolIsolationModeVaultFactory<T extends NetworkType>(
+  executionFee: BigNumberish,
+  registry: TestHandlerRegistry,
+  core: CoreProtocolType<T>,
+  underlyingToken: CustomTestToken | IERC20,
+  userVaultImplementation: FreezableVault | IIsolationModeTokenVaultV1,
+): Promise<TestAsyncProtocolIsolationModeVaultFactory> {
+  return await createContractWithAbi<TestAsyncProtocolIsolationModeVaultFactory>(
+    TestAsyncProtocolIsolationModeVaultFactory__factory.abi,
+    TestAsyncProtocolIsolationModeVaultFactory__factory.bytecode,
+    [
+      executionFee,
+      registry.address,
+      core.dolomiteRegistry.address,
+      underlyingToken.address,
+      core.borrowPositionProxyV2.address,
+      userVaultImplementation.address,
+      core.dolomiteMargin.address,
+    ],
+  );
+}
+
+
+export async function createTestUpgradeableAsyncIsolationModeWrapperTrader<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  registry: TestHandlerRegistry,
+  factory: TestFreezableIsolationModeVaultFactory,
+  asyncProtocol: TestAsyncProtocol,
+): Promise<TestUpgradeableAsyncIsolationModeWrapperTrader> {
+  const libraries = await createAsyncIsolationModeWrapperTraderImpl();
+  const implementation = await createContractWithLibrary<TestUpgradeableAsyncIsolationModeWrapperTrader>(
+    'TestUpgradeableAsyncIsolationModeWrapperTrader',
+    libraries,
+    [asyncProtocol.address, core.tokens.weth.address],
+  );
+
+  const calldata = await implementation.populateTransaction.initialize(
+    factory.address,
+    registry.address,
+    core.dolomiteMargin.address,
+  );
+  const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
+    IsolationModeTraderProxy__factory.abi,
+    IsolationModeTraderProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, calldata.data],
+  );
+
+  return TestUpgradeableAsyncIsolationModeWrapperTrader__factory.connect(proxy.address, core.hhUser1);
+}
+
+export async function createTestUpgradeableAsyncIsolationModeUnwrapperTrader<T extends NetworkType>(
+  core: CoreProtocolType<T>,
+  registry: TestHandlerRegistry,
+  factory: TestFreezableIsolationModeVaultFactory,
+  asyncProtocol: TestAsyncProtocol,
+): Promise<TestUpgradeableAsyncIsolationModeUnwrapperTrader> {
+  const libraries = await createAsyncIsolationModeUnwrapperTraderImpl();
+  const implementation = await createContractWithLibrary<TestUpgradeableAsyncIsolationModeWrapperTrader>(
+    'TestUpgradeableAsyncIsolationModeUnwrapperTrader',
+    libraries,
+    [asyncProtocol.address, core.tokens.weth.address],
+  );
+
+  const calldata = await implementation.populateTransaction.initialize(
+    factory.address,
+    registry.address,
+    core.dolomiteMargin.address,
+  );
+  const proxy = await createContractWithAbi<IsolationModeTraderProxy>(
+    IsolationModeTraderProxy__factory.abi,
+    IsolationModeTraderProxy__factory.bytecode,
+    [implementation.address, core.dolomiteMargin.address, calldata.data],
+  );
+
+  return TestUpgradeableAsyncIsolationModeUnwrapperTrader__factory.connect(proxy.address, core.hhUser1);
 }
 
 export async function createTestEcosystem<T extends NetworkType>(
