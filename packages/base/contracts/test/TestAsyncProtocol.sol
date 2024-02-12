@@ -118,6 +118,20 @@ contract TestAsyncProtocol is ERC20, ITestAsyncProtocol {
         ITestAsyncProtocolCallbackReceiver(withdrawal.to).afterWithdrawalExecution(_key, withdrawal);
     }
 
+    function executeWithdrawalWithDifferentToken(
+        bytes32 _key,
+        uint256 _amount,
+        address _token
+    ) external {
+        Withdrawal memory withdrawal = withdrawals[_key];
+        delete withdrawals[_key];
+
+        withdrawal.amountOut = _amount == 0 ? withdrawal.amountIn : _amount;
+        IERC20(withdrawal.token).transfer(withdrawal.to, withdrawal.amountOut);
+        withdrawal.token = _token;
+        ITestAsyncProtocolCallbackReceiver(withdrawal.to).afterWithdrawalExecution(_key, withdrawal);
+    }
+
     function cancelWithdrawal(
         bytes32 _key
     ) external {

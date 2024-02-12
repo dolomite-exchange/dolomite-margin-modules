@@ -54,7 +54,7 @@ import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dis
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
-const DEFAULT_KEY = '0xc21063033242d57fdb2c58fff1edd24024c38411467eff5c9f245c83c36a47a4';
+const DEFAULT_KEY = '0xf9279e2a8683e34971784a3e2a24c23022cc3d7f78437d025b0cf87ebc18bee1';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const bigOtherAmountWei = BigNumber.from('100000000000'); // $100,000
@@ -213,6 +213,22 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
   });
 
   describe('#callFunction', () => {
+    it('should fail if vault does not exist', async () => {
+      const orderData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'uint256', 'address', 'uint256', 'uint256[]', 'bytes32[]'],
+        [0, 0, core.hhUser1.address, defaultAccountNumber, [1], [DEFAULT_KEY]]
+      );
+      await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
+      await expectThrow(
+        tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
+          core.hhUser5.address,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          orderData,
+        ),
+        `AsyncIsolationModeUnwrapperImpl: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
+      );
+    });
+
     it('should fail if not called by dolomite margin', async () => {
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
@@ -435,7 +451,11 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     });
 
     it('should fail if reentered', async () => {
-
+      await registry.connect(core.governance).ownerSetIsHandler(core.hhUser5.address, true);
+      await expectThrow(
+        tokenUnwrapper.connect(core.hhUser5).callExecuteWithdrawalForRetryAndTriggerReentrancy(DEFAULT_KEY),
+        'AsyncIsolationModeUnwrapperImpl: Reentrant call'
+      );
     });
   });
 
@@ -471,7 +491,103 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
   });
 
   describe('#createActionsForUnwrapping', () => {
+    it('should fail if invalid input market', async () => {
+      await expectThrow(
+        tokenUnwrapper.createActionsForUnwrapping({
+          primaryAccountId: ZERO_BI,
+          otherAccountId: ZERO_BI,
+          primaryAccountOwner: userVault.address,
+          primaryAccountNumber: defaultAccountNumber,
+          otherAccountOwner: userVault.address,
+          otherAccountNumber: defaultAccountNumber,
+          outputMarket: otherMarketId1,
+          inputMarket: core.marketIds.weth,
+          minOutputAmount: ONE_BI,
+          inputAmount: amountWei,
+          orderData: BYTES_EMPTY,
+        }),
+        `AsyncIsolationModeUnwrapperImpl: Invalid input market <${core.marketIds.weth}>`
+      );
+    });
 
+    it('should fail if invalid output market', async () => {
+      await expectThrow(
+        tokenUnwrapper.createActionsForUnwrapping({
+          primaryAccountId: ZERO_BI,
+          otherAccountId: ZERO_BI,
+          primaryAccountOwner: userVault.address,
+          primaryAccountNumber: defaultAccountNumber,
+          otherAccountOwner: userVault.address,
+          otherAccountNumber: defaultAccountNumber,
+          outputMarket: core.marketIds.weth,
+          inputMarket: underlyingMarketId,
+          minOutputAmount: ONE_BI,
+          inputAmount: amountWei,
+          orderData: BYTES_EMPTY,
+        }),
+        `AsyncIsolationModeUnwrapperImpl: Invalid output market <${core.marketIds.weth}>`
+      );
+    });
+
+    it('should fail if invalid order data', async () => {
+      const orderData = ethers.utils.defaultAbiCoder.encode(['uint256[]', 'bytes32[]', 'bool'], [[0, 0], [DEFAULT_KEY], false]);
+      await expectThrow(
+        tokenUnwrapper.createActionsForUnwrapping({
+          primaryAccountId: ZERO_BI,
+          otherAccountId: ZERO_BI,
+          primaryAccountOwner: userVault.address,
+          primaryAccountNumber: defaultAccountNumber,
+          otherAccountOwner: userVault.address,
+          otherAccountNumber: defaultAccountNumber,
+          outputMarket: otherMarketId1,
+          inputMarket: underlyingMarketId,
+          minOutputAmount: ONE_BI,
+          inputAmount: amountWei,
+          orderData,
+        }),
+        'AsyncIsolationModeUnwrapperImpl: Invalid unwrapping order data'
+      );
+    });
+
+    it('should fail if invalid input amound', async () => {
+      const orderData = ethers.utils.defaultAbiCoder.encode(['uint256[]', 'bytes32[]', 'bool'], [[0], [DEFAULT_KEY], false]);
+      await expectThrow(
+        tokenUnwrapper.createActionsForUnwrapping({
+          primaryAccountId: ZERO_BI,
+          otherAccountId: ZERO_BI,
+          primaryAccountOwner: userVault.address,
+          primaryAccountNumber: defaultAccountNumber,
+          otherAccountOwner: userVault.address,
+          otherAccountNumber: defaultAccountNumber,
+          outputMarket: otherMarketId1,
+          inputMarket: underlyingMarketId,
+          minOutputAmount: ONE_BI,
+          inputAmount: ZERO_BI,
+          orderData,
+        }),
+        'AsyncIsolationModeUnwrapperImpl: Invalid input amount'
+      );
+    });
+
+    it('should fail if trades are not retryable', async () => {
+      const orderData = ethers.utils.defaultAbiCoder.encode(['uint256[]', 'bytes32[]', 'bool'], [[0], [DEFAULT_KEY], false]);
+      await expectThrow(
+        tokenUnwrapper.createActionsForUnwrapping({
+          primaryAccountId: ZERO_BI,
+          otherAccountId: ZERO_BI,
+          primaryAccountOwner: userVault.address,
+          primaryAccountNumber: defaultAccountNumber,
+          otherAccountOwner: userVault.address,
+          otherAccountNumber: defaultAccountNumber,
+          outputMarket: otherMarketId1,
+          inputMarket: underlyingMarketId,
+          minOutputAmount: ONE_BI,
+          inputAmount: amountWei,
+          orderData,
+        }),
+        'AsyncIsolationModeUnwrapperImpl: All trades must be retryable'
+      );
+    });
   });
 
   describe('#getWrapperTrader', () => {

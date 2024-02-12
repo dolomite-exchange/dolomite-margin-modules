@@ -200,4 +200,25 @@ contract TestUpgradeableAsyncIsolationModeUnwrapperTrader is
         return _getWrapperTrader();
     }
 
+    function callExecuteWithdrawalForRetryAndTriggerReentrancy(bytes32 _key) external nonReentrant {
+        (bool isSuccessful, bytes memory result) = address(this).delegatecall(
+            abi.encodeWithSelector(
+                this.executeWithdrawalForRetry.selector,
+                _key
+            )
+        );
+        if (!isSuccessful) {
+            if (result.length < 68) {
+                revert("No reversion message!");
+            } else {
+                // solhint-disable-next-line no-inline-assembly
+                assembly {
+                    result := add(result, 0x04) // Slice the sighash.
+                }
+            }
+            (string memory errorMessage) = abi.decode(result, (string));
+            revert(errorMessage);
+        }
+    }
+
 }
