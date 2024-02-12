@@ -106,6 +106,10 @@ export function getOwnerAddMarketParameters<T extends NetworkType>(
     ] as Parameters<IDolomiteMargin['functions']['ownerAddMarket']> as any;
   }
 
+  if (BigNumber.from(maxBorrowWei).gt(maxSupplyWei)) {
+    throw new Error('maxBorrowWei must be smaller than maxSupplyWei');
+  }
+
   return [
     token.address,
     priceOracle.address,

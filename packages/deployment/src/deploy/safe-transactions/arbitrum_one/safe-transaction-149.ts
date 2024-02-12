@@ -133,7 +133,6 @@ async function main(): Promise<DenJsonUpload> {
   const dArbMarketId = await core.dolomiteMargin.getNumMarkets();
   const gmxMarketId = dArbMarketId.add(1);
   const dGmxMarketId = gmxMarketId.add(1);
-  const gmxUsdPriceAggregator = '0xdb98056fecfff59d032ab628337a4887110df3db';
   const transactions: EncodedTransaction[] = [];
   transactions.push(
     await prettyPrintEncodedDataWithTypeSafety(
@@ -175,15 +174,14 @@ async function main(): Promise<DenJsonUpload> {
     await prettyPrintEncodeInsertChainlinkOracle(
       core,
       arbFactory,
-      await core.chainlinkPriceOracle!.getAggregatorByToken(core.tokens.arb!.address),
       ADDRESS_ZERO,
+      await core.chainlinkPriceOracle!.getAggregatorByToken(core.tokens.arb!.address),
     ),
   );
   transactions.push(
     await prettyPrintEncodeInsertChainlinkOracle(
       core,
       core.tokens.gmx!,
-      gmxUsdPriceAggregator,
       ADDRESS_ZERO,
     ),
   );
@@ -191,7 +189,6 @@ async function main(): Promise<DenJsonUpload> {
     await prettyPrintEncodeInsertChainlinkOracle(
       core,
       gmxFactory,
-      gmxUsdPriceAggregator,
       ADDRESS_ZERO,
     ),
   );

@@ -4,7 +4,7 @@ import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import {
   DEFAULT_BLOCK_NUMBER,
-  Network,
+  Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP,
   NetworkName,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import dotenv from 'dotenv';
@@ -47,10 +47,13 @@ export const base_config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       gas: 50_000_000,
       blockGasLimit: 100000000429720,
-      forking: {
-        url: arbitrumOneWeb3Url,
-        blockNumber: DEFAULT_BLOCK_NUMBER,
-      },
+      chains: {
+        [Network.PolygonZkEvm]: {
+          hardforkHistory: {
+            berlin: NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[Network.PolygonZkEvm] - 1,
+          }
+        }
+      }
     },
     [NetworkName.ArbitrumOne]: {
       chainId: parseInt(Network.ArbitrumOne, 10),

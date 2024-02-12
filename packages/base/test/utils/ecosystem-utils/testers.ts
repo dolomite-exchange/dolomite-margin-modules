@@ -187,26 +187,10 @@ export async function createTestUpgradeableAsyncIsolationModeUnwrapperTrader<T e
 
 export async function createTestEcosystem<T extends NetworkType>(
   dolomiteMargin: DolomiteMargin<T>,
-  dolomiteRegistry: IDolomiteRegistry,
-  governor: SignerWithAddress,
   signer: SignerWithAddress,
-  config: CoreProtocolSetupConfig<T>,
 ): Promise<TestEcosystem | undefined> {
   if (network.name !== 'hardhat') {
     return undefined;
-  }
-
-  if (config.blockNumber >= NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP[config.network]) {
-    const genericTrader = await dolomiteRegistry.genericTraderProxy();
-    await dolomiteMargin.ownerSetGlobalOperator(genericTrader, true);
-    const registryProxy = RegistryProxy__factory.connect(dolomiteRegistry.address, governor);
-    const newRegistry = await createContractWithAbi<DolomiteRegistryImplementation>(
-      DolomiteRegistryImplementation__factory.abi,
-      DolomiteRegistryImplementation__factory.bytecode,
-      [],
-    );
-    await registryProxy.upgradeTo(newRegistry.address);
-    await dolomiteRegistry.ownerSetSlippageToleranceForPauseSentinel('70000000000000000'); // 7%
   }
 
   const testExchangeWrapper = await createContractWithAbi<TestDolomiteMarginExchangeWrapper>(

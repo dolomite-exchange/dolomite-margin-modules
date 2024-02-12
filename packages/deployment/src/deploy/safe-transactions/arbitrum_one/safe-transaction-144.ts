@@ -1,7 +1,3 @@
-import {
-  STETH_ETH_CHAINLINK_FEED_MAP,
-  WSTETH_STETH_CHAINLINK_FEED_MAP,
-} from '@dolomite-exchange/modules-base/src/utils/constants';
 import { getAndCheckSpecificNetwork } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -25,7 +21,6 @@ async function main(): Promise<DenJsonUpload> {
     await prettyPrintEncodeInsertChainlinkOracle(
       core,
       core.tokens.wstEth!,
-      WSTETH_STETH_CHAINLINK_FEED_MAP[network]!,
       core.tokens.stEth!.address,
     ),
   );
@@ -33,7 +28,6 @@ async function main(): Promise<DenJsonUpload> {
     await prettyPrintEncodeInsertChainlinkOracle(
       core,
       core.tokens.stEth!,
-      STETH_ETH_CHAINLINK_FEED_MAP[network]!,
       core.tokens.weth.address,
     ),
   );

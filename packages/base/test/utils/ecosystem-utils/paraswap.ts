@@ -14,7 +14,7 @@ import {
   PARASWAP_TRANSFER_PROXY_MAP
 } from '../../../src/utils/constants';
 import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
-import { getContract, getContractOpt } from '../setup';
+import { getContractOpt } from '../setup';
 
 export interface ParaswapEcosystem {
   augustusRouter: IParaswapAugustusRouter;

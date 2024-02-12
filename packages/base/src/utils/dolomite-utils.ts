@@ -186,12 +186,17 @@ const NETWORK_TO_VALID_MAP: Record<NetworkType, boolean> = {
 };
 
 export async function getAnyNetwork(): Promise<NetworkType> {
-  const network = (await ethers.provider.getNetwork()).chainId.toString() as Network;
-  if (!NETWORK_TO_VALID_MAP[network]) {
-    return Promise.reject(new Error(`Invalid network, found ${network}`));
+  let foundNetwork;
+  if (hardhat.network.name === 'hardhat') {
+    if (!process.env.NETWORK) {
+      return Promise.reject(new Error(`Invalid network, found: ${process.env.NETWORK}`));
+    }
+    foundNetwork = hardhat.userConfig.networks![process.env.NETWORK]!.chainId!.toString();
+  } else {
+    foundNetwork = (await ethers.provider.getNetwork()).chainId.toString();
   }
 
-  return network;
+  return foundNetwork as NetworkType;
 }
 
 export async function getAndCheckSpecificNetwork<T extends NetworkType>(networkInvariant: T): Promise<T> {

@@ -360,12 +360,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
   );
 
   const dolomiteRegistry = IDolomiteRegistry__factory.connect(
-    Deployments.DolomiteRegistryProxy[config.network]?.address,
+    Deployments.DolomiteRegistryProxy[config.network].address,
     governance,
   );
 
   const dolomiteRegistryProxy = RegistryProxy__factory.connect(
-    Deployments.DolomiteRegistryProxy[config.network]?.address,
+    Deployments.DolomiteRegistryProxy[config.network].address,
     governance,
   );
 
@@ -386,7 +386,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     : IExpiryV2__factory.connect(ExpiryJson.networks[config.network].address, governance)) as Expiry<T>;
 
   const genericTraderProxy = getContract(
-    IGenericTraderProxyV1Json.networks[config.network]!.address,
+    IGenericTraderProxyV1Json.networks[config.network].address,
     IGenericTraderProxyV1__factory.connect,
     governance,
   );
@@ -409,7 +409,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     governance,
   );
 
-  const testEcosystem = await createTestEcosystem(dolomiteMargin, dolomiteRegistry, governance, hhUser1, config);
+  const testEcosystem = await createTestEcosystem(dolomiteMargin, governance);
 
   const tokenVaultActionsLibraries = await createTokenVaultActionsLibraries(config);
 
@@ -557,6 +557,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolBase(
       coreProtocolParams as CoreProtocolParams<Network.Base>,
       {
+        chainlinkPriceOracle,
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
       },
     ) as any;
@@ -566,16 +567,19 @@ export async function setupCoreProtocol<T extends NetworkType>(
     return new CoreProtocolPolygonZkEvm(
       coreProtocolParams as CoreProtocolParams<Network.PolygonZkEvm>,
       {
+        chainlinkPriceOracle,
         marketIds: {
           ...coreProtocolParams.marketIds,
           matic: MATIC_MAP[typedConfig.network].marketId,
           usdt: USDT_MAP[typedConfig.network].marketId,
+          wbtc: WBTC_MAP[typedConfig.network].marketId,
         },
         paraswapEcosystem: await createParaswapEcosystem(typedConfig.network, hhUser1),
         tokens: {
           ...coreProtocolParams.tokens,
           matic: IERC20__factory.connect(MATIC_MAP[typedConfig.network].address, hhUser1),
           usdt: IERC20__factory.connect(USDT_MAP[typedConfig.network].address, hhUser1),
+          wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
         }
       },
     ) as any;
