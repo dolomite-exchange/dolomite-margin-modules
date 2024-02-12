@@ -151,14 +151,11 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             _inputAmount,
             _extraOrderData
         );
-        if (outputAmount >= minOutputAmount) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            outputAmount >= minOutputAmount,
-            _FILE,
-            "Insufficient output amount",
-            outputAmount,
-            minOutputAmount
-        );
+        /**
+         * Changed this to an assert statement because
+         * _exchangeIntoUnderlyingToken will return the minOutputAmount for async wrappings
+         */
+        /*assert(outputAmount >= minOutputAmount);*/
 
         _approveIsolationModeTokenForTransfer(_tradeOriginator, _receiver, outputAmount);
 
