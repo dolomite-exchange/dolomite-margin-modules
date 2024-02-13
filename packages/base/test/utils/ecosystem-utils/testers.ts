@@ -4,14 +4,10 @@ import { BigNumberish } from 'ethers';
 import { network } from 'hardhat';
 import {
   CustomTestToken,
-  DolomiteRegistryImplementation,
-  DolomiteRegistryImplementation__factory,
-  IDolomiteRegistry,
   IERC20,
   IIsolationModeTokenVaultV1,
   IsolationModeTraderProxy,
   IsolationModeTraderProxy__factory,
-  RegistryProxy__factory,
   TestAsyncProtocol,
   TestAsyncProtocolIsolationModeVaultFactory,
   TestAsyncProtocolIsolationModeVaultFactory__factory,
@@ -36,9 +32,14 @@ import {
   TestUpgradeableAsyncIsolationModeWrapperTrader__factory,
 } from '../../../src/types';
 import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
-import { NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkType } from '../../../src/utils/no-deps-constants';
-import { createAsyncIsolationModeUnwrapperTraderImpl, createAsyncIsolationModeWrapperTraderImpl, createRegistryProxy, DolomiteMargin } from '../dolomite';
-import { CoreProtocolSetupConfig, CoreProtocolType } from '../setup';
+import { NetworkType } from '../../../src/utils/no-deps-constants';
+import {
+  createAsyncIsolationModeUnwrapperTraderImpl,
+  createAsyncIsolationModeWrapperTraderImpl,
+  createRegistryProxy,
+  DolomiteMargin
+} from '../dolomite';
+import { CoreProtocolType } from '../setup';
 
 type TestIsolationModeTokenVault =
   TestIsolationModeTokenVaultV1
@@ -129,7 +130,6 @@ export async function createTestAsyncProtocolIsolationModeVaultFactory<T extends
     ],
   );
 }
-
 
 export async function createTestUpgradeableAsyncIsolationModeWrapperTrader<T extends NetworkType>(
   core: CoreProtocolType<T>,

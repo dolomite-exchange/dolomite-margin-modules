@@ -2155,7 +2155,7 @@ describe('IsolationModeTokenVaultV1', () => {
 
   describe('#testGetMarketInfos', () => {
     it('should work normally', async () => {
-      await userVault.testGetMarketInfos([], [0,0]);
+      await userVault.testGetMarketInfos([], [0, 0]);
     });
   });
 
@@ -2173,7 +2173,7 @@ describe('IsolationModeTokenVaultV1', () => {
         'BaseLiquidatorProxy: Market not found'
       );
     });
-  })
+  });
 
   describe('#testGetAccountValuesWithAdjustMarginPremium', async () => {
     it('should work normally', async () => {

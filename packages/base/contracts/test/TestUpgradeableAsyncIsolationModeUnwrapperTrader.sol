@@ -94,6 +94,32 @@ contract TestUpgradeableAsyncIsolationModeUnwrapperTrader is
         );
     }
 
+    function vaultCreateWithdrawalInfo(
+        bytes32 _key,
+        address _vault,
+        uint256 _accountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata _extraData
+    ) external {
+         assert(_getWithdrawalSlot(_key).vault == address(0));
+
+        WithdrawalInfo memory withdrawalInfo = WithdrawalInfo({
+            key: _key,
+            vault: _vault,
+            accountNumber: _accountNumber,
+            inputAmount: _inputAmount,
+            outputToken: _outputToken,
+            outputAmount: _minOutputAmount,
+            isLiquidation: _isLiquidation,
+            isRetryable: false,
+            extraData: _extraData
+        });
+        AsyncIsolationModeUnwrapperTraderImpl.setWithdrawalInfo(_getStorageSlot(), _key, withdrawalInfo);
+    }
+
     function handleCallbackFromWrapperBefore() external onlyWrapperCaller(msg.sender) {
         if (revertFlag == 1) {
             revert();

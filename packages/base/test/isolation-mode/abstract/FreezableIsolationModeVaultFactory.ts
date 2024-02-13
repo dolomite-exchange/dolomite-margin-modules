@@ -313,11 +313,18 @@ describe('FreezableIsolationModeVaultFactory', () => {
         accountNumber: defaultAccountNumber,
         isFrozen: true,
       });
-      
+
       expect(await factory.isVaultFrozen(userVault.address)).to.be.true;
-      expect(await factory.getPendingAmountByAccount(userVault.address, defaultAccountNumber, FreezeType.Deposit)).to.eq(ONE_BI);
+      expect(await factory.getPendingAmountByAccount(
+        userVault.address,
+        defaultAccountNumber,
+        FreezeType.Deposit
+      )).to.eq(ONE_BI);
       expect(await factory.getPendingAmountByVault(userVault.address, FreezeType.Deposit)).to.eq(ONE_BI);
-      expect(await factory.getOutputTokenByAccount(userVault.address, defaultAccountNumber)).to.eq(core.tokens.usdc.address);
+      expect(await factory.getOutputTokenByAccount(
+        userVault.address,
+        defaultAccountNumber
+      )).to.eq(core.tokens.usdc.address);
       expect(await factory.isVaultAccountFrozen(userVault.address, defaultAccountNumber)).to.be.true;
     });
 
@@ -329,6 +336,7 @@ describe('FreezableIsolationModeVaultFactory', () => {
         PLUS_ONE_BI,
         core.tokens.usdc.address
       );
+
       await factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(
         userVault.address,
         defaultAccountNumber,
@@ -336,9 +344,13 @@ describe('FreezableIsolationModeVaultFactory', () => {
         MINUS_ONE_BI,
         core.tokens.usdc.address
       );
-      
+
       expect(await factory.isVaultFrozen(userVault.address)).to.be.false;
-      expect(await factory.getPendingAmountByAccount(userVault.address, defaultAccountNumber, FreezeType.Deposit)).to.eq(ZERO_BI);
+      expect(await factory.getPendingAmountByAccount(
+        userVault.address,
+        defaultAccountNumber,
+        FreezeType.Deposit
+      )).to.eq(ZERO_BI);
       expect(await factory.getPendingAmountByVault(userVault.address, FreezeType.Deposit)).to.eq(ZERO_BI);
       expect(await factory.getOutputTokenByAccount(userVault.address, defaultAccountNumber)).to.eq(ADDRESS_ZERO);
       expect(await factory.isVaultAccountFrozen(userVault.address, defaultAccountNumber)).to.be.false;
@@ -357,11 +369,18 @@ describe('FreezableIsolationModeVaultFactory', () => {
         accountNumber: defaultAccountNumber,
         isFrozen: true,
       });
-      
+
       expect(await factory.isVaultFrozen(userVault.address)).to.be.true;
-      expect(await factory.getPendingAmountByAccount(userVault.address, defaultAccountNumber, FreezeType.Withdrawal)).to.eq(ONE_BI);
+      expect(await factory.getPendingAmountByAccount(
+        userVault.address,
+        defaultAccountNumber,
+        FreezeType.Withdrawal
+      )).to.eq(ONE_BI);
       expect(await factory.getPendingAmountByVault(userVault.address, FreezeType.Withdrawal)).to.eq(ONE_BI);
-      expect(await factory.getOutputTokenByAccount(userVault.address, defaultAccountNumber)).to.eq(core.tokens.usdc.address);
+      expect(await factory.getOutputTokenByAccount(
+        userVault.address,
+        defaultAccountNumber
+      )).to.eq(core.tokens.usdc.address);
       expect(await factory.isVaultAccountFrozen(userVault.address, defaultAccountNumber)).to.be.true;
     });
 
@@ -380,9 +399,13 @@ describe('FreezableIsolationModeVaultFactory', () => {
         MINUS_ONE_BI,
         core.tokens.usdc.address
       );
-      
+
       expect(await factory.isVaultFrozen(userVault.address)).to.be.false;
-      expect(await factory.getPendingAmountByAccount(userVault.address, defaultAccountNumber, FreezeType.Deposit)).to.eq(ZERO_BI);
+      expect(await factory.getPendingAmountByAccount(
+        userVault.address,
+        defaultAccountNumber,
+        FreezeType.Deposit
+      )).to.eq(ZERO_BI);
       expect(await factory.getPendingAmountByVault(userVault.address, FreezeType.Deposit)).to.eq(ZERO_BI);
       expect(await factory.getOutputTokenByAccount(userVault.address, defaultAccountNumber)).to.eq(ADDRESS_ZERO);
       expect(await factory.isVaultAccountFrozen(userVault.address, defaultAccountNumber)).to.be.false;

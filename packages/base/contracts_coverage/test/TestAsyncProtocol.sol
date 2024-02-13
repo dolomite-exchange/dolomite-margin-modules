@@ -34,6 +34,9 @@ import { ITestAsyncProtocol } from './ITestAsyncProtocol.sol';
  */
 contract TestAsyncProtocol is ERC20, ITestAsyncProtocol {
 
+    event DepositCreated(bytes32 key);
+    event WithdrawalCreated(bytes32 key);
+
     // ============ Constants ============
 
     bytes32 private constant _FILE = "TestAsyncProtocol";
@@ -63,6 +66,7 @@ contract TestAsyncProtocol is ERC20, ITestAsyncProtocol {
             minAmount: _amount,
             amount: 0
         });
+        emit DepositCreated(key);
 
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
         return key;
@@ -103,6 +107,7 @@ contract TestAsyncProtocol is ERC20, ITestAsyncProtocol {
             amountIn: _amount,
             amountOut: 0
         });
+        emit WithdrawalCreated(key);
         return key;
     }
 
@@ -115,6 +120,20 @@ contract TestAsyncProtocol is ERC20, ITestAsyncProtocol {
 
         withdrawal.amountOut = _amount == 0 ? withdrawal.amountIn : _amount;
         IERC20(withdrawal.token).transfer(withdrawal.to, withdrawal.amountOut);
+        ITestAsyncProtocolCallbackReceiver(withdrawal.to).afterWithdrawalExecution(_key, withdrawal);
+    }
+
+    function executeWithdrawalWithDifferentToken(
+        bytes32 _key,
+        uint256 _amount,
+        address _token
+    ) external {
+        Withdrawal memory withdrawal = withdrawals[_key];
+        delete withdrawals[_key];
+
+        withdrawal.amountOut = _amount == 0 ? withdrawal.amountIn : _amount;
+        IERC20(withdrawal.token).transfer(withdrawal.to, withdrawal.amountOut);
+        withdrawal.token = _token;
         ITestAsyncProtocolCallbackReceiver(withdrawal.to).afterWithdrawalExecution(_key, withdrawal);
     }
 

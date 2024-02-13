@@ -34,6 +34,9 @@ import { ITestAsyncProtocol } from './ITestAsyncProtocol.sol';
  */
 contract TestAsyncProtocol is ERC20, ITestAsyncProtocol {
 
+    event DepositCreated(bytes32 key);
+    event WithdrawalCreated(bytes32 key);
+
     // ============ Constants ============
 
     bytes32 private constant _FILE = "TestAsyncProtocol";
@@ -63,6 +66,7 @@ contract TestAsyncProtocol is ERC20, ITestAsyncProtocol {
             minAmount: _amount,
             amount: 0
         });
+        emit DepositCreated(key);
 
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
         return key;
@@ -103,6 +107,7 @@ contract TestAsyncProtocol is ERC20, ITestAsyncProtocol {
             amountIn: _amount,
             amountOut: 0
         });
+        emit WithdrawalCreated(key);
         return key;
     }
 

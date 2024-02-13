@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { MinimalERC20, TestChainHelperLib, TestChainHelperLib__factory, TestMinimalERC20, TestMinimalERC20__factory } from '../../src/types';
+import { TestMinimalERC20, TestMinimalERC20__factory } from '../../src/types';
 import { createContractWithAbi } from '../../src/utils/dolomite-utils';
-import { ADDRESS_ZERO, Network, ZERO_BI } from '../../src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network } from '../../src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from '../utils';
 import { CoreProtocolArbitrumOne } from '../utils/core-protocol';
 import { getDefaultCoreProtocolConfig, setupCoreProtocol } from '../utils/setup';
@@ -70,7 +70,7 @@ describe('MinimalERC20', () => {
         token.burn(core.hhUser1.address, 100),
         'ERC20: Burn amount exceeds balance'
       );
-    })
+    });
   });
 
   describe('#transfer', () => {
@@ -116,7 +116,7 @@ describe('MinimalERC20', () => {
         token.connect(zeroImpersonator).approve(core.hhUser2.address, 150),
         'ERC20: Approve from the zero address'
       );
-    })
+    });
 
     it('should fail if to zero address', async () => {
       await expectThrow(

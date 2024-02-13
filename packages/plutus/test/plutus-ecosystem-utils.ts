@@ -5,7 +5,7 @@ import {
   createContractWithLibrary,
 } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
-import { getTokenVaultLibrary } from '@dolomite-exchange/modules-deployment/src/utils/deploy-utils'; // @follow-up Why can't i use base package
+import { getTokenVaultLibrary } from '@dolomite-exchange/modules-deployment/src/utils/deploy-utils';
 import {
   getDolomiteCompatibleWhitelistForPlutusDAOConstructorParams,
   getPlutusVaultGLPIsolationModeUnwrapperTraderV1ConstructorParams,

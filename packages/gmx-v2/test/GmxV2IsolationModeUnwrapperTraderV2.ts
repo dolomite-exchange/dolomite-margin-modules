@@ -1006,7 +1006,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
       await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
-      let withdrawalInfo = getWithdrawalObject(
+      const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
         ONE_BI,
@@ -1078,7 +1078,7 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       const withdrawalExecutor = await impersonate(core.gmxEcosystemV2!.gmxWithdrawalHandler.address, true);
       const unwrapperImpersonate = await impersonate(unwrapper.address, true);
       await setupNativeUSDCBalance(core, unwrapperImpersonate, 100e6, core.gmxEcosystem!.esGmxDistributorForStakedGlp);
-      let withdrawalInfo = getWithdrawalObject(
+      const withdrawalInfo = getWithdrawalObject(
         unwrapper.address,
         underlyingToken.address,
         ONE_BI,
