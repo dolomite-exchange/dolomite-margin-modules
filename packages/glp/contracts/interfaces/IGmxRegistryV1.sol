@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 
+import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGLPIsolationModeVaultFactory } from "./IGLPIsolationModeVaultFactory.sol";
 import { IGLPManager } from "./IGLPManager.sol";
@@ -29,7 +30,6 @@ import { IGMXIsolationModeVaultFactory } from "./IGMXIsolationModeVaultFactory.s
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./IGmxRewardRouterV2.sol";
 import { IGmxVault } from "./IGmxVault.sol";
-import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
 
 
 /**

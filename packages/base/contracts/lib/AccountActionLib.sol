@@ -21,11 +21,11 @@
 pragma solidity ^0.8.9;
 
 import { AccountBalanceLib } from "./AccountBalanceLib.sol";
+import { ChainHelperLib } from "./ChainHelperLib.sol";
+import { IExpiry } from "../interfaces/IExpiry.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { IExpiry } from "../interfaces/IExpiry.sol";
-import { ChainHelperLib } from "./ChainHelperLib.sol";
 
 
 /**

@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendleRegistry } from "./IPendleRegistry.sol";
 import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
+import { IPendleRegistry } from "./IPendleRegistry.sol";
 
 
 /**

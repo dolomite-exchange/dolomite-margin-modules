@@ -20,18 +20,10 @@
 
 pragma solidity ^0.8.9;
 
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
-import { Require } from "../protocol/lib/Require.sol";
-import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IIsolationModeFreezableLiquidatorProxy } from "../isolation-mode/interfaces/IIsolationModeFreezableLiquidatorProxy.sol";
-import { IIsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
-import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
-import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
+ // solhint-disable max-line-length
 import { IsolationModeFreezableLiquidatorProxy } from "../liquidators/IsolationModeFreezableLiquidatorProxy.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+ // solhint-enable max-line-length
 
 
 /**

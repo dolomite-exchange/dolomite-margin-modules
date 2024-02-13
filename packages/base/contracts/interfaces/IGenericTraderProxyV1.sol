@@ -20,8 +20,8 @@
 pragma solidity ^0.8.9;
 
 import { IGenericTraderBase } from "./IGenericTraderBase.sol";
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 
 
 

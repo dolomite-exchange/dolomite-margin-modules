@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
 import { AsyncIsolationModeTraderBase } from "../isolation-mode/abstract/AsyncIsolationModeTraderBase.sol";
-import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
 
 
 /**

@@ -20,13 +20,15 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "../protocol/lib/Require.sol";
-import { UpgradeableAsyncIsolationModeWrapperTrader } from "../isolation-mode/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol";
-import { AsyncIsolationModeTraderBase } from "../isolation-mode/abstract/AsyncIsolationModeTraderBase.sol";
-import { AsyncIsolationModeWrapperTraderImpl } from "../isolation-mode/abstract/impl/AsyncIsolationModeWrapperTraderImpl.sol";
-import { ITestAsyncProtocolCallbackReceiver } from "./ITestAsyncProtocolCallbackReceiver.sol";
-import { ITestAsyncProtocol } from "./ITestAsyncProtocol.sol";
+// solhint-disable max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ITestAsyncProtocol } from "./ITestAsyncProtocol.sol";
+import { ITestAsyncProtocolCallbackReceiver } from "./ITestAsyncProtocolCallbackReceiver.sol";
+import { AsyncIsolationModeTraderBase } from "../isolation-mode/abstract/AsyncIsolationModeTraderBase.sol";
+import { UpgradeableAsyncIsolationModeWrapperTrader } from "../isolation-mode/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol";
+import { AsyncIsolationModeWrapperTraderImpl } from "../isolation-mode/abstract/impl/AsyncIsolationModeWrapperTraderImpl.sol";
+import { Require } from "../protocol/lib/Require.sol";
+// solhint-enable max-line-length
 
 
 /**

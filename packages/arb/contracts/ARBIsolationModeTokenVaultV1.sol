@@ -20,14 +20,14 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IARB } from "./interfaces/IARB.sol";
 import { IARBIsolationModeTokenVaultV1 } from "./interfaces/IARBIsolationModeTokenVaultV1.sol";
 import { IARBIsolationModeVaultFactory } from "./interfaces/IARBIsolationModeVaultFactory.sol";
 import { IARBRegistry } from "./interfaces/IARBRegistry.sol";
-import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
 
 
 /**

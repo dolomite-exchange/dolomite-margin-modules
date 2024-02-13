@@ -21,8 +21,8 @@ pragma solidity ^0.8.9;
 
 
 /**
- * @title IDolomiteOracleSentinel
- * @author Dolomite
+ * @title   IDolomiteOracleSentinel
+ * @author  Dolomite
  *
  * Interface that Dolomite pings to check if the Blockchain or L2 is alive, if liquidations should be processed, and if
  * markets should are in size-down only mode.
@@ -41,7 +41,7 @@ interface IDolomiteOracleSentinel {
      * @dev Allows the owner to set the grace period duration, which specifies how long the system will disallow
      *      liquidations after sequencer is back online. Only callable by the owner.
      *
-     * @param _gracePeriod  The new duration of the grace period
+     * @param  _gracePeriod  The new duration of the grace period
      */
     function ownerSetGracePeriod(
         uint256 _gracePeriod

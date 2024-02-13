@@ -21,9 +21,9 @@
 pragma solidity ^0.8.9;
 
 import { ProxyContractHelpers } from "./ProxyContractHelpers.sol";
+import { IOnlyDolomiteMargin } from "../interfaces/IOnlyDolomiteMargin.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { IOnlyDolomiteMargin } from "../interfaces/IOnlyDolomiteMargin.sol";
 
 
 /**

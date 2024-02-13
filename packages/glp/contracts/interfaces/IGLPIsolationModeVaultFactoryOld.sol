@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IIsolationModeVaultFactoryOld } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactoryOld.sol"; // solhint-disable-line max-line-length
 import { IGmxRegistryV1 } from "./IGmxRegistryV1.sol";
-import { IIsolationModeVaultFactoryOld } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactoryOld.sol";
 
 
 /**

@@ -20,18 +20,17 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
+import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
+import { IsolationModeTokenVaultV1WithPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol";
+import { DolomiteMarginMath } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DolomiteMarginMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { DolomiteMarginMath } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DolomiteMarginMath.sol";
-import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IPlutusVaultGLP } from "./interfaces/IPlutusVaultGLP.sol";
 import { IPlutusVaultGLPFarm } from "./interfaces/IPlutusVaultGLPFarm.sol";
 import { IPlutusVaultGLPIsolationModeTokenVaultV1 } from "./interfaces/IPlutusVaultGLPIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 import { IPlutusVaultGLPIsolationModeVaultFactory } from "./interfaces/IPlutusVaultGLPIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPlutusVaultRegistry } from "./interfaces/IPlutusVaultRegistry.sol";
-import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
-import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
-import { IsolationModeTokenVaultV1WithPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
 
 /**

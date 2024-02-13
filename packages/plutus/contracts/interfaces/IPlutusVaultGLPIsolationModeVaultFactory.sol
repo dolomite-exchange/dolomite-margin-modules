@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IPlutusVaultRegistry } from "./IPlutusVaultRegistry.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { IPlutusVaultRegistry } from "./IPlutusVaultRegistry.sol";
 
 
 /**

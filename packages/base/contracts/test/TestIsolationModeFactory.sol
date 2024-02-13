@@ -22,9 +22,9 @@ pragma solidity ^0.8.9;
 
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IIsolationModeUpgradeableProxy } from "../isolation-mode/interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IsolationModeUpgradeableProxy } from "../isolation-mode/IsolationModeUpgradeableProxy.sol";
 import { IsolationModeVaultFactory } from "../isolation-mode/abstract/IsolationModeVaultFactory.sol";
+import { IIsolationModeUpgradeableProxy } from "../isolation-mode/interfaces/IIsolationModeUpgradeableProxy.sol";
 
 
 /**

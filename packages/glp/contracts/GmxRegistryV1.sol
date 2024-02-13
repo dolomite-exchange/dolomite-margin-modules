@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { BaseRegistry } from "@dolomite-exchange/modules-base/contracts/general/BaseRegistry.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGLPIsolationModeVaultFactory } from "./interfaces/IGLPIsolationModeVaultFactory.sol";
 import { IGLPManager } from "./interfaces/IGLPManager.sol";
 import { IGLPRewardsRouterV2 } from "./interfaces/IGLPRewardsRouterV2.sol";

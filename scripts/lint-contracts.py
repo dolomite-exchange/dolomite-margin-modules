@@ -161,7 +161,7 @@ def main():
     pattern = "*.sol"
 
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    contracts_path = dir_path + "/contracts"
+    contracts_path = dir_path + "/packages/" + sys.argv[2] + "/contracts"
 
     for dir, _, _ in os.walk(contracts_path):
         files.extend(glob.glob(os.path.join(dir, pattern)))

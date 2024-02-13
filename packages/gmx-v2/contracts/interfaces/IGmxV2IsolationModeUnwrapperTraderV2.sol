@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IGmxV2Registry } from "./IGmxV2Registry.sol";
 import { IGmxWithdrawalCallbackReceiver } from "./IGmxWithdrawalCallbackReceiver.sol";
-import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 
 /**
  * @title   IGmxV2IsolationModeUnwrapperTraderV2

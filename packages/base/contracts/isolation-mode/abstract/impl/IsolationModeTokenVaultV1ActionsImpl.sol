@@ -19,19 +19,19 @@
 */
 pragma solidity ^0.8.9;
 
+import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
+import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
+import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
+import { InterestIndexLib } from "../../../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
-import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
-import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
-import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
-import { InterestIndexLib } from "../../../lib/InterestIndexLib.sol";
 
 
 /**
