@@ -12,7 +12,7 @@ describe('DolomiteMarginVersionWrapperLib_ZkEvm', () => {
   let snapshotId: string;
 
   let core: CoreProtocolPolygonZkEvm;
-  let versionWrapper: TestDolomiteMarginVersionWrapperLib
+  let versionWrapper: TestDolomiteMarginVersionWrapperLib;
 
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.PolygonZkEvm));
@@ -35,7 +35,7 @@ describe('DolomiteMarginVersionWrapperLib_ZkEvm', () => {
       const spread = await versionWrapper.getVersionedLiquidationSpreadForPair(
         core.dolomiteMargin.address,
         Network.PolygonZkEvm,
-        { owner: core.hhUser1.address, number: ZERO_BI},
+        { owner: core.hhUser1.address, number: ZERO_BI },
         core.marketIds.weth,
         core.marketIds.usdc
       );
@@ -46,7 +46,7 @@ describe('DolomiteMarginVersionWrapperLib_ZkEvm', () => {
       const spread = await versionWrapper.getVersionedLiquidationSpreadForPair(
         core.dolomiteMargin.address,
         Network.ArbitrumOne,
-        { owner: core.hhUser1.address, number: ZERO_BI},
+        { owner: core.hhUser1.address, number: ZERO_BI },
         core.marketIds.weth,
         core.marketIds.usdc
       );
@@ -59,7 +59,7 @@ describe('DolomiteMarginVersionWrapperLib_ZkEvm', () => {
       await versionWrapper.getVersionedSpreadAdjustedPrices(
         core.expiry.address,
         Network.PolygonZkEvm,
-        { owner: core.hhUser1.address, number: ZERO_BI},
+        { owner: core.hhUser1.address, number: ZERO_BI },
         core.marketIds.weth,
         core.marketIds.usdc,
         NO_EXPIRY
@@ -71,7 +71,7 @@ describe('DolomiteMarginVersionWrapperLib_ZkEvm', () => {
         versionWrapper.getVersionedSpreadAdjustedPrices(
           core.expiry.address,
           Network.ArbitrumOne,
-          { owner: core.hhUser1.address, number: ZERO_BI},
+          { owner: core.hhUser1.address, number: ZERO_BI },
           core.marketIds.weth,
           core.marketIds.usdc,
           NO_EXPIRY
