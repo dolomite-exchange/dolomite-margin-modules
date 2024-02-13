@@ -21,11 +21,11 @@
 pragma solidity ^0.8.9;
 
 import { TestSimpleIsolationModeVaultFactory } from "./TestSimpleIsolationModeVaultFactory.sol";
-import { Require } from "../protocol/lib/Require.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
+import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
 
 /**
@@ -49,7 +49,9 @@ contract TestIsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1
         return TestSimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
     }
 
-    function testRequireVaultAccountNotFrozen(uint256 _accountNumber) external view requireVaultAccountNotFrozen(_accountNumber) {}
+    function testRequireVaultAccountNotFrozen(
+        uint256 _accountNumber
+    ) external view requireVaultAccountNotFrozen(_accountNumber) {}
 
     function _openBorrowPosition(
         uint256 _fromAccountNumber,

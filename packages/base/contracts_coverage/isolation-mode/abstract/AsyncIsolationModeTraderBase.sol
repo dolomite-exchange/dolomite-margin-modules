@@ -22,12 +22,12 @@ pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IWETH } from "../../protocol/interfaces/IWETH.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../../helpers/OnlyDolomiteMarginForUpgradeable.sol";
-import { IAsyncIsolationModeTraderBase } from "../interfaces/IAsyncIsolationModeTraderBase.sol";
 import { IEventEmitterRegistry } from "../../interfaces/IEventEmitterRegistry.sol";
 import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
+import { IWETH } from "../../protocol/interfaces/IWETH.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IAsyncIsolationModeTraderBase } from "../interfaces/IAsyncIsolationModeTraderBase.sol";
 
 
 /**

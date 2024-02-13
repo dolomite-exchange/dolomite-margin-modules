@@ -22,10 +22,10 @@ pragma solidity ^0.8.9;
 
 import { TestIsolationModeFactory } from "./TestIsolationModeFactory.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1 } from "../isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
+import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 

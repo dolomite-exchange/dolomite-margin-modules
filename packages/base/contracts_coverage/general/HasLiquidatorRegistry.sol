@@ -19,8 +19,8 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "../protocol/lib/Require.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
 
 /**

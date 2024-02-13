@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { TypesLib } from "../protocol/lib/TypesLib.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IExpiry } from "../interfaces/IExpiry.sol";
 import { AccountActionLib } from "../lib/AccountActionLib.sol";
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
+import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
+import { TypesLib } from "../protocol/lib/TypesLib.sol";
 
 
 /**

@@ -59,13 +59,17 @@ import { GenericEventEmissionType } from '@dolomite-exchange/dolomite-margin/dis
 import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 import { parseEther } from 'ethers/lib/utils';
 import { getLiquidateIsolationModeZapPath, getUnwrapZapParams } from '../../utils/zap-utils';
+import { AccountStruct } from 'packages/base/src/utils/constants';
+import { liquidateV4WithZapParam } from '../../utils/liquidation-utils';
 
 const defaultAccountNumber = '0';
 const borrowAccountNumber = '123';
+const otherAccountNumber = '124';
 const price = BigNumber.from('10000000000000000');
 const DEFAULT_KEY = '0xf9279e2a8683e34971784a3e2a24c23022cc3d7f78437d025b0cf87ebc18bee1';
 const RANDOM_KEY = '0x1234567a8683e34971784a3e2a24c23022cc3d7f78437d025b0cf87ebc18bee1';
 const amountWei = BigNumber.from('200000000000000000000'); // $200
+const borrowAmount = amountWei.mul(100).div(121);
 const otherAmountWei = BigNumber.from('10000000'); // $10
 const bigOtherAmountWei = BigNumber.from('100000000000'); // $100,000
 const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
@@ -83,11 +87,6 @@ enum UnwrapperTradeType {
   FromWithdrawal = 0,
   FromDeposit = 1,
 }
-
-const PLUS_ONE_BI = {
-  sign: true,
-  value: ONE_BI,
-};
 
 const EXECUTION_FEE = ONE_ETH_BI.div(4);
 
@@ -110,6 +109,8 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
   let asyncProtocol: TestAsyncProtocol;
 
   let solidUser: SignerWithAddress;
+  let solidAccount: AccountStruct;
+  let liquidAccount: AccountStruct;
   let otherToken1: CustomTestToken;
   let otherToken2: CustomTestToken;
   let otherMarketId1: BigNumber;
@@ -212,6 +213,8 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
 
     impersonatedVault = await impersonate(userVault.address, true);
     doloMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
+    solidAccount = { owner: core.hhUser5.address, number: defaultAccountNumber };
+    liquidAccount = { owner: userVault.address, number: borrowAccountNumber };
 
     snapshotId = await snapshot();
   });
@@ -221,7 +224,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
   });
 
   describe('#initiateUnwrappingForLiquidation', () => {
-    it('should work normally', async () => {
+    async function setupBalances() {
       await userVault.transferIntoPositionWithOtherToken(
         defaultAccountNumber,
         borrowAccountNumber,
@@ -249,13 +252,12 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig
       );
-      let key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.DepositCreated()))[0].args.key;
+      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.DepositCreated()))[0].args.key;
       await asyncProtocol.executeDeposit(key, 0);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
 
-      const borrowAmount = amountWei.mul(100).div(121);
       await userVault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
         defaultAccountNumber,
@@ -272,7 +274,10 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         ZERO_BI.sub(borrowAmount)
       );
       await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId2, borrowAmount);
+    }
 
+    it('should work normally', async () => {
+      await setupBalances();
       await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
       const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
       await liquidatorProxy.prepareForLiquidation({
@@ -284,62 +289,13 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
       });
-      key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
-      await asyncProtocol.executeWithdrawal(key, 0);
+      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      const result = await asyncProtocol.executeWithdrawal(key, 0);
+      await expectEvent(eventEmitter, result, 'AsyncWithdrawalExecuted', {});
     });
 
     it('should work normally for underwater account that must be liquidated', async () => {
-      await userVault.transferIntoPositionWithOtherToken(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        BalanceCheckFlag.Both
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        underlyingMarketId,
-        amountWei,
-        tokenWrapper,
-        ZERO_BI
-      );
-      await userVault.swapExactInputForOutput(
-        borrowAccountNumber,
-        initiateWrappingParams.marketPath,
-        initiateWrappingParams.amountIn,
-        initiateWrappingParams.minAmountOut,
-        initiateWrappingParams.traderParams,
-        initiateWrappingParams.makerAccounts,
-        initiateWrappingParams.userConfig
-      );
-      let key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.DepositCreated()))[0].args.key;
-      await asyncProtocol.executeDeposit(key, 0);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-
-      const borrowAmount = amountWei.mul(100).div(121);
-      await userVault.transferFromPositionWithOtherToken(
-        borrowAccountNumber,
-        defaultAccountNumber,
-        otherMarketId2,
-        borrowAmount,
-        BalanceCheckFlag.To
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(
-        core,
-        userVault.address,
-        borrowAccountNumber,
-        otherMarketId2,
-        ZERO_BI.sub(borrowAmount)
-      );
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId2, borrowAmount);
-
+      await setupBalances();
       await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
       await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(107).div(100));
       const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
@@ -352,9 +308,10 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
       });
-      key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       // Add a little bit to the borrow amount to cover liquidation fee
-      await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      const result = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {});
 
       const allKeys = [key];
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
@@ -371,72 +328,16 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         core
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
-      await core.liquidatorProxyV4
-        .connect(core.hhUser5)
-        .liquidate(
-          { owner: core.hhUser5.address, number: defaultAccountNumber },
-          { owner: userVault.address, number: borrowAccountNumber },
-          zapParam.marketIdsPath,
-          MAX_UINT_256_BI,
-          MAX_UINT_256_BI,
-          zapParam.tradersPath,
-          zapParam.makerAccounts,
-          NO_EXPIRY
-        );
+      await liquidateV4WithZapParam(
+        core,
+        solidAccount,
+        liquidAccount,
+        zapParam
+      );
     });
 
     it('should work when severely underwater', async () => {
-      await userVault.transferIntoPositionWithOtherToken(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        BalanceCheckFlag.Both
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        underlyingMarketId,
-        amountWei,
-        tokenWrapper,
-        ZERO_BI
-      );
-      await userVault.swapExactInputForOutput(
-        borrowAccountNumber,
-        initiateWrappingParams.marketPath,
-        initiateWrappingParams.amountIn,
-        initiateWrappingParams.minAmountOut,
-        initiateWrappingParams.traderParams,
-        initiateWrappingParams.makerAccounts,
-        initiateWrappingParams.userConfig
-      );
-      let key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.DepositCreated()))[0].args.key;
-      await asyncProtocol.executeDeposit(key, 0);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-
-      const borrowAmount = amountWei.mul(100).div(121);
-      await userVault.transferFromPositionWithOtherToken(
-        borrowAccountNumber,
-        defaultAccountNumber,
-        otherMarketId2,
-        borrowAmount,
-        BalanceCheckFlag.To
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(
-        core,
-        userVault.address,
-        borrowAccountNumber,
-        otherMarketId2,
-        ZERO_BI.sub(borrowAmount)
-      );
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId2, borrowAmount);
-
+      await setupBalances();
       await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
       // Push severely underwater
       await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(150).div(100));
@@ -450,9 +351,10 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
       });
-      key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       // Add a little bit to the borrow amount to cover liquidation fee
-      await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      const result = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {});
 
       const allKeys = [key];
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
@@ -469,88 +371,27 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         core
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
-      await core.liquidatorProxyV4
-        .connect(core.hhUser5)
-        .liquidate(
-          { owner: core.hhUser5.address, number: defaultAccountNumber },
-          { owner: userVault.address, number: borrowAccountNumber },
-          zapParam.marketIdsPath,
-          MAX_UINT_256_BI,
-          MAX_UINT_256_BI,
-          zapParam.tradersPath,
-          zapParam.makerAccounts,
-          NO_EXPIRY
-        );
+      await liquidateV4WithZapParam(
+        core,
+        solidAccount,
+        liquidAccount,
+        zapParam
+      );
     });
 
     it('should fail if attempting to liquidate other subaccount', async () => {
-      await userVault.transferIntoPositionWithOtherToken(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        BalanceCheckFlag.Both
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        underlyingMarketId,
-        amountWei,
-        tokenWrapper,
-        ZERO_BI
-      );
-      await userVault.swapExactInputForOutput(
-        borrowAccountNumber,
-        initiateWrappingParams.marketPath,
-        initiateWrappingParams.amountIn,
-        initiateWrappingParams.minAmountOut,
-        initiateWrappingParams.traderParams,
-        initiateWrappingParams.makerAccounts,
-        initiateWrappingParams.userConfig
-      );
-      let key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.DepositCreated()))[0].args.key;
-      await asyncProtocol.executeDeposit(key, 0);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-
-      const borrowAmount = amountWei.mul(100).div(121);
-      await userVault.transferFromPositionWithOtherToken(
-        borrowAccountNumber,
-        defaultAccountNumber,
-        otherMarketId2,
-        borrowAmount,
-        BalanceCheckFlag.To
-      );
-      const otherAccountNumber2 = 124;
+      await setupBalances();
+      // Deposit into second account
       await asyncProtocol.addBalance(core.hhUser1.address, amountWei);
       await asyncProtocol.connect(core.hhUser1).approve(userVault.address, amountWei);
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber2, amountWei);
+      await userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, otherAccountNumber, amountWei);
       await userVault.transferFromPositionWithOtherToken(
-        otherAccountNumber2,
+        otherAccountNumber,
         defaultAccountNumber,
         otherMarketId2,
         borrowAmount,
         BalanceCheckFlag.To
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(
-        core,
-        userVault.address,
-        borrowAccountNumber,
-        otherMarketId2,
-        ZERO_BI.sub(borrowAmount)
-      );
-      await expectProtocolBalance(
-        core,
-        core.hhUser1.address,
-        defaultAccountNumber,
-        otherMarketId2,
-        borrowAmount.mul(2)
       );
 
       await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
@@ -565,14 +406,15 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
       });
-      key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      let key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       // Add a little bit to the borrow amount to cover liquidation fee
-      await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      const result = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {});
 
       //
       await liquidatorProxy.prepareForLiquidation({
         extraData,
-        liquidAccount: { owner: userVault.address, number: otherAccountNumber2 },
+        liquidAccount: { owner: userVault.address, number: otherAccountNumber },
         freezableMarketId: underlyingMarketId,
         inputTokenAmount: amountWei,
         outputMarketId: otherMarketId2,
@@ -580,7 +422,8 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         expirationTimestamp: NO_EXPIRY,
       });
       key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[1].args.key;
-      await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      const result2 = await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      await expectEvent(eventEmitter, result2, 'AsyncWithdrawalFailed', {});
 
       const allKeys = [key];
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
@@ -598,76 +441,18 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
       await expectThrow(
-        core.liquidatorProxyV4
-          .connect(core.hhUser5)
-          .liquidate(
-            { owner: core.hhUser5.address, number: defaultAccountNumber },
-            { owner: userVault.address, number: borrowAccountNumber },
-            zapParam.marketIdsPath,
-            MAX_UINT_256_BI,
-            MAX_UINT_256_BI,
-            zapParam.tradersPath,
-            zapParam.makerAccounts,
-            NO_EXPIRY
-          ),
+        liquidateV4WithZapParam(
+          core,
+          solidAccount,
+          liquidAccount,
+          zapParam
+        ),
         'AsyncIsolationModeUnwrapperImpl: Cant liquidate other subaccount'
       );
     });
 
-    it('should fail if insufficient balance', async () => {});
-
     it('should fail if withdrawal keys are not retryable', async () => {
-      await userVault.transferIntoPositionWithOtherToken(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        BalanceCheckFlag.Both
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        underlyingMarketId,
-        amountWei,
-        tokenWrapper,
-        ZERO_BI
-      );
-      await userVault.swapExactInputForOutput(
-        borrowAccountNumber,
-        initiateWrappingParams.marketPath,
-        initiateWrappingParams.amountIn,
-        initiateWrappingParams.minAmountOut,
-        initiateWrappingParams.traderParams,
-        initiateWrappingParams.makerAccounts,
-        initiateWrappingParams.userConfig
-      );
-      let key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.DepositCreated()))[0].args.key;
-      await asyncProtocol.executeDeposit(key, 0);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-
-      const borrowAmount = amountWei.mul(100).div(121);
-      await userVault.transferFromPositionWithOtherToken(
-        borrowAccountNumber,
-        defaultAccountNumber,
-        otherMarketId2,
-        borrowAmount,
-        BalanceCheckFlag.To
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(
-        core,
-        userVault.address,
-        borrowAccountNumber,
-        otherMarketId2,
-        ZERO_BI.sub(borrowAmount)
-      );
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId2, borrowAmount);
-
+      await setupBalances();
       await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
       await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(107).div(100));
       const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
@@ -680,9 +465,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
       });
-      key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
-      // Add a little bit to the borrow amount to cover liquidation fee
-      // await asyncProtocol.executeWithdrawal(key, borrowAmount.add(parseEther('4')));
+      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
 
       const allKeys = [key];
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
@@ -700,74 +483,18 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
       await expectThrow(
-        core.liquidatorProxyV4
-          .connect(core.hhUser5)
-          .liquidate(
-            { owner: core.hhUser5.address, number: defaultAccountNumber },
-            { owner: userVault.address, number: borrowAccountNumber },
-            zapParam.marketIdsPath,
-            MAX_UINT_256_BI,
-            MAX_UINT_256_BI,
-            zapParam.tradersPath,
-            zapParam.makerAccounts,
-            NO_EXPIRY
-          ),
+        liquidateV4WithZapParam(
+          core,
+          solidAccount,
+          liquidAccount,
+          zapParam
+        ),
         'AsyncIsolationModeUnwrapperImpl: All trades must be retryable'
       );
     });
 
     it('should fail if output amount is insufficient', async () => {
-      await userVault.transferIntoPositionWithOtherToken(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        BalanceCheckFlag.Both
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        underlyingMarketId,
-        amountWei,
-        tokenWrapper,
-        ZERO_BI
-      );
-      await userVault.swapExactInputForOutput(
-        borrowAccountNumber,
-        initiateWrappingParams.marketPath,
-        initiateWrappingParams.amountIn,
-        initiateWrappingParams.minAmountOut,
-        initiateWrappingParams.traderParams,
-        initiateWrappingParams.makerAccounts,
-        initiateWrappingParams.userConfig
-      );
-      let key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.DepositCreated()))[0].args.key;
-      await asyncProtocol.executeDeposit(key, 0);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-
-      const borrowAmount = amountWei.mul(100).div(121);
-      await userVault.transferFromPositionWithOtherToken(
-        borrowAccountNumber,
-        defaultAccountNumber,
-        otherMarketId2,
-        borrowAmount,
-        BalanceCheckFlag.To
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(
-        core,
-        userVault.address,
-        borrowAccountNumber,
-        otherMarketId2,
-        ZERO_BI.sub(borrowAmount)
-      );
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId2, borrowAmount);
-
+      await setupBalances();
       await core.testEcosystem!.testPriceOracle.setPrice(factory.address, price.mul(95).div(100));
       await core.testEcosystem!.testPriceOracle.setPrice(otherToken2.address, price.mul(107).div(100));
       const extraData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [parseEther('.5'), ONE_BI]);
@@ -780,8 +507,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
       });
-      key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
-      await asyncProtocol.executeWithdrawal(key, amountWei.div(2));
+      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      const result = await asyncProtocol.executeWithdrawal(key, amountWei.div(2));
+      await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {});
 
       const allKeys = [key];
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
@@ -800,72 +528,17 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       zapParam.tradersPath[0].tradeData = liquidationData;
       // Throws with insufficient output amount
       await expectThrow(
-        core.liquidatorProxyV4
-          .connect(core.hhUser5)
-          .liquidate(
-            { owner: core.hhUser5.address, number: defaultAccountNumber },
-            { owner: userVault.address, number: borrowAccountNumber },
-            zapParam.marketIdsPath,
-            MAX_UINT_256_BI,
-            MAX_UINT_256_BI,
-            zapParam.tradersPath,
-            zapParam.makerAccounts,
-            NO_EXPIRY
-          )
+        liquidateV4WithZapParam(
+          core,
+          solidAccount,
+          liquidAccount,
+          zapParam
+        ),
       );
     });
 
     it('should fail if output token mismatch', async () => {
-      await userVault.transferIntoPositionWithOtherToken(
-        defaultAccountNumber,
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        BalanceCheckFlag.Both
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-      const initiateWrappingParams = await getInitiateWrappingParams(
-        borrowAccountNumber,
-        otherMarketId1,
-        amountWei,
-        underlyingMarketId,
-        amountWei,
-        tokenWrapper,
-        ZERO_BI
-      );
-      await userVault.swapExactInputForOutput(
-        borrowAccountNumber,
-        initiateWrappingParams.marketPath,
-        initiateWrappingParams.amountIn,
-        initiateWrappingParams.minAmountOut,
-        initiateWrappingParams.traderParams,
-        initiateWrappingParams.makerAccounts,
-        initiateWrappingParams.userConfig
-      );
-      let key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.DepositCreated()))[0].args.key;
-      await asyncProtocol.executeDeposit(key, 0);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, ZERO_BI);
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId1, ZERO_BI);
-
-      await userVault.transferFromPositionWithOtherToken(
-        borrowAccountNumber,
-        defaultAccountNumber,
-        otherMarketId2,
-        amountWei.div(2),
-        BalanceCheckFlag.To
-      );
-      await expectProtocolBalance(core, userVault.address, borrowAccountNumber, underlyingMarketId, amountWei);
-      await expectProtocolBalance(
-        core,
-        userVault.address,
-        borrowAccountNumber,
-        otherMarketId2,
-        ZERO_BI.sub(amountWei.div(2))
-      );
-      await expectProtocolBalance(core, core.hhUser1.address, defaultAccountNumber, otherMarketId2, amountWei.div(2));
-
+      await setupBalances();
       await core.testEcosystem!.testPriceOracle.setPrice(
         factory.address,
         '10000000000000000' // $1.00
@@ -884,8 +557,9 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         minOutputAmount: ONE_BI,
         expirationTimestamp: NO_EXPIRY,
       });
-      key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
-      await asyncProtocol.executeWithdrawal(key, amountWei.div(4));
+      const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
+      const result = await asyncProtocol.executeWithdrawal(key, amountWei.div(4));
+      await expectEvent(eventEmitter, result, 'AsyncWithdrawalFailed', {});
 
       const allKeys = [key];
       const tradeTypes = [UnwrapperTradeType.FromWithdrawal];
@@ -901,18 +575,12 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       zapParam.tradersPath[0].tradeData = liquidationData;
       await expectThrow(
-        core.liquidatorProxyV4
-          .connect(core.hhUser5)
-          .liquidate(
-            { owner: core.hhUser5.address, number: defaultAccountNumber },
-            { owner: userVault.address, number: borrowAccountNumber },
-            zapParam.marketIdsPath,
-            MAX_UINT_256_BI,
-            MAX_UINT_256_BI,
-            zapParam.tradersPath,
-            zapParam.makerAccounts,
-            NO_EXPIRY
-          ),
+        liquidateV4WithZapParam(
+          core,
+          solidAccount,
+          liquidAccount,
+          zapParam
+        ),
         'AsyncIsolationModeUnwrapperImpl: Output token mismatch'
       );
     });
@@ -934,18 +602,22 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
   });
 
   describe('#callFunction', () => {
-    it('should work normally with one key that does not exist', async () => {
+    async function setupCallFunction(amount: BigNumber = amountWei) {
       await asyncProtocol.addBalance(core.hhUser1.address, amountWei);
       await asyncProtocol.connect(core.hhUser1).approve(userVault.address, amountWei);
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
       await userVault.initiateUnwrapping(
         borrowAccountNumber,
-        amountWei,
+        amount,
         otherToken1.address,
         ONE_BI,
         DEFAULT_ORDER_DATA
       );
+    }
+
+    it('should work normally with one key that does not exist', async () => {
+      await setupCallFunction();
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address', 'uint256', 'uint256[]', 'bytes32[]'],
@@ -953,10 +625,11 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expect(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .callFunction(core.hhUser5.address, { owner: core.hhUser1.address, number: defaultAccountNumber }, orderData)
-      ).to.not.be.reverted;
+        tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
+          core.hhUser5.address,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          orderData
+      )).to.not.be.reverted;
     });
 
     it('should fail if input amount is greater than zero but vault does not exist', async () => {
@@ -976,25 +649,17 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .callFunction(core.hhUser5.address, { owner: core.hhUser1.address, number: defaultAccountNumber }, orderData),
+        tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
+          core.hhUser5.address,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          orderData
+        ),
         `AsyncIsolationModeUnwrapperImpl: Invalid account owner <${userVault.address.toLowerCase()}>`
       );
     });
 
     it('should fail if insufficient balance', async () => {
-      await asyncProtocol.addBalance(core.hhUser1.address, amountWei);
-      await asyncProtocol.connect(core.hhUser1).approve(userVault.address, amountWei);
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
-      await userVault.initiateUnwrapping(
-        borrowAccountNumber,
-        amountWei,
-        otherToken1.address,
-        ONE_BI,
-        DEFAULT_ORDER_DATA
-      );
+      await setupCallFunction();
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address', 'uint256', 'uint256[]', 'bytes32[]'],
@@ -1002,25 +667,17 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .callFunction(core.hhUser5.address, { owner: core.hhUser1.address, number: defaultAccountNumber }, orderData),
+        tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
+          core.hhUser5.address,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          orderData
+        ),
         `AsyncIsolationModeUnwrapperImpl: Insufficient balance <${amountWei}, ${MAX_UINT_256_BI.sub(2).toString()}>`
       );
     });
 
     it('should fail if transfer amount is zero', async () => {
-      await asyncProtocol.addBalance(core.hhUser1.address, amountWei);
-      await asyncProtocol.connect(core.hhUser1).approve(userVault.address, amountWei);
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
-      await userVault.initiateUnwrapping(
-        borrowAccountNumber,
-        amountWei,
-        otherToken1.address,
-        ONE_BI,
-        DEFAULT_ORDER_DATA
-      );
+      await setupCallFunction();
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address', 'uint256', 'uint256[]', 'bytes32[]'],
@@ -1028,19 +685,17 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .callFunction(core.hhUser5.address, { owner: core.hhUser1.address, number: defaultAccountNumber }, orderData),
+        tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
+          core.hhUser5.address,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          orderData
+        ),
         'AsyncIsolationModeUnwrapperImpl: Invalid transfer amount'
       );
     });
 
     it('should fail if transfer amount is greater than inputAmount', async () => {
-      await asyncProtocol.addBalance(core.hhUser1.address, amountWei);
-      await asyncProtocol.connect(core.hhUser1).approve(userVault.address, amountWei);
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei);
-      await userVault.initiateUnwrapping(borrowAccountNumber, ONE_BI, otherToken1.address, ONE_BI, DEFAULT_ORDER_DATA);
+      await setupCallFunction(ONE_BI);
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       const orderData = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'address', 'uint256', 'uint256[]', 'bytes32[]'],
@@ -1048,9 +703,11 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .callFunction(core.hhUser5.address, { owner: core.hhUser1.address, number: defaultAccountNumber }, orderData),
+        tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
+          core.hhUser5.address,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          orderData
+        ),
         'AsyncIsolationModeUnwrapperImpl: Invalid transfer amount'
       );
     });
@@ -1062,9 +719,11 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .callFunction(core.hhUser5.address, { owner: core.hhUser1.address, number: defaultAccountNumber }, orderData),
+        tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
+          core.hhUser5.address,
+          { owner: core.hhUser1.address, number: defaultAccountNumber },
+          orderData
+        ),
         `AsyncIsolationModeUnwrapperImpl: Invalid vault <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -1072,18 +731,22 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     it('should fail if not called by dolomite margin', async () => {
       await core.dolomiteMargin.ownerSetGlobalOperator(core.hhUser5.address, true);
       await expectThrow(
-        tokenUnwrapper
-          .connect(core.hhUser1)
-          .callFunction(core.hhUser5.address, { owner: userVault.address, number: defaultAccountNumber }, BYTES_EMPTY),
+        tokenUnwrapper.connect(core.hhUser1).callFunction(
+          core.hhUser5.address,
+          { owner: userVault.address, number: defaultAccountNumber },
+          BYTES_EMPTY
+        ),
         `OnlyDolomiteMargin: Only Dolomite can call function <${core.hhUser1.address.toLowerCase()}>`
       );
     });
 
     it('should fail if sender is not a global operator', async () => {
       await expectThrow(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .callFunction(core.hhUser1.address, { owner: userVault.address, number: defaultAccountNumber }, BYTES_EMPTY),
+        tokenUnwrapper.connect(doloMarginImpersonator).callFunction(
+          core.hhUser1.address,
+          { owner: userVault.address, number: defaultAccountNumber },
+          BYTES_EMPTY
+        ),
         `OnlyDolomiteMargin: Caller is not a global operator <${core.hhUser1.address.toLowerCase()}>`
       );
     });
@@ -1109,18 +772,20 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
           ONE_BI,
           ethers.utils.defaultAbiCoder.encode(
             ['uint8[]', 'bytes32[]'],
-            [
-              [0, 0],
-              [RANDOM_KEY, key],
-            ]
+            [[0, 0], [RANDOM_KEY, key]]
           ),
         ]
       );
       await asyncProtocol.addBalance(tokenUnwrapper.address, amountWei);
       await expect(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .exchange(userVault.address, userVault.address, otherToken1.address, factory.address, amountWei, orderData)
+        tokenUnwrapper.connect(doloMarginImpersonator).exchange(
+          userVault.address,
+          userVault.address,
+          otherToken1.address,
+          factory.address,
+          amountWei,
+          orderData
+        )
       ).to.not.be.reverted;
     });
 
@@ -1167,56 +832,55 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
       );
       await asyncProtocol.addBalance(tokenUnwrapper.address, amountWei);
       await expect(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .exchange(userVault.address, userVault.address, otherToken1.address, factory.address, amountWei, orderData)
+        tokenUnwrapper.connect(doloMarginImpersonator).exchange(
+          userVault.address,
+          userVault.address,
+          otherToken1.address,
+          factory.address,
+          amountWei,
+          orderData
+        )
       ).to.not.be.reverted;
     });
 
     it('should fail if invalid input token', async () => {
       await expectThrow(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .exchange(
-            userVault.address,
-            userVault.address,
-            otherToken1.address,
-            core.tokens.weth.address,
-            amountWei,
-            DEFAULT_ORDER_DATA
-          ),
+        tokenUnwrapper.connect(doloMarginImpersonator).exchange(
+          userVault.address,
+          userVault.address,
+          otherToken1.address,
+          core.tokens.weth.address,
+          amountWei,
+          DEFAULT_ORDER_DATA
+        ),
         `UpgradeableUnwrapperTraderV2: Invalid input token <${core.tokens.weth.address.toLowerCase()}>`
       );
     });
 
     it('should fail if invalid output token', async () => {
       await expectThrow(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .exchange(
-            userVault.address,
-            userVault.address,
-            core.tokens.weth.address,
-            factory.address,
-            amountWei,
-            DEFAULT_ORDER_DATA
-          ),
+        tokenUnwrapper.connect(doloMarginImpersonator).exchange(
+          userVault.address,
+          userVault.address,
+          core.tokens.weth.address,
+          factory.address,
+          amountWei,
+          DEFAULT_ORDER_DATA
+        ),
         `UpgradeableUnwrapperTraderV2: Invalid output token <${core.tokens.weth.address.toLowerCase()}>`
       );
     });
 
     it('should fail if invalid input amount', async () => {
       await expectThrow(
-        tokenUnwrapper
-          .connect(doloMarginImpersonator)
-          .exchange(
-            userVault.address,
-            userVault.address,
-            otherToken1.address,
-            factory.address,
-            ZERO_BI,
-            DEFAULT_ORDER_DATA
-          ),
+        tokenUnwrapper.connect(doloMarginImpersonator).exchange(
+          userVault.address,
+          userVault.address,
+          otherToken1.address,
+          factory.address,
+          ZERO_BI,
+          DEFAULT_ORDER_DATA
+        ),
         'UpgradeableUnwrapperTraderV2: Invalid input amount'
       );
     });
@@ -1238,9 +902,12 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
 
   describe('#getExchangeCost', () => {
     it('should work normally', async () => {
-      expect(await tokenUnwrapper.getExchangeCost(factory.address, otherToken1.address, ONE_BI, BYTES_EMPTY)).to.eq(
-        ONE_BI
-      );
+      expect(await tokenUnwrapper.getExchangeCost(
+        factory.address,
+        otherToken1.address,
+        ONE_BI,
+        BYTES_EMPTY
+      )).to.eq(ONE_BI);
     });
 
     it('should fail if invalid input token', async () => {
@@ -1266,7 +933,7 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
   });
 
   describe('#executeWithdrawal', () => {
-    it('should work normally', async () => {
+    async function setupWithdrawal() {
       await asyncProtocol.addBalance(core.hhUser1.address, amountWei);
       await otherToken1.addBalance(asyncProtocol.address, amountWei);
       await asyncProtocol.connect(core.hhUser1).approve(userVault.address, amountWei);
@@ -1280,6 +947,10 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
         amountWei,
         DEFAULT_ORDER_DATA
       );
+    }
+
+    it('should work normally', async () => {
+      await setupWithdrawal();
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       await asyncProtocol.executeWithdrawal(key, amountWei);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, otherMarketId1, amountWei);
@@ -1287,38 +958,14 @@ describe('UpgradeableAsyncIsolationModeUnwrapperTrader', () => {
     });
 
     it('should work normally if reverts with message', async () => {
-      await asyncProtocol.addBalance(core.hhUser1.address, amountWei);
-      await otherToken1.addBalance(asyncProtocol.address, amountWei);
-      await asyncProtocol.connect(core.hhUser1).approve(userVault.address, amountWei);
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei);
-
-      await userVault.initiateUnwrapping(
-        borrowAccountNumber,
-        amountWei,
-        otherToken1.address,
-        amountWei,
-        DEFAULT_ORDER_DATA
-      );
+      await setupWithdrawal();
       await userVault.setRevertFlag(1);
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       await asyncProtocol.executeWithdrawal(key, amountWei);
     });
 
     it('should work normally if reverts with no message', async () => {
-      await asyncProtocol.addBalance(core.hhUser1.address, amountWei);
-      await otherToken1.addBalance(asyncProtocol.address, amountWei);
-      await asyncProtocol.connect(core.hhUser1).approve(userVault.address, amountWei);
-      await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
-      await userVault.transferIntoPositionWithUnderlyingToken(defaultAccountNumber, borrowAccountNumber, amountWei);
-
-      await userVault.initiateUnwrapping(
-        borrowAccountNumber,
-        amountWei,
-        otherToken1.address,
-        amountWei,
-        DEFAULT_ORDER_DATA
-      );
+      await setupWithdrawal();
       await userVault.setRevertFlag(2);
       const key = (await asyncProtocol.queryFilter(await asyncProtocol.filters.WithdrawalCreated()))[0].args.key;
       await asyncProtocol.executeWithdrawal(key, amountWei);

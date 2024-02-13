@@ -20,11 +20,11 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "../../protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
-import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 import { ILiquidatorAssetRegistry } from "../../interfaces/ILiquidatorAssetRegistry.sol";
+import { Require } from "../../protocol/lib/Require.sol";
+import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
 
 
 /**

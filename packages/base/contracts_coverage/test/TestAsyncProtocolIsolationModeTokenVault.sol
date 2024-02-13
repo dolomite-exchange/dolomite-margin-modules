@@ -19,22 +19,22 @@
 */
 pragma solidity ^0.8.9;
 
+ // solhint-disable max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../protocol/lib/Require.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
-import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol";
-import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
-import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
-import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
-import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
-import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
-import { IsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
-import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
-import { IsolationModeTokenVaultV1WithPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 import { ITestAsyncProtocol } from "./ITestAsyncProtocol.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
+import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
+import { IsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
+import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol";
+import { IsolationModeTokenVaultV1WithPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol";
+import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol";
+import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol";
+import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol";
+import { Require } from "../protocol/lib/Require.sol";
+ // solhint-enable max-line-length
 
 
 /**
@@ -151,14 +151,21 @@ contract TestAsyncProtocolIsolationModeTokenVault is
             );
         }
 
-        if (_params.tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper || isVaultFrozen()) {
+        if (
+            _params.tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper
+            || isVaultFrozen()
+        ) {
             // Only a trusted converter can initiate unwraps (via the callback) OR execute swaps if the vault is frozen
             _requireOnlyConverter(msg.sender);
         }
 
         // Ignore the freezable implementation and call the pausable one directly
-        // @follow-up Corey: Are you cool with doing it like this? Need to still allow the unwrapper so can't call freezable modifier
-        _requireNotLiquidatableIfWrapToUnderlying(_params.tradeAccountNumber, _params.marketIdsPath[_params.marketIdsPath.length - 1]);
+        // @follow-up Corey: Are you cool with doing it like this?
+        // Need to still allow the unwrapper so can't call freezable modifier
+        _requireNotLiquidatableIfWrapToUnderlying(
+            _params.tradeAccountNumber,
+            _params.marketIdsPath[_params.marketIdsPath.length - 1]
+        );
         IsolationModeTokenVaultV1WithPausable._swapExactInputForOutput(
             _params
         );
