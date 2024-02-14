@@ -12,6 +12,7 @@ package-lock.json
 
 .idea
 
+packages/*/src/types
 src/types
 
 .env
@@ -19,5 +20,10 @@ src/types
 # test coverage
 coverage.json
 coverage/
+coverage_2/
+packages/*/coverage/
+packages/*/coverage_2/
 
 dist/
+
+output/

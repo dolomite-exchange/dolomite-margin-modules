@@ -54,7 +54,10 @@ def fixRequires(dir, filepath):
             inMessage = True
 
         if inARequire and not inMessage:
-            ifStatement += builder.lstrip()
+            if ifStatement == '':
+                ifStatement = builder.lstrip()
+            else:
+                ifStatement += (' ' + builder.lstrip())
 
         indexOfOldRequire = line.find(oldRequire)
         indexOfIgnored = line.find(ignoreRequire)
@@ -65,12 +68,11 @@ def fixRequires(dir, filepath):
 
         indexOfEnd = builder.find(');')
         if (inARequire and indexOfEnd >= 0):
-#             print('Running for ' + filepath + ': ' + str(requireLine))
             numLeadingSpaces = len(builder) - 2
             allLines[requireLine] = (' ' * numLeadingSpaces) \
             + 'if (' + ifStatement[:-1] + ') { /* FOR COVERAGE TESTING */ }\n'
             allLines[requireLine + 1] = (' ' * numLeadingSpaces) \
-            + 'Require.that(' + allLines[requireLine + 1].lstrip()
+            + 'Require.that(\n' + (' ' * (numLeadingSpaces + 4)) + allLines[requireLine + 1].lstrip()
             inARequire = False
             inMessage = False
             ifStatement = ''
@@ -92,8 +94,8 @@ def main():
     pattern   = "*.sol"
 
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
-    for dir,_,_ in os.walk(dir_path+"/contracts_coverage"):
+    print(dir_path)
+    for dir,_,_ in os.walk(dir_path + "/packages/" + sys.argv[1] + "/contracts_coverage"):
         files.extend(glob.glob(os.path.join(dir,pattern)))
 
     numHidden = 0

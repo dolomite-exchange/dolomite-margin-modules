@@ -4,17 +4,35 @@
   "rules": {
     "avoid-suicide": "error",
     "avoid-sha3": "error",
-    "compiler-version": ["error", "^0.8.9"],
+    "compiler-version": [
+      "error",
+      "^0.8.9"
+    ],
     "constructor-syntax": "warn",
     "func-name-mixedcase": "off",
-    "func-visibility": ["error", {
-      "ignoreConstructors": true
-    }],
-    "max-line-length": ["error", 120],
+    "func-visibility": [
+      "error",
+      {
+        "ignoreConstructors": true
+      }
+    ],
+    "max-line-length": [
+      "error",
+      120
+    ],
     "modifier-name-mixedcase": "error",
     "not-rely-on-time": "off",
     "ordering": "error",
     "private-vars-leading-underscore": "warn",
-    "quotes": ["error", "double"]
+    "quotes": [
+      "error",
+      "double"
+    ],
+    "reason-string": [
+      "warn",
+      {
+        "maxLength": 64
+      }
+    ]
   }
 }
