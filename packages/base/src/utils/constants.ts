@@ -248,8 +248,8 @@ export const USDC_MAP: Record<Network, TokenWithMarketId> = {
     marketId: 2,
   },
   [Network.PolygonZkEvm]: {
-    address: '0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035',
-    marketId: 2,
+    address: '0x37eAA0eF3549a5Bb7D431be78a3D99BD360d19e5',
+    marketId: 7,
   },
 };
 
