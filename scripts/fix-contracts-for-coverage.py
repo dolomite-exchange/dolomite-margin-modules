@@ -94,8 +94,8 @@ def main():
     pattern   = "*.sol"
 
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
-    for dir,_,_ in os.walk(dir_path+"/contracts_coverage"):
+    print(dir_path)
+    for dir,_,_ in os.walk(dir_path + "/packages/" + sys.argv[1] + "/contracts_coverage"):
         files.extend(glob.glob(os.path.join(dir,pattern)))
 
     numHidden = 0

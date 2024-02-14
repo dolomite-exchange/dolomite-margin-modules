@@ -1,0 +1,27 @@
+{
+  "name": "@dolomite-exchange/modules-liquidity-mining",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "hardhat compile",
+    "clean": "hardhat clean",
+    "test": "hardhat --network hardhat test",
+    "coverage": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/*.ts\" --solcoverjs ../../.solcover.js --network hardhat",
+    "coverage:prepare": "ts-node ../../scripts/fix-contracts-for-coverage.ts liquidity-mining",
+    "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/VesterExploder.ts\" --solcoverjs ../../.solcover.js --network hardhat",
+    "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/VesterExploder.ts",
+    "lint": "yarn lint:sol && yarn lint:ts",
+    "lint:sol": "hardhat check && python ../../scripts/lint-contracts.py fix liquidity-mining",
+    "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"
+  },
+  "private": false,
+  "files": [
+    "contracts/**/*",
+    "!contracts/test/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dolomite-exchange/dolomite-margin-modules.git",
+    "directory": "packages/liquidity-mining"
+  },
+  "license": "GPL-2.0"
+}
