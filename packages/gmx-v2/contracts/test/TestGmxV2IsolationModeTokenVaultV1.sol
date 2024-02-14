@@ -20,10 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { GmxV2IsolationModeTokenVaultV1 } from "../GmxV2IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IGenericTraderProxyV1 } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderProxyV1.sol";
 import { SafeDelegateCallLib } from "@dolomite-exchange/modules-base/contracts/lib/SafeDelegateCallLib.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { GmxV2IsolationModeTokenVaultV1 } from "../GmxV2IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
 
 
 /**

@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { ExpirationLib } from "../lib/ExpirationLib.sol";
+import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 
 
 /**

@@ -23,17 +23,17 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { UpgradeableAsyncIsolationModeUnwrapperTrader } from "../UpgradeableAsyncIsolationModeUnwrapperTrader.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "../UpgradeableAsyncIsolationModeWrapperTrader.sol";
+import { IGenericTraderBase } from "../../../interfaces/IGenericTraderBase.sol";
+import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
+import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../../interfaces/IFreezableIsolationModeVaultFactory.sol";
-import { IGenericTraderBase } from "../../../interfaces/IGenericTraderBase.sol";
-import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeWrapperTraderV2 } from "../../interfaces/IIsolationModeWrapperTraderV2.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../../interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
-import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
 
 
 /**

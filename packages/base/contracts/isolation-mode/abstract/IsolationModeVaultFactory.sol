@@ -22,16 +22,16 @@ pragma solidity ^0.8.9;
 
 import { Create2 } from "@openzeppelin/contracts/utils/Create2.sol";
 import { IsolationModeUpgradeableProxy } from "../IsolationModeUpgradeableProxy.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "../../protocol/lib/Require.sol";
 import { MinimalERC20 } from "../../general/MinimalERC20.sol";
 import { OnlyDolomiteMargin } from "../../helpers/OnlyDolomiteMargin.sol";
 import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.sol";
+import { AccountActionLib } from "../../lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
+import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "../../protocol/lib/Require.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeUpgradeableProxy } from "../interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "../interfaces/IIsolationModeVaultFactory.sol";
-import { AccountActionLib } from "../../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
 
 /**

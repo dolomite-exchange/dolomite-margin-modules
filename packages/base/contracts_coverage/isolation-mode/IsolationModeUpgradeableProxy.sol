@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "../protocol/lib/Require.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
+import { Require } from "../protocol/lib/Require.sol";
 import { IIsolationModeTokenVaultV1 } from "./interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeUpgradeableProxy } from "./interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "./interfaces/IIsolationModeVaultFactory.sol";

@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
-import { JonesUSDCMathLib } from "./JonesUSDCMathLib.sol";
+import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
-import { IJonesUSDCRegistry } from "./interfaces/IJonesUSDCRegistry.sol";
 import { ChainlinkAutomationPriceOracle } from "@dolomite-exchange/modules-oracles/contracts/ChainlinkAutomationPriceOracle.sol";
+import { JonesUSDCMathLib } from "./JonesUSDCMathLib.sol";
+import { IJonesUSDCRegistry } from "./interfaces/IJonesUSDCRegistry.sol";
 
 
 /**

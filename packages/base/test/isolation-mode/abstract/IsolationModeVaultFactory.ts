@@ -1104,7 +1104,7 @@ describe('IsolationModeVaultFactory', () => {
     it('should work normally if token converter', async () => {
       const wrapperImpersonator = await impersonate(tokenWrapperV1.address, true);
       await expect(factory.connect(wrapperImpersonator).testRequireIsTokenConverterOrVault()).to.not.be.reverted;
-    })
+    });
 
     it('should work normally if vault', async () => {
       await factory.createVault(core.hhUser1.address);

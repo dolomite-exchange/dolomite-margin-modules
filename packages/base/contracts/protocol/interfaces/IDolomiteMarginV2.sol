@@ -541,7 +541,7 @@ interface IDolomiteMarginV2 is IDolomiteMarginV2Admin {
      * Get the global minimum margin-ratio that every position must maintain to prevent being
      * liquidated.
      *
-     * @param account       The account whose margin ratio is being queried. This is used to determine if there is an
+     * @param  account       The account whose margin ratio is being queried. This is used to determine if there is an
      *                      override that supersedes the global minimum.
      * @return  The margin ratio for this account
      */
@@ -645,7 +645,7 @@ interface IDolomiteMarginV2 is IDolomiteMarginV2Admin {
      * Get the account risk override getter for an account owner. This contract enables e-mode for certain isolation
      * mode vaults.
      *
-     * @param accountOwner  The address of the account to check if there is a margin ratio override.
+     * @param  accountOwner  The address of the account to check if there is a margin ratio override.
      * @return  The contract that contains risk override information for this account.
      */
     function getAccountRiskOverrideSetterByAccountOwner(
@@ -655,7 +655,7 @@ interface IDolomiteMarginV2 is IDolomiteMarginV2Admin {
     /**
      * Get the margin ratio override for an account owner. Used to enable e-mode for certain isolation mode vaults.
      *
-     * @param account                       The account to check if there is a risk override.
+     * @param  account                       The account to check if there is a risk override.
      * @return marginRatioOverride          The margin ratio override for an account owner. Defaults to 0 if there's no
      *                                      override in place.
      * @return liquidationSpreadOverride    The margin ratio override for an account owner. Defaults to 0 if there's no
@@ -671,7 +671,7 @@ interface IDolomiteMarginV2 is IDolomiteMarginV2Admin {
     /**
      * Get the margin ratio override for an account. Used to enable e-mode for certain accounts/positions.
      *
-     * @param account   The account to check if there is a margin ratio override.
+     * @param  account   The account to check if there is a margin ratio override.
      * @return  The margin ratio override for an account owner. Defaults to 0 if there's no override in place.
      */
     function getMarginRatioOverrideByAccount(AccountInfo calldata account) external view returns (Decimal memory);
@@ -680,7 +680,7 @@ interface IDolomiteMarginV2 is IDolomiteMarginV2Admin {
      * Get the liquidation reward override for an account owner. Used to enable e-mode for certain isolation mode
      * vaults.
      *
-     * @param account   The account to check if there is a liquidation spread override.
+     * @param  account   The account to check if there is a liquidation spread override.
      * @return  The liquidation spread override for an account owner. Defaults to 0 if there's no override in place.
      */
     function getLiquidationSpreadOverrideByAccount(

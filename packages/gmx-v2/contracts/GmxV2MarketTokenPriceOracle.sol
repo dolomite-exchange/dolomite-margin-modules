@@ -20,15 +20,15 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { GmxMarket } from "./lib/GmxMarket.sol";
-import { GmxPrice } from "./lib/GmxPrice.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2MarketTokenPriceOracle } from "./interfaces/IGmxV2MarketTokenPriceOracle.sol";
 import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
+import { GmxMarket } from "./lib/GmxMarket.sol";
+import { GmxPrice } from "./lib/GmxPrice.sol";
 
 
 /**

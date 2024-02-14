@@ -283,7 +283,6 @@ describe('IsolationModeUnwrapperTraderV2', () => {
       );
     });
 
-
     it('should fail if input token is incorrect', async () => {
       const dolomiteMarginImpersonator = await impersonate(core.dolomiteMargin.address, true);
       await expectThrow(

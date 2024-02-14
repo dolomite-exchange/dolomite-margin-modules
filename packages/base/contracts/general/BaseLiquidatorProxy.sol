@@ -20,17 +20,16 @@
 pragma solidity ^0.8.9;
 
 import { HasLiquidatorRegistry } from "./HasLiquidatorRegistry.sol";
+import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { IExpiry } from "../interfaces/IExpiry.sol";
+import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
+import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
 import { BitsLib } from "../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../protocol/lib/DecimalLib.sol";
 import { DolomiteMarginMath } from "../protocol/lib/DolomiteMarginMath.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { TypesLib } from "../protocol/lib/TypesLib.sol";
-import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
-import { IExpiry } from "../interfaces/IExpiry.sol";
-import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
-import { InterestIndexLib } from "../lib/InterestIndexLib.sol";
-import { ChainHelperLib } from "../lib/ChainHelperLib.sol";
 
 /**
  * @title   BaseLiquidatorProxy

@@ -23,11 +23,10 @@ pragma solidity ^0.8.9;
 import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "./IsolationModeTokenVaultV1WithFreezable.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "./IsolationModeTokenVaultV1WithPausable.sol";
-import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
-import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
+import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
+import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 
 
 /**

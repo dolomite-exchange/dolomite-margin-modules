@@ -452,8 +452,7 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
         ),
         'AsyncIsolationModeUnwrapperImpl: Cant liquidate other subaccount',
       );
-      return
-
+      return;
 
       console.log(
         ' 7. Balances for accounts after liquidations show no change to second account and first account has only liquidation output token');

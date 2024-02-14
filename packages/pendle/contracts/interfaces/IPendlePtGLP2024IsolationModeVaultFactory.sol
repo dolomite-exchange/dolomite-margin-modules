@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 
 
 /**

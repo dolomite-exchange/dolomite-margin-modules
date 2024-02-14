@@ -10,7 +10,7 @@
     "coverage:specific": "yarn coverage:prepare && COVERAGE=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat coverage --testfiles \"test/JonesUSDCRegistry.ts\" --solcoverjs ../../.solcover.js --network hardhat",
     "test:specific": "TEST_SPECIFIC=true node --max-old-space-size=32768 ../../node_modules/.bin/hardhat --network hardhat test test/general/BaseRegistry.ts",
     "lint": "yarn lint:sol && yarn lint:ts",
-    "lint:sol": "hardhat check && python ../../scripts/lint-contracts.py fix",
+    "lint:sol": "hardhat check && python ../../scripts/lint-contracts.py fix jones",
     "lint:ts": "tslint --project ../../ -t verbose 'src/**/*.ts' 'test/**/*.ts'"
   },
   "private": false,

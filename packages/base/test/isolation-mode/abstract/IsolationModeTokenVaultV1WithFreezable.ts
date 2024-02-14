@@ -386,8 +386,11 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
       await userVault.depositIntoVaultForDolomiteMargin(defaultAccountNumber, amountWei);
       await userVault.openBorrowPosition(defaultAccountNumber, borrowAccountNumber, amountWei, { value: ONE_ETH_BI });
       expect(await userVault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ONE_ETH_BI);
-      await expect(() => userVault.closeBorrowPositionWithUnderlyingVaultToken(borrowAccountNumber, defaultAccountNumber))
-        .to.changeEtherBalance(core.hhUser1, ONE_ETH_BI);
+      await expect(
+        () => userVault.closeBorrowPositionWithUnderlyingVaultToken(
+          borrowAccountNumber,
+          defaultAccountNumber
+      )).to.changeEtherBalance(core.hhUser1, ONE_ETH_BI);
       expect(await userVault.getExecutionFeeForAccountNumber(borrowAccountNumber)).to.eq(ZERO_BI);
 
       await expectProtocolBalance(core, core.hhUser1, defaultAccountNumber, underlyingMarketId, ZERO_BI);
@@ -1859,7 +1862,13 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault is frozen', async () => {
-      await factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(userVault.address, defaultAccountNumber, FreezeType.Deposit, PLUS_ONE_BI, otherToken1.address);
+      await factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(
+        userVault.address,
+        defaultAccountNumber,
+        FreezeType.Deposit,
+        PLUS_ONE_BI,
+        otherToken1.address
+      );
       await expectThrow(
         userVault.initiateUnwrapping(
           defaultAccountNumber,
@@ -1991,13 +2000,19 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     });
 
     it('should fail if vault account is frozen', async () => {
-      await factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(userVault.address, defaultAccountNumber, FreezeType.Deposit, PLUS_ONE_BI, otherToken1.address);
+      await factory.connect(core.governance).setVaultAccountPendingAmountForFrozenStatus(
+        userVault.address,
+        defaultAccountNumber,
+        FreezeType.Deposit,
+        PLUS_ONE_BI,
+        otherToken1.address
+      );
       await expectThrow(
         userVault.testRequireVaultAccountNotFrozen(defaultAccountNumber),
         ''
       );
     });
-  })
+  });
 
   describe('#setIsVaultDepositSourceWrapper', () => {
     it('should work normally', async () => {
@@ -2027,11 +2042,11 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
         `IsolationModeTokenVaultV1: Only factory can call <${core.hhUser2.address.toLowerCase()}>`,
       );
     });
-  })
+  });
 
   describe('#handlerRegistry', () => {
     it('should work normally', async () => {
       expect(await userVault.handlerRegistry()).to.eq(registry.address);
-    })
-  })
+    });
+  });
 });

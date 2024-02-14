@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { IIsolationModeVaultFactory } from "./IIsolationModeVaultFactory.sol";
+import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 
 /**

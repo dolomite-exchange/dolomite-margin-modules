@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
+import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-
 import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
 import { IPendleYtGLP2024IsolationModeVaultFactory } from "./interfaces/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
-import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol";
+
 
 
 /**

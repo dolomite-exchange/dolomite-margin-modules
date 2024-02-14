@@ -51,7 +51,7 @@ describe('IsolationModeTraderProxy', () => {
       TestAsyncIsolationModeTraderBase__factory.abi,
       TestAsyncIsolationModeTraderBase__factory.bytecode,
       [core.tokens.weth.address],
-    )
+    );
     const calldata = await implementation.populateTransaction.initialize(
       registry.address,
       core.dolomiteMargin.address,

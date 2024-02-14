@@ -19,19 +19,19 @@
 */
 pragma solidity ^0.8.9;
 
+import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
+import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
+import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
+import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
+import { InterestIndexLib } from "../../../lib/InterestIndexLib.sol";
 import { IDolomiteMargin } from "../../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../../protocol/interfaces/IDolomiteStructs.sol";
 import { BitsLib } from "../../../protocol/lib/BitsLib.sol";
 import { DecimalLib } from "../../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../../protocol/lib/Require.sol";
 import { TypesLib } from "../../../protocol/lib/TypesLib.sol";
-import { BaseLiquidatorProxy } from "../../../general/BaseLiquidatorProxy.sol";
-import { IGenericTraderProxyV1 } from "../../../interfaces/IGenericTraderProxyV1.sol";
 import { IIsolationModeTokenVaultV1 } from "../../interfaces/IIsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "../../interfaces/IIsolationModeVaultFactory.sol";
-import { AccountActionLib } from "../../../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../../../lib/AccountBalanceLib.sol";
-import { InterestIndexLib } from "../../../lib/InterestIndexLib.sol";
 
 
 /**
@@ -598,7 +598,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         IDolomiteStructs.AccountInfo memory _account,
         uint256[] memory _marketIds
     )
-        private
+        internal
         view
         returns (
             IDolomiteStructs.MonetaryValue memory supplyValue,
@@ -621,7 +621,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256[] memory _marketIds,
         bool _adjustForMarginPremiums
     )
-        private
+        internal
         view
         returns (
             IDolomiteStructs.MonetaryValue memory,
@@ -652,7 +652,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         IDolomiteMargin _dolomiteMargin,
         uint256[] memory _solidMarketIds,
         uint256[] memory _liquidMarketIds
-    ) private view returns (BaseLiquidatorProxy.MarketInfo[] memory) {
+    ) internal view returns (BaseLiquidatorProxy.MarketInfo[] memory) {
         uint[] memory marketBitmaps = BitsLib.createBitmaps(_dolomiteMargin.getNumMarkets());
         uint256 marketsLength = 0;
         marketsLength = _addMarketsToBitmap(_solidMarketIds, marketBitmaps, marketsLength);
@@ -730,7 +730,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
     function _binarySearch(
         BaseLiquidatorProxy.MarketInfo[] memory _markets,
         uint256 _marketId
-    ) private pure returns (BaseLiquidatorProxy.MarketInfo memory) {
+    ) internal pure returns (BaseLiquidatorProxy.MarketInfo memory) {
         return _binarySearch(
             _markets,
             /* _beginInclusive = */ 0,
@@ -744,7 +744,7 @@ library IsolationModeTokenVaultV1ActionsImpl {
         uint256 _beginInclusive,
         uint256 _endExclusive,
         uint256 _marketId
-    ) private pure returns (BaseLiquidatorProxy.MarketInfo memory) {
+    ) internal pure returns (BaseLiquidatorProxy.MarketInfo memory) {
         uint256 len = _endExclusive - _beginInclusive;
         if (len == 0 || (len == 1 && _markets[_beginInclusive].marketId != _marketId)) {
             revert("BaseLiquidatorProxy: Market not found"); // solhint-disable-line reason-string

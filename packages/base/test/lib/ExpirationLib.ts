@@ -114,8 +114,8 @@ describe('ExpirationLib', () => {
         expiryTimeDelta,
       );
       const actionLibImpersonator = await impersonate(accountActionLib.address, true);
-      await core.dolomiteMargin.connect(actionLibImpersonator).operate([otherAccountStruct], [callAction])
-      
+      await core.dolomiteMargin.connect(actionLibImpersonator).operate([otherAccountStruct], [callAction]);
+
       expect(await core.expiry.getExpiry(otherAccountStruct, otherMarketId)).to.be.gt(ZERO_BI);
       await accountActionLib.transfer(
         core.hhUser1.address,
@@ -172,8 +172,8 @@ describe('ExpirationLib', () => {
         expiryTimeDelta,
       );
       const actionLibImpersonator = await impersonate(accountActionLib.address, true);
-      await core.dolomiteMargin.connect(actionLibImpersonator).operate([otherAccountStruct], [callAction])
-      
+      await core.dolomiteMargin.connect(actionLibImpersonator).operate([otherAccountStruct], [callAction]);
+
       expect(await core.expiry.getExpiry(otherAccountStruct, otherMarketId)).to.be.gt(ZERO_BI);
       await accountActionLib.deposit(
         core.hhUser1.address,
@@ -200,7 +200,10 @@ describe('ExpirationLib', () => {
         otherAccountNumber,
         otherMarketId
       );
-      expect(await core.expiry.getExpiry({owner: core.hhUser1.address, number: otherAccountNumber}, otherMarketId)).to.eq(ZERO_BI);
+      expect(await core.expiry.getExpiry(
+        { owner: core.hhUser1.address, number: otherAccountNumber },
+        otherMarketId
+      )).to.eq(ZERO_BI);
     });
   });
 });

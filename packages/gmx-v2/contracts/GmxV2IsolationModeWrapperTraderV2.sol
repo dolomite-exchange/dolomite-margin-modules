@@ -20,17 +20,19 @@
 
 pragma solidity ^0.8.9;
 
-import { GmxV2Library } from "./GmxV2Library.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IIsolationModeWrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
-import { GmxDeposit } from "./lib/GmxDeposit.sol";
-import { GmxEventUtils } from "./lib/GmxEventUtils.sol";
-import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
-import { IGmxV2IsolationModeWrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeWrapperTraderV2.sol";
-import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
+// solhint-disable max-line-length
 import { AsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/AsyncIsolationModeTraderBase.sol";
 import { UpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/UpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
 import { AsyncIsolationModeWrapperTraderImpl } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/impl/AsyncIsolationModeWrapperTraderImpl.sol";
+import { IIsolationModeWrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeWrapperTraderV2.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { GmxV2Library } from "./GmxV2Library.sol";
+import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
+import { IGmxV2IsolationModeWrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeWrapperTraderV2.sol";
+import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
+import { GmxDeposit } from "./lib/GmxDeposit.sol";
+import { GmxEventUtils } from "./lib/GmxEventUtils.sol";
+// solhint-enable max-line-length
 
 
 /**

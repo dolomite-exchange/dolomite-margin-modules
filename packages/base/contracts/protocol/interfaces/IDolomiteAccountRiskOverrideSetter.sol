@@ -23,17 +23,17 @@ import { IDolomiteStructs } from "./IDolomiteStructs.sol";
 
 
 /**
- * @title IDolomiteAccountRiskOverrideSetter
- * @author Dolomite
+ * @title   IDolomiteAccountRiskOverrideSetter
+ * @author  Dolomite
  *
- * @notice Interface that can be implemented by any contract that needs to implement risk overrides for an account.
+ * @notice  Interface that can be implemented by any contract that needs to implement risk overrides for an account.
  */
 interface IDolomiteAccountRiskOverrideSetter {
 
     /**
      * @notice  Gets the risk overrides for a given account owner.
      *
-     * @param   _accountOwner               The owner of the account whose risk override should be retrieved.
+     * @param  _accountOwner               The owner of the account whose risk override should be retrieved.
      * @return  marginRatioOverride         The margin ratio override for this account.
      * @return  liquidationSpreadOverride   The liquidation spread override for this account.
      */

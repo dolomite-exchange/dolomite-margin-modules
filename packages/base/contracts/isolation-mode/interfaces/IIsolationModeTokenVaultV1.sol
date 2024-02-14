@@ -24,9 +24,9 @@ import { IBorrowPositionProxyV2 } from "../../interfaces/IBorrowPositionProxyV2.
 import { IDolomiteRegistry } from "../../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../../interfaces/IGenericTraderBase.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
+import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
-import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
 
 
 /**

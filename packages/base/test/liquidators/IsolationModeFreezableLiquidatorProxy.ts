@@ -1036,8 +1036,8 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     });
 
     it('should pass if liquidatable', async () => {
-      let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
-      let wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+      const gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
+      const wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
       const wethAmount = amountWei.mul(gmPrice).div(wethPrice).mul(100).div(121);
       await vault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
@@ -1053,8 +1053,8 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
     });
 
     it('should pass if account is liquid status', async () => {
-      let gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
-      let wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
+      const gmPrice = (await core.dolomiteMargin.getMarketPrice(marketId)).value;
+      const wethPrice = (await core.dolomiteMargin.getMarketPrice(core.marketIds.weth)).value;
       const wethAmount = amountWei.mul(gmPrice).div(wethPrice).mul(100).div(121);
       await vault.transferFromPositionWithOtherToken(
         borrowAccountNumber,
@@ -1073,11 +1073,11 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       await core.liquidatorProxyV1!.connect(core.hhUser5).liquidate(
         solidAccount,
         liquidAccount,
-        { value: BigNumber.from('150000000000000000')},
+        { value: BigNumber.from('150000000000000000') },
         ONE_BI,
         [core.marketIds.weth],
         [marketId]
-      )
+      );
       await liquidatorProxy.testCheckIsLiquidatable(liquidAccount);
     });
   });

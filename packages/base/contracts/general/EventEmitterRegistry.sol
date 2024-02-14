@@ -21,7 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import { Require } from "../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IEventEmitterRegistry } from "../interfaces/IEventEmitterRegistry.sol";
@@ -29,6 +28,7 @@ import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "../isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "../isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable max-line-length
+import { Require } from "../protocol/lib/Require.sol";
 
 
 /**

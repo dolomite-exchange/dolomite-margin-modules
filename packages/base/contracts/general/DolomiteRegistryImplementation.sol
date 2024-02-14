@@ -21,8 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
-import { Require } from "../protocol/lib/Require.sol";
 import { OnlyDolomiteMarginForUpgradeable } from "../helpers/OnlyDolomiteMarginForUpgradeable.sol";
 import { ProxyContractHelpers } from "../helpers/ProxyContractHelpers.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
@@ -31,6 +29,8 @@ import { IExpiry } from "../interfaces/IExpiry.sol";
 import { IGenericTraderProxyV1 } from "../interfaces/IGenericTraderProxyV1.sol";
 import { ILiquidatorAssetRegistry } from "../interfaces/ILiquidatorAssetRegistry.sol";
 import { ValidationLib } from "../lib/ValidationLib.sol";
+import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
+import { Require } from "../protocol/lib/Require.sol";
 
 /**
  * @title   DolomiteRegistryImplementation

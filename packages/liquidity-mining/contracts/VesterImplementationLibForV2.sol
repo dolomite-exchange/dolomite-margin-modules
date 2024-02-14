@@ -19,8 +19,8 @@
 
 pragma solidity ^0.8.9;
 
-import { VesterImplementationV2 } from "./VesterImplementationV2.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { VesterImplementationV2 } from "./VesterImplementationV2.sol";
 
 
 /**
