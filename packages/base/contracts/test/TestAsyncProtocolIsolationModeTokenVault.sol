@@ -26,8 +26,8 @@ import { ITestAsyncProtocol } from "./ITestAsyncProtocol.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "../interfaces/IGenericTraderBase.sol";
 import { IHandlerRegistry } from "../interfaces/IHandlerRegistry.sol";
-import { IsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
-import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol";
+import { IsolationModeTokenVaultV1WithAsyncFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezable.sol";
+import { IsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol";
 import { IsolationModeTokenVaultV1WithPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
@@ -44,7 +44,7 @@ import { Require } from "../protocol/lib/Require.sol";
  * @dev     Test contract for AsyncProtocolIsolationModeTokenVault
  */
 contract TestAsyncProtocolIsolationModeTokenVault is
-    IsolationModeTokenVaultV1WithFreezableAndPausable
+    IsolationModeTokenVaultV1WithAsyncFreezableAndPausable
 {
     using SafeERC20 for IERC20;
 
@@ -60,7 +60,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
     // ========================== Constructors ==========================
     // ==================================================================
 
-    constructor(address _testAsyncProtocol, address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {
+    constructor(address _testAsyncProtocol, address _weth) IsolationModeTokenVaultV1WithAsyncFreezable(_weth) {
         TEST_ASYNC_PROTOCOL = ITestAsyncProtocol(_testAsyncProtocol);
     }
 

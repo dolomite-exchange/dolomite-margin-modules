@@ -5,8 +5,8 @@ import { BigNumber, ContractTransaction } from 'ethers';
 import {
   CustomTestToken,
   TestFreezableIsolationModeVaultFactory,
-  TestIsolationModeTokenVaultV1WithFreezableAndPausable,
-  TestIsolationModeTokenVaultV1WithFreezableAndPausable__factory,
+  TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable,
+  TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable__factory,
   TestIsolationModeUnwrapperTraderV2,
   TestIsolationModeUnwrapperTraderV2__factory,
   TestIsolationModeWrapperTraderV2,
@@ -76,8 +76,8 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
   let tokenUnwrapper: TestIsolationModeUnwrapperTraderV2;
   let tokenWrapper: TestIsolationModeWrapperTraderV2;
   let factory: TestFreezableIsolationModeVaultFactory;
-  let userVaultImplementation: TestIsolationModeTokenVaultV1WithFreezableAndPausable;
-  let userVault: TestIsolationModeTokenVaultV1WithFreezableAndPausable;
+  let userVaultImplementation: TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable;
+  let userVault: TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable;
   let impersonatedVault: SignerWithAddress;
 
   let solidUser: SignerWithAddress;
@@ -90,8 +90,8 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-    userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithFreezableAndPausable>(
-      'TestIsolationModeTokenVaultV1WithFreezableAndPausable',
+    userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable>(
+      'TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable',
       libraries,
       [core.tokens.weth.address],
     );
@@ -144,9 +144,9 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
 
     await factory.createVault(core.hhUser1.address);
     const vaultAddress = await factory.getVaultByAccount(core.hhUser1.address);
-    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1WithFreezableAndPausable>(
+    userVault = setupUserVaultProxy<TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable>(
       vaultAddress,
-      TestIsolationModeTokenVaultV1WithFreezableAndPausable__factory,
+      TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable__factory,
       core.hhUser1,
     );
 

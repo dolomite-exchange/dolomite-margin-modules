@@ -24,7 +24,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuar
 import { BaseLiquidatorProxy } from "../general/BaseLiquidatorProxy.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IIsolationModeFreezableLiquidatorProxy } from "../isolation-mode/interfaces/IIsolationModeFreezableLiquidatorProxy.sol"; // solhint-disable-line max-line-length
-import { IIsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { DolomiteMarginVersionWrapperLib } from "../lib/DolomiteMarginVersionWrapperLib.sol";
 import { IDolomiteMargin } from "../protocol/interfaces/IDolomiteMargin.sol";
@@ -124,7 +124,7 @@ contract IsolationModeFreezableLiquidatorProxy is
         );
 
         address outputToken = DOLOMITE_MARGIN().getMarketTokenAddress(_params.outputMarketId);
-        IIsolationModeTokenVaultV1WithFreezable vault = IIsolationModeTokenVaultV1WithFreezable(
+        IIsolationModeTokenVaultV1WithAsyncFreezable vault = IIsolationModeTokenVaultV1WithAsyncFreezable(
             _params.liquidAccount.owner
         );
         vault.initiateUnwrappingForLiquidation{value: msg.value}(

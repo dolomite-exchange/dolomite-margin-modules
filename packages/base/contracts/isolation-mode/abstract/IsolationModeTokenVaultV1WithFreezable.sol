@@ -55,10 +55,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ===================================================
 
     bytes32 private constant _FILE = "IsolationModeVaultV1Freezable"; // shortened to fit in 32 bytes
-    bytes32 private constant _VIRTUAL_BALANCE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.virtualBalance")) - 1);
-    bytes32 private constant _IS_DEPOSIT_SOURCE_WRAPPER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isDepositSourceWrapper")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
-    bytes32 private constant _POSITION_TO_EXECUTION_FEE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.positionToExecutionFee")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _IS_VAULT_FROZEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.virtualBalance")) - 1);
 
     // ==================================================================
     // ====================== Immutable Variables =======================
@@ -75,18 +72,13 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _;
     }
 
-    modifier requireVaultAccountNotFrozen(uint256 _accountNumber) {
-        _requireVaultAccountNotFrozen(_accountNumber);
-        _;
-    }
-
     modifier _depositIntoVaultForDolomiteMarginFreezableValidator(uint256 _accountNumber) {
-        _requireVaultAccountNotFrozen(_accountNumber);
+        _requireNotFrozen();
         _;
     }
 
     modifier _withdrawFromVaultForDolomiteMarginFreezableValidator(uint256 _accountNumber) {
-        _requireVaultAccountNotFrozen(_accountNumber);
+        _requireNotFrozen();
         _;
     }
 
@@ -98,13 +90,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     modifier _closeBorrowPositionWithUnderlyingVaultTokenFreezableValidator(uint256 _borrowAccountNumber) {
         _requireNotFrozen();
         _;
-        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
     modifier _closeBorrowPositionWithOtherTokensFreezableValidator(uint256 _borrowAccountNumber) {
         _requireNotFrozen();
         _;
-        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
     modifier _transferIntoPositionWithUnderlyingTokenFreezableValidator() {
@@ -120,13 +110,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     modifier _transferFromPositionWithUnderlyingTokenFreezableValidator(uint256 _borrowAccountNumber) {
         _requireNotFrozen();
         _;
-        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
     modifier _transferFromPositionWithOtherTokenFreezableValidator(uint256 _borrowAccountNumber) {
         _requireNotFrozen();
         _;
-        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
     modifier _repayAllForBorrowPositionFreezableValidator() {
@@ -139,10 +127,6 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _outputMarketId
     ) {
         _requireNotFrozen();
-        _requireNotLiquidatableIfWrapToUnderlying(
-            /* _accountNumber = */ _borrowAccountNumber,
-            /* _outputMarketId = */ _outputMarketId
-        );
         _;
     }
 
@@ -151,25 +135,11 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         uint256 _outputMarketId
     ) {
         _requireNotFrozen();
-        _requireNotLiquidatableIfWrapToUnderlying(
-            /* _accountNumber = */ _borrowAccountNumber,
-            /* _outputMarketId = */ _outputMarketId
-        );
         _;
-        _refundExecutionFeeIfNecessary(_borrowAccountNumber);
     }
 
     modifier _swapExactInputForOutputFreezableValidator(uint256 _tradeAccountNumber, uint256[] memory _marketIds) {
         _requireNotFrozen();
-        _requireNotLiquidatableIfWrapToUnderlying(
-            /* _accountNumber = */ _tradeAccountNumber,
-            /* _outputMarketId = */ _marketIds[_marketIds.length - 1]
-        );
-        _;
-    }
-
-    modifier onlyLiquidator(address _from) {
-        _validateIsLiquidator(_from);
         _;
     }
 
@@ -185,166 +155,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function setIsVaultDepositSourceWrapper(
-        bool _isDepositSourceWrapper
-    )
-    external
-    onlyVaultFactory(msg.sender) {
-        _setIsVaultDepositSourceWrapper(_isDepositSourceWrapper);
-    }
-
-    function setShouldVaultSkipTransfer(
-        bool _shouldSkipTransfer
-    )
-    external
-    onlyVaultFactory(msg.sender) {
-        _setShouldVaultSkipTransfer(_shouldSkipTransfer);
-    }
-
-    function initiateUnwrapping(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount,
-        bytes calldata _extraData
-    )
-        external
-        payable
-        nonReentrant
-        onlyVaultOwner(msg.sender)
-        requireNotFrozen
-        requireNotLiquidatable(_tradeAccountNumber)
-    {
-        _beforeInitiateUnwrapping(
-            _tradeAccountNumber,
-            _inputAmount,
-            /* _isLiquidation = */ false
-        );
-        _initiateUnwrapping(
-            _tradeAccountNumber,
-            _inputAmount,
-            _outputToken,
-            _minOutputAmount,
-            /* _isLiquidation = */ false,
-            _extraData
-        );
-    }
-
-    function initiateUnwrappingForLiquidation(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount,
-        bytes calldata _extraData
-    )
-        external
-        payable
-        nonReentrant
-        onlyLiquidator(msg.sender)
-    {
-        _beforeInitiateUnwrapping(
-            _tradeAccountNumber,
-            _inputAmount,
-            /* _isLiquidation = */ true
-        );
-        _initiateUnwrapping(
-            _tradeAccountNumber,
-            _inputAmount,
-            _outputToken,
-            _minOutputAmount,
-            /* _isLiquidation = */ true,
-            _extraData
-        );
-    }
-
-    function executeDepositIntoVault(
-        address _from,
-        uint256 _amount
-    )
-        public
-        override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
-        onlyVaultFactory(msg.sender)
-    {
-        _setVirtualBalance(virtualBalance() + _amount);
-
-        if (!shouldSkipTransfer()) {
-            if (!isDepositSourceWrapper()) {
-                IERC20(UNDERLYING_TOKEN()).safeTransferFrom(_from, address(this), _amount);
-            } else {
-                IERC20(UNDERLYING_TOKEN()).safeTransferFrom(
-                    address(handlerRegistry().getWrapperByToken(IFreezableIsolationModeVaultFactory(VAULT_FACTORY()))),
-                    address(this),
-                    _amount
-                );
-                _setIsVaultDepositSourceWrapper(/* _isDepositSourceWrapper = */ false);
-            }
-        } else {
-            Require.that(
-                isVaultFrozen(),
-                _FILE,
-                "Vault should be frozen"
-            );
-            _setShouldVaultSkipTransfer(/* _shouldSkipTransfer = */ false);
-        }
-    }
-
-    function executeWithdrawalFromVault(
-        address _recipient,
-        uint256 _amount
-    )
-        public
-        override(IIsolationModeTokenVaultV1, IsolationModeTokenVaultV1)
-        onlyVaultFactory(msg.sender)
-    {
-        _setVirtualBalance(virtualBalance() - _amount);
-
-        if (!shouldSkipTransfer()) {
-            IERC20(UNDERLYING_TOKEN()).safeTransfer(_recipient, _amount);
-        } else {
-            Require.that(
-                isVaultFrozen(),
-                _FILE,
-                "Vault should be frozen"
-            );
-            _setShouldVaultSkipTransfer(false);
-        }
-    }
-
-    function isDepositSourceWrapper() public view returns (bool) {
-        return _getUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT) == 1;
-    }
-
-    function shouldSkipTransfer() public view returns (bool) {
-        return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
-    }
-
-    function handlerRegistry() public view returns (IHandlerRegistry) {
-        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).handlerRegistry();
-    }
-
-    function getExecutionFeeForAccountNumber(uint256 _accountNumber) public view returns (uint256) {
-        return _getUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)));
-    }
-
     function isVaultFrozen() public virtual view returns (bool) {
-        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultFrozen(address(this));
-    }
-
-    function isVaultAccountFrozen(uint256 _accountNumber) public view returns (bool) {
-        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultAccountFrozen(address(this), _accountNumber);
-    }
-
-    function getOutputTokenByVaultAccount(
-        uint256 _accountNumber
-    ) public view returns (address) {
-        return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).getOutputTokenByAccount(
-            address(this),
-            _accountNumber
-        );
-    }
-
-    function virtualBalance() public view returns (uint256) {
-        return _getUint256(_VIRTUAL_BALANCE_SLOT);
+        return _getUint256(_IS_VAULT_FROZEN_SLOT) == 1;
     }
 
     // ==================================================================
@@ -572,164 +384,16 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ======================== Internal Functions ======================
     // ==================================================================
 
-    function _setIsVaultDepositSourceWrapper(bool _isDepositSourceWrapper) internal {
-        _setUint256(_IS_DEPOSIT_SOURCE_WRAPPER_SLOT, _isDepositSourceWrapper ? 1 : 0);
-        emit IsDepositSourceWrapperSet(_isDepositSourceWrapper);
+    function _setIsVaultFrozen(bool _isVaultFrozen) internal {
+        _setUint256(_IS_VAULT_FROZEN_SLOT, _isVaultFrozen ? 1 : 0);
+        emit IsVaultFrozenSet(_isVaultFrozen);
     }
 
-    function _setShouldVaultSkipTransfer(bool _shouldSkipTransfer) internal {
-        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
-        emit ShouldSkipTransferSet(_shouldSkipTransfer);
-    }
-
-    function _setExecutionFeeForAccountNumber(
-        uint256 _accountNumber,
-        uint256 _executionFee
-    ) internal {
-        _setUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)), _executionFee);
-        emit ExecutionFeeSet(_accountNumber, _executionFee);
-    }
-
-    function _setVirtualBalance(uint256 _balance) internal {
-        _setUint256(_VIRTUAL_BALANCE_SLOT, _balance);
-        emit VirtualBalanceSet(_balance);
-    }
-
-    function _initiateUnwrapping(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        address _outputToken,
-        uint256 _minOutputAmount,
-        bool _isLiquidation,
-        bytes calldata _extraData
-    ) internal virtual;
-
-    function _validateIsLiquidator(address _from) internal view {
-        Require.that(
-            dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(
-                IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).marketId(),
-                _from
-            ),
-            _FILE,
-            "Only liquidator can call",
-            _from
-        );
-    }
-
-    // ==================================================================
-    // ======================== Private Functions =======================
-    // ==================================================================
-
-    function _refundExecutionFeeIfNecessary(uint256 _borrowAccountNumber) private {
-        IDolomiteStructs.AccountInfo memory borrowAccountInfo = IDolomiteStructs.AccountInfo({
-            owner: address(this),
-            number: _borrowAccountNumber
-        });
-        uint256 executionFee = getExecutionFeeForAccountNumber(_borrowAccountNumber);
-        if (DOLOMITE_MARGIN().getAccountNumberOfMarketsWithBalances(borrowAccountInfo) == 0 && executionFee > 0) {
-            // There's no assets left in the position. Issue a refund for the execution fee
-            _setExecutionFeeForAccountNumber(_borrowAccountNumber, /* _executionFee = */ 0);
-            // @audit: check for any reentrancy issues! No user-level functions on the vault should be reentered
-            payable(OWNER()).sendValue(executionFee);
-        }
-    }
-
-    function _beforeInitiateUnwrapping(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        bool _isLiquidation
-    ) private view {
-        // Disallow the withdrawal if we're attempting to OVER withdraw. This can happen due to a pending deposit OR if
-        // the user inputs a number that's too large
-        _validateWithdrawalAmountForUnwrapping(
-            _tradeAccountNumber,
-            _inputAmount,
-            _isLiquidation
-        );
-    }
-
-    function _validateWithdrawalAmountForUnwrapping(
-        uint256 _accountNumber,
-        uint256 _withdrawalAmount,
-        bool _isLiquidation
-    ) private view {
-        Require.that(
-            _withdrawalAmount > 0,
-            _FILE,
-            "Invalid withdrawal amount"
-        );
-
-        IFreezableIsolationModeVaultFactory factory = IFreezableIsolationModeVaultFactory(VAULT_FACTORY());
-        address vault = address(this);
-        uint256 withdrawalPendingAmount = factory.getPendingAmountByAccount(
-            vault,
-            _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Withdrawal
-        );
-        uint256 depositPendingAmount = factory.getPendingAmountByAccount(
-            vault,
-            _accountNumber,
-            IFreezableIsolationModeVaultFactory.FreezeType.Deposit
-        );
-
-        IDolomiteStructs.AccountInfo memory accountInfo = IDolomiteStructs.AccountInfo({
-            owner: vault,
-            number: _accountNumber
-        });
-        uint256 balance = factory.DOLOMITE_MARGIN().getAccountWei(accountInfo, factory.marketId()).value;
-
-        if (!_isLiquidation) {
-            // The requested withdrawal cannot be for more than the user's balance, minus any pending.
-            Require.that(
-                balance - (withdrawalPendingAmount + depositPendingAmount) >= _withdrawalAmount,
-                _FILE,
-                "Withdrawal too large",
-                vault,
-                _accountNumber
-            );
-        } else {
-            // The requested withdrawal must be for the entirety of the user's balance
-            Require.that(
-                balance - (withdrawalPendingAmount + depositPendingAmount) > 0,
-                _FILE,
-                "Account is frozen",
-                vault,
-                _accountNumber
-            );
-            Require.that(
-                balance - (withdrawalPendingAmount + depositPendingAmount) == _withdrawalAmount,
-                _FILE,
-                "Liquidation must be full balance",
-                vault,
-                _accountNumber
-            );
-        }
-    }
-
-    function _requireNotFrozen() private view {
+    function _requireNotFrozen() internal view {
         Require.that(
             !isVaultFrozen(),
             _FILE,
             "Vault is frozen"
         );
-    }
-
-    function _requireVaultAccountNotFrozen(uint256 _accountNumber) private view {
-        Require.that(
-            !isVaultAccountFrozen(_accountNumber),
-            _FILE,
-            "Vault account is frozen",
-            _accountNumber
-        );
-    }
-
-    function _requireNotLiquidatableIfWrapToUnderlying(
-        uint256 _accountNumber,
-        uint256 _outputMarketId
-    ) internal view {
-        uint256 underlyingMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(VAULT_FACTORY());
-        if (_outputMarketId== underlyingMarketId) {
-            _requireNotLiquidatable(_accountNumber);
-        }
     }
 }

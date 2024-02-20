@@ -21,7 +21,7 @@ import {
   TestIsolationModeFactory__factory,
   TestIsolationModeTokenVaultV1,
   TestIsolationModeTokenVaultV1WithFreezable,
-  TestIsolationModeTokenVaultV1WithFreezableAndPausable,
+  TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable,
   TestIsolationModeTokenVaultV1WithPausable,
   TestIsolationModeTokenVaultV1WithPausableAndOnlyEoa,
   TestPriceOracle,
@@ -30,6 +30,7 @@ import {
   TestUpgradeableAsyncIsolationModeUnwrapperTrader__factory,
   TestUpgradeableAsyncIsolationModeWrapperTrader,
   TestUpgradeableAsyncIsolationModeWrapperTrader__factory,
+  TestIsolationModeTokenVaultV1WithAsyncFreezable,
 } from '../../../src/types';
 import { createContractWithAbi, createContractWithLibrary } from '../../../src/utils/dolomite-utils';
 import { NetworkType } from '../../../src/utils/no-deps-constants';
@@ -55,7 +56,7 @@ export interface TestEcosystem {
 export async function createTestIsolationModeFactory<T extends NetworkType>(
   core: CoreProtocolType<T>,
   underlyingToken: CustomTestToken,
-  userVaultImplementation: TestIsolationModeTokenVault,
+  userVaultImplementation: TestIsolationModeTokenVault | IIsolationModeTokenVaultV1,
 ): Promise<TestIsolationModeFactory> {
   return await createContractWithAbi<TestIsolationModeFactory>(
     TestIsolationModeFactory__factory.abi,
@@ -72,7 +73,8 @@ export async function createTestIsolationModeFactory<T extends NetworkType>(
 
 type FreezableVault =
   TestIsolationModeTokenVaultV1WithFreezable
-  | TestIsolationModeTokenVaultV1WithFreezableAndPausable;
+  | TestIsolationModeTokenVaultV1WithAsyncFreezable 
+  | TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable;
 
 export async function createTestHandlerRegistry<T extends NetworkType>(
   core: CoreProtocolType<T>,
