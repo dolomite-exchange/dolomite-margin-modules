@@ -32,6 +32,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "./interfaces/IGLPIsolationModeTokenVaultV2.sol";
 import { IGLPIsolationModeVaultFactory } from "./interfaces/IGLPIsolationModeVaultFactory.sol";
+import { IGMXIsolationModeTokenVaultV1 } from "./interfaces/IGMXIsolationModeTokenVaultV1.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
 import { IGmxRewardRouterV2 } from "./interfaces/IGmxRewardRouterV2.sol";
 import { IGmxRewardTracker } from "./interfaces/IGmxRewardTracker.sol";
@@ -60,6 +61,8 @@ contract GLPIsolationModeTokenVaultV2 is
     // ==================================================================
 
     bytes32 private constant _FILE = "GLPIsolationModeTokenVaultV2";
+    bytes32 private constant _TEMP_BAL_SLOT = bytes32(uint256(keccak256("eip1967.proxy.tempBal")) - 1); // solhint-disable-line max-line-length
+    bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _IS_ACCEPTING_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isAcceptingFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _HAS_ACCEPTED_FULL_ACCOUNT_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.hasAcceptedFullAccountTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _HAS_SYNCED = bytes32(uint256(keccak256("eip1967.proxy.hasSynced")) - 1);
@@ -78,14 +81,24 @@ contract GLPIsolationModeTokenVaultV2 is
     // ======================= External Functions =======================
     // ==================================================================
 
-    function signalAccountTransfer(address _receiver) external onlyGmxVault(msg.sender) {
+    function signalAccountTransfer(address _receiver, uint256 _glpBal) external onlyGmxVault(msg.sender) {
+        _setShouldSkipTransfer(true);
+        _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBal);
+        // @audit Need to make sure user can't initiate a transfer again with the TEMPBAL and get free money
+        _setUint256(_TEMP_BAL_SLOT, _glpBal);
+
         gmx().approve(address(sGmx()), type(uint256).max);
         gmxRewardsRouter().signalTransfer(_receiver);
     }
 
     function cancelAccountTransfer() external onlyGmxVault(msg.sender) {
-        gmx().approve(address(sGmx()), 0);
-        gmxRewardsRouter().signalTransfer(address(0));
+        if (IGMXIsolationModeTokenVaultV1(msg.sender).isVaultFrozen()) {
+            gmx().approve(address(sGmx()), 0);
+            gmxRewardsRouter().signalTransfer(address(0));
+
+            _setShouldSkipTransfer(true);
+            _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _getUint256(_TEMP_BAL_SLOT));
+        }
     }
 
     function handleRewards(
@@ -271,6 +284,11 @@ contract GLPIsolationModeTokenVaultV2 is
     public
     override
     onlyVaultFactory(msg.sender) {
+        if (shouldSkipTransfer()) {
+            _setShouldSkipTransfer(false);
+            return;
+        }
+
         if (isAcceptingFullAccountTransfer()) {
             // The fsGLP is already in this vault, so don't materialize a transfer from the vault owner
             assert(_amount == underlyingBalanceOf());
@@ -286,6 +304,11 @@ contract GLPIsolationModeTokenVaultV2 is
     public
     override
     onlyVaultFactory(msg.sender) {
+        if (shouldSkipTransfer()) {
+            _setShouldSkipTransfer(false);
+            return;
+        }
+
         if (super.underlyingBalanceOf() < _amount) {
             // There's not enough value in the vault to cover the withdrawal, so we need to withdraw from vGLP
             vGlp().withdraw();
@@ -308,6 +331,10 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function gmxRewardsRouter() public view returns (IGmxRewardRouterV2) {
         return registry().gmxRewardsRouter();
+    }
+
+    function shouldSkipTransfer() public view returns (bool) {
+        return _getUint256(_SHOULD_SKIP_TRANSFER_SLOT) == 1;
     }
 
     function underlyingBalanceOf() public view override returns (uint256) {
@@ -587,5 +614,9 @@ contract GLPIsolationModeTokenVaultV2 is
         } else {
             return 0;
         }
+    }
+
+    function _setShouldSkipTransfer(bool _shouldSkipTransfer) internal {
+        _setUint256(_SHOULD_SKIP_TRANSFER_SLOT, _shouldSkipTransfer ? 1 : 0);
     }
 }

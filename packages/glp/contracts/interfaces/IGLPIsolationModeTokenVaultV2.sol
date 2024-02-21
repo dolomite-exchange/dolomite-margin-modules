@@ -107,7 +107,7 @@ interface IGLPIsolationModeTokenVaultV2 {
      */
     function unstakeEsGmx(uint256 _amount) external;
 
-    function signalAccountTransfer(address _recipient) external;
+    function signalAccountTransfer(address _recipient, uint256 _glpBal) external;
 
     function cancelAccountTransfer() external;
 
