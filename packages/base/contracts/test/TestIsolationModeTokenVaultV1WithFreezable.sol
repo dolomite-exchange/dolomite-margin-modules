@@ -38,9 +38,6 @@ contract TestIsolationModeTokenVaultV1WithFreezable is IsolationModeTokenVaultV1
 
     bytes32 private constant _FILE = "TestVaultV1WithFreezable";
 
-    // solhint-disable-next-line no-empty-blocks
-    constructor(address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {}
-
     function dolomiteRegistry() public view returns (IDolomiteRegistry) {
         return TestSimpleIsolationModeVaultFactory(VAULT_FACTORY()).dolomiteRegistry();
     }

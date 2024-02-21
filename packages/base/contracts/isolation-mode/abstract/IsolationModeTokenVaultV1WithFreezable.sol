@@ -57,12 +57,6 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     bytes32 private constant _FILE = "IsolationModeVaultV1Freezable"; // shortened to fit in 32 bytes
     bytes32 private constant _IS_VAULT_FROZEN_SLOT = bytes32(uint256(keccak256("eip1967.proxy.virtualBalance")) - 1);
 
-    // ==================================================================
-    // ====================== Immutable Variables =======================
-    // ==================================================================
-
-    IWETH public immutable override WETH; // solhint-disable-line var-name-mixedcase
-
     // ===================================================
     // ==================== Modifiers ====================
     // ===================================================
@@ -141,14 +135,6 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     modifier _swapExactInputForOutputFreezableValidator(uint256 _tradeAccountNumber, uint256[] memory _marketIds) {
         _requireNotFrozen();
         _;
-    }
-
-    // ==================================================================
-    // --======================== Constructors ==========================
-    // ==================================================================
-
-    constructor(address _weth) {
-        WETH = IWETH(_weth);
     }
 
     // ==================================================================

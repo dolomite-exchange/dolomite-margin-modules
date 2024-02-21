@@ -62,6 +62,12 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
     bytes32 private constant _SHOULD_SKIP_TRANSFER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.shouldSkipTransfer")) - 1); // solhint-disable-line max-line-length
     bytes32 private constant _POSITION_TO_EXECUTION_FEE_SLOT = bytes32(uint256(keccak256("eip1967.proxy.positionToExecutionFee")) - 1); // solhint-disable-line max-line-length
 
+    // ==================================================================
+    // ====================== Immutable Variables =======================
+    // ==================================================================
+
+    IWETH public immutable override WETH; // solhint-disable-line var-name-mixedcase
+
     // ===================================================
     // ==================== Modifiers ====================
     // ===================================================
@@ -138,7 +144,9 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
     // --======================== Constructors ==========================
     // ==================================================================
 
-    constructor(address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {}
+    constructor(address _weth) {
+        WETH = IWETH(_weth);
+    }
 
     // ==================================================================
     // ======================== Public Functions ========================

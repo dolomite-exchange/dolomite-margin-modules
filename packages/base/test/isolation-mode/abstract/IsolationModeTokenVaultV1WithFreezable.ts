@@ -90,7 +90,7 @@ describe('IsolationModeTokenVaultV1WithFreezable', () => {
     userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithFreezable>(
       'TestIsolationModeTokenVaultV1WithFreezable',
       libraries,
-      [core.tokens.weth.address],
+      [],
     );
     registry = await createTestHandlerRegistry(core);
     factory = await createTestIsolationModeFactory(

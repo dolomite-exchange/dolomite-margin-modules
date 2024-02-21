@@ -43,6 +43,4 @@ interface IIsolationModeTokenVaultV1WithFreezable is IIsolationModeTokenVaultV1 
      * @return True if the entire vault is frozen, false otherwise.
      */
     function isVaultFrozen() external view returns (bool);
-
-    function WETH() external view returns (IWETH);
 }

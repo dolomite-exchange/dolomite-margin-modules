@@ -137,4 +137,6 @@ interface IIsolationModeTokenVaultV1WithAsyncFreezable is IIsolationModeTokenVau
      * @return True if the vault account is frozen, false otherwise.
      */
     function isVaultAccountFrozen(uint256 _accountNumber) external view returns (bool);
+
+    function WETH() external view returns (IWETH);
 }
