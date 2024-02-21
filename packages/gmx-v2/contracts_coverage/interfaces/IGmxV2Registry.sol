@@ -21,14 +21,14 @@
 pragma solidity ^0.8.9;
 
 
+import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
+import { IHandlerRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IHandlerRegistry.sol";
 import { IGmxDataStore } from "./IGmxDataStore.sol";
 import { IGmxDepositHandler } from "./IGmxDepositHandler.sol";
 import { IGmxExchangeRouter } from "./IGmxExchangeRouter.sol";
 import { IGmxReader } from "./IGmxReader.sol";
 import { IGmxRouter } from "./IGmxRouter.sol";
 import { IGmxWithdrawalHandler } from "./IGmxWithdrawalHandler.sol";
-import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
-import { IHandlerRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IHandlerRegistry.sol";
 
 
 /**

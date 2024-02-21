@@ -20,11 +20,11 @@
 
 pragma solidity ^0.8.9;
 
+import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
-import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUmamiAssetVault } from "./interfaces/IUmamiAssetVault.sol";
 import { IUmamiAssetVaultRegistry } from "./interfaces/IUmamiAssetVaultRegistry.sol";
 
@@ -36,6 +36,7 @@ import { IUmamiAssetVaultRegistry } from "./interfaces/IUmamiAssetVaultRegistry.
  * @notice  An implementation of the IDolomitePriceOracle interface that gets Jones DAO's jUSDC price in USD terms.
  */
 contract UmamiAssetVaultPriceOracle is IDolomitePriceOracle {
+
     // ============================ Constants ============================
 
     bytes32 private constant _FILE = "UmamiAssetVaultPriceOracle";
@@ -69,12 +70,14 @@ contract UmamiAssetVaultPriceOracle is IDolomitePriceOracle {
     public
     view
     returns (IDolomiteStructs.MonetaryPrice memory) {
+        if (_token == address(ISOLATION_MODE_TOKEN)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _token == address(ISOLATION_MODE_TOKEN),
             _FILE,
             "Invalid token",
             _token
         );
+        if (DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token))) { /* FOR COVERAGE TESTING */ }
         Require.that(
             DOLOMITE_MARGIN.getMarketIsClosing(DOLOMITE_MARGIN.getMarketIdByTokenAddress(_token)),
             _FILE,

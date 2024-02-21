@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { ICustomTestVaultToken } from "@dolomite-exchange/modules-base/contracts/test/ICustomTestVaultToken.sol";
 import { ChainlinkAutomationPriceOracle } from "../ChainlinkAutomationPriceOracle.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**

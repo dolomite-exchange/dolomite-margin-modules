@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IOnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/interfaces/IOnlyDolomiteMargin.sol";
-import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol";
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 import { IChainlinkAutomation } from "./IChainlinkAutomation.sol";
 
 

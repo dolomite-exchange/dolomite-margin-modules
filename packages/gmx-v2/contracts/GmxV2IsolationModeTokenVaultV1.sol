@@ -193,17 +193,21 @@ contract GmxV2IsolationModeTokenVaultV1 is
             );
         }
 
-        if (_params.tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper || isVaultFrozen()) {
+        if (
+            _params.tradersPath[0].traderType == IGenericTraderBase.TraderType.IsolationModeUnwrapper ||
+            isVaultFrozen()
+        ) {
             // Only a trusted converter can initiate unwraps (via the callback) OR execute swaps if the vault is frozen
             _requireOnlyConverter(msg.sender);
         }
 
         // Ignore the freezable implementation and call the pausable one directly
-        // @follow-up Corey: Are you cool with doing it like this? Need to still allow the unwrapper so can't call freezable modifier
-        _requireNotLiquidatableIfWrapToUnderlying(_params.tradeAccountNumber, _params.marketIdsPath[_params.marketIdsPath.length - 1]);
-        IsolationModeTokenVaultV1WithPausable._swapExactInputForOutput(
-            _params
+        _requireNotLiquidatableIfWrapToUnderlying(
+            _params.tradeAccountNumber,
+            _params.marketIdsPath[_params.marketIdsPath.length - 1]
         );
+
+        IsolationModeTokenVaultV1WithPausable._swapExactInputForOutput(_params);
     }
 
     function _initiateUnwrapping(

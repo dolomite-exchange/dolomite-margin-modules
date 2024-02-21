@@ -158,7 +158,6 @@ contract TestAsyncProtocolIsolationModeTokenVault is
         }
 
         // Ignore the freezable implementation and call the pausable one directly
-        // @follow-up Corey: Are you cool with doing it like this?
         // Need to still allow the unwrapper so can't call freezable modifier
         _requireNotLiquidatableIfWrapToUnderlying(
             _params.tradeAccountNumber,

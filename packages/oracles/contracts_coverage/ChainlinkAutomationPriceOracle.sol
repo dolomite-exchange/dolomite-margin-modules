@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IChainlinkAutomationPriceOracle } from "./interfaces/IChainlinkAutomationPriceOracle.sol";
 import { IChainlinkAutomationRegistry } from "./interfaces/IChainlinkAutomationRegistry.sol";
 

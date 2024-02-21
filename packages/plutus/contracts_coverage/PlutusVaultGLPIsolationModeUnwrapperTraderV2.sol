@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
+import { IsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { GLPMathLib } from "@dolomite-exchange/modules-glp/contracts/GLPMathLib.sol";
 import { IGmxRegistryV1 } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGmxRegistryV1.sol";
 import { IGmxVault } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGmxVault.sol";
 import { IPlutusVaultGLPRouter } from "./interfaces/IPlutusVaultGLPRouter.sol";
 import { IPlutusVaultRegistry } from "./interfaces/IPlutusVaultRegistry.sol";
-import { IsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeUnwrapperTraderV2.sol";
 
 
 /**

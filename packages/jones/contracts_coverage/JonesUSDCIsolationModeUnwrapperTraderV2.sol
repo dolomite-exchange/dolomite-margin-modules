@@ -20,10 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { IsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeUnwrapperTraderV2.sol"; // solhint-disable-line max-line-length
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { JonesUSDCMathLib } from "./JonesUSDCMathLib.sol";
 import { IJonesUSDCRegistry } from "./interfaces/IJonesUSDCRegistry.sol";
-import { IsolationModeUnwrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeUnwrapperTraderV2.sol";
 
 
 /**

@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteInterestSetter } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteInterestSetter.sol";
+import { IDolomiteInterestSetter } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteInterestSetter.sol"; // solhint-disable-line max-line-length
 
 
 /**

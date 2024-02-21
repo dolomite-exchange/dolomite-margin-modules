@@ -205,8 +205,8 @@ contract VesterImplementationV2 is
         return nftId;
     }
 
-    function extendDurationForGrandfatheredPosition(uint256 _nftId, uint256 _duration) external {
-        this.extendDurationForGrandfatheredPosition(
+    function extendDurationForPosition(uint256 _nftId, uint256 _duration) external {
+        this.extendDurationForPosition(
             /* _vestingPosition = */ _getVestingPositionSlot(_nftId),
             _nftId,
             _duration

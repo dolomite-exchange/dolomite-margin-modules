@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IUmamiAssetVaultStorageViewer } from "./IUmamiAssetVaultStorageViewer.sol";
 import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
+import { IUmamiAssetVaultStorageViewer } from "./IUmamiAssetVaultStorageViewer.sol";
 
 /**
  * @title   IUmamiAssetVaultRegistry

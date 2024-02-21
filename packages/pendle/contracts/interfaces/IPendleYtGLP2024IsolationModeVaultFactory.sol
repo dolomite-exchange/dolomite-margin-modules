@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IPendleGLPRegistry } from "./IPendleGLPRegistry.sol";
 
 /**

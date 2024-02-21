@@ -20,12 +20,12 @@
 
 pragma solidity ^0.8.9;
 
+import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
+import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
 import { IJonesGLPAdapter } from "./IJonesGLPAdapter.sol";
 import { IJonesGLPVaultRouter } from "./IJonesGLPVaultRouter.sol";
 import { IJonesUSDCFarm } from "./IJonesUSDCFarm.sol";
 import { IJonesWhitelistController } from "./IJonesWhitelistController.sol";
-import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
-import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
 
 
 /**

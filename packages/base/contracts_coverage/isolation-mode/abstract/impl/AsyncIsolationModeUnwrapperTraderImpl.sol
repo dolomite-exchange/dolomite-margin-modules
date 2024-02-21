@@ -105,7 +105,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         IGenericTraderProxyV1.UserConfig memory userConfig = IGenericTraderProxyV1.UserConfig({
             deadline: block.timestamp,
             balanceCheckFlag: AccountBalanceLib.BalanceCheckFlag.None,
-            // @follow-up Which event type here?
             eventType: IGenericTraderProxyV1.EventEmissionType.None
         });
 
@@ -166,14 +165,21 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         }
 
         if (transferAmount == type(uint256).max) {
-            // @audit getAccountWei can return negative. Need to check that
-            // @follow-up Is this the correct number
-            transferAmount = _unwrapper.DOLOMITE_MARGIN().getAccountWei(_accountInfo, factory.marketId()).value;
-        } else if (assetReference == IDolomiteStructs.AssetReference.Target) {
-            transferAmount = _unwrapper.DOLOMITE_MARGIN().getAccountWei(
+            IDolomiteStructs.Wei memory balanceWei = _unwrapper.DOLOMITE_MARGIN().getAccountWei(
                 _accountInfo,
                 factory.marketId()
-            ).value - transferAmount;
+            );
+            /*assert(balanceWei.sign || balanceWei.value == 0);*/
+
+            transferAmount = balanceWei.value;
+        } else if (assetReference == IDolomiteStructs.AssetReference.Target) {
+            IDolomiteStructs.Wei memory balanceWei = _unwrapper.DOLOMITE_MARGIN().getAccountWei(
+                _accountInfo,
+                factory.marketId()
+            );
+            /*assert(balanceWei.sign || balanceWei.value == 0);*/
+
+            transferAmount = balanceWei.value - transferAmount;
         }
         _validateVaultExists(factory, accountOwner);
 
@@ -235,7 +241,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             "Invalid transfer amount"
         );
 
-        // @follow-up Changed this to accountOwner. Is that correct
         factory.enqueueTransferFromDolomiteMargin(accountOwner, transferAmount);
         factory.setShouldVaultSkipTransfer(vault, /* _shouldSkipTransfer = */ true);
     }
@@ -438,7 +443,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
             }
 
             if (shouldExecuteTransferForOtherAccount) {
-                // @follow-up Could this bal ever be different than bal during call function? Would throw off target
                 uint256 targetAmount = _unwrapper.DOLOMITE_MARGIN().getAccountWei(
                     IDolomiteStructs.AccountInfo({
                         owner: _params.otherAccountOwner,
@@ -530,7 +534,6 @@ library AsyncIsolationModeUnwrapperTraderImpl {
         IUpgradeableAsyncIsolationModeUnwrapperTrader.WithdrawalInfo memory _withdrawalInfo
     ) public {
          if (_withdrawalInfo.inputAmount == 0) {
-            // @follow-up This now clears out the key value in withdrawalInfo. Confirm that doesn't cause issues
             delete _state.withdrawalInfo[_key];
         } else {
             _state.withdrawalInfo[_key] = _withdrawalInfo;

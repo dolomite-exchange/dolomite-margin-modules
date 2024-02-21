@@ -20,13 +20,13 @@
 
 pragma solidity ^0.8.9;
 
+import { IGmxDataStore } from "../interfaces/IGmxDataStore.sol";
+import { IGmxReader } from "../interfaces/IGmxReader.sol";
 import { GmxDeposit } from "../lib/GmxDeposit.sol";
 import { GmxMarket } from "../lib/GmxMarket.sol";
 import { GmxMarketPoolValueInfo } from "../lib/GmxMarketPoolValueInfo.sol";
 import { GmxPrice } from "../lib/GmxPrice.sol";
 import { GmxWithdrawal } from "../lib/GmxWithdrawal.sol";
-import { IGmxDataStore } from "../interfaces/IGmxDataStore.sol";
-import { IGmxReader } from "../interfaces/IGmxReader.sol";
 
 
 /**

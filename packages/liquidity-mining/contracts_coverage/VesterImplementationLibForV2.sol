@@ -19,8 +19,8 @@
 
 pragma solidity ^0.8.9;
 
-import { VesterImplementationV2 } from "./VesterImplementationV2.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { VesterImplementationV2 } from "./VesterImplementationV2.sol";
 
 
 /**
@@ -51,7 +51,7 @@ library VesterImplementationLibForV2 {
     // ======================= External Functions =======================
     // ==================================================================
 
-    function extendDurationForGrandfatheredPosition(
+    function extendDurationForPosition(
         VesterImplementationV2 _implementation,
         VesterImplementationV2.VestingPosition storage _vestingPosition,
         uint256 _nftId,
@@ -66,26 +66,17 @@ library VesterImplementationLibForV2 {
             _FILE,
             "Invalid position owner"
         );
-        if (_duration >= _GRANDFATHERED_UPGRADED_MIN_DURATION && _duration <= _MAX_VESTING_DURATION && _duration % _MIN_VESTING_DURATION == 0) { /* FOR COVERAGE TESTING */ }
+        if (_duration <= _MAX_VESTING_DURATION && _duration % _MIN_VESTING_DURATION == 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _duration >= _GRANDFATHERED_UPGRADED_MIN_DURATION
-                && _duration <= _MAX_VESTING_DURATION
-                && _duration % _MIN_VESTING_DURATION == 0,
+            _duration <= _MAX_VESTING_DURATION && _duration % _MIN_VESTING_DURATION == 0,
             _FILE,
             "Invalid duration"
         );
-        if (_nftId <= _implementation.grandfatheredIdCutoff()) { /* FOR COVERAGE TESTING */ }
+        if (_vestingPosition.duration < _duration) { /* FOR COVERAGE TESTING */ }
         Require.that(
-            _nftId <= _implementation.grandfatheredIdCutoff(),
+            _vestingPosition.duration < _duration,
             _FILE,
-            "Invalid NFT ID"
-        );
-
-        if (_vestingPosition.duration <= _OLD_MAX_VESTING_DURATION) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _vestingPosition.duration <= _OLD_MAX_VESTING_DURATION,
-            _FILE,
-            "Position already upgraded"
+            "Duration must be extended"
         );
 
         _vestingPosition.duration = _duration;

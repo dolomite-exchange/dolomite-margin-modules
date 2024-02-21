@@ -1479,6 +1479,13 @@
       "isVerified": true
     }
   },
+  "VesterImplementationLibForV3": {
+    "42161": {
+      "address": "0x174860044994694943117B597486071dF4833f16",
+      "transaction": "0xacb360368c0d5293feda5fc4e29487d8db0991de2ff9acdbeb32301e7ba70334",
+      "isVerified": true
+    }
+  },
   "VesterImplementationV1": {
     "42161": {
       "address": "0xd086c37E84146F6A03baCaB54f80dB3B2691bA80",
@@ -1490,6 +1497,13 @@
     "42161": {
       "address": "0x2960C15a51BF8B190b579E6bB2f74c75E136157D",
       "transaction": "0x374a8f4a594be57818b47442331d69d7b69a4a1367fd7f79f8bfe1f223062e25",
+      "isVerified": true
+    }
+  },
+  "VesterImplementationV3": {
+    "42161": {
+      "address": "0x36416F30f6E3B03D846b63e8Fc6Dc0722ed73a02",
+      "transaction": "0xb3089d973a21909e27230d406945e1ee734100b56a418e84a5c86e2f5d27e345",
       "isVerified": true
     }
   },

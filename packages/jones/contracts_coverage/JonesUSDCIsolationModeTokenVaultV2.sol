@@ -20,14 +20,13 @@
 
 pragma solidity ^0.8.9;
 
+import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { JonesUSDCIsolationModeTokenVaultV1 } from "./JonesUSDCIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { JonesUSDCIsolationModeTokenVaultV1 } from "./JonesUSDCIsolationModeTokenVaultV1.sol";
 import { IJonesUSDCFarm } from "./interfaces/IJonesUSDCFarm.sol";
 import { IJonesUSDCIsolationModeVaultFactory } from "./interfaces/IJonesUSDCIsolationModeVaultFactory.sol";
-import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
-import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
 
 
 /**

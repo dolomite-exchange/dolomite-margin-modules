@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { GmxV2IsolationModeUnwrapperTraderV2 } from "../GmxV2IsolationModeUnwrapperTraderV2.sol";
 import { SafeDelegateCallLib } from "@dolomite-exchange/modules-base/contracts/lib/SafeDelegateCallLib.sol";
+import { GmxV2IsolationModeUnwrapperTraderV2 } from "../GmxV2IsolationModeUnwrapperTraderV2.sol";
 
 
 /**

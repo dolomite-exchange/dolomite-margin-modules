@@ -55,6 +55,7 @@ import {
   PendleRegistry__factory,
 } from '@dolomite-exchange/modules-pendle/src/types';
 import { Etherscan } from '@nomicfoundation/hardhat-verify/etherscan';
+import { Libraries } from '@nomiclabs/hardhat-ethers/src/types';
 import { sleep } from '@openzeppelin/upgrades';
 import { BaseContract, BigNumber, BigNumberish, PopulatedTransaction } from 'ethers';
 import { commify, formatEther, FormatTypes, ParamType, parseEther } from 'ethers/lib/utils';
@@ -88,6 +89,7 @@ export async function verifyContract(
   address: string,
   constructorArguments: any[],
   contractName: string,
+  libraries: Libraries,
   attempts: number = 0,
 ): Promise<void> {
   const customChain = hardhat.config.etherscan.customChains.filter(c => c.network === hardhat.network.name)[0];
@@ -104,8 +106,15 @@ export async function verifyContract(
   try {
     console.log('\tVerifying contract...');
     const artifact = await artifacts.readArtifact(contractName);
-    const factory = await ethers.getContractFactoryFromArtifact(artifact);
+    const factory = await ethers.getContractFactoryFromArtifact(artifact, { libraries });
+
     const buildInfo = artifacts.getBuildInfoSync(contractName);
+    buildInfo!.input.settings.libraries = Object.keys(libraries).reduce<any>((acc, library) => {
+      const artifact = artifacts.readArtifactSync(library);
+      acc[`${artifact.sourceName}`] = { [library]: libraries[library] };
+      return acc;
+    }, {});
+
     const { message: guid } = await instance.verify(
       address,
       JSON.stringify(buildInfo!.input),
@@ -124,7 +133,7 @@ export async function verifyContract(
     if (e?.message.toLowerCase().includes('already verified')) {
       console.log('\tEtherscanVerification: Swallowing already verified error');
     } else if (attempts < 2) {
-      await verifyContract(address, constructorArguments, contractName, attempts + 1);
+      await verifyContract(address, constructorArguments, contractName, libraries, attempts + 1);
     } else {
       return Promise.reject(e);
     }
@@ -176,10 +185,6 @@ async function getFreshArtifactFromWorkspace(artifactName: string) {
         deploymentsArtifactsPath,
         { overwrite: true },
       );
-      // const packageDebugPath = artifactPath.replace('.json', '.dbg.json');
-      // const deploymentDebugPath = packageDebugPath.replace(workspace.substring(21), 'deployment');
-      // console.log('deploymentDebugPath', workspace.substring(21), deploymentDebugPath);
-      // await fsExtra.copy(packageDebugPath, deploymentDebugPath, { overwrite: true });
       const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
       await artifacts.saveArtifactAndDebugFile(artifact);
       return;
@@ -215,8 +220,9 @@ export async function deployContractAndSave(
   if (file[usedContractName]?.[chainId.toString()]) {
     const contract = file[usedContractName][chainId.toString()];
     console.log(`\tContract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`);
+    console.log('');
     if (!contract.isVerified) {
-      await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args);
+      await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
     }
     return contract.address;
   }
@@ -246,7 +252,7 @@ export async function deployContractAndSave(
     writeDeploymentFile(file);
   }
 
-  await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args);
+  await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
 
   return contract.address;
 }
@@ -379,6 +385,7 @@ async function prettyPrintAndVerifyContract(
   contractName: string,
   contractRename: string,
   args: any[],
+  libraries: Libraries,
 ) {
   if (network.name === 'hardhat') {
     return;
@@ -394,7 +401,7 @@ async function prettyPrintAndVerifyContract(
     console.log('\tSleeping for 5s to wait for the transaction to be indexed by Etherscan...');
     await sleep(3000);
     const artifact = await artifacts.readArtifact(contractName);
-    await verifyContract(contract.address, [...args], `${artifact.sourceName}:${contractName}`);
+    await verifyContract(contract.address, [...args], `${artifact.sourceName}:${contractName}`, libraries);
     file[contractRename][chainId].isVerified = true;
     writeDeploymentFile(file);
   } else {

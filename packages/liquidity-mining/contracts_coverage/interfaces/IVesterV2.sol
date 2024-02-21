@@ -78,7 +78,7 @@ interface IVesterV2 is IVesterV1 {
      * @param  _nftId    The ID of the position to extend the duration for
      * @param  _duration The new duration to set for the position
      */
-    function extendDurationForGrandfatheredPosition(uint256 _nftId, uint256 _duration) external;
+    function extendDurationForPosition(uint256 _nftId, uint256 _duration) external;
 
     /**
      *
