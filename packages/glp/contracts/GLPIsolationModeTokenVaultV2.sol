@@ -22,8 +22,10 @@ pragma solidity ^0.8.9;
 
 // solhint-disable max-line-length
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
+import { IsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { IIsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -49,7 +51,7 @@ import { ISGMX } from "./interfaces/ISGMX.sol";
  */
 contract GLPIsolationModeTokenVaultV2 is
     IGLPIsolationModeTokenVaultV2,
-    IsolationModeTokenVaultV1
+    IsolationModeTokenVaultV1WithFreezable
 {
     using SafeERC20 for IERC20;
 
@@ -75,6 +77,16 @@ contract GLPIsolationModeTokenVaultV2 is
     // ==================================================================
     // ======================= External Functions =======================
     // ==================================================================
+
+    function signalAccountTransfer(address _receiver) external onlyGmxVault(msg.sender) {
+        gmx().approve(address(sGmx()), type(uint256).max);
+        gmxRewardsRouter().signalTransfer(_receiver);
+    }
+
+    function cancelAccountTransfer() external onlyGmxVault(msg.sender) {
+        gmx().approve(address(sGmx()), 0);
+        gmxRewardsRouter().signalTransfer(address(0));
+    }
 
     function handleRewards(
         bool _shouldClaimGmx,
@@ -285,6 +297,11 @@ contract GLPIsolationModeTokenVaultV2 is
         sGlp().safeTransfer(_recipient, _amount);
     }
 
+    function isVaultFrozen() public view override returns (bool) {
+        address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
+        return IIsolationModeTokenVaultV1WithFreezable(gmxVault).isVaultFrozen();
+    }
+
     function esGmx() public view returns (IERC20) {
         return IERC20(registry().esGmx());
     }
@@ -367,7 +384,7 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function dolomiteRegistry()
         public
-        override(IsolationModeTokenVaultV1)
+        override
         view
         returns (IDolomiteRegistry)
     {

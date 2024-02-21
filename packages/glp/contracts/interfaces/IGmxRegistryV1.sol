@@ -60,6 +60,7 @@ interface IGmxRegistryV1 is IBaseRegistry {
     event SbfGmxSet(address _sbfGmx);
     event VGlpSet(address _vGlp);
     event VGmxSet(address _vGmx);
+    event HandlerSet(address _handler);
 
     // ===================================================
     // ==================== Functions ====================
@@ -97,6 +98,8 @@ interface IGmxRegistryV1 is IBaseRegistry {
 
     function ownerSetVGmx(address _vGmx) external;
 
+    function ownerSetHandler(address _handler) external;
+
     function bnGmx() external view returns (address);
 
     function esGmx() external view returns (address);
@@ -128,4 +131,6 @@ interface IGmxRegistryV1 is IBaseRegistry {
     function vGlp() external view returns (address);
 
     function vGmx() external view returns (address);
+
+    function handler() external view returns (address);
 }

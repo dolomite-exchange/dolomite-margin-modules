@@ -30,6 +30,8 @@ pragma solidity ^0.8.9;
  */
 interface IGMXIsolationModeTokenVaultV1 {
 
+    event AccountTransferRequested(address _vault, address _receiver);
+
     function stakeGmx(uint256 _amount) external;
 
     function unstakeGmx(uint256 _amount) external;
