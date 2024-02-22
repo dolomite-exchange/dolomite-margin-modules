@@ -21,12 +21,11 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IPendlePtIsolationModeTokenVaultV1 } from "./interfaces/IPendlePtIsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IPendlePtIsolationModeVaultFactory } from "./interfaces/IPendlePtIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1WithPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol"; // solhint-disable-line max-line-length
+import { IPendlePtIsolationModeTokenVaultV1 } from "./interfaces/IPendlePtIsolationModeTokenVaultV1.sol";
+import { IPendlePtIsolationModeVaultFactory } from "./interfaces/IPendlePtIsolationModeVaultFactory.sol";
 import { IPendleRegistry } from "./interfaces/IPendleRegistry.sol";
-import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
-import { IIsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
-import { IsolationModeTokenVaultV1WithPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 
 
 /**

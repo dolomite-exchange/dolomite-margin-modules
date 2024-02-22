@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol";
+import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IJonesUSDCIsolationModeVaultFactory } from "./interfaces/IJonesUSDCIsolationModeVaultFactory.sol";
 import { IJonesUSDCRegistry } from "./interfaces/IJonesUSDCRegistry.sol";
 

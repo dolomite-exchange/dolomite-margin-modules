@@ -1084,7 +1084,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: executionFee }, // @follow-up How to calculate executionFee
+          { value: executionFee },
         ),
         'IsolationModeVaultV1ActionsImpl: Account liquidatable',
       );

@@ -79,8 +79,6 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     )
     external
     onlyHandler(msg.sender) {
-        // @follow-up Switched to use 0 instead of len-1
-        // @audit Don't use len - 1 but use index value
         GmxEventUtils.UintKeyValue memory receivedMarketTokens = _eventData.uintItems.items[0];
         Require.that(
             keccak256(abi.encodePacked(receivedMarketTokens.key))
@@ -93,7 +91,7 @@ contract GmxV2IsolationModeWrapperTraderV2 is
     }
 
     /**
-     * 
+     *
      * @dev  This contract is designed to work with 1 token. If a GMX deposit is cancelled,
      *       any excess tokens other than the inputToken will be stuck in the contract
      */

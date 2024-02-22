@@ -51,7 +51,7 @@ library VesterImplementationLibForV2 {
     // ======================= External Functions =======================
     // ==================================================================
 
-    function extendDurationForGrandfatheredPosition(
+    function extendDurationForPosition(
         VesterImplementationV2 _implementation,
         VesterImplementationV2.VestingPosition storage _vestingPosition,
         uint256 _nftId,
@@ -66,22 +66,14 @@ library VesterImplementationLibForV2 {
             "Invalid position owner"
         );
         Require.that(
-            _duration >= _GRANDFATHERED_UPGRADED_MIN_DURATION
-                && _duration <= _MAX_VESTING_DURATION
-                && _duration % _MIN_VESTING_DURATION == 0,
+            _duration <= _MAX_VESTING_DURATION && _duration % _MIN_VESTING_DURATION == 0,
             _FILE,
             "Invalid duration"
         );
         Require.that(
-            _nftId <= _implementation.grandfatheredIdCutoff(),
+            _vestingPosition.duration < _duration,
             _FILE,
-            "Invalid NFT ID"
-        );
-
-        Require.that(
-            _vestingPosition.duration <= _OLD_MAX_VESTING_DURATION,
-            _FILE,
-            "Position already upgraded"
+            "Duration must be extended"
         );
 
         _vestingPosition.duration = _duration;

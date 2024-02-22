@@ -20,11 +20,11 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { BaseRegistry } from "@dolomite-exchange/modules-base/contracts/general/BaseRegistry.sol";
+import { ValidationLib } from "@dolomite-exchange/modules-base/contracts/lib/ValidationLib.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IUmamiAssetVaultRegistry } from "./interfaces/IUmamiAssetVaultRegistry.sol";
 import { IUmamiAssetVaultStorageViewer } from "./interfaces/IUmamiAssetVaultStorageViewer.sol";
-import { ValidationLib } from "@dolomite-exchange/modules-base/contracts/lib/ValidationLib.sol";
 
 /**
  * @title   UmamiAssetVaultRegistry
@@ -71,6 +71,7 @@ contract UmamiAssetVaultRegistry is IUmamiAssetVaultRegistry, BaseRegistry {
     // ============================================================
 
     function _ownerSetStorageViewer(address _storageViewer) internal {
+        if (_storageViewer != address(0)) { /* FOR COVERAGE TESTING */ }
         Require.that(
             _storageViewer != address(0),
             _FILE,

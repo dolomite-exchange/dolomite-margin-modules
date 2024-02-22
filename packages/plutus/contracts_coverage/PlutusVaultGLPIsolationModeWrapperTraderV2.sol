@@ -20,14 +20,14 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
+import { IsolationModeWrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeWrapperTraderV2.sol"; // solhint-disable-line max-line-length
+import { GLPMathLib } from "@dolomite-exchange/modules-glp/contracts/GLPMathLib.sol";
+import { IGmxRegistryV1 } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGmxRegistryV1.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { GLPMathLib } from "@dolomite-exchange/modules-glp/contracts/GLPMathLib.sol";
-import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
-import { IGmxRegistryV1 } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGmxRegistryV1.sol";
 import { IPlutusVaultGLPRouter } from "./interfaces/IPlutusVaultGLPRouter.sol";
 import { IPlutusVaultRegistry } from "./interfaces/IPlutusVaultRegistry.sol";
-import { IsolationModeWrapperTraderV2 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeWrapperTraderV2.sol";
 
 
 /**

@@ -19,27 +19,28 @@
 */
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+// solhint-disable max-line-length
+import { IAsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncIsolationModeTraderBase.sol";
+import { IIsolationModeUpgradeableProxy } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUpgradeableProxy.sol";
+import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
-import { IAsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IAsyncIsolationModeTraderBase.sol";
-import { IIsolationModeUpgradeableProxy } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUpgradeableProxy.sol";
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
-import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
-import { GmxEventUtils } from "./lib/GmxEventUtils.sol";
-import { GmxMarket } from "./lib/GmxMarket.sol";
-import { GmxPrice } from "./lib/GmxPrice.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IGmxDataStore } from "./interfaces/IGmxDataStore.sol";
 import { IGmxExchangeRouter } from "./interfaces/IGmxExchangeRouter.sol";
 import { IGmxV2IsolationModeTokenVaultV1 } from "./interfaces/IGmxV2IsolationModeTokenVaultV1.sol";
 import { IGmxV2IsolationModeUnwrapperTraderV2 } from "./interfaces/IGmxV2IsolationModeUnwrapperTraderV2.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
-import "hardhat/console.sol";
+import { GmxEventUtils } from "./lib/GmxEventUtils.sol";
+import { GmxMarket } from "./lib/GmxMarket.sol";
+import { GmxPrice } from "./lib/GmxPrice.sol";
+// solhint-enable max-line-length
 
 
 /**
@@ -363,7 +364,6 @@ library GmxV2Library {
             "Unexpected secondaryOutputAmount"
         );
 
-        // @follow-up Double check this logic with long token and short token swaps and withdrawals
         if (_withdrawalInfo.outputToken == _factory.LONG_TOKEN()) {
             if (_withdrawalInfo.outputToken == _outputTokenAddress.value) { /* FOR COVERAGE TESTING */ }
             Require.that(
@@ -381,7 +381,6 @@ library GmxV2Library {
                 );
             }
         } else {
-            console.log('here');
             if (_withdrawalInfo.outputToken == _secondaryOutputTokenAddress.value) { /* FOR COVERAGE TESTING */ }
             Require.that(
                 _withdrawalInfo.outputToken == _secondaryOutputTokenAddress.value,

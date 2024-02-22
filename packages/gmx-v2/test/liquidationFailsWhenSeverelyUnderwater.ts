@@ -294,8 +294,7 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
       }
 
       if (pushFullyUnderwater) {
-        // @audit Increase the value of ETH, so it's severely underwater after the liquidation is handled too
-        // wethPrice = wethPrice.mul(107).div(100);
+        // Increase the value of ETH, so it's severely underwater after the liquidation is handled too
         wethPrice = wethPrice.mul(120).div(100);
         await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weth.address, wethPrice);
         await core.dolomiteMargin.ownerSetPriceOracle(core.marketIds.weth, core.testEcosystem!.testPriceOracle.address);
@@ -522,8 +521,8 @@ describe('POC: liquidationFailsWhenSeverelyUnderwater', () => {
       const tradeTypes = allKeys.map(key => key === depositKey
         ? UnwrapperTradeType.FromDeposit
         : UnwrapperTradeType.FromWithdrawal);
+      // @follow-up Why did it not fail when I didn't have this boolean
       const liquidationData = ethers.utils.defaultAbiCoder.encode(
-        // @follow-up Why did it not fail when I didn't have this boolean
         ['uint8[]', 'bytes32[]', 'bool'],
         [tradeTypes, allKeys, false],
       );

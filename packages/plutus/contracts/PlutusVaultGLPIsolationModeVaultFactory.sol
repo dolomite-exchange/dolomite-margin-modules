@@ -20,8 +20,8 @@
 
 pragma solidity ^0.8.9;
 
-import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol";
-import { IPlutusVaultGLPIsolationModeVaultFactory } from "./interfaces/IPlutusVaultGLPIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPlutusVaultGLPIsolationModeVaultFactory } from "./interfaces/IPlutusVaultGLPIsolationModeVaultFactory.sol";
 import { IPlutusVaultRegistry } from "./interfaces/IPlutusVaultRegistry.sol";
 
 

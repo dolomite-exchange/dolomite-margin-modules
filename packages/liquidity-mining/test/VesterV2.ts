@@ -259,11 +259,11 @@ describe('VesterV2', () => {
     });
   });
 
-  describe('#extendDurationForGrandfatheredPosition', () => {
-    it('should work when the account is grandfathered', async () => {
+  describe('#extendDurationForPosition', () => {
+    it('should work for any account', async () => {
       const signer = await impersonate(oldWalletWithPosition);
       const result = await vester.connect(signer)
-        .extendDurationForGrandfatheredPosition(oldWalletWithPositionNftId, ONE_WEEK.mul(8));
+        .extendDurationForPosition(oldWalletWithPositionNftId, ONE_WEEK.mul(8));
       await expectEvent(vester, result, 'PositionDurationExtended', {
         id: oldWalletWithPositionNftId,
         duration: ONE_WEEK.mul(8),
@@ -275,7 +275,7 @@ describe('VesterV2', () => {
     it('should fail for invalid position owner', async () => {
       await expectThrow(
         vester.connect(core.hhUser1)
-          .extendDurationForGrandfatheredPosition(oldWalletWithPositionNftId, ONE_WEEK.mul(8)),
+          .extendDurationForPosition(oldWalletWithPositionNftId, ONE_WEEK.mul(8)),
         'VesterImplementationLibForV2: Invalid position owner',
       );
     });
@@ -283,37 +283,20 @@ describe('VesterV2', () => {
     it('should fail for invalid duration increase', async () => {
       const signer = await impersonate(oldWalletWithPosition);
       await expectThrow(
-        vester.connect(signer).extendDurationForGrandfatheredPosition(oldWalletWithPositionNftId, ONE_WEEK.mul(7)),
+        vester.connect(signer).extendDurationForPosition(oldWalletWithPositionNftId, ONE_WEEK.mul(41)),
         'VesterImplementationLibForV2: Invalid duration',
       );
       await expectThrow(
-        vester.connect(signer).extendDurationForGrandfatheredPosition(oldWalletWithPositionNftId, ONE_WEEK.mul(41)),
+        vester.connect(signer).extendDurationForPosition(oldWalletWithPositionNftId, ONE_WEEK.mul(8).add(1)),
         'VesterImplementationLibForV2: Invalid duration',
-      );
-      await expectThrow(
-        vester.connect(signer)
-          .extendDurationForGrandfatheredPosition(oldWalletWithPositionNftId, ONE_WEEK.mul(8).add(1)),
-        'VesterImplementationLibForV2: Invalid duration',
-      );
-    });
-
-    it('should fail when position is not grandfathered', async () => {
-      await vester.vest(defaultAccountNumber, ONE_WEEK, ONE_ETH_BI);
-      await expectThrow(
-        vester.extendDurationForGrandfatheredPosition(nextNftId, ONE_WEEK.mul(8)),
-        'VesterImplementationLibForV2: Invalid NFT ID',
       );
     });
 
     it('should fail if the position is already extended', async () => {
       const signer = await impersonate(oldWalletWithPosition);
-      await vester.connect(signer).extendDurationForGrandfatheredPosition(oldWalletWithPositionNftId, ONE_WEEK.mul(8));
-      const position = await vester.vestingPositions(oldWalletWithPositionNftId);
-      expect(position.duration).to.eq(ONE_WEEK.mul(8));
-
       await expectThrow(
-        vester.connect(signer).extendDurationForGrandfatheredPosition(oldWalletWithPositionNftId, ONE_WEEK.mul(9)),
-        'VesterImplementationLibForV2: Position already upgraded',
+        vester.connect(signer).extendDurationForPosition(oldWalletWithPositionNftId, ONE_WEEK),
+        'VesterImplementationLibForV2: Duration must be extended',
       );
     });
   });

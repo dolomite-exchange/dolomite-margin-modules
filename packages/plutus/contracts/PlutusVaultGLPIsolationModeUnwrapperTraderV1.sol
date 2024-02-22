@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IsolationModeUnwrapperTraderV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeUnwrapperTraderV1.sol";
+import { IsolationModeUnwrapperTraderV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeUnwrapperTraderV1.sol"; // solhint-disable-line max-line-length
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { GLPMathLib } from "@dolomite-exchange/modules-glp/contracts/GLPMathLib.sol";

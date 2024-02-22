@@ -352,7 +352,6 @@ library GmxV2Library {
             "Unexpected secondaryOutputAmount"
         );
 
-        // @follow-up Double check this logic with long token and short token swaps and withdrawals
         if (_withdrawalInfo.outputToken == _factory.LONG_TOKEN()) {
             Require.that(
                 _withdrawalInfo.outputToken == _outputTokenAddress.value,

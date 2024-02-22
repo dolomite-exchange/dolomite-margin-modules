@@ -21,7 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
-import { IsolationModeWrapperTraderV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeWrapperTraderV1.sol";
+import { IsolationModeWrapperTraderV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeWrapperTraderV1.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { GLPMathLib } from "@dolomite-exchange/modules-glp/contracts/GLPMathLib.sol";
 import { IGmxRegistryV1 } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGmxRegistryV1.sol";

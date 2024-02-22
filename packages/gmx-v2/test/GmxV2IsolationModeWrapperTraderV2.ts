@@ -272,7 +272,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
         initiateWrappingParams.traderParams,
         initiateWrappingParams.makerAccounts,
         initiateWrappingParams.userConfig,
-        { value: executionFee }, // @follow-up How to calculate executionFee
+        { value: executionFee },
       );
 
       await expectProtocolBalance(core, vault.address, borrowAccountNumber, marketId, minAmountOut);
@@ -319,7 +319,7 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
           initiateWrappingParams.traderParams,
           initiateWrappingParams.makerAccounts,
           initiateWrappingParams.userConfig,
-          { value: executionFee }, // @follow-up How to calculate executionFee
+          { value: executionFee },
         ),
         'GmxV2Library: Execute deposit feature disabled',
       );
@@ -399,7 +399,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       expect(await underlyingToken.allowance(wrapper.address, vault.address)).to.eq(0);
 
       const deposit = await wrapper.getDepositInfo(depositKey);
-      // @follow-up Changed this
       expect(deposit.key).to.eq(BYTES_ZERO);
       expect(deposit.vault).to.eq(ZERO_ADDRESS);
       expect(deposit.accountNumber).to.eq(ZERO_BI);
@@ -436,11 +435,9 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
     });
 
     it('should work normally with short token', async () => {
-      // @follow-up Changed this
       const minAmountOut = parseEther('800');
       await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut);
 
-      // @follow-up This call looks to fail when minOutputAmount is too high. Fails in a unexpected way though
       const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
         .executeDeposit(
           depositKey,
@@ -467,7 +464,6 @@ describe('GmxV2IsolationModeWrapperTraderV2', () => {
       const minAmountOut = parseEther('1600');
       await setupBalances(core.marketIds.nativeUsdc!, usdcAmount, minAmountOut);
 
-      // @follow-up This call looks to fail when minOutputAmount is too high. Fails in a unexpected way though
       const result = await core.gmxEcosystemV2!.gmxDepositHandler.connect(core.gmxEcosystemV2!.gmxExecutor)
         .executeDeposit(
           depositKey,

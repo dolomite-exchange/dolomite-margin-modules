@@ -323,7 +323,7 @@ export async function setupCoreProtocol<T extends NetworkType>(
   if (network.name === 'hardhat') {
     await resetFork(config.blockNumber, config.network);
   } else {
-    console.log('\tSkipping forking...');
+    console.log('\tSkipping forking...\n');
   }
 
   const dolomiteMarginAddress = DolomiteMarginJson.networks[config.network].address;

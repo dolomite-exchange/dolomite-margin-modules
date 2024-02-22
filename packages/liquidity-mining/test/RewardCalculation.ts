@@ -125,7 +125,6 @@ xdescribe('Reward Calculation', () => {
       await emitter.connect(core.hhUser2).withdraw(core.marketIds.weth, 0);
       await mine();
 
-      // @follow up are we losing 1 wei somewhere
       await expectWalletBalance(core.hhUser1.address, oARB, parseEther('.666666666666666666'));
       await expectWalletBalance(core.hhUser2.address, oARB, parseEther('.333333333333333333'));
     });

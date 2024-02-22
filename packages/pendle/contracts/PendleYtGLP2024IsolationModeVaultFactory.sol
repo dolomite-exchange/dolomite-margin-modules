@@ -20,10 +20,10 @@
 
 pragma solidity ^0.8.9;
 
-import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol";
+import { SimpleIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/SimpleIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
-import { IPendleYtGLP2024IsolationModeVaultFactory } from "./interfaces/IPendleYtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPendleYtGLP2024IsolationModeVaultFactory } from "./interfaces/IPendleYtGLP2024IsolationModeVaultFactory.sol";
 import { IPendleYtToken } from "./interfaces/IPendleYtToken.sol";
 
 
@@ -83,9 +83,9 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
 
     function ownerSetPendleGLPRegistry(
         address _pendleGLPRegistry
-    ) 
-    external 
-    override 
+    )
+    external
+    override
     onlyDolomiteMarginOwner(msg.sender) {
         pendleGLPRegistry = IPendleGLPRegistry(_pendleGLPRegistry);
         emit PendleGLPRegistrySet(_pendleGLPRegistry);
@@ -93,9 +93,9 @@ contract PendleYtGLP2024IsolationModeVaultFactory is
 
     function ownerSetYtMaturityTimestamp(
         uint256 _ytMaturityTimestamp
-    ) 
-    external 
-    override 
+    )
+    external
+    override
     onlyDolomiteMarginOwner(msg.sender) {
         ytMaturityTimestamp = _ytMaturityTimestamp;
         emit YtMaturityTimestampSet(_ytMaturityTimestamp);

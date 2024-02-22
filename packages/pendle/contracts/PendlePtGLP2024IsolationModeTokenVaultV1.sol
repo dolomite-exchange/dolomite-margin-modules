@@ -21,11 +21,11 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
-import { IsolationModeTokenVaultV1WithPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol";
+import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1WithPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol"; // solhint-disable-line max-line-length
 import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
-import { IPendlePtGLP2024IsolationModeTokenVaultV1 } from "./interfaces/IPendlePtGLP2024IsolationModeTokenVaultV1.sol"; // solhint-disable-line max-line-length
-import { IPendlePtGLP2024IsolationModeVaultFactory } from "./interfaces/IPendlePtGLP2024IsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
+import { IPendlePtGLP2024IsolationModeTokenVaultV1 } from "./interfaces/IPendlePtGLP2024IsolationModeTokenVaultV1.sol";
+import { IPendlePtGLP2024IsolationModeVaultFactory } from "./interfaces/IPendlePtGLP2024IsolationModeVaultFactory.sol";
 
 
 /**

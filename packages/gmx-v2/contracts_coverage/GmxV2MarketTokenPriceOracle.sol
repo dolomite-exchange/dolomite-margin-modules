@@ -20,15 +20,15 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
-import { GmxMarket } from "./lib/GmxMarket.sol";
-import { GmxPrice } from "./lib/GmxPrice.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationModeVaultFactory.sol";
 import { IGmxV2MarketTokenPriceOracle } from "./interfaces/IGmxV2MarketTokenPriceOracle.sol";
 import { IGmxV2Registry } from "./interfaces/IGmxV2Registry.sol";
+import { GmxMarket } from "./lib/GmxMarket.sol";
+import { GmxPrice } from "./lib/GmxPrice.sol";
 
 
 /**
@@ -152,7 +152,6 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         GmxPrice.PriceProps memory _longTokenPriceProps,
         GmxPrice.PriceProps memory _shortTokenPriceProps
     ) internal view returns (uint256) {
-        // @audit - We use Chainlink for all of these prices
         uint256 indexTokenPrice = DOLOMITE_MARGIN().getMarketPrice(_factory.INDEX_TOKEN_MARKET_ID()).value;
 
         GmxMarket.MarketProps memory marketProps = GmxMarket.MarketProps({
@@ -162,7 +161,6 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             shortToken: _factory.SHORT_TOKEN()
         });
 
-        // @audit Are we worried about this precision loss?
         // Dolomite returns price as 36 decimals - token decimals
         // GMX expects 30 decimals - token decimals so we divide by 10 ** 6
         GmxPrice.PriceProps memory indexTokenPriceProps = GmxPrice.PriceProps({
@@ -171,7 +169,6 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         });
 
 
-        // @audit - we set maximize to false to get the "bid" price. Is this the correct way to think about it?
         (int256 value, ) = REGISTRY.gmxReader().getMarketTokenPrice(
             REGISTRY.gmxDataStore(),
             marketProps,
@@ -182,7 +179,6 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             /* _maximize = */ false
         );
 
-        // @audit Is there a better way to handle this? When could the reader return negative here?
         if (value > 0) { /* FOR COVERAGE TESTING */ }
         Require.that(
             value > 0,

@@ -365,7 +365,6 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
 
       const withdrawals = await Promise.all(withdrawalKeys.map(key => unwrapper.getWithdrawalInfo(key)));
       const partitionedTotalOutputAmount = withdrawals.reduce((acc, withdrawal, i) => {
-        // @follow-up Changed key check because it is now deleted
         if (
           state === FinishState.WithdrawalSucceeded
           || state === FinishState.Liquidated

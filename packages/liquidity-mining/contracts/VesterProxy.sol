@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { OnlyDolomiteMarginForUpgradeable } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMarginForUpgradeable.sol";
+import { OnlyDolomiteMarginForUpgradeable } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMarginForUpgradeable.sol"; // solhint-disable-line max-line-length
 import { ProxyContractHelpers } from "@dolomite-exchange/modules-base/contracts/helpers/ProxyContractHelpers.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";

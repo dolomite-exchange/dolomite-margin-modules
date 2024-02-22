@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { BaseRegistry } from "@dolomite-exchange/modules-base/contracts/general/BaseRegistry.sol";
 import { IERC4626 } from "@dolomite-exchange/modules-base/contracts/interfaces/IERC4626.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IJonesGLPAdapter } from "./interfaces/IJonesGLPAdapter.sol";
 import { IJonesGLPVaultRouter } from "./interfaces/IJonesGLPVaultRouter.sol";
 import { IJonesUSDCFarm } from "./interfaces/IJonesUSDCFarm.sol";
