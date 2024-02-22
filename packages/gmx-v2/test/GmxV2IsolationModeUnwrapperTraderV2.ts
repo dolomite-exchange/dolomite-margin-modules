@@ -733,7 +733,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       });
 
       const withdrawal = await unwrapper.getWithdrawalInfo(withdrawalKey);
-      // @follow-up changed this
       expect(withdrawal.key).to.eq(BYTES_ZERO);
       expect(withdrawal.vault).to.eq(ZERO_ADDRESS);
       expect(withdrawal.accountNumber).to.eq(ZERO_BI);
@@ -857,7 +856,6 @@ describe('GmxV2IsolationModeUnwrapperTraderV2', () => {
       });
 
       const withdrawal = await unwrapper.getWithdrawalInfo(withdrawalKey);
-      // @follow-up changed this
       expect(withdrawal.key).to.eq(BYTES_ZERO);
       expect(withdrawal.vault).to.eq(ZERO_ADDRESS);
       expect(withdrawal.accountNumber).to.eq(ZERO_BI);

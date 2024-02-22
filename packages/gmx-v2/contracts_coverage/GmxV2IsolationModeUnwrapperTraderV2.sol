@@ -156,12 +156,6 @@ contract GmxV2IsolationModeUnwrapperTraderV2 is
             withdrawalInfo
         );
 
-        // @audit:  If GMX changes the keys OR if the data sent back is malformed (causing the above requires to
-        //          fail), this will fail. This will result in us receiving tokens from GMX and not knowing who they
-        //          are for, nor the amount. The only solution will be to upgrade this contract and have an admin
-        //          "unstuck" the funds for users by sending them to the appropriate vaults.
-
-
         // Save the output amount so we can refer to it later. This also enables it to be retried if execution fails
         withdrawalInfo.outputAmount = outputTokenAmount.value + secondaryOutputTokenAmount.value;
         withdrawalInfo.isRetryable = true;

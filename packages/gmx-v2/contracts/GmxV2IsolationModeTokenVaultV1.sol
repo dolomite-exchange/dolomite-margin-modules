@@ -74,7 +74,6 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    // @audit Need to check this can't be used to unfreeze the vault with a dummy deposit. I don't think it can
     /**
      *
      * @param  _key Deposit key

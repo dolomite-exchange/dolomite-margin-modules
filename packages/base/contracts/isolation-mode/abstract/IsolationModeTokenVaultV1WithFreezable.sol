@@ -629,7 +629,6 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         if (DOLOMITE_MARGIN().getAccountNumberOfMarketsWithBalances(borrowAccountInfo) == 0 && executionFee > 0) {
             // There's no assets left in the position. Issue a refund for the execution fee
             _setExecutionFeeForAccountNumber(_borrowAccountNumber, /* _executionFee = */ 0);
-            // @audit: check for any reentrancy issues! No user-level functions on the vault should be reentered
             payable(OWNER()).sendValue(executionFee);
         }
     }

@@ -149,7 +149,6 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         GmxPrice.PriceProps memory _longTokenPriceProps,
         GmxPrice.PriceProps memory _shortTokenPriceProps
     ) internal view returns (uint256) {
-        // @audit - We use Chainlink for all of these prices
         uint256 indexTokenPrice = DOLOMITE_MARGIN().getMarketPrice(_factory.INDEX_TOKEN_MARKET_ID()).value;
 
         GmxMarket.MarketProps memory marketProps = GmxMarket.MarketProps({
@@ -159,7 +158,6 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             shortToken: _factory.SHORT_TOKEN()
         });
 
-        // @audit Are we worried about this precision loss?
         // Dolomite returns price as 36 decimals - token decimals
         // GMX expects 30 decimals - token decimals so we divide by 10 ** 6
         GmxPrice.PriceProps memory indexTokenPriceProps = GmxPrice.PriceProps({
@@ -168,7 +166,6 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
         });
 
 
-        // @audit - we set maximize to false to get the "bid" price. Is this the correct way to think about it?
         (int256 value, ) = REGISTRY.gmxReader().getMarketTokenPrice(
             REGISTRY.gmxDataStore(),
             marketProps,
@@ -179,7 +176,6 @@ contract GmxV2MarketTokenPriceOracle is IGmxV2MarketTokenPriceOracle, OnlyDolomi
             /* _maximize = */ false
         );
 
-        // @audit Is there a better way to handle this? When could the reader return negative here?
         Require.that(
             value > 0,
             _FILE,

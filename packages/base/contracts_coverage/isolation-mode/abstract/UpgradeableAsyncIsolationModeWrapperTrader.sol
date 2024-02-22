@@ -345,14 +345,6 @@ abstract contract UpgradeableAsyncIsolationModeWrapperTrader is
             // `_depositIntoDefaultPositionAndClearDeposit`
             underlyingToken.safeApprove(depositInfo.vault, diff);
 
-            // @audit   The only way this try-catch should throw is if there wasn't enough gas passed into the callback
-            //          gas limit or if the user is underwater (after the deposit settles). We should always pass enough
-            //          gas, though. If the user goes underwater, we'll want to recover as reasonably as possible. The
-            //          way we do this is by initiating an unwrapping & then a liquidation via
-            //          `IsolationModeFreezableLiquidatorProxy.sol`
-            // @audit   This can also fail if the user pushes the GM token total supply on Dolomite past our supply cap
-            //          How do we mitigate this? We don't know ahead of time how many tokens the user will get...
-            // @audit   Are there any other "reasons" that the try-catch can fail that I'm missing here?
             factory.setShouldVaultSkipTransfer(depositInfo.vault, /* _shouldSkipTransfer = */ false);
             try factory.depositIntoDolomiteMarginFromTokenConverter(
                 depositInfo.vault,
