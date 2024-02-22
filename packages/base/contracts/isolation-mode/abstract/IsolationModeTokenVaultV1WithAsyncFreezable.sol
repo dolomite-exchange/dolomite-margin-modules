@@ -34,12 +34,12 @@ import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
+import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
-import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol";
 
 
 /**
- * @title   IsolationModeTokenVaultV1WithFreezable
+ * @title   IsolationModeTokenVaultV1WithAsyncFreezable
  * @author  Dolomite
  *
  * @notice  Abstract implementation of IsolationModeTokenVaultV1 that disallows user actions
@@ -293,7 +293,12 @@ abstract contract IsolationModeTokenVaultV1WithAsyncFreezable is
         return _getUint256(keccak256(abi.encode(_POSITION_TO_EXECUTION_FEE_SLOT, _accountNumber)));
     }
 
-    function isVaultFrozen() public override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable) virtual view returns (bool) {
+    function isVaultFrozen()
+    public 
+    override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable) 
+    virtual 
+    view 
+    returns (bool) {
         return IFreezableIsolationModeVaultFactory(VAULT_FACTORY()).isVaultFrozen(address(this));
     }
 

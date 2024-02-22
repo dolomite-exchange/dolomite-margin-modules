@@ -73,7 +73,7 @@ export async function createTestIsolationModeFactory<T extends NetworkType>(
 
 type FreezableVault =
   TestIsolationModeTokenVaultV1WithFreezable
-  | TestIsolationModeTokenVaultV1WithAsyncFreezable 
+  | TestIsolationModeTokenVaultV1WithAsyncFreezable
   | TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable;
 
 export async function createTestHandlerRegistry<T extends NetworkType>(

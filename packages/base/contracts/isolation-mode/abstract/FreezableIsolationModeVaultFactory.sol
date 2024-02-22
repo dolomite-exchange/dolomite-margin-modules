@@ -27,7 +27,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
-import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol";
+import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
 
 
 /**

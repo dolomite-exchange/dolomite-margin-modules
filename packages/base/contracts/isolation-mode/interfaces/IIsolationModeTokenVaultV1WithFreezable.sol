@@ -21,8 +21,6 @@
 pragma solidity ^0.8.9;
 
 import { IIsolationModeTokenVaultV1 } from "./IIsolationModeTokenVaultV1.sol";
-import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
-import { IWETH } from "../../protocol/interfaces/IWETH.sol";
 
 /**
  * @title   IIsolationModeTokenVaultV1WithFreezable

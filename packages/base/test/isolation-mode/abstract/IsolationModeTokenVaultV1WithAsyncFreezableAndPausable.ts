@@ -90,7 +90,7 @@ describe('IsolationModeTokenVaultV1WithFreezableAndPausable', () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfig(Network.ArbitrumOne));
     underlyingToken = await createTestToken();
     const libraries = await createIsolationModeTokenVaultV1ActionsImpl();
-    userVaultImplementation = await createContractWithLibrary<TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable>(
+    userVaultImplementation = await createContractWithLibrary(
       'TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable',
       libraries,
       [core.tokens.weth.address],

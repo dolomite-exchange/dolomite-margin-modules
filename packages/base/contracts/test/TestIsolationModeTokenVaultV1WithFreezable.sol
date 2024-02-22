@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import { IsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { TestSimpleIsolationModeVaultFactory } from "./TestSimpleIsolationModeVaultFactory.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { IsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
 
 /**
  * @title   TestIsolationModeTokenVaultV1WithFreezable

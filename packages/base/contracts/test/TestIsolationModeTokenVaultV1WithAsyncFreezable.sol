@@ -29,7 +29,7 @@ import { Require } from "../protocol/lib/Require.sol";
 
 
 /**
- * @title   TestIsolationModeTokenVaultV1WithFreezable
+ * @title   TestIsolationModeTokenVaultV1WithAsyncFreezable
  * @author  Dolomite
  *
  * @notice  A test contract for the IsolationModeTokenVaultV1WithFreezable contract.

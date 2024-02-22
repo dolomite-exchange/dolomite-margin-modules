@@ -25,7 +25,7 @@ import { IIsolationModeTokenVaultV1WithPausable } from "./IIsolationModeTokenVau
 
 
 /**
- * @title   IIsolationModeTokenVaultV1WithFreezableAndPausable
+ * @title   IIsolationModeTokenVaultV1WithAsyncFreezableAndPausable
  * @author  Dolomite
  *
  * @notice Interface for the implementation contract used by proxy user vault contracts.
