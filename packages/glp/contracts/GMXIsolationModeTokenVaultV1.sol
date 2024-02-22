@@ -135,7 +135,6 @@ contract GMXIsolationModeTokenVaultV1 is
 
         // @follow-up Is this logic okay?
         if (_gmxVirtualBalance == gmxAccountWei && _glpVirtualBalance == glpAccountWei) {
-            _setUint256(_TEMP_BAL_SLOT, gmxAccountWei);
             _confirmAccountTransfer(gmxAccountWei, glpAccountWei);
         } else {
             _cancelAccountTransfer();
@@ -279,10 +278,10 @@ contract GMXIsolationModeTokenVaultV1 is
         IGLPIsolationModeTokenVaultV2(glpVault).stakeGmx(_amount);
     }
 
-    function _confirmAccountTransfer(uint256 _gmxBal, uint256 _glpVal) internal {
-        uint256 gmxBal = super.underlyingBalanceOf();
-        if (gmxBal > 0) {
-            _stakeGmx(gmxBal);
+    function _confirmAccountTransfer(uint256 _gmxVal, uint256 _glpVal) internal {
+        uint256 bal = super.underlyingBalanceOf();
+        if (bal > 0) {
+            _stakeGmx(bal);
         }
 
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
@@ -291,7 +290,8 @@ contract GMXIsolationModeTokenVaultV1 is
         _setAddress(_RECIPIENT_SLOT, address(0));
 
         _setShouldSkipTransfer(true);
-        _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _gmxBal);
+        _setUint256(_TEMP_BAL_SLOT, _gmxVal);
+        _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _gmxVal);
 
         IGLPIsolationModeTokenVaultV2(glpVault).signalAccountTransfer(recipient, _glpVal);
     }

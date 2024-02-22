@@ -22,10 +22,10 @@ pragma solidity ^0.8.9;
 
 // solhint-disable max-line-length
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 import { IsolationModeTokenVaultV1 } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
-import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { IsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
 import { IIsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -81,26 +81,6 @@ contract GLPIsolationModeTokenVaultV2 is
     // ==================================================================
     // ======================= External Functions =======================
     // ==================================================================
-
-    function signalAccountTransfer(address _receiver, uint256 _glpBal) external onlyGmxVault(msg.sender) {
-        _setShouldSkipTransfer(true);
-        _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBal);
-        // @audit Need to make sure user can't initiate a transfer again with the TEMPBAL and get free money
-        _setUint256(_TEMP_BAL_SLOT, _glpBal);
-
-        gmx().approve(address(sGmx()), type(uint256).max);
-        gmxRewardsRouter().signalTransfer(_receiver);
-    }
-
-    function cancelAccountTransfer() external onlyGmxVault(msg.sender) {
-        if (IGMXIsolationModeTokenVaultV1(msg.sender).isVaultFrozen()) {
-            gmx().approve(address(sGmx()), 0);
-            gmxRewardsRouter().signalTransfer(address(0));
-
-            _setShouldSkipTransfer(true);
-            _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _getUint256(_TEMP_BAL_SLOT));
-        }
-    }
 
     function handleRewards(
         bool _shouldClaimGmx,
@@ -172,6 +152,29 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function unstakeEsGmx(uint256 _amount) external override onlyVaultOwner(msg.sender) {
         gmxRewardsRouter().unstakeEsGmx(_amount);
+    }
+
+    function signalAccountTransfer(
+        address _receiver,
+        uint256 _glpBal
+    ) external onlyGmxVault(msg.sender) {
+        // @audit Need to make sure user can't initiate a transfer again with the TEMPBAL and get free money
+        _setShouldSkipTransfer(true);
+        _setUint256(_TEMP_BAL_SLOT, _glpBal);
+        _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBal);
+
+        gmx().approve(address(sGmx()), type(uint256).max);
+        gmxRewardsRouter().signalTransfer(_receiver);
+    }
+
+    function cancelAccountTransfer() external onlyGmxVault(msg.sender) {
+        if (IGMXIsolationModeTokenVaultV1(msg.sender).isVaultFrozen()) {
+            gmx().approve(address(sGmx()), 0);
+            gmxRewardsRouter().signalTransfer(address(0));
+
+            _setShouldSkipTransfer(true);
+            _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _getUint256(_TEMP_BAL_SLOT));
+        }
     }
 
     function acceptFullAccountTransfer(

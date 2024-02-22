@@ -21,10 +21,10 @@
 pragma solidity ^0.8.9;
 
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
-import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
 import { IIsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IGLPIsolationModeTokenVaultV2 } from "./interfaces/IGLPIsolationModeTokenVaultV2.sol";
@@ -32,7 +32,6 @@ import { IGMXIsolationModeTokenVaultV1 } from "./interfaces/IGMXIsolationModeTok
 import { IGMXIsolationModeVaultFactory } from "./interfaces/IGMXIsolationModeVaultFactory.sol";
 import { IGmxRegistryV1 } from "./interfaces/IGmxRegistryV1.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   GMXIsolationModeTokenVaultV1
@@ -75,30 +74,6 @@ contract GMXIsolationModeTokenVaultV1 is
     // ======================== Public Functions ========================
     // ==================================================================
 
-    function requestAccountTransfer(address _recipient) external onlyVaultOwner(msg.sender) {
-        _requestAccountTransfer(_recipient);
-    }
-
-    function signalAccountTransfer(uint256 _gmxVirtualBalance, uint256 _glpVirtualBalance) external onlyHandler(msg.sender) {
-        if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            isVaultFrozen(),
-            _FILE,
-            "Transfer not in progress"
-        );
-        _signalAccountTransfer(_gmxVirtualBalance, _glpVirtualBalance);
-    }
-
-    function cancelAccountTransfer() external onlyVaultOwner(msg.sender) {
-        if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            isVaultFrozen(),
-            _FILE,
-            "Transfer not in progress"
-        );
-        _cancelAccountTransfer();
-    }
-
     function stakeGmx(uint256 _amount) external onlyVaultOwner(msg.sender) {
         _stakeGmx(_amount);
     }
@@ -122,6 +97,61 @@ contract GMXIsolationModeTokenVaultV1 is
         /*assert(glpVault != address(0));*/
 
         IGLPIsolationModeTokenVaultV2(glpVault).unvestGmx(_shouldStakeGmx, /* _addDepositIntoDolomite = */ true);
+    }
+
+    function requestAccountTransfer(address _recipient) external onlyVaultOwner(msg.sender) {
+        _setAddress(_RECIPIENT_SLOT, _recipient);
+        _setUint256(_TEMP_BAL_SLOT, 0);
+        emit AccountTransferRequested(address(this), _recipient);
+    }
+
+    function signalAccountTransfer(
+        uint256 _gmxVirtualBalance,
+        uint256 _glpVirtualBalance
+    ) external onlyHandler(msg.sender) {
+        if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            isVaultFrozen(),
+            _FILE,
+            "Transfer not in progress"
+        );
+
+        address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
+        IDolomiteStructs.AccountInfo memory gmxAccountInfo = IDolomiteStructs.AccountInfo(
+            address(this),
+            _DEFAULT_ACCOUNT_NUMBER
+        );
+        IDolomiteStructs.AccountInfo memory glpAccountInfo = IDolomiteStructs.AccountInfo(
+            glpVault,
+            _DEFAULT_ACCOUNT_NUMBER
+        );
+
+        uint256 gmxAccountWei = DOLOMITE_MARGIN().getAccountWei(
+            gmxAccountInfo,
+            IGMXIsolationModeVaultFactory(VAULT_FACTORY()).marketId()
+        ).value;
+        uint256 glpAccountWei = DOLOMITE_MARGIN().getAccountWei(
+            glpAccountInfo,
+            registry().glpVaultFactory().marketId()
+        ).value;
+
+        // @follow-up Is this logic okay?
+        if (_gmxVirtualBalance == gmxAccountWei && _glpVirtualBalance == glpAccountWei) {
+            _setUint256(_TEMP_BAL_SLOT, gmxAccountWei);
+            _confirmAccountTransfer(gmxAccountWei, glpAccountWei);
+        } else {
+            _cancelAccountTransfer();
+        }
+    }
+
+    function cancelAccountTransfer() external onlyVaultOwner(msg.sender) {
+        if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            isVaultFrozen(),
+            _FILE,
+            "Transfer not in progress"
+        );
+        _cancelAccountTransfer();
     }
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external onlyVaultFactory(msg.sender) {
@@ -199,7 +229,11 @@ contract GMXIsolationModeTokenVaultV1 is
         return _getUint256(_IS_DEPOSIT_SOURCE_GLP_VAULT) == 1;
     }
 
-    function isVaultFrozen() public view override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable) returns (bool) {
+    function isVaultFrozen()
+    public
+    view
+    override(IIsolationModeTokenVaultV1WithFreezable, IsolationModeTokenVaultV1WithFreezable)
+    returns (bool) {
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
         return _getAddress(_RECIPIENT_SLOT) != address(0) ||
         registry().gmxRewardsRouter().pendingReceivers(glpVault) != address(0);
@@ -246,34 +280,6 @@ contract GMXIsolationModeTokenVaultV1 is
         IERC20 gmx = IERC20(registry().gmx());
         gmx.safeApprove(glpVault, _amount);
         IGLPIsolationModeTokenVaultV2(glpVault).stakeGmx(_amount);
-    }
-
-    function _requestAccountTransfer(address _recipient) internal {
-        _setAddress(_RECIPIENT_SLOT, _recipient);
-        _setUint256(_TEMP_BAL_SLOT, 0);
-        emit AccountTransferRequested(address(this), _recipient);
-    }
-
-    function _signalAccountTransfer(uint256 _gmxVirtualBalance, uint256 _glpVirtualBalance) internal {
-        IDolomiteStructs.AccountInfo memory gmxAccountInfo = IDolomiteStructs.AccountInfo(
-            address(this),
-            _DEFAULT_ACCOUNT_NUMBER
-        );
-        address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
-        IDolomiteStructs.AccountInfo memory glpAccountInfo = IDolomiteStructs.AccountInfo(
-            glpVault,
-            _DEFAULT_ACCOUNT_NUMBER
-        );
-
-        // @follow-up Is this logic okay?
-        uint256 gmxAccountWei = DOLOMITE_MARGIN().getAccountWei(gmxAccountInfo, IGMXIsolationModeVaultFactory(VAULT_FACTORY()).marketId()).value;
-        uint256 glpAccountWei = DOLOMITE_MARGIN().getAccountWei(glpAccountInfo, registry().glpVaultFactory().marketId()).value;
-        if (_gmxVirtualBalance == gmxAccountWei && _glpVirtualBalance == glpAccountWei) {
-            _setUint256(_TEMP_BAL_SLOT, gmxAccountWei);
-            _confirmAccountTransfer(gmxAccountWei, glpAccountWei);
-        } else {
-            _cancelAccountTransfer();
-        }
     }
 
     function _confirmAccountTransfer(uint256 _gmxBal, uint256 _glpVal) internal {
