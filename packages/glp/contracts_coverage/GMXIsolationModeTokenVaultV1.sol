@@ -102,21 +102,15 @@ contract GMXIsolationModeTokenVaultV1 is
     function requestAccountTransfer(address _recipient) external onlyVaultOwner(msg.sender) {
         _setAddress(_RECIPIENT_SLOT, _recipient);
         _setUint256(_TEMP_BAL_SLOT, 0);
-        emit AccountTransferRequested(address(this), _recipient);
+        emit AccountTransferRequested(_recipient);
     }
 
     function signalAccountTransfer(
         uint256 _gmxVirtualBalance,
         uint256 _glpVirtualBalance
     ) external onlyHandler(msg.sender) {
-        if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            isVaultFrozen(),
-            _FILE,
-            "Transfer not in progress"
-        );
-
         address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
+        /*assert(glpVault != address(0));*/
         IDolomiteStructs.AccountInfo memory gmxAccountInfo = IDolomiteStructs.AccountInfo(
             address(this),
             _DEFAULT_ACCOUNT_NUMBER
@@ -135,23 +129,17 @@ contract GMXIsolationModeTokenVaultV1 is
             registry().glpVaultFactory().marketId()
         ).value;
 
-        // @follow-up Is this logic okay?
         if (_gmxVirtualBalance == gmxAccountWei && _glpVirtualBalance == glpAccountWei) {
-            _setUint256(_TEMP_BAL_SLOT, gmxAccountWei);
-            _confirmAccountTransfer(gmxAccountWei, glpAccountWei);
+            _confirmAccountTransfer(glpVault, gmxAccountWei, glpAccountWei);
         } else {
-            _cancelAccountTransfer();
+            _cancelAccountTransfer(glpVault);
         }
     }
 
     function cancelAccountTransfer() external onlyVaultOwner(msg.sender) {
-        if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            isVaultFrozen(),
-            _FILE,
-            "Transfer not in progress"
-        );
-        _cancelAccountTransfer();
+        address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
+        /*assert(glpVault != address(0));*/
+        _cancelAccountTransfer(glpVault);
     }
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external onlyVaultFactory(msg.sender) {
@@ -282,36 +270,52 @@ contract GMXIsolationModeTokenVaultV1 is
         IGLPIsolationModeTokenVaultV2(glpVault).stakeGmx(_amount);
     }
 
-    function _confirmAccountTransfer(uint256 _gmxBal, uint256 _glpVal) internal {
-        uint256 gmxBal = super.underlyingBalanceOf();
-        if (gmxBal > 0) {
-            _stakeGmx(gmxBal);
+    function _confirmAccountTransfer(address _glpVault, uint256 _gmxVal, uint256 _glpVal) internal {
+        if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            isVaultFrozen(),
+            _FILE,
+            "Transfer not in progress"
+        );
+
+        uint256 bal = super.underlyingBalanceOf();
+        if (bal > 0) {
+            _stakeGmx(bal);
         }
 
-        address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
-        /*assert(glpVault != address(0));*/
         address recipient = _getAddress(_RECIPIENT_SLOT);
         _setAddress(_RECIPIENT_SLOT, address(0));
 
-        _setShouldSkipTransfer(true);
-        _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _gmxBal);
+        if (_gmxVal > 0) {
+            _setShouldSkipTransfer(true);
+            _setUint256(_TEMP_BAL_SLOT, _gmxVal);
+            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _gmxVal);
+            /*assert(!shouldSkipTransfer());*/
+        }
 
-        IGLPIsolationModeTokenVaultV2(glpVault).signalAccountTransfer(recipient, _glpVal);
+        IGLPIsolationModeTokenVaultV2(_glpVault).signalAccountTransfer(recipient, _glpVal);
+        emit AccountTransferSignaled(recipient);
     }
 
-    function _cancelAccountTransfer() internal {
+    function _cancelAccountTransfer(address _glpVault) internal {
+        if (isVaultFrozen()) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            isVaultFrozen(),
+            _FILE,
+            "Transfer not in progress"
+        );
         _setAddress(_RECIPIENT_SLOT, address(0));
 
-        address glpVault = registry().glpVaultFactory().getVaultByAccount(OWNER());
-        /*assert(glpVault != address(0));*/
-        IGLPIsolationModeTokenVaultV2(glpVault).cancelAccountTransfer();
+        IGLPIsolationModeTokenVaultV2(_glpVault).cancelAccountTransfer();
 
         uint256 tempBal = _getUint256(_TEMP_BAL_SLOT);
         if (tempBal > 0) {
             _setShouldSkipTransfer(true);
             _setUint256(_TEMP_BAL_SLOT, 0);
             _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBal);
+            /*assert(!shouldSkipTransfer());*/
         }
+        emit AccountTransferCanceled();
     }
 
     function _setShouldSkipTransfer(bool _shouldSkipTransfer) internal {

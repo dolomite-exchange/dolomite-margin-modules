@@ -32,7 +32,9 @@ import { IIsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modu
  */
 interface IGMXIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezable {
 
-    event AccountTransferRequested(address _vault, address _receiver);
+    event AccountTransferRequested(address _receiver);
+    event AccountTransferSignaled(address _receiver);
+    event AccountTransferCanceled();
 
     function stakeGmx(uint256 _amount) external;
 
@@ -41,6 +43,12 @@ interface IGMXIsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezab
     function vestGmx(uint256 _esGmxAmount) external;
 
     function unvestGmx(bool _shouldStakeGmx) external;
+
+    function requestAccountTransfer(address _recipient) external;
+
+    function signalAccountTransfer(uint256 _gmxVirtualBalance, uint256 _glpVirtualBalance) external;
+
+    function cancelAccountTransfer() external;
 
     function setShouldSkipTransfer(bool _shouldSkipTransfer) external;
 

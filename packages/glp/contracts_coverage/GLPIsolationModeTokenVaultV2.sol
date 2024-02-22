@@ -159,9 +159,12 @@ contract GLPIsolationModeTokenVaultV2 is
         uint256 _glpBal
     ) external onlyGmxVault(msg.sender) {
         // @audit Need to make sure user can't initiate a transfer again with the TEMPBAL and get free money
-        _setShouldSkipTransfer(true);
-        _setUint256(_TEMP_BAL_SLOT, _glpBal);
-        _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBal);
+        if (_glpBal > 0) {
+            _setShouldSkipTransfer(true);
+            _setUint256(_TEMP_BAL_SLOT, _glpBal);
+            _withdrawFromVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _glpBal);
+            /*assert(!shouldSkipTransfer());*/
+        }
 
         gmx().approve(address(sGmx()), type(uint256).max);
         gmxRewardsRouter().signalTransfer(_receiver);
@@ -172,8 +175,12 @@ contract GLPIsolationModeTokenVaultV2 is
             gmx().approve(address(sGmx()), 0);
             gmxRewardsRouter().signalTransfer(address(0));
 
-            _setShouldSkipTransfer(true);
-            _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, _getUint256(_TEMP_BAL_SLOT));
+            uint256 tempBal = _getUint256(_TEMP_BAL_SLOT);
+            if (tempBal > 0) {
+                _setShouldSkipTransfer(true);
+                _depositIntoVaultForDolomiteMargin(_DEFAULT_ACCOUNT_NUMBER, tempBal);
+                /*assert(!shouldSkipTransfer());*/
+            }
         }
     }
 
@@ -329,6 +336,7 @@ contract GLPIsolationModeTokenVaultV2 is
 
     function isVaultFrozen() public view override returns (bool) {
         address gmxVault = registry().gmxVaultFactory().getVaultByAccount(OWNER());
+        // @follow-up Make sure this isVaultFrozen doesn't break other functionality
         return gmxVault == address(0) ? false : IIsolationModeTokenVaultV1WithFreezable(gmxVault).isVaultFrozen();
     }
 

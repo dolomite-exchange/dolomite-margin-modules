@@ -107,8 +107,19 @@ interface IGLPIsolationModeTokenVaultV2 {
      */
     function unstakeEsGmx(uint256 _amount) external;
 
+    /**
+     * @notice  Signals a full account transfer to the recipient. This function must be called by the gmx vault
+     *
+     * @param  _recipient   The address of the recipient who will receive this vault's entire account
+     * @param  _glpBal      The account wei of the glp vault in the underlying glp market
+     */
     function signalAccountTransfer(address _recipient, uint256 _glpBal) external;
 
+    /**
+     * @notice  Cancels a full account transfer that has already been signaled.
+     *          This function must be called by the gmx vault
+     *
+     */
     function cancelAccountTransfer() external;
 
     /**
