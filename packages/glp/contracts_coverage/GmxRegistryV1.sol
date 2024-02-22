@@ -20,9 +20,9 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { BaseRegistry } from "@dolomite-exchange/modules-base/contracts/general/BaseRegistry.sol";
+import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGLPIsolationModeVaultFactory } from "./interfaces/IGLPIsolationModeVaultFactory.sol";
 import { IGLPManager } from "./interfaces/IGLPManager.sol";
 import { IGLPRewardsRouterV2 } from "./interfaces/IGLPRewardsRouterV2.sol";
@@ -82,6 +82,7 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
     bytes32 private constant _SBF_GMX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.sbfGmx")) - 1);
     bytes32 private constant _V_GLP_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vGlp")) - 1);
     bytes32 private constant _V_GMX_SLOT = bytes32(uint256(keccak256("eip1967.proxy.vGmx")) - 1);
+    bytes32 private constant _HANDLER_SLOT = bytes32(uint256(keccak256("eip1967.proxy.handler")) - 1);
     // solhint-enable max-line-length
 
     // ============ Constructor ============
@@ -174,6 +175,10 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         _ownerSetVGmx(_vGmx);
     }
 
+    function ownerSetHandler(address _handler) external override onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetHandler(_handler);
+    }
+
     function bnGmx() external view returns (address) {
         return _getAddress(_BN_GMX_SLOT);
     }
@@ -236,6 +241,10 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
 
     function vGmx() external view returns (address) {
         return _getAddress(_V_GMX_SLOT);
+    }
+
+    function handler() external view returns (address) {
+        return _getAddress(_HANDLER_SLOT);
     }
 
     // ==================== Internal Functions =========================
@@ -414,5 +423,16 @@ contract GmxRegistryV1 is IGmxRegistryV1, BaseRegistry {
         );
         _setAddress(_V_GMX_SLOT, _vGmx);
         emit VGmxSet(_vGmx);
+    }
+
+    function _ownerSetHandler(address _handler) internal {
+        if (_handler != address(0)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _handler != address(0),
+            _FILE,
+            "Invalid handler address"
+        );
+        _setAddress(_HANDLER_SLOT, _handler);
+        emit HandlerSet(_handler);
     }
 }
