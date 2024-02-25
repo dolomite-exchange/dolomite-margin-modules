@@ -21,6 +21,8 @@ import {
 } from '@dolomite-exchange/modules-gmx-v2/src/gmx-v2-constructors';
 import {
   GmxV2IsolationModeTokenVaultV1__factory,
+  GmxV2IsolationModeUnwrapperTraderV2__factory,
+  GmxV2IsolationModeWrapperTraderV2__factory,
   GmxV2MarketTokenPriceOracle__factory,
   GmxV2Registry__factory,
   IGmxV2IsolationModeUnwrapperTraderV2,
@@ -66,7 +68,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   );
   const gmxV2RegistryProxy = IGmxV2Registry__factory.connect(gmxV2RegistryProxyAddress, core.hhUser1);
 
-  const gmxV2Library = await deployContractAndSave(
+  const gmxV2LibraryAddress = await deployContractAndSave(
     'GmxV2Library',
     [],
     'GmxV2LibraryV1',
@@ -75,7 +77,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     'GmxV2IsolationModeTokenVaultV1',
     [core.tokens.weth.address],
     'GmxV2IsolationModeTokenVaultV1',
-    { GmxV2Library: gmxV2Library },
+    { GmxV2Library: gmxV2LibraryAddress },
   );
   const gmxV2TokenVault = GmxV2IsolationModeTokenVaultV1__factory.connect(gmxV2TokenVaultAddress, core.hhUser1);
 
@@ -105,24 +107,62 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
     parseEther(`${5_000_000}`),
     parseEther(`${2_000_000}`),
   ];
+  const gmNames = [
+    'ARB',
+    'BTC',
+    'ETH',
+    'LINK',
+  ];
+
+  const asyncUnwrapperLibAddress = await deployContractAndSave(
+    'AsyncIsolationModeUnwrapperTraderImpl',
+    [],
+    'AsyncIsolationModeUnwrapperTraderImplV1',
+  );
+  const unwrapperImplementationAddress = await deployContractAndSave(
+    'GmxV2IsolationModeUnwrapperTraderV2',
+    [core.tokens.weth.address],
+    'GmxV2IsolationModeUnwrapperTraderV2',
+    { GmxV2Library: gmxV2LibraryAddress, AsyncIsolationModeUnwrapperTraderImpl: asyncUnwrapperLibAddress },
+  );
+  const unwrapperImplementation = GmxV2IsolationModeUnwrapperTraderV2__factory.connect(
+    unwrapperImplementationAddress,
+    core.hhUser1
+  );
+
+  const asyncWrapperLibAddress = await deployContractAndSave(
+    'AsyncIsolationModeWrapperTraderImpl',
+    [],
+    'AsyncIsolationModeWrapperTraderImplV1',
+  );
+  const wrapperImplementationAddress = await deployContractAndSave(
+    'GmxV2IsolationModeWrapperTraderV2',
+    [core.tokens.weth.address],
+    'GmxV2IsolationModeWrapperTraderV2',
+    { GmxV2Library: gmxV2LibraryAddress, AsyncIsolationModeWrapperTraderImpl: asyncWrapperLibAddress },
+  );
+  const wrapperImplementation = GmxV2IsolationModeWrapperTraderV2__factory.connect(
+    wrapperImplementationAddress,
+    core.hhUser1
+  );
 
   const factories: IIsolationModeVaultFactory[] = [];
   const unwrappers: IGmxV2IsolationModeUnwrapperTraderV2[] = [];
   const wrappers: IGmxV2IsolationModeWrapperTraderV2[] = [];
 
-  for (const gmToken of gmTokens) {
+  for (let i = 0; i < gmTokens.length; i += 1) {
     const factoryAddress = await deployContractAndSave(
       'GmxV2IsolationModeVaultFactory',
       getGmxV2IsolationModeVaultFactoryConstructorParams(
         core,
         gmxV2RegistryProxy,
-        [...stablecoins, gmToken.longMarketId],
+        [...stablecoins, gmTokens[i].longMarketId],
         [],
-        gmToken.marketToken,
+        gmTokens[i].marketToken,
         gmxV2TokenVault,
         GMX_V2_EXECUTION_FEE,
       ),
-      'NAME?', // TODO
+      `GmxV2${gmNames[i]}IsolationModeVaultFactory`,
     );
     const factory = IGmxV2IsolationModeVaultFactory__factory.connect(factoryAddress, core.hhUser1);
 
@@ -134,7 +174,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         factory,
         gmxV2RegistryProxy,
       ),
-      'NAME?', // TODO rename
+      `GmxV2${gmNames[i]}IsolationModeUnwrapperTraderV2?`,
     );
 
     const wrapperProxyAddress = await deployContractAndSave(
@@ -145,7 +185,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
         factory,
         gmxV2RegistryProxy,
       ),
-      'NAME?', // TODO rename
+      `GmxV2${gmNames[i]}IsolationModeWrapperTraderV2?`,
     );
 
     factories.push(factory);
