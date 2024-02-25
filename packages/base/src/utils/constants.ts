@@ -358,8 +358,20 @@ export const GMX_EXECUTOR_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0xC539cB358a58aC67185BaAD4d5E3f7fCfc903700',
 };
 
+export const GMX_ARB_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0xC25cEf6061Cf5dE5eb761b50E4743c1F5D7E5407',
+};
+
+export const GMX_BTC_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x47c031236e19d024b42f8AE6780E44A573170703',
+};
+
 export const GMX_ETH_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
   [Network.ArbitrumOne]: '0x70d95587d40A2caf56bd97485aB3Eec10Bee6336',
+};
+
+export const GMX_LINK_USD_MARKET_TOKEN_MAP: Record<Network.ArbitrumOne, string> = {
+  [Network.ArbitrumOne]: '0x7f1fa204bb700853D36994DA19F830b6Ad18455C',
 };
 
 export const GMX_GOV_MAP: Record<Network.ArbitrumOne, string> = {

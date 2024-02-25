@@ -1,5 +1,6 @@
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { BigNumber, BigNumberish } from 'ethers';
+import { parseEther } from 'ethers/lib/utils';
 import {
   GmxV2IsolationModeTokenVaultV1,
   GmxV2IsolationModeUnwrapperTraderV2,
@@ -38,7 +39,7 @@ export async function getGmxV2RegistryConstructorParams(
   ];
 }
 
-export const GMX_V2_EXECUTION_FEE = BigNumber.from('13627562862500000');
+export const GMX_V2_EXECUTION_FEE = parseEther('0.001');
 export const GMX_V2_CALLBACK_GAS_LIMIT = BigNumber.from('2000000');
 
 export function getGmxV2IsolationModeVaultFactoryConstructorParams(

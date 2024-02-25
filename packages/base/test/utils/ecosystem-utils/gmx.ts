@@ -1,45 +1,4 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import {
-  IERC20,
-  IERC20__factory,
-  IERC20Mintable,
-  IERC20Mintable__factory,
-  RegistryProxy,
-  RegistryProxy__factory,
-} from '../../../src/types';
-import { Network } from '../../../src/utils/no-deps-constants';
-import {
-  BN_GMX_MAP,
-  ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP,
-  ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP,
-  ES_GMX_MAP,
-  FS_GLP_MAP,
-  GLP_MANAGER_MAP,
-  GLP_MAP,
-  GLP_REWARD_ROUTER_MAP,
-  GMX_DATASTORE_MAP,
-  GMX_DEPOSIT_HANDLER_MAP,
-  GMX_DEPOSIT_VAULT_MAP,
-  GMX_ETH_USD_MARKET_TOKEN_MAP,
-  GMX_EXCHANGE_ROUTER_MAP,
-  GMX_EXECUTOR_MAP,
-  GMX_MAP,
-  GMX_READER_MAP,
-  GMX_REWARD_ROUTER_V2_MAP,
-  GMX_REWARD_ROUTER_V3_MAP,
-  GMX_ROUTER_MAP,
-  GMX_VAULT_MAP,
-  GMX_WITHDRAWAL_HANDLER_MAP,
-  GMX_WITHDRAWAL_VAULT_MAP,
-  S_GLP_MAP,
-  S_GMX_MAP,
-  SBF_GMX_MAP,
-  V_GLP_MAP,
-  V_GMX_MAP
-} from '../../../src/utils/constants';
-import { impersonateOrFallback } from '../index';
-import { getContract } from '../setup';
-import Deployments from  '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
+import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 import {
   GLPIsolationModeUnwrapperTraderV1,
   GLPIsolationModeUnwrapperTraderV1__factory,
@@ -64,7 +23,7 @@ import {
   IGmxVester,
   IGmxVester__factory,
   ISGMX,
-  ISGMX__factory
+  ISGMX__factory,
 } from '@dolomite-exchange/modules-glp/src/types';
 import {
   IGmxDataStore,
@@ -80,8 +39,58 @@ import {
   IGmxRouter,
   IGmxRouter__factory,
   IGmxWithdrawalHandler,
-  IGmxWithdrawalHandler__factory
+  IGmxWithdrawalHandler__factory,
 } from '@dolomite-exchange/modules-gmx-v2/src/types';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { BigNumberish } from 'ethers';
+import {
+  IERC20,
+  IERC20__factory,
+  IERC20Mintable,
+  IERC20Mintable__factory,
+  RegistryProxy,
+  RegistryProxy__factory,
+} from '../../../src/types';
+import {
+  ARB_MAP,
+  BN_GMX_MAP,
+  ES_GMX_DISTRIBUTOR_FOR_STAKED_GLP_MAP,
+  ES_GMX_DISTRIBUTOR_FOR_STAKED_GMX_MAP,
+  ES_GMX_MAP,
+  FS_GLP_MAP,
+  GLP_MANAGER_MAP,
+  GLP_MAP,
+  GLP_REWARD_ROUTER_MAP,
+  GMX_ARB_USD_MARKET_TOKEN_MAP,
+  GMX_BTC_USD_MARKET_TOKEN_MAP,
+  GMX_DATASTORE_MAP,
+  GMX_DEPOSIT_HANDLER_MAP,
+  GMX_DEPOSIT_VAULT_MAP,
+  GMX_ETH_USD_MARKET_TOKEN_MAP,
+  GMX_EXCHANGE_ROUTER_MAP,
+  GMX_EXECUTOR_MAP,
+  GMX_LINK_USD_MARKET_TOKEN_MAP,
+  GMX_MAP,
+  GMX_READER_MAP,
+  GMX_REWARD_ROUTER_V2_MAP,
+  GMX_REWARD_ROUTER_V3_MAP,
+  GMX_ROUTER_MAP,
+  GMX_VAULT_MAP,
+  GMX_WITHDRAWAL_HANDLER_MAP,
+  GMX_WITHDRAWAL_VAULT_MAP,
+  LINK_MAP,
+  NATIVE_USDC_MAP,
+  S_GLP_MAP,
+  S_GMX_MAP,
+  SBF_GMX_MAP,
+  V_GLP_MAP,
+  V_GMX_MAP,
+  WBTC_MAP,
+  WETH_MAP,
+} from '../../../src/utils/constants';
+import { Network } from '../../../src/utils/no-deps-constants';
+import { impersonateOrFallback } from '../index';
+import { getContract } from '../setup';
 
 export interface GmxEcosystem {
   bnGmx: IERC20;
@@ -111,10 +120,24 @@ export interface GmxEcosystem {
   };
 }
 
+interface GmToken {
+  marketToken: IGmxMarketToken;
+  longToken: IERC20;
+  shortToken: IERC20;
+  longMarketId: BigNumberish;
+  shortMarketId: BigNumberish;
+}
+
 export interface GmxEcosystemV2 {
   gmxDataStore: IGmxDataStore;
   gmxDepositHandler: IGmxDepositHandler;
   gmxDepositVault: SignerWithAddress;
+  gmTokens: {
+    arbUsd: GmToken;
+    btcUsd: GmToken;
+    ethUsd: GmToken;
+    linkUsd: GmToken;
+  };
   gmxEthUsdMarketToken: IGmxMarketToken;
   gmxExchangeRouter: IGmxExchangeRouter;
   gmxExecutor: SignerWithAddress;
@@ -225,6 +248,52 @@ export async function createGmxEcosystemV2(network: Network, signer: SignerWithA
       signer,
     ),
     gmxDepositVault: await impersonateOrFallback(GMX_DEPOSIT_VAULT_MAP[network] as string, true, signer),
+    gmTokens: {
+      ethUsd: {
+        marketToken: getContract(
+          GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
+          IGmxMarketToken__factory.connect,
+          signer,
+        ),
+        longToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
+        longMarketId: WETH_MAP[network].marketId,
+        shortMarketId: NATIVE_USDC_MAP[network].marketId,
+      },
+      btcUsd: {
+        marketToken: getContract(
+          GMX_BTC_USD_MARKET_TOKEN_MAP[network] as string,
+          IGmxMarketToken__factory.connect,
+          signer,
+        ),
+        longToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
+        longMarketId: WBTC_MAP[network].marketId,
+        shortMarketId: NATIVE_USDC_MAP[network].marketId,
+      },
+      arbUsd: {
+        marketToken: getContract(
+          GMX_ARB_USD_MARKET_TOKEN_MAP[network] as string,
+          IGmxMarketToken__factory.connect,
+          signer,
+        ),
+        longToken: IERC20__factory.connect(ARB_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
+        longMarketId: ARB_MAP[network].marketId,
+        shortMarketId: NATIVE_USDC_MAP[network].marketId,
+      },
+      linkUsd: {
+        marketToken: getContract(
+          GMX_LINK_USD_MARKET_TOKEN_MAP[network] as string,
+          IGmxMarketToken__factory.connect,
+          signer,
+        ),
+        longToken: IERC20__factory.connect(LINK_MAP[network].address, signer),
+        shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
+        longMarketId: LINK_MAP[network].marketId,
+        shortMarketId: NATIVE_USDC_MAP[network].marketId,
+      },
+    },
     gmxEthUsdMarketToken: getContract(
       GMX_ETH_USD_MARKET_TOKEN_MAP[network] as string,
       IGmxMarketToken__factory.connect,
