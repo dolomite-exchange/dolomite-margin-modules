@@ -307,7 +307,7 @@ library GmxV2Library {
         uint256 _shortMarketId
     ) public pure {
         Require.that(
-            _marketIds.length == 2,
+            _marketIds.length >= 2,
             _FILE,
             "Invalid market IDs length"
         );

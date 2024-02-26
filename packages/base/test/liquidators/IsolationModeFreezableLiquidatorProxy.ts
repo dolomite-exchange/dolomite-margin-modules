@@ -34,8 +34,6 @@ import {
   DolomiteRegistryImplementation__factory,
   EventEmitterRegistry,
   IGenericTraderProxyV1__factory,
-  IsolationModeFreezableLiquidatorProxy,
-  IsolationModeFreezableLiquidatorProxy__factory,
   TestIsolationModeFreezableLiquidatorProxy,
   TestIsolationModeFreezableLiquidatorProxy__factory,
 } from '../../src/types';
@@ -131,7 +129,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmTokens.ethUsd,
       userVaultImplementation,
       executionFee,
     );

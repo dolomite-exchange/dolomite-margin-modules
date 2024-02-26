@@ -15,6 +15,7 @@ import {
   createIsolationModeTokenVaultV1ActionsImpl,
 } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { createSafeDelegateLibrary } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/general';
+import { GmToken } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/gmx';
 import { BalanceCheckFlag } from '@dolomite-margin/dist/src';
 import { GenericEventEmissionType, GenericTraderType } from '@dolomite-margin/dist/src/modules/GenericTraderProxyV1';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
@@ -44,7 +45,6 @@ import {
   GmxV2MarketTokenPriceOracle__factory,
   GmxV2Registry,
   GmxV2Registry__factory,
-  IGmxMarketToken,
   IGmxV2IsolationModeVaultFactory,
   IGmxV2Registry,
   TestGmxV2IsolationModeTokenVaultV1,
@@ -64,7 +64,7 @@ async function createArtifactFromWorkspaceIfNotExists(artifactName: string): Pro
     .filter(d => d.isDirectory())
     .map(d => path.join(packagesPath, d.name));
 
-  const contractsFolders =  ['contracts_coverage', 'contracts'];
+  const contractsFolders = ['contracts_coverage', 'contracts'];
   for (const contractFolder of contractsFolders) {
     for (const child of children) {
       const artifactPath = join(
@@ -145,7 +145,7 @@ export async function createGmxV2IsolationModeVaultFactory(
   gmxRegistry: IGmxV2Registry,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
-  gmToken: IGmxMarketToken,
+  gmToken: GmToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
 ): Promise<GmxV2IsolationModeVaultFactory> {
@@ -171,7 +171,7 @@ export async function createTestGmxV2IsolationModeVaultFactory(
   gmxRegistry: IGmxV2Registry,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
-  gmToken: IGmxMarketToken,
+  gmToken: GmToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
 ): Promise<TestGmxV2IsolationModeVaultFactory> {

@@ -128,7 +128,7 @@ describe('GmxV2IsolationModeTokenVaultV1', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmTokens.ethUsd,
       userVaultImplementation,
       executionFee,
     );

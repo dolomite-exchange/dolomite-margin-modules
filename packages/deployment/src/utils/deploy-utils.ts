@@ -220,10 +220,10 @@ export async function deployContractAndSave(
   if (file[usedContractName]?.[chainId.toString()]) {
     const contract = file[usedContractName][chainId.toString()];
     console.log(`\tContract ${usedContractName} has already been deployed to chainId ${chainId} (${contract.address}). Skipping...`);
-    console.log('');
     if (!contract.isVerified) {
       await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
     }
+    console.log('');
     return contract.address;
   }
 
@@ -253,6 +253,7 @@ export async function deployContractAndSave(
   }
 
   await prettyPrintAndVerifyContract(file, chainId, contractName, usedContractName, args, libraries ?? {});
+  console.log('');
 
   return contract.address;
 }
@@ -393,9 +394,9 @@ async function prettyPrintAndVerifyContract(
 
   const contract = file[contractRename][chainId.toString()];
 
-  console.log(`========================= ${contractRename} =========================`);
-  console.log('Address: ', contract.address);
-  console.log('='.repeat(52 + contractRename.length));
+  console.log(`\t========================= ${contractRename} =========================`);
+  console.log('\tAddress: ', contract.address);
+  console.log(`\t${'='.repeat(52 + contractRename.length)}`);
 
   if (!(process.env.SKIP_VERIFICATION === 'true')) {
     console.log('\tSleeping for 5s to wait for the transaction to be indexed by Etherscan...');

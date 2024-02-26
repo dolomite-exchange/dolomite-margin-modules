@@ -10,6 +10,9 @@ import {
   IsolationModeFreezableLiquidatorProxy,
   IsolationModeFreezableLiquidatorProxy__factory,
 } from 'packages/base/src/types';
+import {
+  getIsolationModeFreezableLiquidatorProxyConstructorParams,
+} from 'packages/base/src/utils/constructors/dolomite';
 import { createContractWithAbi, depositIntoDolomiteMargin } from 'packages/base/src/utils/dolomite-utils';
 import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from 'packages/base/src/utils/no-deps-constants';
 import { impersonate, revertToSnapshotAndCapture, snapshot } from 'packages/base/test/utils';
@@ -54,7 +57,6 @@ import {
   createGmxV2Registry,
   getOracleParams,
 } from './gmx-v2-ecosystem-utils';
-import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -100,7 +102,7 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
     liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core)
+      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
     );
 
     const gmxV2Library = await createGmxV2Library();
@@ -114,7 +116,7 @@ describe('POC: liquidationWithdrawalKeyHijacking', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmTokens.ethUsd,
       userVaultImplementation,
       GMX_V2_EXECUTION_FEE,
     );

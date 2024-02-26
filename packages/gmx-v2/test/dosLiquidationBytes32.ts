@@ -11,9 +11,12 @@ import { takeSnapshot } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { BigNumber, BigNumberish, ethers } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
+import {
+  getIsolationModeFreezableLiquidatorProxyConstructorParams,
+} from 'packages/base/src/utils/constructors/dolomite';
 import { AccountStruct } from '../../base/src/utils/constants';
 import { createContractWithAbi } from '../../base/src/utils/dolomite-utils';
-import { NO_EXPIRY, Network, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
+import { NO_EXPIRY, ONE_BI, ONE_ETH_BI, ZERO_BI } from '../../base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '../../base/test/utils';
 import { expectEvent, expectProtocolBalance, expectWalletBalance } from '../../base/test/utils/assertions';
 import { createDolomiteRegistryImplementation, createEventEmitter } from '../../base/test/utils/dolomite';
@@ -49,7 +52,6 @@ import {
   getInitiateWrappingParams,
   getOracleParams,
 } from './gmx-v2-ecosystem-utils';
-import { getIsolationModeFreezableLiquidatorProxyConstructorParams } from 'packages/base/src/utils/constructors/dolomite';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = defaultAccountNumber.add(ONE_BI);
@@ -94,7 +96,7 @@ describe('POC: dosLiquidationBytes32', () => {
     liquidatorProxy = await createContractWithAbi<IsolationModeFreezableLiquidatorProxy>(
       IsolationModeFreezableLiquidatorProxy__factory.abi,
       IsolationModeFreezableLiquidatorProxy__factory.bytecode,
-      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core)
+      await getIsolationModeFreezableLiquidatorProxyConstructorParams(core),
     );
 
     const gmxV2Library = await createGmxV2Library();
@@ -108,7 +110,7 @@ describe('POC: dosLiquidationBytes32', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmTokens.ethUsd,
       userVaultImplementation,
       executionFee,
     );

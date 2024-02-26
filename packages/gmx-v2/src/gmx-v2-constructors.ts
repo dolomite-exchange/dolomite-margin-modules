@@ -1,4 +1,5 @@
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
+import { GmToken } from '@dolomite-exchange/modules-base/test/utils/ecosystem-utils/gmx';
 import { BigNumber, BigNumberish } from 'ethers';
 import { parseEther } from 'ethers/lib/utils';
 import {
@@ -47,7 +48,7 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   gmxRegistry: IGmxV2Registry,
   debtMarketIds: BigNumberish[],
   collateralMarketIds: BigNumberish[],
-  gmToken: IGmxMarketToken,
+  gmToken: GmToken,
   userVaultImplementation: GmxV2IsolationModeTokenVaultV1,
   executionFee: BigNumberish,
 ): any[] {
@@ -58,12 +59,12 @@ export function getGmxV2IsolationModeVaultFactoryConstructorParams(
   return [
     gmxRegistry.address,
     executionFee,
-    [
-      gmToken.address,
-      core.tokens.weth.address,
-      core.tokens.nativeUsdc!.address,
-      core.tokens.weth.address,
-    ],
+    {
+      marketToken: gmToken.marketToken.address,
+      indexToken: gmToken.indexToken.address,
+      shortToken: gmToken.shortToken.address,
+      longToken: gmToken.longToken.address,
+    },
     debtMarketIds,
     collateralMarketIds,
     core.borrowPositionProxyV2.address,

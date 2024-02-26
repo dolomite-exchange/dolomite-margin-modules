@@ -66,7 +66,7 @@ describe('GmxV2MarketTokenPriceOracle', () => {
       gmxV2Registry,
       allowableMarketIds,
       allowableMarketIds,
-      core.gmxEcosystemV2!.gmxEthUsdMarketToken,
+      core.gmxEcosystemV2!.gmTokens.ethUsd,
       userVaultImplementation,
       GMX_V2_EXECUTION_FEE,
     );

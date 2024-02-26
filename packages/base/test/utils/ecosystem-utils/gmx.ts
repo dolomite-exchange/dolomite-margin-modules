@@ -120,8 +120,9 @@ export interface GmxEcosystem {
   };
 }
 
-interface GmToken {
+export interface GmToken {
   marketToken: IGmxMarketToken;
+  indexToken: IERC20;
   longToken: IERC20;
   shortToken: IERC20;
   longMarketId: BigNumberish;
@@ -255,6 +256,7 @@ export async function createGmxEcosystemV2(network: Network, signer: SignerWithA
           IGmxMarketToken__factory.connect,
           signer,
         ),
+        indexToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
         longToken: IERC20__factory.connect(WETH_MAP[network].address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
         longMarketId: WETH_MAP[network].marketId,
@@ -266,6 +268,7 @@ export async function createGmxEcosystemV2(network: Network, signer: SignerWithA
           IGmxMarketToken__factory.connect,
           signer,
         ),
+        indexToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
         longToken: IERC20__factory.connect(WBTC_MAP[network].address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
         longMarketId: WBTC_MAP[network].marketId,
@@ -277,6 +280,7 @@ export async function createGmxEcosystemV2(network: Network, signer: SignerWithA
           IGmxMarketToken__factory.connect,
           signer,
         ),
+        indexToken: IERC20__factory.connect(ARB_MAP[network].address, signer),
         longToken: IERC20__factory.connect(ARB_MAP[network].address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
         longMarketId: ARB_MAP[network].marketId,
@@ -288,6 +292,7 @@ export async function createGmxEcosystemV2(network: Network, signer: SignerWithA
           IGmxMarketToken__factory.connect,
           signer,
         ),
+        indexToken: IERC20__factory.connect(LINK_MAP[network].address, signer),
         longToken: IERC20__factory.connect(LINK_MAP[network].address, signer),
         shortToken: IERC20__factory.connect(NATIVE_USDC_MAP[network].address, signer),
         longMarketId: LINK_MAP[network].marketId,
