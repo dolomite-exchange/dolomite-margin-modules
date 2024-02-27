@@ -39,7 +39,7 @@ contract TestTransformer {
         tokenTo = ICustomTestToken(_tokenTo);
     }
     
-    function transform(uint256 amount) external returns (uint256) {
+    function transform(uint256 amount, bytes calldata /* _extraData */) external returns (uint256) {
         tokenFrom.burn(amount);
         tokenTo.addBalance(address(this), amount);
         return amount;

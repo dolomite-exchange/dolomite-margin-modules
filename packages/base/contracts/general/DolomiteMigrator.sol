@@ -88,8 +88,36 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     function migrate(
         IDolomiteStructs.AccountInfo[] calldata _accounts,
         uint256 _fromMarketId,
-        uint256 _toMarketId
+        uint256 _toMarketId,
+        bytes calldata _extraData
     ) external onlyHandler(msg.sender) {
+        _migrate(_accounts, _fromMarketId, _toMarketId, _extraData);
+    }
+
+    function ownerSetTransformer(
+        uint256 _fromMarketId,
+        uint256 _toMarketId,
+        address _transformer
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetTransformer(_fromMarketId, _toMarketId, _transformer);
+    }
+
+    function ownerSetHandler(
+        address _handler
+    ) external onlyDolomiteMarginOwner(msg.sender) {
+        _ownerSetHandler(_handler);
+    }
+
+    // ================================================
+    // ================ Internal Functions ============
+    // ================================================
+
+    function _migrate(
+        IDolomiteStructs.AccountInfo[] calldata _accounts,
+        uint256 _fromMarketId,
+        uint256 _toMarketId,
+        bytes calldata _extraData
+    ) internal virtual {
         Require.that(
             _fromMarketId != _toMarketId,
             _FILE,
@@ -124,7 +152,7 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
 
             uint256 amountWei = DOLOMITE_MARGIN().getAccountWei(account, _fromMarketId).value;
             IIsolationModeMigrator(account.owner).migrate(amountWei);
-            uint256 amountOut = _delegateCallToTransformer(_fromMarketId, _toMarketId, amountWei);
+            uint256 amountOut = _delegateCallToTransformer(_fromMarketId, _toMarketId, amountWei, _extraData);
 
             // @follow-up Double check these enqueues and approvals. They work in tests but can you take a look
             fromFactory.enqueueTransferFromDolomiteMargin(account.owner, amountWei);
@@ -137,33 +165,16 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         }
     }
 
-    function ownerSetTransformer(
-        uint256 _fromMarketId,
-        uint256 _toMarketId,
-        address _transformer
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetTransformer(_fromMarketId, _toMarketId, _transformer);
-    }
-
-    function ownerSetHandler(
-        address _handler
-    ) external onlyDolomiteMarginOwner(msg.sender) {
-        _ownerSetHandler(_handler);
-    }
-
-    // ================================================
-    // ================ Internal Functions ============
-    // ================================================
-
     function _delegateCallToTransformer(
         uint256 _fromMarketId,
         uint256 _toMarketId,
-        uint256 _amount
+        uint256 _amount,
+        bytes memory _extraData
     ) internal returns (uint256) {
         address transformer = marketIdsToTransformer[_fromMarketId][_toMarketId];
         // @follow-up Want to use a library instead to delegate call?
         (bool success, bytes memory data) = transformer.delegatecall(
-            abi.encodeWithSignature("transform(uint256)", _amount)
+            abi.encodeWithSignature("transform(uint256,bytes)", _amount, _extraData)
         );
         Require.that(
             success,
