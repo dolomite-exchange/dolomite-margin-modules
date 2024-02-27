@@ -20,10 +20,10 @@
 
 pragma solidity ^0.8.9;
 
+import { IDolomiteMigrator } from "./IDolomiteMigrator.sol";
 import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
-import { IDolomiteMigrator } from "./IDolomiteMigrator.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 

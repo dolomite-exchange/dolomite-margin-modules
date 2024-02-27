@@ -20,21 +20,18 @@
 
 pragma solidity ^0.8.9;
 
-import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
-import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
-import { IIsolationModeMigrator } from "../isolation-mode/interfaces/IIsolationModeMigrator.sol";
-import { IIsolationModeTokenVaultV1 } from "../isolation-mode/interfaces/IIsolationModeTokenVaultV1.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OnlyDolomiteMargin } from "../helpers/OnlyDolomiteMargin.sol";
+import { IDolomiteMigrator } from "../interfaces/IDolomiteMigrator.sol";
+import { IIsolationModeMigrator } from "../isolation-mode/interfaces/IIsolationModeMigrator.sol";
+import { IIsolationModeVaultFactory } from "../isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
+import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
-import { AccountActionLib } from "../lib/AccountActionLib.sol";
-import { AccountBalanceLib } from "../lib/AccountBalanceLib.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   DolomiteMigrator
@@ -88,7 +85,7 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     // =================== Functions ==================
     // ================================================
 
-    // @follow-up Who to make this callable by? valid handlers
+    // @follow-up should handler be stored in this contract or on a registry contract?
     function migrate(
         IDolomiteStructs.AccountInfo[] calldata _accounts,
         uint256 _fromMarketId,
@@ -107,11 +104,16 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             "Markets must be isolation mode"
         );
 
-        IIsolationModeVaultFactory fromFactory = IIsolationModeVaultFactory(DOLOMITE_MARGIN().getMarketTokenAddress(_fromMarketId));
-        IIsolationModeVaultFactory toFactory = IIsolationModeVaultFactory(DOLOMITE_MARGIN().getMarketTokenAddress(_toMarketId));
+        IIsolationModeVaultFactory fromFactory = IIsolationModeVaultFactory(
+            DOLOMITE_MARGIN().getMarketTokenAddress(_fromMarketId)
+        );
+        IIsolationModeVaultFactory toFactory = IIsolationModeVaultFactory(
+            DOLOMITE_MARGIN().getMarketTokenAddress(_toMarketId)
+        );
 
         for (uint256 i; i < _accounts.length; ++i) {
             IDolomiteStructs.AccountInfo memory account = _accounts[i];
+
             address owner = fromFactory.getAccountByVault(account.owner);
             if (owner != address(0)) { /* FOR COVERAGE TESTING */ }
             Require.that(
@@ -126,10 +128,10 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
 
             uint256 amountWei = DOLOMITE_MARGIN().getAccountWei(account, _fromMarketId).value;
             IIsolationModeMigrator(account.owner).migrate(amountWei);
-            fromFactory.enqueueTransferFromDolomiteMargin(account.owner, amountWei);
-
             uint256 amountOut = _delegateCallToTransformer(_fromMarketId, _toMarketId, amountWei);
 
+            // @follow-up Double check these enqueues and approvals. They work in tests but can you take a look
+            fromFactory.enqueueTransferFromDolomiteMargin(account.owner, amountWei);
             toFactory.enqueueTransferIntoDolomiteMargin(toVault, amountOut);
             IERC20(toFactory.UNDERLYING_TOKEN()).safeApprove(toVault, amountOut);
             IERC20(address(toFactory)).safeApprove(address(DOLOMITE_MARGIN()), amountOut);
@@ -193,24 +195,13 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             number: _account.number
         });
 
-        // @follow-up Design of the full contract, but also this part with the counter
+        // @follow-up Thoughts on design of the full contract, but also this part with the counter
         uint256[] memory marketsWithBalances = DOLOMITE_MARGIN().getAccountMarketsWithBalances(_account);
-        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](marketsWithBalances.length + 1);
-        uint256 counter = 2;
-
-        for (uint256 j; j < marketsWithBalances.length; ++j) {
-            if (marketsWithBalances[j] == _fromMarketId) {
-                continue;
-            }
-            actions[counter] = AccountActionLib.encodeTransferAction(
-                /* fromAccountId = */ 0,
-                /* toAccountId = */ 1,
-                /* marketId = */ marketsWithBalances[j],
-                /* amountDenomination = */ IDolomiteStructs.AssetDenomination.Wei,
-                /* amount = */ type(uint256).max
-            );
-            ++counter;
-        }
+        // @follow-up Assuming one market will be the fromMarketId, if not it will fail
+        // @follow-up Should we explicitly check for this?
+        IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
+            marketsWithBalances.length + 1
+        );
         actions[0] = AccountActionLib.encodeWithdrawalAction(
             /* _accountId = */ 0,
             _fromMarketId,
@@ -233,6 +224,21 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             }),
             /* _fromAccount = */ address(this)
         );
+
+        uint256 counter = 2;
+        for (uint256 j; j < marketsWithBalances.length; ++j) {
+            if (marketsWithBalances[j] == _fromMarketId) {
+                continue;
+            }
+            actions[counter] = AccountActionLib.encodeTransferAction(
+                /* fromAccountId = */ 0,
+                /* toAccountId = */ 1,
+                /* marketId = */ marketsWithBalances[j],
+                /* amountDenomination = */ IDolomiteStructs.AssetDenomination.Wei,
+                /* amount = */ type(uint256).max
+            );
+            ++counter;
+        }
 
         DOLOMITE_MARGIN().operate(accounts, actions);
     }

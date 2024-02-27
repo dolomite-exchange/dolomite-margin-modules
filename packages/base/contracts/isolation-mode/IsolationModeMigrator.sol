@@ -36,15 +36,31 @@ import { IIsolationModeVaultFactory } from "./interfaces/IIsolationModeVaultFact
 contract IsolationModeMigrator {
     using SafeERC20 for IERC20;
 
+    // ================================================
+    // =================== Constants ==================
+    // ================================================
+
     bytes32 private constant _FILE = "IsolationModeMigrator";
+
+    // ================================================
+    // =================== State Variables ============
+    // ================================================
 
     IDolomiteRegistry public immutable dolomiteRegistry;
     IIsolationModeVaultFactory public immutable vaultFactory;
     
+    // ================================================
+    // =================== Modifiers ==================
+    // ================================================
+
     modifier onlyMigrator(address _from) {
         _requireOnlyMigrator(_from);
         _;
     }
+
+    // ================================================
+    // =================== Constructor ================
+    // ================================================
 
     // @follow-up What addresses to put in here as immutable?
     constructor(address _dolomiteRegistry, address _vaultFactory) {
@@ -59,13 +75,19 @@ contract IsolationModeMigrator {
         );
     }
 
+    // ================================================
+    // =================== Functions ==================
+    // ================================================
+
+    // @follow-up Is this ok to leave with no access control?
     function executeWithdrawalFromVault(address _recipient, uint256 _amount) external {}
 
     function _requireOnlyMigrator(address _from) internal view {
         Require.that(
             _from == address(dolomiteRegistry.dolomiteMigrator()),
             _FILE,
-            "Only migrator can call"
+            "Caller is not migrator",
+            _from
         );
     }
 }

@@ -24,7 +24,7 @@ import { ICustomTestToken } from "./ICustomTestToken.sol";
 
 
 /**
- * @title   TestTransformer
+ * @title   TestFailingTransformer
  * @author  Dolomite
  *
  * @notice  Test contract for a transformer implementation

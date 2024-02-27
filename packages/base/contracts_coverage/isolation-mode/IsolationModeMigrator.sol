@@ -20,12 +20,11 @@
 
 pragma solidity ^0.8.9;
 
-import { Require } from "../protocol/lib/Require.sol";
-import { IIsolationModeTokenVaultV1 } from "./interfaces/IIsolationModeTokenVaultV1.sol";
-import { IIsolationModeVaultFactory } from "./interfaces/IIsolationModeVaultFactory.sol";
-import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
+import { Require } from "../protocol/lib/Require.sol";
+import { IIsolationModeVaultFactory } from "./interfaces/IIsolationModeVaultFactory.sol";
 
 
 /**
@@ -37,15 +36,31 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract IsolationModeMigrator {
     using SafeERC20 for IERC20;
 
+    // ================================================
+    // =================== Constants ==================
+    // ================================================
+
     bytes32 private constant _FILE = "IsolationModeMigrator";
+
+    // ================================================
+    // =================== State Variables ============
+    // ================================================
 
     IDolomiteRegistry public immutable dolomiteRegistry;
     IIsolationModeVaultFactory public immutable vaultFactory;
+
+    // ================================================
+    // =================== Modifiers ==================
+    // ================================================
 
     modifier onlyMigrator(address _from) {
         _requireOnlyMigrator(_from);
         _;
     }
+
+    // ================================================
+    // =================== Constructor ================
+    // ================================================
 
     // @follow-up What addresses to put in here as immutable?
     constructor(address _dolomiteRegistry, address _vaultFactory) {
@@ -60,6 +75,11 @@ contract IsolationModeMigrator {
         );
     }
 
+    // ================================================
+    // =================== Functions ==================
+    // ================================================
+
+    // @follow-up Is this ok to leave with no access control?
     function executeWithdrawalFromVault(address _recipient, uint256 _amount) external {}
 
     function _requireOnlyMigrator(address _from) internal view {
@@ -67,7 +87,8 @@ contract IsolationModeMigrator {
         Require.that(
             _from == address(dolomiteRegistry.dolomiteMigrator()),
             _FILE,
-            "Only migrator can call"
+            "Caller is not migrator",
+            _from
         );
     }
 }
