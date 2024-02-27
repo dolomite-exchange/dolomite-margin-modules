@@ -22,8 +22,8 @@ pragma solidity ^0.8.9;
 // solhint-disable max-line-length
 import { IDolomiteRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteRegistry.sol";
 import { IGenericTraderBase } from "@dolomite-exchange/modules-base/contracts/interfaces/IGenericTraderBase.sol";
-import { IsolationModeTokenVaultV1WithFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol";
-import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1WithAsyncFreezable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezable.sol";
+import { IsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 import { IsolationModeTokenVaultV1WithPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/abstract/IsolationModeTokenVaultV1WithPausable.sol";
 import { IFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
@@ -51,7 +51,7 @@ import { IGmxV2IsolationModeVaultFactory } from "./interfaces/IGmxV2IsolationMod
  */
 contract GmxV2IsolationModeTokenVaultV1 is
     IGmxV2IsolationModeTokenVaultV1,
-    IsolationModeTokenVaultV1WithFreezableAndPausable
+    IsolationModeTokenVaultV1WithAsyncFreezableAndPausable
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
@@ -66,7 +66,7 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ========================== Constructors ==========================
     // ==================================================================
 
-    constructor(address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {
+    constructor(address _weth) IsolationModeTokenVaultV1WithAsyncFreezable(_weth) {
         // solhint-disable-previous-line no-empty-blocks
     }
 

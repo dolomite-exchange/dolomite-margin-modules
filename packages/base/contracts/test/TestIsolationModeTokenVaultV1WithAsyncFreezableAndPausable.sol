@@ -23,25 +23,25 @@ pragma solidity ^0.8.9;
 import { TestIsolationModeFactory } from "./TestIsolationModeFactory.sol";
 import { IDolomiteRegistry } from "../interfaces/IDolomiteRegistry.sol";
 import { IsolationModeTokenVaultV1 } from "../isolation-mode/abstract/IsolationModeTokenVaultV1.sol";
-import { IsolationModeTokenVaultV1WithFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezable.sol"; // solhint-disable-line max-line-length
-import { IsolationModeTokenVaultV1WithFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1WithAsyncFreezable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezable.sol"; // solhint-disable-line max-line-length
+import { IsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "../isolation-mode/abstract/IsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 import { IFreezableIsolationModeVaultFactory } from "../isolation-mode/interfaces/IFreezableIsolationModeVaultFactory.sol"; // solhint-disable-line max-line-length
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 
 
 /**
- * @title   TestIsolationModeTokenVaultV1WithFreezableAndPausable
+ * @title   TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable
  * @author  Dolomite
  *
  * @notice  A test contract for the TestIsolationModeTokenVaultV1WithFreezableAndPausable contract.
  */
-contract TestIsolationModeTokenVaultV1WithFreezableAndPausable is IsolationModeTokenVaultV1WithFreezableAndPausable {
+contract TestIsolationModeTokenVaultV1WithAsyncFreezableAndPausable is IsolationModeTokenVaultV1WithAsyncFreezableAndPausable { // solhint-disable-line max-line-length
 
     // solhint-disable-next-line max-line-length
     bytes32 private constant _IS_EXTERNAL_REDEMPTION_PAUSED_SLOT = bytes32(uint256(keccak256("eip1967.proxy.isExternalRedemptionPaused")) - 1);
 
     // solhint-disable-next-line no-empty-blocks
-    constructor(address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {}
+    constructor(address _weth) IsolationModeTokenVaultV1WithAsyncFreezable(_weth) {}
 
     function setIsExternalRedemptionPaused(bool _newIsExternalRedemptionPaused) public {
         _setUint256(_IS_EXTERNAL_REDEMPTION_PAUSED_SLOT, _newIsExternalRedemptionPaused ? 1 : 0);

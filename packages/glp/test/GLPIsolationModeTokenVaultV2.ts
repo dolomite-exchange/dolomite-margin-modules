@@ -79,6 +79,8 @@ describe('GLPIsolationModeTokenVaultV2', () => {
 
     const gmxVaultImplementation = await createGMXIsolationModeTokenVaultV1();
     gmxFactory = await createGMXIsolationModeVaultFactory(core, gmxRegistry, gmxVaultImplementation);
+    await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
+    await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(gmxFactory.address);
 
     underlyingGlpMarketId = BigNumber.from(core.marketIds.dfsGlp!);
     await core.testEcosystem!.testPriceOracle.setPrice(glpFactory.address, '1000000000000000000');
@@ -129,8 +131,6 @@ describe('GLPIsolationModeTokenVaultV2', () => {
       core.gmxEcosystem!.esGmxDistributorForStakedGlp.address,
       parseEther('100000000'),
     );
-    await gmxRegistry.connect(core.governance).ownerSetGlpVaultFactory(glpFactory.address);
-    await gmxRegistry.connect(core.governance).ownerSetGmxVaultFactory(gmxFactory.address);
 
     snapshotId = await snapshot();
   });
@@ -995,6 +995,24 @@ describe('GLPIsolationModeTokenVaultV2', () => {
     it('should fail when not called by gmxVault', async () => {
       await expectThrow(
         glpVault.connect(core.hhUser1).unvestGmx(true, true),
+        'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
+      );
+    });
+  });
+
+  describe('#signalAccountTransfer', () => {
+    it('should fail if not called by gmx vault', async () => {
+      await expectThrow(
+        glpVault.connect(core.hhUser1).signalAccountTransfer(core.hhUser2.address, ZERO_BI),
+        'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
+      );
+    });
+  });
+
+  describe('#cancelAccountTransfer', () => {
+    it('should fail if not called by gmx vault', async () => {
+      await expectThrow(
+        glpVault.connect(core.hhUser1).cancelAccountTransfer(),
         'GLPIsolationModeTokenVaultV2: Invalid GMX vault',
       );
     });

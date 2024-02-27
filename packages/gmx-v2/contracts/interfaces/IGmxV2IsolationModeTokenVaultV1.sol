@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IIsolationModeTokenVaultV1WithFreezableAndPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithFreezableAndPausable.sol"; // solhint-disable-line max-line-length
+import { IIsolationModeTokenVaultV1WithAsyncFreezableAndPausable } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeTokenVaultV1WithAsyncFreezableAndPausable.sol"; // solhint-disable-line max-line-length
 import { IGmxV2Registry } from "./IGmxV2Registry.sol";
 
 
@@ -29,7 +29,7 @@ import { IGmxV2Registry } from "./IGmxV2Registry.sol";
  * @author  Dolomite
  *
  */
-interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithFreezableAndPausable {
+interface IGmxV2IsolationModeTokenVaultV1 is IIsolationModeTokenVaultV1WithAsyncFreezableAndPausable {
 
     function cancelDeposit(bytes32 _key) external;
 

@@ -27,7 +27,7 @@ import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol
 import { Require } from "../../protocol/lib/Require.sol";
 import { TypesLib } from "../../protocol/lib/TypesLib.sol";
 import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
-import { IIsolationModeTokenVaultV1WithFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithFreezable.sol";
+import { IIsolationModeTokenVaultV1WithAsyncFreezable } from "../interfaces/IIsolationModeTokenVaultV1WithAsyncFreezable.sol";
 
 
 /**
@@ -141,7 +141,7 @@ abstract contract FreezableIsolationModeVaultFactory is
     external
     requireIsTokenConverter(msg.sender)
     requireIsVault(_vault) {
-        IIsolationModeTokenVaultV1WithFreezable(_vault).setShouldVaultSkipTransfer(_shouldSkipTransfer);
+        IIsolationModeTokenVaultV1WithAsyncFreezable(_vault).setShouldVaultSkipTransfer(_shouldSkipTransfer);
     }
 
     function depositIntoDolomiteMarginFromTokenConverter(
@@ -296,6 +296,6 @@ abstract contract FreezableIsolationModeVaultFactory is
         address _vault,
         bool _isDepositSourceWrapper
     ) internal {
-        IIsolationModeTokenVaultV1WithFreezable(_vault).setIsVaultDepositSourceWrapper(_isDepositSourceWrapper);
+        IIsolationModeTokenVaultV1WithAsyncFreezable(_vault).setIsVaultDepositSourceWrapper(_isDepositSourceWrapper);
     }
 }
