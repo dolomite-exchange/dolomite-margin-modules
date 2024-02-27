@@ -11,7 +11,7 @@ import {
   getDefaultCoreProtocolConfig,
   setupCoreProtocol,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
-import { BaseRouter, Router } from '@pendle/sdk-v2';
+import { BaseRouter, Router, CHAIN_ID_MAPPING } from '@pendle/sdk-v2';
 import { expectProtocolBalance, expectProtocolBalanceIsGreaterThan } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { AccountInfoStruct } from 'packages/base/src/utils';
 import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules-base/test/utils/dolomite';
@@ -24,7 +24,6 @@ import {
   PtGLPTransformer__factory
 } from 'packages/pendle/src/types';
 import { ONE_TENTH_OF_ONE_BIPS_NUMBER, encodeSwapExactPtForTokens } from '../pendle-utils';
-import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2';
 
 const defaultAccountNumber = ZERO_BI;
 const vaultAddress = '0x10dc4c2c391de5008bc4c895c3b1c3b070661674';
@@ -73,7 +72,11 @@ describe('PtGLPMigrator', () => {
     const newRegistry = await createDolomiteRegistryImplementation();
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(newRegistry.address);
     await core.dolomiteRegistry.ownerSetDolomiteMigrator(migrator.address);
-    await migrator.connect(core.governance).ownerSetTransformer(core.marketIds.dPtGlp, core.marketIds.dfsGlp, transformer.address);
+    await migrator.connect(core.governance).ownerSetTransformer(
+      core.marketIds.dPtGlp,
+      core.marketIds.dfsGlp,
+      transformer.address
+    );
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(migrator.address, true);
     await ptGlpFactory.connect(core.governance).ownerSetIsTokenConverterTrusted(migrator.address, true);
     await glpFactory.connect(core.governance).setIsTokenConverterTrusted(migrator.address, true);
@@ -99,7 +102,10 @@ describe('PtGLPMigrator', () => {
 
   describe('#transform', () => {
     it('should work normally', async () => {
-      const ptGlpAmountWei = (await core.dolomiteMargin.getAccountWei( { owner: vaultAddress, number: defaultAccountNumber }, core.marketIds.dPtGlp)).value;
+      const ptGlpAmountWei = (await core.dolomiteMargin.getAccountWei(
+        { owner: vaultAddress, number: defaultAccountNumber },
+        core.marketIds.dPtGlp
+      )).value;
       const { tokenOutput, extraOrderData } = await encodeSwapExactPtForTokens(
         router,
         ptGlpAmountWei,
@@ -107,11 +113,22 @@ describe('PtGLPMigrator', () => {
         core.pendleEcosystem.glpMar2024.ptGlpMarket.address,
         core.gmxEcosystem.sGlp.address,
       );
-      await migrator.connect(core.hhUser5).migrate(accounts, core.marketIds.dPtGlp, core.marketIds.dfsGlp, extraOrderData);
+      await migrator.connect(core.hhUser5).migrate(
+        accounts,
+        core.marketIds.dPtGlp,
+        core.marketIds.dfsGlp,
+        extraOrderData
+      );
 
       const glpVaultAddress = await glpFactory.getVaultByAccount(vaultOwner);
       await expectProtocolBalance(core, vaultAddress, defaultAccountNumber, core.marketIds.dPtGlp, ZERO_BI);
-      await expectProtocolBalanceIsGreaterThan(core, { owner: glpVaultAddress, number: defaultAccountNumber }, core.marketIds.dfsGlp, tokenOutput.minTokenOut, ZERO_BI);
+      await expectProtocolBalanceIsGreaterThan(
+        core,
+        { owner: glpVaultAddress, number: defaultAccountNumber },
+        core.marketIds.dfsGlp,
+        tokenOutput.minTokenOut,
+        ZERO_BI
+      );
     });
-  })
+  });
 });

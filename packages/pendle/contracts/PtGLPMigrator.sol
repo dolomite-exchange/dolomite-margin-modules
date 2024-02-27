@@ -20,15 +20,16 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+// solhint-disable max-line-length
+import { DolomiteMigrator } from "@dolomite-exchange/modules-base/contracts/general/DolomiteMigrator.sol";
 import { IIsolationModeMigrator } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeMigrator.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
-import { IGLPIsolationModeVaultFactory } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGLPIsolationModeVaultFactory.sol";
-import { IGmxRegistryV1 } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGmxRegistryV1.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { DolomiteMigrator } from "@dolomite-exchange/modules-base/contracts/general/DolomiteMigrator.sol";
+import { IGLPIsolationModeVaultFactory } from "@dolomite-exchange/modules-glp/contracts/interfaces/IGLPIsolationModeVaultFactory.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+// solhint-enable max-line-length
 
 
 /**
