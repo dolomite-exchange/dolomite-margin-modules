@@ -413,4 +413,21 @@ interface IGmxReader {
         GmxPrice.PriceProps memory _tokenInPrice,
         GmxPrice.PriceProps memory _tokenOutPrice
     ) external view returns (int256, int256);
+
+    function getDepositAmountOut(
+        IGmxDataStore _dataStore,
+        GmxMarket.MarketProps memory _market,
+        GmxMarket.MarketPrices memory _prices,
+        uint256 _longTokenAmount,
+        uint256 _shortTokenAmount,
+        address _uiFeeReceiver
+    ) external view returns (uint256);
+
+    function getWithdrawalAmountOut(
+        IGmxDataStore _dataStore,
+        GmxMarket.MarketProps memory _market,
+        GmxMarket.MarketPrices memory _prices,
+        uint256 _marketTokenAmount,
+        address _uiFeeReceiver
+    ) external view returns (uint256, uint256);
 }
