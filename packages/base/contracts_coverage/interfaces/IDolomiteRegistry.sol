@@ -23,6 +23,7 @@ pragma solidity ^0.8.9;
 import { IEventEmitterRegistry } from "./IEventEmitterRegistry.sol";
 import { IExpiry } from "./IExpiry.sol";
 import { IGenericTraderProxyV1 } from "./IGenericTraderProxyV1.sol";
+import { IDolomiteMigrator } from "./IDolomiteMigrator.sol";
 import { ILiquidatorAssetRegistry } from "./ILiquidatorAssetRegistry.sol";
 import { IDolomitePriceOracle } from "../protocol/interfaces/IDolomitePriceOracle.sol";
 
@@ -45,6 +46,7 @@ interface IDolomiteRegistry {
     event LiquidatorAssetRegistrySet(address indexed _liquidatorAssetRegistry);
     event EventEmitterSet(address indexed _eventEmitter);
     event ChainlinkPriceOracleSet(address indexed _chainlinkPriceOracle);
+    event DolomiteMigratorSet(address indexed _dolomiteMigrator);
 
     // ========================================================
     // =================== Admin Functions ====================
@@ -88,6 +90,8 @@ interface IDolomiteRegistry {
      */
     function ownerSetChainlinkPriceOracle(address _chainlinkPriceOracle) external;
 
+    function ownerSetDolomiteMigrator(address _dolomiteMigrator) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================
@@ -121,6 +125,8 @@ interface IDolomiteRegistry {
      * @return The address of the Chainlink price oracle that's compatible with DolomiteMargin
      */
     function chainlinkPriceOracle() external view returns (IDolomitePriceOracle);
+
+    function dolomiteMigrator() external view returns (IDolomiteMigrator);
 
     /**
      * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
