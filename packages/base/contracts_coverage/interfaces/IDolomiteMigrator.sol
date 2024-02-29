@@ -53,7 +53,8 @@ interface IDolomiteMigrator {
     function migrate(
         IDolomiteStructs.AccountInfo[] calldata _accounts,
         uint256 _fromMarketId,
-        uint256 _toMarketId
+        uint256 _toMarketId,
+        bytes calldata _extraData
     ) external;
 
     function ownerSetTransformer(uint256 _fromMarketId, uint256 _toMarketId, address _transformer) external;

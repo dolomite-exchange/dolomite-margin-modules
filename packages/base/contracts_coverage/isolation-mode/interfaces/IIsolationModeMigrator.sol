@@ -20,6 +20,8 @@
 
 pragma solidity ^0.8.9;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 
 /**
  * @title   IIsolationModeMigrator
@@ -28,6 +30,8 @@ pragma solidity ^0.8.9;
  * @notice
  */
 interface IIsolationModeMigrator {
+
+    function MIGRATION_TOKEN() external view returns (IERC20);
 
     function migrate(uint256 _amountWei) external;
 }

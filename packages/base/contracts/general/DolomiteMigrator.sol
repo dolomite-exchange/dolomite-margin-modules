@@ -31,6 +31,7 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
 
 
 /**
@@ -136,6 +137,7 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             DOLOMITE_MARGIN().getMarketTokenAddress(_toMarketId)
         );
 
+        address outputToken = IDolomiteTransformer(marketIdsToTransformer[_fromMarketId][_toMarketId]).outputToken();
         for (uint256 i; i < _accounts.length; ++i) {
             IDolomiteStructs.AccountInfo memory account = _accounts[i];
 
@@ -151,16 +153,28 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             }
 
             uint256 amountWei = DOLOMITE_MARGIN().getAccountWei(account, _fromMarketId).value;
-            IIsolationModeMigrator(account.owner).migrate(amountWei);
-            uint256 amountOut = _delegateCallToTransformer(_fromMarketId, _toMarketId, amountWei, _extraData);
+            uint256 amountOut;
+            if (amountWei > 0) {
+                IIsolationModeMigrator(account.owner).migrate(amountWei);
+                amountOut = _delegateCallToTransformer(_fromMarketId, _toMarketId, amountWei, _extraData);
 
-            // @follow-up Double check these enqueues and approvals. They work in tests but can you take a look
-            fromFactory.enqueueTransferFromDolomiteMargin(account.owner, amountWei);
-            toFactory.enqueueTransferIntoDolomiteMargin(toVault, amountOut);
-            IERC20(toFactory.UNDERLYING_TOKEN()).safeApprove(toVault, amountOut);
-            IERC20(address(toFactory)).safeApprove(address(DOLOMITE_MARGIN()), amountOut);
+                fromFactory.enqueueTransferFromDolomiteMargin(account.owner, amountWei);
+                toFactory.enqueueTransferIntoDolomiteMargin(toVault, amountOut);
+                IERC20(outputToken).safeApprove(toVault, amountOut);
+                IERC20(address(toFactory)).safeApprove(address(DOLOMITE_MARGIN()), amountOut);
 
-            _craftAndExecuteActions(account, toVault, _fromMarketId, _toMarketId, amountOut);
+                // @note Will remove these. Just here for debugging
+                assert(IERC20(outputToken).allowance(address(this), toVault) > 0);
+                assert(IERC20(address(toFactory)).allowance(toVault, address(DOLOMITE_MARGIN())) > 0);
+                assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) > 0);
+            }
+
+            _craftAndExecuteActions(account, toVault, _fromMarketId, _toMarketId, amountOut, amountWei > 0);
+
+            assert(IERC20(outputToken).allowance(address(this), toVault) == 0);
+            assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) == 0);
+            // @follow-up This final assert is failing. I think because we do straight deposit, it won't work
+            // assert(IERC20(address(toFactory)).allowance(toVault, address(DOLOMITE_MARGIN())) == 0);
             emit MigrationComplete(account.owner, account.number, _fromMarketId, _toMarketId);
         }
     }
@@ -172,15 +186,23 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         bytes memory _extraData
     ) internal returns (uint256) {
         address transformer = marketIdsToTransformer[_fromMarketId][_toMarketId];
+        assert(transformer != address(0));
         // @follow-up Want to use a library instead to delegate call?
         (bool success, bytes memory data) = transformer.delegatecall(
-            abi.encodeWithSignature("transform(uint256,bytes)", _amount, _extraData)
+            abi.encodeWithSelector(IDolomiteTransformer.transform.selector, _amount, _extraData)
         );
+
         Require.that(
             success,
             _FILE,
             "Transformer call failed"
         );
+        Require.that(
+            data.length == 32,
+            _FILE,
+            "Invalid return data"
+        );
+
         return abi.decode(data, (uint256));
     }
 
@@ -189,7 +211,8 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         address _toVault,
         uint256 _fromMarketId,
         uint256 _toMarketId,
-        uint256 _amount
+        uint256 _amount,
+        bool _hasFromMarketIdBalance
     ) internal {
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
         accounts[0] = IDolomiteStructs.AccountInfo({
@@ -201,49 +224,49 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             number: _account.number
         });
 
-        // @follow-up Thoughts on design of the full contract, but also this part with the counter
         uint256[] memory marketsWithBalances = DOLOMITE_MARGIN().getAccountMarketsWithBalances(_account);
-        // @follow-up Assuming one market will be the fromMarketId, if not it will fail
-        // @follow-up Should we explicitly check for this?
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            marketsWithBalances.length + 1
-        );
-        actions[0] = AccountActionLib.encodeWithdrawalAction(
-            /* _accountId = */ 0,
-            _fromMarketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Target,
-                value: 0
-            }),
-            /* _toAccount = */ address(this)
-        );
-        actions[1] = AccountActionLib.encodeDepositAction(
-            /* _accountId = */ 1,
-            _toMarketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amount
-            }),
-            /* _fromAccount = */ address(this)
+            _hasFromMarketIdBalance ? marketsWithBalances.length + 1 : marketsWithBalances.length
         );
 
-        uint256 counter = 2;
+        if (_hasFromMarketIdBalance) {
+            actions[0] = AccountActionLib.encodeWithdrawalAction(
+                /* _accountId = */ 0,
+                _fromMarketId,
+                IDolomiteStructs.AssetAmount({
+                    sign: true,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Target,
+                    value: 0
+                }),
+                /* _toAccount = */ address(this)
+            );
+            actions[1] = AccountActionLib.encodeDepositAction(
+                /* _accountId = */ 1,
+                _toMarketId,
+                IDolomiteStructs.AssetAmount({
+                    sign: true,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Delta,
+                    value: _amount
+                }),
+                /* _fromAccount = */ address(this)
+            );
+        }
+
+        uint256 counter = _hasFromMarketIdBalance ? 2 : 0;
         for (uint256 j; j < marketsWithBalances.length; ++j) {
             if (marketsWithBalances[j] == _fromMarketId) {
+                assert(_hasFromMarketIdBalance);
                 continue;
             }
-            actions[counter] = AccountActionLib.encodeTransferAction(
+            actions[counter++] = AccountActionLib.encodeTransferAction(
                 /* fromAccountId = */ 0,
                 /* toAccountId = */ 1,
                 /* marketId = */ marketsWithBalances[j],
                 /* amountDenomination = */ IDolomiteStructs.AssetDenomination.Wei,
                 /* amount = */ type(uint256).max
             );
-            ++counter;
         }
 
         DOLOMITE_MARGIN().operate(accounts, actions);

@@ -31,6 +31,7 @@ import { AccountActionLib } from "../lib/AccountActionLib.sol";
 import { IDolomiteStructs } from "../protocol/interfaces/IDolomiteStructs.sol";
 import { ExcessivelySafeCall } from "../protocol/lib/ExcessivelySafeCall.sol";
 import { Require } from "../protocol/lib/Require.sol";
+import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
 
 
 /**
@@ -89,56 +90,10 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     function migrate(
         IDolomiteStructs.AccountInfo[] calldata _accounts,
         uint256 _fromMarketId,
-        uint256 _toMarketId
+        uint256 _toMarketId,
+        bytes calldata _extraData
     ) external onlyHandler(msg.sender) {
-        if (_fromMarketId != _toMarketId) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _fromMarketId != _toMarketId,
-            _FILE,
-            "Cannot migrate to same market"
-        );
-        if (_isIsolationModeMarket(_fromMarketId) && _isIsolationModeMarket(_toMarketId)) { /* FOR COVERAGE TESTING */ }
-        Require.that(
-            _isIsolationModeMarket(_fromMarketId) && _isIsolationModeMarket(_toMarketId),
-            _FILE,
-            "Markets must be isolation mode"
-        );
-
-        IIsolationModeVaultFactory fromFactory = IIsolationModeVaultFactory(
-            DOLOMITE_MARGIN().getMarketTokenAddress(_fromMarketId)
-        );
-        IIsolationModeVaultFactory toFactory = IIsolationModeVaultFactory(
-            DOLOMITE_MARGIN().getMarketTokenAddress(_toMarketId)
-        );
-
-        for (uint256 i; i < _accounts.length; ++i) {
-            IDolomiteStructs.AccountInfo memory account = _accounts[i];
-
-            address owner = fromFactory.getAccountByVault(account.owner);
-            if (owner != address(0)) { /* FOR COVERAGE TESTING */ }
-            Require.that(
-                owner != address(0),
-                _FILE,
-                "Invalid vault"
-            );
-            address toVault = toFactory.getVaultByAccount(owner);
-            if (toVault == address(0)) {
-                toVault = toFactory.createVault(owner);
-            }
-
-            uint256 amountWei = DOLOMITE_MARGIN().getAccountWei(account, _fromMarketId).value;
-            IIsolationModeMigrator(account.owner).migrate(amountWei);
-            uint256 amountOut = _delegateCallToTransformer(_fromMarketId, _toMarketId, amountWei);
-
-            // @follow-up Double check these enqueues and approvals. They work in tests but can you take a look
-            fromFactory.enqueueTransferFromDolomiteMargin(account.owner, amountWei);
-            toFactory.enqueueTransferIntoDolomiteMargin(toVault, amountOut);
-            IERC20(toFactory.UNDERLYING_TOKEN()).safeApprove(toVault, amountOut);
-            IERC20(address(toFactory)).safeApprove(address(DOLOMITE_MARGIN()), amountOut);
-
-            _craftAndExecuteActions(account, toVault, _fromMarketId, _toMarketId, amountOut);
-            emit MigrationComplete(account.owner, account.number, _fromMarketId, _toMarketId);
-        }
+        _migrate(_accounts, _fromMarketId, _toMarketId, _extraData);
     }
 
     function ownerSetTransformer(
@@ -159,22 +114,93 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
     // ================ Internal Functions ============
     // ================================================
 
+    function _migrate(
+        IDolomiteStructs.AccountInfo[] calldata _accounts,
+        uint256 _fromMarketId,
+        uint256 _toMarketId,
+        bytes calldata _extraData
+    ) internal virtual {
+        if (_fromMarketId != _toMarketId) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _fromMarketId != _toMarketId,
+            _FILE,
+            "Cannot migrate to same market"
+        );
+        if (_isIsolationModeMarket(_fromMarketId) && _isIsolationModeMarket(_toMarketId)) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _isIsolationModeMarket(_fromMarketId) && _isIsolationModeMarket(_toMarketId),
+            _FILE,
+            "Markets must be isolation mode"
+        );
+
+        IIsolationModeVaultFactory fromFactory = IIsolationModeVaultFactory(
+            DOLOMITE_MARGIN().getMarketTokenAddress(_fromMarketId)
+        );
+        IIsolationModeVaultFactory toFactory = IIsolationModeVaultFactory(
+            DOLOMITE_MARGIN().getMarketTokenAddress(_toMarketId)
+        );
+
+        address outputToken = IDolomiteTransformer(marketIdsToTransformer[_fromMarketId][_toMarketId]).outputToken();
+        for (uint256 i; i < _accounts.length; ++i) {
+            IDolomiteStructs.AccountInfo memory account = _accounts[i];
+
+            address owner = fromFactory.getAccountByVault(account.owner);
+            if (owner != address(0)) { /* FOR COVERAGE TESTING */ }
+            Require.that(
+                owner != address(0),
+                _FILE,
+                "Invalid vault"
+            );
+            address toVault = toFactory.getVaultByAccount(owner);
+            if (toVault == address(0)) {
+                toVault = toFactory.createVault(owner);
+            }
+
+            uint256 amountWei = DOLOMITE_MARGIN().getAccountWei(account, _fromMarketId).value;
+            uint256 amountOut;
+            if (amountWei > 0) {
+                IIsolationModeMigrator(account.owner).migrate(amountWei);
+                amountOut = _delegateCallToTransformer(_fromMarketId, _toMarketId, amountWei, _extraData);
+
+                // @follow-up Double check these enqueues and approvals. They work in tests but can you take a look
+                fromFactory.enqueueTransferFromDolomiteMargin(account.owner, amountWei);
+                toFactory.enqueueTransferIntoDolomiteMargin(toVault, amountOut);
+                IERC20(outputToken).safeApprove(toVault, amountOut);
+                IERC20(address(toFactory)).safeApprove(address(DOLOMITE_MARGIN()), amountOut);
+            }
+
+            _craftAndExecuteActions(account, toVault, _fromMarketId, _toMarketId, amountOut, amountWei > 0);
+            // @todo Check allowances
+            emit MigrationComplete(account.owner, account.number, _fromMarketId, _toMarketId);
+        }
+    }
+
     function _delegateCallToTransformer(
         uint256 _fromMarketId,
         uint256 _toMarketId,
-        uint256 _amount
+        uint256 _amount,
+        bytes memory _extraData
     ) internal returns (uint256) {
         address transformer = marketIdsToTransformer[_fromMarketId][_toMarketId];
+        /*assert(transformer != address(0));*/
         // @follow-up Want to use a library instead to delegate call?
         (bool success, bytes memory data) = transformer.delegatecall(
-            abi.encodeWithSignature("transform(uint256)", _amount)
+            abi.encodeWithSelector(IDolomiteTransformer.transform.selector, _amount, _extraData)
         );
+
         if (success) { /* FOR COVERAGE TESTING */ }
         Require.that(
             success,
             _FILE,
             "Transformer call failed"
         );
+        if (data.length == 32) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            data.length == 32,
+            _FILE,
+            "Invalid return data"
+        );
+
         return abi.decode(data, (uint256));
     }
 
@@ -183,7 +209,8 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         address _toVault,
         uint256 _fromMarketId,
         uint256 _toMarketId,
-        uint256 _amount
+        uint256 _amount,
+        bool _hasFromMarketIdBalance
     ) internal {
         IDolomiteStructs.AccountInfo[] memory accounts = new IDolomiteStructs.AccountInfo[](2);
         accounts[0] = IDolomiteStructs.AccountInfo({
@@ -195,49 +222,49 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
             number: _account.number
         });
 
-        // @follow-up Thoughts on design of the full contract, but also this part with the counter
         uint256[] memory marketsWithBalances = DOLOMITE_MARGIN().getAccountMarketsWithBalances(_account);
-        // @follow-up Assuming one market will be the fromMarketId, if not it will fail
-        // @follow-up Should we explicitly check for this?
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
-            marketsWithBalances.length + 1
-        );
-        actions[0] = AccountActionLib.encodeWithdrawalAction(
-            /* _accountId = */ 0,
-            _fromMarketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Target,
-                value: 0
-            }),
-            /* _toAccount = */ address(this)
-        );
-        actions[1] = AccountActionLib.encodeDepositAction(
-            /* _accountId = */ 1,
-            _toMarketId,
-            IDolomiteStructs.AssetAmount({
-                sign: true,
-                denomination: IDolomiteStructs.AssetDenomination.Wei,
-                ref: IDolomiteStructs.AssetReference.Delta,
-                value: _amount
-            }),
-            /* _fromAccount = */ address(this)
+            _hasFromMarketIdBalance ? marketsWithBalances.length + 1 : marketsWithBalances.length
         );
 
-        uint256 counter = 2;
+        if (_hasFromMarketIdBalance) {
+            actions[0] = AccountActionLib.encodeWithdrawalAction(
+                /* _accountId = */ 0,
+                _fromMarketId,
+                IDolomiteStructs.AssetAmount({
+                    sign: true,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Target,
+                    value: 0
+                }),
+                /* _toAccount = */ address(this)
+            );
+            actions[1] = AccountActionLib.encodeDepositAction(
+                /* _accountId = */ 1,
+                _toMarketId,
+                IDolomiteStructs.AssetAmount({
+                    sign: true,
+                    denomination: IDolomiteStructs.AssetDenomination.Wei,
+                    ref: IDolomiteStructs.AssetReference.Delta,
+                    value: _amount
+                }),
+                /* _fromAccount = */ address(this)
+            );
+        }
+
+        uint256 counter = _hasFromMarketIdBalance ? 2 : 0;
         for (uint256 j; j < marketsWithBalances.length; ++j) {
             if (marketsWithBalances[j] == _fromMarketId) {
+                /*assert(_hasFromMarketIdBalance);*/
                 continue;
             }
-            actions[counter] = AccountActionLib.encodeTransferAction(
+            actions[counter++] = AccountActionLib.encodeTransferAction(
                 /* fromAccountId = */ 0,
                 /* toAccountId = */ 1,
                 /* marketId = */ marketsWithBalances[j],
                 /* amountDenomination = */ IDolomiteStructs.AssetDenomination.Wei,
                 /* amount = */ type(uint256).max
             );
-            ++counter;
         }
 
         DOLOMITE_MARGIN().operate(accounts, actions);

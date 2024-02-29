@@ -21,7 +21,9 @@
 pragma solidity ^0.8.9;
 
 import { ICustomTestToken } from "./ICustomTestToken.sol";
+import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
 
+import "hardhat/console.sol";
 
 /**
  * @title   TestFailingTransformer
@@ -32,14 +34,28 @@ import { ICustomTestToken } from "./ICustomTestToken.sol";
 contract TestFailingTransformer {
 
     ICustomTestToken public immutable tokenFrom;
-    ICustomTestToken public immutable tokenTo;
+    address public immutable outputToken;
 
     constructor(address _tokenFrom, address _tokenTo) {
         tokenFrom = ICustomTestToken(_tokenFrom);
-        tokenTo = ICustomTestToken(_tokenTo);
+        outputToken = _tokenTo;
     }
 
-    function transform(uint256 amount) external returns (uint256) {
+    function transform(uint256 amount, bytes calldata /* _extraData */) external returns (uint256) {
         revert("Call failed");
+    }
+}
+
+contract TestFailingTransformerBytes {
+    ICustomTestToken public immutable tokenFrom;
+    address public immutable outputToken;
+
+    constructor(address _tokenFrom, address _tokenTo) {
+        tokenFrom = ICustomTestToken(_tokenFrom);
+        outputToken = _tokenTo;
+    }
+
+    function transform(uint256 amount, bytes calldata /* _extraData */) external returns (bytes memory) {
+        return abi.encode(amount, amount);
     }
 }

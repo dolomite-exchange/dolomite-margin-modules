@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { ICustomTestToken } from "./ICustomTestToken.sol";
+import { IDolomiteTransformer } from "../interfaces/IDolomiteTransformer.sol";
 
 
 /**
@@ -29,19 +30,19 @@ import { ICustomTestToken } from "./ICustomTestToken.sol";
  *
  * @notice  Test contract for a transformer implementation
  */
-contract TestTransformer {
+contract TestTransformer is IDolomiteTransformer {
 
     ICustomTestToken public immutable tokenFrom;
-    ICustomTestToken public immutable tokenTo;
+    address public immutable outputToken;
 
     constructor(address _tokenFrom, address _tokenTo) {
         tokenFrom = ICustomTestToken(_tokenFrom);
-        tokenTo = ICustomTestToken(_tokenTo);
+        outputToken = _tokenTo;
     }
 
-    function transform(uint256 amount) external returns (uint256) {
+    function transform(uint256 amount, bytes calldata /* _extraData */) external returns (uint256) {
         tokenFrom.burn(amount);
-        tokenTo.addBalance(address(this), amount);
+        ICustomTestToken(outputToken).addBalance(address(this), amount);
         return amount;
     }
 }

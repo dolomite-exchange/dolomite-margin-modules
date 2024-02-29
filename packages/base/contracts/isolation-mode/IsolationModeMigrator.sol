@@ -48,6 +48,8 @@ contract IsolationModeMigrator {
 
     IDolomiteRegistry public immutable dolomiteRegistry;
     IIsolationModeVaultFactory public immutable vaultFactory;
+    // @follow-up Want to set it here or have a function that returns it?
+    IERC20 public immutable MIGRATION_TOKEN;
     
     // ================================================
     // =================== Modifiers ==================
@@ -63,13 +65,14 @@ contract IsolationModeMigrator {
     // ================================================
 
     // @follow-up What addresses to put in here as immutable?
-    constructor(address _dolomiteRegistry, address _vaultFactory) {
+    constructor(address _dolomiteRegistry, address _vaultFactory, address _migrationToken) {
         dolomiteRegistry = IDolomiteRegistry(_dolomiteRegistry);
         vaultFactory = IIsolationModeVaultFactory(_vaultFactory);
+        MIGRATION_TOKEN = IERC20(_migrationToken);
     }
 
     function migrate(uint256 _amountWei) external onlyMigrator(msg.sender) {
-        IERC20(vaultFactory.UNDERLYING_TOKEN()).safeTransfer(
+        MIGRATION_TOKEN.safeTransfer(
             msg.sender,
             _amountWei
         );

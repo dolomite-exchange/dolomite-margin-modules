@@ -20,18 +20,16 @@
 
 pragma solidity ^0.8.9;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 
 /**
- * @title   IIsolationModeMigrator
+ * @title   IDolomiteTransformer
  * @author  Dolomite
  *
- * @notice 
+ * @notice  Interface for a transformer implementation
  */
-interface IIsolationModeMigrator {
+interface IDolomiteTransformer {
 
-    function MIGRATION_TOKEN() external view returns (IERC20);
+    function outputToken() external view returns (address);
 
-    function migrate(uint256 _amountWei) external;
+    function transform(uint256 amount, bytes calldata /* _extraData */) external returns (uint256);
 }

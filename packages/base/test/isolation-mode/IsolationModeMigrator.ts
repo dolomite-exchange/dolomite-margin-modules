@@ -72,7 +72,7 @@ describe('IsolationModeMigrator', () => {
     migratorImplementation = await createContractWithAbi<IsolationModeMigrator>(
       IsolationModeMigrator__factory.abi,
       IsolationModeMigrator__factory.bytecode,
-      [core.dolomiteRegistry.address, factory.address]
+      [core.dolomiteRegistry.address, factory.address, underlyingToken.address]
     );
     await factory.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
 

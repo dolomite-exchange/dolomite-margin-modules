@@ -6,6 +6,8 @@ import {
   IsolationModeMigrator,
   IsolationModeMigrator__factory,
   TestFailingTransformer,
+  TestFailingTransformerBytes,
+  TestFailingTransformerBytes__factory,
   TestFailingTransformer__factory,
   TestIsolationModeFactory,
   TestIsolationModeTokenVaultV1,
@@ -35,6 +37,7 @@ import { BalanceCheckFlag } from '@dolomite-exchange/dolomite-margin';
 
 const defaultAccountNumber = ZERO_BI;
 const borrowAccountNumber = BigNumber.from('123');
+const borrowAccountNumber2 = BigNumber.from('124');
 const amountWei = BigNumber.from('200000000000000000000'); // $200
 const usdcAmount = BigNumber.from('200000000'); // $200
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
@@ -94,7 +97,7 @@ describe('DolomiteMigrator', () => {
     migratorImplementation = await createContractWithAbi<IsolationModeMigrator>(
       IsolationModeMigrator__factory.abi,
       IsolationModeMigrator__factory.bytecode,
-      [core.dolomiteRegistry.address, factory1.address]
+      [core.dolomiteRegistry.address, factory1.address, underlyingToken1.address]
     );
     transformer = await createContractWithAbi<TestTransformer>(
       TestTransformer__factory.abi,
@@ -247,6 +250,36 @@ describe('DolomiteMigrator', () => {
       await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, core.marketIds.dai, amountWei);
     });
 
+    it('should work normally when other balances but not fromMarketId need to be transferred', async () => {
+      const accounts = [
+        { owner: userVault.address, number: borrowAccountNumber2 }
+      ];
+      await userVault.transferIntoPositionWithOtherToken(
+        defaultAccountNumber,
+        borrowAccountNumber2,
+        core.marketIds.usdc,
+        usdcAmount,
+        BalanceCheckFlag.None
+      );
+      await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
+      const result = await migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY);
+      await expectEvent(migrator, result, 'MigrationComplete', {
+        accountOwner: userVault.address,
+        accountNumber: borrowAccountNumber2,
+        fromMarketId: marketId1,
+        toMarketId: marketId2,
+      });
+
+      const vaultAddress = await factory2.getVaultByAccount(core.hhUser1.address);
+      await expectProtocolBalance(core, userVault.address, borrowAccountNumber2, marketId1, ZERO_BI);
+      await expectProtocolBalance(core, userVault.address, borrowAccountNumber2, marketId2, ZERO_BI);
+      await expectProtocolBalance(core, userVault.address, borrowAccountNumber2, core.marketIds.usdc, ZERO_BI);
+
+      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber2, marketId1, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber2, marketId2, ZERO_BI);
+      await expectProtocolBalance(core, vaultAddress, borrowAccountNumber2, core.marketIds.usdc, usdcAmount);
+    });
+
     it('should work normally when vault already exists', async () => {
       await factory2.createVault(core.hhUser1.address);
       await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
@@ -261,6 +294,21 @@ describe('DolomiteMigrator', () => {
       const vaultAddress = await factory2.getVaultByAccount(core.hhUser1.address);
       await expectProtocolBalance(core, userVault.address, borrowAccountNumber, marketId1, ZERO_BI);
       await expectProtocolBalance(core, vaultAddress, borrowAccountNumber, marketId2, amountWei);
+    });
+
+    it('should fail if transformer returns invalid data', async () => {
+      await factory1.connect(core.governance).ownerSetUserVaultImplementation(migratorImplementation.address);
+      const newTransformer = await createContractWithAbi<TestFailingTransformerBytes>(
+        TestFailingTransformerBytes__factory.abi,
+        TestFailingTransformerBytes__factory.bytecode,
+        [underlyingToken1.address, underlyingToken2.address]
+      );
+      await migrator.connect(core.governance).ownerSetTransformer(marketId1, marketId2, newTransformer.address);
+
+      await expectThrow(
+        migrator.connect(core.hhUser5).migrate(accounts, marketId1, marketId2, BYTES_EMPTY),
+        'DolomiteMigrator: Invalid return data'
+      );
     });
 
     it('should fail if transformer call fails', async () => {
