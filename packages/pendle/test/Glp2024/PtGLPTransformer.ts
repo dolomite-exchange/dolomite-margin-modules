@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import {
+  DolomiteMigrator,
+  DolomiteMigrator__factory,
   IsolationModeMigrator,
   IsolationModeMigrator__factory,
 } from '@dolomite-exchange/modules-base/src/types';
@@ -18,8 +20,6 @@ import { createDolomiteRegistryImplementation } from '@dolomite-exchange/modules
 import { IGLPIsolationModeVaultFactoryOld } from 'packages/glp/src/types';
 import {
   PendlePtGLP2024IsolationModeVaultFactory,
-  PtGLPMigrator,
-  PtGLPMigrator__factory,
   PtGLPTransformer,
   PtGLPTransformer__factory
 } from 'packages/pendle/src/types';
@@ -29,10 +29,10 @@ const defaultAccountNumber = ZERO_BI;
 const vaultAddress = '0x10dc4c2c391de5008bc4c895c3b1c3b070661674';
 const vaultOwner = '0x9958Ed7f2441c208821Ea14643224812A006D221';
 
-describe('PtGLPMigrator', () => {
+describe('PtGLPTransformer', () => {
   let snapshotId: string;
   let core: CoreProtocolArbitrumOne;
-  let migrator: PtGLPMigrator;
+  let migrator: DolomiteMigrator;
   let glpFactory: IGLPIsolationModeVaultFactoryOld;
   let ptGlpFactory: PendlePtGLP2024IsolationModeVaultFactory;
   let migratorImplementation: IsolationModeMigrator;
@@ -47,20 +47,20 @@ describe('PtGLPMigrator', () => {
     ptGlpFactory = core.pendleEcosystem.glpMar2024.dPtGlp2024.connect(core.hhUser1);
     glpFactory = core.gmxEcosystem!.live.dGlp.connect(core.hhUser1);
 
-    migrator = await createContractWithAbi<PtGLPMigrator>(
-      PtGLPMigrator__factory.abi,
-      PtGLPMigrator__factory.bytecode,
+    migrator = await createContractWithAbi<DolomiteMigrator>(
+      DolomiteMigrator__factory.abi,
+      DolomiteMigrator__factory.bytecode,
       [core.dolomiteMargin.address, core.hhUser5.address],
     );
     migratorImplementation = await createContractWithAbi<IsolationModeMigrator>(
       IsolationModeMigrator__factory.abi,
       IsolationModeMigrator__factory.bytecode,
-      [core.dolomiteRegistry.address, ptGlpFactory.address]
+      [core.dolomiteRegistry.address, ptGlpFactory.address, core.pendleEcosystem.glpMar2024.ptGlpToken.address]
     );
     transformer = await createContractWithAbi<PtGLPTransformer>(
       PtGLPTransformer__factory.abi,
       PtGLPTransformer__factory.bytecode,
-      [await ptGlpFactory.pendlePtGLP2024Registry()]
+      [await ptGlpFactory.pendlePtGLP2024Registry(), core.gmxEcosystem.sGlp.address]
     );
 
     router = Router.getRouter({

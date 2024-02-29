@@ -21,6 +21,7 @@
 pragma solidity ^0.8.9;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IDolomiteTransformer } from "@dolomite-exchange/modules-base/contracts/interfaces/IDolomiteTransformer.sol";
 import { IPendleGLPRegistry } from "./interfaces/IPendleGLPRegistry.sol";
 import { IPendlePtToken } from "./interfaces/IPendlePtToken.sol";
 import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
@@ -32,13 +33,15 @@ import { IPendleRouter } from "./interfaces/IPendleRouter.sol";
  *
  * @notice  Contract for PtGLP transformer implementation
  */
-contract PtGLPTransformer {
+contract PtGLPTransformer is IDolomiteTransformer {
     using SafeERC20 for IPendlePtToken;
 
     IPendleGLPRegistry public immutable PENDLE_REGISTRY; // solhint-disable-line var-name-mixedcase
+    address public immutable outputToken;
 
-    constructor(address _pendleRegistry) {
+    constructor(address _pendleRegistry, address _outputToken) {
         PENDLE_REGISTRY = IPendleGLPRegistry(_pendleRegistry);
+        outputToken = _outputToken;
     }
     
     // @follow-up Do we need minAmountOut to prevent sandwich attacks?
