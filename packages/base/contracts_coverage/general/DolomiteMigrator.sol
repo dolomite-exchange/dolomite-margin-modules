@@ -162,15 +162,23 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
                 IIsolationModeMigrator(account.owner).migrate(amountWei);
                 amountOut = _delegateCallToTransformer(_fromMarketId, _toMarketId, amountWei, _extraData);
 
-                // @follow-up Double check these enqueues and approvals. They work in tests but can you take a look
                 fromFactory.enqueueTransferFromDolomiteMargin(account.owner, amountWei);
                 toFactory.enqueueTransferIntoDolomiteMargin(toVault, amountOut);
                 IERC20(outputToken).safeApprove(toVault, amountOut);
                 IERC20(address(toFactory)).safeApprove(address(DOLOMITE_MARGIN()), amountOut);
+
+                // @note Will remove these. Just here for debugging
+                // assert(IERC20(outputToken).allowance(address(this), toVault) > 0);
+                // assert(IERC20(address(toFactory)).allowance(toVault, address(DOLOMITE_MARGIN())) > 0);
+                // assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) > 0);
             }
 
             _craftAndExecuteActions(account, toVault, _fromMarketId, _toMarketId, amountOut, amountWei > 0);
-            // @todo Check allowances
+
+            /*assert(IERC20(outputToken).allowance(address(this), toVault) == 0);*/
+            /*assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) == 0);*/
+            // @follow-up This final assert is failing. This extra approval also happens with a normal wrapping
+            /*assert(IERC20(address(toFactory)).allowance(toVault, address(DOLOMITE_MARGIN())) == 0);*/
             emit MigrationComplete(account.owner, account.number, _fromMarketId, _toMarketId);
         }
     }
@@ -226,6 +234,10 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
             _hasFromMarketIdBalance ? marketsWithBalances.length + 1 : marketsWithBalances.length
         );
+        // @follow-up Do we want this here? If not, it will revert
+        if (actions.length == 0) {
+            return;
+        }
 
         if (_hasFromMarketIdBalance) {
             actions[0] = AccountActionLib.encodeWithdrawalAction(

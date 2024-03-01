@@ -162,19 +162,14 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
                 toFactory.enqueueTransferIntoDolomiteMargin(toVault, amountOut);
                 IERC20(outputToken).safeApprove(toVault, amountOut);
                 IERC20(address(toFactory)).safeApprove(address(DOLOMITE_MARGIN()), amountOut);
-
-                // @note Will remove these. Just here for debugging
-                assert(IERC20(outputToken).allowance(address(this), toVault) > 0);
-                assert(IERC20(address(toFactory)).allowance(toVault, address(DOLOMITE_MARGIN())) > 0);
-                assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) > 0);
             }
 
             _craftAndExecuteActions(account, toVault, _fromMarketId, _toMarketId, amountOut, amountWei > 0);
 
+            // @follow-up Need to make sure a user can't make these allowance asserts fail
             assert(IERC20(outputToken).allowance(address(this), toVault) == 0);
             assert(IERC20(address(toFactory)).allowance(address(this), address(DOLOMITE_MARGIN())) == 0);
-            // @follow-up This final assert is failing. I think because we do straight deposit, it won't work
-            // assert(IERC20(address(toFactory)).allowance(toVault, address(DOLOMITE_MARGIN())) == 0);
+            assert(IERC20(address(toFactory)).allowance(toVault, address(DOLOMITE_MARGIN())) == 0);
             emit MigrationComplete(account.owner, account.number, _fromMarketId, _toMarketId);
         }
     }
@@ -228,6 +223,10 @@ contract DolomiteMigrator is IDolomiteMigrator, OnlyDolomiteMargin {
         IDolomiteStructs.ActionArgs[] memory actions = new IDolomiteStructs.ActionArgs[](
             _hasFromMarketIdBalance ? marketsWithBalances.length + 1 : marketsWithBalances.length
         );
+        // @follow-up Do we want this here? If not, it will revert instead of No-Op
+        if (actions.length == 0) {
+            return;
+        }
 
         if (_hasFromMarketIdBalance) {
             actions[0] = AccountActionLib.encodeWithdrawalAction(
