@@ -29,7 +29,9 @@ import { IFreezableIsolationModeVaultFactory } from "@dolomite-exchange/modules-
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
 import { IUpgradeableAsyncIsolationModeWrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeWrapperTrader.sol"; // solhint-disable-line max-line-length
+import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
+import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -53,6 +55,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
     IGmxV2IsolationModeTokenVaultV1,
     IsolationModeTokenVaultV1WithFreezableAndPausable
 {
+    using DecimalLib for uint256;
+    using DecimalLib for IDolomiteStructs.Decimal;
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
 
@@ -66,8 +70,8 @@ contract GmxV2IsolationModeTokenVaultV1 is
     // ========================== Constructors ==========================
     // ==================================================================
 
-    constructor(address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {
-        // solhint-disable-previous-line no-empty-blocks
+    constructor(address _weth, uint256 _chainId) IsolationModeTokenVaultV1WithFreezable(_weth, _chainId) {
+        // solhint-disable-line no-empty-blocks
     }
 
     // ==================================================================
@@ -261,5 +265,51 @@ contract GmxV2IsolationModeTokenVaultV1 is
         // solhint-disable-previous-line no-empty-blocks
         // Don't do any validation here. We check the msg.value conditionally in the `swapExactInputForOutput`
         // implementation
+    }
+
+    function _validateMinAmountIsNotTooLarge(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata _extraData
+    ) internal override view {
+        if (!_isLiquidation) {
+            // GUARD statement
+            return;
+        }
+
+        IDolomiteStructs.AccountInfo memory tradeAccount = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _tradeAccountNumber
+        });
+        (IDolomiteStructs.Decimal memory weight, uint256 otherMinOutputAmount) = abi.decode(
+            _extraData,
+            (IDolomiteStructs.Decimal, uint256)
+        );
+
+        uint256 inputAmountAfterWeight = _inputAmount.mul(DecimalLib.oneSub(weight)); // for stack too deep
+        uint256 inputMarketId = marketId();
+        uint256 outputMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken);
+        _requireMinAmountIsNotTooLargeForLiquidation(
+            tradeAccount,
+            inputMarketId,
+            outputMarketId,
+            inputAmountAfterWeight,
+            _minOutputAmount
+        );
+
+        // Check the min output amount of the other token too since GM is unwound via 2 tokens
+        uint256 otherInputAmountAfterWeight = _inputAmount.mul(weight); // for stack too deep
+        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
+        uint256 longTokenMarketId = factory.LONG_TOKEN_MARKET_ID();
+        _requireMinAmountIsNotTooLargeForLiquidation(
+            tradeAccount,
+            inputMarketId,
+            longTokenMarketId != outputMarketId ? longTokenMarketId : factory.SHORT_TOKEN_MARKET_ID(),
+            otherInputAmountAfterWeight,
+            otherMinOutputAmount
+        );
     }
 }

@@ -60,7 +60,13 @@ contract TestAsyncProtocolIsolationModeTokenVault is
     // ========================== Constructors ==========================
     // ==================================================================
 
-    constructor(address _testAsyncProtocol, address _weth) IsolationModeTokenVaultV1WithFreezable(_weth) {
+    constructor(
+        address _testAsyncProtocol,
+        address _weth,
+        uint256 _chainId
+    )
+        IsolationModeTokenVaultV1WithFreezable(_weth, _chainId)
+    {
         TEST_ASYNC_PROTOCOL = ITestAsyncProtocol(_testAsyncProtocol);
     }
 
@@ -105,7 +111,7 @@ contract TestAsyncProtocolIsolationModeTokenVault is
     function isExternalRedemptionPaused()
         public
         override
-        view
+        pure
         returns (bool)
     {
         return false;

@@ -18,9 +18,14 @@
 
 */
 
-pragma solidity >=0.4.21;
+pragma solidity ^0.8.9;
 
-
+/**
+ * @title   IArbitrumGasInfo
+ * @author  Dolomite
+ *
+ * @notice  Precompile on Arbitrum for retrieving current gas data
+ */
 interface IArbitrumGasInfo {
 
     // return gas prices in wei, assuming the specified aggregator is used

@@ -27,9 +27,11 @@ import { IsolationModeTokenVaultV1 } from "./IsolationModeTokenVaultV1.sol";
 import { IGenericTraderProxyV1 } from "../../interfaces/IGenericTraderProxyV1.sol";
 import { IHandlerRegistry } from "../../interfaces/IHandlerRegistry.sol";
 import { AccountBalanceLib } from "../../lib/AccountBalanceLib.sol";
+import { DolomiteMarginVersionWrapperLib } from "../../lib/DolomiteMarginVersionWrapperLib.sol";
 import { IDolomiteMargin } from "../../protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "../../protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "../../protocol/interfaces/IWETH.sol";
+import { DecimalLib } from "../../protocol/lib/DecimalLib.sol";
 import { Require } from "../../protocol/lib/Require.sol";
 import { IFreezableIsolationModeVaultFactory } from "../interfaces/IFreezableIsolationModeVaultFactory.sol";
 import { IIsolationModeTokenVaultV1 } from "../interfaces/IIsolationModeTokenVaultV1.sol";
@@ -48,6 +50,8 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     IsolationModeTokenVaultV1
 {
     using Address for address payable;
+    using DecimalLib for uint256;
+    using DolomiteMarginVersionWrapperLib for IDolomiteMargin;
     using SafeERC20 for IERC20;
 
     // ===================================================
@@ -65,6 +69,7 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // ==================================================================
 
     IWETH public immutable override WETH; // solhint-disable-line var-name-mixedcase
+    uint256 public immutable override CHAIN_ID; // solhint-disable-line var-name-mixedcase
 
     // ===================================================
     // ==================== Modifiers ====================
@@ -177,8 +182,9 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     // --======================== Constructors ==========================
     // ==================================================================
 
-    constructor(address _weth) {
+    constructor(address _weth, uint256 _chainId) {
         WETH = IWETH(_weth);
+        CHAIN_ID = _chainId;
     }
 
     // ==================================================================
@@ -218,7 +224,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _beforeInitiateUnwrapping(
             _tradeAccountNumber,
             _inputAmount,
-            /* _isLiquidation = */ false
+            _outputToken,
+            _minOutputAmount,
+            /* _isLiquidation = */ false,
+            _extraData
         );
         _initiateUnwrapping(
             _tradeAccountNumber,
@@ -245,7 +254,10 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         _beforeInitiateUnwrapping(
             _tradeAccountNumber,
             _inputAmount,
-            /* _isLiquidation = */ true
+            _outputToken,
+            _minOutputAmount,
+            /* _isLiquidation = */ true,
+            _extraData
         );
         _initiateUnwrapping(
             _tradeAccountNumber,
@@ -604,6 +616,60 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         bytes calldata _extraData
     ) internal virtual;
 
+    function _beforeInitiateUnwrapping(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata _extraData
+    ) internal virtual view {
+        // Disallow the withdrawal if we're attempting to OVER withdraw. This can happen due to a pending deposit OR if
+        // the user inputs a number that's too large
+        _validateWithdrawalAmountForUnwrapping(
+            _tradeAccountNumber,
+            _inputAmount,
+            _isLiquidation
+        );
+
+        _validateMinAmountIsNotTooLarge(
+            _tradeAccountNumber,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount,
+            _isLiquidation,
+            _extraData
+        );
+    }
+
+    /// @dev    This is mainly used to make sure that the account is not attempting to prevent liquidation by submitting
+    ///         transactions that are guaranteed to fail via submitting a min amount that's unreasonable
+    function _validateMinAmountIsNotTooLarge(
+        uint256 _tradeAccountNumber,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bool _isLiquidation,
+        bytes calldata /* _extraData */
+    ) internal virtual view {
+        if (!_isLiquidation) {
+            // GUARD statement
+            return;
+        }
+
+        IDolomiteStructs.AccountInfo memory liquidAccount = IDolomiteStructs.AccountInfo({
+            owner: address(this),
+            number: _tradeAccountNumber
+        });
+        _requireMinAmountIsNotTooLargeForLiquidation(
+            liquidAccount,
+            marketId(),
+            DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken),
+            _inputAmount,
+            _minOutputAmount
+        );
+    }
+
     function _validateIsLiquidator(address _from) internal view {
         Require.that(
             dolomiteRegistry().liquidatorAssetRegistry().isAssetWhitelistedForLiquidation(
@@ -631,20 +697,6 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             _setExecutionFeeForAccountNumber(_borrowAccountNumber, /* _executionFee = */ 0);
             payable(OWNER()).sendValue(executionFee);
         }
-    }
-
-    function _beforeInitiateUnwrapping(
-        uint256 _tradeAccountNumber,
-        uint256 _inputAmount,
-        bool _isLiquidation
-    ) private view {
-        // Disallow the withdrawal if we're attempting to OVER withdraw. This can happen due to a pending deposit OR if
-        // the user inputs a number that's too large
-        _validateWithdrawalAmountForUnwrapping(
-            _tradeAccountNumber,
-            _inputAmount,
-            _isLiquidation
-        );
     }
 
     function _validateWithdrawalAmountForUnwrapping(
@@ -730,5 +782,31 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
         if (_outputMarketId== underlyingMarketId) {
             _requireNotLiquidatable(_accountNumber);
         }
+    }
+
+    function _requireMinAmountIsNotTooLargeForLiquidation(
+        IDolomiteStructs.AccountInfo memory _liquidAccount,
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputTokenAmount,
+        uint256 _minOutputAmount
+    ) internal view {
+        uint256 inputValue = DOLOMITE_MARGIN().getMarketPrice(_inputMarketId).value * _inputTokenAmount;
+        uint256 outputValue = DOLOMITE_MARGIN().getMarketPrice(_outputMarketId).value * _minOutputAmount;
+
+        IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
+            CHAIN_ID,
+            _liquidAccount,
+            /* heldMarketId = */ _inputMarketId,
+            /* ownedMarketId = */ _outputMarketId
+        );
+        spread.value /= 2;
+        uint256 inputValueAdj = inputValue - inputValue.mul(spread);
+
+        Require.that(
+            outputValue <= inputValueAdj,
+            _FILE,
+            "minOutputAmount too large"
+        );
     }
 }
