@@ -25,6 +25,7 @@ import { artifacts } from 'hardhat';
 import { Artifact } from 'hardhat/types';
 import path, { join } from 'path';
 import {
+  getGmxV2IsolationModeTokenVaultConstructorParams,
   getGmxV2IsolationModeUnwrapperTraderV2ConstructorParams,
   getGmxV2IsolationModeVaultFactoryConstructorParams,
   getGmxV2IsolationModeWrapperTraderV2ConstructorParams,
@@ -117,7 +118,7 @@ export async function createGmxV2IsolationModeTokenVaultV1(
   return createContractWithLibraryAndArtifact<GmxV2IsolationModeTokenVaultV1>(
     artifact,
     { GmxV2Library: library.address, ...libraries },
-    [core.tokens.weth.address],
+    getGmxV2IsolationModeTokenVaultConstructorParams(core),
   );
 }
 
@@ -135,7 +136,7 @@ export async function createTestGmxV2IsolationModeTokenVaultV1(
       SafeDelegateCallLib: safeDelegateCallLibrary.address,
       IsolationModeTokenVaultV1ActionsImpl: Object.values(actionsLib)[0],
     },
-    [core.tokens.weth.address],
+    getGmxV2IsolationModeTokenVaultConstructorParams(core),
   );
 }
 

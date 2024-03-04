@@ -284,32 +284,15 @@ contract GmxV2IsolationModeTokenVaultV1 is
             owner: address(this),
             number: _tradeAccountNumber
         });
-        (IDolomiteStructs.Decimal memory weight, uint256 otherMinOutputAmount) = abi.decode(
+
+        GmxV2Library.validateMinAmountIsNotTooLargeForLiquidation(
+            IGmxV2IsolationModeVaultFactory(VAULT_FACTORY()),
+            tradeAccount,
+            _inputAmount,
+            _outputToken,
+            _minOutputAmount,
             _extraData,
-            (IDolomiteStructs.Decimal, uint256)
-        );
-
-        uint256 inputAmountAfterWeight = _inputAmount.mul(DecimalLib.oneSub(weight)); // for stack too deep
-        uint256 inputMarketId = marketId();
-        uint256 outputMarketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken);
-        _requireMinAmountIsNotTooLargeForLiquidation(
-            tradeAccount,
-            inputMarketId,
-            outputMarketId,
-            inputAmountAfterWeight,
-            _minOutputAmount
-        );
-
-        // Check the min output amount of the other token too since GM is unwound via 2 tokens
-        uint256 otherInputAmountAfterWeight = _inputAmount.mul(weight); // for stack too deep
-        IGmxV2IsolationModeVaultFactory factory = IGmxV2IsolationModeVaultFactory(VAULT_FACTORY());
-        uint256 longTokenMarketId = factory.LONG_TOKEN_MARKET_ID();
-        _requireMinAmountIsNotTooLargeForLiquidation(
-            tradeAccount,
-            inputMarketId,
-            longTokenMarketId != outputMarketId ? longTokenMarketId : factory.SHORT_TOKEN_MARKET_ID(),
-            otherInputAmountAfterWeight,
-            otherMinOutputAmount
+            CHAIN_ID
         );
     }
 }

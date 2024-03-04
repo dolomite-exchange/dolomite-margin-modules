@@ -599,7 +599,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       );
     }
 
-    it('should work normally for underwater account', async () => {
+    it.only('should work normally for underwater account', async () => {
       await setupBalances(borrowAccountNumber, true, false);
       await liquidatorProxy.prepareForLiquidation({
         liquidAccount,

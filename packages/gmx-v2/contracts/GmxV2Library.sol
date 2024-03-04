@@ -24,9 +24,11 @@ import { IAsyncIsolationModeTraderBase } from "@dolomite-exchange/modules-base/c
 import { IIsolationModeUpgradeableProxy } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeUpgradeableProxy.sol";
 import { IIsolationModeVaultFactory } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IIsolationModeVaultFactory.sol";
 import { IUpgradeableAsyncIsolationModeUnwrapperTrader } from "@dolomite-exchange/modules-base/contracts/isolation-mode/interfaces/IUpgradeableAsyncIsolationModeUnwrapperTrader.sol"; // solhint-disable-line max-line-length
+import { DolomiteMarginVersionWrapperLib } from "@dolomite-exchange/modules-base/contracts/lib/DolomiteMarginVersionWrapperLib.sol";
 import { IDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { IWETH } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IWETH.sol";
+import { DecimalLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/DecimalLib.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
 import { TypesLib } from "@dolomite-exchange/modules-base/contracts/protocol/lib/TypesLib.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -50,6 +52,8 @@ import { GmxPrice } from "./lib/GmxPrice.sol";
  * @notice  Library contract for the GmxV2IsolationModeTokenVaultV1 contract to reduce code size
  */
 library GmxV2Library {
+    using DecimalLib for *;
+    using DolomiteMarginVersionWrapperLib for *;
     using SafeERC20 for IERC20;
     using SafeERC20 for IWETH;
     using TypesLib for IDolomiteStructs.Par;
@@ -69,6 +73,18 @@ library GmxV2Library {
     bytes32 private constant _IS_MARKET_DISABLED = keccak256(abi.encode("IS_MARKET_DISABLED"));
     uint256 private constant _GMX_PRICE_DECIMAL_ADJUSTMENT = 6;
     uint256 private constant _GMX_PRICE_SCALE_ADJUSTMENT = 10 ** _GMX_PRICE_DECIMAL_ADJUSTMENT;
+
+    // =========================================================
+    // ======================== Structs ========================
+    // =========================================================
+
+    struct MiniCache {
+        IDolomiteMargin dolomiteMargin;
+        uint256 inputMarketId;
+        uint256 outputMarketId;
+        uint256 longMarketId;
+        uint256 shortMarketId;
+    }
 
     // ==================================================================
     // ======================== Public Functions ========================
@@ -174,7 +190,7 @@ library GmxV2Library {
         // Fix stack too deep
         IGmxV2IsolationModeVaultFactory factory = _factory;
 
-        (, uint256 minShortTokenAmount) = abi.decode(_extraData, (uint256, uint256));
+        (, uint256 minShortTokenAmount) = abi.decode(_extraData, (IDolomiteStructs.Decimal, uint256));
         IUpgradeableAsyncIsolationModeUnwrapperTrader unwrapper = registry.getUnwrapperByToken(factory);
         IGmxExchangeRouter.CreateWithdrawalParams memory withdrawalParams = IGmxExchangeRouter.CreateWithdrawalParams(
             /* receiver = */ address(unwrapper),
@@ -383,6 +399,49 @@ library GmxV2Library {
         }
     }
 
+    function validateMinAmountIsNotTooLargeForLiquidation(
+        IGmxV2IsolationModeVaultFactory _factory,
+        IDolomiteStructs.AccountInfo memory _liquidAccount,
+        uint256 _inputAmount,
+        address _outputToken,
+        uint256 _minOutputAmount,
+        bytes calldata _extraData,
+        uint256 _chainId
+    ) public view {
+        MiniCache memory cache = MiniCache({
+            dolomiteMargin: _factory.DOLOMITE_MARGIN(),
+            inputMarketId: _factory.marketId(),
+            outputMarketId: _factory.DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken),
+            longMarketId: _factory.LONG_TOKEN_MARKET_ID(),
+            shortMarketId: _factory.SHORT_TOKEN_MARKET_ID()
+        });
+        (IDolomiteStructs.Decimal memory weight, uint256 otherMinOutputAmount) = abi.decode(
+            _extraData,
+            (IDolomiteStructs.Decimal, uint256)
+        );
+
+        _requireMinAmountIsNotTooLargeForLiquidation(
+            cache.dolomiteMargin,
+            _liquidAccount,
+            cache.inputMarketId,
+            cache.outputMarketId,
+            _inputAmount.mul(DecimalLib.oneSub(weight)),
+            _minOutputAmount,
+            _chainId
+        );
+
+        // Check the min output amount of the other token too since GM is unwound via 2 tokens
+        _requireMinAmountIsNotTooLargeForLiquidation(
+            cache.dolomiteMargin,
+            _liquidAccount,
+            cache.inputMarketId,
+            cache.longMarketId != cache.outputMarketId ? cache.longMarketId : cache.shortMarketId,
+            _inputAmount.mul(weight),
+            otherMinOutputAmount,
+            _chainId
+        );
+    }
+
     // ==================================================================
     // ======================== Private Functions ======================
     // ==================================================================
@@ -413,6 +472,34 @@ library GmxV2Library {
         });
     }
 
+    function _requireMinAmountIsNotTooLargeForLiquidation(
+        IDolomiteMargin _dolomiteMargin,
+        IDolomiteStructs.AccountInfo memory _liquidAccount,
+        uint256 _inputMarketId,
+        uint256 _outputMarketId,
+        uint256 _inputTokenAmount,
+        uint256 _minOutputAmount,
+        uint256 _chainId
+    ) private view {
+        uint256 inputValue = _dolomiteMargin.getMarketPrice(_inputMarketId).value * _inputTokenAmount;
+        uint256 outputValue = _dolomiteMargin.getMarketPrice(_outputMarketId).value * _minOutputAmount;
+
+        IDolomiteMargin.Decimal memory spread = _dolomiteMargin.getVersionedLiquidationSpreadForPair(
+            _chainId,
+            _liquidAccount,
+            /* heldMarketId = */ _inputMarketId,
+            /* ownedMarketId = */ _outputMarketId
+        );
+        spread.value /= 2;
+        uint256 inputValueAdj = inputValue - inputValue.mul(spread);
+
+        Require.that(
+            outputValue <= inputValueAdj,
+            _FILE,
+            "minOutputAmount too large"
+        );
+    }
+
     function _maxPnlFactorKey(
         bytes32 _pnlFactorType,
         address _market,
@@ -421,7 +508,7 @@ library GmxV2Library {
         return keccak256(abi.encode(_MAX_PNL_FACTOR_KEY, _pnlFactorType, _market, _isLong));
     }
 
-    function _isMarketDisableKey(address _market) internal pure returns (bytes32) {
+    function _isMarketDisableKey(address _market) private pure returns (bytes32) {
         return keccak256(abi.encode(_IS_MARKET_DISABLED, _market));
     }
 }

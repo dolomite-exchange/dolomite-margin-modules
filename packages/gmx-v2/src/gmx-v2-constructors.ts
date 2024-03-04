@@ -8,7 +8,6 @@ import {
   GmxV2IsolationModeVaultFactory,
   GmxV2IsolationModeWrapperTraderV2,
   GmxV2Registry,
-  IGmxMarketToken,
   IGmxV2IsolationModeVaultFactory,
   IGmxV2Registry,
 } from './types';
@@ -123,4 +122,14 @@ export function getGmxV2MarketTokenPriceOracleConstructorParams(
     gmxRegistryV2.address,
     core.dolomiteMargin.address,
   ];
+}
+
+export function getGmxV2IsolationModeTokenVaultConstructorParams(
+  core: CoreProtocolArbitrumOne,
+): any[] {
+  if (!core.gmxEcosystem) {
+    throw new Error('Gmx ecosystem not initialized');
+  }
+
+  return [core.tokens.weth.address, core.config.network];
 }
