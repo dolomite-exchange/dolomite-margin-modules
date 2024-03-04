@@ -76,7 +76,7 @@ const DEFAULT_EXTRA_DATA = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint
 const NEW_GENERIC_TRADER_PROXY = '0x905F3adD52F01A9069218c8D1c11E240afF61D2B';
 
 const gasLimit = process.env.COVERAGE !== 'true' ? 10_000_000 : 100_000_000;
-const executionFee = process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE : GMX_V2_EXECUTION_FEE.mul(10);
+const executionFee = process.env.COVERAGE !== 'true' ? GMX_V2_EXECUTION_FEE.mul(50) : GMX_V2_EXECUTION_FEE.mul(50);
 
 describe('IsolationModeFreezableLiquidatorProxy', () => {
   let snapshotId: string;
@@ -102,6 +102,9 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
   let depositMinAmountOut: BigNumber;
   let totalAmountWei: BigNumber;
 
+  // 0x5dac504d
+  // 000000000000000000000000000000000000000000000000003068c7db0f9a88
+  // 00000000000000000000000000000000000000000000000000038d7ea4c68000
   before(async () => {
     core = await setupCoreProtocol(getDefaultCoreProtocolConfigForGmxV2());
 
@@ -599,7 +602,7 @@ describe('IsolationModeFreezableLiquidatorProxy', () => {
       );
     }
 
-    it.only('should work normally for underwater account', async () => {
+    it('should work normally for underwater account', async () => {
       await setupBalances(borrowAccountNumber, true, false);
       await liquidatorProxy.prepareForLiquidation({
         liquidAccount,
