@@ -1,4 +1,4 @@
-import { RegistryProxy, RegistryProxy__factory } from '@dolomite-exchange/modules-base/src/types';
+import { RegistryProxy, RegistryProxy__factory, SimpleIsolationModeUnwrapperTraderV2, SimpleIsolationModeUnwrapperTraderV2__factory, SimpleIsolationModeWrapperTraderV2, SimpleIsolationModeWrapperTraderV2__factory } from '@dolomite-exchange/modules-base/src/types';
 import {
   createContractWithAbi,
   createContractWithLibrary,
@@ -23,6 +23,8 @@ import {
   getPendleYtGLP2024IsolationModeVaultFactoryConstructorParams,
   getPendleYtGLP2024IsolationModeWrapperTraderV2ConstructorParams,
   getPendleYtGLPPriceOracleConstructorParams,
+  getSimplePtUnwrapperTraderV2ConstructorParams,
+  getSimplePtWrapperTraderV2ConstructorParams,
 } from '../src/pendle-constructors';
 import {
   IERC20,

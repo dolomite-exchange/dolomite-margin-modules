@@ -69,7 +69,9 @@ import {
   USDT_MAP,
   WBTC_MAP,
   WETH_MAP,
+  WE_ETH_MAP,
   WST_ETH_MAP,
+  RS_ETH_MAP,
 } from '../../src/utils/constants';
 import { Network, NETWORK_TO_DEFAULT_BLOCK_NUMBER_MAP, NetworkType } from '../../src/utils/no-deps-constants';
 import {
@@ -231,6 +233,19 @@ export async function setupGMXBalance(
   await core.tokens.gmx!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
+export async function setupRsEthBalance(
+  core: { tokens: { rsEth: IERC20 } },
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xf176fb51f4eb826136a54fdc71c50fcd2202e272'; // Balancer Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.rsEth!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.rsEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+
 export async function setupRETHBalance(
   core: { tokens: { rEth: IERC20 } },
   signer: SignerWithAddress,
@@ -241,6 +256,18 @@ export async function setupRETHBalance(
   const whaleSigner = await impersonate(whaleAddress, true);
   await core.tokens.rEth!.connect(whaleSigner).transfer(signer.address, amount);
   await core.tokens.rEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
+}
+
+export async function setupWeEthBalance(
+  core: { tokens: { weEth: IERC20 } },
+  signer: SignerWithAddress,
+  amount: BigNumberish,
+  spender: { address: string },
+) {
+  const whaleAddress = '0xa6c895eb332e91c5b3d00b7baeeaae478cc502da'; // Balancer Vault
+  const whaleSigner = await impersonate(whaleAddress, true);
+  await core.tokens.weEth!.connect(whaleSigner).transfer(signer.address, amount);
+  await core.tokens.weEth!.connect(signer).approve(spender.address, ethers.constants.MaxUint256);
 }
 
 export async function setupWstETHBalance(
@@ -543,10 +570,12 @@ export async function setupCoreProtocol<T extends NetworkType>(
           premia: IERC20__factory.connect(PREMIA_MAP[typedConfig.network]!.address, hhUser1),
           pendle: IERC20__factory.connect(PENDLE_MAP[typedConfig.network]!.address, hhUser1),
           rEth: IERC20__factory.connect(RETH_MAP[typedConfig.network]!.address, hhUser1),
+          rsEth: IERC20__factory.connect(RS_ETH_MAP[typedConfig.network]!.address, hhUser1),
           radiant: IERC20__factory.connect(RDNT_MAP[typedConfig.network]!.address, hhUser1),
           size: IERC20__factory.connect(SIZE_MAP[typedConfig.network]!.address, hhUser1),
           stEth: IERC20__factory.connect(ST_ETH_MAP[typedConfig.network]!.address, hhUser1),
           wbtc: IERC20__factory.connect(WBTC_MAP[typedConfig.network].address, hhUser1),
+          weEth: IERC20__factory.connect(WE_ETH_MAP[typedConfig.network]!.address, hhUser1),
           wstEth: IERC20__factory.connect(WST_ETH_MAP[typedConfig.network]!.address, hhUser1),
         },
       },

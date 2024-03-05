@@ -297,3 +297,33 @@ export function getPendleYtGLPPriceOracleConstructorParams(
     core.marketIds.dfsGlp!,
   ];
 }
+
+export function getSimplePtUnwrapperTraderV2ConstructorParams(
+  core: CoreProtocolArbitrumOne,
+  factory: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    factory.address,
+    core.dolomiteMargin.address,
+    core.dolomiteRegistry.address
+  ];
+}
+
+export function getSimplePtWrapperTraderV2ConstructorParams(
+  core: CoreProtocolArbitrumOne,
+  factory: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    factory.address,
+    core.dolomiteMargin.address,
+    core.dolomiteRegistry.address
+  ];
+}
