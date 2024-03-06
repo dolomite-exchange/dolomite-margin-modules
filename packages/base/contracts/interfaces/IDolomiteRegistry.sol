@@ -89,6 +89,13 @@ interface IDolomiteRegistry {
      */
     function ownerSetChainlinkPriceOracle(address _chainlinkPriceOracle) external;
 
+    /**
+     *
+     * @param  _redstonePriceOracle    The new address of the Redstone price oracle that's compatible with
+     *                                  DolomiteMargin.
+     */
+    function ownerSetRedstonePriceOracle(address _redstonePriceOracle) external;
+
     // ========================================================
     // =================== Getter Functions ===================
     // ========================================================

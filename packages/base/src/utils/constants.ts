@@ -675,6 +675,7 @@ export const CHAINLINK_PRICE_AGGREGATORS_MAP: Record<Network, Record<string, str
     [RDNT_MAP[Network.ArbitrumOne].address]: '0x20d0fcab0ecfd078b036b6caf1fac69a6453b352',
     [ST_ETH_MAP[Network.ArbitrumOne].address]: '0xded2c52b75b24732e9107377b7ba93ec1ffa4baf',
     [WST_ETH_MAP[Network.ArbitrumOne].address]: '0xb1552c5e96b312d0bf8b554186f846c40614a540',
+    [WE_ETH_MAP[Network.ArbitrumOne].address]: '0x20bAe7e1De9c596f5F7615aeaa1342Ba99294e12',
   }, // already deployed
   [Network.Base]: {
     [WETH_MAP[Network.Base].address]: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70',
