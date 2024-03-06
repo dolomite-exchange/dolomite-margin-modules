@@ -26,7 +26,6 @@ import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccess
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
 import { IChainlinkPriceOracle } from "./interfaces/IChainlinkPriceOracle.sol";
 
-import "hardhat/console.sol";
 
 /**
  * @title   RedstonePriceOracle
@@ -180,8 +179,14 @@ contract RedstonePriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         } else {
             // The price we just got and converted is NOT against USD. So we need to get its pair's price against USD.
             // We can do so by recursively calling #getPrice using the `tokenPair` as the parameter instead of `token`.
-            uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(tokenPair);
-            uint256 tokenPairPrice = DOLOMITE_MARGIN().getMarketPrice(marketId).value;
+            uint256 tokenPairPrice;
+            if (address(_tokenToAggregatorMap[tokenPair]) == address(0)) {
+                uint256 marketId = DOLOMITE_MARGIN().getMarketIdByTokenAddress(tokenPair);
+                tokenPairPrice = DOLOMITE_MARGIN().getMarketPrice(marketId).value;
+            } else {
+                tokenPairPrice = getPrice(tokenPair).value;
+            }
+
             // Standardize the price to use 36 decimals.
             uint256 tokenPairWith36Decimals = tokenPairPrice * (10 ** uint256(_tokenToDecimalsMap[tokenPair]));
             // Now that the chained price uses 36 decimals (and thus is standardized), we can do easy math.
@@ -254,12 +259,13 @@ contract RedstonePriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         _tokenToAggregatorMap[_token] = IChainlinkAggregator(_chainlinkAggregator);
         _tokenToDecimalsMap[_token] = _tokenDecimals;
         if (_tokenPair != address(0)) {
-            Require.that(
-                address(_tokenToAggregatorMap[_tokenPair]) != address(0),
-                _FILE,
-                "Invalid token pair",
-                _tokenPair
-            );
+            // @follow-up Is it ok to remove this?
+            // Require.that(
+            //     address(_tokenToAggregatorMap[_tokenPair]) != address(0),
+            //     _FILE,
+            //     "Invalid token pair",
+            //     _tokenPair
+            // );
             // The aggregator's price is NOT against USD. Therefore, we need to store what it's against as well as the
             // # of decimals the aggregator's price has.
             _tokenToPairingMap[_token] = _tokenPair;
