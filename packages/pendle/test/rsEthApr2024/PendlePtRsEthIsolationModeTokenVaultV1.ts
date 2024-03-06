@@ -22,9 +22,11 @@ import {
   createPendlePtIsolationModeUnwrapperTraderV2,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtIsolationModeWrapperTraderV2,
-  createPendlePtPriceOracle,
+  createPendlePtRsEthPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
 
 describe('PendlePtRsEthApr2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -45,6 +47,14 @@ describe('PendlePtRsEthApr2024IsolationModeTokenVaultV1', () => {
     });
 
     const underlyingToken = core.tokens.rsEth!;
+    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
+      TWAPPriceOracle__factory.abi,
+      TWAPPriceOracle__factory.bytecode,
+      [core.tokens.rsEth.address, ['0xb355cce5cbaf411bd56e3b092f5aa10a894083ae'], core.dolomiteMargin.address]
+    );
+    const rsEthMarketId = await core.dolomiteMargin.getNumMarkets();
+    await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);
+    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(rsEthMarketId, twapPriceOracle.address);
     underlyingPtToken = core.pendleEcosystem!.rsEthApr2024.ptRsEthToken.connect(core.hhUser1);
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
@@ -52,7 +62,7 @@ describe('PendlePtRsEthApr2024IsolationModeTokenVaultV1', () => {
       core,
       core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket,
       core.pendleEcosystem!.rsEthApr2024.ptOracle,
-      core.pendleEcosystem!.syREthToken,
+      core.pendleEcosystem!.syRsEthToken,
     );
     factory = await createPendlePtIsolationModeVaultFactory(
       core,
@@ -63,7 +73,7 @@ describe('PendlePtRsEthApr2024IsolationModeTokenVaultV1', () => {
 
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken);
+    priceOracle = await createPendlePtRsEthPriceOracle(core, factory, pendleRegistry);
 
     await setupTestMarket(core, factory, true, priceOracle);
 

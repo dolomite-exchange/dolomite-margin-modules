@@ -1,5 +1,11 @@
 import { BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { encodeExternalSellActionDataWithNoData, getRealLatestBlockNumber, impersonate, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  encodeExternalSellActionDataWithNoData,
+  getRealLatestBlockNumber,
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot
+} from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
 import { CHAIN_ID_MAPPING } from '@pendle/sdk-v2/dist/common/ChainId';
@@ -28,6 +34,7 @@ import {
   createPendlePtIsolationModeVaultFactory,
   createPendlePtIsolationModeWrapperTraderV2,
   createPendlePtPriceOracle,
+  createPendlePtRsEthPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 import { BigNumber } from 'ethers';
@@ -36,6 +43,8 @@ import { AccountInfoStruct } from 'packages/base/src/utils';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expectThrow } from 'packages/base/test/utils/assertions';
 import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('20000000000000000000'); // 20
@@ -60,8 +69,6 @@ describe('PendlePtRsEthApr2024IsolationModeUnwrapperTraderV2', () => {
   let ptMarket: IPendlePtMarket;
   let ptBal: BigNumber;
 
-  let solidUser: SignerWithAddress;
-
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: await getRealLatestBlockNumber(true, Network.ArbitrumOne),
@@ -71,9 +78,15 @@ describe('PendlePtRsEthApr2024IsolationModeUnwrapperTraderV2', () => {
     ptMarket = core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket.connect(core.hhUser1);
     ptToken = core.pendleEcosystem!.rsEthApr2024.ptRsEthToken.connect(core.hhUser1);
     underlyingToken = core.tokens.rsEth!;
-    await core.testEcosystem!.testPriceOracle.setPrice(underlyingToken.address, ONE_ETH_BI);
+
+    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
+      TWAPPriceOracle__factory.abi,
+      TWAPPriceOracle__factory.bytecode,
+      [core.tokens.rsEth.address, ['0xb355cce5cbaf411bd56e3b092f5aa10a894083ae'], core.dolomiteMargin.address]
+    );
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, underlyingToken, true, core.testEcosystem!.testPriceOracle);
+    await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);
+    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(underlyingMarketId, twapPriceOracle.address);
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
@@ -91,11 +104,11 @@ describe('PendlePtRsEthApr2024IsolationModeUnwrapperTraderV2', () => {
 
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    // priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken);
-    
+    priceOracle = await createPendlePtRsEthPriceOracle(core, factory, pendleRegistry);
+
     marketId = await core.dolomiteMargin.getNumMarkets();
     await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_ETH_BI);
-    await setupTestMarket(core, factory, true, core.testEcosystem!.testPriceOracle);
+    await setupTestMarket(core, factory, true, priceOracle);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);

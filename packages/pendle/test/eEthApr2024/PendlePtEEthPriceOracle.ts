@@ -2,7 +2,9 @@ import {
   DolomiteRegistryImplementation,
   DolomiteRegistryImplementation__factory,
 } from '@dolomite-exchange/modules-base/src/types';
+import { CHAINLINK_PRICE_AGGREGATORS_MAP, WE_ETH_ETH_REDSTONE_FEED_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
+import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
@@ -18,17 +20,18 @@ import {
   PendleRegistry,
 } from '../../src/types';
 import {
+  createPendlePtEEthPriceOracle,
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeVaultFactory,
-  createPendlePtRsEthPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
-import { Network } from 'packages/base/src/utils/no-deps-constants';
+import { RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
+import { ethers } from 'hardhat';
+import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
 
-const PT_RS_ETH_PRICE = BigNumber.from('3682064398981067160104');
+const PT_E_ETH_PRICE = BigNumber.from('3689824302982898438870');
 
-describe('PendlePtRsEthApr2024PriceOracle', () => {
+describe('PendlePtEEthApr2024PriceOracle', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -36,39 +39,48 @@ describe('PendlePtRsEthApr2024PriceOracle', () => {
   let pendleRegistry: PendleRegistry;
   let factory: PendlePtIsolationModeVaultFactory;
   let underlyingToken: IERC20;
-  let underlyingMarketId: BigNumber;
 
   before(async () => {
     core = await setupCoreProtocol({
       blockNumber: 187_700_000,
       network: Network.ArbitrumOne,
     });
+
+    underlyingToken = core.tokens.weEth!;
+    const oracle = (await createContractWithAbi<RedstonePriceOracle>(
+      RedstonePriceOracle__factory.abi,
+      RedstonePriceOracle__factory.bytecode,
+      [
+        [core.tokens.weth.address, underlyingToken.address],
+        [core.chainlinkPriceOracle!.getAggregatorByToken(core.tokens.weth.address), WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne]],
+        [18, 18],
+        [ADDRESS_ZERO, core.tokens.weth.address],
+        core.dolomiteMargin.address
+      ]
+    )).connect(core.governance);
+
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
       DolomiteRegistryImplementation__factory.abi,
       DolomiteRegistryImplementation__factory.bytecode,
       [],
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(oracle.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
       core.chainlinkPriceOracle!.address,
     );
-
-    underlyingToken = core.tokens.rsEth!;
-    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
-      TWAPPriceOracle__factory.abi,
-      TWAPPriceOracle__factory.bytecode,
-      [core.tokens.rsEth.address, ['0xb355cce5cbaf411bd56e3b092f5aa10a894083ae'], core.dolomiteMargin.address]
+    await core.chainlinkPriceOracle!.connect(core.governance).ownerInsertOrUpdateOracleToken(
+      underlyingToken.address,
+      18,
+      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
+      ADDRESS_ZERO,
     );
-    underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);
-    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(underlyingMarketId, twapPriceOracle.address);
-    await freezeAndGetOraclePrice(underlyingToken);
 
     pendleRegistry = await createPendleRegistry(
       core,
-      core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket,
-      core.pendleEcosystem!.rsEthApr2024.ptOracle,
-      core.pendleEcosystem!.syRsEthToken,
+      core.pendleEcosystem!.weEthApr2024.ptWeEthMarket,
+      core.pendleEcosystem!.weEthApr2024.ptOracle,
+      core.pendleEcosystem!.syWeEthToken,
     );
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     factory = await createPendlePtIsolationModeVaultFactory(
@@ -77,9 +89,9 @@ describe('PendlePtRsEthApr2024PriceOracle', () => {
       core.pendleEcosystem!.weEthApr2024.ptWeEthToken,
       userVaultImplementation,
     );
-    ptOracle = await createPendlePtRsEthPriceOracle(core, factory, pendleRegistry);
+
+    ptOracle = await createPendlePtEEthPriceOracle(core, factory, pendleRegistry);
     await setupTestMarket(core, factory, true, ptOracle);
-    await freezeAndGetOraclePrice(underlyingToken);
 
     snapshotId = await snapshot();
   });
@@ -99,18 +111,9 @@ describe('PendlePtRsEthApr2024PriceOracle', () => {
 
   describe('#getPrice', () => {
     it('returns the correct value under normal conditions for the dptToken', async () => {
-      await core.dolomiteRegistry.connect(core.governance)
-        .ownerSetChainlinkPriceOracle(
-        core.testEcosystem!.testPriceOracle.address
-      );
+      await setNextBlockTimestamp(1709735900);
       const price = await ptOracle.getPrice(factory.address);
-      expect(price.value).to.eq(PT_RS_ETH_PRICE);
+      expect(price.value).to.eq(PT_E_ETH_PRICE);
     });
   });
-
-  async function freezeAndGetOraclePrice(token: IERC20): Promise<BigNumber> {
-    const price = (await core.dolomiteMargin.getMarketPrice(underlyingMarketId));
-    await core.testEcosystem!.testPriceOracle.setPrice(token.address, price.value);
-    return price.value;
-  }
 });

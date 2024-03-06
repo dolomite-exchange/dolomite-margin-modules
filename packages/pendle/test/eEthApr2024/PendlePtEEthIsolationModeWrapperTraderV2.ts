@@ -1,5 +1,5 @@
 import { AccountInfoStruct } from '@dolomite-exchange/modules-base/src/utils';
-import { BYTES_EMPTY, Network, ONE_ETH_BI, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, BYTES_EMPTY, Network, ZERO_BI } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import {
   encodeExternalSellActionDataWithNoData,
   getRealLatestBlockNumber,
@@ -12,11 +12,9 @@ import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/ut
 import { setupNewGenericTraderProxy } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import {
   setupCoreProtocol,
-  setupRsEthBalance,
   setupTestMarket,
   setupUserVaultProxy,
   setupWeEthBalance,
-  setupWstETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
@@ -37,14 +35,18 @@ import {
   PendleRegistry,
 } from '../../src/types';
 import {
+  createPendlePtEEthPriceOracle,
   createPendlePtIsolationModeTokenVaultV1,
   createPendlePtIsolationModeUnwrapperTraderV2,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtIsolationModeWrapperTraderV2,
-  createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 import { encodeSwapExactTokensForPt, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
+import { RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { CHAINLINK_PRICE_AGGREGATORS_MAP, WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
+import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying
@@ -54,7 +56,7 @@ const usableAmount = parseEther('10');
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendlePtWeEthApr2024IsolationModeWrapperTraderV2', () => {
+describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;
@@ -82,9 +84,19 @@ describe('PendlePtWeEthApr2024IsolationModeWrapperTraderV2', () => {
     ptToken = core.pendleEcosystem!.weEthApr2024.ptWeEthToken.connect(core.hhUser1);
     underlyingToken = core.tokens.weEth!;
 
-    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.weEth.address, '1000000000000000000');
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, core.tokens.weEth, false, core.testEcosystem!.testPriceOracle);
+    const oracle = (await createContractWithAbi<RedstonePriceOracle>(
+      RedstonePriceOracle__factory.abi,
+      RedstonePriceOracle__factory.bytecode,
+      [
+        [core.tokens.weth.address, underlyingToken.address],
+        [core.chainlinkPriceOracle!.getAggregatorByToken(core.tokens.weth.address), WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne]],
+        [18, 18],
+        [ADDRESS_ZERO, core.tokens.weth.address],
+        core.dolomiteMargin.address
+      ]
+    )).connect(core.governance);
+    await setupTestMarket(core, core.tokens.weEth, false, oracle);
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
@@ -102,13 +114,25 @@ describe('PendlePtWeEthApr2024IsolationModeWrapperTraderV2', () => {
 
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    // priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken);
-
+    const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
+      DolomiteRegistryImplementation__factory.abi,
+      DolomiteRegistryImplementation__factory.bytecode,
+      [],
+    );
+    await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(oracle.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
+      core.chainlinkPriceOracle!.address,
+    );
+    await core.chainlinkPriceOracle!.connect(core.governance).ownerInsertOrUpdateOracleToken(
+      underlyingToken.address,
+      18,
+      CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
+      ADDRESS_ZERO,
+    );
+    priceOracle = await createPendlePtEEthPriceOracle(core, factory, pendleRegistry);
     marketId = await core.dolomiteMargin.getNumMarkets();
-    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_ETH_BI);
-    await setupTestMarket(core, factory, true, core.testEcosystem!.testPriceOracle);
-    // await setupTestMarket(core, factory, true, priceOracle);
-    // await core.dolomiteMargin.ownerSetPriceOracle(marketId, priceOracle.address);
+    await setupTestMarket(core, factory, true, priceOracle);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);

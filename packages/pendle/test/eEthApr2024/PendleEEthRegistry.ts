@@ -10,7 +10,7 @@ import { createPendleRegistry } from '../pendle-ecosystem-utils';
 
 const OTHER_ADDRESS = '0x1234567812345678123456781234567812345678';
 
-describe('PendleWeEthApr2024Registry', () => {
+describe('PendleEEthApr2024Registry', () => {
   let snapshotId: string;
 
   let core: CoreProtocolArbitrumOne;

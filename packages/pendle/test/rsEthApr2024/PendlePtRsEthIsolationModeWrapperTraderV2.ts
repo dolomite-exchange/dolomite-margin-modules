@@ -15,7 +15,6 @@ import {
   setupRsEthBalance,
   setupTestMarket,
   setupUserVaultProxy,
-  setupWstETHBalance,
 } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { ZERO_ADDRESS } from '@openzeppelin/upgrades/lib/utils/Addresses';
 import { BaseRouter, Router } from '@pendle/sdk-v2';
@@ -40,10 +39,12 @@ import {
   createPendlePtIsolationModeUnwrapperTraderV2,
   createPendlePtIsolationModeVaultFactory,
   createPendlePtIsolationModeWrapperTraderV2,
-  createPendlePtPriceOracle,
+  createPendlePtRsEthPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 import { encodeSwapExactTokensForPt, ONE_TENTH_OF_ONE_BIPS_NUMBER } from '../pendle-utils';
+import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
+import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('200000000000000000000'); // 200 units of underlying
@@ -79,11 +80,16 @@ describe('PendlePtRsEthApr2024IsolationModeWrapperTraderV2', () => {
 
     ptMarket = core.pendleEcosystem!.rsEthApr2024.ptRsEthMarket;
     ptToken = core.pendleEcosystem!.rsEthApr2024.ptRsEthToken.connect(core.hhUser1);
-    underlyingToken = core.tokens.rsEth!;
 
-    await core.testEcosystem!.testPriceOracle.setPrice(core.tokens.rsEth.address, '1000000000000000000');
+    underlyingToken = core.tokens.rsEth!;
+    const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
+      TWAPPriceOracle__factory.abi,
+      TWAPPriceOracle__factory.bytecode,
+      [core.tokens.rsEth.address, ['0xb355cce5cbaf411bd56e3b092f5aa10a894083ae'], core.dolomiteMargin.address]
+    );
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
-    await setupTestMarket(core, core.tokens.rsEth, false, core.testEcosystem!.testPriceOracle);
+    await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);
+    await core.dolomiteMargin.connect(core.governance).ownerSetPriceOracle(underlyingMarketId, twapPriceOracle.address);
 
     const userVaultImplementation = await createPendlePtIsolationModeTokenVaultV1();
     pendleRegistry = await createPendleRegistry(
@@ -101,13 +107,10 @@ describe('PendlePtRsEthApr2024IsolationModeWrapperTraderV2', () => {
 
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
-    // priceOracle = await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken);
+    priceOracle = await createPendlePtRsEthPriceOracle(core, factory, pendleRegistry);
 
     marketId = await core.dolomiteMargin.getNumMarkets();
-    await core.testEcosystem!.testPriceOracle.setPrice(factory.address, ONE_ETH_BI);
-    await setupTestMarket(core, factory, true, core.testEcosystem!.testPriceOracle);
-    // await setupTestMarket(core, factory, true, priceOracle);
-    // await core.dolomiteMargin.ownerSetPriceOracle(marketId, priceOracle.address);
+    await setupTestMarket(core, factory, true, priceOracle);
 
     await factory.connect(core.governance).ownerInitialize([unwrapper.address, wrapper.address]);
     await core.dolomiteMargin.connect(core.governance).ownerSetGlobalOperator(factory.address, true);
