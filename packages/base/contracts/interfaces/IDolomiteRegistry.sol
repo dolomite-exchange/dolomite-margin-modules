@@ -124,6 +124,11 @@ interface IDolomiteRegistry {
     function chainlinkPriceOracle() external view returns (IDolomitePriceOracle);
 
     /**
+     * @return The address of the Redstone price oracle that's compatible with DolomiteMargin
+     */
+    function redstonePriceOracle() external view returns (IDolomitePriceOracle);
+
+    /**
      * @return The base (denominator) for the slippage tolerance variable. Always 1e18.
      */
     function slippageToleranceForPauseSentinelBase() external pure returns (uint256);
