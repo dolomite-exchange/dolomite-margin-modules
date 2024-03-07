@@ -28,6 +28,7 @@ import {
 import { RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
 import { getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
 import axios from 'axios';
+import { parseEther } from 'ethers/lib/utils';
 
 describe('PendlePtEEthApr2024PriceOracle_integration', () => {
   let snapshotId: string;
@@ -93,7 +94,7 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
 
     ptOracle = await createPendlePtEEthPriceOracle(core, factory, pendleRegistry);
     await setupTestMarket(core, factory, true, ptOracle);
-    await ptOracle.connect(core.governance).ownerSetDeductionCoefficient(BigNumber.from('3500000000000000'));
+    await ptOracle.connect(core.governance).ownerSetDeductionCoefficient(parseEther('.001'));
 
     const BASE_URL = 'https://api-v2.pendle.finance/sdk/api/v1';
     const data = await axios.get(`${BASE_URL}/swapExactPtForToken`, {

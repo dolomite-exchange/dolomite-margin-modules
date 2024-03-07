@@ -26,6 +26,7 @@ import {
 import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
 import { ADDRESS_ZERO, Network, ONE_ETH_BI } from 'packages/base/src/utils/no-deps-constants';
 import axios from 'axios';
+import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
 
 describe('PendlePtRsEthApr2024PriceOracle_integration', () => {
   let snapshotId: string;
@@ -57,7 +58,7 @@ describe('PendlePtRsEthApr2024PriceOracle_integration', () => {
     const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
       TWAPPriceOracle__factory.abi,
       TWAPPriceOracle__factory.bytecode,
-      [core.tokens.rsEth.address, ['0xb355cce5cbaf411bd56e3b092f5aa10a894083ae'], core.dolomiteMargin.address]
+      [core.tokens.rsEth.address, [RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]], core.dolomiteMargin.address]
     );
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);
