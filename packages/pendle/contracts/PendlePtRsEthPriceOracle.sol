@@ -48,10 +48,10 @@ contract PendlePtRsEthPriceOracle is PendlePtPriceOracle {
     // ============================ Internal Functions ============================
 
     function _getCurrentPrice() internal view override returns (uint256) {
-        uint256 underlyingPrice = DOLOMITE_MARGIN.getMarketPrice(
-            DOLOMITE_MARGIN.getMarketIdByTokenAddress(UNDERLYING_TOKEN)
+        uint256 underlyingPrice = DOLOMITE_MARGIN().getMarketPrice(
+            DOLOMITE_MARGIN().getMarketIdByTokenAddress(UNDERLYING_TOKEN)
         ).value;
         uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptMarket()), TWAP_DURATION);
-        return underlyingPrice * ptExchangeRate / PT_ASSET_SCALE;
+        return _applyDeductionCoefficient(underlyingPrice * ptExchangeRate / PT_ASSET_SCALE);
     }
 }

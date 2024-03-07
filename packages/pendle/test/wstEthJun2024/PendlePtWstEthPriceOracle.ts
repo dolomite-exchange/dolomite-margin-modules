@@ -7,7 +7,7 @@ import { STETH_USD_CHAINLINK_FEED_MAP } from '@dolomite-exchange/modules-base/sr
 import { createContractWithAbi } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import { ADDRESS_ZERO, Network } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
 import { advanceToTimestamp, revertToSnapshotAndCapture, snapshot } from '@dolomite-exchange/modules-base/test/utils';
-import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
+import { expectEvent, expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import {
   getDefaultCoreProtocolConfig,
@@ -23,6 +23,8 @@ import {
   PendleRegistry,
   TestPendlePtOracle,
   TestPendlePtOracle__factory,
+  TestPendlePtPriceOracle,
+  TestPendlePtPriceOracle__factory,
 } from '../../src/types';
 import {
   createPendlePtIsolationModeTokenVaultV1,
@@ -30,6 +32,7 @@ import {
   createPendlePtPriceOracle,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
+import { parseEther } from 'ethers/lib/utils';
 
 const PT_WST_ETH_PRICE = BigNumber.from('5018321015037081078544705');
 
@@ -129,6 +132,41 @@ describe('PendlePtWstEthJun2024PriceOracle', () => {
 
       await testPtOracle.setOracleState(false, 0, true);
       await createPendlePtPriceOracle(core, factory, pendleRegistry, underlyingToken); // should work now
+    });
+  });
+
+  describe('#ownerSetDeductionCoefficient', () => {
+    it('should work normally', async () => {
+      const result = await ptOracle.connect(core.governance).ownerSetDeductionCoefficient(100);
+      await expectEvent(ptOracle, result, 'DeductionCoefficientSet', {
+        deductionCoefficient: 100,
+      });
+      expect(await ptOracle.deductionCoefficient()).to.eq(100);
+    });
+
+    it('should fail if not called by owner', async () => {
+      await expectThrow(
+        ptOracle.connect(core.hhUser1).ownerSetDeductionCoefficient(100),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+  });
+
+  describe('#applyDeductionCoefficient', () => {
+    it('should work normally', async () => {
+      const testPtOracle = await createContractWithAbi<TestPendlePtPriceOracle>(
+        TestPendlePtPriceOracle__factory.abi,
+        TestPendlePtPriceOracle__factory.bytecode,
+        [
+          factory.address,
+          pendleRegistry.address,
+          core.tokens.wstEth!.address,
+          core.dolomiteMargin.address,
+        ],
+      );
+      expect(await testPtOracle.testApplyDeductionCoefficient(100)).to.eq(100);
+      await testPtOracle.connect(core.governance).ownerSetDeductionCoefficient(parseEther('0.1'));
+      expect(await testPtOracle.testApplyDeductionCoefficient(100)).to.eq(90);
     });
   });
 

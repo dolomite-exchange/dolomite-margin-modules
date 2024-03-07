@@ -55,6 +55,9 @@ contract PendlePtEEthPriceOracle is PendlePtPriceOracle {
         uint256 weETHExchangeRate = REGISTRY.dolomiteRegistry().chainlinkPriceOracle().getPrice(UNDERLYING_TOKEN).value;
         // weEth -> USD
         uint256 underlyingPrice = REGISTRY.dolomiteRegistry().redstonePriceOracle().getPrice(UNDERLYING_TOKEN).value;
-        return underlyingPrice * ptExchangeRate * WE_ETH_ASSET_SCALE / (PT_ASSET_SCALE * weETHExchangeRate);
+
+        return _applyDeductionCoefficient(
+            underlyingPrice * ptExchangeRate * WE_ETH_ASSET_SCALE / (PT_ASSET_SCALE * weETHExchangeRate)
+        );
     }
 }

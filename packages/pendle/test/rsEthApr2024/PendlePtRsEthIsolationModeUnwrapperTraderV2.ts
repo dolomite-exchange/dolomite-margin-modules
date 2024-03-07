@@ -45,6 +45,7 @@ import { expectThrow } from 'packages/base/test/utils/assertions';
 import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { TWAPPriceOracle, TWAPPriceOracle__factory } from 'packages/oracles/src/types';
+import { RS_ETH_CAMELOT_POOL_MAP } from 'packages/base/src/utils/constants';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('20000000000000000000'); // 20
@@ -82,7 +83,7 @@ describe('PendlePtRsEthApr2024IsolationModeUnwrapperTraderV2', () => {
     const twapPriceOracle = await createContractWithAbi<TWAPPriceOracle>(
       TWAPPriceOracle__factory.abi,
       TWAPPriceOracle__factory.bytecode,
-      [core.tokens.rsEth.address, ['0xb355cce5cbaf411bd56e3b092f5aa10a894083ae'], core.dolomiteMargin.address]
+      [core.tokens.rsEth.address, [RS_ETH_CAMELOT_POOL_MAP[Network.ArbitrumOne]], core.dolomiteMargin.address]
     );
     underlyingMarketId = await core.dolomiteMargin.getNumMarkets();
     await setupTestMarket(core, core.tokens.rsEth, false, twapPriceOracle);

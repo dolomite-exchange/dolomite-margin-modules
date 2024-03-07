@@ -95,6 +95,7 @@ describe('PendlePtEEthApr2024IsolationModeWrapperTraderV2', () => {
         [core.tokens.weth, underlyingToken],
         [wethAggregator, weEthAggregator],
         [ADDRESS_ZERO, core.tokens.weth.address],
+        [false, false],
         core
       )
     )).connect(core.governance);
