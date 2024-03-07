@@ -661,10 +661,12 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
             owner: address(this),
             number: _tradeAccountNumber
         });
+        IDolomiteMargin dolomiteMargin = DOLOMITE_MARGIN();
         _requireMinAmountIsNotTooLargeForLiquidation(
+            dolomiteMargin,
             liquidAccount,
             marketId(),
-            DOLOMITE_MARGIN().getMarketIdByTokenAddress(_outputToken),
+            dolomiteMargin.getMarketIdByTokenAddress(_outputToken),
             _inputAmount,
             _minOutputAmount
         );
@@ -785,16 +787,17 @@ abstract contract IsolationModeTokenVaultV1WithFreezable is
     }
 
     function _requireMinAmountIsNotTooLargeForLiquidation(
+        IDolomiteMargin _dolomiteMargin,
         IDolomiteStructs.AccountInfo memory _liquidAccount,
         uint256 _inputMarketId,
         uint256 _outputMarketId,
         uint256 _inputTokenAmount,
         uint256 _minOutputAmount
     ) internal view {
-        uint256 inputValue = DOLOMITE_MARGIN().getMarketPrice(_inputMarketId).value * _inputTokenAmount;
-        uint256 outputValue = DOLOMITE_MARGIN().getMarketPrice(_outputMarketId).value * _minOutputAmount;
+        uint256 inputValue = _dolomiteMargin.getMarketPrice(_inputMarketId).value * _inputTokenAmount;
+        uint256 outputValue = _dolomiteMargin.getMarketPrice(_outputMarketId).value * _minOutputAmount;
 
-        IDolomiteMargin.Decimal memory spread = DOLOMITE_MARGIN().getVersionedLiquidationSpreadForPair(
+        IDolomiteMargin.Decimal memory spread = _dolomiteMargin.getVersionedLiquidationSpreadForPair(
             CHAIN_ID,
             _liquidAccount,
             /* heldMarketId = */ _inputMarketId,

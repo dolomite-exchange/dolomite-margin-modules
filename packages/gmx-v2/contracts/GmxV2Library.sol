@@ -314,7 +314,7 @@ library GmxV2Library {
 
         uint256 maxCallbackGasLimit = dataStore.getUint(_MAX_CALLBACK_GAS_LIMIT_KEY);
 
-        return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit; // solhint-disable-line max-line-length
+        return isShortPnlTooLarge || isLongPnlTooLarge || _registry.callbackGasLimit() > maxCallbackGasLimit;
     }
 
     function validateInitialMarketIds(
@@ -408,6 +408,7 @@ library GmxV2Library {
         bytes calldata _extraData,
         uint256 _chainId
     ) public view {
+        // For managing "stack too deep"
         MiniCache memory cache = MiniCache({
             dolomiteMargin: _factory.DOLOMITE_MARGIN(),
             inputMarketId: _factory.marketId(),
