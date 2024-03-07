@@ -62,13 +62,15 @@ export async function getRedstonePriceOracleConstructorParams<T extends NetworkT
   tokens: IERC20[],
   aggregators: string[],
   tokenPairs: string[],
+  tokenToBypassUsdValue: boolean[],
   core: CoreProtocolType<T>,
-): Promise<[string[], string[], BigNumberish[], string[], string]> {
+): Promise<[string[], string[], BigNumberish[], string[], boolean[], string]> {
   return [
     tokens.map(t => t.address),
     aggregators,
     await Promise.all(tokens.map(t => IERC20Metadata__factory.connect(t.address, t.signer).decimals())),
     tokenPairs,
+    tokenToBypassUsdValue,
     core.dolomiteMargin.address,
   ];
 }
