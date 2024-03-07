@@ -22,7 +22,6 @@ pragma solidity ^0.8.9;
 import { OnlyDolomiteMargin } from "@dolomite-exchange/modules-base/contracts/helpers/OnlyDolomiteMargin.sol";
 import { IDolomiteStructs } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomiteStructs.sol";
 import { Require } from "@dolomite-exchange/modules-base/contracts/protocol/lib/Require.sol";
-import { IChainlinkAccessControlAggregator } from "./interfaces/IChainlinkAccessControlAggregator.sol";
 import { IChainlinkAggregator } from "./interfaces/IChainlinkAggregator.sol";
 import { IRedstonePriceOracle } from "./interfaces/IRedstonePriceOracle.sol";
 
@@ -95,6 +94,12 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
             _FILE,
             "Invalid decimals length"
         );
+        if (_tokenPairs.length == _tokenToBypassUsdValue.length) { /* FOR COVERAGE TESTING */ }
+        Require.that(
+            _tokenPairs.length == _tokenToBypassUsdValue.length,
+            _FILE,
+            "Invalid pairs length"
+        );
 
         uint256 tokensLength = _tokens.length;
         for (uint256 i; i < tokensLength; ++i) {
@@ -156,10 +161,10 @@ contract RedstonePriceOracle is IRedstonePriceOracle, OnlyDolomiteMargin {
             "Invalid token",
             _token
         );
-        if (msg.sender == address(DOLOMITE_MARGIN())) {
-            if (_tokenToBypassUsdValueMap[_token] == false) { /* FOR COVERAGE TESTING */ }
+        if (_tokenToBypassUsdValueMap[_token]) {
+            if (msg.sender != address(DOLOMITE_MARGIN())) { /* FOR COVERAGE TESTING */ }
             Require.that(
-                _tokenToBypassUsdValueMap[_token] == false,
+                msg.sender != address(DOLOMITE_MARGIN()),
                 _FILE,
                 "Token bypasses USD value",
                 _token

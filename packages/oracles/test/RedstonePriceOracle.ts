@@ -154,6 +154,24 @@ describe('RedstonePriceOracle', () => {
         'RedstonePriceOracle: Invalid decimals length',
       );
     });
+
+    it('should fail when token decimal length is not aligned', async () => {
+      await expectThrow(
+        createContractWithAbi<RedstonePriceOracle>(
+          RedstonePriceOracle__factory.abi,
+          RedstonePriceOracle__factory.bytecode,
+          [
+            [ZERO_ADDRESS, ZERO_ADDRESS],
+            [ZERO_ADDRESS, ZERO_ADDRESS],
+            [8, 8],
+            [ZERO_ADDRESS, ZERO_ADDRESS],
+            [false],
+            core.dolomiteMargin.address,
+          ],
+        ),
+        'RedstonePriceOracle: Invalid pairs length',
+      );
+    });
   });
 
   describe('#getPrice', () => {
@@ -176,6 +194,19 @@ describe('RedstonePriceOracle', () => {
       const price = await oracle.getPrice(core.tokens.weEth.address);
       expect(price.value).to.eq(WE_ETH_PRICE);
     });
+
+    it('returns the correct value for usd bypass token', async () => {
+      await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
+        testToken.address,
+        18,
+        testAggregator.address,
+        ADDRESS_ZERO,
+        true
+      );
+      const price = await oracle.getPrice(testToken.address);
+      expect(price.value).to.eq(TEST_TOKEN_PRICE);
+    });
+
 
     it('reverts if dolomite margin calls getPrice on usd bypass token', async () => {
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
