@@ -11,18 +11,24 @@ import {
 import {
   CustomTestToken,
 } from '@dolomite-exchange/modules-base/src/types';
-import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/../../../packages/base/src/utils/dolomite-utils';
+import { createContractWithAbi, createTestToken } from '@dolomite-exchange/modules-base/src/utils/dolomite-utils';
 import {
   ADDRESS_ZERO,
   Network,
   ONE_DAY_SECONDS,
   ZERO_BI,
 } from '@dolomite-exchange/modules-base/src/utils/no-deps-constants';
-import { impersonate, revertToSnapshotAndCapture, snapshot, waitTime } from '@dolomite-exchange/modules-base/test/utils';
+import {
+  impersonate,
+  revertToSnapshotAndCapture,
+  snapshot,
+  waitTime
+} from '@dolomite-exchange/modules-base/test/utils';
 import { expectThrow } from '@dolomite-exchange/modules-base/test/utils/assertions';
 import { setupCoreProtocol } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { parseEther } from 'ethers/lib/utils';
 import { getRedstonePriceOracleConstructorParams } from '../src/oracles-constructors';
+import { WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
 
 const WE_ETH_PRICE = BigNumber.from('3966474866008054000000');
 const BTC_PRICE = BigNumber.from('38491101100000000000000000000000');
@@ -53,12 +59,19 @@ describe('RedstonePriceOracle', () => {
     testToken = await createTestToken();
     await testAggregator.setLatestAnswer(TEST_TOKEN_PRICE); // 0.1E
     await testAggregator.setDecimals(18);
+    const aggregators = [
+      ADDRESS_ZERO,
+      testAggregator.address,
+      testAggregator.address,
+      testAggregator.address,
+      WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne],
+    ];
     oracle = (await createContractWithAbi<RedstonePriceOracle>(
       RedstonePriceOracle__factory.abi,
       RedstonePriceOracle__factory.bytecode,
       await getRedstonePriceOracleConstructorParams(
         [core.tokens.weth, core.tokens.dai, core.tokens.usdc, core.tokens.wbtc, core.tokens.weEth],
-        [ADDRESS_ZERO, testAggregator.address, testAggregator.address, testAggregator.address, '0xA736eAe8805dDeFFba40cAB8c99bCB309dEaBd9B'],
+        aggregators,
         [ADDRESS_ZERO, ADDRESS_ZERO, ADDRESS_ZERO, core.tokens.dai.address, core.tokens.weth.address],
         [false, false, false, false, false],
         core
@@ -177,7 +190,7 @@ describe('RedstonePriceOracle', () => {
         oracle.connect(doloImpersonator).getPrice(testToken.address),
         `RedstonePriceOracle: Token bypasses USD value <${testToken.address.toLowerCase()}>`,
       );
-    })
+    });
 
     it('reverts when an invalid address is passed in', async () => {
       const ONE_ADDRESS = '0x1000000000000000000000000000000000000000';
