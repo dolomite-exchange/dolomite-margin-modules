@@ -4,7 +4,7 @@ import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/ut
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
 import { BigNumberish } from 'ethers';
-import { Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
+import { ADDRESS_ZERO, Network, NetworkType } from 'packages/base/src/utils/no-deps-constants';
 import {
   IChainlinkAggregator,
   IChainlinkPriceOracle,
@@ -54,6 +54,21 @@ export async function getChainlinkPriceOracleConstructorParams<T extends Network
     aggregators.map(t => t.address),
     await Promise.all(tokens.map(t => IERC20Metadata__factory.connect(t.address, t.signer).decimals())),
     tokenPairs.map(t => t.address),
+    core.dolomiteMargin.address,
+  ];
+}
+
+export async function getRedstonePriceOracleConstructorParams<T extends NetworkType>(
+  tokens: IERC20[],
+  aggregators: string[],
+  tokenPairs: string[],
+  core: CoreProtocolType<T>,
+): Promise<[string[], string[], BigNumberish[], string[], string]> {
+  return [
+    tokens.map(t => t.address),
+    aggregators,
+    await Promise.all(tokens.map(t => IERC20Metadata__factory.connect(t.address, t.signer).decimals())),
+    tokenPairs,
     core.dolomiteMargin.address,
   ];
 }

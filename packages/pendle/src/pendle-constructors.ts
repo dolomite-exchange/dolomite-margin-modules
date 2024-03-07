@@ -133,6 +133,40 @@ export function getPendlePtPriceOracleConstructorParams<T extends Network>(
   ];
 }
 
+export function getPendlePtRsEthPriceOracleConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    dptToken.address,
+    pendleRegistry.address,
+    core.tokens.rsEth.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
+export function getPendlePtEEthPriceOracleConstructorParams<T extends Network>(
+  core: CoreProtocolWithPendle<T>,
+  dptToken: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+  pendleRegistry: IPendleRegistry | PendleRegistry,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    dptToken.address,
+    pendleRegistry.address,
+    core.tokens.weEth.address,
+    core.dolomiteMargin.address,
+  ];
+}
+
 export function getPendlePtIsolationModeWrapperTraderV2ConstructorParams<T extends Network>(
   core: CoreProtocolWithPendle<T>,
   pendleRegistry: IPendleRegistry | PendleRegistry,
@@ -295,5 +329,35 @@ export function getPendleYtGLPPriceOracleConstructorParams(
     pendleRegistry.address,
     core.dolomiteMargin.address,
     core.marketIds.dfsGlp!,
+  ];
+}
+
+export function getSimplePtUnwrapperTraderV2ConstructorParams(
+  core: CoreProtocolArbitrumOne,
+  factory: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    factory.address,
+    core.dolomiteMargin.address,
+    core.dolomiteRegistry.address
+  ];
+}
+
+export function getSimplePtWrapperTraderV2ConstructorParams(
+  core: CoreProtocolArbitrumOne,
+  factory: IPendlePtIsolationModeVaultFactory | PendlePtIsolationModeVaultFactory,
+): any[] {
+  if (!core.pendleEcosystem) {
+    throw new Error('Pendle ecosystem not initialized');
+  }
+
+  return [
+    factory.address,
+    core.dolomiteMargin.address,
+    core.dolomiteRegistry.address
   ];
 }

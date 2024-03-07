@@ -45,6 +45,7 @@ interface IDolomiteRegistry {
     event LiquidatorAssetRegistrySet(address indexed _liquidatorAssetRegistry);
     event EventEmitterSet(address indexed _eventEmitter);
     event ChainlinkPriceOracleSet(address indexed _chainlinkPriceOracle);
+    event RedstonePriceOracleSet(address indexed _redstonePriceOracle);
 
     // ========================================================
     // =================== Admin Functions ====================

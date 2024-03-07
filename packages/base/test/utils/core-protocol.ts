@@ -67,11 +67,13 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   nativeUsdc: IERC20;
   premia: IERC20;
   rEth: IERC20;
+  rsEth: IERC20;
   radiant: IERC20;
   pendle: IERC20;
   size: IERC20;
   stEth: IERC20;
   wbtc: IERC20;
+  weEth: IERC20;
   wstEth: IERC20;
 }
 
