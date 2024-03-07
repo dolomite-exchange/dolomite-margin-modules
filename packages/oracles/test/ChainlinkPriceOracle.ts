@@ -314,11 +314,12 @@ describe('ChainlinkPriceOracle', () => {
         18,
         testAggregator.address,
         ZERO_ADDRESS,
-        false
+        true
       );
       expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(18);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
       expect(await oracle.getTokenPairByToken(tokenAddress)).to.eq(ZERO_ADDRESS);
+      expect(await oracle.getBypassUsdValueByToken(tokenAddress)).to.eq(true);
     });
 
     it('can update an existing oracle', async () => {
@@ -328,11 +329,12 @@ describe('ChainlinkPriceOracle', () => {
         11,
         testAggregator.address,
         core.tokens.weth.address,
-        false
+        true
       );
       expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(11);
       expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
       expect(await oracle.getTokenPairByToken(tokenAddress)).to.eq(core.tokens.weth.address);
+      expect(await oracle.getBypassUsdValueByToken(tokenAddress)).to.eq(true);
     });
 
     it('fails when invoked by non-admin', async () => {

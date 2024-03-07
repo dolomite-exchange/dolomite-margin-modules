@@ -232,6 +232,10 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         return _tokenToPairingMap[_token];
     }
 
+    function getBypassUsdValueByToken(address _token) public view returns (bool) {
+        return _tokenToBypassUsdValueMap[_token];
+    }
+
     /**
      * Standardizes `value` to have `ONE_DOLLAR.decimals` - `tokenDecimals` number of decimals.
      */
