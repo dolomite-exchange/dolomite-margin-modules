@@ -75,7 +75,7 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
       await getRedstonePriceOracleConstructorParams(
         [core.tokens.weth, underlyingToken],
         [wethAggregator, weEthAggregator],
-        [ADDRESS_ZERO, core.tokens.weth],
+        [ADDRESS_ZERO, core.tokens.weth.address],
         core
       )
     )).connect(core.governance);
