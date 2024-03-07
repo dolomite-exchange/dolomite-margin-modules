@@ -20,12 +20,7 @@
 
 pragma solidity ^0.8.9;
 
-import { IBaseRegistry } from "@dolomite-exchange/modules-base/contracts/interfaces/IBaseRegistry.sol";
-import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol";
-import { IPendlePtMarket } from "./IPendlePtMarket.sol";
-import { IPendlePtOracle } from "./IPendlePtOracle.sol";
-import { IPendleRouter } from "./IPendleRouter.sol";
-import { IPendleSyToken } from "./IPendleSyToken.sol";
+import { IDolomitePriceOracle } from "@dolomite-exchange/modules-base/contracts/protocol/interfaces/IDolomitePriceOracle.sol"; // solhint-disable-line max-line-length
 
 
 /**

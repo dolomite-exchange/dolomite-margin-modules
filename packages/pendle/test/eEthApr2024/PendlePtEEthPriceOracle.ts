@@ -56,6 +56,7 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
         [core.tokens.weth, underlyingToken],
         [wethAggregator, weEthAggregator],
         [ADDRESS_ZERO, core.tokens.weth.address],
+        [false, false],
         core
       )
     )).connect(core.governance);

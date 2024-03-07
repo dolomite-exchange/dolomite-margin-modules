@@ -52,6 +52,6 @@ contract PendlePtRsEthPriceOracle is PendlePtPriceOracle {
             DOLOMITE_MARGIN().getMarketIdByTokenAddress(UNDERLYING_TOKEN)
         ).value;
         uint256 ptExchangeRate = REGISTRY.ptOracle().getPtToAssetRate(address(REGISTRY.ptMarket()), TWAP_DURATION);
-        return underlyingPrice * ptExchangeRate / PT_ASSET_SCALE;
+        return _applyDeductionCoefficient(underlyingPrice * ptExchangeRate / PT_ASSET_SCALE);
     }
 }

@@ -29,8 +29,6 @@ import { RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/orac
 import { getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
 import axios from 'axios';
 
-const PT_E_ETH_PRICE = BigNumber.from('3689824302982898438870');
-
 describe('PendlePtEEthApr2024PriceOracle_integration', () => {
   let snapshotId: string;
 
@@ -57,6 +55,7 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
         [core.tokens.weth, underlyingToken],
         [wethAggregator, weEthAggregator],
         [ADDRESS_ZERO, core.tokens.weth.address],
+        [false, false],
         core
       )
     )).connect(core.governance);
@@ -94,6 +93,7 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
 
     ptOracle = await createPendlePtEEthPriceOracle(core, factory, pendleRegistry);
     await setupTestMarket(core, factory, true, ptOracle);
+    await ptOracle.connect(core.governance).ownerSetDeductionCoefficient(BigNumber.from('3500000000000000'));
 
     const BASE_URL = 'https://api-v2.pendle.finance/sdk/api/v1';
     const data = await axios.get(`${BASE_URL}/swapExactPtForToken`, {
@@ -135,9 +135,9 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
       if (process.env.COVERAGE === 'true') {
         return;
       }
-      const price = await ptOracle.getPrice(factory.address);
-      expect(price.value.mul(ONE_ETH_BI)).to.be.gte(apiAmountOut.mul(995).div(1000));
-      expect(price.value.mul(ONE_ETH_BI)).to.be.lte(apiAmountOut.mul(1005).div(1000));
+      const price = (await ptOracle.getPrice(factory.address)).value;
+      expect(apiAmountOut.div(ONE_ETH_BI)).to.be.gte(price.mul(995).div(1000));
+      expect(apiAmountOut.div(ONE_ETH_BI)).to.be.lte(price.mul(1005).div(1000));
     });
   });
 });

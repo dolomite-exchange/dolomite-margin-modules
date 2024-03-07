@@ -77,6 +77,7 @@ describe('PendlePtRsEthApr2024PriceOracle_integration', () => {
       userVaultImplementation,
     );
     ptOracle = await createPendlePtRsEthPriceOracle(core, factory, pendleRegistry);
+    await ptOracle.connect(core.governance).ownerSetDeductionCoefficient(BigNumber.from('3500000000000000'));
     await setupTestMarket(core, factory, true, ptOracle);
 
     const BASE_URL = 'https://api-v2.pendle.finance/sdk/api/v1';
@@ -119,8 +120,7 @@ describe('PendlePtRsEthApr2024PriceOracle_integration', () => {
       if (process.env.COVERAGE === 'true') {
         return;
       }
-      let price = (await ptOracle.getPrice(factory.address)).value;
-      price = price.mul(999).div(1000);
+      const price = (await ptOracle.getPrice(factory.address)).value;
       expect(apiAmountOut.div(ONE_ETH_BI)).to.be.gte(price.mul(995).div(1000));
       expect(apiAmountOut.div(ONE_ETH_BI)).to.be.lte(price.mul(1005).div(1000));
     });
