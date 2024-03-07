@@ -29,6 +29,7 @@ import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
 import { RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
 import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
+import { getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
 
 describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -66,16 +67,17 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
     unwrapper = await createPendlePtIsolationModeUnwrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
     wrapper = await createPendlePtIsolationModeWrapperTraderV2(core, pendleRegistry, underlyingToken, factory);
 
-    const oracle = (await createContractWithAbi<RedstonePriceOracle>(
+    const wethAggregator = await core.chainlinkPriceOracle!.getAggregatorByToken(core.tokens.weth.address);
+    const weEthAggregator = WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne];
+    const redstoneOracle = (await createContractWithAbi<RedstonePriceOracle>(
       RedstonePriceOracle__factory.abi,
       RedstonePriceOracle__factory.bytecode,
-      [
-        [core.tokens.weth.address, underlyingToken.address],
-        [core.chainlinkPriceOracle!.getAggregatorByToken(core.tokens.weth.address), WE_ETH_ETH_REDSTONE_FEED_MAP[Network.ArbitrumOne]],
-        [18, 18],
-        [ADDRESS_ZERO, core.tokens.weth.address],
-        core.dolomiteMargin.address
-      ]
+      await getRedstonePriceOracleConstructorParams(
+        [core.tokens.weth, underlyingToken],
+        [wethAggregator, weEthAggregator],
+        [ADDRESS_ZERO, core.tokens.weth],
+        core
+      )
     )).connect(core.governance);
 
     const dolomiteRegistryImplementation = await createContractWithAbi<DolomiteRegistryImplementation>(
@@ -84,7 +86,7 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
       [],
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
-    await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(oracle.address);
+    await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
       core.chainlinkPriceOracle!.address,
     );
