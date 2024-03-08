@@ -179,15 +179,14 @@ describe('ChainlinkPriceOracle', () => {
         testToken.address,
         18,
         testAggregator.address,
-        core.tokens.weth.address,
-        false
+        core.tokens.weth.address
       );
       const price = await oracle.getPrice(testToken.address);
       expect(price.value).to.eq(TEST_TOKEN_PRICE);
     });
 
     it('returns the correct value for usd bypass token', async () => {
-      await oracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
+      await oracle.connect(core.governance).ownerInsertOrUpdateOracleTokenWithBypass(
         testToken.address,
         18,
         testAggregator.address,
@@ -201,7 +200,7 @@ describe('ChainlinkPriceOracle', () => {
 
     it('reverts when token bypasses USD value and caller is dolomite margin', async () => {
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);
-      await oracle.ownerInsertOrUpdateOracleToken(
+      await oracle.ownerInsertOrUpdateOracleTokenWithBypass(
         testToken.address,
         18,
         testAggregator.address,
@@ -232,7 +231,6 @@ describe('ChainlinkPriceOracle', () => {
         18,
         testAggregator.address,
         core.tokens.weth.address,
-        false
       );
       await testAggregator.setLatestAnswer(BigNumber.from('20000000000')); // $200
       await waitTime((60 * 60 * 36) + 1); // prices expire in 36 hours by default
@@ -250,7 +248,6 @@ describe('ChainlinkPriceOracle', () => {
         18,
         testAggregator.address,
         core.tokens.weth.address,
-        false
       );
       await expectThrow(
         oracle.getPrice(testToken.address),
@@ -266,7 +263,6 @@ describe('ChainlinkPriceOracle', () => {
         18,
         testAggregator.address,
         core.tokens.weth.address,
-        false
       );
       await expectThrow(
         oracle.getPrice(testToken.address),
@@ -306,10 +302,10 @@ describe('ChainlinkPriceOracle', () => {
     });
   });
 
-  describe('#ownerInsertOrUpdateOracleToken', () => {
+  describe('#ownerInsertOrUpdateOracleTokenWithBypass', () => {
     it('can insert a new oracle', async () => {
       const tokenAddress = testToken.address;
-      await oracle.ownerInsertOrUpdateOracleToken(
+      await oracle.ownerInsertOrUpdateOracleTokenWithBypass(
         tokenAddress,
         18,
         testAggregator.address,
@@ -324,7 +320,7 @@ describe('ChainlinkPriceOracle', () => {
 
     it('can update an existing oracle', async () => {
       const tokenAddress = core.tokens.wbtc.address;
-      await oracle.ownerInsertOrUpdateOracleToken(
+      await oracle.ownerInsertOrUpdateOracleTokenWithBypass(
         tokenAddress,
         11,
         testAggregator.address,
@@ -339,7 +335,7 @@ describe('ChainlinkPriceOracle', () => {
 
     it('fails when invoked by non-admin', async () => {
       await expectThrow(
-        oracle.connect(core.hhUser1).ownerInsertOrUpdateOracleToken(
+        oracle.connect(core.hhUser1).ownerInsertOrUpdateOracleTokenWithBypass(
           testToken.address,
           9,
           testAggregator.address,
@@ -354,7 +350,7 @@ describe('ChainlinkPriceOracle', () => {
       const tokenAddress = testToken.address;
       const otherPairAddress = '0x1234567812345678123456781234567812345678';
       await expectThrow(
-        oracle.ownerInsertOrUpdateOracleToken(
+        oracle.ownerInsertOrUpdateOracleTokenWithBypass(
           tokenAddress,
           9,
           testAggregator.address,
@@ -366,7 +362,86 @@ describe('ChainlinkPriceOracle', () => {
     });
 
     it('can be set as the oracle for a market', async () => {
+      await oracle.ownerInsertOrUpdateOracleTokenWithBypass(
+        testToken.address,
+        18,
+        testAggregator.address,
+        core.tokens.weth.address,
+        false
+      );
+      const marketId = await core.dolomiteMargin.getNumMarkets();
+      await core.dolomiteMargin.ownerAddMarket(
+        testToken.address,
+        oracle.address,
+        core.interestSetters.alwaysZeroInterestSetter.address,
+        { value: ZERO_BI },
+        { value: ZERO_BI },
+        ZERO_BI,
+        false,
+        false,
+      );
+      const price = await core.dolomiteMargin.getMarketPrice(marketId);
+      expect(price.value).to.eq(TEST_TOKEN_PRICE);
+    });
+  });
+
+  describe('#ownerInsertOrUpdateOracleToken', () => {
+    it('can insert a new oracle', async () => {
+      const tokenAddress = testToken.address;
       await oracle.ownerInsertOrUpdateOracleToken(
+        tokenAddress,
+        18,
+        testAggregator.address,
+        ZERO_ADDRESS,
+      );
+      expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(18);
+      expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
+      expect(await oracle.getTokenPairByToken(tokenAddress)).to.eq(ZERO_ADDRESS);
+      expect(await oracle.getBypassUsdValueByToken(tokenAddress)).to.eq(false);
+    });
+
+    it('can update an existing oracle', async () => {
+      const tokenAddress = core.tokens.wbtc.address;
+      await oracle.ownerInsertOrUpdateOracleToken(
+        tokenAddress,
+        11,
+        testAggregator.address,
+        core.tokens.weth.address,
+      );
+      expect(await oracle.getDecimalsByToken(tokenAddress)).to.eq(11);
+      expect(await oracle.getAggregatorByToken(tokenAddress)).to.eq(testAggregator.address);
+      expect(await oracle.getTokenPairByToken(tokenAddress)).to.eq(core.tokens.weth.address);
+      expect(await oracle.getBypassUsdValueByToken(tokenAddress)).to.eq(false);
+    });
+
+    it('fails when invoked by non-admin', async () => {
+      await expectThrow(
+        oracle.connect(core.hhUser1).ownerInsertOrUpdateOracleToken(
+          testToken.address,
+          9,
+          testAggregator.address,
+          ZERO_ADDRESS,
+        ),
+        `OnlyDolomiteMargin: Caller is not owner of Dolomite <${core.hhUser1.address.toLowerCase()}>`,
+      );
+    });
+
+    it('fails when non-zero paired token does not have an aggregator', async () => {
+      const tokenAddress = testToken.address;
+      const otherPairAddress = '0x1234567812345678123456781234567812345678';
+      await expectThrow(
+        oracle.ownerInsertOrUpdateOracleToken(
+          tokenAddress,
+          9,
+          testAggregator.address,
+          otherPairAddress,
+        ),
+        `ChainlinkPriceOracle: Invalid token pair <${otherPairAddress.toLowerCase()}>`,
+      );
+    });
+
+    it('can be set as the oracle for a market', async () => {
+      await oracle.ownerInsertOrUpdateOracleTokenWithBypass(
         testToken.address,
         18,
         testAggregator.address,

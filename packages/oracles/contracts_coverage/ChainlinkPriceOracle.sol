@@ -126,7 +126,7 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
         _ownerSetStalenessThreshold(_stalenessThreshold);
     }
 
-    function ownerInsertOrUpdateOracleToken(
+    function ownerInsertOrUpdateOracleTokenWithBypass(
         address _token,
         uint8 _tokenDecimals,
         address _chainlinkAggregator,
@@ -142,6 +142,24 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
             _chainlinkAggregator,
             _tokenPair,
             _bypassUsdValue
+        );
+    }
+
+    function ownerInsertOrUpdateOracleToken(
+        address _token,
+        uint8 _tokenDecimals,
+        address _chainlinkAggregator,
+        address _tokenPair
+    )
+    external
+    onlyDolomiteMarginOwner(msg.sender)
+    {
+        _ownerInsertOrUpdateOracleToken(
+            _token,
+            _tokenDecimals,
+            _chainlinkAggregator,
+            _tokenPair,
+            false
         );
     }
 
@@ -239,6 +257,10 @@ contract ChainlinkPriceOracle is IChainlinkPriceOracle, OnlyDolomiteMargin {
 
     function getTokenPairByToken(address _token) public view returns (address _tokenPair) {
         return _tokenToPairingMap[_token];
+    }
+
+    function getBypassUsdValueByToken(address _token) public view returns (bool) {
+        return _tokenToBypassUsdValueMap[_token];
     }
 
     /**
