@@ -74,6 +74,7 @@ export interface PendleEcosystem {
     ptRsEthToken: IPendlePtToken;
   };
   weEthApr2024: {
+    pendleRegistry: IPendleRegistry;
     ptOracle: IPendlePtOracle;
     ptWeEthMarket: IPendlePtMarket;
     ptWeEthToken: IPendlePtToken;
@@ -200,6 +201,11 @@ export async function createPendleEcosystem(
       ),
     },
     weEthApr2024: {
+      pendleRegistry: getContract(
+        deployments.PendleWeETHApr2024RegistryProxy[network].address,
+        IPendleRegistry__factory.connect,
+        signer,
+      ),
       ptOracle: getContract(
         PENDLE_PT_ORACLE_MAP[network] as string,
         IPendlePtOracle__factory.connect,

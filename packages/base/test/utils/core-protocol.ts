@@ -56,6 +56,7 @@ interface CoreProtocolTokensArbitrumOne extends CoreProtocolTokens {
   dGmx: IERC20;
   dPtGlp: IERC20;
   dPtREthJun2025: IERC20;
+  dPtWeEthApr2024: IERC20;
   dPtWstEthJun2024: IERC20;
   dPtWstEthJun2025: IERC20;
   dpx: IERC20;
@@ -85,6 +86,7 @@ interface CoreProtocolMarketIdsArbitrumOne extends CoreProtocolMarketIds {
   djUSDC: BigNumberish;
   dplvGlp: BigNumberish;
   dPtGlp: BigNumberish;
+  dPtWeEthApr2024: BigNumberish;
   dPtREthJun2025: BigNumberish;
   dPtWstEthJun2024: BigNumberish;
   dPtWstEthJun2025: BigNumberish;

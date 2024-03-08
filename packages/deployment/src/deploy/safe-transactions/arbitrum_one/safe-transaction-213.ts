@@ -28,7 +28,6 @@ import getScriptName from '../../../utils/get-script-name';
 /**
  * This script encodes the following transactions:
  * - Deploys PT-weETH
- * - Deploys PT-rsETH
  */
 async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const network = await getAndCheckSpecificNetwork(Network.ArbitrumOne);
@@ -56,7 +55,7 @@ async function main(): Promise<DryRunOutput<Network.ArbitrumOne>> {
   const ptWeEthMarketId = numMarkets.add(incrementor++);
   const weEthPendleSystem = await deployPendlePtSystem(
     core,
-    'weETH',
+    'WeETHApr2024',
     core.pendleEcosystem.weEthApr2024.ptWeEthMarket,
     core.pendleEcosystem.weEthApr2024.ptOracle,
     core.pendleEcosystem.weEthApr2024.ptWeEthToken,

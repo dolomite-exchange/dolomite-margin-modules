@@ -96,6 +96,13 @@ export const DPT_R_ETH_JUN_2025_MAP: Record<Network.ArbitrumOne, TokenWithMarket
   },
 };
 
+export const DPT_WE_ETH_APR_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
+  [Network.ArbitrumOne]: {
+    address: '0xa2e14377fA6ce3556E2248559E85dc44260e362f',
+    marketId: 36,
+  },
+};
+
 export const DPT_WST_ETH_JUN_2024_MAP: Record<Network.ArbitrumOne, TokenWithMarketId> = {
   [Network.ArbitrumOne]: {
     address: '0x1bE165864C918527F2e3e131c2ADc4da9B8c619B',
