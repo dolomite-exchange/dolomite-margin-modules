@@ -24,12 +24,12 @@ import { IChainlinkAggregator } from "./IChainlinkAggregator.sol";
 
 
 /**
- * @title   IChainlinkPriceOracle
+ * @title   IChainlinkPriceOracleV2
  * @author  Dolomite
  *
  * An interface of IDolomitePriceOracle that makes Chainlink prices compatible with the protocol.
  */
-interface IChainlinkPriceOracle is IDolomitePriceOracle {
+interface IChainlinkPriceOracleV2 is IDolomitePriceOracle {
 
     // ============ Events ============
 

@@ -1,5 +1,4 @@
 import { IAlgebraV3Pool, IERC20 } from '@dolomite-exchange/modules-base/src/types';
-import { CHAINLINK_PRICE_ORACLE_OLD_MAP } from '@dolomite-exchange/modules-base/src/utils/constants';
 import { CoreProtocolArbitrumOne } from '@dolomite-exchange/modules-base/test/utils/core-protocol';
 import { DolomiteMargin } from '@dolomite-exchange/modules-base/test/utils/dolomite';
 import { CoreProtocolType } from '@dolomite-exchange/modules-base/test/utils/setup';
@@ -11,6 +10,7 @@ import {
   IChainlinkPriceOracleOld__factory,
   IERC20Metadata__factory,
 } from './types';
+import Deployments from '@dolomite-exchange/modules-deployments/src/deploy/deployments.json';
 
 export type CoreProtocolWithChainlink<T extends Network> = Extract<CoreProtocolType<T>, {
   dolomiteMargin: DolomiteMargin<T>;
@@ -21,7 +21,7 @@ export async function getChainlinkPriceOracleConstructorParamsFromOldPriceOracle
   core: CoreProtocolArbitrumOne,
 ): Promise<[string[], string[], BigNumberish[], string[], boolean[], string]> {
   const oldPriceOracle = IChainlinkPriceOracleOld__factory.connect(
-    CHAINLINK_PRICE_ORACLE_OLD_MAP[core.config.network],
+    Deployments.ChainlinkPriceOracleV1[core.config.network].address,
     core.hhUser1,
   );
   const tokens: string[] = [];
@@ -35,9 +35,9 @@ export async function getChainlinkPriceOracleConstructorParamsFromOldPriceOracle
     const priceOracle = await core.dolomiteMargin.getMarketPriceOracle(i);
     if (priceOracle === oldPriceOracle.address) {
       tokens.push(token);
-      aggregators.push(await oldPriceOracle.tokenToAggregatorMap(token));
-      tokenDecimals.push(await oldPriceOracle.tokenToDecimalsMap(token));
-      tokenPairs.push(await oldPriceOracle.tokenToPairingMap(token));
+      aggregators.push(await oldPriceOracle.getAggregatorByToken(token));
+      tokenDecimals.push(await oldPriceOracle.getDecimalsByToken(token));
+      tokenPairs.push(await oldPriceOracle.getTokenPairByToken(token));
       bypassUsdValue.push(false);
     }
   }
@@ -51,7 +51,6 @@ export async function getChainlinkPriceOracleConstructorParams<T extends Network
   bypassUsdValue: boolean[],
   core: CoreProtocolType<T>,
 ): Promise<[string[], string[], BigNumberish[], string[], boolean[], string]> {
-  const tokenDecimals: number[] = [];
   return [
     tokens.map(t => t.address),
     aggregators.map(t => t.address),
