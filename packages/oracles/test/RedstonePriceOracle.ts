@@ -31,7 +31,6 @@ import { getRedstonePriceOracleConstructorParams } from '../src/oracles-construc
 import { WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
 
 const WE_ETH_PRICE = BigNumber.from('3966474866008054000000');
-const BTC_PRICE = BigNumber.from('38491101100000000000000000000000');
 const TEST_TOKEN_PRICE = parseEther('1');
 const USDC_PRICE = TEST_TOKEN_PRICE.mul(BigNumber.from(10).pow(12));
 
@@ -206,7 +205,6 @@ describe('RedstonePriceOracle', () => {
       const price = await oracle.getPrice(testToken.address);
       expect(price.value).to.eq(TEST_TOKEN_PRICE);
     });
-
 
     it('reverts if dolomite margin calls getPrice on usd bypass token', async () => {
       const doloImpersonator = await impersonate(core.dolomiteMargin.address, true);

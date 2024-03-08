@@ -101,7 +101,7 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
       18,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
       ADDRESS_ZERO,
-      true
+      true,
     );
     priceOracle = await createPendlePtEEthPriceOracle(core, factory, pendleRegistry);
     await setupTestMarket(core, factory, true, priceOracle);

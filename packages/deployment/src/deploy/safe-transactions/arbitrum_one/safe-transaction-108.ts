@@ -24,6 +24,7 @@ async function main() {
   const chainlinkPriceOracleAddress = await deployContractAndSave(
     'ChainlinkPriceOracle',
     chainlinkPriceOracleParams,
+    'ChainlinkPriceOracleV1',
   );
   const pendleYtGlpPriceOracleAddress = await deployContractAndSave(
     'PendleYtGLPPriceOracle',

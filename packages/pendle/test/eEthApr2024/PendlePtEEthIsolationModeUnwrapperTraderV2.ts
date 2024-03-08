@@ -133,7 +133,7 @@ describe('PendlePtEEthApr2024IsolationModeUnwrapperTraderV2', () => {
       18,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
       ADDRESS_ZERO,
-      true
+      true,
     );
     priceOracle = await createPendlePtEEthPriceOracle(core, factory, pendleRegistry);
     marketId = await core.dolomiteMargin.getNumMarkets();

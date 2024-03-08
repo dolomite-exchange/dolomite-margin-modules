@@ -1,4 +1,4 @@
-import { IChainlinkAutomationRegistry, IChainlinkPriceOracle } from '@dolomite-exchange/modules-oracles/src/types';
+import { IChainlinkAutomationRegistry, IChainlinkPriceOracleOld } from '@dolomite-exchange/modules-oracles/src/types';
 import { ApiToken } from '@dolomite-exchange/zap-sdk';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { BigNumberish } from 'ethers';
@@ -229,7 +229,7 @@ interface CoreProtocolParamsArbitrumOne {
   arbEcosystem: ArbEcosystem;
   camelotEcosystem: CamelotEcosystem;
   chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
-  chainlinkPriceOracle: IChainlinkPriceOracle;
+  chainlinkPriceOracle: IChainlinkPriceOracleOld;
   gmxEcosystem: GmxEcosystem;
   gmxEcosystemV2: GmxEcosystemV2;
   jonesEcosystem: JonesEcosystem;
@@ -249,7 +249,7 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
   public readonly arbEcosystem: ArbEcosystem;
   public readonly camelotEcosystem: CamelotEcosystem;
   public readonly chainlinkAutomationRegistry: IChainlinkAutomationRegistry;
-  public readonly chainlinkPriceOracle: IChainlinkPriceOracle;
+  public readonly chainlinkPriceOracle: IChainlinkPriceOracleOld;
   public readonly gmxEcosystem: GmxEcosystem;
   public readonly gmxEcosystemV2: GmxEcosystemV2;
   public readonly jonesEcosystem: JonesEcosystem;
@@ -290,13 +290,13 @@ export class CoreProtocolArbitrumOne extends CoreProtocolAbstract<Network.Arbitr
 }
 
 export interface CoreProtocolParamsBase {
-  chainlinkPriceOracle: IChainlinkPriceOracle;
+  chainlinkPriceOracle: IChainlinkPriceOracleOld;
   paraswapEcosystem: ParaswapEcosystem;
 }
 
 export class CoreProtocolBase extends CoreProtocolAbstract<Network.Base> {
 
-  public readonly chainlinkPriceOracle: IChainlinkPriceOracle;
+  public readonly chainlinkPriceOracle: IChainlinkPriceOracleOld;
   public readonly paraswapEcosystem: ParaswapEcosystem;
   public readonly network: Network.Base = Network.Base;
 
@@ -323,7 +323,7 @@ interface CoreProtocolMarketIdsZkEvm extends CoreProtocolMarketIds {
 }
 
 export interface CoreProtocolParamsZkEvm {
-  chainlinkPriceOracle: IChainlinkPriceOracle;
+  chainlinkPriceOracle: IChainlinkPriceOracleOld;
   marketIds: CoreProtocolMarketIdsZkEvm;
   paraswapEcosystem: ParaswapEcosystem;
   tokens: CoreProtocolTokensZkEvm;
@@ -331,7 +331,7 @@ export interface CoreProtocolParamsZkEvm {
 
 export class CoreProtocolPolygonZkEvm extends CoreProtocolAbstract<Network.PolygonZkEvm> {
 
-  public readonly chainlinkPriceOracle: IChainlinkPriceOracle;
+  public readonly chainlinkPriceOracle: IChainlinkPriceOracleOld;
   public readonly paraswapEcosystem: ParaswapEcosystem;
 
   public override readonly marketIds: CoreProtocolMarketIdsZkEvm;
