@@ -44,8 +44,8 @@ import { setupNewGenericTraderProxy } from 'packages/base/test/utils/dolomite';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
 import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
-import { getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
+import { ChainlinkPriceOracle, ChainlinkPriceOracle__factory, RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
+import { getChainlinkPriceOracleConstructorParamsFromOldPriceOracle, getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
 
 const defaultAccountNumber = '0';
 const amountWei = BigNumber.from('20000000000000000000'); // 20
@@ -120,10 +120,15 @@ describe('PendlePtEEthApr2024IsolationModeUnwrapperTraderV2', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
+    const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracle>(
+      ChainlinkPriceOracle__factory.abi,
+      ChainlinkPriceOracle__factory.bytecode,
+      await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core),
+    )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      core.chainlinkPriceOracle!.address,
+      chainlinkOracle.address
     );
-    await core.chainlinkPriceOracle!.connect(core.governance).ownerInsertOrUpdateOracleToken(
+    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
       underlyingToken.address,
       18,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],

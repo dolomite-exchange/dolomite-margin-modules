@@ -25,9 +25,9 @@ import {
   createPendlePtIsolationModeVaultFactory,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
+import { ChainlinkPriceOracle, ChainlinkPriceOracle__factory, RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
 import { setNextBlockTimestamp } from '@nomicfoundation/hardhat-network-helpers/dist/src/helpers/time';
-import { getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
+import { getChainlinkPriceOracleConstructorParamsFromOldPriceOracle, getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
 
 const PT_E_ETH_PRICE = BigNumber.from('3689824302982898438870');
 
@@ -68,14 +68,20 @@ describe('PendlePtEEthApr2024PriceOracle', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
+    const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracle>(
+      ChainlinkPriceOracle__factory.abi,
+      ChainlinkPriceOracle__factory.bytecode,
+      await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core),
+    )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      core.chainlinkPriceOracle!.address,
+      chainlinkOracle.address
     );
-    await core.chainlinkPriceOracle!.connect(core.governance).ownerInsertOrUpdateOracleToken(
+    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
       underlyingToken.address,
       18,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
       ADDRESS_ZERO,
+      true
     );
 
     pendleRegistry = await createPendleRegistry(

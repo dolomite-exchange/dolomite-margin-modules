@@ -26,10 +26,10 @@ import {
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
 import { createContractWithAbi } from 'packages/base/src/utils/dolomite-utils';
-import { RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
+import { ChainlinkPriceOracle, ChainlinkPriceOracle__factory, RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
 import { CHAINLINK_PRICE_AGGREGATORS_MAP, WE_ETH_ETH_REDSTONE_FEED_MAP } from 'packages/base/src/utils/constants';
 import { DolomiteRegistryImplementation, DolomiteRegistryImplementation__factory } from 'packages/base/src/types';
-import { getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
+import { getChainlinkPriceOracleConstructorParamsFromOldPriceOracle, getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
 
 describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
   let snapshotId: string;
@@ -88,10 +88,15 @@ describe('PendlePtEEthApr2024IsolationModeTokenVaultV1', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
+    const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracle>(
+      ChainlinkPriceOracle__factory.abi,
+      ChainlinkPriceOracle__factory.bytecode,
+      await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core),
+    )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      core.chainlinkPriceOracle!.address,
+      chainlinkOracle.address
     );
-    await core.chainlinkPriceOracle!.connect(core.governance).ownerInsertOrUpdateOracleToken(
+    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
       underlyingToken.address,
       18,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],

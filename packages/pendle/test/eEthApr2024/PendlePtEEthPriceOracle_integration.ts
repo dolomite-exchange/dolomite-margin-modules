@@ -25,8 +25,8 @@ import {
   createPendlePtIsolationModeVaultFactory,
   createPendleRegistry,
 } from '../pendle-ecosystem-utils';
-import { RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
-import { getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
+import { ChainlinkPriceOracle, ChainlinkPriceOracle__factory, RedstonePriceOracle, RedstonePriceOracle__factory } from 'packages/oracles/src/types';
+import { getChainlinkPriceOracleConstructorParamsFromOldPriceOracle, getRedstonePriceOracleConstructorParams } from 'packages/oracles/src/oracles-constructors';
 import axios from 'axios';
 import { parseEther } from 'ethers/lib/utils';
 
@@ -68,14 +68,20 @@ describe('PendlePtEEthApr2024PriceOracle_integration', () => {
     );
     await core.dolomiteRegistryProxy.connect(core.governance).upgradeTo(dolomiteRegistryImplementation.address);
     await core.dolomiteRegistry.connect(core.governance).ownerSetRedstonePriceOracle(redstoneOracle.address);
+    const chainlinkOracle = (await createContractWithAbi<ChainlinkPriceOracle>(
+      ChainlinkPriceOracle__factory.abi,
+      ChainlinkPriceOracle__factory.bytecode,
+      await getChainlinkPriceOracleConstructorParamsFromOldPriceOracle(core),
+    )).connect(core.governance);
     await core.dolomiteRegistry.connect(core.governance).ownerSetChainlinkPriceOracle(
-      core.chainlinkPriceOracle!.address,
+      chainlinkOracle.address
     );
-    await core.chainlinkPriceOracle!.connect(core.governance).ownerInsertOrUpdateOracleToken(
+    await chainlinkOracle.connect(core.governance).ownerInsertOrUpdateOracleToken(
       underlyingToken.address,
       18,
       CHAINLINK_PRICE_AGGREGATORS_MAP[Network.ArbitrumOne][core.tokens.weEth.address],
       ADDRESS_ZERO,
+      true
     );
 
     pendleRegistry = await createPendleRegistry(
